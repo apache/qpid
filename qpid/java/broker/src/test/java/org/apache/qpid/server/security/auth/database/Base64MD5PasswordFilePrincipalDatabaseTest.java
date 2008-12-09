@@ -23,6 +23,9 @@ package org.apache.qpid.server.security.auth.database;
 import junit.framework.TestCase;
 
 import javax.security.auth.login.AccountNotFoundException;
+
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -37,13 +40,20 @@ import java.util.regex.Pattern;
 public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 {
 
-    Base64MD5PasswordFilePrincipalDatabase _database;
     private static final String TEST_COMMENT = "# Test Comment";
     private String USERNAME = "testUser";
+    private String _username = this.getClass().getName()+"username";
+    private char[] _password = "password".toCharArray();
+    private Principal _principal = new UsernamePrincipal(_username);
+    private Base64MD5PasswordFilePrincipalDatabase _database;
+    private File _pwdFile;
 
-    public void setUp()
+    public void setUp() throws Exception
     {
         _database = new Base64MD5PasswordFilePrincipalDatabase();
+        _pwdFile = File.createTempFile(this.getClass().getName(), "pwd");
+        _pwdFile.deleteOnExit();
+        _database.setPasswordFile(_pwdFile.getAbsolutePath());
     }
 
     private File createPasswordFile(int commentLines, int users)
@@ -297,4 +307,31 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
         testFile.delete();
     }
+    
+    public void testCreateUserPrincipal() throws IOException
+    {
+        _database.createPrincipal(_principal, _password);
+        Principal newPrincipal = _database.getUser(_username);
+        assertNotNull(newPrincipal);
+        assertEquals(_principal.getName(), newPrincipal.getName());
+    }
+    
+    public void testVerifyPassword() throws IOException, AccountNotFoundException
+    {
+        testCreateUserPrincipal();
+        //assertFalse(_pwdDB.verifyPassword(_username, null));
+        assertFalse(_database.verifyPassword(_username, new char[]{}));
+        assertFalse(_database.verifyPassword(_username, "massword".toCharArray()));
+        assertTrue(_database.verifyPassword(_username, _password));
+    }
+    
+    public void testUpdatePassword() throws IOException, AccountNotFoundException 
+    {
+        testCreateUserPrincipal();
+        char[] newPwd = "newpassword".toCharArray();
+        _database.updatePassword(_principal, newPwd);
+        assertFalse(_database.verifyPassword(_username, _password));
+        assertTrue(_database.verifyPassword(_username, newPwd));
+    }
+    
 }

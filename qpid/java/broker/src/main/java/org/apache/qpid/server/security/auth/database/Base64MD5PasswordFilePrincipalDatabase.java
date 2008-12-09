@@ -109,6 +109,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     /**
      * SASL Callback Mechanism - sets the Password in the PasswordCallback based on the value in the PasswordFile
+     * If you want to change the password for a user, use updatePassword instead.
      *
      * @param principal The Principal to set the password for
      * @param callback  The PasswordCallback to call setPassword on
@@ -152,17 +153,31 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     {
         char[] pwd = lookupPassword(principal);
 
-        int index = 0;
-        boolean verified = true;
-
-        while (verified & index < password.length)
+        return compareCharArray(pwd, password);
+    }
+    
+    private boolean compareCharArray(char[] a, char[] b)
+    {
+        boolean equal = false;
+        if (a.length == b.length)
         {
-            verified = (pwd[index] == password[index]);
-            index++;
+            equal = true;
+            int index = 0;
+            while (equal && index < a.length)
+            {
+                equal = a[index] == b[index];
+                index++;
+            }
         }
-        return verified;
+        return equal;
     }
 
+    /**
+     * Changes the password for the specified user
+     * 
+     * @param principal to change the password for
+     * @param password plaintext password to set the password too
+     */
     public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
     {
         HashedUser user = _users.get(principal.getName());
