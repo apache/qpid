@@ -41,13 +41,13 @@ See the run-tests usage for for additional options:
 
 == Expected failures ==
 
-Certain tests are expected to fail to do incomplete functionality or
+Certain tests are expected to fail due to incomplete functionality or
 unresolved interop issues. To skip expected failures for the C++ or
 Java brokers:
 
-  ./run-tests -I <file_name>
+  ./run-tests -I <file-name>
 
-Where <file_name> is one of the following files:
+Where <file-name> is one of the following files:
 
   * cpp_failing_0-10.txt
   * cpp_failing_0-9.txt
