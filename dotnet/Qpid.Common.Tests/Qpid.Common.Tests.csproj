@@ -1,4 +1,4 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,6 +9,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Apache.Qpid.Tests</RootNamespace>
     <AssemblyName>Apache.Qpid.Common.Tests</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -38,11 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Qpid\Collections\TestConsumerProducerQueue.cs" />
-    <Compile Include="Qpid\Collections\TestLinkedHashtable.cs" />
-    <Compile Include="Qpid\Framing\TestEncodingUtils.cs" />
-    <Compile Include="Qpid\Framing\TestAMQType.cs" />
+    <Compile Include="**\*.cs" />    
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Qpid.Buffer\Qpid.Buffer.csproj">

@@ -2,7 +2,7 @@
 
 Usage() 
 {
-  echo "usage: $0 net-1.1|net-2.0|mono-2.0"
+  echo "usage: $0 net-2.0|mono-2.0"
   exit 2
 }
 
