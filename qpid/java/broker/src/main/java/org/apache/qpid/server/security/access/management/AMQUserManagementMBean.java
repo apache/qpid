@@ -441,7 +441,12 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     private String getCurrentJMXUser()
     {
         AccessControlContext acc = AccessController.getContext();
+        
         Subject subject = Subject.getSubject(acc);
+        if (subject == null)
+        {
+            return "Unknown user, authentication Subject was null";
+        }
 
         // Retrieve JMXPrincipal from Subject
         Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
