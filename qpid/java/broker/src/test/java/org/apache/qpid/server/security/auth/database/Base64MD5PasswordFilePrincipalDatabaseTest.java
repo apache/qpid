@@ -38,44 +38,19 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 {
 
     Base64MD5PasswordFilePrincipalDatabase _database;
-    private String QPID_HOME;
     private static final String TEST_COMMENT = "# Test Comment";
     private String USERNAME = "testUser";
-    private static final String TEST_FILE_NAME = "B64Test.tmp";
 
     public void setUp()
     {
         _database = new Base64MD5PasswordFilePrincipalDatabase();
-
-        QPID_HOME = System.getProperty("QPID_HOME");
-
-        assertNotNull("QPID_HOME not set", QPID_HOME);
-    }
-
-    public void tearDown()
-    {
-        File testFile = new File(QPID_HOME + File.separator + TEST_FILE_NAME);
-        if (testFile.exists())
-        {
-            testFile.delete();
-        }
-
-        testFile = new File(QPID_HOME + File.separator + TEST_FILE_NAME + ".old");
-        if (testFile.exists())
-        {
-            testFile.delete();
-        }
     }
 
     private File createPasswordFile(int commentLines, int users)
     {
         try
         {
-            File testFile = new File(QPID_HOME + File.separator + TEST_FILE_NAME);
-            if (testFile.exists())
-            {
-                testFile.delete();
-            }
+            File testFile = File.createTempFile("Base64MD5PDPDTest","tmp");
             testFile.deleteOnExit();
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(testFile));
