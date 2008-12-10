@@ -199,7 +199,7 @@ void TCPConnector::connect(const std::string& host, int port){
     assert(closed);
     try {
         socket.connect(host, port);
-    } catch (const std::exception& e) {
+    } catch (const std::exception& /*e*/) {
         socket.close();
         throw;
     }
