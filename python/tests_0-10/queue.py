@@ -88,7 +88,7 @@ class QueueTests(TestBase010):
         # TestBase.setUp has already opened session(1)
         s1 = self.session
         # Here we open a second separate connection:
-        s2 = self.conn.session("other", 2)
+        s2 = self.conn.session("other")
 
         #declare an exclusive queue:
         s1.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
@@ -96,6 +96,22 @@ class QueueTests(TestBase010):
             #other connection should not be allowed to declare this:
             s2.queue_declare(queue="exclusive-queue", exclusive=True, auto_delete=True)
             self.fail("Expected second exclusive queue_declare to raise a channel exception")
+        except SessionException, e:
+            self.assertEquals(405, e.args[0].error_code)
+            
+        s3 = self.conn.session("subscriber")
+        try:
+            #other connection should not be allowed to declare this:
+            s3.message_subscribe(queue="exclusive-queue")
+            self.fail("Expected message_subscribe on an exclusive queue to raise a channel exception")
+        except SessionException, e:
+            self.assertEquals(405, e.args[0].error_code)
+
+        s4 = self.conn.session("deleter")
+        try:
+            #other connection should not be allowed to declare this:
+            s4.queue_delete(queue="exclusive-queue")
+            self.fail("Expected queue_delete on an exclusive queue to raise a channel exception")
         except SessionException, e:
             self.assertEquals(405, e.args[0].error_code)
 

@@ -177,7 +177,7 @@ class FederationTests(TestBase010):
         #setup queue on remote broker and add some messages
         r_conn = self.connect(host=remote_host(), port=remote_port())
         r_session = r_conn.session("test_pull_from_queue")
-        r_session.queue_declare(queue="my-bridge-queue", exclusive=True, auto_delete=True)
+        r_session.queue_declare(queue="my-bridge-queue", auto_delete=True)
         for i in range(1, 6):
             dp = r_session.delivery_properties(routing_key="my-bridge-queue")
             r_session.message_transfer(message=Message(dp, "Message %d" % i))

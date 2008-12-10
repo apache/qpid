@@ -346,7 +346,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
         std::pair<Queue::shared_ptr, bool> queue_created =  
             getBroker().getQueues().declare(name, durable,
                                             autoDelete,
-                                            exclusive ? this : 0);
+                                            exclusive ? &session : 0);
         queue = queue_created.first;
         assert(queue);
         if (queue_created.second) { // This is a new queue
@@ -367,7 +367,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
                 exclusiveQueues.push_back(queue);
             }
         } else {
-            if (exclusive && queue->setExclusiveOwner(this)) {
+            if (exclusive && queue->setExclusiveOwner(&session)) {
                 exclusiveQueues.push_back(queue);
             }
         }
@@ -379,7 +379,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
                                                       queue_created.second ? "created" : "existing"));
     }
 
-    if (exclusive && !queue->isExclusiveOwner(this)) 
+    if (exclusive && !queue->isExclusiveOwner(&session)) 
         throw ResourceLockedException(QPID_MSG("Cannot grant exclusive access to queue "
                                                << queue->getName()));
 } 
@@ -405,6 +405,9 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
     }
 
     Queue::shared_ptr q = getQueue(queue);
+    if (q->hasExclusiveOwner() && !q->isExclusiveOwner(&session)) 
+        throw ResourceLockedException(QPID_MSG("Cannot delete queue "
+                                               << queue << "; it is exclusive to another session"));
     if(ifEmpty && q->getMessageCount() > 0){
         throw PreconditionFailedException("Queue not empty.");
     }else if(ifUnused && q->getConsumerCount() > 0){
@@ -473,6 +476,9 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     Queue::shared_ptr queue = getQueue(queueName);
     if(!destination.empty() && state.exists(destination))
         throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
+    if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(&session)) 
+        throw ResourceLockedException(QPID_MSG("Cannot subscribe to exclusive queue "
+                                               << queue->getName()));
 
     state.consume(destination, queue, 
                   acceptMode == 0, acquireMode == 0, exclusive, 
