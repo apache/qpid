@@ -182,6 +182,11 @@ Broker::Broker(const Broker::Options& conf) :
         queues.setParent(vhost);
         exchanges.setParent(vhost);
         links.setParent(vhost);
+    } else {
+        // Management is disabled so there is no broker management ID.
+        // Create a unique uuid to use as the federation tag.
+        framing::Uuid uuid(true);
+        federationTag = uuid.str();
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
