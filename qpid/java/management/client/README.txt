@@ -5,7 +5,7 @@ The following README content could be read also in http://cwiki.apache.org/confl
 2)HOW TO RUN Q-Man
 
 2.1)PREREQUISITES
-QMan is a standalone application that is packaged as qpid-management-client-incubating-M3.jar. To run QMan you need to add the following jars in your CLASSPATH:
+QMan is a standalone application that is packaged as qpid-management-client-<version>.jar. To run QMan you need to add the following jars in your CLASSPATH:
 
 log4j-1.2.12.jar
 slf4j-api-1.4.0.jar
@@ -15,8 +15,8 @@ commons-codec-1.3.jar
 commons-lang-2.2.jar
 commons-collections-3.2.jar
 commons-configuration-1.2.jar
-qpid-client-incubating-Mx.jar (were x is the current qpid version)
-qpid-common-incubating-Mx.jar (were x is the current qpid version)
+qpid-client-<version>.jar (were <version> is the current qpid version)
+qpid-common-<version>.jar (were <version> is the current qpid version)
 
 alternatively you can run the following script (that add all the qpid jars to the CLASSPATH):
 
