@@ -106,7 +106,7 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
 {
     try {
         authenticator->start(mechanism, response);
-    } catch (std::exception& e) {
+    } catch (std::exception& /*e*/) {
         management::ManagementAgent* agent = connection.getAgent();
         if (agent) {
             string error;
@@ -132,7 +132,7 @@ void ConnectionHandler::Handler::secureOk(const string& response)
 {
     try {
         authenticator->step(response);
-    } catch (std::exception& e) {
+    } catch (std::exception& /*e*/) {
         management::ManagementAgent* agent = connection.getAgent();
         if (agent) {
             string error;
