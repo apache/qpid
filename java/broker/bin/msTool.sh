@@ -49,7 +49,7 @@ if $cygwin; then
 fi
 
 # Set classpath to include Qpid jar with all required jars in manifest
-QPID_LIBS=$QPID_TOOLS/lib/qpid-incubating.jar
+QPID_LIBS=$QPID_TOOLS/lib/qpid-all.jar
 
 # Set other variables used by the qpid-run script before calling
 export JAVA=java \

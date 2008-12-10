@@ -58,7 +58,7 @@
   <property name="module.release.tgz"          location="${module.release.base}/${module.namever}.tar.gz"/>
   <property name="module.release.bz2"          location="${module.release}/${module.namever}.tar.bz2"/>
 
-  <property name="module.qpid.jar"     location="${module.release.lib}/qpid-incubating.jar"/>
+  <property name="module.qpid.jar"     location="${module.release.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${module.qpid.jar}"/>
 
   <property name="module.coverage"     location="${module.build}/coverage"/>
