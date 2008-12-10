@@ -39,7 +39,8 @@ void SubscriptionImpl::subscribe()
         arg::queue=queue,
         arg::destination=name,
         arg::acceptMode=settings.acceptMode,
-        arg::acquireMode=settings.acquireMode);
+        arg::acquireMode=settings.acquireMode,
+        arg::exclusive=settings.exclusive);
     setFlowControl(settings.flowControl);
 }
 
