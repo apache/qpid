@@ -109,7 +109,7 @@ class Queue;
     };
 
     class QueueHandlerImpl : public QueueHandler,
-            public HandlerHelper, public OwnershipToken
+            public HandlerHelper
     {
         Broker& broker;
         std::vector< boost::shared_ptr<Queue> > exclusiveQueues;
