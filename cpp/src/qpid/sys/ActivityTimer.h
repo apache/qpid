@@ -49,39 +49,31 @@ class ActivityTimer
     };
 
     struct Data {               // Must be a POD
-        uint64_t start, entered, exited;
-        Stat active, inactive;
+        uint64_t start, entered;
+        Stat active;
 
         void reset() {
-            start = entered = exited = 0;
+            start = entered = 0;
             active.reset();
-            inactive.reset();
         }
 
         void enter(uint64_t now) {
             entered=now;
-            if (start) {
-                assert(exited);
-                assert(entered > exited);
-                inactive.sample(entered - exited);
-            }
-            else
-                start = Duration(now);
+            if (!start) start = Duration(now);
         }
 
         void exit(uint64_t now) {
-            assert(start);
-            assert(entered);
-            exited=now;
-            assert(exited > entered);
-            active.sample(exited - entered);
+            active.sample(now - entered);
         }
     };
 
     ActivityTimer(Data& d, const char* fn, const char* file, int line, uint64_t reportInterval) : data(d) {
         uint64_t now = Duration(qpid::sys::now());
-        if (data.start && now - data.start > reportInterval)
-            report(fn, file, line);
+        if (data.start) {
+            interval = now-data.start;
+            if (interval > reportInterval)
+                report(fn, file, line);
+        }
         data.enter(now);
     }
 
@@ -91,14 +83,13 @@ class ActivityTimer
 
   private:
     Data& data;
+    uint64_t interval;
 
     void report(const char* fn, const char* file, int line) {
-        uint64_t secs = (Duration(now())-data.start)/TIME_SEC;
-        printf("[%lu]%s:%d: %s: rate=%ld/sec active=%ld inactive=%ld\n",
-               Thread::current().id(), file, line, fn,
-               long(data.active.count/secs),
-               long(data.active.mean()/TIME_USEC),
-               long(data.inactive.mean()/TIME_USEC));
+        long rate = (data.active.count*TIME_SEC)/interval;
+        double percent = (data.active.total*100.0)/interval;
+        printf("%s:%d: TIMER %ld/sec %f%% [%lu] %s\n",
+               file, line, rate, percent, Thread::current().id(), fn);
         data.reset();
     }
 };
@@ -109,7 +100,7 @@ class ActivityTimer
  * Can only have one in a given scope.
  */
 #define ACTIVITY_TIMER(REPORT_INTERVAL_SECS) \
-    static __thread ::qpid::sys::ActivityTimer::Data qpid__ActivityTimerData__ = { 0, 0, 0, { 0, 0 }, { 0, 0 } }; \
+    static __thread ::qpid::sys::ActivityTimer::Data qpid__ActivityTimerData__ = { 0, 0, { 0,0 }}; \
     ::qpid::sys::ActivityTimer qpid__ActivityTimerInstance__(qpid__ActivityTimerData__, BOOST_CURRENT_FUNCTION, __FILE__, __LINE__, 2*::qpid::sys::TIME_SEC)
 
 #endif  /*!QPID_SYS_ACTIVITYTIMER_H*/
