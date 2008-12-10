@@ -51,8 +51,10 @@ cd ../java
 ant build release
 
 cd ../dotnet
-sh build-framing
-./release mono-2.0
+cd Qpid.Common
+ant
+cd ..
+./build-nant-release mono-2.0
 
 cd client-010/gentool
 ant
