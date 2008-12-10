@@ -38,14 +38,12 @@ OutputInterceptor::OutputInterceptor(cluster::Connection& p, sys::ConnectionOutp
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
     parent.getCluster().checkQuorum();
-    Locker l(lock); 
     next->send(f);
     if (!parent.isCatchUp())
         sent += f.encodedSize();
 }
 
 void OutputInterceptor::activateOutput() {
-    Locker l(lock);
     if (parent.isCatchUp())
         next->activateOutput();
     else {
@@ -69,7 +67,6 @@ bool  OutputInterceptor::doOutput() {
 // which tranfers frames to the codec for writing.
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
-    Locker l(lock);
     size_t buf = next->getBuffered();
     if (parent.isLocal())
         writeEstimate.delivered(sent, buf); // Update the estimate.
@@ -77,7 +74,6 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
     // Run the real doOutput() till we have added the requested data or there's nothing to output.
     sent = 0;
     do {
-    sys::Mutex::ScopedUnlock u(lock);
         moreOutput = parent.getBrokerConnection().doOutput();
     } while (sent < requested && moreOutput);
     sent += buf;                // Include buffered data in the sent total.
@@ -94,7 +90,6 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
 
 // Send a doOutput request if one is not already in flight.
 void OutputInterceptor::sendDoOutput() {
-    // Call with lock held.
     if (!parent.isLocal()) return;
 
     doingOutput = true;
@@ -110,17 +105,14 @@ void OutputInterceptor::sendDoOutput() {
 }
 
 void OutputInterceptor::setOutputHandler(sys::ConnectionOutputHandler& h) {
-    Locker l(lock);
     next = &h;
 }
 
 void OutputInterceptor::close() {
-    Locker l(lock);
     next->close();
 }
 
 size_t OutputInterceptor::getBuffered() const {
-    Locker l(lock);
     return next->getBuffered();
 }
 
