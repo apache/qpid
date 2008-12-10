@@ -11,7 +11,7 @@ dnl
 dnl When updating the name/version number here, also update it in
 dnl src/qpid/Version.h
 
-AC_INIT([qpidc], [0.3], [qpid-dev@incubator.apache.org])
+AC_INIT([qpidc], [0.4], [qpid-dev@incubator.apache.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 
