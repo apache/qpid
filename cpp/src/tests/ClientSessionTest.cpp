@@ -19,6 +19,7 @@
  *
  */
 #include "unit_test.h"
+#include "test_tools.h"
 #include "BrokerFixture.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Monitor.h"
@@ -338,9 +339,6 @@ QPID_AUTO_TEST_CASE(testRelease) {
 
 QPID_AUTO_TEST_CASE(testCompleteOnAccept) {
     ClientSessionFixture fix;
-
-    fix.session.queueDeclare(arg::queue="HELP_FIND_ME");
-
     const uint count = 8;
     const uint chunk = 4;
     for (uint i = 0; i < count; i++) {        
@@ -377,9 +375,6 @@ QPID_AUTO_TEST_CASE(testCompleteOnAccept) {
         accepted.add(m.getId());
     }    
     fix.session.messageAccept(accepted);
-
-    fix.session.queueDelete(arg::queue="HELP_FIND_ME");
-
 }
 
 namespace
@@ -434,6 +429,22 @@ QPID_AUTO_TEST_CASE(testConcurrentSenders)
     for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::start, _1));
     for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::join, _1));
     connection.close();
+}
+
+
+QPID_AUTO_TEST_CASE(testExclusiveSubscribe)
+{
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="myq", arg::exclusive=true, arg::autoDelete=true);
+    SubscriptionSettings settings;
+    settings.exclusive = true;
+    LocalQueue q;
+    fix.subs.subscribe(q, "myq", settings, "first");
+    //attempt to create new subscriber should fail
+    ScopedSuppressLogging sl;
+    BOOST_CHECK_THROW(fix.subs.subscribe(q, "myq", "second"), ResourceLockedException);
+    ;
+    
 }
 
 QPID_AUTO_TEST_SUITE_END()

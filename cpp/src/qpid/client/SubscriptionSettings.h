@@ -46,7 +46,7 @@ struct SubscriptionSettings
         AcquireMode acquire=ACQUIRE_MODE_PRE_ACQUIRED,
         unsigned int autoAck_=1,
         CompletionMode completion=COMPLETE_ON_DELIVERY
-    ) : flowControl(flow), acceptMode(accept), acquireMode(acquire), autoAck(autoAck_), completionMode(completion) {}
+    ) : flowControl(flow), acceptMode(accept), acquireMode(acquire), autoAck(autoAck_), completionMode(completion), exclusive(false) {}
                          
     FlowControl flowControl;    ///@< Flow control settings. @see FlowControl
     AcceptMode acceptMode;      ///@< ACCEPT_MODE_EXPLICIT or ACCEPT_MODE_NONE
@@ -80,6 +80,11 @@ struct SubscriptionSettings
      * completing messages (@see Session::markCompleted()).
      */
     CompletionMode completionMode;
+    /**
+     * If set, requests that no other subscriber be allowed to access
+     * the queue while this subscription is active.
+     */
+    bool exclusive;
 };
 
 }} // namespace qpid::client
