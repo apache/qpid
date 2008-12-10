@@ -72,7 +72,7 @@ void Connection::open(
                 open(settings);
                 break;
             }
-            catch (const Exception& e) {
+            catch (const Exception& /*e*/) {
                 if (i == url.end()) throw;
             }
         }
