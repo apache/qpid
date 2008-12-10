@@ -46,9 +46,9 @@
         </copy>
         <copy todir="${servlet.web-inf}/lib">
             <fileset dir="${build}/lib">
-                <include name="qpid-client-incubating*.jar"/>
-                <include name="qpid-common-incubating*.jar"/>
-                <include name="qpid-management-client-incubating*.jar"/>
+                <include name="qpid-client-*.jar"/>
+                <include name="qpid-common-*.jar"/>
+                <include name="qpid-management-client-*.jar"/>
             </fileset>
         </copy>
     </target>

@@ -32,7 +32,7 @@
   ${modules.plugin} ${modules.examples} ${modules.tests}
   ${modules.management} ${modules.management.tools}"/>
 
-  <property name="qpid.jar"           location="${build.lib}/qpid-incubating.jar"/>
+  <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
 
   <property name="resources"     value="${project.root}/resources"/>
