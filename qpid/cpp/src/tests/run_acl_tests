@@ -15,6 +15,18 @@ stop_brokers() {
         ../qpidd -q --port $LOCAL_PORT
 }
 
+test_loading_acl_from_absolute_path(){
+   ../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module ../.libs/acl.so --acl-file $PWD/policy.acl -t --log-to-file temp.log  2>/dev/null
+    PORT=`grep "Listening on TCP port" temp.log | awk '{print $8}'`
+    ACL_FILE=`grep "notice Read ACL file" temp.log | awk '{print $7}'`    
+    rm -rf temp.log
+   ../qpidd -q --port $PORT
+   if test $ACL_FILE != "\"$PWD/policy.acl\""; then
+     echo "unable to load policy file from an absolute path";
+     return 1;
+   fi
+}
+
 if test -d ${PYTHON_DIR} ;  then
     rm -rf $DATA_DIR
     mkdir -p $DATA_DIR
@@ -24,10 +36,12 @@ if test -d ${PYTHON_DIR} ;  then
     PYTHONPATH=$PYTHON_DIR
     export PYTHONPATH
     $srcdir/acl.py -v -s $srcdir/../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --port $LOCAL_PORT
-    RETCODE=$?
+    RETCODE=$?   
     stop_brokers
+    test_loading_acl_from_absolute_path
+    RETCODE2=$?
     rm -rf $DATA_DIR
-    if test x$RETCODE != x0; then 
+    if test x$RETCODE != x0 -o x$RETCODE2 != x0; then 
         echo "FAIL acl tests"; exit 1;
     fi
 fi
