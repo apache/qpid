@@ -36,13 +36,7 @@
       <field name="cluster-id" type="uuid"/>
     </control>
 
-    <control name = "dump-start" code="0x3" label="Used internally by dumper to mark stall point.">
-      <field name="dumpee" type="uint64"/>
-      <field name="url" type="str16"/>      
-    </control>
-
-
-    <control name="ready" code="0x10" label="New member is ready.">
+Min     <control name="ready" code="0x10" label="New member is ready.">
       <field name="url" type="str16"/>
     </control>
 

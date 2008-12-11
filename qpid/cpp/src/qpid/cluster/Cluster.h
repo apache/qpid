@@ -115,7 +115,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave(Lock&);
     std::vector<Url> getUrls(Lock&) const;
 
-    bool sendMcast(const Event& e);
+    void sendMcast(PollableEventQueue::Queue& );
     
     // Called via CPG, deliverQueue or DumpClient threads. 
     void tryMakeOffer(const MemberId&, Lock&);
@@ -128,12 +128,13 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // 
     void dumpRequest(const MemberId&, const std::string&, Lock&);
     void dumpOffer(const MemberId& dumper, uint64_t dumpee, const framing::Uuid&, Lock&);
-    void dumpStart(const MemberId& dumper, uint64_t dumpeeInt, const std::string& urlStr, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
-    bool delivered(const Event&); // deliverQueue callback
-    void delivered(const Event&, Lock&); // unlocked version
+    void delivered(PollableEventQueue::Queue&); // deliverQueue callback
+    void deliveredEvent(const Event&); 
+
+    void dumpStart(const MemberId& dumpee, const Url& url, Lock&);
 
     // CPG callbacks, called in CPG IO thread.
     void dispatch(sys::DispatchHandle&); // Dispatch CPG events.
