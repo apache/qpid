@@ -46,6 +46,9 @@ cluster_la_SOURCES = \
   qpid/cluster/ClusterMap.cpp \
   qpid/cluster/FailoverExchange.h \
   qpid/cluster/FailoverExchange.cpp \
+  qpid/cluster/Multicaster.h \
+  qpid/cluster/Multicaster.cpp \
+  qpid/cluster/ClusterLeaveException.h \
   qpid/cluster/Quorum.h
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la

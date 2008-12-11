@@ -163,7 +163,6 @@ class Connection :
     framing::FrameDecoder localDecoder;
     framing::FrameDecoder mcastDecoder;
     broker::Connection connection;
-    framing::SequenceNumber mcastSeq;
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;

@@ -163,7 +163,7 @@ void Connection::closed() {
             // closed and process any outstanding frames from the cluster
             // until self-delivery of deliver-close.
             output.setOutputHandler(discardHandler);
-            cluster.mcastControl(ClusterConnectionDeliverCloseBody(), self, ++mcastSeq);
+            cluster.getMulticast().mcastControl(ClusterConnectionDeliverCloseBody(), self);
         }
     }
     catch (const std::exception& e) {
@@ -193,7 +193,7 @@ size_t Connection::decode(const char* buffer, size_t size) {
     }
     else {                      // Multicast local connections.
         assert(isLocal());
-        cluster.mcastBuffer(buffer, size, self, ++mcastSeq);
+        cluster.getMulticast().mcastBuffer(buffer, size, self);
     }
     return size;
 }
