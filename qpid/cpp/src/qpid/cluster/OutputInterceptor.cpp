@@ -99,8 +99,8 @@ void OutputInterceptor::sendDoOutput() {
     // Send it anyway to keep the doOutput chain going until we are sure there's no more output
     // (in deliverDoOutput)
     //
-    // FIXME aconway 2008-10-16: use ++parent.mcastSeq as sequence no,not 0
-    parent.getCluster().mcastControl(ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), parent.getId(), 0);
+    parent.getCluster().getMulticast().mcastControl(
+        ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), request), parent.getId());
     QPID_LOG(trace, parent << "Send doOutput request for " << request);
 }
 
