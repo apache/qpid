@@ -411,72 +411,46 @@ public class ViewUtility
             ex.printStackTrace();
         }
     }
-    
-    public static int popupInfoMessage(String title, String message)
+
+    private static Shell getShell()
     {
-        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_INFORMATION | SWT.OK);
+        Shell shell = Display.getCurrent().getActiveShell();
+
+        // Under linux GTK getActiveShell returns null so we need to make a new shell for display.
+        // Under windows this is fine.
+        if (shell == null)
+        {
+            // This occurs under linux gtk
+            shell = new Shell(Display.getCurrent(), SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX);
+        }
+
+        return shell;
+    }
+
+    private static int showBox(String title, String message, int icon)
+    {
+        MessageBox messageBox = new MessageBox(getShell(), icon);
         messageBox.setMessage(message);
         messageBox.setText(title);
-        int response = messageBox.open();
-        
-        return response;
+
+        return messageBox.open();
+    }
+
+    public static int popupInfoMessage(String title, String message)
+    {
+        return showBox(title, message, SWT.ICON_INFORMATION | SWT.OK);
     }
     
     public static int popupErrorMessage(String title, String message)
     {
-        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_ERROR | SWT.OK);
-        messageBox.setMessage(message);
-        messageBox.setText(title);
-        int response = messageBox.open();
-        
-        return response;
+        return showBox(title, message, SWT.ICON_ERROR | SWT.OK);
     }
-    
+
     public static int popupConfirmationMessage(String title, String message)
     {
-        MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), 
-                                SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
-        messageBox.setMessage(message);
-        messageBox.setText(title);
-        int response = messageBox.open();
-        
-        return response;
+        return showBox(title, message,SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
     }
-    
-    public static void popupError(String title, String message, Throwable ex)
-    {
-        IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                    IStatus.ERROR, ex.toString(), ex); 
-        ErrorDialog.openError(Display.getCurrent().getActiveShell(), title, message, status);
 
-    }
-    
-    public static void popupError(String errorMsg)
-    {
-        Display display = Display.getCurrent();
-        Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX);
-        shell.setText("Attribute");
-        shell.setLayout(new GridLayout());
-        int x = display.getBounds().width;
-        int y = display.getBounds().height;
-        int width = 500;
-        int height = 250;
-        shell.setBounds(x/4, y/4, width, height);
-        
-        Label label = new Label(shell, SWT.NONE);
-        label.setText(errorMsg);
-        label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
-        
-        shell.open();
-        while (!shell.isDisposed())
-        {
-            if (!display.readAndDispatch())
-            {
-                display.sleep();
-            }
-        }
-        shell.dispose();
-    }
     
     public static Shell createPopupShell(String title, int width, int height)
     {
