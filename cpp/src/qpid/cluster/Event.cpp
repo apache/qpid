@@ -32,42 +32,45 @@ namespace cluster {
 
 using framing::Buffer;
 
-const size_t Event::OVERHEAD = sizeof(uint8_t) + sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
+const size_t Event::HEADER_SIZE =
+    sizeof(uint8_t) +  // type
+    sizeof(uint64_t) + // connection pointer only, CPG provides member ID.
+    sizeof(uint32_t);  // payload size
 
-Event::Event(EventType t, const ConnectionId& c,  size_t s, uint32_t i)
-    : type(t), connectionId(c), size(s), data(RefCountedBuffer::create(s)), id(i) {}
+Event::Event(EventType t, const ConnectionId& c,  size_t s)
+    : type(t), connectionId(c), size(s), store(RefCountedBuffer::create(s+HEADER_SIZE)) {
+    encodeHeader();
+}
 
 Event Event::decode(const MemberId& m, framing::Buffer& buf) {
-    assert(buf.available() > OVERHEAD);
+    if (buf.available() <= HEADER_SIZE)
+        throw ClusterLeaveException("Not enough for multicast header");
     EventType type((EventType)buf.getOctet());
-    assert(type == DATA || type == CONTROL);
+    if(type != DATA && type != CONTROL)
+        throw ClusterLeaveException("Invalid multicast event type");
     ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
-    uint32_t id = buf.getLong();
     uint32_t size = buf.getLong();
-    Event e(type, connection, size, id);
-    assert(buf.available() >= size);
+    Event e(type, connection, size);
+    if (buf.available() < size)
+        throw ClusterLeaveException("Not enough data for multicast event");
     memcpy(e.getData(), buf.getPointer() + buf.getPosition(), size);
     return e;
 }
 
-Event Event::control(const framing::AMQBody& body, const ConnectionId& cid, uint32_t id) {
+Event Event::control(const framing::AMQBody& body, const ConnectionId& cid) {
     framing::AMQFrame f(body);
-    Event e(CONTROL, cid, f.encodedSize(), id);
+    Event e(CONTROL, cid, f.encodedSize());
     Buffer buf(e);
     f.encode(buf);
     return e;
 }
     
-bool Event::mcast (Cpg& cpg) const {
-    char header[OVERHEAD];
-    Buffer b(header, OVERHEAD);
+void Event::encodeHeader () {
+    Buffer b(getStore(), HEADER_SIZE);
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
-    b.putLong(id);
     b.putLong(size);
-    assert(b.getPosition() == OVERHEAD);
-    iovec iov[] = { { header, OVERHEAD }, { const_cast<char*>(getData()), getSize() } };
-    return cpg.mcast(iov, sizeof(iov)/sizeof(*iov));
+    assert(b.getPosition() == HEADER_SIZE);
 }
 
 Event::operator Buffer() const  {
@@ -77,7 +80,7 @@ Event::operator Buffer() const  {
 static const char* EVENT_TYPE_NAMES[] = { "data", "control" };
 
 std::ostream& operator << (std::ostream& o, const Event& e) {
-    o << "[event " << e.getConnectionId() << "/" << e.getId()
+    o << "[event " << e.getConnectionId() 
       << " " << EVENT_TYPE_NAMES[e.getType()]
       << " " << e.getSize() << " bytes]";
     return o;

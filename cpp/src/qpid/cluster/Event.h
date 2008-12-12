@@ -42,36 +42,43 @@ namespace cluster {
  */
 class Event {
   public:
-    /** Create an event to mcast with a buffer of size bytes. */
-    Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0, uint32_t id=0);
+    /** Create an event with a buffer that can hold size bytes plus an event header. */
+    Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
 
     /** Create an event copied from delivered data. */
     static Event decode(const MemberId& m, framing::Buffer&);
 
     /** Create an event containing a control */
-    static Event control(const framing::AMQBody&, const ConnectionId&, uint32_t id=0);
-    
-    bool mcast(Cpg& cpg) const;
+    static Event control(const framing::AMQBody&, const ConnectionId&);
     
     EventType getType() const { return type; }
     ConnectionId getConnectionId() const { return connectionId; }
     MemberId getMemberId() const { return connectionId.getMember(); }
     size_t getSize() const { return size; }
-    char* getData() { return data; }
-    const char* getData() const { return data; }
-    size_t getId() const { return id; }
+
+    // Data excluding header.
+    char* getData() { return store + HEADER_SIZE; }
+    const char* getData() const { return store + HEADER_SIZE; }
+
+    // Store including header
+    char* getStore() { return store; }
+    const char* getStore() const { return store; }
+    size_t getStoreSize() { return size + HEADER_SIZE; }
+    
     bool isCluster() const { return connectionId.getPointer() == 0; }
     bool isConnection() const { return connectionId.getPointer() != 0; }
 
     operator framing::Buffer() const;
 
   private:
-    static const size_t OVERHEAD;
+    static const size_t HEADER_SIZE;
+    
+    void encodeHeader();
+
     EventType type;
     ConnectionId connectionId;
     size_t size;
-    RefCountedBuffer::pointer data;
-    uint32_t id;
+    RefCountedBuffer::pointer store;
 };
 
 std::ostream& operator << (std::ostream&, const Event&);
