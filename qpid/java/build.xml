@@ -216,7 +216,7 @@
     <iterate target="instrument"/>
   </target>
   
-  <target name="cover-test" description="run tests and generate coverage information">
+  <target name="cover-test" description="run tests and generate coverage information" depends="build">
     <iterate target="cover-test" modules="broker client common"/>
   </target>
     

@@ -467,7 +467,7 @@
     <delete dir="${module.instrumented}"/>
   </target>
 
-  <target name="instrument" depends="build">
+  <target name="instrument">
     <cobertura-instrument todir="${module.instrumented}"
                           datafile="${cobertura.datafile}">
       <fileset dir="${module.classes}">
