@@ -42,7 +42,6 @@ public abstract class ApplicationRegistry
     private static ImageRegistry imageRegistry = new ImageRegistry();
     private static FontRegistry fontRegistry = new FontRegistry();
     public static final boolean debug = Boolean.getBoolean("eclipse.consoleLog");
-    public static final String securityMechanism = System.getProperty("security", null);
     public static final long timeout = Long.parseLong(System.getProperty("timeout", "5000"));
     
     static
@@ -132,11 +131,6 @@ public abstract class ApplicationRegistry
         List<ManagedServer> list = new CopyOnWriteArrayList<ManagedServer>(_closedServerList);
         _closedServerList.clear();
         return list;
-    }
-    
-    public static String getSecurityMechanism()
-    {
-        return securityMechanism;
     }
 
 }
