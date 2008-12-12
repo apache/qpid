@@ -1,10 +1,11 @@
 Info
 ====
 
-There are two separate .NET clients: one that implements AMQP 0.9 and another that
-implements 0-10. 0-10 is required to communicate with the Qpid C++ broker.
+There are two separate .NET clients: one that implements AMQP 0-8 (and
+can communicate with the Java broker) and another that implements
+0-10 (and can communicate with the C++ broker).
 
-This README contains instructions for building the 0-9 client.
+This README contains instructions for building the 0-8 client.
 
 Instructions for building and installing the 0-10 client are located in client-010/README.txt.
 

@@ -1,8 +1,8 @@
 Apache Incubator Qpid .NET M4 Release Notes
 -------------------------------------------
 
-The Qpid M4 release contains support the for AMQP 0-10 and AMQP 0-8
-specification.
+The Qpid M4 release contains seperate clients that support the AMQP
+0-10 and AMQP 0-8 protocols.
 
 For full details of Qpid capabilities, as they currently stand, see our
 detailed project documentation at:
@@ -23,5 +23,4 @@ http://issues.apache.org/jira/browse/QPID
 Changes since M3
 ----------------
 
-The major change since M3 has been the introduction of 0-10 support.
-
+The major change since M3 has been the addition of a new client which implements 0-10 support.
