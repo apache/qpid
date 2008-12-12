@@ -57,10 +57,13 @@ void Multicaster::mcast(const Event& e) {
     queue.push(e);
 }
 
+
 void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
     try {
         PollableEventQueue::Queue::iterator i = values.begin();
-        while (i != values.end() && i->mcast(cpg)) {
+        while( i != values.end()) {
+            iovec iov = { const_cast<char*>(i->getStore()), i->getStoreSize() };
+            if (!cpg.mcast(&iov, 1)) break; // returns false for flow control
             QPID_LOG(trace, " MCAST " << *i);
             ++i;
         }
