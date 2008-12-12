@@ -22,6 +22,7 @@
  *
  */
 
+#include "ClusterLeaveException.h"
 #include <qpid/Url.h>
 
 #include <utility>
