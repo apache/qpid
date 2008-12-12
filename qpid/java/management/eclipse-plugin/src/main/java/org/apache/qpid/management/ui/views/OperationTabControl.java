@@ -22,7 +22,6 @@ package org.apache.qpid.management.ui.views;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -34,6 +33,8 @@ import static org.apache.qpid.management.ui.Constants.*;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.ParameterData;
@@ -69,6 +70,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
  * Control class for the MBean operations tab. It creates the required widgets
  * for the selected MBean.
  * @author Bhupendra Bhardwaj
+ * @author Robert Gemmell
  */
 public class OperationTabControl extends TabControl
 {
@@ -604,7 +606,15 @@ public class OperationTabControl extends TabControl
                     }
                     
                     // customized for passwords
-                    String securityMechanism = ApplicationRegistry.getSecurityMechanism();
+                    String securityMechanism = "";
+                    ServerRegistry serverReg = ApplicationRegistry.getServerRegistry(_mbean);
+                    
+                    if (serverReg instanceof JMXServerRegistry)
+                    {
+                        JMXServerRegistry jmxServerReg = (JMXServerRegistry) ApplicationRegistry.getServerRegistry(_mbean);
+                        securityMechanism = jmxServerReg.getSecurityMechanism();
+                    }
+                    
                     if ((MECH_CRAMMD5.equals(securityMechanism)) && PASSWORD.equalsIgnoreCase(param.getName()))
                     {
                         try
