@@ -53,7 +53,7 @@ module Qpid::Qmf
     def object_props(broker, record); end
 
     # Invoked when an object is updated
-    def objectStats(broker, record); end
+    def object_stats(broker, record); end
 
     # Invoked when an event is raised
     def event(broker, event); end
@@ -151,10 +151,10 @@ module Qpid::Qmf
       @result         = []
       @select         = []
       @error             = nil
-      @rcv_objects       = kwargs[:rcv_objects] || true
-      @rcv_events        = kwargs[:rcv_events] || true
-      @rcv_heartbeats    = kwargs[:rcv_heartbeats] || true
-      @user_bindings     = kwargs[:user_bindings] || false
+      @rcv_objects       = kwargs[:rcv_objects] == nil ? true : kwargs[:rcv_objects]
+      @rcv_events        = kwargs[:rcv_events]  == nil ? true : kwargs[:rcv_events]
+      @rcv_heartbeats    = kwargs[:rcv_heartbeats] == nil ? true : kwargs[:rcv_heartbeats]
+      @user_bindings     = kwargs[:user_bindings] == nil ? false : kwargs[:user_bindings]
       unless @console
         @rcv_objects    = false
         @rcv_events     = false
@@ -559,8 +559,8 @@ module Qpid::Qmf
         end
       end
 
-      @console.object_props(broker, object) if @console && prop
-      @console.object_stats(broker, object) if @console && stat
+      @console.object_props(broker, object) if @console && @rcv_objects && prop
+      @console.object_stats(broker, object) if @console && @rcv_objects && stat
     end
 
     def handle_broker_disconnect(broker); end
