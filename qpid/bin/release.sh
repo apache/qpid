@@ -32,7 +32,7 @@ fi
 
 set -xe
 
-svn export -r ${REV} https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid qpid-${VER}
+svn export -r ${REV} https://svn.apache.org/repos/asf/qpid/trunk/qpid qpid-${VER}
 
 mkdir artifacts
 
