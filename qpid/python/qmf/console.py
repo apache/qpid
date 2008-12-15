@@ -577,7 +577,7 @@ class Session:
     finally:
       self.cv.release()
 
-    if self.console != None:
+    if self.console and self.rcvObjects:
       if prop:
         self.console.objectProps(broker, object)
       if stat:
