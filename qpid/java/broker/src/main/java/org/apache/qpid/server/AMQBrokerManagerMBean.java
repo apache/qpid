@@ -42,12 +42,8 @@ import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import org.apache.commons.configuration.Configuration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -79,7 +75,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     @MBeanConstructor("Creates the Broker Manager MBean")
     public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
-        super(ManagedBroker.class, ManagedBroker.TYPE);
+        super(ManagedBroker.class, ManagedBroker.TYPE, ManagedBroker.VERSION);
 
         _virtualHostMBean = virtualHostMBean;
         VirtualHost virtualHost = virtualHostMBean.getVirtualHost();
