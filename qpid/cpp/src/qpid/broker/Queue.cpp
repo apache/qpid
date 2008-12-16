@@ -307,7 +307,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
                 //consumer wants the message
                 c->position = msg.position;
                 m = msg;
-                clearLVQIndex(msg);
+                if (!lastValueQueueNoAcquire) clearLVQIndex(msg);
                 return true;
             } else {
                 //browser hasn't got enough credit for the message
