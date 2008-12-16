@@ -32,6 +32,7 @@ public class Constants
     public final static String ACTION_REMOVE_MBEANNODE = "Remove from list";
     public final static String VALUE = "value";
     public final static String TYPE  = "type";
+    public final static String VERSION  = "version";
     public final static String NODE_TYPE_SERVER    = "server";
     public final static String NODE_TYPE_DOMAIN    = "domain";
     public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
