@@ -64,7 +64,7 @@ if len(sys.argv) > 2 :
   port=int(sys.argv[2])
 
 socket = connect(host, port)
-connection = Connection (sock=socket)
+connection = Connection (sock=socket, username=user, password=password)
 connection.start()
 session = connection.session(str(uuid4()))
 
