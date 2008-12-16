@@ -33,7 +33,10 @@ import java.io.IOException;
 
 public interface UserManagement
 {
+
     String TYPE = "UserManagement";
+
+    int VERSION = 2;
 
     //********** Operations *****************//
     /**
@@ -114,5 +117,6 @@ public interface UserManagement
     @MBeanOperation(name = "viewUsers", description = "All users with access rights to the system.",
                     impact = MBeanOperationInfo.INFO)
     TabularData viewUsers();
+
 
 }
