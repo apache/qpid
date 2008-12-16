@@ -816,7 +816,8 @@ void ManagementAgentImpl::ConnectionThread::run()
                 session = connection.newSession(queueName.str());
                 subscriptions = new client::SubscriptionManager(session);
 
-                session.queueDeclare(arg::queue=queueName.str());
+                session.queueDeclare(arg::queue=queueName.str(), arg::autoDelete=true,
+                                     arg::exclusive=true);
                 session.exchangeBind(arg::exchange="amq.direct", arg::queue=queueName.str(),
                                      arg::bindingKey=queueName.str());
 
