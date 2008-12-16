@@ -228,8 +228,9 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
         assertNotNull(testUser);
 
-        String NEW_PASSWORD = "NewPassword";
-        String NEW_PASSWORD_HASH = "TmV3UGFzc3dvcmQ=";
+        String NEW_PASSWORD = "guest";
+        
+        String NEW_PASSWORD_HASH = "CE4DQ6BIb/BVMN9scFyLtA==";
         try
         {
             _database.updatePassword(testUser, NEW_PASSWORD.toCharArray());
