@@ -27,7 +27,7 @@ namespace qpid {
 namespace client {
 
 enum QueueSizePolicy {NONE, REJECT, FLOW_TO_DISK, RING, RING_STRICT};
-enum QueueOrderingPolicy {FIFO, LVQ};	
+enum QueueOrderingPolicy {FIFO, LVQ, LVQ_NO_ACQUIRE};	
 
 /**
  * A help class to set options on the Queue. Create a configured args while
@@ -94,6 +94,7 @@ class QueueOptions: public framing::FieldTable
     static const std::string strLastValueQueue;
     static const std::string strPersistLastNode;
     static const std::string strLVQMatchProperty;
+    static const std::string strLastValueQueueNoAcquire;
 };
 
 }
