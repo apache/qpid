@@ -52,7 +52,7 @@ if len(sys.argv) > 2 :
 
 #  Create a connection.
 socket = connect(host, port)
-connection = Connection (sock=socket)
+connection = Connection (sock=socket, username=user, password=password)
 connection.start()
 session = connection.session(str(uuid4()))
 
