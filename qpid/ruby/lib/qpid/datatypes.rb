@@ -347,7 +347,7 @@ module Qpid
     def self.format(s)
       # Python format !LHHHHL
       # big-endian, ulong, ushort x 4, ulong
-      "%08x-%04x-%04x-%04x-%04x%08x" % bytes.unpack("NnnnnN")
+      "%08x-%04x-%04x-%04x-%04x%08x" % s.unpack("NnnnnN")
     end
   end
 end
