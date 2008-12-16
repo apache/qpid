@@ -644,7 +644,7 @@ module Qpid::Qmf
       when 11: return value ? 'T' : 'F'
       when 12: return value.to_s
       when 13: return value.to_s
-      when 14: return Qpid::UUID::format(hash)
+      when 14: return Qpid::UUID::format(value)
       when 15: return value.to_s
       when 16: return value.to_s
       when 17: return value.to_s
@@ -954,7 +954,7 @@ module Qpid::Qmf
       @properties.select { |property, value|
         property.index
       }.collect { |property,value|
-        value.to_s }.join(":")
+        @session.display_value(value, property.type) }.join(":")
     end
 
     # Replace properties and/or statistics with a newly received update
@@ -967,7 +967,8 @@ module Qpid::Qmf
     end
 
     def to_s
-      index
+      key = klass_key
+      key[0] + ":" + key[1] + "[" + @object_id.to_s() + "] " + index
     end
 
     # This must be defined because ruby has this (deprecated) method built in.
@@ -1580,11 +1581,11 @@ module Qpid::Qmf
     end
 
     def object_props(broker, record)
-      puts "objectProps #{record.klass_key}"
+      puts "objectProps #{record}"
     end
 
     def object_stats(broker, record)
-      puts "objectStats #{record.klass_key}"
+      puts "objectStats #{record}"
     end
 
     def event(broker, event)
