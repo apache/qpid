@@ -370,6 +370,7 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     intrusive_ptr<Message> msg3 = create_message("e", "C");
     intrusive_ptr<Message> msg4 = create_message("e", "D");
     intrusive_ptr<Message> msg5 = create_message("e", "F");
+    intrusive_ptr<Message> msg6 = create_message("e", "G");
 
     //set deliever match for LVQ a,b,c,a
 
@@ -383,6 +384,7 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
     msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
     msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+    msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
 	
     //enqueue 4 message
     queue->deliver(msg1);
@@ -402,6 +404,12 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
     
     queue->deliver(msg5);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
+
+    // set mode to no acquire and check
+    args.setOrdering(client::LVQ_NO_ACQUIRE);
+    queue->configure(args);
+    queue->deliver(msg6);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
  
 }
