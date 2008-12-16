@@ -1022,7 +1022,7 @@ class Object(object):
         if result != u"":
           result += u":"
         try:
-          valstr = unicode(value)
+          valstr = unicode(self._session._displayValue(value, property.type))
         except:
           valstr = u"<undecodable>"
         result += valstr
@@ -1044,7 +1044,9 @@ class Object(object):
       self.statistics = newer.getStatistics()
 
   def __repr__(self):
-    return self.getIndex().encode("utf8")
+    key = self.getClassKey()
+    return key.getPackageName() + ":" + key.getClassName() +\
+        "[" + self.getObjectId().__repr__() + "] " + self.getIndex().encode("utf8")
 
   def __getattr__(self, name):
     for method in self._schema.getMethods():
@@ -1607,10 +1609,10 @@ class DebugConsole(Console):
     print "delAgent:", agent
 
   def objectProps(self, broker, record):
-    print "objectProps:", record.getClassKey()
+    print "objectProps:", record
 
   def objectStats(self, broker, record):
-    print "objectStats:", record.getClassKey()
+    print "objectStats:", record
 
   def event(self, broker, event):
     print "event:", event
