@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.security.NoSuchAlgorithmException;
+import java.io.UnsupportedEncodingException;
 
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularDataSupport;
@@ -605,26 +607,33 @@ public class OperationTabControl extends TabControl
                         return;
                     }
                     
-                    // customized for passwords
-                    String securityMechanism = "";
-                    ServerRegistry serverReg = ApplicationRegistry.getServerRegistry(_mbean);
-                    
-                    if (serverReg instanceof JMXServerRegistry)
+                    //Custom handling for the PASSWORD field
+                    if (param.getName().equalsIgnoreCase(PASSWORD))
                     {
-                        JMXServerRegistry jmxServerReg = (JMXServerRegistry) ApplicationRegistry.getServerRegistry(_mbean);
-                        securityMechanism = jmxServerReg.getSecurityMechanism();
-                    }
-                    
-                    if ((MECH_CRAMMD5.equals(securityMechanism)) && PASSWORD.equalsIgnoreCase(param.getName()))
-                    {
-                        try
+                        //Convert the String value to a character array if that is what is required.
+                        if (param.getType().equals("[C"))
                         {
-                            param.setValue(ViewUtility.getMD5HashedCharArray(param.getValue()));
-                        }
-                        catch (Exception ex)
-                        {
-                            MBeanUtility.handleException(_mbean, ex);
-                            return;
+                            // Retreive the mBean type and version.
+                            // If we have a version 1 UserManagement class mbean then it expects the password
+                            // to be sent as the hashed version.
+                            if (_mbean.getType().equals("UserManagement") && _mbean.getVersion() == 1)
+                            {
+                                try
+                                {
+                                    param.setValue(ViewUtility.getHash((String) param.getValue()));
+                                }
+                                catch (Exception hashException)
+                                {
+                                    ViewUtility.popupErrorMessage(_form.getText(),
+                                                                  "Unable to calculate hash for Password:"
+                                                                  + hashException.getMessage());
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                param.setValue(((String) param.getValue()).toCharArray());
+                            }
                         }
                     }
                     // end of customization
