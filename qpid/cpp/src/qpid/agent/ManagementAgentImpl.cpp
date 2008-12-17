@@ -856,6 +856,9 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
         session.messageTransfer(arg::content=msg, arg::destination=exchange);
     } catch(exception& e) {
         QPID_LOG(error, "Exception caught in sendBuffer: " << e.what());
+        // Bounce the connection
+        if (subscriptions)
+            subscriptions->stop();
     }
 }
 
