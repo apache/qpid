@@ -22,6 +22,8 @@ package org.apache.qpid.server.subscription;
 */
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -40,6 +42,7 @@ public class MockSubscription implements Subscription
     private QueueEntry lastSeen = null;
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
+    private final Lock _stateChangeLock = new ReentrantLock();
 
     public void close()
     {
@@ -83,6 +86,7 @@ public class MockSubscription implements Subscription
 
     public void getSendLock()
     {
+        _stateChangeLock.lock();
     }
 
     public boolean hasInterest(QueueEntry msg)
@@ -121,6 +125,7 @@ public class MockSubscription implements Subscription
 
     public void releaseSendLock()
     {
+        _stateChangeLock.unlock();
     }
 
     public void resend(QueueEntry entry) throws AMQException
