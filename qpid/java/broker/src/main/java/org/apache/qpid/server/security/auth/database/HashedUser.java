@@ -27,11 +27,10 @@ import org.apache.log4j.Logger;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
-import java.security.MessageDigest;
 
-public class Base64HashedUser implements Principal
+public class HashedUser implements Principal
 {
-    private static final Logger _logger = Logger.getLogger(Base64HashedUser.class);
+    private static final Logger _logger = Logger.getLogger(HashedUser.class);
 
     String _name;
     char[] _password;
@@ -39,7 +38,7 @@ public class Base64HashedUser implements Principal
     private boolean _modified = false;
     private boolean _deleted = false;
 
-    Base64HashedUser(String[] data) throws UnsupportedEncodingException
+    HashedUser(String[] data) throws UnsupportedEncodingException
     {
         if (data.length != 2)
         {
@@ -64,20 +63,7 @@ public class Base64HashedUser implements Principal
         }
     }
 
-    public byte[] getMD5(byte[] data) throws NoSuchAlgorithmException, UnsupportedEncodingException
-    {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-
-        for (byte b : data)
-        {
-            md.update(b);
-        }
-
-        return md.digest();
-    }
-    
-    
-    public Base64HashedUser(String name, char[] password)
+    public HashedUser(String name, char[] password)
     {
         _name = name;
         setPassword(password);
@@ -122,8 +108,7 @@ public class Base64HashedUser implements Principal
         {
             byteArray[index++] = (byte) c;
         }
-                        
-        _encodedPassword = (new Base64()).encode(getMD5(byteArray));
+        _encodedPassword = (new Base64()).encode(byteArray);
     }
 
     public boolean isModified()
