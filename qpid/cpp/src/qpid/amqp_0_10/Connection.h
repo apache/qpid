@@ -45,6 +45,7 @@ class Connection  : public sys::ConnectionCodec,
     typedef std::deque<framing::AMQFrame> FrameQueue;
 
     FrameQueue frameQueue;
+    FrameQueue workQueue;
     bool frameQueueClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
