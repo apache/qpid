@@ -146,7 +146,6 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     uint32_t          assignedBrokerBank;
     uint32_t          assignedAgentBank;
     uint16_t          bootSequence;
-    uint8_t           debugLevel;
 
     static const uint8_t DEBUG_OFF     = 0;
     static const uint8_t DEBUG_CONN    = 1;

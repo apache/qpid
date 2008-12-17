@@ -20,6 +20,7 @@
 
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementObject.h"
+#include "qpid/log/Statement.h"
 #include "ManagementAgentImpl.h"
 #include <list>
 #include <string.h>
@@ -82,13 +83,10 @@ ManagementAgentImpl::ManagementAgentImpl() :
     extThread(false), writeFd(-1), readFd(-1),
     initialized(false), connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
-    assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0), debugLevel(0),
+    assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
     connThreadBody(*this), connThread(connThreadBody),
     pubThreadBody(*this), pubThread(pubThreadBody)
 {
-    char* debug = ::getenv("QMF_DEBUG_LEVEL");
-    if (debug)
-        debugLevel = ::atoi(debug);
 }
 
 ManagementAgentImpl::~ManagementAgentImpl()
@@ -137,9 +135,8 @@ void ManagementAgentImpl::init(const string& brokerHost,
     connectionSettings.password = pwd;
     connectionSettings.mechanism = mech;
 
-    if (debugLevel)
-        cout << "QMF Agent Initialized: broker=" << brokerHost << ":" << brokerPort <<
-            " interval=" << intervalSeconds << " storeFile=" << _storeFile << endl;
+    QPID_LOG(info, "QMF Agent Initialized: broker=" << brokerHost << ":" << brokerPort <<
+             " interval=" << intervalSeconds << " storeFile=" << _storeFile);
 
     // TODO: Abstract the socket calls for portability
     if (extThread) {
@@ -265,10 +262,8 @@ void ManagementAgentImpl::startProtocol()
     uint32_t length = buffer.getPosition();
     buffer.reset();
     connThreadBody.sendBuffer(buffer, length, "qpid.management", "broker");
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "SENT AttachRequest: reqBroker=" << requestedBrokerBank <<
-            " reqAgent=" << requestedAgentBank << endl;
-    }
+    QPID_LOG(trace, "SENT AttachRequest: reqBroker=" << requestedBrokerBank <<
+             " reqAgent=" << requestedAgentBank);
 }
 
 void ManagementAgentImpl::storeData(bool requested)
@@ -316,9 +311,7 @@ void ManagementAgentImpl::sendCommandComplete(string replyToKey, uint32_t sequen
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
     connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyToKey);
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "SENT CommandComplete: seq=" << sequence << " code=" << code << " text=" << text << endl;
-    }
+    QPID_LOG(trace, "SENT CommandComplete: seq=" << sequence << " code=" << code << " text=" << text);
 }
 
 void ManagementAgentImpl::handleAttachResponse(Buffer& inBuffer)
@@ -328,19 +321,17 @@ void ManagementAgentImpl::handleAttachResponse(Buffer& inBuffer)
     assignedBrokerBank = inBuffer.getLong();
     assignedAgentBank  = inBuffer.getLong();
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "RCVD AttachResponse: broker=" << assignedBrokerBank <<
-            " agent=" << assignedAgentBank << endl;
-    }
+    QPID_LOG(trace, "RCVD AttachResponse: broker=" << assignedBrokerBank << " agent=" << assignedAgentBank);
 
     if ((assignedBrokerBank != requestedBrokerBank) ||
         (assignedAgentBank  != requestedAgentBank)) {
-        if (requestedAgentBank == 0)
-            cout << "Initial object-id bank assigned: " << assignedBrokerBank << "." <<
-                 assignedAgentBank << endl;
-        else
-            cout << "Collision in object-id! New bank assigned: " << assignedBrokerBank <<
-                "." << assignedAgentBank << endl;
+        if (requestedAgentBank == 0) {
+            QPID_LOG(notice, "Initial object-id bank assigned: " << assignedBrokerBank << "." <<
+                     assignedAgentBank);
+        } else {
+            QPID_LOG(warning, "Collision in object-id! New bank assigned: " << assignedBrokerBank <<
+                     "." << assignedAgentBank);
+        }
         storeData();
         requestedBrokerBank = assignedBrokerBank;
         requestedAgentBank = assignedAgentBank;
@@ -387,9 +378,7 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
     inBuffer.getShortString(key.name);
     inBuffer.getBin128(key.hash);
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "RCVD SchemaRequest: package=" << packageName << " class=" << key.name << endl;
-    }
+    QPID_LOG(trace, "RCVD SchemaRequest: package=" << packageName << " class=" << key.name);
 
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
@@ -406,9 +395,7 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
             outBuffer.reset();
             connThreadBody.sendBuffer(outBuffer, outLen, "qpid.management", "broker");
 
-            if (debugLevel >= DEBUG_PROTO) {
-                cout << "SENT SchemaInd: package=" << packageName << " class=" << key.name << endl;
-            }
+            QPID_LOG(trace, "SENT SchemaInd: package=" << packageName << " class=" << key.name);
         }
     }
 }
@@ -418,9 +405,7 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
     Mutex::ScopedLock lock(agentLock);
     clientWasAdded = true;
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "RCVD ConsoleAddedInd" << endl;
-    }
+    QPID_LOG(trace, "RCVD ConsoleAddedInd");
 }
 
 void ManagementAgentImpl::invokeMethodRequest(Buffer& inBuffer, uint32_t sequence, string replyTo)
@@ -475,9 +460,7 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
 
     ft.decode(inBuffer);
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "RCVD GetQuery: map=" << ft << endl;
-    }
+    QPID_LOG(trace, "RCVD GetQuery: map=" << ft);
 
     value = ft.get("_class");
     if (value.get() == 0 || !value->convertsTo<string>()) {
@@ -499,9 +482,7 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             outBuffer.reset ();
             connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
 
-            if (debugLevel >= DEBUG_PROTO) {
-                cout << "SENT ObjectInd" << endl;
-            }
+            QPID_LOG(trace, "SENT ObjectInd");
         }
         sendCommandComplete(replyTo, sequence);
         return;
@@ -524,9 +505,7 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             outBuffer.reset();
             connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
 
-            if (debugLevel >= DEBUG_PROTO) {
-                cout << "SENT ObjectInd" << endl;
-            }
+            QPID_LOG(trace, "SENT ObjectInd");
         }
     }
 
@@ -546,9 +525,7 @@ void ManagementAgentImpl::handleMethodRequest(Buffer& inBuffer, uint32_t sequenc
         invokeMethodRequest(inBuffer, sequence, replyTo);
     }
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "RCVD MethodRequest" << endl;
-    }
+    QPID_LOG(trace, "RCVD MethodRequest");
 }
 
 void ManagementAgentImpl::received(Message& msg)
@@ -659,9 +636,7 @@ void ManagementAgentImpl::encodePackageIndication(Buffer&              buf,
 {
     buf.putShortString((*pIter).first);
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "SENT PackageInd: package=" << (*pIter).first << endl;
-    }
+    QPID_LOG(trace, "SENT PackageInd: package=" << (*pIter).first);
 }
 
 void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
@@ -675,9 +650,7 @@ void ManagementAgentImpl::encodeClassIndication(Buffer&              buf,
     buf.putShortString(key.name);
     buf.putBin128(key.hash);
 
-    if (debugLevel >= DEBUG_PROTO) {
-        cout << "SENT ClassInd: package=" << (*pIter).first << " class=" << key.name << endl;
-    }
+    QPID_LOG(trace, "SENT ClassInd: package=" << (*pIter).first << " class=" << key.name);
 }
 
 void ManagementAgentImpl::periodicProcessing()
@@ -692,10 +665,6 @@ void ManagementAgentImpl::periodicProcessing()
         return;
 
     moveNewObjectsLH();
-
-    if (debugLevel >= DEBUG_PUBLISH) {
-        cout << "Objects managed: " << managementObjects.size() << endl;
-    }
 
     //
     //  Clear the been-here flag on all objects in the map.
@@ -769,10 +738,6 @@ void ManagementAgentImpl::periodicProcessing()
         }
     }
 
-    if (debugLevel >= DEBUG_PUBLISH && !deleteList.empty()) {
-        cout << "Deleting " << deleteList.size() << " objects" << endl;
-    }
-
     // Delete flagged objects
     for (list<pair<ObjectId, ManagementObject*> >::reverse_iterator iter = deleteList.rbegin();
          iter != deleteList.rend();
@@ -810,8 +775,7 @@ void ManagementAgentImpl::ConnectionThread::run()
     while (true) {
         try {
             if (agent.initialized) {
-                if (agent.debugLevel)
-                    cout << "QMF Agent attempting to connect to the broker..." << endl;
+                QPID_LOG(debug, "QMF Agent attempting to connect to the broker...");
                 connection.open(agent.connectionSettings);
                 session = connection.newSession(queueName.str());
                 subscriptions = new client::SubscriptionManager(session);
@@ -822,8 +786,7 @@ void ManagementAgentImpl::ConnectionThread::run()
                                      arg::bindingKey=queueName.str());
 
                 subscriptions->subscribe(agent, queueName.str(), dest);
-                if (agent.debugLevel)
-                    cout << "    Connection established" << endl;
+                QPID_LOG(info, "Connection established with broker");
                 {
                     Mutex::ScopedLock _lock(connLock);
                     if (shutdown)
@@ -835,8 +798,7 @@ void ManagementAgentImpl::ConnectionThread::run()
                         subscriptions->run();
                     } catch (exception) {}
 
-                    if (agent.debugLevel)
-                        cout << "QMF Agent connection has been lost" << endl;
+                    QPID_LOG(warning, "Connection to the broker has been lost");
 
                     operational = false;
                     agent.connected = false;
@@ -849,8 +811,7 @@ void ManagementAgentImpl::ConnectionThread::run()
         } catch (exception &e) {
             if (delay < delayMax)
                 delay *= delayFactor;
-            if (agent.debugLevel)
-                cout << "    Connection failed: exception=" << e.what() << endl;
+            QPID_LOG(debug, "Connection failed: exception=" << e.what());
         }
 
         {
@@ -893,7 +854,9 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
     msg.setData(data);
     try {
         session.messageTransfer(arg::content=msg, arg::destination=exchange);
-    } catch(exception&) {}
+    } catch(exception& e) {
+        QPID_LOG(error, "Exception caught in sendBuffer: " << e.what());
+    }
 }
 
 void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint32_t agentBank)
@@ -901,7 +864,7 @@ void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint
     stringstream key;
     key << "agent." << brokerBank << "." << agentBank;
     session.exchangeBind(arg::exchange="qpid.management", arg::queue=queueName.str(),
-                          arg::bindingKey=key.str());
+                         arg::bindingKey=key.str());
 }
 
 void ManagementAgentImpl::ConnectionThread::close()
