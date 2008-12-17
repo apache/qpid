@@ -43,7 +43,7 @@ public:
 
     intrusive_ptr<Message> last;
     bool received;
-    TestConsumer(): received(false) {};
+    TestConsumer(bool acquire = true):Consumer(acquire), received(false) {};
 
     virtual bool deliver(QueuedMessage& msg){
         last = msg.payload;
@@ -384,7 +384,7 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
     msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
     msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
-    msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
 	
     //enqueue 4 message
     queue->deliver(msg1);
@@ -406,12 +406,17 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     queue->deliver(msg5);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
 
-    // set mode to no acquire and check
-    args.setOrdering(client::LVQ_NO_ACQUIRE);
+    // set mode to no browse and check
+    args.setOrdering(client::LVQ_NO_BROWSE);
     queue->configure(args);
+    TestConsumer::shared_ptr c1(new TestConsumer(false));
+    
+    queue->dispatch(c1);
+    queue->dispatch(c1);
+    queue->dispatch(c1);
+    
     queue->deliver(msg6);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
- 
 }
 
 QPID_AUTO_TEST_CASE(testLVQMultiQueue){
