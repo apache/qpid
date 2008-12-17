@@ -606,25 +606,19 @@ public class OperationTabControl extends TabControl
                     }
                     
                     // customized for passwords
-                    String securityMechanism = "";
-                    ServerRegistry serverReg = ApplicationRegistry.getServerRegistry(_mbean);
-                    
-                    if (serverReg instanceof JMXServerRegistry)
+                    if (PASSWORD.equalsIgnoreCase(param.getName()))
                     {
-                        JMXServerRegistry jmxServerReg = (JMXServerRegistry) ApplicationRegistry.getServerRegistry(_mbean);
-                        securityMechanism = jmxServerReg.getSecurityMechanism();
-                    }
-                    
-                    if ((MECH_CRAMMD5.equals(securityMechanism)) && PASSWORD.equalsIgnoreCase(param.getName()))
-                    {
-                        try
+                        if (param.getType().equals("[C"))
                         {
-                            param.setValue(ViewUtility.getMD5HashedCharArray(param.getValue()));
-                        }
-                        catch (Exception ex)
-                        {
-                            MBeanUtility.handleException(_mbean, ex);
-                            return;
+                            try
+                            {
+                                param.setValue(ViewUtility.getHash((String)param.getValue()));
+                            }
+                            catch (Exception ex)
+                            {
+                                MBeanUtility.handleException(_mbean, ex);
+                                return;
+                            }
                         }
                     }
                     // end of customization
