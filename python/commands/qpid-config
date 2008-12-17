@@ -95,13 +95,17 @@ class BrokerManager:
         self.url = brokerUrl
         self.qmf = Session()
         self.broker = self.qmf.addBroker(brokerUrl)
+        agents = self.qmf.getAgents()
+        for a in agents:
+            if a.getAgentBank() == 0:
+                self.brokerAgent = a
 
     def Disconnect(self):
         self.qmf.delBroker(self.broker)
 
     def Overview (self):
-        exchanges = self.qmf.getObjects(_class="exchange")
-        queues    = self.qmf.getObjects(_class="queue")
+        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
+        queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         print "Total Exchanges: %d" % len (exchanges)
         etype = {}
         for ex in exchanges:
@@ -122,7 +126,7 @@ class BrokerManager:
         print "    non-durable: %d" % (len (queues) - _durable)
 
     def ExchangeList (self, filter):
-        exchanges = self.qmf.getObjects(_class="exchange")
+        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
         caption1 = "Type      "
         caption2 = "Exchange Name"
         maxNameLen = len(caption2)
@@ -145,9 +149,9 @@ class BrokerManager:
                 print
 
     def ExchangeListRecurse (self, filter):
-        exchanges = self.qmf.getObjects(_class="exchange")
-        bindings  = self.qmf.getObjects(_class="binding")
-        queues    = self.qmf.getObjects(_class="queue")
+        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
+        bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
+        queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         for ex in exchanges:
             if self.match (ex.name, filter):
                 print "Exchange '%s' (%s)" % (ex.name, ex.type)
@@ -161,7 +165,7 @@ class BrokerManager:
             
 
     def QueueList (self, filter):
-        queues = self.qmf.getObjects(_class="queue")
+        queues = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
 
         caption = "Queue Name"
         maxNameLen = len(caption)
@@ -191,9 +195,9 @@ class BrokerManager:
                 print
 
     def QueueListRecurse (self, filter):
-        exchanges = self.qmf.getObjects(_class="exchange")
-        bindings  = self.qmf.getObjects(_class="binding")
-        queues    = self.qmf.getObjects(_class="queue")
+        exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
+        bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
+        queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         for queue in queues:
             if self.match (queue.name, filter):
                 print "Queue '%s'" % queue.name
@@ -378,8 +382,10 @@ try:
             bm.Unbind (cargs[1:])
         else:
             Usage ()
+except KeyboardInterrupt:
+    print
 except Exception,e:
     print "Failed:", e.args
     sys.exit(1)
-
-bm.Disconnect()
+finally:
+    bm.Disconnect()
