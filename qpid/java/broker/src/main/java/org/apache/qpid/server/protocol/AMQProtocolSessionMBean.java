@@ -37,6 +37,7 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.security.Principal;
 import java.util.Date;
 import java.util.List;
 
@@ -57,6 +58,7 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.MethodRegistry;
@@ -91,7 +93,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
     {
-        super(ManagedConnection.class, ManagedConnection.TYPE, ManagedConnection.VERSION);
+        super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
         String remote = getRemoteAddress();
         remote = "anonymous".equals(remote) ? (remote + hashCode()) : remote;

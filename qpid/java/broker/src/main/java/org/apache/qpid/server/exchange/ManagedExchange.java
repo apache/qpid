@@ -40,7 +40,6 @@ import org.apache.qpid.server.queue.ManagedQueue;
 public interface ManagedExchange
 {
     static final String TYPE = "Exchange";
-    static final int VERSION = 1;
 
     /**
      * Returns the name of the managed exchange.
