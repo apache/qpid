@@ -69,7 +69,11 @@ bool Connection::isClosed() const {
 }
 
 size_t  Connection::encode(const char* buffer, size_t size) {
-    Mutex::ScopedLock l(frameQueueLock);
+    {   // Swap frameQueue data into workQueue to avoid holding lock while we encode.
+        Mutex::ScopedLock l(frameQueueLock);
+        assert(workQueue.empty());
+        workQueue.swap(frameQueue); 
+    }
     framing::Buffer out(const_cast<char*>(buffer), size);
     if (!isClient && !initialized) {
         framing::ProtocolInitiation pi(getVersion());
@@ -78,16 +82,24 @@ size_t  Connection::encode(const char* buffer, size_t size) {
         QPID_LOG(trace, "SENT " << identifier << " INIT(" << pi << ")");
     }
     size_t frameSize=0;
-    while (!frameQueue.empty() && ((frameSize=frameQueue.front().encodedSize()) <= out.available())) {
-        frameQueue.front().encode(out);
-        QPID_LOG(trace, "SENT [" << identifier << "]: " << frameQueue.front());
-        frameQueue.pop_front();
-        buffered -= frameSize;
-        if (frameQueue.empty() && out.available() > 0) connection->doOutput(); 
+    size_t encoded=0;
+    while (!workQueue.empty() && ((frameSize=workQueue.front().encodedSize()) <= out.available())) {
+        workQueue.front().encode(out);
+        QPID_LOG(trace, "SENT [" << identifier << "]: " << workQueue.front());
+        workQueue.pop_front();
+        encoded += frameSize;
+        if (workQueue.empty() && out.available() > 0) connection->doOutput(); 
     }
-    assert(frameQueue.empty() || frameQueue.front().encodedSize() <= size);
-    if (!frameQueue.empty() && frameQueue.front().encodedSize() > size)
-        throw InternalErrorException(QPID_MSG("Could not write frame, too large for buffer."));
+    assert(workQueue.empty() || workQueue.front().encodedSize() <= size);
+    if (!workQueue.empty() && workQueue.front().encodedSize() > size)
+        throw InternalErrorException(QPID_MSG("Frame too large for buffer."));
+    {
+        Mutex::ScopedLock l(frameQueueLock);
+        buffered -= encoded;
+        // Put back any frames we did not encode.
+        frameQueue.insert(frameQueue.begin(), workQueue.begin(), workQueue.end());
+        workQueue.clear();
+    }
     return out.getPosition();
 }
 
