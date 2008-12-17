@@ -38,8 +38,12 @@ import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
@@ -77,7 +81,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         
         public ExchangeMBean() throws NotCompliantMBeanException
         {
-            super(ManagedExchange.class, ManagedExchange.TYPE, ManagedExchange.VERSION);
+            super(ManagedExchange.class, ManagedExchange.TYPE);
         }
 
         protected void init() throws OpenDataException
