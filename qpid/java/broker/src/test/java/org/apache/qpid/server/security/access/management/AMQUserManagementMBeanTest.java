@@ -27,8 +27,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
 
 import junit.framework.TestCase;
 
@@ -99,21 +97,6 @@ public class AMQUserManagementMBeanTest extends TestCase
 
         assertTrue(deleted);
     }
-
-    public void testVersion()
-    {
-        try
-        {
-            ObjectName name = _amqumMBean.getObjectName();
-            assertEquals(AMQUserManagementMBean.VERSION, Integer.parseInt(name.getKeyProperty("version")));
-        }
-        catch (MalformedObjectNameException e)
-        {
-            fail(e.getMessage());
-        }
-
-    }
-
  
     
     // ============================ Utility methods =========================
