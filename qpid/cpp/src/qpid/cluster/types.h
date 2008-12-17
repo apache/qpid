@@ -22,8 +22,10 @@
  *
  */
 
+
 #include "ClusterLeaveException.h"
-#include <qpid/Url.h>
+#include "config.h"
+#include "qpid/Url.h"
 
 #include <utility>
 #include <iosfwd>
@@ -32,7 +34,13 @@
 #include <stdint.h>
 
 extern "C" {
+#ifdef HAVE_OPENAIS_CPG_H    
 #include <openais/cpg.h>
+#elif HAVE_COROSYNC_CPG_H    
+#  include <corosync/cpg.h>
+#else
+#  error "No cpg.h header file available"
+#endif    
 }
 
 namespace qpid {

@@ -90,13 +90,19 @@ NOTE: make sure to install the related '-devel' packages also!
 
 2.2.1. Using Package Management Tools
 =====================================
-On linux most packages can be installed using your distribution's package
-management tool. For example on Fedora:
-  # yum install boost-devel e2fsprogs-devel pkgconfig openais openais-devel 
-  # yum install gcc-c++ make autoconf automake help2man libtool doxygen graphviz ruby
+
+On linux most packages can be installed using your distribution's
+package management tool. For example on Fedora:
+
+ # yum install boost-devel e2fsprogs-devel pkgconfig gcc-c++ make autoconf automake ruby libtool help2man doxygen graphviz
+
+The optional clustering packages changed name in Fedora 10. On Fedora 9 or earlier:
+ # yum install openais-devel cman-devel
+On Fedora 10 or later
+ # yum install corosync-devel cmanlib-devel
 
 Follow the manual installation instruction below for any packages not
-available through yum.
+available through your distributions packaging tool.
 
 2.2.2. From Source
 ==================
