@@ -44,7 +44,7 @@ struct ClusterValues {
     size_t readMax;
 
     // FIXME aconway 2008-12-09: revisit default.
-    ClusterValues() : quorum(false), readMax(4) {}
+    ClusterValues() : quorum(false), readMax(0) {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
@@ -68,7 +68,7 @@ struct ClusterOptions : public Options {
 #if HAVE_LIBCMAN
             ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
-            ("cluster-read-max", optValue(values.readMax,"N"), "Max un-delivered reads per client connection, 0 means unlimited.")
+            ("cluster-read-max", optValue(values.readMax,"N"), "Throttle read rate from client connections.")
             ;
     }
 };
