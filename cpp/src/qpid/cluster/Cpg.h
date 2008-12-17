@@ -30,10 +30,6 @@
 #include <cassert>
 #include <string.h>
 
-extern "C" {
-#include <openais/cpg.h>
-}
-
 namespace qpid {
 namespace cluster {
 

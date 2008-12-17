@@ -165,44 +165,44 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
 
 # Check for optional cluster requirements.
 tmp_LIBS=$LIBS
-LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais -L/usr/lib/corosync -L/usr/lib64/corosync"
+AC_CHECK_LIB([cpg],[cpg_local_get],[have_libcpg=yes],)
+AC_CHECK_HEADERS([openais/cpg.h corosync/cpg.h],[have_cpg_h=yes],)
 AC_ARG_WITH([cpg],  
   [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
   [case "${withval}" in
-    yes)			# yes - enable
-    with_CPG=yes
-    AC_CHECK_LIB([cpg],[cpg_local_get],,[AC_MSG_ERROR([libcpg not found, install openais])])
-    AC_CHECK_HEADERS([openais/cpg.h],,[AC_MSG_ERROR([openais/cpg.h not found, install openais-devel])])
+    yes)			# yes - require dependencies
+    test x$have_libcpg = xyes || AC_MSG_ERROR([libcpg not found, install openais or corosync])
+    test x$have_cpg_h = xyes || AC_MSG_ERROR([cpg.h not found, install openais-devel or corosync-devel])
+    with_cpg=yes
     ;;
-    no) with_CPG=no ;; 
+    no) with_cpg=no ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
    esac],
    [		   # not specified - use if present
-    with_CPG=yes
-    AC_CHECK_LIB([cpg],[cpg_local_get],,[with_CPG=no])
-    AC_CHECK_HEADERS([openais/cpg.h],,[with_CPG=no])
+    test x$have_libcpg = xyes -a x$have_cpg_h = xyes && with_cpg=yes
    ]
 )
-AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_CPG = xyes])
+AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_cpg = xyes])
 
+AC_CHECK_LIB([cman],[cman_is_quorate],have_libcman=yes,)
+AC_CHECK_HEADERS([libcman.h],have_libcman_h=yes,)
 AC_ARG_WITH([libcman],  
   [AS_HELP_STRING([--with-libcman], [Integration with libcman quorum service.])],
   [case "${withval}" in
-    yes)			# yes - enable
-    with_LIBCMAN=yes
-    AC_CHECK_LIB([cman],[cman_is_quorate],,[AC_MSG_ERROR([libcman not found, install libcman package.])])
-    AC_CHECK_HEADERS([libcman.h],,[AC_MSG_ERROR([libcman.h not found, install cman-devel])])
+    yes)			# yes - require dependencies
+    test x$have_libcman = xyes || AC_MSG_ERROR([libcman not found, install cman-devel or cmanlib-devel])
+    test x$have_libcman_h = xyes || AC_MSG_ERROR([libcman.h not found, install cman-devel or cmanlib-devel])
+    with_libcman=yes
     ;;
-    no) with_LIBCMAN=no ;; 
+    no) with_libcman=no ;; 
     *) AC_MSG_ERROR([Bad value ${withval} for --with-libcman option]) ;;
    esac],
-   [		   # not specified - use if present and with_CPG=yes
-    with_LIBCMAN=$with_CPG
-    AC_CHECK_LIB([cman],[cman_is_quorate],,with_LIBCMAN=no)
-    AC_CHECK_HEADERS([libcman.h],,with_LIBCMAN=no)
+   [				# not specified - use if present and we're using with_cpg
+    test x$have_libcman = xyes -a x$have_libcman_h = xyes -a x$with_cpg = xyes &&   with_libcman=yes
    ]
 )
-AM_CONDITIONAL([HAVE_LIBCMAN], [test x$with_LIBCMAN = xyes])
+AM_CONDITIONAL([HAVE_LIBCMAN], [test x$with_libcman = xyes])
 
 LIBS=$tmp_LIBS
 

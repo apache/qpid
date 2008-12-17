@@ -23,8 +23,8 @@ srcdir=`dirname $0`
 # Check AIS requirements and run tests if found.
 id -nG | grep '\<ais\>' >/dev/null || \
     NOGROUP="You are not a member of the ais group."
-ps -u root | grep aisexec >/dev/null || \
-    NOAISEXEC="The aisexec daemon is not running as root"
+ps -u root | grep 'aisexec\|corosync' >/dev/null || \
+    NOAISEXEC="The aisexec or corosync daemon is not running as root"
 
 if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
     cat <<EOF
