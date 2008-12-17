@@ -119,15 +119,17 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
     ScopedLock l(lock);
     assert(dispatcher.id() == 0);
     dispatcher = Thread::current();
-    assert(batch.empty());
-    batch.swap(queue);
-    {
-        ScopedUnlock u(lock);   // Allow concurrent push to queue.
-        callback(batch);
-    }
-    if (!batch.empty()) {
-        queue.insert(queue.begin(), batch.begin(), batch.end()); // put back unprocessed items.
-        batch.clear();
+    while (!stopped && !queue.empty()) {
+        assert(batch.empty());
+        batch.swap(queue);
+        {
+            ScopedUnlock u(lock);   // Allow concurrent push to queue.
+            callback(batch);
+        }
+        if (!batch.empty()) {
+            queue.insert(queue.begin(), batch.begin(), batch.end()); // put back unprocessed items.
+            batch.clear();
+        }
     }
     dispatcher = Thread();
     if (queue.empty()) condition.clear();
