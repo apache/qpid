@@ -61,7 +61,7 @@ const std::string qpidNoLocal("no-local");
 const std::string qpidTraceIdentity("qpid.trace.id");
 const std::string qpidTraceExclude("qpid.trace.exclude");
 const std::string qpidLastValueQueue("qpid.last_value_queue");
-const std::string qpidLastValueQueueNoAcquire("qpid.last_value_queue_no_acquire");
+const std::string qpidLastValueQueueNoBrowse("qpid.last_value_queue_no_browse");
 const std::string qpidPersistLastNode("qpid.persist_last_node");
 const std::string qpidVQMatchProperty("qpid.LVQ_key");
 }
@@ -80,7 +80,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     exclusive(0),
     noLocal(false),
     lastValueQueue(false),
-    lastValueQueueNoAcquire(false),
+    lastValueQueueNoBrowse(false),
     persistLastNode(false),
     inLastNodeFailure(false),
     persistenceId(0),
@@ -215,7 +215,7 @@ bool Queue::acquire(const QueuedMessage& msg) {
             || (lastValueQueue && (i->position == msg.position) && 
                 msg.payload.get() == checkLvqReplace(*i).payload.get()) )  {
 
-            if (!lastValueQueueNoAcquire) clearLVQIndex(msg);
+            clearLVQIndex(msg);
             messages.erase(i);
             QPID_LOG(debug, "Match found, acquire succeeded: " << i->position << " == " << msg.position);
             return true;
@@ -307,7 +307,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
                 //consumer wants the message
                 c->position = msg.position;
                 m = msg;
-                if (!lastValueQueueNoAcquire) clearLVQIndex(msg);
+                if (!lastValueQueueNoBrowse) clearLVQIndex(msg);
                 return true;
             } else {
                 //browser hasn't got enough credit for the message
@@ -675,10 +675,10 @@ void Queue::configure(const FieldTable& _settings)
     lastValueQueue= _settings.get(qpidLastValueQueue);
     if (lastValueQueue) QPID_LOG(debug, "Configured queue as Last Value Queue");
 
-    lastValueQueueNoAcquire = _settings.get(qpidLastValueQueueNoAcquire);
-    if (lastValueQueueNoAcquire){
-        QPID_LOG(debug, "Configured queue as Last Value Queue No Acquire");
-        lastValueQueue = lastValueQueueNoAcquire;
+    lastValueQueueNoBrowse = _settings.get(qpidLastValueQueueNoBrowse);
+    if (lastValueQueueNoBrowse){
+        QPID_LOG(debug, "Configured queue as Last Value Queue No Browse");
+        lastValueQueue = lastValueQueueNoBrowse;
     }
     
     persistLastNode= _settings.get(qpidPersistLastNode);
