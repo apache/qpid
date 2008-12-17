@@ -69,7 +69,10 @@ int Cpg::getFd() {
 }
 
 Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdown(false) {
-    cpg_callbacks_t callbacks = { &globalDeliver, &globalConfigChange };
+    cpg_callbacks_t callbacks;
+    ::memset(&callbacks, sizeof(callbacks), 0);
+    callbacks.cpg_deliver_fn = &globalDeliver;
+    callbacks.cpg_confchg_fn = &globalConfigChange;
     check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
     check(cpg_context_set(handle, this), "Cannot set CPG context");
     // Note: CPG is currently unix-specific. If CPG is ported to
