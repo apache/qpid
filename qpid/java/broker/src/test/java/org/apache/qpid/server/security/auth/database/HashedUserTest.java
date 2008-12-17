@@ -21,13 +21,15 @@
 package org.apache.qpid.server.security.auth.database;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 
 /*
     Note User is mainly tested by Base64MD5PFPDTest this is just to catch the extra methods
  */
-public class Base64HashedUserTest extends TestCase
+public class HashedUserTest extends TestCase
 {
 
     String USERNAME = "username";
@@ -38,7 +40,7 @@ public class Base64HashedUserTest extends TestCase
     {
         try
         {
-            Base64HashedUser user = new Base64HashedUser(new String[]{USERNAME, PASSWORD, USERNAME});
+            HashedUser user = new HashedUser(new String[]{USERNAME, PASSWORD, USERNAME});
             fail("Error expected");
         }
         catch (IllegalArgumentException e)
@@ -55,7 +57,7 @@ public class Base64HashedUserTest extends TestCase
     {
         try
         {
-            Base64HashedUser user = new Base64HashedUser(new String[]{USERNAME, HASHED_PASSWORD});
+            HashedUser user = new HashedUser(new String[]{USERNAME, HASHED_PASSWORD});
             assertEquals("Username incorrect", USERNAME, user.getName());
             int index = 0;
 

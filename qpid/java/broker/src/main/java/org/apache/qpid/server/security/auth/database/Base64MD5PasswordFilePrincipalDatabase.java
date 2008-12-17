@@ -61,7 +61,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     AMQUserManagementMBean _mbean;
     public static final String DEFAULT_ENCODING = "utf-8";
-    private Map<String, Base64HashedUser> _users = new HashMap<String, Base64HashedUser>();
+    private Map<String, HashedUser> _users = new HashMap<String, HashedUser>();
     private ReentrantLock _userUpdate = new ReentrantLock();
 
     public Base64MD5PasswordFilePrincipalDatabase()
@@ -180,7 +180,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
      */
     public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
     {
-        Base64HashedUser user = _users.get(principal.getName());
+        HashedUser user = _users.get(principal.getName());
 
         if (user == null)
         {
@@ -230,7 +230,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return false;
         }
 
-        Base64HashedUser user = new Base64HashedUser(principal.getName(), password);
+        HashedUser user = new HashedUser(principal.getName(), password);
 
         try
         {
@@ -260,7 +260,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
     {
-        Base64HashedUser user = _users.get(principal.getName());
+        HashedUser user = _users.get(principal.getName());
 
         if (user == null)
         {
@@ -324,7 +324,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
      */
     private char[] lookupPassword(String name)
     {
-        Base64HashedUser user = _users.get(name);
+        HashedUser user = _users.get(name);
         if (user == null)
         {
             return null;
@@ -356,7 +356,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                         continue;
                     }
 
-                    Base64HashedUser user = new Base64HashedUser(result);
+                    HashedUser user = new HashedUser(result);
                     _logger.info("Created user:" + user);
                     _users.put(user.getName(), user);
                 }
@@ -408,7 +408,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                         continue;
                     }
 
-                    Base64HashedUser user = _users.get(result[0]);
+                    HashedUser user = _users.get(result[0]);
 
                     if (user == null)
                     {
@@ -444,7 +444,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     }
                 }
 
-                for (Base64HashedUser user : _users.values())
+                for (HashedUser user : _users.values())
                 {
                     if (user.isModified())
                     {
