@@ -59,7 +59,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private final MBeanServer _mbeanServer;
     private Registry _rmiRegistry;
     private JMXServiceURL _jmxURL;
-
+    
     public static final String MANAGEMENT_PORT_CONFIG_PATH = "management.jmxport";
     public static final int MANAGEMENT_PORT_DEFAULT = 8999;
 
@@ -73,8 +73,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
-                               : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
+                : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
     }
+
 
     public void start() throws IOException
     {
@@ -90,13 +91,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", false);
         int port = appRegistry.getConfiguration().getInt(MANAGEMENT_PORT_CONFIG_PATH, MANAGEMENT_PORT_DEFAULT);
 
-        Map env = new HashMap();
-
         if (security)
         {
             // For SASL using JMXMP
             _jmxURL = new JMXServiceURL("jmxmp", null, port);
 
+            Map env = new HashMap();
             Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();
             PrincipalDatabase db = null;
 
@@ -139,20 +139,18 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
            env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf);
             */
 
-            _log.warn("JMX: Starting JMXConnector server  on port '" + port + "' with SASL");
+            JMXConnectorServer cs = JMXConnectorServerFactory.newJMXConnectorServer(_jmxURL, env, _mbeanServer);
+            MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
+            cs.setMBeanServerForwarder(mbsf);
+            cs.start();
+            _log.warn("JMX: Started JMXConnector server  on port '" + port + "' with SASL");
 
         }
         else
         {
-            env = null;
-            _jmxURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:" + port + "/jmxrmi");
-            _log.warn("JMX: Starting JMXConnector server on port '" + port + "' with security disabled");
+            startJMXConnectorServer(port);
+            _log.warn("JMX: Started JMXConnector server on port '" + port + "' with security disabled");
         }
-
-        
-        startJMXConnectorServer(port, env);
-        _log.warn("JMX: Started JMXConnector server on port '" + port + "'");
-
     }
 
     /**
@@ -160,18 +158,13 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
      *
      * @param port
      *
-     * @param env
      * @throws IOException
      */
-    private void startJMXConnectorServer(int port, Map env) throws IOException
+    private void startJMXConnectorServer(int port) throws IOException
     {
         startRMIRegistry(port);
-
-        JMXConnectorServer cs = JMXConnectorServerFactory.newJMXConnectorServer(_jmxURL, env, _mbeanServer);
-
-        MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
-        cs.setMBeanServerForwarder(mbsf);
-
+        _jmxURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:" + port + "/jmxrmi");
+        JMXConnectorServer cs = JMXConnectorServerFactory.newJMXConnectorServer(_jmxURL, null, _mbeanServer);
         cs.start();
     }
 
