@@ -59,6 +59,10 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
               const std::string& pwd = "guest",
               const std::string& mech = "PLAIN",
               const std::string& proto = "tcp");
+    void init(const client::ConnectionSettings& settings,
+              uint16_t intervalSeconds = 10,
+              bool useExternalThread = false,
+              const std::string& storeFile = "");
     bool isConnected() { return connected; }
     std::string& getLastFailure() { return lastFailure; }
     void registerClass(const std::string& packageName,
