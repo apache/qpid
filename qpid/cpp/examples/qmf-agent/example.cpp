@@ -164,6 +164,10 @@ int main_int(int argc, char** argv)
     singleton = new ManagementAgent::Singleton();
     const char* host = argc>1 ? argv[1] : "127.0.0.1";
     int port = argc>2 ? atoi(argv[2]) : 5672;
+    qpid::client::ConnectionSettings settings;
+
+    settings.host = host;
+    settings.port = port;
 
     signal(SIGINT, shutdown);
 
@@ -175,7 +179,7 @@ int main_int(int argc, char** argv)
 
     // Start the agent.  It will attempt to make a connection to the
     // management broker
-    agent->init(string(host), port, 5, false, ".magentdata");
+    agent->init(settings, 5, false, ".magentdata");
 
     // Allocate some core objects
     CoreClass core1(agent, "Example Core Object #1");
