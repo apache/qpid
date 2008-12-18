@@ -71,9 +71,10 @@ public:
     const framing::Uuid& getUuid() const { return uuid; }
 
     // Stubs for remote management agent calls
-    void init (const std::string&, uint16_t, uint16_t, bool,
-               const std::string&, const std::string&, const std::string&,
-               const std::string&, const std::string&) { assert(0); }
+    void init(const std::string&, uint16_t, uint16_t, bool,
+              const std::string&, const std::string&, const std::string&,
+              const std::string&, const std::string&) { assert(0); }
+    void init(const client::ConnectionSettings&, uint16_t, bool, const std::string&) { assert(0); }
     uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
     int getSignalFd () { assert(0); return -1; }
 

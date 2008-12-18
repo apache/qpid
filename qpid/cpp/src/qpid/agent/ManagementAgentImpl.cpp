@@ -124,19 +124,29 @@ void ManagementAgentImpl::init(const string& brokerHost,
                                const string& mech,
                                const string& proto)
 {
+    client::ConnectionSettings settings;
+    settings.protocol = proto;
+    settings.host = brokerHost;
+    settings.port = brokerPort;
+    settings.username = uid;
+    settings.password = pwd;
+    settings.mechanism = mech;
+    init(settings, intervalSeconds, useExternalThread, _storeFile);
+}
+
+void ManagementAgentImpl::init(const client::ConnectionSettings& settings,
+                               uint16_t intervalSeconds,
+                               bool useExternalThread,
+                               const std::string& _storeFile)
+{
     interval     = intervalSeconds;
     extThread    = useExternalThread;
     storeFile    = _storeFile;
     nextObjectId = 1;
-    connectionSettings.protocol = proto;
-    connectionSettings.host = brokerHost;
-    connectionSettings.port = brokerPort;
-    connectionSettings.username = uid;
-    connectionSettings.password = pwd;
-    connectionSettings.mechanism = mech;
 
-    QPID_LOG(info, "QMF Agent Initialized: broker=" << brokerHost << ":" << brokerPort <<
+    QPID_LOG(info, "QMF Agent Initialized: broker=" << settings.host << ":" << settings.port <<
              " interval=" << intervalSeconds << " storeFile=" << _storeFile);
+    connectionSettings = settings;
 
     // TODO: Abstract the socket calls for portability
     if (extThread) {
