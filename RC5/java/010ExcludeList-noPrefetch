@@ -1,0 +1,61 @@
+org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
+org.apache.qpid.client.ResetMessageListenerTest#*
+org.apache.qpid.test.unit.transacted.TransactedTest#testRollback
+// those tests need durable subscribe states to be persisted
+org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
+org.apache.qpid.test.unit.ct.DurableSubscriberTest#testDurSubRestoresMessageSelector
+// This test cannot be run with no-prefetch
+org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
+//These tests are for the java broker
+org.apache.qpid.server.security.acl.SimpleACLTest#*
+org.apache.qpid.server.plugins.PluginTest#*
+// This test is not finished
+org.apache.qpid.test.testcases.TTLTest#*
+// Those tests require failover support
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.testcases.FailoverTest#*
+org.apache.qpid.test.client.failover.FailoverTest#*
+// Those tests are testing 0.8 specific semantics
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteNoTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteTxP2P
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxPubSub
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteNoTxPubSub
+org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteTxPubSub
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxP2P
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxP2P
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
+org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
+org.apache.qpid.test.client.FlowControlTest#*
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testDefaultExchanges
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnresolvedVirtualHostFailure
+// the 0.10 c++ broker does not implement forget
+org.apache.qpid.test.unit.xa.FaultTest#testForget
+// the 0-10 c++ broker does not implement priority / this test depends on a Java broker extension for queue creation
+org.apache.qpid.server.queue.PriorityTest
+//this test checks explicitly for 0-8 flow control semantics
+org.apache.qpid.test.client.FlowControlTest
+// The default cpp.testprofile does not start the cpp broker with authentication so this test will fail.
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection
+// c++ broker doesn't do selectors, so this will fail
+org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFillQueue
+// QPID-1225 : Temporary remove this test until the problem has been addressed
+org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
+
+// InVM Broker tests
+org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
+// QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
+org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*

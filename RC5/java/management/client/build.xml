@@ -1,0 +1,66 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ - 
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ - 
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<project name="Qpid Management Client" default="build">
+
+    <property name="module.depends" value="client common"/>
+
+    <import file="../../module.xml"/>
+
+
+    <property name="servlet.war" value="qman.war"/>
+    <property name="servlet.root" value="${module.build}/servlet"/>
+    <property name="servlet.web-inf" value="${servlet.root}/WEB-INF"/>
+    <property name="servlet.classes" value="${servlet.web-inf}/classes"/>
+   
+
+    <target name="servlet-prepare">        
+        <mkdir dir="${servlet.root}"/>
+        <mkdir dir="${servlet.web-inf}"/>
+        <mkdir dir="${servlet.classes}"/>
+        <copy file="./web.xml" todir="${servlet.web-inf}" verbose="false"/>
+        <copy todir="${servlet.classes}" verbose="false">
+            <fileset dir="${module.classes}">
+                <include name="org/apache/qpid/management/servlet/*"/>
+            </fileset>
+        </copy>
+        <copy todir="${servlet.web-inf}">
+            <fileset dir="${build}" includes="${module.libs}"/>
+        </copy>
+        <copy todir="${servlet.web-inf}/lib">
+            <fileset dir="${build}/lib">
+                <include name="qpid-client-*.jar"/>
+                <include name="qpid-common-*.jar"/>
+                <include name="qpid-management-client-*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="servlet-clean">
+      <delete dir="${servlet.root}"/>
+    </target>
+
+    <target name="servlet">
+        <jar destfile="${servlet.root}/${servlet.war}" basedir="${servlet.root}"/>
+    </target>
+
+    <target name="postbuild" depends="servlet-clean,servlet-prepare,servlet" description="run after a build"/>
+
+</project>
