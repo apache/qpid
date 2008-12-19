@@ -34,12 +34,15 @@ import org.apache.qpid.management.ui.views.TreeObject;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -102,11 +105,24 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
         shell.setImage(ApplicationRegistry.getImage(CONSOLE_IMAGE));
         shell.setLayout(new GridLayout());
         
-        int x = display.getBounds().width;
-        int y = display.getBounds().height;
-        shell.setBounds(x/3, y/3, 350, 200);
-
-        createWidgets(shell);
+        createWidgets(shell);        
+        shell.pack();
+        
+        //get current size dialog, and screen size
+        int displayWidth = display.getBounds().width;
+        int displayHeight = display.getBounds().height;        
+        int currentShellWidth = shell.getSize().x;
+        int currentShellHeight = shell.getSize().y;
+        
+        //default sizes for the dialog
+        int minShellWidth = 350;
+        int minShellHeight= 200;        
+        //ensure this is large enough, increase it if its not
+        int newShellWidth =  currentShellWidth > minShellWidth ? currentShellWidth : minShellWidth;
+        int newShellHeight = currentShellHeight > minShellHeight ? currentShellHeight : minShellHeight;
+        
+        //set the final size and centre the dialog
+        shell.setBounds((displayWidth - newShellWidth)/2 , (displayHeight - newShellHeight)/2, newShellWidth, newShellHeight);
         
         shell.open();
         _window.getShell().setEnabled(false);
@@ -155,10 +171,26 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
         textPwd.setText("");
         textPwd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
+        //Get the text widgets
+        Control[] widgets = composite.getChildren();
+        for (int i=0; i < widgets.length; i++)
+        {
+            widgets[i].addKeyListener(new KeyAdapter()
+            {
+                public void keyPressed(KeyEvent event)
+                {
+                    if (event.character == SWT.ESC)
+                    {
+                      //Escape key acts as cancel on all widgets
+                        shell.close();
+                    }
+                }
+            });
+        }
+        
         Composite buttonsComposite  = new Composite(composite, SWT.NONE);
         buttonsComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
         buttonsComposite.setLayout(new GridLayout(2, true));
-        
         
         final Button connectButton = new Button(buttonsComposite, SWT.PUSH | SWT.CENTER);       
         connectButton.setText(Constants.BUTTON_CONNECT);
@@ -203,7 +235,26 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
             {
                 shell.dispose();
             }
-        });  
+        });
+        
+        //Get the ok/cancel button widgets and add a new key listener
+        widgets = buttonsComposite.getChildren();
+        for (int i=0; i < widgets.length; i++)
+        {
+            widgets[i].addKeyListener(new KeyAdapter()
+            {
+                public void keyPressed(KeyEvent event)
+                {
+                    if (event.character == SWT.ESC)
+                    {
+                        //Escape key acts as cancel on all widgets
+                        shell.close();
+                    }
+                }
+            });
+        }
+        
+        shell.setDefaultButton(connectButton);
     }
     
 }
