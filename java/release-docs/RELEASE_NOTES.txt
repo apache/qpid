@@ -16,28 +16,20 @@ and detailed developer documentation.
 New features, Improvements and Bug fixes
 ----------------------
 
-AMQP 0-10 support (client only)
-Apache Derby persistent message store
-Transient transactional performance has greatly increased.
+A security related problem was addressed. If Base64MD5 passwords are
+turned on on the broker and it has been configured to use JMXMP via
+the addition of jxmremote_optional.jar to the classpath, it is
+possible for an attacker to bypass the authentication on the JMX
+management interface due to a bug in password verification.
 
-A full list can be found:
-http://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12312117&styleName=Text&projectId=12310520
+A new command line management interface was added (qpid-cli)
+
+A full list of changes can be found at:
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12313279&styleName=Text&projectId=12310520
 
 
 Known Issues/Outstanding Work
 -----------------------------
-
-QPID-959: Fail over between a 0-9 and a 0-10 broker is not supported.
-
-QPID-1251: On windows platforms the following run time exception is thrown and displayed when initiating a connection with an 0.9 broker:
-  Exception in thread "IoReceiver - localhost/localhost:5672"
-  java.lang.RuntimeException: connection closed
-
-  Moreover, when closing JMS connections the JMS exception listener may
-  receive the following JMS exception:
-
-  javax.jms.JMSException: connection was closed at
-  org.apache.qpid.client.AMQConnectionDelegate_0_10.onClosed(AMQConnectionDelegate_0_10.java:164)
 
 You can view the outstanding task list for Qpid by visiting our JIRA:
 http://issues.apache.org/jira/browse/QPID
