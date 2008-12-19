@@ -7,6 +7,8 @@ from:
 
 http://jira.amqp.org/confluence/display/AMQP/Download
 
+Notable additions for the M$ release includes, the c++ client API had improvements done to make it more user friendly. The c++ broker has a windows port, acl support, SSL support, performance enhancements and clustering (experimental).
+
 For full details of Qpid c++ capabilities, as they currently stand,
 see our project documentation at:
 
