@@ -179,6 +179,7 @@ cmodule_LTLIBRARIES =
 include cluster.mk
 include acl.mk
 include qmf.mk
+include qmfc.mk
 if HAVE_XML
 include xml.mk
 endif

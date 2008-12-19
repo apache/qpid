@@ -63,6 +63,17 @@ namespace SystemInfo {
                       std::string &version,
                       std::string &machine);
 
+    /**
+     * Get the process ID of the current process.
+     */
+    uint32_t getProcessId();
+
+    /**
+     * Get the process ID of the parent of the current process.
+     */
+    uint32_t getParentProcessId();
+
+
 }}} // namespace qpid::sys::SystemInfo
 
 #endif  /*!QPID_SYS_SYSTEMINFO_H*/
