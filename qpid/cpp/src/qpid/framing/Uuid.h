@@ -68,7 +68,7 @@ struct Uuid : public boost::array<uint8_t, 16> {
     uint32_t encodedSize() const { return size(); }
 
     /** String value in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
-    std::string str();
+    std::string str() const;
 
     template <class S> void serialize(S& s) {
         s.raw(begin(), size());

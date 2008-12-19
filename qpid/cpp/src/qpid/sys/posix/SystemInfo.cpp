@@ -94,4 +94,16 @@ void SystemInfo::getSystemId (std::string &osName,
     }
 }
 
+uint32_t SystemInfo::getProcessId()
+{
+    return (uint32_t) ::getpid();
+}
+
+uint32_t SystemInfo::getParentProcessId()
+{
+    return (uint32_t) ::getppid();
+}
+
+
+
 }} // namespace qpid::sys
