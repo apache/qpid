@@ -154,6 +154,7 @@ class SessionManager
 
 private:
     friend class Broker;
+    friend class Broker::ConnectionThread;
     friend class Object;
     sys::Mutex lock;
     sys::Mutex brokerListLock;
