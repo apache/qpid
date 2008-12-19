@@ -379,6 +379,7 @@ AC_CONFIG_FILES([
   examples/request-response/Makefile
   examples/failover/Makefile
   examples/xml-exchange/Makefile
+  examples/qmf-console/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile

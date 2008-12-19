@@ -52,7 +52,7 @@ istream& operator>>(istream& in, Uuid& uuid) {
     return in;
 }
 
-std::string Uuid::str() {
+std::string Uuid::str() const {
     std::ostringstream os;
     os << *this;
     return os.str();
