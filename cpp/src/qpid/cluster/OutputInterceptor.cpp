@@ -32,8 +32,10 @@ namespace cluster {
 
 using namespace framing;
 
-OutputInterceptor::OutputInterceptor(cluster::Connection& p, sys::ConnectionOutputHandler& h)
-    : parent(p), next(&h), sent(), moreOutput(), doingOutput()
+OutputInterceptor::OutputInterceptor(
+    cluster::Connection& p, sys::ConnectionOutputHandler& h)
+    : parent(p), next(&h), sent(), writeEstimate(p.getCluster().getWriteEstimate()),
+      moreOutput(), doingOutput()
 {}
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
@@ -69,7 +71,7 @@ bool  OutputInterceptor::doOutput() {
 void OutputInterceptor::deliverDoOutput(size_t requested) {
     size_t buf = next->getBuffered();
     if (parent.isLocal())
-        writeEstimate.delivered(sent, buf); // Update the estimate.
+        writeEstimate.delivered(requested, sent, buf); // Update the estimate.
 
     // Run the real doOutput() till we have added the requested data or there's nothing to output.
     sent = 0;

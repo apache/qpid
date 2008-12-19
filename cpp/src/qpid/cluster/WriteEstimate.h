@@ -51,12 +51,17 @@ class WriteEstimate
      * doOutput request just delivered, not yet executed. Update the estimate.
      * and estimate how much data to request in the next onOutput
      * request. 0 means don't send an onOutput request.
+     *
+     * @param delivered value in doOutput control.
      */
-    void delivered(size_t sent, size_t buffered);
+    void delivered(size_t delivered, size_t sent, size_t buffered);
+
+    /** Last estimate delivered, i.e. known to cluster */
+    size_t getLastEstimate() const { return estimate; }
 
   private:
     bool growing;
-    size_t estimate;
+    size_t estimate, lastEstimate;
 };
 
 }} // namespace qpid::cluster
