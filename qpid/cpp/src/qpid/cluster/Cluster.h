@@ -69,7 +69,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     /**
      * Join a cluster. 
      */
-    Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum, size_t readMax);
+    Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum,
+            size_t readMax, size_t writeEstimate);
 
     virtual ~Cluster();
 
@@ -95,6 +96,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void checkQuorum();         // called in connection threads.
 
     size_t getReadMax() { return readMax; }
+    size_t getWriteEstimate() { return writeEstimate; }
     
   private:
     typedef sys::LockPtr<Cluster,sys::Monitor> LockPtr;
@@ -181,6 +183,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     const Url myUrl;
     const MemberId myId;
     const size_t readMax;
+    const size_t writeEstimate;
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
     sys::DispatchHandle cpgDispatchHandle;
