@@ -28,7 +28,7 @@ xalan=lib/xalan-2.7.0.jar
 osgi-core=lib/org.osgi.core-1.0.0.jar
 felix-framework=lib/org.apache.felix.framework-1.0.0.jar
 
-servlet=lib/javax.servlet.jar
+geronimo-servlet=lib/geronimo-servlet_2.5_spec-1.2.jar
 felix.libs=${osgi-core} ${felix-framework}
 
 common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
@@ -40,7 +40,7 @@ broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs} ${build.lib}/${project.name}-common-${project.version}.jar
 
 broker-plugins.libs=${common.libs} ${felix.libs} 
-management-client.libs=${client.libs} ${commons-pool} ${log4j} ${slf4j-log4j} ${servlet}
+management-client.libs=${client.libs} ${commons-pool} ${log4j} ${slf4j-log4j} ${geronimo-servlet}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
