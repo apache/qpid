@@ -41,10 +41,10 @@ struct ClusterValues {
     string name;
     string url;
     bool quorum;
-    size_t readMax;
+    size_t readMax, writeEstimate;
 
     // FIXME aconway 2008-12-09: revisit default.
-    ClusterValues() : quorum(false), readMax(0) {}
+    ClusterValues() : quorum(false), readMax(0), writeEstimate(64) {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
@@ -68,7 +68,10 @@ struct ClusterOptions : public Options {
 #if HAVE_LIBCMAN
             ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
-            ("cluster-read-max", optValue(values.readMax,"N"), "Throttle read rate from client connections.")
+            ("cluster-read-max", optValue(values.readMax,"N"),
+             "Throttle read rate from client connections.")
+            ("cluster-write-estimate", optValue(values.writeEstimate, "Kb"),
+             "Estimate connection write rate per multicast cycle")
             ;
     }
 };
@@ -88,7 +91,7 @@ struct ClusterPlugin : public Plugin {
         if (values.name.empty()) return; // Only if --cluster-name option was specified.
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
-        cluster = new Cluster(values.name, values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)), *broker, values.quorum, values.readMax);
+        cluster = new Cluster(values.name, values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)), *broker, values.quorum, values.readMax, values.writeEstimate*1024);
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));

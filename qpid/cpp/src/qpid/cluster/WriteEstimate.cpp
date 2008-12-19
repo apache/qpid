@@ -27,7 +27,7 @@ namespace qpid {
 namespace cluster {
 
 WriteEstimate::WriteEstimate(size_t initial)
-    : growing(true), estimate(initial) {}
+    : growing(true), estimate(initial), lastEstimate(initial) {}
 
 size_t WriteEstimate::sending(size_t buffered) {
     // We want to send a doOutput request for enough data such
@@ -42,7 +42,8 @@ size_t WriteEstimate::sending(size_t buffered) {
 
 size_t pad(size_t value) { return value + value/2; }
 
-void WriteEstimate::delivered(size_t sent, size_t buffered) {
+void WriteEstimate::delivered(size_t last, size_t sent, size_t buffered) {
+    lastEstimate = last;
     size_t wrote =  sent > buffered ? sent - buffered : 0;
     if (wrote == 0)             // No change
         return; 

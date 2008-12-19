@@ -64,6 +64,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
     mutable sys::Mutex lock;
     sys::ConnectionOutputHandler* next;
     size_t sent;
+    size_t lastDoOutput;
     WriteEstimate writeEstimate;
     bool moreOutput;
     bool doingOutput;
