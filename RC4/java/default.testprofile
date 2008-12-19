@@ -1,0 +1,23 @@
+broker.version=0-8
+broker=vm
+broker.clean=${project.root}/clean-dir ${build.data}
+broker.ready=Listening on TCP port
+
+java.naming.provider.url=${project.root}/test-provider.properties
+max_prefetch=1000
+
+log=debug
+amqj.logging.level=${log}
+amqj.protocol.logging.level=${log}
+root.logging.level=${log}
+log4j.configuration=file:///${project.root}/log4j-test.xml
+log4j.debug=false
+
+test.excludes=true
+test.excludesfile=${project.root}/ExcludeList ${project.root}/08ExcludeList
+test.fork=no
+test.mem=512M
+test=*Test
+haltonfailure=no
+haltonerror=no
+exclude.modules=none

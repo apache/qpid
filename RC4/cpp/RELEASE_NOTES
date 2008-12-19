@@ -1,0 +1,16 @@
+Apache Qpid C++ M4 Release Notes
+--------------------------------
+
+The Qpid M4 release of the c++ client and broker support the 0-10
+version of the AMQP specification.  You can access this specification
+from: 
+
+http://jira.amqp.org/confluence/display/AMQP/Download
+
+For full details of Qpid c++ capabilities, as they currently stand,
+see our project documentation at:
+
+http://cwiki.apache.org/confluence/pages/viewpage.action?pageId=28284
+
+Please take time to go through the README file provided with the
+distro to get a good understanding about build system etc.

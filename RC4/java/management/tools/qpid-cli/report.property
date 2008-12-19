@@ -1,0 +1,7 @@
+object=queue
+column=Name,MessageCount,ActiveConsumerCount,Durable
+filter.name=ping
+filter.virtualhost=test
+output=csv
+seperator=|
+interval=1

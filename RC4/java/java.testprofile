@@ -1,0 +1,5 @@
+broker=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT
+broker.clean=${project.root}/clean-dir ${build.data}
+broker.ready=Qpid Broker Ready
+
+test.excludesfile=${project.root}/ExcludeList ${project.root}/08ExcludeList-nonvm
