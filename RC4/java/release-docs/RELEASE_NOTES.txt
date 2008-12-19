@@ -1,0 +1,43 @@
+Apache Qpid Incubating Java M4 Release Notes
+-------------------------------------------
+
+The Qpid M4 release contains support for AMQP 0-8, 0-9 and 0-10. You
+can access the specifications from
+http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+
+For full details of Apache Qpid's capabilities see our detailed
+project documentation at:
+
+http://cwiki.apache.org/confluence/display/qpid/Qpid+Java+Documentation
+
+From the link above you can access our Getting Started Guide, FAQ, Build How To
+and detailed developer documentation.
+
+New features, Improvements and Bug fixes
+----------------------
+
+AMQP 0-10 support (client only)
+Apache Derby persistent message store
+Transient transactional performance has greatly increased.
+
+A full list can be found:
+http://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12312117&styleName=Text&projectId=12310520
+
+
+Known Issues/Outstanding Work
+-----------------------------
+
+QPID-959: Fail over between a 0-9 and a 0-10 broker is not supported.
+
+QPID-1251: On windows platforms the following run time exception is thrown and displayed when initiating a connection with an 0.9 broker:
+  Exception in thread "IoReceiver - localhost/localhost:5672"
+  java.lang.RuntimeException: connection closed
+
+  Moreover, when closing JMS connections the JMS exception listener may
+  receive the following JMS exception:
+
+  javax.jms.JMSException: connection was closed at
+  org.apache.qpid.client.AMQConnectionDelegate_0_10.onClosed(AMQConnectionDelegate_0_10.java:164)
+
+You can view the outstanding task list for Qpid by visiting our JIRA:
+http://issues.apache.org/jira/browse/QPID

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rm /var/lib/oprofile/oprofiled.log
+
+opcontrol --reset
+opcontrol --setup --no-vmlinux --separate=library 
+opcontrol --start
+# -- Do stuff here --
+./qpidd
+# -- End of stuff --
+opcontrol --stop
+opcontrol --dump
+opcontrol --shutdown
+opreport -l ./.libs/lt-qpidd > stats.txt
+opannotate --source --output-dir=qpidd-prof ./.libs/lt-qpidd
+
+# clear the relusts
+#opcontrol --reset
