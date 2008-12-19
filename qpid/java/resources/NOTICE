@@ -42,3 +42,7 @@ in functionality to BSD editline and GNU readline.Original software is
 available from 
 
 pphttp://jline.sourceforge.net/index.html
+
+Jython is used within ant scripts for generating code.
+Jython is hosted at http://www.jython.org
+The license for jython is located at http://www.jython.org/Project/license.txt
