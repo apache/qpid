@@ -23,9 +23,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="MaxMethodBodySize"
-	ProjectGUID="{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}"
-	RootNamespace="MaxMethodBodySize"
+	Name="qmfconsole"
+	ProjectGUID="{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}"
+	RootNamespace="qmfconsole"
 	Keyword="Win32Proj"
 	SignManifests="true"
 	>
@@ -42,9 +42,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Static_Debug"
-			IntermediateDirectory="Static_Debug\MaxMethodBodySize\I386"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Static_Debug\qmfconsole\I386"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -73,7 +73,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -88,7 +88,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -96,15 +96,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies=""
-				OutputFile="$(OutDir)\generate_MaxMethodBodySize_h.exe"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
+				OutputFile=".\qmfconsolesd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -120,14 +113,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(OutDir)\generate_MaxMethodBodySize_h"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Static_Release"
-			IntermediateDirectory="Static_Release\MaxMethodBodySize\I386"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Static_Release\qmfconsole\I386"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -156,7 +148,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -168,7 +160,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -176,17 +168,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies=""
-				OutputFile="$(OutDir)\generate_MaxMethodBodySize_h.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
+				OutputFile=".\qmfconsoles.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -202,14 +185,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(OutDir)\generate_MaxMethodBodySize_h"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="Static_Debug"
-			IntermediateDirectory="Static_Debug\MaxMethodBodySize\AMD64"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Static_Debug\qmfconsole\AMD64"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -238,7 +220,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -253,7 +235,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;_WIN64"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -261,16 +243,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies=""
-				OutputFile="$(OutDir)\generate_MaxMethodBodySize_h.exe"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="17"
+				Name="VCLibrarianTool"
+				OutputFile=".\qmfconsolesd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -286,14 +260,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(OutDir)\generate_MaxMethodBodySize_h"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="Static_Release"
-			IntermediateDirectory="Static_Release\MaxMethodBodySize\AMD64"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Static_Release\qmfconsole\AMD64"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -322,7 +295,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -334,7 +307,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;_WIN64"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -342,18 +315,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies=""
-				OutputFile="$(OutDir)\generate_MaxMethodBodySize_h.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="17"
+				Name="VCLibrarianTool"
+				OutputFile=".\qmfconsoles.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -369,7 +332,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(OutDir)\generate_MaxMethodBodySize_h"
 			/>
 		</Configuration>
 	</Configurations>
@@ -380,14 +342,74 @@
 			Name="Source Files"
 			Filter="cpp;cxx;cc;C;c">
 			<File
-				RelativePath="gen\generate_MaxMethodBodySize_h.cpp">
+				RelativePath="qpid\console\Agent.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\Broker.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\ClassKey.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\Object.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\ObjectId.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\Package.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\Schema.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\SequenceManager.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\SessionManager.cpp">
+			</File>
+			<File
+				RelativePath="qpid\console\Value.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hh">
 			<File
-				RelativePath="qpidd.h">
+				RelativePath="qpid\console\Agent.h">
+			</File>
+			<File
+				RelativePath="qpid\console\Broker.h">
+			</File>
+			<File
+				RelativePath="qpid\console\ClassKey.h">
+			</File>
+			<File
+				RelativePath="qpid\console\ConsoleListener.h">
+			</File>
+			<File
+				RelativePath="qpid\console\Event.h">
+			</File>
+			<File
+				RelativePath="qpid\console\Object.h">
+			</File>
+			<File
+				RelativePath="qpid\console\ObjectId.h">
+			</File>
+			<File
+				RelativePath="qpid\console\Package.h">
+			</File>
+			<File
+				RelativePath="qpid\console\Schema.h">
+			</File>
+			<File
+				RelativePath="qpid\console\SequenceManager.h">
+			</File>
+			<File
+				RelativePath="qpid\console\SessionManager.h">
+			</File>
+			<File
+				RelativePath="qpid\console\Value.h">
 			</File>
 		</Filter>
 	</Files>
