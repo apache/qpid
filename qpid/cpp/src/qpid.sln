@@ -25,6 +25,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common.vcproj", "
 		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF} = {CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qmfconsole", "qmfconsole.vcproj", "{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6961DBA3-FECA-1BAD-F396-8C394564ADCF} = {6961DBA3-FECA-1BAD-F396-8C394564ADCF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -65,6 +70,14 @@ Global
 		{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|Win32.Build.0 = Release|Win32
 		{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|x64.ActiveCfg = Release|x64
 		{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|x64.Build.0 = Release|x64
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Debug|Win32.Build.0 = Debug|Win32
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Debug|x64.ActiveCfg = Debug|x64
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Debug|x64.Build.0 = Debug|x64
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Release|Win32.ActiveCfg = Release|Win32
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Release|Win32.Build.0 = Release|Win32
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Release|x64.ActiveCfg = Release|x64
+		{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

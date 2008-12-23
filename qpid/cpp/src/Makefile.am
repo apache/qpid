@@ -28,6 +28,7 @@ windows_dist = \
   common.vcproj \
   client.vcproj \
   MaxMethodBodySize.vcproj \
+  qmfconsole.vcproj \
   protocol_gen.mak \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
