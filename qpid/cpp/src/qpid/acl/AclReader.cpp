@@ -352,7 +352,7 @@ AclReader::gmCitr AclReader::addGroup(const std::string& newGroupName) {
 
 void AclReader::addName(const std::string& name, nameSetPtr groupNameSet) {
     gmCitr citr = groups.find(name);
-    if (citr != groups.end()) {
+    if (citr != groups.end() && citr->first != name){
         // This is a previously defined group: add all the names in that group to this group
         groupNameSet->insert(citr->second->begin(), citr->second->end());
     } else {
