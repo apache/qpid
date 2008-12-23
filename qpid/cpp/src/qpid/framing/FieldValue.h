@@ -193,12 +193,14 @@ class VariableWidthValue : public FieldValue::Data {
     uint32_t encodedSize() const { return lenwidth + octets.size(); } 
     void encode(Buffer& buffer) {
         buffer.putUInt<lenwidth>(octets.size());
-        buffer.putRawData(&octets[0], octets.size());
+        if (octets.size() > 0)
+            buffer.putRawData(&octets[0], octets.size());
     };
     void decode(Buffer& buffer) {
         uint32_t len = buffer.getUInt<lenwidth>();
         octets.resize(len);
-        buffer.getRawData(&octets[0], len);
+        if (len > 0)
+            buffer.getRawData(&octets[0], len);
     }
     bool operator==(const Data& d) const {
         const VariableWidthValue<lenwidth>* rhs = dynamic_cast< const VariableWidthValue<lenwidth>* >(&d);
