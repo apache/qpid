@@ -29,10 +29,65 @@
 #include "qpid/sys/Mutex.h"
 
 using namespace qpid::console;
+using namespace qpid::sys;
 using namespace std;
 using qpid::framing::Uuid;
 using qpid::framing::FieldTable;
-using qpid::sys::Mutex;
+
+void Object::AttributeMap::addRef(const string& key, const ObjectId& val)
+{
+    (*this)[key] = Value::Ptr(new RefValue(val));
+}
+
+void Object::AttributeMap::addUint(const string& key, uint32_t val)
+{
+    (*this)[key] = Value::Ptr(new UintValue(val));
+}
+
+void Object::AttributeMap::addInt(const string& key, int32_t val)
+{
+    (*this)[key] = Value::Ptr(new IntValue(val));
+}
+
+void Object::AttributeMap::addUint64(const string& key, uint64_t val)
+{
+    (*this)[key] = Value::Ptr(new Uint64Value(val));
+}
+
+void Object::AttributeMap::addInt64(const string& key, int64_t val)
+{
+    (*this)[key] = Value::Ptr(new Int64Value(val));
+}
+
+void Object::AttributeMap::addString(const string& key, const string& val)
+{
+    (*this)[key] = Value::Ptr(new StringValue(val));
+}
+
+void Object::AttributeMap::addBool(const string& key, bool val)
+{
+    (*this)[key] = Value::Ptr(new BoolValue(val));
+}
+
+void Object::AttributeMap::addFloat(const string& key, float val)
+{
+    (*this)[key] = Value::Ptr(new FloatValue(val));
+}
+
+void Object::AttributeMap::addDouble(const string& key, double val)
+{
+    (*this)[key] = Value::Ptr(new DoubleValue(val));
+}
+
+void Object::AttributeMap::addUuid(const string& key, const framing::Uuid& val)
+{
+    (*this)[key] = Value::Ptr(new UuidValue(val));
+}
+
+void Object::AttributeMap::addMap(const string& key, const framing::FieldTable& val)
+{
+    (*this)[key] = Value::Ptr(new MapValue(val));
+}
 
 Object::Object(Broker* b, SchemaClass* s, framing::Buffer& buffer, bool prop, bool stat) :
     broker(b), schema(s), pendingMethod(0)
@@ -49,7 +104,7 @@ Object::Object(Broker* b, SchemaClass* s, framing::Buffer& buffer, bool prop, bo
              pIter != schema->properties.end(); pIter++) {
             SchemaProperty* property = *pIter;
             if (excludes.count(property->name) != 0) {
-                attributes[property->name] = new NullValue();
+                attributes[property->name] = Value::Ptr(new NullValue());
             } else {
                 attributes[property->name] = property->decodeValue(buffer);
             }
@@ -65,19 +120,14 @@ Object::Object(Broker* b, SchemaClass* s, framing::Buffer& buffer, bool prop, bo
     }
 }
 
-Object::~Object()
-{
-    //    for (AttributeMap::iterator iter = attributes.begin(); iter != attributes.end(); iter++)
-    //        delete iter->second;
-    //    attributes.clear();
-}
+Object::~Object() {}
 
 const ClassKey& Object::getClassKey() const
 {
     return schema->getClassKey();
 }
 
-std::string Object::getIndex() const
+string Object::getIndex() const
 {
     string result;
 
@@ -139,9 +189,18 @@ void Object::invokeMethod(const string name, const AttributeMap& args, MethodRes
 
             {
                 Mutex::ScopedLock l(broker->lock);
-                while (pendingMethod != 0)
-                    broker->cond.wait(broker->lock);
-                result = methodResponse;
+                bool ok = true;
+                while (pendingMethod != 0 && ok) {
+                    ok = broker->cond.wait(broker->lock, AbsTime(now(), broker->sessionManager.settings.methodTimeout * TIME_SEC));
+                }
+
+                if (!ok) {
+                    result.code = 0x1001;
+                    result.text.assign("Method call timed out");
+                    result.arguments.clear();
+                } else {
+                    result = methodResponse;
+                }
             }
         }
     }
@@ -169,122 +228,122 @@ void Object::handleMethodResp(framing::Buffer& buffer, uint32_t sequence)
     }
 }
 
-ObjectId Object::attrRef(const std::string& key) const
+ObjectId Object::attrRef(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return ObjectId();
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isObjectId())
         return ObjectId();
     return val->asObjectId();
 }
 
-uint32_t Object::attrUint(const std::string& key) const
+uint32_t Object::attrUint(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return 0;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isUint())
         return 0;
     return val->asUint();
 }
 
-int32_t Object::attrInt(const std::string& key) const
+int32_t Object::attrInt(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return 0;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isInt())
         return 0;
     return val->asInt();
 }
 
-uint64_t Object::attrUint64(const std::string& key) const
+uint64_t Object::attrUint64(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return 0;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isUint64())
         return 0;
     return val->asUint64();
 }
 
-int64_t Object::attrInt64(const std::string& key) const
+int64_t Object::attrInt64(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return 0;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isInt64())
         return 0;
     return val->asInt64();
 }
 
-string Object::attrString(const std::string& key) const
+string Object::attrString(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return string();
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isString())
         return string();
     return val->asString();
 }
 
-bool Object::attrBool(const std::string& key) const
+bool Object::attrBool(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return false;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isBool())
         return false;
     return val->asBool();
 }
 
-float Object::attrFloat(const std::string& key) const
+float Object::attrFloat(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return 0.0;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isFloat())
         return 0.0;
     return val->asFloat();
 }
 
-double Object::attrDouble(const std::string& key) const
+double Object::attrDouble(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return 0.0;
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isDouble())
         return 0.0;
     return val->asDouble();
 }
 
-Uuid Object::attrUuid(const std::string& key) const
+Uuid Object::attrUuid(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return Uuid();
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isUuid())
         return Uuid();
     return val->asUuid();
 }
 
-FieldTable Object::attrMap(const std::string& key) const
+FieldTable Object::attrMap(const string& key) const
 {
     AttributeMap::const_iterator iter = attributes.find(key);
     if (iter == attributes.end())
         return FieldTable();
-    Value* val = iter->second;
+    Value::Ptr val = iter->second;
     if (!val->isMap())
         return FieldTable();
     return val->asMap();

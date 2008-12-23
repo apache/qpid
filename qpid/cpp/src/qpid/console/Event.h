@@ -21,18 +21,61 @@
 #ifndef _QPID_CONSOLE_EVENT_H_
 #define _QPID_CONSOLE_EVENT_H_
 
-#include <string>
-#include "Message.h"
+#include "Object.h"
+#include "qpid/framing/Uuid.h"
+#include "qpid/framing/FieldTable.h"
 
 namespace qpid {
+namespace framing {
+    class Buffer;
+}
 namespace console {
+
+    class Broker;
+    class SchemaClass;
+    class ClassKey;
 
     /**
      *
-     * \ingroup qpidconsoleapi
+     * \ingroup qmfconsoleapi
      */
     class Event {
+    public:
+        typedef enum {
+        EMERGENCY = 0, ALERT = 1, CRITICAL = 2, ERROR = 3,  WARNING = 4,
+        NOTICE = 5, INFO = 6, DEBUG = 7
+        } Severity;
+
+        Event(Broker* broker, SchemaClass* schemaClass, framing::Buffer& buffer);
+        Broker* getBroker() const { return broker; }
+        const ClassKey& getClassKey() const;
+        SchemaClass* getSchema() const { return schema; }
+        const Object::AttributeMap& getAttributes() const { return attributes; }
+        uint64_t getTimestamp() const { return timestamp; }
+        uint8_t getSeverity() const { return severity; }
+        std::string getSeverityString() const;
+
+        ObjectId attrRef(const std::string& key) const;
+        uint32_t attrUint(const std::string& key) const;
+        int32_t attrInt(const std::string& key) const;
+        uint64_t attrUint64(const std::string& key) const;
+        int64_t attrInt64(const std::string& key) const;
+        std::string attrString(const std::string& key) const;
+        bool attrBool(const std::string& key) const;
+        float attrFloat(const std::string& key) const;
+        double attrDouble(const std::string& key) const;
+        framing::Uuid attrUuid(const std::string& key) const;
+        framing::FieldTable attrMap(const std::string& key) const;
+
+    private:
+        Broker* broker;
+        SchemaClass* schema;
+        uint64_t timestamp;
+        Severity severity;
+        Object::AttributeMap attributes;
     };
+
+    std::ostream& operator<<(std::ostream& o, const Event& event);
 }
 }
 

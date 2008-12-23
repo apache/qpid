@@ -30,6 +30,7 @@
 #include "Agent.h"
 #include "Object.h"
 #include "ObjectId.h"
+#include "Value.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Condition.h"
 #include "qpid/client/ConnectionSettings.h"
@@ -52,6 +53,19 @@ class SessionManager
     typedef std::vector<ClassKey> KeyVector;
     ~SessionManager() {}
 
+    struct Settings {
+        bool rcvObjects;
+        bool rcvEvents;
+        bool rcvHeartbeats;
+        bool userBindings;
+        uint32_t methodTimeout;
+        uint32_t getTimeout;
+
+        Settings() : rcvObjects(true), rcvEvents(true), rcvHeartbeats(true), userBindings(false),
+                     methodTimeout(20), getTimeout(20)
+        {}
+    };
+
     /** Create a new SessionManager
      *
      * Provide your own subclass of ConsoleListener to receive updates and indications
@@ -61,24 +75,18 @@ class SessionManager
      *@param rcvObjects Listener wishes to receive managed object data.
      *@param rcvEvents Listener wishes to receive events.
      *@param rcvHeartbeats Listener wishes to receive agent heartbeats.
-     *@param manageConnections SessionManager should retry dropped connections.
      *@param userBindings If rcvObjects is true, userBindings allows the console client
      * to control which object classes are received.  See the bindPackage and bindClass
      * methods.  If userBindings is false, the listener will receive updates for all
      * object classes.
      */
     SessionManager(ConsoleListener* listener = 0,
-                   bool rcvObjects = true,
-                   bool rcvEvents = true,
-                   bool rcvHeartbeats = true,
-                   bool manageConnections = false,
-                   bool userBindings = false);
+                   Settings settings = Settings());
 
     /** Connect a broker to the console session
      *
      *@param settings Connection settings for client access
      *@return broker object if operation is successful
-     *@exception If 'manageConnections' is disabled and the connection to the broker fails,
      * an exception shall be thrown.
      */
     Broker* addBroker(client::ConnectionSettings& settings);
@@ -166,11 +174,7 @@ private:
     SequenceManager::set syncSequenceList;
     Object::Vector getResult;
     std::string error;
-    bool rcvObjects;
-    bool rcvEvents;
-    bool rcvHeartbeats;
-    bool userBindings;
-    bool manageConnections;
+    Settings settings;
     NameVector bindingKeyList;
 
     void bindingKeys();

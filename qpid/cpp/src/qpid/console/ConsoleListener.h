@@ -25,6 +25,7 @@
 #include "Broker.h"
 #include "ClassKey.h"
 #include "Object.h"
+#include "Event.h"
 
 namespace qpid {
 namespace console {
@@ -74,7 +75,7 @@ namespace console {
 
         /** Invoked when an event is raised.
          */
-        //virtual void event(Broker&, Event) {}
+        virtual void event(Event&) {}
 
         /**
          */
