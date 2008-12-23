@@ -25,6 +25,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
 #include "ObjectId.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace framing {
@@ -38,6 +39,7 @@ namespace console {
     class Value {
 
     public:
+        typedef boost::shared_ptr<Value> Ptr;
         virtual ~Value() {}
         virtual std::string str() const = 0;
 
@@ -196,8 +198,8 @@ namespace console {
 
     class ValueFactory {
     public:
-        static Value* newValue(int typeCode, framing::Buffer& buffer);
-        static void encodeValue(int typeCode, Value* value, framing::Buffer& buffer);
+        static Value::Ptr newValue(int typeCode, framing::Buffer& buffer);
+        static void encodeValue(int typeCode, Value::Ptr value, framing::Buffer& buffer);
     };
 }
 }

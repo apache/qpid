@@ -24,6 +24,7 @@
 #include "ObjectId.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <set>
 #include <vector>
@@ -47,13 +48,25 @@ namespace console {
     struct MethodResponse {
         uint32_t code;
         std::string text;
-        std::map<std::string, Value*> arguments;
+        std::map<std::string, boost::shared_ptr<Value> > arguments;
     };
 
     class Object {
     public:
         typedef std::vector<Object> Vector;
-        typedef std::map<std::string, Value*> AttributeMap;
+        struct AttributeMap : public std::map<std::string, boost::shared_ptr<Value> > {
+            void addRef(const std::string& key, const ObjectId& val);
+            void addUint(const std::string& key, uint32_t val);
+            void addInt(const std::string& key, int32_t val);
+            void addUint64(const std::string& key, uint64_t val);
+            void addInt64(const std::string& key, int64_t val);
+            void addString(const std::string& key, const std::string& val);
+            void addBool(const std::string& key, bool val);
+            void addFloat(const std::string& key, float val);
+            void addDouble(const std::string& key, double val);
+            void addUuid(const std::string& key, const framing::Uuid& val);
+            void addMap(const std::string& key, const framing::FieldTable& val);
+        };
 
         Object(Broker* broker, SchemaClass* schemaClass, framing::Buffer& buffer, bool prop, bool stat);
         ~Object();

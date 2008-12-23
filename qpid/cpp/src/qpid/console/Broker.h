@@ -61,6 +61,7 @@ namespace console {
         void addBinding(const std::string& key) {
             connThreadBody.bindExchange("qpid.management", key);
         }
+        std::string getUrl() const;
 
     private:
         friend class SessionManager;

@@ -31,6 +31,7 @@ libqmfconsole_la_SOURCES = \
   qpid/console/ClassKey.cpp \
   qpid/console/ConsoleListener.h \
   qpid/console/Event.h \
+  qpid/console/Event.cpp \
   qpid/console/Object.h \
   qpid/console/Object.cpp \
   qpid/console/ObjectId.h \

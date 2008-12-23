@@ -59,6 +59,13 @@ Broker::~Broker()
 {
 }
 
+string Broker::getUrl() const
+{
+    stringstream url;
+    url << connectionSettings.host << ":" << connectionSettings.port;
+    return url.str();
+}
+
 void Broker::encodeHeader(framing::Buffer& buf, uint8_t opcode, uint32_t seq) const
 {
     buf.putOctet('A');
@@ -249,7 +256,9 @@ void Broker::waitForStable()
         return;
     syncInFlight = true;
     while (reqsOutstanding != 0) {
-        cond.wait(lock);  // TODO: put timeout delay in here!
+        bool result = cond.wait(lock, AbsTime(now(), TIME_SEC * sessionManager.settings.getTimeout));
+        if (!result)
+            throw(Exception("Timed out waiting for broker to synchronize"));
     }
 }
 

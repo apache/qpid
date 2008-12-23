@@ -22,6 +22,7 @@
 #define _QPID_CONSOLE_SCHEMA_H_
 
 #include "ClassKey.h"
+#include <boost/shared_ptr.hpp>
 #include <vector>
 
 namespace qpid {
@@ -33,7 +34,7 @@ namespace console {
 
     struct SchemaArgument {
         SchemaArgument(framing::Buffer& buffer, bool forMethod = false);
-        Value* decodeValue(framing::Buffer& buffer);
+        boost::shared_ptr<Value> decodeValue(framing::Buffer& buffer);
 
         std::string name;
         uint8_t typeCode;
@@ -49,7 +50,7 @@ namespace console {
 
     struct SchemaProperty {
         SchemaProperty(framing::Buffer& buffer);
-        Value* decodeValue(framing::Buffer& buffer);
+        boost::shared_ptr<Value> decodeValue(framing::Buffer& buffer);
 
         std::string name;
         uint8_t typeCode;
@@ -65,7 +66,7 @@ namespace console {
 
     struct SchemaStatistic {
         SchemaStatistic(framing::Buffer& buffer);
-        Value* decodeValue(framing::Buffer& buffer);
+        boost::shared_ptr<Value> decodeValue(framing::Buffer& buffer);
 
         std::string name;
         uint8_t typeCode;
