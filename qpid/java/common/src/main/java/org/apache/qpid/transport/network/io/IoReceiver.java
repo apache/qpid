@@ -24,9 +24,10 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,6 +47,8 @@ final class IoReceiver extends Thread
     private final Socket socket;
     private final long timeout;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final boolean shutdownBroken =
+        ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
 
     public IoReceiver(IoTransport transport, Receiver<ByteBuffer> receiver,
                       int bufferSize, long timeout)
@@ -67,7 +70,7 @@ final class IoReceiver extends Thread
         {
             try
             {
-                if (((String) System.getProperties().get("os.name")).matches("(?i).*windows.*"))
+                if (shutdownBroken)
                 {
                    socket.close();
                 }
@@ -125,7 +128,13 @@ final class IoReceiver extends Thread
         }
         catch (Throwable t)
         {
-            receiver.exception(t);
+            if (!(shutdownBroken &&
+                  t instanceof SocketException &&
+                  t.getMessage().equalsIgnoreCase("socket closed") &&
+                  closed.get()))
+            {
+                receiver.exception(t);
+            }
         }
         finally
         {
