@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Collections;
 import java.io.IOException;
 
+import static org.apache.qpid.transport.Option.*;
+
 /**
  * ConnectionTest
  */
@@ -62,7 +64,11 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     protected void tearDown() throws Exception
     {
-        _ioa.close();
+        if (_ioa != null)
+        {
+            _ioa.close();
+        }
+
         super.tearDown();
     }
 
@@ -360,6 +366,20 @@ public class ConnectionTest extends TestCase implements SessionListener
         System.out.println(messages);
         assertEquals(1, messages.size());
         assertEquals("SINK 3", messages.get(0).getBodyString());
+    }
+
+    public void testFlushExpected() throws InterruptedException
+    {
+        startServer();
+
+        Connection conn = new Connection();
+        conn.connect("localhost", port, null, "guest", "guest");
+        Session ssn = conn.createSession();
+        ssn.sessionFlush(EXPECTED);
+        send(ssn, "SINK 0");
+        ssn.sessionFlush(EXPECTED);
+        send(ssn, "SINK 1");
+        ssn.sync();
     }
 
 }
