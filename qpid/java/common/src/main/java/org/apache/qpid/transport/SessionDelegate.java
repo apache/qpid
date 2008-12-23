@@ -115,7 +115,7 @@ public class SessionDelegate
         }
         if (flush.getExpected())
         {
-            throw new Error("not implemented");
+            ssn.flushExpected();
         }
     }
 

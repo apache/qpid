@@ -312,6 +312,19 @@ public class Session extends SessionInvoker
         }
     }
 
+    void flushExpected()
+    {
+        RangeSet rs = new RangeSet();
+        synchronized (processedLock)
+        {
+            if (incomingInit)
+            {
+                rs.add(commandsIn);
+            }
+        }
+        sessionExpected(rs, null);
+    }
+
     public void flushProcessed(Option ... options)
     {
         RangeSet copy;
