@@ -51,7 +51,7 @@ SchemaArgument::SchemaArgument(framing::Buffer& buffer, bool forMethod)
     }
 }
 
-Value* SchemaArgument::decodeValue(framing::Buffer& buffer)
+Value::Ptr SchemaArgument::decodeValue(framing::Buffer& buffer)
 {
     return ValueFactory::newValue(typeCode, buffer);
 }
@@ -73,7 +73,7 @@ SchemaProperty::SchemaProperty(framing::Buffer& buffer)
     desc = map.getAsString("desc");
 }
 
-Value* SchemaProperty::decodeValue(framing::Buffer& buffer)
+Value::Ptr SchemaProperty::decodeValue(framing::Buffer& buffer)
 {
     return ValueFactory::newValue(typeCode, buffer);
 }
@@ -89,7 +89,7 @@ SchemaStatistic::SchemaStatistic(framing::Buffer& buffer)
     desc = map.getAsString("desc");
 }
 
-Value* SchemaStatistic::decodeValue(framing::Buffer& buffer)
+Value::Ptr SchemaStatistic::decodeValue(framing::Buffer& buffer)
 {
     return ValueFactory::newValue(typeCode, buffer);
 }

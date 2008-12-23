@@ -21,17 +21,9 @@
 
 #include "qpid/console/ConsoleListener.h"
 #include "qpid/console/SessionManager.h"
-#include "qpid/console/Value.h"
-#include <unistd.h>
-#include <cstdlib>
-#include <iostream>
-
-#include <sstream>
 
 using namespace std;
 using namespace qpid::console;
-using std::cout;
-using std::endl;
 
 class Listener : public ConsoleListener {
 public:
@@ -67,6 +59,10 @@ public:
 
     void objectStats(Broker& broker, Object& object) {
         cout << "objectStats: broker=" << broker << " object=" << object << endl;
+    }
+
+    void event(Event& event) {
+        cout << "event: " << event << endl;
     }
 };
 
@@ -127,8 +123,8 @@ int main_int(int /*argc*/, char** /*argv*/)
 
         Object::AttributeMap args;
         MethodResponse result;
-        args["sequence"] = new UintValue(1);
-        args["body"] = new StringValue("Testing...");
+        args.addUint("sequence", 1);
+        args.addString("body", "Testing...");
 
         cout << "Call echo method..." << endl;
         broker.invokeMethod("echo", args, result);

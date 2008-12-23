@@ -117,33 +117,33 @@ MapValue::MapValue(framing::Buffer& buffer)
 }
 
 
-Value* ValueFactory::newValue(int typeCode, framing::Buffer& buffer)
+Value::Ptr ValueFactory::newValue(int typeCode, framing::Buffer& buffer)
 {
     switch (typeCode) {
-    case 1:  return static_cast<Value*>(new UintValue(buffer.getOctet()));      // U8
-    case 2:  return static_cast<Value*>(new UintValue(buffer.getShort()));      // U16
-    case 3:  return static_cast<Value*>(new UintValue(buffer.getLong()));       // U32
-    case 4:  return static_cast<Value*>(new Uint64Value(buffer.getLongLong())); // U64
-    case 6:  return static_cast<Value*>(new StringValue(buffer, 6));            // SSTR
-    case 7:  return static_cast<Value*>(new StringValue(buffer, 7));            // LSTR
-    case 8:  return static_cast<Value*>(new Int64Value(buffer.getLongLong()));  // ABSTIME
-    case 9:  return static_cast<Value*>(new Uint64Value(buffer.getLongLong())); // DELTATIME
-    case 10: return static_cast<Value*>(new RefValue(buffer));                  // REF
-    case 11: return static_cast<Value*>(new BoolValue(buffer.getOctet()));      // BOOL
-    case 12: return static_cast<Value*>(new FloatValue(buffer.getFloat()));     // FLOAT
-    case 13: return static_cast<Value*>(new DoubleValue(buffer.getDouble()));   // DOUBLE
-    case 14: return static_cast<Value*>(new UuidValue(buffer));                 // UUID
-    case 15: return static_cast<Value*>(new MapValue(buffer));                  // MAP
-    case 16: return static_cast<Value*>(new IntValue(buffer.getOctet()));       // S8
-    case 17: return static_cast<Value*>(new IntValue(buffer.getShort()));       // S16
-    case 18: return static_cast<Value*>(new IntValue(buffer.getLong()));        // S32
-    case 19: return static_cast<Value*>(new Int64Value(buffer.getLongLong()));  // S64
+    case 1:  return Value::Ptr(new UintValue(buffer.getOctet()));      // U8
+    case 2:  return Value::Ptr(new UintValue(buffer.getShort()));      // U16
+    case 3:  return Value::Ptr(new UintValue(buffer.getLong()));       // U32
+    case 4:  return Value::Ptr(new Uint64Value(buffer.getLongLong())); // U64
+    case 6:  return Value::Ptr(new StringValue(buffer, 6));            // SSTR
+    case 7:  return Value::Ptr(new StringValue(buffer, 7));            // LSTR
+    case 8:  return Value::Ptr(new Int64Value(buffer.getLongLong()));  // ABSTIME
+    case 9:  return Value::Ptr(new Uint64Value(buffer.getLongLong())); // DELTATIME
+    case 10: return Value::Ptr(new RefValue(buffer));                  // REF
+    case 11: return Value::Ptr(new BoolValue(buffer.getOctet()));      // BOOL
+    case 12: return Value::Ptr(new FloatValue(buffer.getFloat()));     // FLOAT
+    case 13: return Value::Ptr(new DoubleValue(buffer.getDouble()));   // DOUBLE
+    case 14: return Value::Ptr(new UuidValue(buffer));                 // UUID
+    case 15: return Value::Ptr(new MapValue(buffer));                  // MAP
+    case 16: return Value::Ptr(new IntValue(buffer.getOctet()));       // S8
+    case 17: return Value::Ptr(new IntValue(buffer.getShort()));       // S16
+    case 18: return Value::Ptr(new IntValue(buffer.getLong()));        // S32
+    case 19: return Value::Ptr(new Int64Value(buffer.getLongLong()));  // S64
     }
 
-    return 0;
+    return Value::Ptr();
 }
 
-void ValueFactory::encodeValue(int typeCode, Value* value, framing::Buffer& buffer)
+void ValueFactory::encodeValue(int typeCode, Value::Ptr value, framing::Buffer& buffer)
 {
     switch (typeCode) {
     case 1:  buffer.putOctet(value->asUint()); return;          // U8
