@@ -1,0 +1,3 @@
+broker.version=0-10
+broker=${project.root}/../cpp/src/qpidd --load-module ${project.root}/../cpp/src/.libs/cluster.so --cluster-name cpp-java-test-cluster -p @PORT --data-dir ${build.data}/@PORT -t --auth no
+test.excludesfile=${project.root}/ExcludeList ${project.root}/010ExcludeList
