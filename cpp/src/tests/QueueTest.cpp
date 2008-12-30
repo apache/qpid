@@ -417,6 +417,11 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     
     queue->deliver(msg6);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 3u);
+
+    intrusive_ptr<Message> received;
+    received = queue->get().payload;
+    BOOST_CHECK_EQUAL(msg4.get(), received.get());
+
 }
 
 QPID_AUTO_TEST_CASE(testLVQMultiQueue){
