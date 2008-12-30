@@ -308,6 +308,10 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
                 c->position = msg.position;
                 m = msg;
                 if (!lastValueQueueNoBrowse) clearLVQIndex(msg);
+                if (lastValueQueue) {
+                    boost::intrusive_ptr<Message> replacement = msg.payload->getReplacementMessage(this);
+                    if (replacement.get()) m.payload = replacement;
+                }
                 return true;
             } else {
                 //browser hasn't got enough credit for the message
@@ -511,6 +515,10 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
                 lvq[key] = msg;
             }else {
                 i->second->setReplacementMessage(msg,this);
+                if (mgmtObject != 0) {
+                    mgmtObject->inc_msgTotalDequeues();
+                    mgmtObject->inc_byteTotalDequeues(msg->contentSize());
+                }
             }		 
         }else {
             messages.push_back(qm);
