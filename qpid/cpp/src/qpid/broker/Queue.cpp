@@ -515,10 +515,8 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
                 lvq[key] = msg;
             }else {
                 i->second->setReplacementMessage(msg,this);
-                if (mgmtObject != 0) {
-                    mgmtObject->inc_msgTotalDequeues();
-                    mgmtObject->inc_byteTotalDequeues(msg->contentSize());
-                }
+                qm.payload = i->second;
+                dequeued(qm);
             }		 
         }else {
             messages.push_back(qm);
