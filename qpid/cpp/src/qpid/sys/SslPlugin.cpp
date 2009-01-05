@@ -98,7 +98,7 @@ static struct SslPlugin : public Plugin {
                     const broker::Broker::Options& opts = broker->getOptions();
                     ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
                                                                                 opts.connectionBacklog, opts.tcpNoDelay));
-                    QPID_LOG(info, "Listening for SSL connections on TCP port " << protocol->getPort());
+                    QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
                     broker->registerProtocolFactory("ssl", protocol);
                 } catch (const std::exception& e) {
                     QPID_LOG(error, "Failed to initialise SSL plugin: " << e.what());
