@@ -24,7 +24,7 @@ log4j.additivity.org.apache.qpid=false
 log4j.logger.org.apache.qpid.management.client=DEBUG, console
 
 log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.Threshold=all
+log4j.appender.console.Threshold=error
 log4j.appender.console.layout=org.apache.log4j.PatternLayout
 log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
