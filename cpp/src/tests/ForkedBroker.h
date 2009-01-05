@@ -108,6 +108,7 @@ class ForkedBroker {
             std::vector<const char*> args2(args);
             args2.push_back("--port=0");
             args2.push_back("--mgmt-enable=no"); // TODO aconway 2008-07-16: why does mgmt cause problems?
+            args2.push_back("--log-enable=error+"); // Keep quiet except for errors.
             args2.push_back(0);
             execv(prog, const_cast<char* const*>(&args2[0]));
             throw ErrnoException("execv failed");
