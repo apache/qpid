@@ -21,7 +21,7 @@
 
 using System.ServiceModel;   
 
-namespace org.apache.qpid.wcf.demo
+namespace org.apache.qpid.wcf.demo.helloClient
 {  
     public class HelloClient : ClientBase<IHelloContract>, IHelloContract
     {      

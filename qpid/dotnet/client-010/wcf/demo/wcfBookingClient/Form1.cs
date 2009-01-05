@@ -24,6 +24,7 @@ using System.ServiceModel;
 using System.Windows.Forms;
 using org.apache.qpid.wcf.demo;
 using org.apache.qpid.wcf.model;
+using org.apache.qpid.wcf.demo.bookingServer;
 
 namespace WindowsFormsBooking
 {

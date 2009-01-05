@@ -47,7 +47,7 @@ namespace org.apache.qpid.wcf.model
             _session = session;            
         }
 
-        public override void Send(Message message, TimeSpan timeout)
+        public override void Send(System.ServiceModel.Channels.Message message, TimeSpan timeout)
         {
             if (message.State != MessageState.Closed)
             {

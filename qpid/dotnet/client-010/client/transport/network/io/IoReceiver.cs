@@ -151,12 +151,12 @@ namespace org.apache.qpid.transport.network.io
                 while ((read = m_bufStream.Read(buffer, offset, m_bufferSize - offset)) > 0)
                 {
                     MemoryStream memStream = new MemoryStream(buffer, offset, read);
-                    if(ReceivedBuffer != null)
+                    if (ReceivedBuffer != null)
                     {
                         // call the event 
                         payload.Payload = memStream;
                         ReceivedBuffer(this, payload);
-                    }                  
+                    }
                     offset += read;
                     if (offset > threshold)
                     {
@@ -166,8 +166,12 @@ namespace org.apache.qpid.transport.network.io
                 }
                 log.debug("Receiver thread terminating");
             }
+            catch (IOException e)
+            {
+                // IOException is thrown when the socket is closed according to the docs
+            }
             catch (Exception t)
-            {                
+            {
                 if (ExceptionReading != null)
                 {
                     ExceptionReading(this, new ExceptionArgs(t));
