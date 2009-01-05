@@ -41,7 +41,7 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
     trace(false),
     sinkOptions (SinkOptions::create(argv0_))
 {
-    selectors.push_back("error+");
+    selectors.push_back("notice+");
 
     ostringstream levels;
     levels << LevelTraits::name(Level(0));

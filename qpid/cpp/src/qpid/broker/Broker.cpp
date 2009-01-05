@@ -284,7 +284,7 @@ void Broker::setStore (MessageStore* _store)
 
 void Broker::run() {
     accept();
-
+    QPID_LOG(notice, "Broker running");
     Dispatcher d(poller);
     int numIOThreads = config.workerThreads;
     std::vector<Thread> t(numIOThreads-1);
