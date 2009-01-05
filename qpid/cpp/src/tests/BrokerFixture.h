@@ -23,12 +23,15 @@
  */
 
 #include "SocketProxy.h"
-#include "qpid/sys/Thread.h"
+
 #include "qpid/broker/Broker.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
+#include "qpid/sys/Thread.h"
 #include <boost/noncopyable.hpp>
 
 /**
@@ -42,6 +45,13 @@ struct  BrokerFixture : private boost::noncopyable {
     qpid::sys::Thread brokerThread;
 
     BrokerFixture(Broker::Options opts=Broker::Options()) {
+        // Keep the tests quiet unless logging env. vars have been set by user.
+        if (!::getenv("QPID_LOG_ENABLE") && !::getenv("QPID_TRACE")) {
+            qpid::log::Options logOpts;
+            logOpts.selectors.clear();
+            logOpts.selectors.push_back("error+");
+            qpid::log::Logger::instance().configure(logOpts);
+        }
         opts.port=0;
         // Management doesn't play well with multiple in-process brokers.
         opts.enableMgmt=false;  

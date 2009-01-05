@@ -108,51 +108,61 @@ Daemon::~Daemon() {
 }
 
 uint16_t Daemon::wait(int timeout) {            // parent waits for child.
-    errno = 0;                  
-    struct timeval tv;
-    tv.tv_sec = timeout;
-    tv.tv_usec = 0;
+    try {
+        errno = 0;                  
+        struct timeval tv;
+        tv.tv_sec = timeout;
+        tv.tv_usec = 0;
 
-    /*
-     * Rewritten using low-level IO, for compatibility 
-     * with earlier Boost versions, i.e. 103200.
-     */
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(pipeFds[0], &fds);
-    int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
-    if(n==0) throw Exception("Timed out waiting for daemon");
-    if(n<0) throw ErrnoException("Error waiting for daemon");
-    uint16_t port = 0;
-    /*
-     * Read the child's port number from the pipe.
-     */
-    int desired_read = sizeof(uint16_t);
-    if ( desired_read > ::read(pipeFds[0], & port, desired_read) ) 
-      throw Exception("Cannot read from child process.");
+        /*
+         * Rewritten using low-level IO, for compatibility 
+         * with earlier Boost versions, i.e. 103200.
+         */
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(pipeFds[0], &fds);
+        int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
+        if(n==0) throw Exception("Timed out waiting for daemon");
+        if(n<0) throw ErrnoException("Error waiting for daemon");
+        uint16_t port = 0;
+        /*
+         * Read the child's port number from the pipe.
+         */
+        int desired_read = sizeof(uint16_t);
+        if ( desired_read > ::read(pipeFds[0], & port, desired_read) ) 
+            throw Exception("Cannot read from child process.");
 
-    /*
-     * If the port number is 0, the child has put an error message
-     * on the pipe.  Get it and throw it.
-     */
-     if ( 0 == port ) {
-       // Skip whitespace
-       char c = ' ';
-       while ( isspace(c) ) {
-         if ( 1 > ::read(pipeFds[0], &c, 1) )
-           throw Exception("Child port == 0, and no error message on pipe.");
-       }
+        /*
+         * If the port number is 0, the child has put an error message
+         * on the pipe.  Get it and throw it.
+         */
+        if ( 0 == port ) {
+            // Skip whitespace
+            char c = ' ';
+            while ( isspace(c) ) {
+                if ( 1 > ::read(pipeFds[0], &c, 1) )
+                    throw Exception("Child port == 0, and no error message on pipe.");
+            }
 
-       // Get Message
-       string errmsg;
-       do {
-           errmsg += c;
-       } while (::read(pipeFds[0], &c, 1));
-       throw Exception("Daemon startup failed"+
-                       (errmsg.empty() ? string(".") : ": " + errmsg));
-     }
-
-    return port;
+            // Get Message
+            string errmsg;
+            do {
+                errmsg += c;
+            } while (::read(pipeFds[0], &c, 1));
+            throw Exception("Daemon startup failed"+
+                            (errmsg.empty() ? string(".") : ": " + errmsg));
+        }
+        return port;
+    }
+    catch (const std::exception& e) {
+        // Print directly to cerr. The caller will catch and log the
+        // exception, but in the case of a daemon parent process we
+        // also need to be sure the error goes to stderr. A
+        // dameon's logging configuration normally does not log to
+        // stderr. 
+        std::cerr << e.what() << endl;
+        throw;
+    }
 }
 
 
