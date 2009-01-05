@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client.csproj", "{B911FFD7-754F-4735-A188-218D5065BE79}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "..\demo\Demo.csproj", "{E4C46FBC-7560-406D-BFEF-CA010E584DF4}"
@@ -8,8 +8,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelAddIn", "..\addins\ExcelAddIn\ExcelAddIn.csproj", "{85EFD719-39F6-4471-90FF-9E621430344B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelAddInProducer", "..\addins\ExcelAddInProducer\ExcelAddInProducer.csproj", "{80F00C3B-EB38-4B3B-9F77-68977A30B155}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagePRocessor", "..\addins\MessagePRocessor\MessagePRocessor.csproj", "{244ACF6F-F632-47B0-9DCE-4C9421AE8EF0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "example-direct-producer", "..\examples\direct\example-direct-producer\example-direct-producer.csproj", "{96FCB250-8142-40EE-9BDD-CA839EE21021}"
 EndProject
@@ -30,6 +28,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "example-fanout-Listener", "..\examples\fanout\example-fanout-Listener\example-fanout-Listener.csproj", "{18A0792B-DC3A-4EC5-93D6-DB8A111D8F15}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "perftest", "..\perftest\perftest.csproj", "{7F7E8DE7-FDF2-4A52-A4CE-D3756B05273C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelAddInMessageProcessor", "..\addins\ExcelAddInMessageProcessor\ExcelAddInMessageProcessor.csproj", "{C2AE83A3-D5D1-469D-8611-A4738B9997CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,10 +53,6 @@ Global
 		{80F00C3B-EB38-4B3B-9F77-68977A30B155}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80F00C3B-EB38-4B3B-9F77-68977A30B155}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80F00C3B-EB38-4B3B-9F77-68977A30B155}.Release|Any CPU.Build.0 = Release|Any CPU
-		{244ACF6F-F632-47B0-9DCE-4C9421AE8EF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{244ACF6F-F632-47B0-9DCE-4C9421AE8EF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{244ACF6F-F632-47B0-9DCE-4C9421AE8EF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{244ACF6F-F632-47B0-9DCE-4C9421AE8EF0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{96FCB250-8142-40EE-9BDD-CA839EE21021}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{96FCB250-8142-40EE-9BDD-CA839EE21021}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96FCB250-8142-40EE-9BDD-CA839EE21021}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -97,6 +93,10 @@ Global
 		{7F7E8DE7-FDF2-4A52-A4CE-D3756B05273C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F7E8DE7-FDF2-4A52-A4CE-D3756B05273C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F7E8DE7-FDF2-4A52-A4CE-D3756B05273C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2AE83A3-D5D1-469D-8611-A4738B9997CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2AE83A3-D5D1-469D-8611-A4738B9997CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2AE83A3-D5D1-469D-8611-A4738B9997CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2AE83A3-D5D1-469D-8611-A4738B9997CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
