@@ -291,7 +291,7 @@ QPID_AUTO_TEST_CASE(testOptionsDefault) {
     BOOST_CHECK(sinks.logToStderr);
     BOOST_CHECK(!sinks.logToStdout);
     BOOST_CHECK(sinks.logFile.length() == 0);
-    vector<string> expect=list_of("error+");
+    vector<string> expect=list_of("notice+");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     BOOST_CHECK(opts.time && opts.level);
     BOOST_CHECK(!(opts.source || opts.function || opts.thread));
