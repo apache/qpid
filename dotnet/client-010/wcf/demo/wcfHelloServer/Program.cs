@@ -22,7 +22,7 @@
 using System;
 using System.ServiceModel;
 
-namespace org.apache.qpid.wcf.demo
+namespace org.apache.qpid.wcf.demo.helloServer
 {
     class Program
     {

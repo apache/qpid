@@ -21,7 +21,7 @@
 
 using System;
 
-namespace org.apache.qpid.wcf.demo
+namespace org.apache.qpid.wcf.demo.helloClient
 {
     class Program
     {

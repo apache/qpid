@@ -21,7 +21,7 @@
 
 using System.Runtime.Serialization;
 
-namespace org.apache.qpid.wcf.demo
+namespace org.apache.qpid.wcf.demo.bookingServer
 {
     [DataContract]
     public sealed class Receipt

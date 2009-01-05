@@ -26,7 +26,6 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading;
-using client.client;
 using org.apache.qpid.client;
 using org.apache.qpid.transport;
 using org.apache.qpid.transport.util;
@@ -59,12 +58,12 @@ namespace org.apache.qpid.wcf.model
         }
 
 
-        public override Message Receive(TimeSpan timeout)
+        public override System.ServiceModel.Channels.Message Receive(TimeSpan timeout)
         {
             _session.messageFlow("myDest", MessageCreditUnit.MESSAGE, 1);
             _session.sync();
-            MessageTransfer m = _queue.Dequeue();
-            Message result = null;
+            IMessage m = _queue.Dequeue();
+            System.ServiceModel.Channels.Message result = null;
             if (m != null)
             {              
                 var reader = new BinaryReader(m.Body, Encoding.UTF8);
@@ -97,7 +96,7 @@ namespace org.apache.qpid.wcf.model
             return result;
         }
 
-        public override bool TryReceive(TimeSpan timeout, out Message message)
+        public override bool TryReceive(TimeSpan timeout, out System.ServiceModel.Channels.Message message)
         {            
             message = Receive(timeout);
             return message != null;
@@ -143,7 +142,7 @@ namespace org.apache.qpid.wcf.model
         }
     }
 
-    internal class WCFListener : MessageListener
+    internal class WCFListener : IMessageListener
     {
         private static readonly Logger _log = Logger.get(typeof (WCFListener));
         private readonly BlockingQueue _q;
@@ -153,7 +152,7 @@ namespace org.apache.qpid.wcf.model
             _q = q;
         }
 
-        public void messageTransfer(MessageTransfer m)
+        public void messageTransfer(IMessage m)
         {
             _log.debug("message received by listener");
             _q.Enqueue(m);
@@ -163,9 +162,9 @@ namespace org.apache.qpid.wcf.model
     internal class BlockingQueue
     {
         private int _count;
-        private readonly Queue<MessageTransfer> _queue = new Queue<MessageTransfer>();
+        private readonly Queue<IMessage> _queue = new Queue<IMessage>();
 
-        public MessageTransfer Dequeue(TimeSpan timeout)
+        public IMessage Dequeue(TimeSpan timeout)
         {
             lock (_queue)
             {
@@ -185,7 +184,7 @@ namespace org.apache.qpid.wcf.model
             }
         }
 
-        public MessageTransfer Dequeue()
+        public IMessage Dequeue()
         {
             lock (_queue)
             {               
@@ -202,7 +201,7 @@ namespace org.apache.qpid.wcf.model
             }
         }
 
-        public void Enqueue(MessageTransfer data)
+        public void Enqueue(IMessage data)
         {
             if (data != null)
             {

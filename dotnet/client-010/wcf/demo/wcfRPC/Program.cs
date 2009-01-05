@@ -26,7 +26,7 @@ using System.Threading;
 using org.apache.qpid.wcf.model;
 
 
-namespace org.apache.qpid.wcf.demo
+namespace org.apache.qpid.wcf.demo.rpc
 {
     internal class Program
     {

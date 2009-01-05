@@ -20,7 +20,7 @@
 */
 using System.ServiceModel;
 
-namespace org.apache.qpid.wcf.demo
+namespace org.apache.qpid.wcf.demo.helloServer
 {
     [ServiceContract]
     public interface IHelloContract
