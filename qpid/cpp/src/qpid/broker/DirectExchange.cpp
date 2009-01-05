@@ -33,7 +33,6 @@ namespace
 const std::string qpidFedOp("qpid.fed.op");
 const std::string qpidFedTags("qpid.fed.tags");
 const std::string qpidFedOrigin("qpid.fed.origin");
-const std::string qpidExclusiveBinding("qpid.exclusive-binding");
 
 const std::string fedOpBind("B");
 const std::string fedOpUnbind("U");
@@ -57,25 +56,15 @@ DirectExchange::DirectExchange(const string& _name, bool _durable,
 
 bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
 {
-    string fedOp(fedOpBind);
-    string fedTags;
-    string fedOrigin;
-    bool exclusiveBinding = false;
-    if (args) {
-        fedOp = args->getAsString(qpidFedOp);
-        fedTags = args->getAsString(qpidFedTags);
-        fedOrigin = args->getAsString(qpidFedOrigin);
-        exclusiveBinding = args->get(qpidExclusiveBinding);
-    }
-
+    string fedOp(args ? args->getAsString(qpidFedOp) : fedOpBind);
+    string fedTags(args ? args->getAsString(qpidFedTags) : "");
+    string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     bool propagate = false;
 
     if (args == 0 || fedOp.empty() || fedOp == fedOpBind) {
         Mutex::ScopedLock l(lock);
         Binding::shared_ptr b(new Binding(routingKey, queue, this, FieldTable(), fedOrigin));
         BoundKey& bk = bindings[routingKey];
-        if (exclusiveBinding) bk.queues.clear();
-
         if (bk.queues.add_unless(b, MatchQueue(queue))) {
             propagate = bk.fedBinding.addOrigin(fedOrigin);
             if (mgmtExchange != 0) {
