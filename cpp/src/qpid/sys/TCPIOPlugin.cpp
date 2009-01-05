@@ -70,7 +70,7 @@ static class TCPIOPlugin : public Plugin {
             } else {
                 ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, 
                                                                                  opts.tcpNoDelay));
-                QPID_LOG(info, "Listening on TCP port " << protocol->getPort());
+                QPID_LOG(notice, "Listening on TCP port " << protocol->getPort());
                 broker->registerProtocolFactory("tcp", protocol);
             }
         }
