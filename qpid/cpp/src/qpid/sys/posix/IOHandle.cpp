@@ -31,6 +31,8 @@ int toFd(const IOHandlePrivate* h)
     return h->fd;
 }
 
+NullIOHandle DummyIOHandle;
+
 IOHandle::IOHandle(IOHandlePrivate* h) :
   impl(h)
 {}

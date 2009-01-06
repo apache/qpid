@@ -20,7 +20,10 @@
  */
 
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Dispatcher.h"
+#include "qpid/sys/DispatchHandle.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/sys/Thread.h"
 
 #include <sys/types.h>
@@ -28,6 +31,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 
 #include <iostream>
 #include <boost/bind.hpp>
@@ -74,7 +78,26 @@ void reader(DispatchHandle& h, int fd) {
     h.rewatch();
 }
 
-int main(int argc, char** argv)
+DispatchHandle* rh = 0;
+DispatchHandle* wh = 0;
+
+void rInterrupt(DispatchHandle&) {
+	cerr << "R";
+}
+
+void wInterrupt(DispatchHandle&) {
+	cerr << "W";	
+}
+
+DispatchHandle::Callback rcb = rInterrupt;
+DispatchHandle::Callback wcb = wInterrupt;
+
+void timer_handler(int /*signo*/, siginfo_t* /*info*/, void* /*context*/) {
+	rh->call(rcb);
+	wh->call(wcb);
+}
+
+int main(int /*argc*/, char** /*argv*/)
 {
     // Create poller
     Poller::shared_ptr poller(new Poller);
@@ -82,12 +105,12 @@ int main(int argc, char** argv)
     // Create dispatcher thread
     Dispatcher d(poller);
     Dispatcher d1(poller);
-    //Dispatcher d2(poller);
-    //Dispatcher d3(poller);
+    Dispatcher d2(poller);
+    Dispatcher d3(poller);
     Thread dt(d);
     Thread dt1(d1);
-    //Thread dt2(d2);
-    //Thread dt3(d3);
+    Thread dt2(d2);
+    Thread dt3(d3);
 
     // Setup sender and receiver
     int sv[2];
@@ -106,22 +129,58 @@ int main(int argc, char** argv)
     for (int i = 0; i < 8; i++)
         testString += testString;
 
-    DispatchHandle rh(sv[0], boost::bind(reader, _1, sv[0]), 0);
-    DispatchHandle wh(sv[1], 0, boost::bind(writer, _1, sv[1], testString));    
+    PosixIOHandle f0(sv[0]);
+    PosixIOHandle f1(sv[1]);
 
-    rh.watch(poller);
-    wh.watch(poller);
+    rh = new DispatchHandle(f0, boost::bind(reader, _1, sv[0]), 0, 0);
+    wh = new DispatchHandle(f1, 0, boost::bind(writer, _1, sv[1], testString), 0);    
+
+    rh->startWatch(poller);
+    wh->startWatch(poller);
+
+    // Set up a regular itimer interupt
+    
+    // Ignore signal in this thread
+    ::sigset_t sm;
+    ::sigemptyset(&sm);
+    ::sigaddset(&sm, SIGRTMIN);
+    ::pthread_sigmask(SIG_BLOCK, &sm, 0);
+    
+    // Signal handling
+    struct ::sigaction sa;
+    sa.sa_sigaction = timer_handler;
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    ::sigemptyset(&sa.sa_mask);
+    rc = ::sigaction(SIGRTMIN, &sa,0);
+    assert(rc == 0);
+    
+    ::sigevent se;
+    se.sigev_notify = SIGEV_SIGNAL;
+    se.sigev_signo = SIGRTMIN;
+    se.sigev_value.sival_ptr = 0;
+    timer_t timer;
+    rc = ::timer_create(CLOCK_REALTIME, &se, &timer);
+    assert(rc == 0);
+    
+    itimerspec ts = {
+    /*.it_value = */ {2, 0},  // s, ns
+    /*.it_interval = */ {2, 0}}; // s, ns
+    
+    rc = ::timer_settime(timer, 0, &ts, 0);
+    assert(rc == 0);
 
     // wait 2 minutes then shutdown
-    sleep(60);
-    
+    ::sleep(60);
+
+    rc = ::timer_delete(timer);
+    assert(rc == 0);
     poller->shutdown();
     dt.join();
     dt1.join();
-    //dt2.join();
-    //dt3.join();
+    dt2.join();
+    dt3.join();
 
-    cout << "Wrote: " << writtenBytes << "\n";
+    cout << "\nWrote: " << writtenBytes << "\n";
     cout << "Read: " << readBytes << "\n";
     
     return 0;

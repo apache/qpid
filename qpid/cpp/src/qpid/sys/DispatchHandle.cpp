@@ -270,20 +270,28 @@ void DispatchHandle::stopWatch() {
     case IDLE:
     case DELAYED_IDLE:
     case DELAYED_DELETE:
-    	return;
+        return;
     case DELAYED_R:
     case DELAYED_W:
     case DELAYED_RW:
     case DELAYED_INACTIVE:
-    	state = DELAYED_IDLE;
-    	break;
+        state = DELAYED_IDLE;
+        break;
     default:
-	    state = IDLE;
-	    break;
+        state = IDLE;
+        break;
     }
     assert(poller);
     poller->delFd(*this);
     poller.reset();
+}
+
+void DispatchHandle::call(Callback iCb) {
+    assert(iCb);
+    ScopedLock<Mutex> lock(stateLock);
+    interruptedCallbacks.push(iCb);
+    
+    (void) poller->interrupt(*this);
 }
 
 // The slightly strange switch structure
@@ -302,9 +310,9 @@ void DispatchHandle::doDelete() {
         state = DELAYED_DELETE;
         return;
     case IDLE:
-    	break;
+        break;
     default:
-    	// Can only get out of stopWatch() in DELAYED_IDLE/DELAYED_DELETE/IDLE states
+        // Can only get out of stopWatch() in DELAYED_IDLE/DELAYED_DELETE/IDLE states
         assert(false);
     }
     }
@@ -368,14 +376,29 @@ void DispatchHandle::processEvent(Poller::EventType type) {
             disconnectedCallback(*this);
         }
         break;
+    case Poller::INTERRUPTED:
+        {
+        ScopedLock<Mutex> lock(stateLock);
+        assert(interruptedCallbacks.size() > 0);
+        // We'll actually do the interrupt below
+        }
+        break;
     default:
         assert(false);
     }
 
-    // If any of the callbacks re-enabled reading/writing then actually
-    // do it now
     {
     ScopedLock<Mutex> lock(stateLock);
+    // If we've got a pending interrupt do it now
+    while (interruptedCallbacks.size() > 0) {
+        Callback cb = interruptedCallbacks.front();
+        assert(cb);
+        cb(*this);
+        interruptedCallbacks.pop();
+    }
+
+    // If any of the callbacks re-enabled reading/writing then actually
+    // do it now
     switch (state) {
     case DELAYED_R:
         poller->modFd(*this, Poller::INPUT);
