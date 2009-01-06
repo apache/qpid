@@ -18,38 +18,31 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
+#ifndef _SecureConnectionFactory_
+#define _SecureConnectionFactory_
 
-#include "qpid/log/Logger.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/Version.h"
+#include "qpid/sys/ConnectionCodec.h"
 
 namespace qpid {
-namespace client {
+namespace broker {
+class Broker;
 
-ConnectionSettings::ConnectionSettings() :
-    protocol("tcp"),
-    host("localhost"), 
-    port(TcpAddress::DEFAULT_PORT),
-    locale("en_US"),
-    heartbeat(0),
-    maxChannels(32767),
-    maxFrameSize(65535),
-    bounds(2),
-    tcpNoDelay(false),
-    service(qpid::saslName),
-    minSsf(0),
-    maxSsf(256)
-{}
-
-ConnectionSettings::~ConnectionSettings() {}
-
-void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
+class SecureConnectionFactory : public sys::ConnectionCodec::Factory
 {
-    if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
-        QPID_LOG(info, "Set TCP_NODELAY");
-    }
-}
+  public:
+    SecureConnectionFactory(Broker& b);            
 
-}} // namespace qpid::client
+    sys::ConnectionCodec*
+    create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id);
+
+    sys::ConnectionCodec*
+    create(sys::OutputControl&, const std::string& id);
+
+  private:
+    Broker& broker;
+};
+
+}}
+
+
+#endif

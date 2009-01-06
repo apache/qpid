@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "Codec.h"
 #include "qpid/framing/ProtocolVersion.h"
 
 namespace qpid {
@@ -34,22 +35,9 @@ class OutputControl;
  * Interface of coder/decoder for a connection of a specific protocol
  * version.
  */
-class ConnectionCodec {
+class ConnectionCodec : public Codec {
   public:
     virtual ~ConnectionCodec() {}
-
-    /** Decode from buffer, return number of bytes decoded.
-     * @return may be less than size if there was incomplete
-     * data at the end of the buffer.
-     */
-    virtual size_t decode(const char* buffer, size_t size) = 0;
-
-
-    /** Encode into buffer, return number of bytes encoded */
-    virtual size_t encode(const char* buffer, size_t size) = 0;
-
-    /** Return true if we have data to encode */
-    virtual bool canEncode() = 0;
 
     /** Network connection was closed from other end. */
     virtual void closed() = 0;

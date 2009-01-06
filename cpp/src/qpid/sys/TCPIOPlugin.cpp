@@ -65,14 +65,10 @@ static class TCPIOPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
-            if (opts.requireEncrypted) {
-                QPID_LOG(info, "Not accepting unencrypted connections on TCP");
-            } else {
-                ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, 
-                                                                                 opts.tcpNoDelay));
-                QPID_LOG(notice, "Listening on TCP port " << protocol->getPort());
-                broker->registerProtocolFactory("tcp", protocol);
-            }
+            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, 
+                                                                             opts.tcpNoDelay));
+            QPID_LOG(notice, "Listening on TCP port " << protocol->getPort());
+            broker->registerProtocolFactory("tcp", protocol);
         }
     }
 } tcpPlugin;

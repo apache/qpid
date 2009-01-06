@@ -24,6 +24,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/Exception.h"
+#include "qpid/sys/SecurityLayer.h"
 #include <memory>
 
 namespace qpid {
@@ -40,6 +41,7 @@ public:
     virtual void step(const std::string& response) = 0;
     virtual void getUid(std::string&) {}
     virtual void getError(std::string&) {}
+    virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;
 
     static bool available(void);
 

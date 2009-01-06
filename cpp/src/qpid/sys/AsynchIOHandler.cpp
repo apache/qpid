@@ -184,16 +184,21 @@ void AsynchIOHandler::idle(AsynchIO&){
         return;
     }
     if (codec == 0) return;
-    if (codec->canEncode()) {
-        // Try and get a queued buffer if not then construct new one
-        AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
-        if (!buff) buff = new Buff;
-        size_t encoded=codec->encode(buff->bytes, buff->byteCount);
-        buff->dataCount = encoded;
-        aio->queueWrite(buff);
-    }
-    if (codec->isClosed())
+    try {
+        if (codec->canEncode()) {
+            // Try and get a queued buffer if not then construct new one
+            AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
+            if (!buff) buff = new Buff;
+            size_t encoded=codec->encode(buff->bytes, buff->byteCount);
+            buff->dataCount = encoded;
+            aio->queueWrite(buff);
+        }
+        if (codec->isClosed())
+            aio->queueWriteClose();       
+    } catch (const std::exception& e) {
+        QPID_LOG(error, e.what());
         aio->queueWriteClose();
+    }
 }
 
 }} // namespace qpid::sys

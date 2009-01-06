@@ -40,6 +40,11 @@
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
+
+namespace sys {
+class SecurityLayer;
+}
+
 namespace client {
 
 struct ConnectionSettings;
@@ -65,6 +70,9 @@ class Connector : public framing::OutputHandler
     virtual sys::ShutdownHandler* getShutdownHandler() const = 0;
     virtual framing::OutputHandler* getOutputHandler() = 0;
     virtual const std::string& getIdentifier() const = 0;
+
+    virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>) {}
+
 };
 
 }}

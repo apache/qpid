@@ -1,3 +1,6 @@
+#ifndef QPID_SYS_CODEC_H
+#define QPID_SYS_CODEC_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,38 +21,32 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
-
-#include "qpid/log/Logger.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/Version.h"
+#include <cstddef>
 
 namespace qpid {
-namespace client {
+namespace sys {
 
-ConnectionSettings::ConnectionSettings() :
-    protocol("tcp"),
-    host("localhost"), 
-    port(TcpAddress::DEFAULT_PORT),
-    locale("en_US"),
-    heartbeat(0),
-    maxChannels(32767),
-    maxFrameSize(65535),
-    bounds(2),
-    tcpNoDelay(false),
-    service(qpid::saslName),
-    minSsf(0),
-    maxSsf(256)
-{}
-
-ConnectionSettings::~ConnectionSettings() {}
-
-void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
+/**
+ * Generic codec interface
+ */
+class Codec
 {
-    if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
-        QPID_LOG(info, "Set TCP_NODELAY");
-    }
-}
+  public:
+    virtual ~Codec() {}
 
-}} // namespace qpid::client
+    /** Decode from buffer, return number of bytes decoded.
+     * @return may be less than size if there was incomplete
+     * data at the end of the buffer.
+     */
+    virtual size_t decode(const char* buffer, size_t size) = 0;
+
+
+    /** Encode into buffer, return number of bytes encoded */
+    virtual size_t encode(const char* buffer, size_t size) = 0;
+
+    /** Return true if we have data to encode */
+    virtual bool canEncode() = 0;
+};
+}} // namespace qpid::sys
+
+#endif  /*!QPID_SYS_CODEC_H*/

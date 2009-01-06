@@ -353,10 +353,13 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.cpp
 
-libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 if HAVE_SASL
-libqpidbroker_la_LIBADD += -lsasl2
+libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
+libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.cpp
+libqpidcommon_la_LIBADD += -lsasl2
 endif
+
+libqpidbroker_la_LIBADD = libqpidcommon.la -luuid
 
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
@@ -403,6 +406,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
   qpid/broker/SaslAuthenticator.cpp \
+  qpid/broker/SecureConnection.cpp \
+  qpid/broker/SecureConnectionFactory.cpp \
   qpid/broker/SemanticState.h \
   qpid/broker/SemanticState.cpp \
   qpid/broker/SessionAdapter.cpp \
@@ -425,6 +430,7 @@ libqpidbroker_la_SOURCES = \
   qpid/management/ManagementBroker.cpp \
   qpid/management/ManagementExchange.cpp \
   qpid/sys/TCPIOPlugin.cpp
+
 
 libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
 
@@ -452,6 +458,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/MessageReplayTracker.cpp		\
   qpid/client/QueueOptions.cpp			\
   qpid/client/Results.cpp			\
+  qpid/client/SaslFactory.cpp			\
   qpid/client/SessionBase_0_10.cpp		\
   qpid/client/SessionBase_0_10.h		\
   qpid/client/SessionBase_0_10Access.h		\
@@ -552,6 +559,8 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
   qpid/broker/SaslAuthenticator.h \
+  qpid/broker/SecureConnection.h \
+  qpid/broker/SecureConnectionFactory.h \
   qpid/broker/SessionAdapter.h \
   qpid/broker/SessionManager.h \
   qpid/broker/System.h \
@@ -591,6 +600,8 @@ nobase_include_HEADERS = \
   qpid/client/MessageListener.h \
   qpid/client/MessageReplayTracker.h \
   qpid/client/Results.h \
+  qpid/client/Sasl.h \
+  qpid/client/SaslFactory.h \
   qpid/client/SessionBase_0_10.h \
   qpid/client/Session.h \
   qpid/client/SessionImpl.h \
@@ -668,6 +679,7 @@ nobase_include_HEADERS = \
   qpid/sys/AtomicValue_gcc.h \
   qpid/sys/AtomicValue_mutex.h \
   qpid/sys/BlockingQueue.h \
+  qpid/sys/Codec.h \
   qpid/sys/CopyOnWriteArray.h \
   qpid/sys/Condition.h \
   qpid/sys/ConnectionCodec.h \
@@ -692,6 +704,7 @@ nobase_include_HEADERS = \
   qpid/sys/Runnable.h \
   qpid/sys/Fork.h \
   qpid/sys/ScopedIncrement.h \
+  qpid/sys/SecurityLayer.h \
   qpid/sys/Semaphore.h \
   qpid/sys/SystemInfo.h \
   qpid/sys/Shlib.h \

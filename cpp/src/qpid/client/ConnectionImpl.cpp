@@ -110,6 +110,14 @@ void ConnectionImpl::open()
     connector->connect(host, port);
     connector->init();
     handler.waitForOpen();
+    //enable security layer if one has been negotiated:
+    std::auto_ptr<SecurityLayer> securityLayer = handler.getSecurityLayer();
+    if (securityLayer.get()) {
+        QPID_LOG(debug, "Activating security layer");
+        connector->activateSecurityLayer(securityLayer);
+    } else {
+        QPID_LOG(debug, "No security layer in place");
+    }
 
     failover.reset(new FailoverListener(shared_from_this(), handler.knownBrokersUrls));
 }
