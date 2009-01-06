@@ -267,5 +267,10 @@ Manageable::status_t Connection::ManagementMethod(uint32_t methodId, Args&, stri
     return status;
 }
 
+void Connection::setSecureConnection(SecureConnection* s)
+{
+    adapter.setSecureConnection(s);
+}
+
 }}
 

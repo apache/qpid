@@ -21,16 +21,18 @@
 
 #include "ConnectionHandler.h"
 
-#include "qpid/log/Statement.h"
+#include "SaslFactory.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Helpers.h"
+#include "qpid/log/Statement.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::framing::connection;
+using qpid::sys::SecurityLayer;
 
 namespace {
 const std::string OK("OK");
@@ -146,18 +148,50 @@ void ConnectionHandler::fail(const std::string& message)
     setState(FAILED);
 }
 
-void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& /*mechanisms*/, const Array& /*locales*/)
+namespace {
+std::string SPACE(" ");
+}
+
+void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& mechanisms, const Array& /*locales*/)
 {
     checkState(NOT_STARTED, INVALID_STATE_START);
     setState(NEGOTIATING);
-    //TODO: verify that desired mechanism and locale are supported
-    string response = ((char)0) + username + ((char)0) + password;
-    proxy.startOk(properties, mechanism, response, locale);
+    sasl = SaslFactory::getInstance().create(*this);
+
+    std::string mechlist;
+    bool chosenMechanismSupported = mechanism.empty();
+    for (Array::const_iterator i = mechanisms.begin(); i != mechanisms.end(); ++i) {
+        if (!mechanism.empty() && mechanism == (*i)->get<std::string>()) {
+            chosenMechanismSupported = true;
+            mechlist = (*i)->get<std::string>() + SPACE + mechlist;
+        } else {
+            if (i != mechanisms.begin()) mechlist += SPACE;
+            mechlist += (*i)->get<std::string>();
+        }
+    }        
+
+    if (!chosenMechanismSupported) {
+        fail("Selected mechanism not supported: " + mechanism);
+    }
+
+    if (sasl.get()) {
+        string response = sasl->start(mechanism.empty() ? mechlist : mechanism);
+        proxy.startOk(properties, sasl->getMechanism(), response, locale);
+    } else {
+        //TODO: verify that desired mechanism and locale are supported
+        string response = ((char)0) + username + ((char)0) + password;
+        proxy.startOk(properties, mechanism, response, locale);
+    }
 }
 
-void ConnectionHandler::secure(const std::string& /*challenge*/)
+void ConnectionHandler::secure(const std::string& challenge)
 {
-    throw NotImplementedException("Challenge-response cycle not yet implemented in client");
+    if (sasl.get()) {
+        string response = sasl->step(challenge);
+        proxy.secureOk(response);
+    } else {
+        throw NotImplementedException("Challenge-response cycle not yet implemented in client");
+    }
 }
 
 void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSizeProposed, 
@@ -179,6 +213,9 @@ void ConnectionHandler::openOk ( const Array& knownBrokers )
     framing::Array::ValueVector::const_iterator i;
     for ( i = knownBrokers.begin(); i != knownBrokers.end(); ++i )
         knownBrokersUrls.push_back(Url((*i)->get<std::string>()));
+    if (sasl.get()) {
+        securityLayer = sasl->getSecurityLayer(maxFrameSize);
+    }
     setState(OPEN);
     QPID_LOG(debug, "Known-brokers for connection: " << log::formatList(knownBrokersUrls));
 }
@@ -224,3 +261,8 @@ bool ConnectionHandler::isClosed() const
 }
 
 bool ConnectionHandler::isClosing() const { return getState() == CLOSING; }
+
+std::auto_ptr<qpid::sys::SecurityLayer> ConnectionHandler::getSecurityLayer()
+{
+    return securityLayer;
+}

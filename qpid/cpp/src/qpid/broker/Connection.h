@@ -57,6 +57,7 @@ namespace qpid {
 namespace broker {
 
 class LinkRegistry;
+class SecureConnection;
 
 class Connection : public sys::ConnectionInputHandler, 
                    public ConnectionState,
@@ -105,7 +106,7 @@ class Connection : public sys::ConnectionInputHandler,
     }
 
     void sendClose();
-    
+    void setSecureConnection(SecureConnection* secured);
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;

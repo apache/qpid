@@ -201,3 +201,10 @@
    fun:_ZN5boost6detail3tss3setEPv
 }
 
+{
+   Shows up on RHEL5: believed benign
+   Memcheck:Cond
+   fun:__strcpy_chk
+   fun:_sasl_load_plugins
+   fun:sasl_client_init
+}
