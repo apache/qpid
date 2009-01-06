@@ -64,7 +64,9 @@ public class SessionDelegate
 
     @Override public void sessionTimeout(Session ssn, SessionTimeout t)
     {
-        ssn.setExpiry(t.getTimeout());
+        // XXX: we ignore this right now, we should uncomment this
+        // when full session resume is supported:
+        // ssn.setExpiry(t.getTimeout());
     }
 
     @Override public void sessionCompleted(Session ssn, SessionCompleted cmp)
