@@ -55,16 +55,19 @@ struct Args : public qpid::TestOptions {
     bool csv;
     bool durable;
     string base;
+    bool singleConnect;
 
     Args() : size(256), count(1000), rate(0), reportFrequency(1000),
     	     timeLimit(0), queues(1), 
              prefetch(100), ack(0),
-             durable(false), base("latency-test")
+             durable(false), base("latency-test"), singleConnect(false)
+
     {
         addOptions()            
 
             ("size", optValue(size, "N"), "message size")
             ("queues", optValue(queues, "N"), "number of queues")
+            ("single-connection", optValue(singleConnect, "yes|no"), "Use one connection for multiple sessions.")
             ("count", optValue(count, "N"), "number of messages to send")
             ("rate", optValue(rate, "N"), "target message rate (causes count to be ignored)")
             ("sync", optValue(sync), "send messages synchronously")
@@ -85,6 +88,7 @@ const std::string chars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 Args opts;
 double c_min, c_avg, c_max;
+Connection globalConnection;
 
 uint64_t current_time()
 {
@@ -109,14 +113,15 @@ struct Stats
 class Client : public Runnable
 {
 protected:
-    Connection connection;
+    Connection* connection;
+    Connection localConnection;
     AsyncSession session;
     Thread thread;
     string queue;
 
 public:
     Client(const string& q);
-    virtual ~Client() {}
+    virtual ~Client();
 
     void start();
     void join();
@@ -171,8 +176,14 @@ public:
 
 Client::Client(const string& q) : queue(q)
 {
-    opts.open(connection);
-    session = connection.newSession();       
+    if (opts.singleConnect){
+        connection = &globalConnection;
+        if (!globalConnection.isOpen()) opts.open(globalConnection);
+    }else{
+        connection = &localConnection;
+        opts.open(localConnection);
+    }
+    session = connection->newSession();       
 }
 
 void Client::start()
@@ -189,8 +200,16 @@ void Client::run()
 {
     try{
         test();
+    } catch(const std::exception& e) {
+        std::cout << "Error in receiver: " << e.what() << std::endl;
+    }
+}
+
+Client::~Client()
+{
+    try{
         session.close();
-        connection.close();
+        connection->close();
     } catch(const std::exception& e) {
         std::cout << "Error in receiver: " << e.what() << std::endl;
     }
