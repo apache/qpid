@@ -187,6 +187,13 @@ check_PROGRAMS+=sender
 sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 sender_LDADD=$(lib_client) 
 
+check_PROGRAMS+=PollerTest
+PollerTest_SOURCES=PollerTest.cpp
+PollerTest_LDADD=$(lib_common)
+
+check_PROGRAMS+=DispatcherTest
+DispatcherTest_SOURCES=DispatcherTest.cpp
+DispatcherTest_LDADD=$(lib_common)
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 

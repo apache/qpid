@@ -266,6 +266,7 @@ public:
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
     virtual void startReading();
+    virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
 
 private:
@@ -275,6 +276,7 @@ private:
     void readable(DispatchHandle& handle);
     void writeable(DispatchHandle& handle);
     void disconnected(DispatchHandle& handle);
+    void requestedCall(RequestCallback);
     void close(DispatchHandle& handle);
 
 private:
@@ -384,6 +386,18 @@ bool AsynchIO::writeQueueEmpty() {
 
 void AsynchIO::startReading() {
     DispatchHandle::rewatchRead();
+}
+
+void AsynchIO::requestCallback(RequestCallback callback) {
+    // TODO creating a function object every time isn't all that
+    // efficient - if this becomes heavily used do something better (what?)
+    assert(callback);
+    DispatchHandle::call(boost::bind(&AsynchIO::requestedCall, this, callback));
+}
+
+void AsynchIO::requestedCall(RequestCallback callback) {
+    assert(callback);
+    callback(*this);
 }
 
 /** Return a queued buffer if there are enough

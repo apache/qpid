@@ -23,6 +23,7 @@
  */
 
 #include "Time.h"
+#include "Runnable.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -37,7 +38,7 @@ namespace sys {
  */
 class PollerHandle;
 class PollerPrivate;
-class Poller {
+class Poller : public Runnable {
     PollerPrivate* const impl;
 
 public:
@@ -57,7 +58,8 @@ public:
         READ_WRITABLE,
         DISCONNECTED,
         SHUTDOWN,
-        TIMEOUT
+        TIMEOUT,
+        INTERRUPTED
     };
 
     struct Event {
@@ -76,6 +78,20 @@ public:
     ~Poller();
     /** Note: this function is async-signal safe */
     void shutdown();
+    
+    // Interrupt waiting for a specific poller handle
+    // returns true if we could interrupt the handle
+    // - in this case on return the handle is no longer being monitored,
+    //   but we will receive an event from some invocation of poller::wait
+    //   with the handle and the INTERRUPTED event type
+    // if it returns false then the handle is not being monitored by the poller
+    // - This can either be because it has just received an event which has been
+    //   reported and has not been reenabled since. Or because it was removed
+    //   from the monitoring set
+    bool interrupt(PollerHandle& handle);
+    
+    // Poller run loop
+    void run();
 
     void addFd(PollerHandle& handle, Direction dir);
     void delFd(PollerHandle& handle);

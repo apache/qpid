@@ -34,26 +34,7 @@ Dispatcher::~Dispatcher() {
 }
     
 void Dispatcher::run() {
-    do {
-        Poller::Event event = poller->wait();
-
-        // If can read/write then dispatch appropriate callbacks        
-        if (event.handle) {
-            event.process();
-        } else {
-            // Handle shutdown
-            switch (event.type) {
-            case Poller::SHUTDOWN:
-                goto dispatcher_shutdown;
-            default:
-                // This should be impossible
-                assert(false);
-            }
-        }
-    } while (true);
-    
-dispatcher_shutdown:
-    ;
+	poller->run();
 }
 
 }}

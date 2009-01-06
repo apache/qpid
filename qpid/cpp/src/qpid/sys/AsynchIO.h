@@ -114,6 +114,7 @@ public:
     typedef boost::function2<void, AsynchIO&, const Socket&> ClosedCallback;
     typedef boost::function1<void, AsynchIO&> BuffersEmptyCallback;
     typedef boost::function1<void, AsynchIO&> IdleCallback;
+    typedef boost::function1<void, AsynchIO&> RequestCallback;
 
     // Call create() to allocate a new AsynchIO object with the specified
     // callbacks. This method is implemented in platform-specific code to
@@ -138,6 +139,7 @@ public:
     virtual void queueWriteClose() = 0;
     virtual bool writeQueueEmpty() = 0;
     virtual void startReading() = 0;
+    virtual void requestCallback(RequestCallback) = 0;
     virtual BufferBase* getQueuedBuffer() = 0;
 
 protected:

@@ -27,6 +27,7 @@
 
 #include <boost/function.hpp>
 
+#include <queue>
 
 namespace qpid {
 namespace sys {
@@ -53,11 +54,13 @@ class DispatchHandle : public PollerHandle {
     friend class DispatchHandleRef;
 public:
     typedef boost::function1<void, DispatchHandle&> Callback;
+    typedef std::queue<Callback> CallbackQueue;
 
 private:
     Callback readableCallback;
     Callback writableCallback;
     Callback disconnectedCallback;
+    CallbackQueue interruptedCallbacks;
     Poller::shared_ptr poller;
     Mutex stateLock;
     enum {
@@ -92,12 +95,12 @@ public:
     /** Add this DispatchHandle to the poller to be watched. */
     void startWatch(Poller::shared_ptr poller);
 
-    /** Resume watchingn for all non-0 callbacks. */
+    /** Resume watching for all non-0 callbacks. */
     void rewatch();
-    /** Resume watchingn for read only. */
+    /** Resume watching for read only. */
     void rewatchRead();
 
-    /** Resume watchingn for write only. */
+    /** Resume watching for write only. */
     void rewatchWrite();
 
     /** Stop watching temporarily. The DispatchHandle remains
@@ -112,6 +115,11 @@ public:
     /** Stop watching permanently. Disassociates from the poller. */
     void stopWatch();
     
+    /** Interrupt watching this handle and make a serialised callback that respects the
+     * same exclusivity guarantees as the other callbacks
+     */
+    void call(Callback iCb);
+
 protected:
     /** Override to get extra processing done when the DispatchHandle is deleted. */
     void doDelete();
@@ -139,6 +147,7 @@ public:
     void unwatchRead() { ref->unwatchRead(); }
     void unwatchWrite() { ref->unwatchWrite(); }
     void stopWatch() { ref->stopWatch(); }
+    void call(Callback iCb) { ref->call(iCb); }
 };
 
 }}
