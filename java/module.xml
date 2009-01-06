@@ -241,6 +241,9 @@
       <sysproperty key="test.excludes" value="${test.excludes}"/>
       <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
       <sysproperty key="test.output" value="${module.results}"/>
+      <syspropertyset>
+        <propertyref prefix="profile"/>
+      </syspropertyset>
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
       <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
       <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
