@@ -22,6 +22,7 @@
 #include <algorithm>
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include <string.h>
 
 namespace qpid {
 namespace sys {
