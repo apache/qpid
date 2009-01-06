@@ -60,6 +60,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     private static int usedBrokers = 0;
     private CountDownLatch failoverComplete;
     private static final long DEFAULT_FAILOVER_TIME = 10000L;
+    private boolean CLUSTERED = Boolean.getBoolean("profile.clustered");
 
     @Override
     protected void setUp() throws Exception
@@ -158,9 +159,12 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 
         causeFailure(DEFAULT_FAILOVER_TIME);
 
-        msg = consumer.receive(500);
+        if (!CLUSTERED)
+        {
+            msg = consumer.receive(500);
+            assertNull("Should not have received message from new broker!", msg);
+        }
 
-        assertNull("Should not have received message from new broker!", msg);
         // Check that messages still sent / received
         sendMessages(totalMessages, transacted);
         consumeMessages(totalMessages, transacted);

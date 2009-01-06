@@ -47,6 +47,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     protected Session _clientSession;
     protected Queue _queue;
     protected static final String MESSAGE_ID_PROPERTY = "MessageIDProperty";
+    protected boolean CLUSTERED = Boolean.getBoolean("profile.clustered");
 
     public void setUp() throws Exception
     {
@@ -452,7 +453,10 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
 
         sendMessages("connection1", messages);
-        sendMessages("connection2", messages);
+        if (!CLUSTERED)
+        {
+            sendMessages("connection2", messages);
+        }
 
 
         checkQueueDepth(messages);
@@ -517,7 +521,10 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         int messages = 50;
 
         sendMessages("connection1", messages);
-        sendMessages("connection2", messages);
+        if (!CLUSTERED)
+        {
+            sendMessages("connection2", messages);
+        }
 
         failBroker();
 
