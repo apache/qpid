@@ -40,14 +40,19 @@ OutputInterceptor::OutputInterceptor(
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
     parent.getCluster().checkQuorum();
-    next->send(f);
+    {
+        sys::Mutex::ScopedLock l(lock);
+        next->send(f);
+    }
     if (!parent.isCatchUp())
         sent += f.encodedSize();
 }
 
 void OutputInterceptor::activateOutput() {
-    if (parent.isCatchUp())
+    if (parent.isCatchUp()) {
+        sys::Mutex::ScopedLock l(lock);
         next->activateOutput();
+    }
     else {
         QPID_LOG(trace,  parent << " activateOutput - sending doOutput");
         moreOutput = true;
@@ -55,7 +60,10 @@ void OutputInterceptor::activateOutput() {
     }
 }
 
-void OutputInterceptor::giveReadCredit(int32_t credit) { next->giveReadCredit(credit); }
+void OutputInterceptor::giveReadCredit(int32_t credit) {
+    sys::Mutex::ScopedLock l(lock);
+    next->giveReadCredit(credit);
+}
 
 // Called in write thread when the IO layer has no more data to write.
 // We do nothing in the write thread, we run doOutput only on delivery
@@ -107,14 +115,17 @@ void OutputInterceptor::sendDoOutput() {
 }
 
 void OutputInterceptor::setOutputHandler(sys::ConnectionOutputHandler& h) {
+    sys::Mutex::ScopedLock l(lock);
     next = &h;
 }
 
 void OutputInterceptor::close() {
+    sys::Mutex::ScopedLock l(lock);
     next->close();
 }
 
 size_t OutputInterceptor::getBuffered() const {
+    sys::Mutex::ScopedLock l(lock);
     return next->getBuffered();
 }
 
