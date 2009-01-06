@@ -22,17 +22,20 @@
 
 #include "ConnectionHandler.h"
 #include "Connection.h"
+#include "SecureConnection.h"
+#include "qpid/Url.h"
 #include "qpid/framing/ClientInvoker.h"
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
-#include "qpid/Url.h"
+#include "qpid/sys/SecurityLayer.h"
 #include "AclModule.h"
 #include "qmf/org/apache/qpid/broker/EventClientConnectFail.h"
 
 using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
+using qpid::sys::SecurityLayer;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace
@@ -70,11 +73,16 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     }
 }
 
+void ConnectionHandler::setSecureConnection(SecureConnection* secured)
+{
+    handler->secured = secured;
+}
+
 ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  : handler(new Handler(connection, isClient)) {}
 
 ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
     client(c.getOutput()), server(c.getOutput()),
-    connection(c), serverMode(!isClient), acl(0)
+    connection(c), serverMode(!isClient), acl(0), secured(0)
 {
     if (serverMode) {
 
@@ -160,6 +168,12 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
     for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i) 
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
     client.openOk(array);
+
+    //install security layer if one has been negotiated:
+    if (secured) {
+        std::auto_ptr<SecurityLayer> sl = authenticator->getSecurityLayer(connection.getFrameMax());
+        if (sl.get()) secured->activateSecurityLayer(sl);
+    }
 }
 
         

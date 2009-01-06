@@ -1,3 +1,6 @@
+#ifndef QPID_CLIENT_SASLFACTORY_H
+#define QPID_CLIENT_SASLFACTORY_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,38 +21,28 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
-
-#include "qpid/log/Logger.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/Version.h"
+#include "Sasl.h"
+#include "qpid/sys/Mutex.h"
+#include <memory>
 
 namespace qpid {
 namespace client {
 
-ConnectionSettings::ConnectionSettings() :
-    protocol("tcp"),
-    host("localhost"), 
-    port(TcpAddress::DEFAULT_PORT),
-    locale("en_US"),
-    heartbeat(0),
-    maxChannels(32767),
-    maxFrameSize(65535),
-    bounds(2),
-    tcpNoDelay(false),
-    service(qpid::saslName),
-    minSsf(0),
-    maxSsf(256)
-{}
-
-ConnectionSettings::~ConnectionSettings() {}
-
-void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
+/**
+ * Factory for instances of the Sasl interface through which Sasl
+ * support is provided to a ConnectionHandler.
+ */
+class SaslFactory
 {
-    if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
-        QPID_LOG(info, "Set TCP_NODELAY");
-    }
-}
-
+  public:
+    std::auto_ptr<Sasl> create(const ConnectionSettings&);
+    static SaslFactory& getInstance();
+    ~SaslFactory();
+  private:
+    SaslFactory();
+    static qpid::sys::Mutex lock;
+    static std::auto_ptr<SaslFactory> instance;
+};
 }} // namespace qpid::client
+
+#endif  /*!QPID_CLIENT_SASLFACTORY_H*/

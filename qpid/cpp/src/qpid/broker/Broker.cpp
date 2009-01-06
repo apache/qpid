@@ -27,6 +27,7 @@
 #include "NullMessageStore.h"
 #include "RecoveryManagerImpl.h"
 #include "SaslAuthenticator.h"
+#include "SecureConnectionFactory.h"
 #include "TopicExchange.h"
 #include "Link.h"
 
@@ -135,7 +136,7 @@ Broker::Broker(const Broker::Options& conf) :
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
     links(this),
-    factory(new ConnectionFactory(*this)),
+    factory(new SecureConnectionFactory(*this)),
     dtxManager(timer),
     sessionManager(
         qpid::SessionState::Configuration(

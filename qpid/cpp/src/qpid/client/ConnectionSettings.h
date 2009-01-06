@@ -71,7 +71,8 @@ struct ConnectionSettings {
     std::string virtualhost;
 
     /**
-     * The username to use when authenticating the connection.
+     * The username to use when authenticating the connection. If not
+     * specified the current users login is used if available.
      */
     std::string username;
     /**
@@ -111,6 +112,20 @@ struct ConnectionSettings {
      * If true, TCP_NODELAY will be set for the connection.
      */
     bool tcpNoDelay;
+    /**
+     * SASL service name
+     */
+    std::string service;
+    /**
+     * Minimum acceptable strength of any SASL negotiated security
+     * layer. 0 means no security layer required.
+     */
+    uint minSsf;
+    /**
+     * Maximum acceptable strength of any SASL negotiated security
+     * layer. 0 means no security layer allowed.
+     */
+    uint maxSsf;
 };
 
 }} // namespace qpid::client

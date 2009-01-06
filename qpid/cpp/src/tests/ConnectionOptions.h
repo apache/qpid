@@ -47,7 +47,10 @@ struct  ConnectionOptions : public qpid::Options,
             ("max-frame-size", optValue(maxFrameSize, "N"), "the maximum frame size to request.")
             ("bounds-multiplier", optValue(bounds, "N"), 
              "bound size of write queue (as a multiple of the max frame size).")
-            ("tcp-nodelay", optValue(tcpNoDelay), "Turn on tcp-nodelay");
+            ("tcp-nodelay", optValue(tcpNoDelay), "Turn on tcp-nodelay")
+            ("service", optValue(service, "SERVICE-NAME"), "SASL service name.")
+            ("min-ssf", optValue(minSsf, "N"), "Minimum acceptable strength for SASL security layer")
+	    ("max-ssf", optValue(maxSsf, "N"), "Maximum acceptable strength for SASL security layer");
     }
 };
 

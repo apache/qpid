@@ -1,3 +1,6 @@
+#ifndef QPID_CLIENT_SASL_H
+#define QPID_CLIENT_SASL_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,38 +21,32 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
 
-#include "qpid/log/Logger.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/Version.h"
+#include <memory>
+#include <string>
 
 namespace qpid {
-namespace client {
 
-ConnectionSettings::ConnectionSettings() :
-    protocol("tcp"),
-    host("localhost"), 
-    port(TcpAddress::DEFAULT_PORT),
-    locale("en_US"),
-    heartbeat(0),
-    maxChannels(32767),
-    maxFrameSize(65535),
-    bounds(2),
-    tcpNoDelay(false),
-    service(qpid::saslName),
-    minSsf(0),
-    maxSsf(256)
-{}
-
-ConnectionSettings::~ConnectionSettings() {}
-
-void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
-{
-    if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
-        QPID_LOG(info, "Set TCP_NODELAY");
-    }
+namespace sys {
+class SecurityLayer;
 }
 
+namespace client {
+
+class ConnectionSettings;
+
+/**
+ * Interface to SASL support
+ */
+class Sasl
+{
+  public:
+    virtual std::string start(const std::string& mechanisms) = 0;
+    virtual std::string step(const std::string& challenge) = 0;
+    virtual std::string getMechanism() = 0;
+    virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;    
+    virtual ~Sasl() {}
+};
 }} // namespace qpid::client
+
+#endif  /*!QPID_CLIENT_SASL_H*/

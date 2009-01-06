@@ -40,6 +40,7 @@ namespace qpid {
 namespace broker {
 
 class Connection;
+class SecureConnection;
 
 class ConnectionHandler : public framing::FrameHandler
 {
@@ -52,6 +53,7 @@ class ConnectionHandler : public framing::FrameHandler
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
         AclModule* acl;
+        SecureConnection* secured;
 
         Handler(Connection& connection, bool isClient);
         ~Handler();
@@ -87,6 +89,7 @@ class ConnectionHandler : public framing::FrameHandler
     ConnectionHandler(Connection& connection, bool isClient);
     void close(framing::connection::CloseCode code, const std::string& text);
     void handle(framing::AMQFrame& frame);
+    void setSecureConnection(SecureConnection* secured);
 };
 
 

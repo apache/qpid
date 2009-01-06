@@ -23,6 +23,7 @@
 
 #include "ChainableFrameHandler.h"
 #include "ConnectionSettings.h"
+#include "Sasl.h"
 #include "StateManager.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
@@ -33,7 +34,9 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/InputHandler.h"
+#include "qpid/sys/SecurityLayer.h"
 #include "qpid/Url.h"
+#include <memory>
 
 namespace qpid {
 namespace client {
@@ -64,6 +67,8 @@ class ConnectionHandler : private StateManager,
     framing::ProtocolVersion version;
     framing::Array capabilities;
     framing::FieldTable properties;
+    std::auto_ptr<Sasl> sasl;
+    std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;
 
     void checkState(STATES s, const std::string& msg);
 
@@ -102,6 +107,8 @@ public:
     bool isOpen() const;
     bool isClosed() const;
     bool isClosing() const;
+
+    std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer();    
 
     CloseListener onClose;
     ErrorListener onError;

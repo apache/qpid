@@ -1,3 +1,6 @@
+#ifndef QPID_SYS_SECURITYLAYER_H
+#define QPID_SYS_SECURITYLAYER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,38 +21,22 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
-
-#include "qpid/log/Logger.h"
-#include "qpid/sys/Socket.h"
-#include "qpid/Version.h"
+#include "Codec.h"
 
 namespace qpid {
-namespace client {
+namespace sys {
 
-ConnectionSettings::ConnectionSettings() :
-    protocol("tcp"),
-    host("localhost"), 
-    port(TcpAddress::DEFAULT_PORT),
-    locale("en_US"),
-    heartbeat(0),
-    maxChannels(32767),
-    maxFrameSize(65535),
-    bounds(2),
-    tcpNoDelay(false),
-    service(qpid::saslName),
-    minSsf(0),
-    maxSsf(256)
-{}
-
-ConnectionSettings::~ConnectionSettings() {}
-
-void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
+/**
+ * Defines interface to a SASL negotiated Security Layer (for
+ * encryption/integrity)
+ */
+class SecurityLayer : public Codec
 {
-    if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
-        QPID_LOG(info, "Set TCP_NODELAY");
-    }
-}
+  public:
+    virtual void init(Codec*) = 0;
+    virtual ~SecurityLayer() {}
+};
 
-}} // namespace qpid::client
+}} // namespace qpid::sys
+
+#endif  /*!QPID_SYS_SECURITYLAYER_H*/
