@@ -92,6 +92,7 @@ struct Opts : public TestOptions {
 
     // General
     size_t qt;
+    bool singleConnect;
     size_t iterations;
     Mode mode;
     bool summary;
@@ -109,7 +110,7 @@ struct Opts : public TestOptions {
         setup(false), control(false), publish(false), subscribe(false),
         pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false), syncPub(false),
         subs(1), ack(0),
-        qt(1), iterations(1), mode(SHARED), summary(false),
+        qt(1),singleConnect(false), iterations(1), mode(SHARED), summary(false),
         intervalSub(0), intervalPub(0), tx(0), txPub(0), txSub(0), commitAsync(false)
     {
         addOptions()
@@ -136,6 +137,8 @@ struct Opts : public TestOptions {
              "N==0: Subscriber uses unconfirmed mode")
             
             ("qt", optValue(qt, "N"), "Create N queues or topics.")
+            ("single-connection", optValue(singleConnect, "yes|no"), "Use one connection for multiple sessions.")
+            
             ("iterations", optValue(iterations, "N"), "Desired number of iterations of the test.")
             ("summary,s", optValue(summary), "Summary output: pubs/sec subs/sec transfers/sec Mbytes/sec")
 
@@ -214,21 +217,29 @@ const std::string Opts::helpText=
 "Note the <other options> must be identical for all processes.\n";
 
 Opts opts;
+Connection globalConnection;
 
 struct Client : public Runnable {
-    Connection connection;
+    Connection* connection;
+    Connection localConnection;
     AsyncSession session;
     Thread thread;
 
     Client() {
-        opts.open(connection);
-        session = connection.newSession();
+        if (opts.singleConnect){
+            connection = &globalConnection;
+            if (!globalConnection.isOpen()) opts.open(globalConnection);
+        }else{
+            connection = &localConnection;
+            opts.open(localConnection);
+        }
+        session = connection->newSession();
     }
 
     ~Client() {
         try {
             session.close();
-            connection.close();
+            connection->close();
         } catch (const std::exception& e) {
             std::cerr << "Error in shutdown: " << e.what() << std::endl;
         }
