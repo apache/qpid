@@ -23,6 +23,7 @@
  */
 
 #include "qpid/sys/Time.h"
+#include "qpid/sys/IOHandle.h"
 
 struct timespec;
 struct timeval;
@@ -46,6 +47,25 @@ public:
 };
 
 int toFd(const IOHandlePrivate* h);
+
+// Posix fd as an IOHandle
+class PosixIOHandle : public IOHandle {
+public:
+    PosixIOHandle(int fd) :
+        IOHandle(new IOHandlePrivate(fd))
+    {}
+};
+
+// Dummy IOHandle for places it's required in the API
+// but we promise not to actually try to do any operations on the IOHandle
+class NullIOHandle : public IOHandle {
+public:
+    NullIOHandle() :
+        IOHandle(new IOHandlePrivate)
+    {}
+};
+
+extern NullIOHandle DummyIOHandle;
 
 }}
 

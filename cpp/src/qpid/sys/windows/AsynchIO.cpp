@@ -284,6 +284,7 @@ public:
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
     virtual void startReading();
+    virtual void requestCallback(RequestCallback);
 
     /**
      * getQueuedBuffer returns a buffer from the buffer queue, if one is
@@ -529,6 +530,11 @@ void AsynchIO::startReading() {
         notifyBuffersEmpty();
     }
     return;
+}
+
+// TODO: This needs to arrange for a callback that is serialised with
+// the other IO callbacks for this AsynchIO
+void AsynchIO::requestCallback(RequestCallback callback) {
 }
 
 /**

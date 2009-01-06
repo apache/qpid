@@ -23,7 +23,9 @@
  * Use socketpair to test the poller
  */
 
+#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 
 #include <string>
 #include <iostream>
@@ -67,7 +69,7 @@ int readALot(int fd) {
     return bytesRead;
 }
 
-int main(int argc, char** argv)
+int main(int /*argc*/, char** /*argv*/)
 {
     try 
     {
@@ -103,15 +105,18 @@ int main(int argc, char** argv)
 
         auto_ptr<Poller> poller(new Poller);
         
-        PollerHandle h0(sv[0]);
-        PollerHandle h1(sv[1]);
+        PosixIOHandle f0(sv[0]);
+        PosixIOHandle f1(sv[1]);
+
+        PollerHandle h0(f0);
+        PollerHandle h1(f1);
         
         poller->addFd(h0, Poller::INOUT);
         
-        // Wait for 500ms - h0 should be writable
+        // h0 should be writable
         Poller::Event event = poller->wait();
         assert(event.handle == &h0);
-        assert(event.dir == Poller::OUT);
+        assert(event.type == Poller::WRITABLE);
         
         // Write as much as we can to socket 0
         bytesWritten = writeALot(sv[0], testString);
@@ -126,17 +131,48 @@ int main(int argc, char** argv)
         poller->addFd(h1, Poller::INOUT);
         event = poller->wait();
         assert(event.handle == &h1);
-        assert(event.dir == Poller::INOUT);
+        assert(event.type == Poller::READ_WRITABLE);
+        
+        // Can't interrupt, it's not active
+        assert(poller->interrupt(h1) == false);
         
         bytesRead = readALot(sv[1]);
         assert(bytesRead == bytesWritten);
         cout << "Read(1): " << bytesRead << " bytes\n";
-        
-        // At this point h1 should have been disabled from the poller
-        // (as it was just returned) and h0 can write again
+
+        // Test poller interrupt
+        assert(poller->interrupt(h0) == true);
         event = poller->wait();
         assert(event.handle == &h0);
-        assert(event.dir == Poller::OUT);    
+        assert(event.type == Poller::INTERRUPTED);
+        assert(poller->interrupt(h0) == false);
+
+        // Test multiple interrupts
+        poller->rearmFd(h0);
+        poller->rearmFd(h1);
+        assert(poller->interrupt(h0) == true);
+        assert(poller->interrupt(h1) == true);
+        
+        // Make sure we can't interrupt them again
+        assert(poller->interrupt(h0) == false);
+        assert(poller->interrupt(h1) == false);
+        
+        // Make sure that they both come out in the correct order
+        event = poller->wait();
+        assert(event.handle == &h0);
+        assert(event.type == Poller::INTERRUPTED);
+        assert(poller->interrupt(h0) == false);
+        event = poller->wait();
+        assert(event.handle == &h1);
+        assert(event.type == Poller::INTERRUPTED);
+        assert(poller->interrupt(h1) == false);
+
+        // At this point h1 should have been disabled from the poller
+        // (as it was just returned) and h0 can write again
+        poller->rearmFd(h0);
+        event = poller->wait();
+        assert(event.handle == &h0);
+        assert(event.type == Poller::WRITABLE);    
 
         // Now both the handles should be disabled
         event = poller->wait(500000000);
@@ -146,11 +182,11 @@ int main(int argc, char** argv)
         poller->shutdown();
         event = poller->wait();
         assert(event.handle == 0);
-        assert(event.dir == Poller::SHUTDOWN);
+        assert(event.type == Poller::SHUTDOWN);
 
         event = poller->wait();
         assert(event.handle == 0);
-        assert(event.dir == Poller::SHUTDOWN);
+        assert(event.type == Poller::SHUTDOWN);
 
         poller->delFd(h1);
         poller->delFd(h0);
