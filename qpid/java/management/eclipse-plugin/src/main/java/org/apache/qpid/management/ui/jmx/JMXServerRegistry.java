@@ -20,16 +20,13 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
-import static org.apache.qpid.management.ui.Constants.*;
+import static org.apache.qpid.management.ui.Constants.ALL;
 
-import java.io.IOException;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.management.ListenerNotFoundException;
@@ -38,11 +35,8 @@ import javax.management.MBeanServerConnection;
 import javax.management.Notification;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.sasl.SaslClientFactory;
 
+import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -51,21 +45,13 @@ import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
-import org.apache.qpid.management.ui.sasl.JCAProvider;
-import org.apache.qpid.management.ui.sasl.SaslProvider;
-import org.apache.qpid.management.ui.sasl.UserPasswordCallbackHandler;
-import org.apache.qpid.management.ui.sasl.UsernameHashedPasswordCallbackHandler;
 
 
 public class JMXServerRegistry extends ServerRegistry
 {
-    private boolean _connected = false;
     private ObjectName _serverObjectName = null;
-    private Map<String, Object> _env = null;
-    private JMXServiceURL _jmxUrl = null;
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
-    private Exception _connectionException = null;
     private String _securityMechanism = null;
     
     private List<String> _usersList;
@@ -99,94 +85,20 @@ public class JMXServerRegistry extends ServerRegistry
     public JMXServerRegistry(ManagedServer server) throws Exception
     {
         super(server);
+        
+        _jmxc = JMXConnnectionFactory.getJMXConnection(
+                ApplicationRegistry.timeout, server.getHost(),
+                server.getPort(), server.getUser(), server.getPassword());
+        
+        _mbsc = _jmxc.getMBeanServerConnection();
 
-        long timeNow;
+        _clientListener = new ClientListener(server);
+        _notificationListener = new ClientNotificationListener(server);
 
-        //auto-negotiate an RMI or JMXMP (SASL/CRAM-MD5 or SASL/PLAIN) JMX connection to broker
-        try
-        {
-            timeNow = System.currentTimeMillis();
-            createJMXconnector("RMI");
-        }
-        catch (IOException rmiIOE)
-        {
-            // check if the ioe was raised because we tried connecting to a non RMI-JRMP based JMX server
-            boolean jrmpServer = !rmiIOE.getMessage().contains("non-JRMP server at remote endpoint");
+        _jmxc.addConnectionNotificationListener(_clientListener, null, null);
+        _serverObjectName = new ObjectName("JMImplementation:type=MBeanServerDelegate");
+        _mbsc.addNotificationListener(_serverObjectName, _clientListener, null, null);
 
-            if (jrmpServer)
-            {
-                IOException nioe = new IOException();
-                nioe.initCause(rmiIOE);
-                throw nioe;
-            }
-            else
-            {
-                try
-                {
-                    //It wasnt an RMI ConnectorServer at the broker end. Try to establish a JMXMP SASL/CRAM-MD5 connection instead.
-                    timeNow = System.currentTimeMillis();
-                    createJMXconnector("JMXMP_CRAM-MD5");
-                }
-                catch (IOException cramIOE)
-                {
-                    // check if the IOE was raised because we tried connecting to a SASL/PLAIN server using SASL/CRAM-MD5
-                    boolean plainProfileServer = cramIOE.getMessage().contains("The server supported profiles [SASL/PLAIN]" +
-                    					                            " do not match the client required profiles [SASL/CRAM-MD5]");
-
-                    if (!plainProfileServer)
-                    {
-                        IOException nioe = new IOException();
-                        nioe.initCause(cramIOE);
-                        throw nioe;
-                    }
-                    else
-                    {                    	
-                        try
-                        {
-                            // Try to establish a JMXMP SASL/PLAIN connection instead.
-                            timeNow = System.currentTimeMillis();
-                            createJMXconnector("JMXMP_PLAIN");
-                        }
-                        catch (IOException plainIOE)
-                        {
-                            /* Out of options now. Check that the IOE was raised because we tried connecting to a server
-                             * which didnt support SASL/PLAIN. If so, signal an unknown profile type. If not, raise the exception. */
-                            boolean unknownProfile = cramIOE.getMessage().contains("do not match the client required profiles [SASL/PLAIN]");
-
-                            if (unknownProfile)
-                            {
-                                throw new Exception("Unknown JMXMP authentication mechanism, unable to connect.");
-                            }
-                            else
-                            {
-                                IOException nioe = new IOException();
-                                nioe.initCause(plainIOE);
-                                throw nioe;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (_connected)
-        {
-            _mbsc = _jmxc.getMBeanServerConnection();
-
-            _clientListener = new ClientListener(server);
-            _notificationListener = new ClientNotificationListener(server);
-
-            _jmxc.addConnectionNotificationListener(_clientListener, null, null);
-            _serverObjectName = new ObjectName("JMImplementation:type=MBeanServerDelegate");
-            _mbsc.addNotificationListener(_serverObjectName, _clientListener, null, null);
-        }
-        else
-        {
-            if (System.currentTimeMillis() - timeNow >= ApplicationRegistry.timeout)
-                throw new Exception("Qpid server connection timed out");
-            else
-                throw new Exception("Qpid server connection failed");
-        }
     }
 
     public MBeanServerConnection getServerConnection()
@@ -194,104 +106,10 @@ public class JMXServerRegistry extends ServerRegistry
         return _mbsc;
     }
 
-    private void createJMXconnector(String connectionType) throws IOException, Exception
-    {
-        if (connectionType == "RMI")
-        {
-            _securityMechanism = MECH_PLAIN;
-
-            _jmxUrl = new JMXServiceURL(getManagedServer().getUrl());
-            _env = null;
-        }
-        else if (connectionType.contains("JMXMP"))
-        {
-            // Check that the JMXMPConnector is available to provide SASL support
-            final String jmxmpcClass = "javax.management.remote.jmxmp.JMXMPConnector";
-
-            try
-            {
-                Class.forName(jmxmpcClass, false, this.getClass().getClassLoader());
-            }
-            catch (ClassNotFoundException cnfe)
-            {
-                throw new Exception("JMXMPConnector class not found, unable to connect to specified server.\n\n"
-                                + "Please add the jmxremote_optional.jar to the jmxremote.sasl plugin folder, or the classpath.");
-            }
-
-            _jmxUrl = new JMXServiceURL("jmxmp", getManagedServer().getHost(), getManagedServer().getPort());
-            _env = new HashMap<String, Object>();
-
-            /* set the package in which to find the JMXMP ClientProvider.class file loaded by the 
-             * jmxremote.sasl plugin (from the jmxremote_optional.jar) */
-            _env.put("jmx.remote.protocol.provider.pkgs", "com.sun.jmx.remote.protocol");
-
-            if (connectionType == "JMXMP_CRAM-MD5")
-            {
-                _securityMechanism = MECH_CRAMMD5;
-
-                Map<String, Class<? extends SaslClientFactory>> map = new HashMap<String, Class<? extends SaslClientFactory>>();
-                Class<?> clazz = Class.forName("org.apache.qpid.management.ui.sasl.CRAMMD5HashedSaslClientFactory");
-                map.put("CRAM-MD5-HASHED", (Class<? extends SaslClientFactory>) clazz);
-                Security.addProvider(new JCAProvider(map));
-
-                CallbackHandler handler = new UsernameHashedPasswordCallbackHandler(
-                                getManagedServer().getUser(), 
-                                getManagedServer().getPassword());
-                _env.put("jmx.remote.profiles", SASL_CRAMMD5);
-                _env.put("jmx.remote.sasl.callback.handler", handler);
-            }
-            else if (connectionType == "JMXMP_PLAIN")
-            {
-                _securityMechanism = MECH_PLAIN;
-
-                Security.addProvider(new SaslProvider());
-                CallbackHandler handler = new UserPasswordCallbackHandler(getManagedServer().getUser(), getManagedServer().getPassword());
-                _env.put("jmx.remote.profiles", SASL_PLAIN);
-                _env.put("jmx.remote.sasl.callback.handler", handler);
-            }
-            else
-            {
-                throw new Exception("Unknown authentication mechanism");
-            }
-        }
-        else
-        {
-            throw new Exception("Unknown connection type");
-        }
-
-        Thread connectorThread = new Thread(new ConnectorThread());
-        connectorThread.start();
-        connectorThread.join(ApplicationRegistry.timeout);
-
-        if (_connectionException != null)
-        {
-            throw _connectionException;
-        }
-    }
 
     public String getSecurityMechanism()
     {
         return _securityMechanism;
-    }
-
-    private class ConnectorThread implements Runnable
-    {
-        public void run()
-        {
-            try
-            {
-                _connected = false;
-                _connectionException = null;
-
-                _jmxc = JMXConnectorFactory.connect(_jmxUrl, _env);
-
-                _connected = true;
-            }
-            catch (Exception ex)
-            {
-                _connectionException = ex;
-            }
-        }
     }
 
     /**

@@ -133,8 +133,4 @@ public class Constants
     public final static String INFO_USERNAME = "Please enter the " + USERNAME;
     public final static String INFO_PASSWORD = "Please enter the " + PASSWORD;
     
-    public final static String MECH_CRAMMD5 = "CRAM-MD5";
-    public final static String MECH_PLAIN = "PLAIN";
-    public final static String SASL_CRAMMD5 = "SASL/CRAM-MD5";
-    public final static String SASL_PLAIN = "SASL/PLAIN";
 }

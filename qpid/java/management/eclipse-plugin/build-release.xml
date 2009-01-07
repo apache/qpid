@@ -33,6 +33,7 @@
                 <isset property ="eclipse.ini"/>
                 <isset property ="license.eclipse.txt"/>
                 <isset property ="jmxremote.sasl.manifest"/>
+                <isset property ="qpidmanagementcommon.manifest"/>
                 <!-- platform specific properties -->
                 <isset property ="bin.includes"/>
                 <isset property ="release.name"/>
@@ -63,6 +64,16 @@
         <!-- Copy the jmxremote.sasl plugin's manifest, creating its plugin directory -->
         <copy todir="${release.subdir}/eclipse/plugins/jmxremote.sasl_1.0.1/META-INF" flatten="true" failonerror="true">
             <fileset file="${jmxremote.sasl.manifest}"/>
+        </copy>
+    </target>
+
+    <target name="release-bin-qpidmanagementcommon-plugin">
+        <!-- Copy the management common plugin's manifest, creating its plugin directory -->
+        <copy todir="${release.subdir}/eclipse/plugins/qpid-management-common_1.0.0/META-INF" flatten="true" failonerror="true">
+            <fileset file="${qpidmanagementcommon.manifest}"/>
+        </copy>
+        <copy todir="${release.subdir}/eclipse/plugins/qpid-management-common_1.0.0/" flatten="true" failonerror="true">
+            <fileset file="${build.lib}/qpid-management-common-${project.version}.jar"/>
         </copy>
     </target>
 
@@ -147,6 +158,6 @@
     
     
     <target name="release-bin" depends="check,release-bin-prepare,release-bin-rcp-deps,
-        release-bin-mcplugin-jar,release-bin-jmxremote-plugin,release-bin-zip,release-bin-gzip"/>
+        release-bin-mcplugin-jar,release-bin-qpidmanagementcommon-plugin,release-bin-jmxremote-plugin,release-bin-zip,release-bin-gzip"/>
     
 </project>

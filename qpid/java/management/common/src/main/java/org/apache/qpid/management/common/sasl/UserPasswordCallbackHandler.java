@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,27 +17,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.management.ui.sasl;
+package org.apache.qpid.management.common.sasl;
 
-import java.io.IOException;
+import java.io.*;
+import javax.security.auth.callback.*;
 
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-
-import org.apache.qpid.management.ui.views.ViewUtility;
-
-public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
+public class UserPasswordCallbackHandler implements CallbackHandler
 {
     private String user;
     private char[] pwchars;
     
-    public UsernameHashedPasswordCallbackHandler(String user, String password) throws Exception
+    public UserPasswordCallbackHandler(String user, String password)
     {
         this.user = user;
-        this.pwchars = ViewUtility.getHash(password);
+        this.pwchars = password.toCharArray();
     }
 
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
@@ -62,7 +54,6 @@ public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
         }
     }
 
-    
     private void clearPassword()
     {
         if (pwchars != null) 
