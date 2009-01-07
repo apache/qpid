@@ -53,7 +53,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 
-public class Commandlist extends Command {
+public class Commandlist extends CommandImpl {
 
     private String object;
     private String name;

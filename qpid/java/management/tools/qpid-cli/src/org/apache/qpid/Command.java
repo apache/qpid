@@ -39,24 +39,14 @@ package org.apache.qpid;
 
 import org.apache.qpid.utils.CommandLineOption;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: May 29, 2008
- * Time: 9:21:46 PM
- * To change this template use File | Settings | File Templates.
- */
-public interface
-        Command {
+public interface Command {
 
     public static String commandname = null;
     public static CommandLineOption options = null;
 
-    void execute();
+    public void execute();
 
-    void printusage();
+    public void printusage();
 
-    void optionchecker();
-
-    void optionvaluechecker();
+    public void optionvaluechecker();
 }

@@ -59,7 +59,7 @@ import java.io.InputStreamReader;
  * Time: 5:34:51 PM
  * To change this template use File | Settings | File Templates.
  */
-public class Commanddelete extends Command {
+public class Commanddelete extends CommandImpl {
     private String object;
     private String name;
     private String vhost;

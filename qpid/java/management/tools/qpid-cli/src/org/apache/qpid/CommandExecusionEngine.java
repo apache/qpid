@@ -40,7 +40,7 @@ package org.apache.qpid;
 import org.apache.qpid.utils.CommandLineOptionParser;
 import org.apache.qpid.utils.JMXinfo;
 import org.apache.qpid.commands.*;
-import org.apache.qpid.commands.Command;
+import org.apache.qpid.commands.CommandImpl;
 
 
 public class CommandExecusionEngine {
