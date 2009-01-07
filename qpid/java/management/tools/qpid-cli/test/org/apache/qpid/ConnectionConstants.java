@@ -48,4 +48,6 @@ package org.apache.qpid;
 public interface ConnectionConstants {
     String BROKER_HOSTNAME="localhost";
     String BROKER_PORT="8999";
+    String USERNAME = "guest";
+    String PASSWORD = "guest";
 }

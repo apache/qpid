@@ -65,20 +65,13 @@ public class TestConnector {
     MBeanServerConnection mbsc;
 
     @Before
-    public void setup()
+    public void setup() throws Exception
     {
-        test = ConnectorFactory.getConnector("localhost","8999");
+        test = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT, ConnectionConstants.USERNAME, ConnectionConstants.PASSWORD);
         String url = "service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi";
 
     }
-    @Test
-    public void testGetURL()
-    {
-
-
-//        Assert.assertNotNull(test);
-        Assert.assertEquals(test.getURL(),test.getURL());
-    }
+    
     @Test
     public void testGetConnector()
     {

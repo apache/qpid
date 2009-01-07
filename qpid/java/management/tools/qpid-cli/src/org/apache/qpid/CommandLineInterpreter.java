@@ -96,7 +96,8 @@ public class CommandLineInterpreter {
                     commandlineoptionparser = new CommandLineOptionParser(args);
 
                 JMXConfiguration config = new JMXConfiguration(commandlineoptionparser.getAlloptions());
-                conn = ConnectorFactory.getConnector(config.gethostname(), config.getport());
+                conn = ConnectorFactory.getConnector(config.gethostname(), config.getport(), 
+                                                     config.getUsername(), config.getPassword());
                 jmxc = conn.getConnector();
                 mbsc = conn.getMBeanServerConnection();
                 if (config.checkoptionsetting("r", commandlineoptionparser.getAlloptions())) {
@@ -123,7 +124,7 @@ public class CommandLineInterpreter {
                     }
                 }
             } catch (Exception ex) {
-                connectionrefuse();
+                connectionrefuse(ex);
                 return;
             }
             /* In this point connection has been established */
@@ -183,9 +184,23 @@ public class CommandLineInterpreter {
         return t;
     }
 
-    private static void connectionrefuse() {
-        System.out.println("Cannot connect with the broker in given host with given port");
-        System.out.println("Please check the host name and the port given");
+    private static void connectionrefuse(Exception e) {
+        String message = e.getLocalizedMessage();
+        if (e instanceof SecurityException)
+        {
+            message = " authentication failed, please check username and password";
+        }
+        else
+        {
+            Throwable cause = e.getCause();
+            while (cause != null)
+            {
+                message = cause.getMessage();
+                cause = cause.getCause();
+            }
+        }
+
+        System.out.println("Cannot connect with the broker: " + message);
     }
 
     public static String[] oneshotmode(String[] args,CommandLineOptionParser commandlineoptionparser,JMXConnector jmxc,MBeanServerConnection mbsc) throws Exception

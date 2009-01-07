@@ -69,11 +69,11 @@ public class TestCommandLineInterpreter {
 
     String [] args = null;
     @Before
-    public void startup()
+    public void startup() throws Exception
     {
         args = command.split(" ");
 //        System.out.println(args[0]);
-        conn = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME, ConnectionConstants.BROKER_PORT);
+        conn = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT, ConnectionConstants.USERNAME, ConnectionConstants.PASSWORD);
         jmxc = conn.getConnector();
         mbsc = conn.getMBeanServerConnection();
         parser = new CommandLineOptionParser(args,args[0]);

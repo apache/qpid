@@ -46,6 +46,8 @@ public interface CommandLineOptionConstants {
         String PORT_OPTION = "p";
         String INTERVAL_OPTION = "i";
         String REPORT_OPTION = "r";
+        String USER_OPTION = "u";
+        String PASSWORD_OPTION = "w";
 
     }
 
