@@ -90,7 +90,7 @@ bool ClassKey::operator>=(const ClassKey& other) const
     return !(*this < other);
 }
 
-void ClassKey::encode(framing::Buffer& buffer) const
+void ClassKey::encode(qpid::framing::Buffer& buffer) const
 {
     buffer.putShortString(package);
     buffer.putShortString(name);

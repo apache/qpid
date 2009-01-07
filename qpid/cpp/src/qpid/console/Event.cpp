@@ -32,7 +32,7 @@ using namespace std;
 using qpid::framing::Uuid;
 using qpid::framing::FieldTable;
 
-Event::Event(Broker* _broker, SchemaClass* _schema, framing::Buffer& buffer) :
+Event::Event(Broker* _broker, SchemaClass* _schema, qpid::framing::Buffer& buffer) :
     broker(_broker), schema(_schema)
 {
     timestamp = buffer.getLongLong();

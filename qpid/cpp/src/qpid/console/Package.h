@@ -23,6 +23,7 @@
 
 #include <string>
 #include <map>
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace console {

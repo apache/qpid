@@ -30,6 +30,7 @@
 
 using namespace qpid::console;
 using namespace qpid::sys;
+using namespace qpid;
 using namespace std;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;

@@ -23,6 +23,7 @@
 #include "qpid/framing/Buffer.h"
 
 using namespace qpid::console;
+using namespace qpid;
 using namespace std;
 
 ObjectId::ObjectId(framing::Buffer& buffer)
