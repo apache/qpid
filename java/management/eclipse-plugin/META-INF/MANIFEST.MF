@@ -10,7 +10,8 @@ Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.ui.forms,
- jmxremote.sasl;resolution:=optional
+ jmxremote.sasl;resolution:=optional,
+ qpid-management-common
 Eclipse-LazyStart: true
 Export-Package: org.apache.qpid.management.ui,
  org.apache.qpid.management.ui.actions,
