@@ -69,7 +69,7 @@ public class TestCommandExecutionEngine {
 
     }
     @Test
-    public void TestCommandSelector()
+    public void TestCommandSelector() throws Exception
     {
         line = "list -o queue";
         command = line.split(" ");

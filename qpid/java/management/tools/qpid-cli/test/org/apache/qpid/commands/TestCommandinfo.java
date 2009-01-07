@@ -70,7 +70,7 @@ public class TestCommandinfo {
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));
         info = new JMXinfo(jmxc,parser,mbsc);
-        infocommand = new Commandinfo(info,"list");
+        infocommand = new Commandinfo(info);
 
     }
     @Test

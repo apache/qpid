@@ -18,54 +18,34 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
 package org.apache.qpid.commands;
 
+import org.apache.qpid.commands.objects.ObjectNames;
+import org.apache.qpid.commands.objects.QueueObject;
 import org.apache.qpid.utils.JMXinfo;
-import org.apache.qpid.utils.CommandLineOptionParser;
-import org.apache.qpid.utils.CommandLineOptionConstants;
-import org.apache.qpid.utils.CommandLineOption;
-import org.apache.qpid.commands.objects.*;
 
-import javax.management.ObjectName;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
+import javax.management.Attribute;
 import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
 import java.util.Set;
-import java.util.Iterator;
-import java.util.Map;
 
+public class Commandset extends CommandImpl
+{
+    private String _attributeName;
+    private String _value;
+    public static String COMMAND_NAME = "set";
 
-public class Commandlist extends CommandImpl {
-
-    public static final String COMMAND_NAME = "list";
-
-    public Commandlist(JMXinfo info)
+    public Commandset(JMXinfo info)
     {
         super(info);
     }
 
-    private void listobjects(String option_value) {
-        /*pring usage if use is not give the correct option letter or no options */
-        if (option_value == null) {
-//            System.out.println("testing");
+    private void setAttribute(String option_value)
+    {
+        /*print usage if use is not give the correct option letter or no options */
+        if (option_value == null)
+        {
             printusage();
             return;
         }
@@ -73,114 +53,181 @@ public class Commandlist extends CommandImpl {
         Set set = null;
         ObjectNames objname = null;
 
-        try {
-            if (option_value.compareToIgnoreCase("queue") == 0 || option_value.compareToIgnoreCase("queues") == 0) {
+        try
+        {
+            if (option_value.compareToIgnoreCase("queue") == 0 || option_value.compareToIgnoreCase("queues") == 0)
+            {
                 objname = new QueueObject(mbsc);
-
-            } else
-            if (option_value.compareToIgnoreCase("Virtualhosts") == 0 || option_value.compareToIgnoreCase("Virtualhost") == 0) {
-                objname = new VirtualHostObject(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Exchange") == 0 || option_value.compareToIgnoreCase("Exchanges") == 0) {
-                objname = new ExchangeObject(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Connection") == 0 || option_value.compareToIgnoreCase("Connections") == 0) {
-                objname = new ConnectionObject(mbsc);
-//                this.name = option_value;
-            } else if (option_value.compareToIgnoreCase("all") == 0) {
-                objname = new AllObjects(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Usermanagement") == 0 || option_value.compareToIgnoreCase("Usermanagmenets") == 0) {
-                objname = new UserManagementObject(mbsc);
-//                this.name = option_value;
-            } else {
+            }
+            else
+            {
                 printusage();
                 echo("Wrong objectName");
                 return;
             }
+
+            if (_attributeName == null)
+            {
+                echo("attribute name not specified. See --help for details");
+                return;
+            }
+
+            if (_value == null)
+            {
+                echo("new value not specified. See --help for details");
+                return;
+            }
+
             objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
             objname.returnObjects();
-            if (objname.getSet().size() != 0) {
-                if (this.getObject().compareToIgnoreCase("queue") == 0 || this.getObject().compareToIgnoreCase("queues") == 0)
-                    objname.displayqueues(this.getOutputFormat(), this.getSeperator());
-                else
-                    objname.displayobjects(this.getOutputFormat(), this.getSeperator());
-            } else {
-                if (hasName()) {
+
+            if (objname.getSet().size() != 1)
+            {
+                echo("You quering return more than one queue to set was this intended?\n" + objname.getQueryString());
+            }
+            else if (objname.getSet().size() == 1)
+            {
+                ObjectName object = (ObjectName) objname.getSet().iterator().next();
+
+                Object value = objname.getAttribute(object, _attributeName);
+
+                Object attributeValue = _value;
+
+                try
+                {
+                    if (value instanceof Integer)
+                    {
+                        attributeValue = Integer.valueOf(_value);
+                    }
+                    else if (value instanceof Long)
+                    {
+                        attributeValue = Long.valueOf(_value);
+                    }
+                }
+                catch (NumberFormatException nfe)
+                {
+                    echo("Value(" + _attributeName + ") should be of type " + value.getClass().getName());
+                    return;
+                }
+
+                Attribute attribute = new Attribute(_attributeName, attributeValue);
+
+                objname.setAttribute(object, attribute);
+            }
+            else
+            {
+                if (hasName())
+                {
 
                     echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
                     echo(this.getObject() + "Type Objects might not in the broker currently");
                     echo("");
-                } else {
+                }
+                else
+                {
                     printusage();
                 }
             }
 
-
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
 
-
     }
 
-    public void listdomains() {
-        MBeanServerConnection mbsc = info.getmbserverconnector();
-        try {
-            String[] domains = mbsc.getDomains();
-            echo("DOMAINS");
-            for (int i = 0; i < domains.length; i++)
-                echo("\tDomain[" + i + "] = " + domains[i]);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public void execute() {
+    public void execute()
+    {
         /* In here you it's easy to handle any number of otpions which are going to add with the list command which works
         with main option object or o
          */
-        if (checkoptionsetting("output")) {
+        if (checkoptionsetting("output"))
+        {
             setOutputFormat(optionchecker("output"));
             if (checkoptionsetting("separator"))
+            {
                 setSeperator(optionchecker("separator"));
+            }
         }
-        if (checkoptionsetting("object") || checkoptionsetting("o")) {
+        if (checkoptionsetting("object") || checkoptionsetting("o"))
+        {
             String object = optionchecker("object");
-            if (object == null) {
+            if (object == null)
+            {
                 object = optionchecker("o");
             }
             setObject(object);
-            if (checkoptionsetting("name") || checkoptionsetting("n")) {
+
+            if (checkoptionsetting("name") || checkoptionsetting("n"))
+            {
                 String name = optionchecker("name");
                 if (name == null)
+                {
                     name = optionchecker("n");
+                }
 
                 setName(name);
             }
-            if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
+
+            if (checkoptionsetting("attribute") || checkoptionsetting("a"))
+            {
+                String name = optionchecker("attribute");
+                if (name == null)
+                {
+                    name = optionchecker("a");
+                }
+
+                setAttributeName(name);
+            }
+
+            if (checkoptionsetting("set") || checkoptionsetting("s"))
+            {
+                String value = optionchecker("set");
+                if (value == null)
+                {
+                    value = optionchecker("s");
+                }
+
+                setAttributeValue(value);
+            }
+
+            if (checkoptionsetting("virtualhost") || checkoptionsetting("v"))
+            {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
+                {
                     vhost = optionchecker("v");
+                }
                 setVirtualhost(vhost);
             }
-            listobjects(this.getObject());
-        } else if (checkoptionsetting("domain") || checkoptionsetting("d"))
-            listdomains();
+            setAttribute(this.getObject());
+        }
         else if (checkoptionsetting("h") || checkoptionsetting("help"))
+        {
             printusage();
+        }
         else
+        {
             unrecognizeoption();
+        }
     }
 
-    public void printusage() {
+    private void setAttributeValue(String value)
+    {
+        _value = value;
+    }
+
+    private void setAttributeName(String name)
+    {
+        this._attributeName = name;
+    }
+
+    public void printusage()
+    {
         echo("");
-        echo("Usage:list [OPTION] ... [OBJECT TYPE]...\n");
+        echo("Usage:set [OPTION] ... [OBJECT TYPE]...\n");
         echo("List the information about the given object\n");
         echo("Where possible options include:\n");
         echo("        -o      --object      type of objects which you want to list\n");
@@ -190,15 +237,10 @@ public class Commandlist extends CommandImpl {
         echo("                              Or You can specify object type by giving it at the beginning");
         echo("                              rather giving it as a argument");
         echo("                              Ex:< queue list > this command is equal to list -o queue \n");
-        echo("        -d      --domain      list all the domains of objects available for remote monitoring\n");
         echo("        -v      --virtualhost After specifying the object type you can filter output with this option");
         echo("                              list objects with the given virtualhost which will help to find ");
         echo("                              identical queue objects with -n option");
         echo("                              ex: queue list -v develop   ment");
-        echo("        -output               Specify which output format you want to get the ouput");
-        echo("                              Although the option is there current version supports only for CSV output format");
-        echo("        -separator            This option use with output option to specify which separator you want to get the CSV output (default seperator is comma");
-        echo("        -h      --help        Display the help and back to the qpid-cli prompt\n");
         echo("        -n      --name        After specifying what type of objects you want to monitor you can filter");
         echo("                              the output using -n option by specifying the name of the object you want ");
         echo("                              to monitor exactly");
@@ -206,9 +248,11 @@ public class Commandlist extends CommandImpl {
         echo("                              of ping");
         echo("                              ex: <queue list -n ping -v development> list all the queue objects with name ");
         echo("                              of ping and virtualhost of developement \n");
-
+        echo("        -a      --attribute   ");
+        echo("        -h      --help        Display the help and back to the qpid-cli prompt\n");
 
     }
+
 }
 
 

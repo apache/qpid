@@ -38,29 +38,29 @@
 
 package org.apache.qpid;
 
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
+
+import javax.management.MBeanServerConnection;
+import javax.management.remote.JMXConnector;
+
+import jline.ArgumentCompletor;
+import jline.ConsoleReader;
+import jline.SimpleCompletor;
+
+import org.apache.qpid.commands.Commanddelete;
+import org.apache.qpid.commands.Commandhelp;
+import org.apache.qpid.commands.Commandinfo;
+import org.apache.qpid.commands.Commandlist;
+import org.apache.qpid.commands.Commandmove;
+import org.apache.qpid.commands.Commandview;
+import org.apache.qpid.commands.Commandviewcontent;
 import org.apache.qpid.utils.CommandLineOptionParser;
 import org.apache.qpid.utils.JMXConfiguration;
 import org.apache.qpid.utils.JMXinfo;
 
-import javax.management.MBeanServerConnection;
-import javax.management.remote.JMXConnector;
-import javax.naming.ServiceUnavailableException;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.Properties;
-import java.rmi.ConnectException;
-
-import jline.ConsoleReader;
-import jline.ArgumentCompletor;
-import jline.SimpleCompletor;
-
-
 public class CommandLineInterpreter {
+    
     public static void main(String[] args) {
         Connector conn = null;
         try {
@@ -86,6 +86,8 @@ public class CommandLineInterpreter {
                 }
             }
 
+            registerCommands();
+            
             /* Connecting with the broker */
             try {
                 if (commandlineoptionparser == null)
@@ -145,6 +147,17 @@ public class CommandLineInterpreter {
         }
     }
 
+    private static void registerCommands()
+    {
+        CommandExecutionEngine.addCommand(Commanddelete.COMMAND_NAME, Commanddelete.class);
+        CommandExecutionEngine.addCommand(Commandhelp.COMMAND_NAME, Commandhelp.class);
+        CommandExecutionEngine.addCommand(Commandinfo.COMMAND_NAME, Commandinfo.class);
+        CommandExecutionEngine.addCommand(Commandlist.COMMAND_NAME, Commandlist.class);
+        CommandExecutionEngine.addCommand(Commandmove.COMMAND_NAME, Commandmove.class);
+        CommandExecutionEngine.addCommand(Commandview.COMMAND_NAME, Commandview.class);
+        CommandExecutionEngine.addCommand(Commandviewcontent.COMMAND_NAME, Commandviewcontent.class);
+    }
+
     private static void Usage() {
         System.out.println("Connecting to localhost Qpid java broker...");
     }
@@ -161,7 +174,7 @@ public class CommandLineInterpreter {
         System.out.println("Please check the host name and the port given");
     }
 
-    public static String[] oneshotmode(String[] args,CommandLineOptionParser commandlineoptionparser,JMXConnector jmxc,MBeanServerConnection mbsc)
+    public static String[] oneshotmode(String[] args,CommandLineOptionParser commandlineoptionparser,JMXConnector jmxc,MBeanServerConnection mbsc) throws Exception
     {
         int check = 0;
         String [] temp;
