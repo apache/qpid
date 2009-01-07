@@ -37,18 +37,16 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.utils.CommandLineOptionParser;
 import org.apache.qpid.utils.JMXinfo;
 import org.apache.qpid.commands.*;
-import org.apache.qpid.commands.CommandImpl;
 
 
-public class CommandExecusionEngine {
+public class CommandExecutionEngine {
     private Command currentcommand = null;
     private String commandname = null;
     private JMXinfo info = null;
 
-    public CommandExecusionEngine(JMXinfo info) {
+    public CommandExecutionEngine(JMXinfo info) {
         this.info = info;
         this.commandname = info.getCommandLineOptionParser().getcommandname();
     }
