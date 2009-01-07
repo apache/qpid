@@ -781,6 +781,12 @@
 				RelativePath="qpid\broker\RecoveryManagerImpl.cpp">
 			</File>
 			<File
+				RelativePath="qpid\broker\SecureConnection.cpp">
+			</File>
+			<File
+				RelativePath="qpid\broker\SecureConnectionFactory.cpp">
+			</File>
+			<File
 				RelativePath="qpid\broker\SemanticState.cpp">
 			</File>
 			<File
@@ -1203,6 +1209,12 @@
 			</File>
 			<File
 				RelativePath="qpid\broker\SaslAuthenticator.h">
+			</File>
+			<File
+				RelativePath="qpid\broker\SecureConnection.h">
+			</File>
+			<File
+				RelativePath="qpid\broker\SecureConnectionFactory.h">
 			</File>
 			<File
 				RelativePath="qpid\broker\SemanticState.h">

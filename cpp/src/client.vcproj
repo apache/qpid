@@ -414,6 +414,9 @@
 				RelativePath="qpid\client\Results.cpp">
 			</File>
 			<File
+				RelativePath="qpid\client\SaslFactory.cpp">
+			</File>
+			<File
 				RelativePath="qpid\client\SessionBase_0_10.cpp">
 			</File>
 			<File
@@ -536,6 +539,12 @@
 			</File>
 			<File
 				RelativePath="qpid\client\Results.h">
+			</File>
+			<File
+				RelativePath="qpid\client\Sasl.h">
+			</File>
+			<File
+				RelativePath="qpid\client\SaslFactory.h">
 			</File>
 			<File
 				RelativePath="qpid\client\Session.h">

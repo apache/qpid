@@ -360,6 +360,72 @@
 				RelativePath="gen\qpid\framing\ClientInvoker.cpp">
 			</File>
 			<File
+				RelativePath="gen\qpid\framing\ClusterConfigChangeBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionAccumulatedAckBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionConsumerStateBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverCloseBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverDoOutputBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliveryRecordBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionQueueBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionQueuePositionBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionSessionStateBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionShadowReadyBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxAcceptBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxDequeueBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEndBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEnqueueBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxPublishBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterDumpOfferBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterDumpRequestBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterReadyBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterShutdownBody.cpp">
+			</File>
+			<File
 				RelativePath="gen\qpid\framing\ConnectionCloseBody.cpp">
 			</File>
 			<File
@@ -1000,6 +1066,72 @@
 				RelativePath="gen\qpid\framing\ClientInvoker.h">
 			</File>
 			<File
+				RelativePath="gen\qpid\framing\ClusterConfigChangeBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionAccumulatedAckBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionConsumerStateBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverCloseBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverDoOutputBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliveryRecordBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionQueueBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionQueuePositionBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionSessionStateBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionShadowReadyBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxAcceptBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxDequeueBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEndBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEnqueueBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxPublishBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterDumpOfferBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterDumpRequestBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterReadyBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterShutdownBody.h">
+			</File>
+			<File
 				RelativePath="gen\qpid\framing\ConnectionCloseBody.h">
 			</File>
 			<File
@@ -1591,6 +1723,9 @@
 				RelativePath="qpid\sys\BlockingQueue.h">
 			</File>
 			<File
+				RelativePath="qpid\sys\Codec.h">
+			</File>
+			<File
 				RelativePath="qpid\sys\Condition.h">
 			</File>
 			<File
@@ -1664,6 +1799,9 @@
 			</File>
 			<File
 				RelativePath="qpid\sys\ScopedIncrement.h">
+			</File>
+			<File
+				RelativePath="qpid\sys\SecurityLayer.h">
 			</File>
 			<File
 				RelativePath="qpid\sys\Semaphore.h">
