@@ -21,6 +21,7 @@
 
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Dispatcher.h"
 
 #include "AsynchIoResult.h"
 #include "IoHandlePrivate.h"
@@ -88,6 +89,24 @@ class PollerPrivate {
     }
 };
 
+void Poller::shutdown() {
+    // Allow sloppy code to shut us down more than once.
+    if (impl->isShutdown)
+        return;
+    ULONG_PTR key = 1;    // Tell wait() it's a shutdown, not I/O
+    PostQueuedCompletionStatus(impl->iocp, 0, key, 0);
+}
+
+bool Poller::interrupt(PollerHandle&) {
+    return false;  // There's no concept of a registered handle.
+}
+
+void Poller::run() {
+    Poller::shared_ptr p(this);
+    qpid::sys::Dispatcher d(p);
+    d.run();
+}
+
 void Poller::addFd(PollerHandle& handle, Direction dir) {
     HANDLE h = (HANDLE)(handle.impl->fd);
     if (h != INVALID_HANDLE_VALUE) {
@@ -98,14 +117,6 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
         AsynchWriteWanted *result = new AsynchWriteWanted(handle.impl->cb);
         PostQueuedCompletionStatus(impl->iocp, 0, 0, result->overlapped());
     }
-}
-
-void Poller::shutdown() {
-    // Allow sloppy code to shut us down more than once.
-    if (impl->isShutdown)
-        return;
-    ULONG_PTR key = 1;    // Tell wait() it's a shutdown, not I/O
-    PostQueuedCompletionStatus(impl->iocp, 0, key, 0);
 }
 
 // All no-ops...

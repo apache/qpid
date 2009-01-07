@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <string>
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 
@@ -33,7 +34,7 @@ class SecurityLayer;
 
 namespace client {
 
-class ConnectionSettings;
+struct ConnectionSettings;
 
 /**
  * Interface to SASL support
