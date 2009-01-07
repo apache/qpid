@@ -34,9 +34,9 @@
 #include <stdint.h>
 
 extern "C" {
-#ifdef HAVE_OPENAIS_CPG_H    
-#include <openais/cpg.h>
-#elif HAVE_COROSYNC_CPG_H    
+#if defined (HAVE_OPENAIS_CPG_H)
+#  include <openais/cpg.h>
+#elif defined (HAVE_COROSYNC_CPG_H)
 #  include <corosync/cpg.h>
 #else
 #  error "No cpg.h header file available"
