@@ -29,6 +29,7 @@
 #include <windows.h>
 
 using namespace qpid::framing;
+using qpid::sys::SecurityLayer;
 
 namespace qpid {
 namespace broker {
@@ -43,6 +44,7 @@ public:
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
     void step(const std::string&) {}
+    std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
 
 class SspiAuthenticator : public SaslAuthenticator
@@ -57,6 +59,7 @@ public:
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
     void step(const std::string& response);
+    std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
 
 bool SaslAuthenticator::available(void)
@@ -107,6 +110,12 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
         connection.setUserId("anonymous");
     }   
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
+}
+
+std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
+{
+    std::auto_ptr<SecurityLayer> securityLayer;
+    return securityLayer;
 }
 
 
@@ -170,6 +179,12 @@ void SspiAuthenticator::start(const string& mechanism, const string& response)
 void SspiAuthenticator::step(const string& response)
 {
   QPID_LOG(info, "SASL: Need another step!!!");
+}
+
+std::auto_ptr<SecurityLayer> SspiAuthenticator::getSecurityLayer(uint16_t)
+{
+    std::auto_ptr<SecurityLayer> securityLayer;
+    return securityLayer;
 }
 
 }}
