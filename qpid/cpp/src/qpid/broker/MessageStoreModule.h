@@ -73,7 +73,8 @@ class MessageStoreModule : public MessageStore
                  const PersistableQueue& queue);
     uint32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);
-	 
+    bool isNull() const;
+
     ~MessageStoreModule();
 };
 
