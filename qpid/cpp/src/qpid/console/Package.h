@@ -26,7 +26,7 @@
 
 namespace qpid {
 namespace console {
-    class SchemaClass;
+    struct SchemaClass;
 
     /**
      *

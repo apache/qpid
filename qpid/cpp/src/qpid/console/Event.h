@@ -31,9 +31,9 @@ namespace framing {
 }
 namespace console {
 
-    class Broker;
-    class SchemaClass;
-    class ClassKey;
+    class  Broker;
+    struct SchemaClass;
+    class  ClassKey;
 
     /**
      *
