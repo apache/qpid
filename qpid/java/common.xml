@@ -61,8 +61,6 @@
     </fileset>
   </path>
 
-  <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
-
   <macrodef name="indirect">
     <attribute name="name"/>
     <attribute name="variable"/>
@@ -132,6 +130,10 @@
       </fileset>
       <report todir="${build.report}"/>
     </junitreport>
+  </target>
+
+  <target name="cobertura-init">
+    <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
   </target>
 
   <target name="help" description="display detailed build documentation">
