@@ -55,7 +55,7 @@ import java.nio.charset.Charset;
  * Time: 12:19:16 PM
  * To change this template use File | Settings | File Templates.
  */
-public class Commandviewcontent extends Command {
+public class Commandviewcontent extends CommandImpl {
     private String object;
     private String name;
     private String vhost;

@@ -47,7 +47,7 @@ import javax.management.MBeanServerConnection;
 import java.util.Set;
 
 
-public class Commandinfo extends Command {
+public class Commandinfo extends CommandImpl {
     private String object = null;
     private String name = null;
     private String virtualhost = null;

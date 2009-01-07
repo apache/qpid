@@ -59,7 +59,7 @@ import java.awt.font.OpenType;
  * Time: 11:33:05 PM
  * To change this template use File | Settings | File Templates.
  */
-public class Commandview extends Command {
+public class Commandview extends CommandImpl {
     private String object;
     private String name;
     private String vhost;
