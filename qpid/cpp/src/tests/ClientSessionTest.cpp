@@ -447,6 +447,28 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscribe)
     
 }
 
+QPID_AUTO_TEST_CASE(testExclusiveBinding) {
+    FieldTable options;
+    options.setString("qpid.exclusive-binding", "anything");
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="queue-1", arg::exclusive=true, arg::autoDelete=true);
+    fix.session.queueDeclare(arg::queue="queue-2", arg::exclusive=true, arg::autoDelete=true);
+    fix.session.exchangeBind(arg::exchange="amq.direct", arg::queue="queue-1", arg::bindingKey="my-key", arg::arguments=options);
+    fix.session.messageTransfer(arg::destination="amq.direct", arg::content=Message("message1", "my-key"));
+    fix.session.exchangeBind(arg::exchange="amq.direct", arg::queue="queue-2", arg::bindingKey="my-key", arg::arguments=options);
+    fix.session.messageTransfer(arg::destination="amq.direct", arg::content=Message("message2", "my-key"));
+
+    Message got;
+    BOOST_CHECK(fix.subs.get(got, "queue-1"));
+    BOOST_CHECK_EQUAL("message1", got.getData());
+    BOOST_CHECK(!fix.subs.get(got, "queue-1"));
+
+    BOOST_CHECK(fix.subs.get(got, "queue-2"));
+    BOOST_CHECK_EQUAL("message2", got.getData());
+    BOOST_CHECK(!fix.subs.get(got, "queue-2"));
+}
+
+
 QPID_AUTO_TEST_SUITE_END()
 
 
