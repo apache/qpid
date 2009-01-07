@@ -20,7 +20,7 @@
  -->
 <project name="Eclipse Plugin" default="build">
 
-    <property name="module.depends" value="broker common"/>
+    <property name="module.depends" value="broker common management/common"/>
 
     <import file="../../module.xml"/>
 

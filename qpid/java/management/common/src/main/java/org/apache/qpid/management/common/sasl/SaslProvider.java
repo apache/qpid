@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.management.ui.sasl;
+package org.apache.qpid.management.common.sasl;
 
 import java.security.Provider;
 

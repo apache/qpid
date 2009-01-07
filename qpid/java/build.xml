@@ -25,7 +25,7 @@
   <property name="modules.core"       value="junit-toolkit common broker client tools"/>
   <property name="modules.examples"   value="client/example"/>
   <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
-  <property name="modules.management" value="management/client management/eclipse-plugin"/>
+  <property name="modules.management" value="management/common management/client management/eclipse-plugin"/>
   <property name="modules.plugin"     value="broker-plugins"/>
   <property name="modules.management.tools" value="management/tools/qpid-cli"/>
   <property name="modules"            value="${modules.core}

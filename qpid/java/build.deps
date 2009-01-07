@@ -102,3 +102,4 @@ management-client.test.libs=${client.test.libs}
 management-eclipse-plugin.test.libs=${systests.libs}
 broker-plugins.test.libs=${test.libs}
 management-tools-qpid-cli.test.libs=${junit4} ${slf4j-log4j} ${log4j} ${client.libs}
+management-common.test.libs=${test.libs}

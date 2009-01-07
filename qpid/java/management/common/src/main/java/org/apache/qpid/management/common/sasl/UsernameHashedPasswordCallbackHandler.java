@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,20 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.management.ui.sasl;
+package org.apache.qpid.management.common.sasl;
 
-import java.io.*;
-import javax.security.auth.callback.*;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
-public class UserPasswordCallbackHandler implements CallbackHandler
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+
+
+public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
 {
     private String user;
     private char[] pwchars;
     
-    public UserPasswordCallbackHandler(String user, String password)
+    public UsernameHashedPasswordCallbackHandler(String user, String password) throws Exception
     {
         this.user = user;
-        this.pwchars = password.toCharArray();
+        this.pwchars = getHash(password);
     }
 
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
@@ -54,6 +64,7 @@ public class UserPasswordCallbackHandler implements CallbackHandler
         }
     }
 
+    
     private void clearPassword()
     {
         if (pwchars != null) 
@@ -69,5 +80,29 @@ public class UserPasswordCallbackHandler implements CallbackHandler
     protected void finalize()
     {
         clearPassword();
+    }
+    
+    public static char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+        byte[] data = text.getBytes("utf-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        for (byte b : data)
+        {
+            md.update(b);
+        }
+
+        byte[] digest = md.digest();
+
+        char[] hash = new char[digest.length ];
+
+        int index = 0;
+        for (byte b : digest)
+        {            
+            hash[index++] = (char) b;
+        }
+
+        return hash;
     }
 }
