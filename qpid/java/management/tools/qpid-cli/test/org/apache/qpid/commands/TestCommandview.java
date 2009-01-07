@@ -70,7 +70,7 @@ public class TestCommandview {
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));
         info = new JMXinfo(jmxc,parser,mbsc);
-        view = new Commandview(info,"view");
+        view = new Commandview(info);
     }
     @Test
     public void TestSetQueryString()

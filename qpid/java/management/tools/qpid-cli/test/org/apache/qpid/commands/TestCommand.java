@@ -75,7 +75,7 @@ public class TestCommand{
         parser = new CommandLineOptionParser(list);
         test = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT);
         info = new JMXinfo(test.getConnector(),parser,test.getMBeanServerConnection());
-        cmd = new Commandinfo(info,"list");
+        cmd = new Commandinfo(info);
 
     }
     @Test

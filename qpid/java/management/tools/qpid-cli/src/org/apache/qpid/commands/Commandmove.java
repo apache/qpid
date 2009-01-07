@@ -63,21 +63,26 @@ import java.io.BufferedReader;
  * To change this template use File | Settings | File Templates.
  */
 public class Commandmove extends CommandImpl {
+    
+
+    public static final String COMMAND_NAME = "move";
+    
     private String name1 = null, name2 = null, vhost1 = null, vhost2 = null, method1 = null, method2 = null;    //target and starting queue specifications happen with these options
     private QueueObject queue1;
     private MBeanServerConnection mbsc;
     private ObjectName queue;
     private int fmid = 0, tmid = 0;
 
-    public Commandmove(JMXinfo info, String name) {
-        super(info, name);
+    public Commandmove(JMXinfo info) {
+        super(info);
+        
         this.mbsc = info.getmbserverconnector();
         this.queue1 = new QueueObject(mbsc);
         this.method1 = "moveMessages";
         this.method2 = "getMessagesOnTheQueue";
 
     }
-
+    
     public void movemessages() {
         Set set = null;
         queue1.setQueryString(this.getObject(), this.name1, this.vhost1);

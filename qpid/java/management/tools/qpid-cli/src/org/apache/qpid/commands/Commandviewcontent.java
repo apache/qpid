@@ -56,6 +56,9 @@ import java.nio.charset.Charset;
  * To change this template use File | Settings | File Templates.
  */
 public class Commandviewcontent extends CommandImpl {
+
+    public static final String COMMAND_NAME = "viewcontent";
+    
     private String object;
     private String name;
     private String vhost;
@@ -65,14 +68,14 @@ public class Commandviewcontent extends CommandImpl {
     private String method1;
     private ObjectName queue;
 
-    public Commandviewcontent(JMXinfo info, String name) {
-        super(info, name);
+    public Commandviewcontent(JMXinfo info) {
+        super(info);
         this.mbsc = info.getmbserverconnector();
         this.objname = new QueueObject(mbsc);
         this.method1 = "viewMessageContent";
 
     }
-
+    
     public void viewcontent() {
         Set set = null;
         Object temp[] = {null};

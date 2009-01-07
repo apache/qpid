@@ -60,14 +60,17 @@ import java.awt.font.OpenType;
  * To change this template use File | Settings | File Templates.
  */
 public class Commandview extends CommandImpl {
+    
+    public static final String COMMAND_NAME = "view";
+    
     private int number = 0;
     private QueueObject objname;
     private MBeanServerConnection mbsc;
     private String method1;
     private ObjectName queue;
 
-    public Commandview(JMXinfo info, String name) {
-        super(info, name);
+    public Commandview(JMXinfo info) {
+        super(info);
         this.mbsc = info.getmbserverconnector();
         this.objname = new QueueObject(mbsc);
         this.method1 = "viewMessages";

@@ -70,7 +70,7 @@ public class TestCommandviewcontent {
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));
         info = new JMXinfo(jmxc,parser,mbsc);
-        viewcontent = new Commandviewcontent(info,"viewcontent");
+        viewcontent = new Commandviewcontent(info);
 
 
 

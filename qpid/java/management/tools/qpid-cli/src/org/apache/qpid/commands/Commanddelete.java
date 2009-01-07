@@ -65,9 +65,10 @@ public class Commanddelete extends CommandImpl {
     private MBeanServerConnection mbsc;
     private String method1, method2;
     private ObjectName queue;
+    public static final String COMMAND_NAME = "delete";
 
-    public Commanddelete(JMXinfo info, String name) {
-        super(info, name);
+    public Commanddelete(JMXinfo info) {
+        super(info);
         this.mbsc = info.getmbserverconnector();
         this.objname = new QueueObject(mbsc);
         this.method1 = "deleteMessageFromTop";
@@ -189,5 +190,4 @@ public class Commanddelete extends CommandImpl {
         while (st.hasMoreElements()) t += st.nextElement();
         return t;
     }
-
 }
