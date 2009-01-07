@@ -66,7 +66,7 @@ string Broker::getUrl() const
     return url.str();
 }
 
-void Broker::encodeHeader(framing::Buffer& buf, uint8_t opcode, uint32_t seq) const
+void Broker::encodeHeader(Buffer& buf, uint8_t opcode, uint32_t seq) const
 {
     buf.putOctet('A');
     buf.putOctet('M');
@@ -75,7 +75,7 @@ void Broker::encodeHeader(framing::Buffer& buf, uint8_t opcode, uint32_t seq) co
     buf.putLong (seq);
 }
 
-bool Broker::checkHeader(framing::Buffer& buf, uint8_t *opcode, uint32_t *seq) const
+bool Broker::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq) const
 {
     if (buf.getSize() < 8)
         return false;
@@ -90,7 +90,7 @@ bool Broker::checkHeader(framing::Buffer& buf, uint8_t *opcode, uint32_t *seq) c
     return h1 == 'A' && h2 == 'M' && h3 == '2';
 }
 
-void Broker::received(client::Message& msg)
+void Broker::received(qpid::client::Message& msg)
 {
     string   data = msg.getData();
     Buffer   inBuffer(const_cast<char*>(data.c_str()), data.size());

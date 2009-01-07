@@ -24,6 +24,7 @@
 #include "qpid/framing/FieldTable.h"
 
 using namespace qpid::console;
+using namespace qpid;
 using std::string;
 using std::vector;
 

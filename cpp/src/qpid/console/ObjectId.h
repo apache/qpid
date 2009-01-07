@@ -22,6 +22,7 @@
 #define _QPID_CONSOLE_OBJECTID_H
 
 #include <iostream>
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace framing {

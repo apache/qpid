@@ -30,6 +30,7 @@
 
 using namespace qpid::console;
 using namespace qpid::sys;
+using namespace qpid;
 using namespace std;
 using qpid::framing::Uuid;
 using qpid::framing::FieldTable;
@@ -79,12 +80,12 @@ void Object::AttributeMap::addDouble(const string& key, double val)
     (*this)[key] = Value::Ptr(new DoubleValue(val));
 }
 
-void Object::AttributeMap::addUuid(const string& key, const framing::Uuid& val)
+void Object::AttributeMap::addUuid(const string& key, const Uuid& val)
 {
     (*this)[key] = Value::Ptr(new UuidValue(val));
 }
 
-void Object::AttributeMap::addMap(const string& key, const framing::FieldTable& val)
+void Object::AttributeMap::addMap(const string& key, const FieldTable& val)
 {
     (*this)[key] = Value::Ptr(new MapValue(val));
 }
