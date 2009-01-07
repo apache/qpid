@@ -60,7 +60,7 @@ import javax.management.MBeanServerConnection;
 public class TestCommandinfo {
       JMXinfo info=null;
     String command = "info -o queue -n ping -v test";
-    Commandinfo infocommand = null;
+    CommandImpl infocommand = null;
     Connector conn = null;
     @Before
     public void startup()
@@ -77,9 +77,9 @@ public class TestCommandinfo {
     public void TestSetQueryString()
     {
         infocommand.execute();
-        Assert.assertEquals(infocommand.getobject(),"queue");
-        Assert.assertEquals(infocommand.getvirtualhost(),"test");
-        Assert.assertEquals(infocommand.getname(),"ping");
+        Assert.assertEquals(infocommand.getObject(),"queue");
+        Assert.assertEquals(infocommand.getVirtualhost(),"test");
+        Assert.assertEquals(infocommand.getName(),"ping");
     }
 
     @After

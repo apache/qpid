@@ -60,9 +60,6 @@ import java.io.InputStreamReader;
  * To change this template use File | Settings | File Templates.
  */
 public class Commanddelete extends CommandImpl {
-    private String object;
-    private String name;
-    private String vhost;
     private int number = 0;
     private QueueObject objname;
     private MBeanServerConnection mbsc;
@@ -80,7 +77,7 @@ public class Commanddelete extends CommandImpl {
 
     public void deletemessages() {
         Set set = null;
-        objname.setQueryString(this.object, this.name, this.vhost);
+        objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
         set = objname.returnObjects();
 
         if (objname.getSet().size() != 0) {
@@ -111,7 +108,7 @@ public class Commanddelete extends CommandImpl {
             }
 
         } else {
-            if (isname()) {
+            if (hasName()) {
 
                 echo("The Queue you have specified is not in the current broker");
                 echo("");
@@ -132,7 +129,7 @@ public class Commanddelete extends CommandImpl {
                 object = optionchecker("o");
             }
             if (object.compareToIgnoreCase("queue") == 0)
-                setobject(object);
+                setObject(object);
             else {
                 unrecognizeoption();
                 echo("This command is only applicable for delete command so please start with queue");
@@ -142,13 +139,13 @@ public class Commanddelete extends CommandImpl {
                 if (name == null)
                     name = optionchecker("n");
 
-                setname(name);
+                setName(name);
             }
             if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
-                setvhost(vhost);
+                setVirtualhost(vhost);
             }
             if (checkoptionsetting("top") || checkoptionsetting("t")) {
                 String number = optionchecker("top");
@@ -175,38 +172,6 @@ public class Commanddelete extends CommandImpl {
         echo("        -t      --top         Give how many number of messages you want to delete from the top (Default = all the messages will be deleted");
         echo("        -h      --help        Display the help and back to the qpid-cli prompt\n");
 
-    }
-
-    private void setobject(String object) {
-        this.object = object;
-    }
-
-    public String getobject() {
-        return this.object;
-    }
-
-    private void setname(String name) {
-        this.name = name;
-    }
-
-    private boolean isname() {
-        if (this.name == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    private void setvhost(String vhost) {
-        this.vhost = vhost;
-    }
-
-    public String getvhost() {
-        return this.vhost;
-    }
-
-    public String getname() {
-        return this.name;
     }
 
     private void setnumber(String number) {

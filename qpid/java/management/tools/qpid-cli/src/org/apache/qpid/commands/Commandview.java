@@ -60,13 +60,10 @@ import java.awt.font.OpenType;
  * To change this template use File | Settings | File Templates.
  */
 public class Commandview extends CommandImpl {
-    private String object;
-    private String name;
-    private String vhost;
     private int number = 0;
     private QueueObject objname;
     private MBeanServerConnection mbsc;
-    private String method1, method2;
+    private String method1;
     private ObjectName queue;
 
     public Commandview(JMXinfo info, String name) {
@@ -74,14 +71,13 @@ public class Commandview extends CommandImpl {
         this.mbsc = info.getmbserverconnector();
         this.objname = new QueueObject(mbsc);
         this.method1 = "viewMessages";
-        this.method2 = "viewMessaegContent";
 
     }
 
     public void viewmessages() {
         Set set = null;
         Object temp[] = {null};
-        objname.setQueryString(this.object, this.name, this.vhost);
+        objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
         set = objname.returnObjects();
         String header = "", temp_header = "", message_data = "", outline = "";
 
@@ -159,7 +155,7 @@ public class Commandview extends CommandImpl {
             }
 
         } else {
-            if (isname()) {
+            if (hasName()) {
 
                 echo("The Queue you have specified is not in the current broker");
                 echo("");
@@ -180,7 +176,7 @@ public class Commandview extends CommandImpl {
                 object = optionchecker("o");
             }
             if (object.compareToIgnoreCase("queue") == 0)
-                setobject(object);
+                setObject(object);
             else {
                 unrecognizeoption();
                 echo("This command is only applicable for delete command so please start with queue");
@@ -190,13 +186,13 @@ public class Commandview extends CommandImpl {
                 if (name == null)
                     name = optionchecker("n");
 
-                setname(name);
+                setName(name);
             }
             if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
-                setvhost(vhost);
+                setVirtualhost(vhost);
             }
             if (checkoptionsetting("top") || checkoptionsetting("t")) {
                 String number = optionchecker("top");
@@ -225,30 +221,6 @@ public class Commandview extends CommandImpl {
 
     }
 
-    private void setobject(String object) {
-        this.object = object;
-    }
-
-    private void setname(String name) {
-        this.name = name;
-    }
-
-    private boolean isname() {
-        if (this.name == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    private void setvhost(String vhost) {
-        this.vhost = vhost;
-    }
-
-    public String getvhost() {
-        return this.vhost;
-    }
-
     private void setnumber(String number) {
         Integer i = new Integer(number);
         this.number = i.intValue();
@@ -261,16 +233,8 @@ public class Commandview extends CommandImpl {
         return t;
     }
 
-    public String getname() {
-        return this.name;
+    public int getnumber()
+    {
+        return number;
     }
-
-    public String getobject() {
-        return this.object;
-    }
-
-    public int getnumber() {
-        return this.number;
-    }
-
 }

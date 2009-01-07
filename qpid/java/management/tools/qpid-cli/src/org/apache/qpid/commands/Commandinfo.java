@@ -48,11 +48,6 @@ import java.util.Set;
 
 
 public class Commandinfo extends CommandImpl {
-    private String object = null;
-    private String name = null;
-    private String virtualhost = null;
-    private String outputformat = null;
-    private String seperator = ",";
 
     public Commandinfo(JMXinfo info, String name) {
 
@@ -99,17 +94,17 @@ public class Commandinfo extends CommandImpl {
                 echo("Wrong objectName");
                 return;
             }
-            objname.setQueryString(this.object, this.name, this.virtualhost);
+            objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
             objname.returnObjects();
             if (objname.getSet().size() != 0) {
-                objname.displayinfo(this.outputformat, this.seperator);
+                objname.displayinfo(this.getOutputFormat(), this.getSeperator());
 
             } else {
-                if (isname()) {
+                if (hasName()) {
 
-                    echo("You might quering wrong " + this.object + " name with --name or -n option ");
+                    echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
-                    echo(this.object + "Type Objects might not in the broker currently");
+                    echo(this.getObject() + "Type Objects might not in the broker currently");
                     echo("");
                 } else {
                     printusage();
@@ -129,30 +124,30 @@ public class Commandinfo extends CommandImpl {
         with main option object or o
          */
         if (checkoptionsetting("output")) {
-            setoutputformat(optionchecker("output"));
+            setOutputFormat(optionchecker("output"));
             if (checkoptionsetting("separator"))
-                setseperator(optionchecker("separator"));
+                setSeperator(optionchecker("separator"));
         }
         if (checkoptionsetting("object") || checkoptionsetting("o")) {
             String object = optionchecker("object");
             if (object == null) {
                 object = optionchecker("o");
             }
-            setobject(object);
+            setObject(object);
             if (checkoptionsetting("name") || checkoptionsetting("n")) {
                 String name = optionchecker("name");
                 if (name == null)
                     name = optionchecker("n");
 
-                setname(name);
+                setName(name);
             }
             if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
-                setvirtualhost(vhost);
+                setVirtualhost(vhost);
             }
-            listobjects(this.object);
+            listobjects(this.getObject());
         } else if (checkoptionsetting("h") || checkoptionsetting("help"))
             printusage();
         else
@@ -185,75 +180,4 @@ public class Commandinfo extends CommandImpl {
         echo("                              ex: <queue info -n ping> : Give all the information about queue objects ");
         echo("                              having queue name of ping\n");
     }
-
-    private void setobject(String object) {
-        this.object = object;
-    }
-
-    private void setname(String name) {
-        this.name = name;
-    }
-
-    private boolean isname() {
-        if (this.name == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    private void setvirtualhost(String vhost) {
-        this.virtualhost = vhost;
-    }
-
-    public String getvirtualhost() {
-        return this.virtualhost;
-    }
-
-    private void setoutputformat(String outputformat) {
-        this.outputformat = outputformat;
-    }
-
-    private void setseperator(String seperator) {
-        this.seperator = seperator;
-    }
-
-    private boolean isseperator() {
-        if (this.seperator == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    private boolean isoutputformat() {
-        if (this.outputformat == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    public String getname() {
-        return this.name;
-    }
-
-    public String getobject() {
-        return this.object;
-    }
-
-    /*
-    public String optionchecker(String option_letter) {
-       Map map =  info.getCommandLineOptionParser().getAlloptions();
-       if(map == null)
-       return null;
-       CommandLineOption option = (CommandLineOption) map.get(option_letter);
-       if(option == null)
-       return null;
-       String value = option.getOptionValue();
-       return value;
-
-
-    }
-    */
 }

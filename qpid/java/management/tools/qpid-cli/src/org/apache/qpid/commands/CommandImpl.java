@@ -39,37 +39,82 @@
 package org.apache.qpid.commands;
 
 
-import org.apache.qpid.utils.CommandLineOptionParser;
+import org.apache.qpid.Command;
 import org.apache.qpid.utils.JMXinfo;
 import org.apache.qpid.utils.CommandLineOption;
 
-import javax.management.remote.JMXConnector;
-import javax.management.MBeanServerConnection;
 import java.util.Map;
 
 
-public class Command {
-    public JMXinfo info = null;
-    public String commandname = null;
+public abstract class CommandImpl implements Command {
+    protected JMXinfo info = null;
+    private String commandname = null;
 
+    private String name;
+    private String virtualhost = null;
+    private String object = null;
 
-    public Command(JMXinfo info, String name) {
+    private String outputformat = null;
+    private String seperator = ",";
+
+    public CommandImpl(JMXinfo info, String name) {
         this.info = info;
         this.commandname = name;
     }
 
-    public Command() {
+    public CommandImpl() {
 
     }
 
-    public void execute() {
-
-
+    protected void setName(String name) {
+        this.name = name;
     }
 
-    public void printusage() {
+    public String getName() {
+        return this.name;
+    }
+    
+    protected boolean hasName() {
+        if (this.name == null)
+            return false;
+
+        else
+            return true;
+    }
+    
+    protected void setObject(String object) {
+        this.object = object;
+    }
+    
+    public String getObject() {
+        return this.object;
+    }
+    
+    protected void setOutputFormat(String outputformat) {
+        this.outputformat = outputformat;
     }
 
+    protected String getOutputFormat()
+    {
+        return outputformat;
+    }
+    
+    protected void setSeperator(String seperator) {
+        this.seperator = seperator;
+    }
+
+    protected String getSeperator()
+    {
+        return seperator;
+    }
+    
+    protected void setVirtualhost(String virtualhost) {
+        this.virtualhost = virtualhost;
+    }
+
+    public String getVirtualhost() {
+        return this.virtualhost;
+    }
 
     public String optionchecker(String option_letter) {
         Map map = info.getCommandLineOptionParser().getAlloptions();
@@ -96,11 +141,7 @@ public class Command {
         else
             return false;
     }
-
-    public void optionvaluechecker() {
-
-    }
-
+    
     public void echo(String str) {
         System.out.println(str);
     }
@@ -109,5 +150,9 @@ public class Command {
         echo("list: Unrecognized option");
         echo("Try `" + this.commandname + " --help` for more information");
     }
+
+    public abstract void execute();
+
+    public abstract void printusage();
 
 }

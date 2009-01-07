@@ -63,10 +63,8 @@ import java.io.BufferedReader;
  * To change this template use File | Settings | File Templates.
  */
 public class Commandmove extends CommandImpl {
-    private String object;
     private String name1 = null, name2 = null, vhost1 = null, vhost2 = null, method1 = null, method2 = null;    //target and starting queue specifications happen with these options
-    private int number = 0;
-    private QueueObject queue1, queue2;
+    private QueueObject queue1;
     private MBeanServerConnection mbsc;
     private ObjectName queue;
     private int fmid = 0, tmid = 0;
@@ -75,7 +73,6 @@ public class Commandmove extends CommandImpl {
         super(info, name);
         this.mbsc = info.getmbserverconnector();
         this.queue1 = new QueueObject(mbsc);
-//        this.queue2 = new QueueObject(mbsc);
         this.method1 = "moveMessages";
         this.method2 = "getMessagesOnTheQueue";
 
@@ -83,12 +80,8 @@ public class Commandmove extends CommandImpl {
 
     public void movemessages() {
         Set set = null;
-        queue1.setQueryString(this.object, this.name1, this.vhost1);
-//        queue2.setQueryString(this.object, this.name2, this.vhost2);
+        queue1.setQueryString(this.getObject(), this.name1, this.vhost1);
         set = queue1.returnObjects();
-        List messageidlist = null;
-        Long frommessageid = null, tomessageid, middle;
-        int temp = 0;
         if (queue1.getSet().size() != 0) {                   // find the queue 
             Iterator it = set.iterator();
             this.queue = (ObjectName) it.next();
@@ -101,43 +94,6 @@ public class Commandmove extends CommandImpl {
                 printusage();
             }
         }
-//        if(this.tmid == 0 || this.fmid == 0)
-//        {
-//            this.number = queue1.getmessagecount(this.queue);
-//            echo("");
-//            System.out.print("Do you want to delete all the messages from the Queue[Y/N] :");
-//            InputStreamReader isr = new InputStreamReader(System.in);
-//            BufferedReader br = new BufferedReader(isr);
-//            try{
-//                String s = br.readLine();
-//                echo(s);
-//                if(s.compareToIgnoreCase("y") != 0)
-//                    return;
-//            }catch(Exception ex)
-//            {
-//                ex.printStackTrace();
-//            }
-//
-//        }
-//        if(this.number > queue1.getmessagecount(this.queue))
-//        {
-//            System.out.println("Given number is Greater than the Queue Depth");
-//            return;
-//        }//if user doesn't specify -t option all the messages will be moved
-//        Object[] params = {new Integer(this.number)};
-//        String[] signature = {new String("java.lang.Integer")};
-//        try{
-//            messageidlist = (List)this.mbsc.invoke(queue,this.method2,params,signature);
-//            Iterator it1 = messageidlist.iterator();
-//            temp++;
-//            do
-//            {
-//                middle = (Long)it1.next();
-//                if(temp == 1)
-//                    frommessageid = middle; // get the messageid of first message
-//
-//            }while(it1.hasNext());
-//            tomessageid = middle;   // get the messageid of the last message
         try {
             Object[] params1 = {getfmid(), gettmid(), this.name2};
             String[] signature1 = {new String("long"), new String("long"), new String("java.lang.String")};
@@ -163,7 +119,7 @@ public class Commandmove extends CommandImpl {
                 object = optionchecker("o");
             }
             if (object.compareToIgnoreCase("queue") == 0)
-                setobject(object);
+                setObject(object);
             else {
                 unrecognizeoption();
                 echo("This command is only applicable for queue command so please start with queue");
@@ -214,10 +170,6 @@ public class Commandmove extends CommandImpl {
 
     }
 
-    private void setobject(String object) {
-        this.object = object;
-    }
-
     private void setname1(String name) {
         this.name1 = name;
     }
@@ -244,14 +196,6 @@ public class Commandmove extends CommandImpl {
 
     private void setvhost1(String vhost) {
         this.vhost1 = vhost;
-    }
-//    private void setvhost2(String vhost) {
-//        this.vhost2 = vhost;
-//    }
-
-    private void setnumber(String number) {
-        Integer i = new Integer(number);
-        this.number = i.intValue();
     }
 
     private static String removeSpaces(String s) {
@@ -284,11 +228,4 @@ public class Commandmove extends CommandImpl {
         return this.name2;
     }
 
-    public String getvhost() {
-        return this.vhost1;
-    }
-
-    public String getobject() {
-        return this.object;
-    }
 }

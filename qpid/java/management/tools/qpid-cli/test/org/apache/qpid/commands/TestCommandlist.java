@@ -81,9 +81,9 @@ public class TestCommandlist {
     public void TestSetQueryString()
     {
         list.execute();
-        Assert.assertEquals(list.getobject(),"queue");
-        Assert.assertEquals(list.getvhost(),"test");
-        Assert.assertEquals(list.getname(),"ping");
+        Assert.assertEquals(list.getObject(),"queue");
+        Assert.assertEquals(list.getVirtualhost(),"test");
+        Assert.assertEquals(list.getName(),"ping");
     }
 
     @After

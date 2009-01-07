@@ -92,12 +92,6 @@ public class Commandviewcontent extends CommandImpl {
                     echo("You haven't selected a MessageId Please use -id and give a message id");
                     echo("Or run view command with same arguemnts to view messageId list for the queue");
                 }
-
-//                if(objname.getmessagecount(this.queue) < this.number)
-//                {
-//                    echo("Given number is Greater than the Queue Depth");
-//                    return;
-//                }
                 else {
                     Object[] params = {this.number};
                     String[] signature = {new String("long")};
@@ -139,25 +133,6 @@ public class Commandviewcontent extends CommandImpl {
 
                     }
                     echo(message_data);
-//                    Object keys[] = data.keySet().toArray();
-//                    CompositeData comdata = data.get(keys);
-//                    for(int i=0;i < keys.length;i++)
-//                    {
-//                        System.out.println(keys[i].toString());
-//                        CompositeData cdata = data.get(temp);
-//                        System.out.println(cdata.toString());
-//                        temp[0] = null;
-//                    }
-//                    TabularType tabular = data.getTabularType();
-////                    System.out.println(tabular.toString());
-//                   List info = tabular.getIndexNames();
-//                   Iterator it1 = info.iterator();
-//
-//                    do{
-//                            String temp1 = (String)it1.next();
-//                        System.out.println(temp1);
-//                    }while(it1.hasNext());
-
                 }
             } catch (Exception ex) {
                 echo("Given MessageId is invalid, There's no message with the given messageId");
@@ -166,7 +141,7 @@ public class Commandviewcontent extends CommandImpl {
             }
 
         } else {
-            if (isname()) {
+            if (hasName()) {
 
                 echo("The Queue you have specified is not in the current broker");
                 echo("");
@@ -187,7 +162,7 @@ public class Commandviewcontent extends CommandImpl {
                 object = optionchecker("o");
             }
             if (object.compareToIgnoreCase("queue") == 0)
-                setobject(object);
+                setObject(object);
             else {
                 unrecognizeoption();
                 echo("This command is only applicable for delete command so please start with queue");
@@ -197,13 +172,13 @@ public class Commandviewcontent extends CommandImpl {
                 if (name == null)
                     name = optionchecker("n");
 
-                setname(name);
+                setName(name);
             }
             if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
-                setvhost(vhost);
+                setVirtualhost(vhost);
             }
             if (checkoptionsetting("messageid") || checkoptionsetting("id")) {
                 String number = optionchecker("id");
@@ -232,30 +207,6 @@ public class Commandviewcontent extends CommandImpl {
 
     }
 
-    private void setobject(String object) {
-        this.object = object;
-    }
-
-    private void setname(String name) {
-        this.name = name;
-    }
-
-    private boolean isname() {
-        if (this.name == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    public void setvhost(String vhost) {
-        this.vhost = vhost;
-    }
-
-    public String getvhost() {
-        return this.vhost;
-    }
-
     private void setnumber(String number) {
         Integer i = new Integer(number);
         this.number = i.intValue();
@@ -266,14 +217,6 @@ public class Commandviewcontent extends CommandImpl {
         String t = "";
         while (st.hasMoreElements()) t += st.nextElement();
         return t;
-    }
-
-    public String getname() {
-        return this.name;
-    }
-
-    public String getobject() {
-        return this.object;
     }
 
     public int getnumber() {
