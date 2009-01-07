@@ -74,7 +74,7 @@ public class TestCommandlist {
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));
         info = new JMXinfo(jmxc,parser,mbsc);
-        list = new Commandlist(info,"list");
+        list = new Commandlist(info);
 
     }
     @Test

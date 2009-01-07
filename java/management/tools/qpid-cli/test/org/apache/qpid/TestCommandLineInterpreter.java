@@ -80,7 +80,7 @@ public class TestCommandLineInterpreter {
 
     }
     @Test
-    public void TestSetQueryString()
+    public void TestSetQueryString() throws Exception
     {
         CommandLineInterpreter.oneshotmode(args,parser,jmxc,mbsc);
         Assert.assertEquals(args[0],"info");

@@ -37,11 +37,14 @@
  */
 package org.apache.qpid;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.utils.JMXinfo;
-import org.apache.qpid.commands.*;
 
 
 public class CommandExecutionEngine {
+    private static Map<String, Class<? extends Command>> _commands = new HashMap<String, Class<? extends Command>>();
     private Command currentcommand = null;
     private String commandname = null;
     private JMXinfo info = null;
@@ -51,29 +54,24 @@ public class CommandExecutionEngine {
         this.commandname = info.getCommandLineOptionParser().getcommandname();
     }
 
-    public boolean CommandSelector() {
-
-        if (CommandConstants.INFO_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commandinfo(info, this.commandname);
-        else if (CommandConstants.LIST_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commandlist(info, this.commandname);
-        else if (CommandConstants.HELP_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commandhelp(info, this.commandname);
-        else if (CommandConstants.DELETE_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commanddelete(info, this.commandname);
-        else if (CommandConstants.MOVE_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commandmove(info, this.commandname);
-        else if (CommandConstants.VIEW_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commandview(info, this.commandname);
-        else if (CommandConstants.VIEWCONTENT_COMMAND.equalsIgnoreCase(this.commandname))
-            currentcommand = new Commandviewcontent(info, this.commandname);
-        else {
+    public boolean CommandSelector() throws Exception {
+        Class<? extends Command> commandClass = _commands.get(this.commandname);
+        if (commandClass != null)
+        {
+            Class<?> parameterTypes = JMXinfo.class;
+            currentcommand = (Command) commandClass.getConstructor(parameterTypes).newInstance(info);
+        }
+        else
+        {
             usage();
             return false;
         }
         return true;
-
-
+    }
+    
+    public static void addCommand(String name, Class<? extends Command> newCommand)
+    {
+        _commands.put(name, newCommand);
     }
 
     public void runcommand() {

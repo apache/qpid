@@ -70,7 +70,7 @@ public class TestCommandmove {
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));
         info = new JMXinfo(jmxc,parser,mbsc);
-        move = new Commandmove(info,"move");
+        move = new Commandmove(info);
 
 
 

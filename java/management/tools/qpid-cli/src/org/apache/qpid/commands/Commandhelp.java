@@ -48,10 +48,13 @@ import org.apache.qpid.utils.JMXinfo;
  * To change this template use File | Settings | File Templates.
  */
 public class Commandhelp extends CommandImpl {
-    public Commandhelp(JMXinfo info, String name) {
-        super(info, name);
-    }
 
+    public static final String COMMAND_NAME = "help";
+    
+    public Commandhelp(JMXinfo info) 
+    {
+    }
+    
     public void execute() {
         printusage();
     }
@@ -70,4 +73,5 @@ public class Commandhelp extends CommandImpl {
         echo("[quit]    This command is disconnect the connection with the Qpid Java broker and go back to normal propmt");
         echo("");
     }
+
 }

@@ -70,7 +70,7 @@ public class TestCommanddelete {
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));
         info = new JMXinfo(jmxc,parser,mbsc);
-        delete = new Commanddelete(info,"delete");
+        delete = new Commanddelete(info);
 
 
 

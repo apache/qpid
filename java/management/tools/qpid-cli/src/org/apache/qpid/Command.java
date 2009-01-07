@@ -39,6 +39,8 @@ package org.apache.qpid;
 
 public interface Command {
 
+    public static String COMMAND_NAME = null;
+    
     public void execute();
 
     public void printusage();

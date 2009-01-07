@@ -40,6 +40,7 @@ package org.apache.qpid.commands;
 
 
 import org.apache.qpid.Command;
+import org.apache.qpid.CommandExecutionEngine;
 import org.apache.qpid.utils.JMXinfo;
 import org.apache.qpid.utils.CommandLineOption;
 
@@ -48,7 +49,6 @@ import java.util.Map;
 
 public abstract class CommandImpl implements Command {
     protected JMXinfo info = null;
-    private String commandname = null;
 
     private String name;
     private String virtualhost = null;
@@ -56,16 +56,16 @@ public abstract class CommandImpl implements Command {
 
     private String outputformat = null;
     private String seperator = ",";
-
-    public CommandImpl(JMXinfo info, String name) {
+    
+    public CommandImpl(JMXinfo info) {
         this.info = info;
-        this.commandname = name;
     }
 
-    public CommandImpl() {
+    public CommandImpl() 
+    {
 
     }
-
+    
     protected void setName(String name) {
         this.name = name;
     }
@@ -148,11 +148,12 @@ public abstract class CommandImpl implements Command {
 
     public void unrecognizeoption() {
         echo("list: Unrecognized option");
-        echo("Try `" + this.commandname + " --help` for more information");
+        echo("Try `" + COMMAND_NAME + " --help` for more information");
     }
 
     public abstract void execute();
 
     public abstract void printusage();
+
 
 }

@@ -38,28 +38,30 @@
 
 package org.apache.qpid.commands;
 
-
-import org.apache.qpid.utils.CommandLineOptionParser;
+import org.apache.qpid.commands.objects.ObjectNames;
+import org.apache.qpid.commands.objects.QueueObject;
 import org.apache.qpid.utils.JMXinfo;
-import org.apache.qpid.commands.objects.*;
 
 import javax.management.MBeanServerConnection;
+import javax.management.ObjectName;
 import java.util.Set;
 
-
-public class Commandinfo extends CommandImpl {
-
-    public static final String COMMAND_NAME = "info";
+public class Commandget extends CommandImpl
+{
     
-    public Commandinfo(JMXinfo info)
+    private String _attributeName;
+    private String _value;
+    public static String COMMAND_NAME = "get";
+
+    public Commandget(JMXinfo info)
     {
         super(info);
     }
 
-    private void listobjects(String option_value) {
-        /*pring usage if use is not give the correct option letter or no options */
-        if (option_value == null) {
-//            System.out.println("testing");
+    private void getAttribute(String option_value)
+    {
+        if (option_value == null)
+        {
             printusage();
             return;
         }
@@ -67,118 +69,164 @@ public class Commandinfo extends CommandImpl {
         Set set = null;
         ObjectNames objname = null;
 
-        try {
-            if (option_value.compareToIgnoreCase("queue") == 0 || option_value.compareToIgnoreCase("queues") == 0) {
+        try
+        {
+            if (option_value.compareToIgnoreCase("queue") == 0 || option_value.compareToIgnoreCase("queues") == 0)
+            {
                 objname = new QueueObject(mbsc);
-
-            } else
-            if (option_value.compareToIgnoreCase("Virtualhosts") == 0 || option_value.compareToIgnoreCase("Virtualhost") == 0) {
-                objname = new VirtualHostObject(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Exchange") == 0 || option_value.compareToIgnoreCase("Exchanges") == 0) {
-                objname = new ExchangeObject(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Connection") == 0 || option_value.compareToIgnoreCase("Connections") == 0) {
-                objname = new ConnectionObject(mbsc);
-//                this.name = option_value;
-            } else if (option_value.compareToIgnoreCase("all") == 0) {
-                objname = new AllObjects(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Usermanagement") == 0 || option_value.compareToIgnoreCase("Usermanagmenets") == 0) {
-                objname = new UserManagementObject(mbsc);
-//                this.name = option_value;
-            } else {
+            }
+            else
+            {
                 printusage();
                 echo("Wrong objectName");
                 return;
             }
+
+            if (_attributeName == null)
+            {
+                echo("attribute name not specified. See --help for details");
+                return;
+            }
+
             objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
             objname.returnObjects();
-            if (objname.getSet().size() != 0) {
-                objname.displayinfo(this.getOutputFormat(), this.getSeperator());
 
-            } else {
-                if (hasName()) {
+            if (objname.getSet().size() != 1)
+            {
+                echo("You quering return more than one queue to set was this intended?\n" + objname.getQueryString());
+            }
+            else if (objname.getSet().size() == 1)
+            {
+                ObjectName object = (ObjectName) objname.getSet().iterator().next();
+
+                Object value= objname.getAttribute(object, _attributeName);
+
+                echo(value.toString());
+            }
+            else
+            {
+                if (hasName())
+                {
 
                     echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
                     echo(this.getObject() + "Type Objects might not in the broker currently");
                     echo("");
-                } else {
+                }
+                else
+                {
                     printusage();
                 }
             }
 
-
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
 
-
     }
 
-    public void execute() {
+    public void execute()
+    {
         /* In here you it's easy to handle any number of otpions which are going to add with the list command which works
         with main option object or o
          */
-        if (checkoptionsetting("output")) {
+        if (checkoptionsetting("output"))
+        {
             setOutputFormat(optionchecker("output"));
             if (checkoptionsetting("separator"))
+            {
                 setSeperator(optionchecker("separator"));
+            }
         }
-        if (checkoptionsetting("object") || checkoptionsetting("o")) {
+        if (checkoptionsetting("object") || checkoptionsetting("o"))
+        {
             String object = optionchecker("object");
-            if (object == null) {
+            if (object == null)
+            {
                 object = optionchecker("o");
             }
             setObject(object);
-            if (checkoptionsetting("name") || checkoptionsetting("n")) {
+
+            if (checkoptionsetting("name") || checkoptionsetting("n"))
+            {
                 String name = optionchecker("name");
                 if (name == null)
+                {
                     name = optionchecker("n");
+                }
 
                 setName(name);
             }
-            if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
+
+            if (checkoptionsetting("attribute") || checkoptionsetting("a"))
+            {
+                String name = optionchecker("attribute");
+                if (name == null)
+                {
+                    name = optionchecker("a");
+                }
+
+                setAttributeName(name);
+            }
+            if (checkoptionsetting("virtualhost") || checkoptionsetting("v"))
+            {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
+                {
                     vhost = optionchecker("v");
+                }
                 setVirtualhost(vhost);
             }
-            listobjects(this.getObject());
-        } else if (checkoptionsetting("h") || checkoptionsetting("help"))
+            getAttribute(this.getObject());
+        }
+        else if (checkoptionsetting("h") || checkoptionsetting("help"))
+        {
             printusage();
+        }
         else
+        {
             unrecognizeoption();
+        }
     }
 
-    public void printusage() {
+    private void setAttributeName(String name)
+    {
+        this._attributeName = name;
+    }
+
+    public void printusage()
+    {
         echo("");
-        echo("Usage:info [OPTION] ... [OBJECT TYPE]...\n");
-        echo("Give ALL the information about the given object\n");
+        echo("Usage:set [OPTION] ... [OBJECT TYPE]...\n");
+        echo("List the information about the given object\n");
         echo("Where possible options include:\n");
         echo("        -o      --object      type of objects which you want to list\n");
         echo("                              ex: < list -o queue > : lists all the queues created in the java broker\n");
         echo("                              For now list command is supporting following object typse \n");
         echo("                              Queue  Connection  VirtualHost  UserMangement  Exchange");
-        echo("                              Or You can specify object type by giving it at the beginning rather giving ");
-        echo("                              it as a argument");
-        echo("                              Ex:< queue info > this command is equal to <info -o queue> command \n");
+        echo("                              Or You can specify object type by giving it at the beginning");
+        echo("                              rather giving it as a argument");
+        echo("                              Ex:< queue list > this command is equal to list -o queue \n");
         echo("        -v      --virtualhost After specifying the object type you can filter output with this option");
-        echo("                              list objects with the given virtualhost which will help to find identical");
-        echo("                              queue objects with -n option");
-        echo("                              ex: queue info -v developement");
-        echo("        -output               Specify which output format you want to get the ouput");
-        echo("                              Although the option is there current version supports only for CSV output format");
-        echo("        -separator            This option use with output option to specify which separator you want to get the CSV output (default seperator is comma");
-        echo("        -h      --help        Display the help and back to the qpid-cli prompt\n");
+        echo("                              list objects with the given virtualhost which will help to find ");
+        echo("                              identical queue objects with -n option");
+        echo("                              ex: queue list -v develop   ment");
         echo("        -n      --name        After specifying what type of objects you want to monitor you can filter");
-        echo("                              the output using -n option by specifying the name of the object you want");
+        echo("                              the output using -n option by specifying the name of the object you want ");
         echo("                              to monitor exactly");
-        echo("                              ex: <queue info -n ping> : Give all the information about queue objects ");
-        echo("                              having queue name of ping\n");
+        echo("                              ex: <list -o queue -n ping> : list all the queue objects having queue name");
+        echo("                              of ping");
+        echo("                              ex: <queue list -n ping -v development> list all the queue objects with name ");
+        echo("                              of ping and virtualhost of developement \n");
+        echo("        -a      --attribute   ");
+        echo("        -h      --help        Display the help and back to the qpid-cli prompt\n");
+
     }
 }
+
+
+
+
+
