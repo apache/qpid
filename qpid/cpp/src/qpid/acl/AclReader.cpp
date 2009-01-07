@@ -312,6 +312,7 @@ bool AclReader::processGroupLine(tokList& toks, const bool cont) {
                 errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.";
                 return false;
             }
+            if (!isValidUserName(toks[i])) return false;
             addName(toks[i], citr->second);
         }
     } else {
@@ -330,6 +331,7 @@ bool AclReader::processGroupLine(tokList& toks, const bool cont) {
                 errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Name \"" << toks[i] << "\" contains illegal characters.";
                 return false;
             }
+            if (!isValidUserName(toks[i])) return false;
             addName(toks[i], citr->second);
         }
     }
@@ -506,6 +508,16 @@ AclReader::nvPair AclReader::splitNameValuePair(const std::string& nvpString) {
         return nvPair(nvpString, "");
     }
     return nvPair(nvpString.substr(0, pos), nvpString.substr(pos+1));
+}
+
+// Returns true if a username has the name@realm format
+bool AclReader::isValidUserName(const std::string& name){
+	size_t pos = name.find('@');
+	if ( pos == std::string::npos || pos == name.length() -1){
+		errorStream << ACL_FORMAT_ERR_LOG_PREFIX << "Username '" << name << "' must contain a realm";
+		return false;
+	}
+	return true;
 }
 
 }} // namespace qpid::acl
