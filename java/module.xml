@@ -470,7 +470,7 @@
     <delete dir="${module.instrumented}"/>
   </target>
 
-  <target name="instrument">
+  <target name="instrument" depends="cobertura-init">
     <cobertura-instrument todir="${module.instrumented}"
                           datafile="${cobertura.datafile}">
       <fileset dir="${module.classes}">
@@ -530,7 +530,7 @@
     </junit>
   </target>
 
-  <target name="coverage-report">
+  <target name="coverage-report" depends="cobertura-init">
       <echo message="${cobertura.datafile}"/>
       <cobertura-report format="html"
                       destdir="${module.coverage}"

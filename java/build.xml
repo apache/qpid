@@ -195,7 +195,7 @@
     <delete dir="${tasks.classes}"/>
   </target>
 
-  <target name="coverage-report" description="generate coverage report">
+  <target name="coverage-report" description="generate coverage report" depends="cobertura-init">
     <cobertura-merge datafile="${build.coveragereport}/cobertura.ser">
       <!-- merge all module coverage reports -->
       <fileset dir="${build}">
