@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="MaxMethodBodySize"
-	ProjectGUID="{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}"
+	ProjectGUID="{CB5C939B-FECA-1BAD-BB9C-8C3A688E2823}"
 	RootNamespace="MaxMethodBodySize"
 	Keyword="Win32Proj"
 	SignManifests="true"

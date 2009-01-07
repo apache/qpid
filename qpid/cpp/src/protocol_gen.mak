@@ -7,16 +7,14 @@
 # repository.
 
 specdir = ..\..\specs
-# To add cluster support, add ..\xml\cluster.xml to specs, then add sources
-# to project files.
-specs = $(specdir)\amqp.0-10-qpid-errata.xml
+specs = $(specdir)\amqp.0-10-qpid-errata.xml ..\xml\cluster.xml
 
 rgen_dir=..\rubygen
 
 mgen_dir=..\managementgen
-mgmt_specs=$(specdir)\management-schema.xml .\qpid\acl\management-schema.xml
-# To add cluser management, add the next line to mgen_specs:
-#	.\qpid\cluster\management-schema.xml
+mgmt_specs=$(specdir)\management-schema.xml \
+           .\qpid\acl\management-schema.xml \
+           .\qpid\cluster\management-schema.xml
 
 all: rubygen.mk gen\generate_MaxMethodBodySize_h.cpp managementgen.mk
 

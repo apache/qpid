@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="client"
-	ProjectGUID="{6961DBA3-FECA-1BAD-F396-8C394564ADCF}"
+	ProjectGUID="{6961DBA3-FECA-1BAD-F396-8C39688E2823}"
 	RootNamespace="client"
 	Keyword="Win32Proj"
 	SignManifests="true"
