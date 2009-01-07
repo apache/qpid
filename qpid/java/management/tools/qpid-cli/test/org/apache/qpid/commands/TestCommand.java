@@ -44,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.After;
 import org.junit.Assert;
+import org.apache.qpid.Command;
 import org.apache.qpid.Connector;
 import org.apache.qpid.ConnectorFactory;
 import org.apache.qpid.ConnectionConstants;
@@ -74,7 +75,7 @@ public class TestCommand{
         parser = new CommandLineOptionParser(list);
         test = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT);
         info = new JMXinfo(test.getConnector(),parser,test.getMBeanServerConnection());
-        cmd = new Command(info,"list");
+        cmd = new Commandinfo(info,"list");
 
     }
     @Test

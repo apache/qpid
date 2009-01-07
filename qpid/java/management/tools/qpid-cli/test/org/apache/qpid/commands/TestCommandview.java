@@ -76,9 +76,9 @@ public class TestCommandview {
     public void TestSetQueryString()
     {
         view.execute();
-        Assert.assertEquals(view.getobject(),"queue");
-        Assert.assertEquals(view.getvhost(),"test");
-        Assert.assertEquals(view.getname(),"ping");
+        Assert.assertEquals(view.getObject(),"queue");
+        Assert.assertEquals(view.getVirtualhost(),"test");
+        Assert.assertEquals(view.getName(),"ping");
         Assert.assertEquals(view.getnumber(),10);
 
     }

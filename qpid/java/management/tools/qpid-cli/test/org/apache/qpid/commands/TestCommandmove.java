@@ -79,8 +79,8 @@ public class TestCommandmove {
     public void TestSetQueryString()
     {
         move.execute();
-        Assert.assertEquals(move.getobject(),"queue");
-        Assert.assertEquals(move.getvhost(),"test");
+        Assert.assertEquals(move.getObject(),"queue");
+        Assert.assertEquals(move.getVirtualhost(),"test");
         Assert.assertEquals(move.getname1(),"ping");
         Assert.assertEquals(move.getname2(),"message_queue");
         Assert.assertEquals(move.getfmid(),10);

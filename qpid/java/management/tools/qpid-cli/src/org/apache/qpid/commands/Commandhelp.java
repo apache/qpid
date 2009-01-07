@@ -53,10 +53,10 @@ public class Commandhelp extends CommandImpl {
     }
 
     public void execute() {
-        displayhelp();
+        printusage();
     }
 
-    private void displayhelp() {
+    public void printusage() {
         echo("");
         echo("Current version of qpid CLI is supporting following commands");
         echo("");
