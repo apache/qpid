@@ -62,7 +62,7 @@ import java.io.BufferedReader;
  * Time: 5:35:05 PM
  * To change this template use File | Settings | File Templates.
  */
-public class Commandmove extends Command {
+public class Commandmove extends CommandImpl {
     private String object;
     private String name1 = null, name2 = null, vhost1 = null, vhost2 = null, method1 = null, method2 = null;    //target and starting queue specifications happen with these options
     private int number = 0;

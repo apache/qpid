@@ -47,7 +47,7 @@ import org.apache.qpid.utils.JMXinfo;
  * Time: 5:55:28 PM
  * To change this template use File | Settings | File Templates.
  */
-public class Commandhelp extends Command {
+public class Commandhelp extends CommandImpl {
     public Commandhelp(JMXinfo info, String name) {
         super(info, name);
     }
