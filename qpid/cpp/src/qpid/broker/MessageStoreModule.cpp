@@ -20,6 +20,7 @@
  */
 
 #include "MessageStoreModule.h"
+#include "NullMessageStore.h"
 #include <iostream>
 
 // This transfer protects against the unloading of the store lib prior to the handling of the exception
@@ -163,6 +164,11 @@ void MessageStoreModule::abort(TransactionContext& ctxt)
 void MessageStoreModule::collectPreparedXids(std::set<std::string>& xids)
 {
     TRANSFER_EXCEPTION(store->collectPreparedXids(xids));
+}
+
+bool MessageStoreModule::isNull() const
+{
+    return NullMessageStore::isNullStore(store);
 }
 
 }} // namespace qpid::broker

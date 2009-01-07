@@ -20,8 +20,10 @@
  */
 
 #include "NullMessageStore.h"
+#include "MessageStoreModule.h"
 #include "RecoveryManager.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
 
 #include <iostream>
 
@@ -90,7 +92,10 @@ void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessag
 
 void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&,
                                    const intrusive_ptr<const PersistableMessage>&,
-                                   string&, uint64_t, uint32_t) {}
+                                   string&, uint64_t, uint32_t) 
+{
+    throw qpid::framing::InternalErrorException("Can't load content; persistence not enabled");
+}
 
 void NullMessageStore::enqueue(TransactionContext*,
                                const intrusive_ptr<PersistableMessage>& msg,
@@ -149,8 +154,13 @@ bool NullMessageStore::isNull() const
 
 bool NullMessageStore::isNullStore(const MessageStore* store)
 {
-    const NullMessageStore* test = dynamic_cast<const NullMessageStore*>(store);
-    return test && test->isNull();
+    const MessageStoreModule* wrapper = dynamic_cast<const MessageStoreModule*>(store);
+    if (wrapper) {
+        return wrapper->isNull();
+    } else {
+        const NullMessageStore* test = dynamic_cast<const NullMessageStore*>(store);
+        return test && test->isNull();
+    }
 }
 
 }}  // namespace qpid::broker
