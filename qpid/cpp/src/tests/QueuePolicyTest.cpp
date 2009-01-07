@@ -22,6 +22,7 @@
 #include "test_tools.h"
 
 #include "qpid/broker/QueuePolicy.h"
+#include "qpid/client/QueueOptions.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "MessageUtils.h"
@@ -240,6 +241,33 @@ QPID_AUTO_TEST_CASE(testPolicyWithDtx)
     //now retry and this time should succeed
     other = f.connection.newSession();
     other.messageTransfer(arg::content=client::Message("Message_6", q));
+}
+
+QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore) 
+{
+    //Ensure that with no store loaded, we don't flow to disk but
+    //fallback to rejecting messages
+    QueueOptions args;
+    args.setSizePolicy(FLOW_TO_DISK, 0, 5);
+
+    ProxySessionFixture f;
+    std::string q("my-queue");
+    f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
+    LocalQueue incoming;
+    SubscriptionSettings settings(FlowControl::unlimited());
+    settings.autoAck = 0; // no auto ack.
+    Subscription sub = f.subs.subscribe(incoming, q, settings); 
+    for (int i = 0; i < 5; i++) {
+        f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
+    }
+    for (int i = 0; i < 5; i++) {
+        BOOST_CHECK_EQUAL(incoming.pop().getData(), (boost::format("%1%_%2%") % "Message" % (i+1)).str());
+    }
+    try {
+        ScopedSuppressLogging sl; // Suppress messages for expected errors.
+        f.session.messageTransfer(arg::content=client::Message("Message_6", q));
+        BOOST_FAIL("expecting ResourceLimitExceededException.");
+    } catch (const ResourceLimitExceededException&) {}    
 }
 
 
