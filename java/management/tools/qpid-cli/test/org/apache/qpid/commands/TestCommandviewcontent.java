@@ -79,11 +79,10 @@ public class TestCommandviewcontent {
     public void TestSetQueryString()
     {
         viewcontent.execute();
-        Assert.assertEquals(viewcontent.getobject(),"queue");
+        Assert.assertEquals(viewcontent.getObject(),"queue");
         Assert.assertEquals(viewcontent.getnumber(),10);
-        Assert.assertEquals(viewcontent.getname(),"ping");
-        Assert.assertEquals(viewcontent.getvhost(),"test");
-
+        Assert.assertEquals(viewcontent.getName(),"ping");
+        Assert.assertEquals(viewcontent.getVirtualhost(),"test");
     }
 
     @After

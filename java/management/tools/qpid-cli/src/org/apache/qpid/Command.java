@@ -37,16 +37,14 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.utils.CommandLineOption;
-
 public interface Command {
-
-    public static String commandname = null;
-    public static CommandLineOption options = null;
 
     public void execute();
 
     public void printusage();
 
-    public void optionvaluechecker();
+    public String optionchecker(String string);
+
+    public boolean checkoptionsetting(String string);
+
 }

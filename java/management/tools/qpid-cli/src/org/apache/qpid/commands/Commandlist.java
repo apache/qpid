@@ -55,12 +55,6 @@ import java.util.Map;
 
 public class Commandlist extends CommandImpl {
 
-    private String object;
-    private String name;
-    private String vhost;
-    private String outputformat = null;
-    private String seperator = ","; //this variable is assigning if -n option is used otherwise this is null
-
     public Commandlist(JMXinfo info, String name) {
         super(info, name);
 
@@ -105,19 +99,19 @@ public class Commandlist extends CommandImpl {
                 echo("Wrong objectName");
                 return;
             }
-            objname.setQueryString(this.object, this.name, this.vhost);
+            objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
             objname.returnObjects();
             if (objname.getSet().size() != 0) {
-                if (this.object.compareToIgnoreCase("queue") == 0 || this.object.compareToIgnoreCase("queues") == 0)
-                    objname.displayqueues(this.outputformat, this.seperator);
+                if (this.getObject().compareToIgnoreCase("queue") == 0 || this.getObject().compareToIgnoreCase("queues") == 0)
+                    objname.displayqueues(this.getOutputFormat(), this.getSeperator());
                 else
-                    objname.displayobjects(this.outputformat, this.seperator);
+                    objname.displayobjects(this.getOutputFormat(), this.getSeperator());
             } else {
-                if (isname()) {
+                if (hasName()) {
 
-                    echo("You might quering wrong " + this.object + " name with --name or -n option ");
+                    echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
-                    echo(this.object + "Type Objects might not in the broker currently");
+                    echo(this.getObject() + "Type Objects might not in the broker currently");
                     echo("");
                 } else {
                     printusage();
@@ -150,30 +144,30 @@ public class Commandlist extends CommandImpl {
         with main option object or o
          */
         if (checkoptionsetting("output")) {
-            setoutputformat(optionchecker("output"));
+            setOutputFormat(optionchecker("output"));
             if (checkoptionsetting("separator"))
-                setseperator(optionchecker("separator"));
+                setSeperator(optionchecker("separator"));
         }
         if (checkoptionsetting("object") || checkoptionsetting("o")) {
             String object = optionchecker("object");
             if (object == null) {
                 object = optionchecker("o");
             }
-            setobject(object);
+            setObject(object);
             if (checkoptionsetting("name") || checkoptionsetting("n")) {
                 String name = optionchecker("name");
                 if (name == null)
                     name = optionchecker("n");
 
-                setname(name);
+                setName(name);
             }
             if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
-                setvhost(vhost);
+                setVirtualhost(vhost);
             }
-            listobjects(this.object);
+            listobjects(this.getObject());
         } else if (checkoptionsetting("domain") || checkoptionsetting("d"))
             listdomains();
         else if (checkoptionsetting("h") || checkoptionsetting("help"))
@@ -211,81 +205,6 @@ public class Commandlist extends CommandImpl {
         echo("                              ex: <queue list -n ping -v development> list all the queue objects with name ");
         echo("                              of ping and virtualhost of developement \n");
 
-
-    }
-
-    private void setobject(String object) {
-        this.object = object;
-    }
-
-    private void setname(String name) {
-        this.name = name;
-    }
-
-    private boolean isname() {
-        if (this.name == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    private void setvhost(String vhost) {
-        this.vhost = vhost;
-    }
-
-    public String getvhost() {
-        return this.vhost;
-    }
-
-    public String getname() {
-        return this.name;
-    }
-
-    public String getobject() {
-        return this.object;
-    }
-
-    private void setoutputformat(String outputformat) {
-        this.outputformat = outputformat;
-    }
-
-    private void setseperator(String seperator) {
-        this.seperator = seperator;
-    }
-
-    private boolean isseperator() {
-        if (this.seperator == null)
-            return false;
-
-        else
-            return true;
-    }
-
-    private boolean isoutputformat() {
-        if (this.outputformat == null)
-            return false;
-
-        else
-            return true;
-    }
-
-
-    /*
-    public String optionchecker(String option_letter) {
-       Map map =  info.getCommandLineOptionParser().getAlloptions();
-       if(map == null)
-       return null;
-       CommandLineOption option = (CommandLineOption) map.get(option_letter);
-       if(option == null)
-       return null;
-       String value = option.getOptionValue();
-       return value;
-
-
-    }
-    */
-    public void optionvaluechecker() {
 
     }
 }

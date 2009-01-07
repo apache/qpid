@@ -79,9 +79,9 @@ public class TestCommanddelete {
     public void TestSetQueryString()
     {
          delete.execute();
-        Assert.assertEquals(delete.getobject(),"queue");
-        Assert.assertEquals(delete.getvhost(),"test");
-        Assert.assertEquals(delete.getname(),"ping");
+        Assert.assertEquals(delete.getObject(),"queue");
+        Assert.assertEquals(delete.getVirtualhost(),"test");
+        Assert.assertEquals(delete.getName(),"ping");
         Assert.assertEquals(delete.getnumber(),1);
 
     }
