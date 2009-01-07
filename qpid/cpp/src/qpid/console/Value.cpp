@@ -22,6 +22,7 @@
 #include "Value.h"
 #include "qpid/framing/Buffer.h"
 
+using namespace qpid;
 using namespace qpid::console;
 using namespace std;
 
