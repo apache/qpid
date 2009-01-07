@@ -54,12 +54,12 @@ import java.io.IOException;
  * Time: 12:06:25 PM
  * To change this template use File | Settings | File Templates.
  */
-public class TestCommandExecusionEngine {
+public class TestCommandExecutionEngine {
     String line;
     String [] command;
     CommandLineOptionParser commandlineoptionparser;
     JMXinfo info;
-    CommandExecusionEngine engine;
+    CommandExecutionEngine engine;
     Connector connector;
     @Before
     public void setup(){
@@ -75,7 +75,7 @@ public class TestCommandExecusionEngine {
         command = line.split(" ");
         commandlineoptionparser = new CommandLineOptionParser(command);
         info = new JMXinfo(connector.getConnector(), commandlineoptionparser,connector.getMBeanServerConnection());
-        engine = new CommandExecusionEngine(info);
+        engine = new CommandExecutionEngine(info);
         Assert.assertEquals(engine.CommandSelector(),true);
     }
     @After

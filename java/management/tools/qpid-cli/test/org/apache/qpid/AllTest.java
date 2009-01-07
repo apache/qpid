@@ -55,7 +55,7 @@ import org.apache.qpid.utils.TestJMXConfiguration;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         TestCommand.class,
-        TestCommandExecusionEngine.class,
+        TestCommandExecutionEngine.class,
         TestCommandLineOption.class,
         TestCommandLineOptionParser.class,
         TestConnector.class,

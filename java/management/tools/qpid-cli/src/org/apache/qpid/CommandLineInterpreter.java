@@ -87,8 +87,6 @@ public class CommandLineInterpreter {
             }
 
             /* Connecting with the broker */
-//            commandlineoptionparser = new CommandLineOptionParser(args);
-//            JMXConfiguration config = new JMXConfiguration(commandlineoptionparser.getAlloptions());
             try {
                 if (commandlineoptionparser == null)
                     commandlineoptionparser = new CommandLineOptionParser(args);
@@ -122,7 +120,6 @@ public class CommandLineInterpreter {
             String[] command;
 
             /* prividing GNU readline features using Jline library */
-            //String list = "list";
             PrintWriter out = new PrintWriter(System.out);
             reader.addCompletor(new ArgumentCompletor(
                     new SimpleCompletor(new String[]{"list", "info", "exit", "quit", "delete", "move", "view", "viewcontent", "queue", "exchange", "connection", "usermanagement", "virtualhost"})));
@@ -136,7 +133,7 @@ public class CommandLineInterpreter {
                     command = line.split("\\s+");
                     commandlineoptionparser = new CommandLineOptionParser(command);
                     JMXinfo info = new JMXinfo(jmxc, commandlineoptionparser, mbsc);
-                    CommandExecusionEngine engine = new CommandExecusionEngine(info);
+                    CommandExecutionEngine engine = new CommandExecutionEngine(info);
                     if (engine.CommandSelector())
                         engine.runcommand();
                 }
@@ -164,9 +161,6 @@ public class CommandLineInterpreter {
         System.out.println("Please check the host name and the port given");
     }
 
-    private static void commandlineerror() {
-        System.out.println("Please run the script again and try to connect to broker again");
-    }
     public static String[] oneshotmode(String[] args,CommandLineOptionParser commandlineoptionparser,JMXConnector jmxc,MBeanServerConnection mbsc)
     {
         int check = 0;
@@ -184,7 +178,7 @@ public class CommandLineInterpreter {
 
         commandlineoptionparser = new CommandLineOptionParser(args);           //change the args string array which works as interactive mode//
         JMXinfo info = new JMXinfo(jmxc, commandlineoptionparser, mbsc);
-        CommandExecusionEngine engine = new CommandExecusionEngine(info);
+        CommandExecutionEngine engine = new CommandExecutionEngine(info);
         if (engine.CommandSelector())
             engine.runcommand();
         return args;
