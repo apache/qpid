@@ -63,9 +63,9 @@ public class TestCommanddelete {
     Commanddelete delete = null;
     Connector conn;
     @Before
-    public void startup()
+    public void startup() throws Exception
     {
-        conn = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME, ConnectionConstants.BROKER_PORT);
+        conn = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT, ConnectionConstants.USERNAME, ConnectionConstants.PASSWORD);
         JMXConnector jmxc = conn.getConnector();
         MBeanServerConnection mbsc = conn.getMBeanServerConnection();
         CommandLineOptionParser parser = new CommandLineOptionParser(command.split(" "));

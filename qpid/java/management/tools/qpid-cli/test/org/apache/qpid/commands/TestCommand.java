@@ -69,11 +69,11 @@ public class TestCommand{
     CommandLineOptionParser parser;
     Command cmd;
     @Before
-    public void setup()
+    public void setup() throws Exception
     {
         list = command.split(" ");
         parser = new CommandLineOptionParser(list);
-        test = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT);
+        test = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT, ConnectionConstants.USERNAME, ConnectionConstants.PASSWORD);
         info = new JMXinfo(test.getConnector(),parser,test.getMBeanServerConnection());
         cmd = new Commandinfo(info);
 

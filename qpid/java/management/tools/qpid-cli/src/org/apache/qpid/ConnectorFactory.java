@@ -37,11 +37,12 @@
  */
 package org.apache.qpid;
 
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.JMXConnector;
-import javax.management.MBeanServerConnection;
 import java.io.IOException;
+
+import javax.management.MBeanServerConnection;
+import javax.management.remote.JMXConnector;
+
+import org.apache.qpid.management.common.JMXConnnectionFactory;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,20 +53,21 @@ import java.io.IOException;
  */
 public class ConnectorFactory {
 
-    public static Connector getConnector(String host, String port) {
+    private static final long TIMEOUT = 30 * 1000;
 
-        String url_string = "service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi";
-        JMXServiceURL url;
-        JMXConnector jmxc;
-        MBeanServerConnection mbsc;
+    public static Connector getConnector(String host, String port, String username, String password) throws Exception {
+
+        JMXConnector jmxc = null;
+        MBeanServerConnection mbsc = null;
         try {
-            url = new JMXServiceURL(url_string);
-            jmxc = JMXConnectorFactory.connect(url, null);
+            jmxc = JMXConnnectionFactory.getJMXConnection(TIMEOUT, host, Integer.parseInt(port), username, password);
             mbsc = jmxc.getMBeanServerConnection();
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } 
+        catch (NumberFormatException e)
+        {
+            System.out.println("Illegal port entered:"+port);
+            System.exit(1);
         }
-        return new Connector(url, jmxc, mbsc);
+        return new Connector(jmxc, mbsc);
     }
 }

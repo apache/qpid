@@ -49,6 +49,8 @@ public class JMXConfiguration {
     private String outputpath = ".";
     private String report_file = "report.output";
     private boolean isreport_mode = false;
+    private String username = null;
+    private String password = null;
 
     public JMXConfiguration(Map map) {
         if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.HOST_OPTION, map)) {
@@ -60,6 +62,14 @@ public class JMXConfiguration {
         if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.REPORT_OPTION, map)) {
 
             this.report_file = optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.REPORT_OPTION, map);
+        }
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.USER_OPTION, map)) {
+
+            this.setUsername(optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.USER_OPTION, map));
+        }
+
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.PASSWORD_OPTION, map)) {
+            this.setPassword(optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.PASSWORD_OPTION, map));
         }
 
     }
@@ -143,6 +153,26 @@ public class JMXConfiguration {
             return true;
         else
             return false;
+    }
+
+    public void setUsername(String username)
+    {
+        this.username = username;
+    }
+
+    public String getUsername()
+    {
+        return username;
+    }
+
+    public void setPassword(String password)
+    {
+        this.password = password;
+    }
+
+    public String getPassword()
+    {
+        return password;
     }
 
 }
