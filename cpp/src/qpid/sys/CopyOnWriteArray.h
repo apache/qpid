@@ -64,6 +64,18 @@ public:
         }
     }
 
+    bool clear()
+    {
+        Mutex::ScopedLock l(lock);
+        if (array && !array->empty()) {
+            ArrayPtr copy;
+            array = copy;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     template <class F>
     bool add_unless(T& t, F f)
     {
