@@ -351,6 +351,9 @@
 				RelativePath="qpid\console\ClassKey.cpp">
 			</File>
 			<File
+				RelativePath="qpid\console\Event.cpp">
+			</File>
+			<File
 				RelativePath="qpid\console\Object.cpp">
 			</File>
 			<File
