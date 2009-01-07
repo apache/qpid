@@ -19,6 +19,7 @@
 set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/jline-0.9.94.jar
 set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/junit-4.4.jar
 set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/qpid-cli-1.0.jar
+set CLASSPATH=%CLASSPATH%;%QPID_HOME%/lib/qpid-management-common-M4.jar
 set CLASSPATH=%CLASSPATH%;%QPID_HOME%/management/tools/qpid-cli/main/classes/
 java -classpath %CLASSPATH% org.apache.qpid.CommandLineInterpreter %1
 

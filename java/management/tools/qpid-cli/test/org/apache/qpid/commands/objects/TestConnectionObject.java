@@ -38,6 +38,8 @@
 package org.apache.qpid.commands.objects;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.ConnectionConstants;
 import org.apache.qpid.ConnectorFactory;
 import org.apache.qpid.Connector;
 import org.junit.After;
@@ -61,9 +63,9 @@ public class TestConnectionObject {
     String test1,test2,test3;
 
     @Before
-    public void startup()
+    public void startup() throws Exception
     {
-        conn  = ConnectorFactory.getConnector("localhost", "8999");
+        conn = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT, ConnectionConstants.USERNAME, ConnectionConstants.PASSWORD);
         mbsc = conn.getMBeanServerConnection();
         test = new ConnectionObject(mbsc);
         test1 = "ping";

@@ -62,9 +62,9 @@ public class TestCommandExecutionEngine {
     CommandExecutionEngine engine;
     Connector connector;
     @Before
-    public void setup(){
+    public void setup() throws Exception{
 
-        connector = ConnectorFactory.getConnector("localhost","8999");
+        connector = ConnectorFactory.getConnector(ConnectionConstants.BROKER_HOSTNAME,ConnectionConstants.BROKER_PORT, ConnectionConstants.USERNAME, ConnectionConstants.PASSWORD);
 
 
     }

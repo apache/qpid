@@ -20,7 +20,7 @@
  -->
 <project name="qpid-cli">
 
-  <property name="module.depends" value="common" />
+  <property name="module.depends" value="common management/common" />
   <property name="module.test.depends" value="common client" />
   <property name="module.src" value="src" />
   <!-- Disable tests as per QPID-1342 -->

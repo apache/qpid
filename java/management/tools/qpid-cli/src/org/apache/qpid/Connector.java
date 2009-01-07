@@ -45,23 +45,16 @@ import java.io.IOException;
 
 
 public class Connector {
-    private JMXServiceURL url = null;
     private JMXConnector jmxc = null;
     private MBeanServerConnection mbsc = null;
 
 
-    public Connector(JMXServiceURL url, JMXConnector jmxc, MBeanServerConnection mbsc) {
+    public Connector(JMXConnector jmxc, MBeanServerConnection mbsc) {
 
-
-        this.url = url;
         this.jmxc = jmxc;
         this.mbsc = mbsc;
 
 
-    }
-
-    public JMXServiceURL getURL() {
-        return url;
     }
 
     public JMXConnector getConnector() {
