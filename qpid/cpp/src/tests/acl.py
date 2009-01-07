@@ -132,7 +132,35 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)                
         
-        
+
+    def test_group_and_user_with_same_name(self):
+        """
+        Test a group and user with same name
+        Ex. group admin admin 
+        """
+        aclf = ACLFile()
+        aclf.write('group bob@QPID bob@QPID\n')
+        aclf.write('acl deny bob@QPID bind exchange\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+
+        self.reload_acl()
+
+        session = get_session('bob','bob')
+        try:
+            session.queue_declare(queue="allow_queue")
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request");
+            self.fail("Error during queue create request");
+
+        try:
+            session.exchange_bind(exchange="amq.direct", queue="allow_queue", binding_key="routing_key")
+            self.fail("ACL should deny queue bind request");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+       
+ 
    #=====================================
    # ACL file format tests
    #=====================================     
@@ -180,7 +208,21 @@ class ACLTests(TestBase010):
         if (result.text.find("contains illegal characters",0,len(result.text)) == -1):
             self.fail(result)
 
-            
+    def test_user_without_realm(self):
+        """
+        Test a user defined without a realm
+        Ex. group admin rajith
+        """
+        aclf = ACLFile()
+        aclf.write('group admin bob\n')
+        aclf.write('acl deny admin bind exchange\n')
+        aclf.write('acl allow all all')
+        aclf.close()
+         
+        result = self.reload_acl()
+        if (result.text.find("Username 'bob' must contain a realm",0,len(result.text)) == -1):
+            self.fail(result)
+
         
    #=====================================
    # ACL queue tests

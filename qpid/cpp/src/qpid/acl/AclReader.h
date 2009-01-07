@@ -107,11 +107,12 @@ class AclReader {
 
     bool processAclLine(tokList& toks);
     void printRules() const; // debug aid
-    
+    bool isValidUserName(const std::string& name);
+
     static bool checkName(const std::string& name);
     static nvPair splitNameValuePair(const std::string& nvpString);
 };
-    
+
 }} // namespace qpid::acl
 
 #endif // QPID_ACL_ACLREADER_H
