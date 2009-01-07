@@ -49,10 +49,12 @@ import jline.ConsoleReader;
 import jline.SimpleCompletor;
 
 import org.apache.qpid.commands.Commanddelete;
+import org.apache.qpid.commands.Commandget;
 import org.apache.qpid.commands.Commandhelp;
 import org.apache.qpid.commands.Commandinfo;
 import org.apache.qpid.commands.Commandlist;
 import org.apache.qpid.commands.Commandmove;
+import org.apache.qpid.commands.Commandset;
 import org.apache.qpid.commands.Commandview;
 import org.apache.qpid.commands.Commandviewcontent;
 import org.apache.qpid.utils.CommandLineOptionParser;
@@ -106,9 +108,16 @@ public class CommandLineInterpreter {
                 /* This implementation is for the people who are using the interactive
                 mode for one shot this run the user given command and exit */
                 for (int i = 0; i < args.length; i++) {
-                    if (args[i].compareTo("list") == 0 || args[i].compareTo("info") == 0 || args[i].compareTo("view") == 0 || args[i].compareTo("viewcontent") == 0
-                            || args[i].compareTo("delete") == 0 || args[i].compareTo("move") == 0) {
-                        oneshotmode(args,commandlineoptionparser,jmxc,mbsc);
+                    if (args[i].compareTo("list") == 0 ||
+                        args[i].compareTo("info") == 0 ||
+                        args[i].compareTo("view") == 0 ||
+                        args[i].compareTo("viewcontent") == 0 ||
+                        args[i].compareTo("delete") == 0 ||
+                        args[i].compareTo("move") == 0 ||
+                        args[i].compareTo("set") == 0 ||
+                        args[i].compareTo("get") == 0)
+                    {
+                        oneshotmode(args, commandlineoptionparser, jmxc, mbsc);
 
                         return;
                     }
@@ -124,7 +133,9 @@ public class CommandLineInterpreter {
             /* prividing GNU readline features using Jline library */
             PrintWriter out = new PrintWriter(System.out);
             reader.addCompletor(new ArgumentCompletor(
-                    new SimpleCompletor(new String[]{"list", "info", "exit", "quit", "delete", "move", "view", "viewcontent", "queue", "exchange", "connection", "usermanagement", "virtualhost"})));
+                    new SimpleCompletor(new String[]{"get","set","list", "info", "exit", "quit", "delete", "move", "view", 
+                                                     "viewcontent", "queue", "exchange", "connection", "usermanagement",
+                                                     "virtualhost"})));
             while ((line = reader.readLine("qpid-admin-$ ")) != null) {
                 out.flush();
                 if (removeSpaces(line).equalsIgnoreCase("quit") || removeSpaces(line).equalsIgnoreCase("exit"))
@@ -140,6 +151,7 @@ public class CommandLineInterpreter {
                         engine.runcommand();
                 }
             }
+            
             conn.getConnector().close();
         }
         catch (Exception ex) {
@@ -150,10 +162,12 @@ public class CommandLineInterpreter {
     private static void registerCommands()
     {
         CommandExecutionEngine.addCommand(Commanddelete.COMMAND_NAME, Commanddelete.class);
+        CommandExecutionEngine.addCommand(Commandget.COMMAND_NAME, Commandget.class);
         CommandExecutionEngine.addCommand(Commandhelp.COMMAND_NAME, Commandhelp.class);
         CommandExecutionEngine.addCommand(Commandinfo.COMMAND_NAME, Commandinfo.class);
         CommandExecutionEngine.addCommand(Commandlist.COMMAND_NAME, Commandlist.class);
         CommandExecutionEngine.addCommand(Commandmove.COMMAND_NAME, Commandmove.class);
+        CommandExecutionEngine.addCommand(Commandset.COMMAND_NAME, Commandset.class);
         CommandExecutionEngine.addCommand(Commandview.COMMAND_NAME, Commandview.class);
         CommandExecutionEngine.addCommand(Commandviewcontent.COMMAND_NAME, Commandviewcontent.class);
     }

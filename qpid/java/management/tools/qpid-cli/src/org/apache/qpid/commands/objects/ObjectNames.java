@@ -25,10 +25,16 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.MBeanInfo;
+import javax.management.MBeanException;
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.ReflectionException;
+import javax.management.Attribute;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -114,7 +120,7 @@ public class ObjectNames {
                             temp = "=" + temp;
                         echo(temp);
                         echo("There are no attributes for this object Type");
-                        return;
+                        continue;
                     }
                     for (MBeanAttributeInfo attr : attr_info) {
                         Object toWrite = null;
@@ -472,6 +478,32 @@ public class ObjectNames {
 
     public Set getSet() {
         return set;
+    }
+
+    public Object getAttribute(ObjectName object, String attribute)
+    {
+        try
+        {
+            return mbsc.getAttribute(object, attribute);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void setAttribute(ObjectName object, Attribute attribute)
+    {
+        try
+        {
+            mbsc.setAttribute(object, attribute);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
 }
