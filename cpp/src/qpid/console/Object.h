@@ -35,12 +35,12 @@ namespace framing {
 }
 namespace console {
 
-    class Broker;
-    class SchemaClass;
-    class SchemaMethod;
-    class ObjectId;
-    class ClassKey;
-    class Value;
+    class  Broker;
+    struct SchemaClass;
+    struct SchemaMethod;
+    class  ObjectId;
+    class  ClassKey;
+    class  Value;
 
     /**
      * \ingroup qmfconsoleapi
