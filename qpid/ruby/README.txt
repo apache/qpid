@@ -19,4 +19,4 @@ and consumes a message:
 The "tests" directory contains a collection of unit tests for the ruby
 client. These can be run with the Rakefile provided:
 
-  ./rake test
+  rake test
