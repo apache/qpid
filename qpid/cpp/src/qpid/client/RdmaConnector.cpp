@@ -365,8 +365,6 @@ void RdmaConnector::eof(Rdma::AsynchIO&) {
     handleClosed();
 }
 
-// TODO: astitcher 20070908 This version of the code can never time out, so the idle processing
-// will never be called
 void RdmaConnector::run(){
     // Keep the connection impl in memory until run() completes.
     //GRS: currently the ConnectionImpls destructor is where the Io thread is joined

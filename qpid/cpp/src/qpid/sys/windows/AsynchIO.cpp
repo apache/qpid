@@ -24,6 +24,7 @@
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/Poller.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
 #include "qpid/log/Statement.h"
@@ -90,6 +91,7 @@ namespace sys {
 /*
  * Asynch Acceptor
  *
+ * TODO FIX this comment - is it still true?
  * This implementation uses knowledge that the DispatchHandle handle member
  * is derived from PollerHandle, which has a reference to the Socket.
  * No dispatching features of DispatchHandle are used - we just use the
