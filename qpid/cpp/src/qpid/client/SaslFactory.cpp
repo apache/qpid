@@ -95,7 +95,6 @@ class CyrusSasl : public Sasl
 };
 
 //sasl callback functions
-int getLogin(void *context, int id, const char **result, unsigned *len);
 int getUserFromSettings(void *context, int id, const char **result, unsigned *len);
 int getPasswordFromSettings(sasl_conn_t *conn, void *context, int id, sasl_secret_t **psecret);
 typedef int CallbackProc();
@@ -140,15 +139,7 @@ CyrusSasl::CyrusSasl(const ConnectionSettings& s) : conn(0), settings(s)
     callbacks[i].proc = 0;
     callbacks[i++].context = 0;
 
-    if (settings.username.empty()) {
-        callbacks[i].id = SASL_CB_USER;
-        callbacks[i].proc = (CallbackProc*) &getLogin;
-        callbacks[i++].context = &login;
-
-        callbacks[i].id = SASL_CB_AUTHNAME;
-        callbacks[i].proc = (CallbackProc*) &getLogin;
-        callbacks[i++].context = &login;
-    } else {
+    if (!settings.username.empty()) {
         callbacks[i].id = SASL_CB_USER;
         callbacks[i].proc = (CallbackProc*) &getUserFromSettings;
         callbacks[i++].context = &settings;
@@ -295,24 +286,6 @@ std::auto_ptr<SecurityLayer> CyrusSasl::getSecurityLayer(uint16_t maxFrameSize)
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(conn, maxFrameSize));
     }
     return securityLayer;
-}
-
-int getLogin(void* context, int /*id*/, const char** result, unsigned* /*len*/)
-{
-    if (context) {
-        char* login = (char*) context;
-        int status = getlogin_r(login, MAX_LOGIN_LENGTH);
-        if (status == 0) {
-            *result = login;
-            QPID_LOG(debug, "getLogin(): " << (*result));
-        } else {
-            strcpy(login, "guest");
-            QPID_LOG(error, "getlogin_r() failed with " << status << "; defaulting to " << login);
-        }
-        return SASL_OK;
-    } else {
-        return SASL_FAIL;
-    }
 }
 
 int getUserFromSettings(void* context, int /*id*/, const char** result, unsigned* /*len*/)
