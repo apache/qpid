@@ -150,8 +150,13 @@ CyrusSasl::CyrusSasl(const ConnectionSettings& s) : conn(0), settings(s)
     }
 
     callbacks[i].id = SASL_CB_PASS;
-    callbacks[i].proc = (CallbackProc*) &getPasswordFromSettings;
-    callbacks[i++].context = &settings;
+    if (settings.password.empty()) {
+        callbacks[i].proc = 0;
+        callbacks[i++].context = 0;        
+    } else {
+        callbacks[i].proc = (CallbackProc*) &getPasswordFromSettings;
+        callbacks[i++].context = &settings;
+    }
 
     callbacks[i].id = SASL_CB_LIST_END;
     callbacks[i].proc = 0;
@@ -263,13 +268,22 @@ std::string CyrusSasl::getMechanism()
 
 void CyrusSasl::interact(sasl_interact_t* client_interact)
 {
-    std::cout << "[" << client_interact->id << "] " << client_interact->challenge << " " << client_interact->prompt;
-    if (client_interact->defresult) std::cout << " (" << client_interact->defresult << ")";
-    std::cout << std::endl;
-    if (std::cin >> input) {
+
+    if (client_interact->id == SASL_CB_PASS) {
+        char* password = getpass(client_interact->prompt);
+        input = std::string(password);
         client_interact->result = input.data();
         client_interact->len = input.size();
-    }    
+    } else {
+        std::cout << client_interact->prompt;
+        if (client_interact->defresult) std::cout << " (" << client_interact->defresult << ")";
+        std::cout << ": ";
+        if (std::cin >> input) {
+            client_interact->result = input.data();
+            client_interact->len = input.size();
+        }
+    }
+
 }
 
 std::auto_ptr<SecurityLayer> CyrusSasl::getSecurityLayer(uint16_t maxFrameSize)
