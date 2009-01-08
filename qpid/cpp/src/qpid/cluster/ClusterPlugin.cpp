@@ -69,9 +69,9 @@ struct ClusterOptions : public Options {
             ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
             ("cluster-read-max", optValue(values.readMax,"N"),
-             "Throttle read rate from client connections.")
+             "Experimental: Throttle read rate from client connections.")
             ("cluster-write-estimate", optValue(values.writeEstimate, "Kb"),
-             "Estimate connection write rate per multicast cycle")
+             "Experimental: initial estimate for connection write per multicast cycle")
             ;
     }
 };

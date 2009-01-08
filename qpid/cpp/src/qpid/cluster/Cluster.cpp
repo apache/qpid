@@ -98,7 +98,7 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
         0,                                         // write
         boost::bind(&Cluster::disconnect, this, _1) // disconnect
     ),
-    mcast(cpg, poller),
+    mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     mgmtObject(0),
     deliverQueue(boost::bind(&Cluster::delivered, this, _1), poller),
     state(INIT),
