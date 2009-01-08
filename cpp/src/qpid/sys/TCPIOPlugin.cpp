@@ -25,6 +25,7 @@
 
 #include "qpid/Plugin.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/Poller.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
 

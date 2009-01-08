@@ -21,6 +21,8 @@
 
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/Poller.h"
+#include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/Time.h"
 #include "qpid/log/Statement.h"
 
@@ -201,8 +203,7 @@ void AsynchConnector::connComplete(DispatchHandle& h)
         connCallback(socket);
         DispatchHandle::doDelete();
     } else {
-        // TODO: This need to be fixed as strerror isn't thread safe
-        failure(errCode, std::string(::strerror(errCode)));
+        failure(errCode, std::string(strError(errCode)));
     }
 }
 

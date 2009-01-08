@@ -21,16 +21,14 @@
  *
  */
 
-// @@TODO: TAKE THIS OUT... SHould be in posix version.
-#include "DispatchHandle.h"
-
 #include <boost/function.hpp>
-#include <deque>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace sys {
     
 class Socket;
+class Poller;
 
 /*
  * Asynchronous acceptor: accepts connections then does a callback with the
@@ -47,7 +45,7 @@ private:
 public:
     AsynchAcceptor(const Socket& s, Callback callback);
     ~AsynchAcceptor();
-    void start(Poller::shared_ptr poller);
+    void start(boost::shared_ptr<Poller> poller);
 };
 
 /*
@@ -66,7 +64,7 @@ public:
     // deletes. To correctly manage heaps when needed, the allocate and
     // delete should both be done from the same class/library.
     static AsynchConnector* create(const Socket& s,
-                                   Poller::shared_ptr poller,
+                                   boost::shared_ptr<Poller> poller,
                                    std::string hostname,
                                    uint16_t port,
                                    ConnectedCallback connCb,
@@ -131,7 +129,7 @@ public:
 public:
     virtual void queueForDeletion() = 0;
 
-    virtual void start(Poller::shared_ptr poller) = 0;
+    virtual void start(boost::shared_ptr<Poller> poller) = 0;
     virtual void queueReadBuffer(BufferBase* buff) = 0;
     virtual void unread(BufferBase* buff) = 0;
     virtual void queueWrite(BufferBase* buff) = 0;
