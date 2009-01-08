@@ -94,17 +94,9 @@ class Cpg : public sys::IOHandle {
     /** Disconnect from CPG */
     void shutdown();
     
-    /** Dispatch CPG events.
-     *@param type one of
-     * - CPG_DISPATCH_ONE - dispatch exactly one event.
-     * - CPG_DISPATCH_ALL - dispatch all available events, don't wait.
-     * - CPG_DISPATCH_BLOCKING - blocking dispatch loop.
-     */
-    void dispatch(cpg_dispatch_t type);
-
-    void dispatchOne() { dispatch(CPG_DISPATCH_ONE); }
-    void dispatchAll() { dispatch(CPG_DISPATCH_ALL); }
-    void dispatchBlocking() { dispatch(CPG_DISPATCH_BLOCKING); }
+    void dispatchOne();
+    void dispatchAll();
+    void dispatchBlocking();
 
     void join(const std::string& group);    
     void leave();
