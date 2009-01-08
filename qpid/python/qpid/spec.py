@@ -57,3 +57,5 @@ def load(specfile, *errata):
     return spec010.load(specfile, *errata)
   else:
     return spec08.load(specfile, *errata)
+
+SPEC = load(default())

@@ -23,9 +23,8 @@ from util import wait, notify
 from assembler import Assembler, Segment
 from codec010 import StringCodec
 from session import Session
-from invoker import Invoker
-from spec010 import Control, Command, load
-from spec import default
+from generator import control_invoker
+from spec import SPEC
 from exceptions import *
 from logging import getLogger
 import delegates
@@ -63,12 +62,9 @@ def sslwrap(sock):
 
 class Connection(Assembler):
 
-  def __init__(self, sock, spec=None, delegate=client, **args):
+  def __init__(self, sock, spec=SPEC, delegate=client, **args):
     Assembler.__init__(self, sslwrap(sock))
-    if spec == None:
-      spec = load(default())
     self.spec = spec
-    self.track = self.spec["track"]
 
     self.lock = RLock()
     self.attached = {}
@@ -96,7 +92,7 @@ class Connection(Assembler):
       else:
         ssn = self.sessions.get(name)
         if ssn is None:
-          ssn = Session(name, self.spec, delegate=delegate)
+          ssn = Session(name, delegate=delegate)
           self.sessions[name] = ssn
         elif ssn.channel is not None:
           if force:
@@ -189,23 +185,16 @@ class Connection(Assembler):
 
 log = getLogger("qpid.io.ctl")
 
-class Channel(Invoker):
+class Channel(control_invoker(SPEC)):
 
   def __init__(self, connection, id):
     self.connection = connection
     self.id = id
     self.session = None
 
-  def resolve_method(self, name):
-    inst = self.connection.spec.instructions.get(name)
-    if inst is not None and isinstance(inst, Control):
-      return self.METHOD, inst
-    else:
-      return self.ERROR, None
-
   def invoke(self, type, args, kwargs):
     ctl = type.new(args, kwargs)
-    sc = StringCodec(self.connection.spec)
+    sc = StringCodec(self.spec)
     sc.write_control(ctl)
     self.connection.write_segment(Segment(True, True, type.segment_type,
                                           type.track, self.id, sc.encoded))
