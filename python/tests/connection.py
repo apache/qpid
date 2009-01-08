@@ -25,7 +25,6 @@ from qpid.datatypes import Message
 from qpid.testlib import testrunner
 from qpid.delegates import Server
 from qpid.queue import Queue
-from qpid.spec010 import load
 from qpid.session import Delegate
 
 PORT = 1234
@@ -62,13 +61,14 @@ class TestSession(Delegate):
                                     cmd.acquire_mode, m)
     elif cmd.destination == "abort":
       self.session.channel.connection.sock.close()
+    elif cmd.destination == "heartbeat":
+      self.session.channel.connection_heartbeat()
     else:
       self.queue.put((cmd, headers, body))
 
 class ConnectionTest(TestCase):
 
   def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10.xml"))
     self.queue = Queue()
     self.running = True
     started = Event()
@@ -76,7 +76,7 @@ class ConnectionTest(TestCase):
     def run():
       ts = TestServer(self.queue)
       for s in listen("0.0.0.0", PORT, lambda: self.running, lambda: started.set()):
-        conn = Connection(s, self.spec, ts.connection)
+        conn = Connection(s, delegate=ts.connection)
         try:
           conn.start(5)
         except Closed:
@@ -94,8 +94,8 @@ class ConnectionTest(TestCase):
     connect("0.0.0.0", PORT).close()
     self.server.join(3)
 
-  def connect(self):
-    return Connection(connect("0.0.0.0", PORT), self.spec)
+  def connect(self, **kwargs):
+    return Connection(connect("0.0.0.0", PORT), **kwargs)
 
   def test(self):
     c = self.connect()
@@ -213,3 +213,10 @@ class ConnectionTest(TestCase):
     s.auto_sync = False
     s.message_transfer("echo", message=Message("test"))
     s.sync(10)
+
+  def testHeartbeat(self):
+    c = self.connect(heartbeat=10)
+    c.start(10)
+    s = c.session("test")
+    s.channel.connection_heartbeat()
+    s.message_transfer("heartbeat")

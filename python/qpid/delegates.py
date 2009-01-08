@@ -61,6 +61,9 @@ class Delegate:
     self.connection.opened = False
     notify(self.connection.condition)
 
+  def connection_heartbeat(self, ch, hrt):
+    pass
+
   def session_attach(self, ch, a):
     try:
       self.connection.attach(a.name, ch, self.delegate, a.force)
@@ -139,11 +142,13 @@ class Client(Delegate):
                 "version": "development",
                 "platform": os.name}
 
-  def __init__(self, connection, username="guest", password="guest", mechanism="PLAIN"):
+  def __init__(self, connection, username="guest", password="guest",
+               mechanism="PLAIN", heartbeat=None):
     Delegate.__init__(self, connection)
     self.username = username
     self.password = password
     self.mechanism = mechanism
+    self.heartbeat = heartbeat
 
   def start(self):
     self.connection.write_header(self.spec.major, self.spec.minor)
@@ -154,7 +159,7 @@ class Client(Delegate):
     ch.connection_start_ok(client_properties=Client.PROPERTIES, mechanism=self.mechanism, response=r)
 
   def connection_tune(self, ch, tune):
-    ch.connection_tune_ok()
+    ch.connection_tune_ok(heartbeat=self.heartbeat)
     ch.connection_open()
 
   def connection_open_ok(self, ch, open_ok):
