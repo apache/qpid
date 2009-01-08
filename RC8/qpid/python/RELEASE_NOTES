@@ -1,0 +1,17 @@
+Apache Python M4 Release Notes
+------------------------------
+
+The Qpid M4 release of the python client contains support the for both
+ 0-8 and 0-10 of the AMQP specification as well as support for the
+non-WIP portion of the 0-9 specification.  You can access these
+specifications from:
+
+http://jira.amqp.org/confluence/display/AMQP/Download
+
+For full details of Qpid capabilities, as they currently stand, see our
+project page at:
+
+http://cwiki.apache.org/confluence/display/qpid/Index
+
+The README file provided contains some details on installing and using
+the python client that is included with this distribution.

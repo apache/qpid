@@ -1,0 +1,107 @@
+{
+   RHEL4 -- we think Boost is responsible for these leaks.
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN5boost15program_options??options_description*
+}
+
+{
+   RHEL4 -- we think Boost is responsible for these leaks.
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN5boost9unit_test9test_case*
+}
+
+{
+   RHEL4 -- we think Boost is responsible for these leaks.
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:_ZN4qpid3sys5Shlib4loadEPKc
+   fun:_Z9testShlibv
+   fun:_ZN5boost9unit_test9ut_detail17unit_test_monitor8functionEv
+   obj:/usr/lib64/libboost_unit_test_framework.so.1.32.0
+   fun:_ZN5boost17execution_monitor7executeEbi
+   fun:_ZN5boost9unit_test9ut_detail17unit_test_monitor21execute_and_translateEPNS0_9test_caseEMS3_FvvEi
+   fun:_ZN5boost9unit_test9test_case3runEv
+   fun:_ZN5boost9unit_test10test_suite6do_runEv
+   fun:_ZN5boost9unit_test9test_case3runEv
+   fun:main
+}
+
+{
+   RHEL4 -- we think Boost is responsible for these leaks.
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:_ZN4qpid6broker5Timer5startEv
+   fun:_ZN4qpid6broker5TimerC1Ev
+   fun:_ZN4qpid6broker10DtxManagerC1Ev
+}
+
+{
+   INVESTIGATE
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:_ZN4qpid6client9Connector4initEv
+   fun:_ZN4qpid6client14ConnectionImpl4openERKSsiS3_S3_S3_
+}
+
+{
+   INVESTIGATE
+   Memcheck:Param
+   write(buf)
+   obj:/lib64/tls/libc-2.3.4.so
+   fun:_ZNK4qpid3sys6Socket5writeEPKvm
+   fun:_ZN4qpid3sys8AsynchIO9writeableERNS0_14DispatchHandleE
+}
+
+{
+   INVESTIGATE
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:_ZN4qpid6broker5Timer5startEv
+   fun:_ZN4qpid6broker5TimerC1Ev
+   fun:_ZN4qpid6broker10DtxManagerC1Ev
+}
+{
+   RHEL4 (and FC5)
+   Memcheck:Leak 
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:_ZN4qpid3sys13ThreadPrivateC1EPNS0_8RunnableE
+   fun:_ZN4qpid3sys6ThreadC1EPNS0_8RunnableE
+   fun:_ZN4qpid6client9Connector4initEv
+}
+{
+   INVESTIGATE
+   Memcheck:Param
+   futex(utime)
+   fun:__lll_mutex_unlock_wake
+}
+{
+   SAME ISSUE, NEW OCCURENCE
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:_ZN4qpid3sys13ThreadPrivateC1EPNS0_8RunnableE
+   fun:_ZN4qpid3sys6ThreadC1EPNS0_8RunnableE
+   fun:_ZN4qpid6broker5Timer5startEv
+   fun:_ZN4qpid6broker5TimerC1Ev
+   fun:_ZN4qpid6broker12LinkRegistryC1EPNS0_6BrokerE
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:send
+   fun:get_mapping
+}

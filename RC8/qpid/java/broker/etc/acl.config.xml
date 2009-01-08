@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<broker>
+    <prefix>${QPID_HOME}</prefix>
+    <work>${QPID_WORK}</work>
+    <conf>${prefix}/etc</conf>
+    <connector>
+        <!-- Uncomment out this block and edit the keystorePath and keystorePassword
+             to enable SSL support
+        <ssl>
+            <enabled>true</enabled>
+            <sslOnly>true</sslOnly>
+            <keystorePath>/path/to/keystore.ks</keystorePath>
+            <keystorePassword>keystorepass</keystorePassword>
+        </ssl>-->
+        <qpidnio>false</qpidnio>
+        <!-- I've had the 0.0 and 0.1 Reader threads continually throwing IOException when client closes-->
+        <protectio>false</protectio>
+        <transport>nio</transport>
+        <port>5672</port>
+        <sslport>8672</sslport>
+        <socketReceiveBuffer>32768</socketReceiveBuffer>
+        <socketSendBuffer>32768</socketSendBuffer>
+    </connector>
+    <management>
+        <enabled>false</enabled>
+        <jmxport>8999</jmxport>
+        <security-enabled>false</security-enabled>
+    </management>
+    <advanced>
+        <filterchain enableExecutorPool="true"/>
+        <enablePooledAllocator>false</enablePooledAllocator>
+        <enableDirectBuffers>false</enableDirectBuffers>
+        <framesize>65535</framesize>
+        <compressBufferOnQueue>false</compressBufferOnQueue>
+        <enableJMSXUserID>false</enableJMSXUserID>
+    </advanced>
+
+    <security>
+        <principal-databases>
+            <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed -->
+            <principal-database>
+                <name>passwordfile</name>
+                <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
+                <attributes>
+                    <attribute>
+                        <name>passwordFile</name>
+                        <value>${conf}/passwd</value>
+                    </attribute>
+                </attributes>
+            </principal-database>
+        </principal-databases>
+
+        <access>
+            <class>org.apache.qpid.server.security.access.plugins.DenyAll</class>
+        </access>
+
+        <jmx>
+            <access>${conf}/jmxremote.access</access>
+            <principal-database>passwordfile</principal-database>
+        </jmx>
+    </security>
+
+    <virtualhosts>
+        <directory>${conf}/virtualhosts</directory>
+
+        <virtualhost>
+            <name>test</name>
+            <test>
+                <store>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                </store>
+
+                <queues>
+                    <exchange>amq.direct</exchange>
+                    <!-- 4Mb -->
+                    <maximumQueueDepth>4235264</maximumQueueDepth>
+                    <!-- 2Mb -->
+                    <maximumMessageSize>2117632</maximumMessageSize>
+                    <!-- 10 mins -->
+                    <maximumMessageAge>600000</maximumMessageAge>
+                </queues>
+
+
+                <security>
+                    <access>
+                        <class>org.apache.qpid.server.security.access.plugins.SimpleXML</class>
+                    </access>
+
+                    <access_control_list>
+                        <!-- This section grants pubish rights to an exchange + routing key pair -->
+                        <publish>
+                            <exchanges>
+                                <exchange>
+                                    <name>amq.direct</name>
+                                    <routing_keys>
+
+                                        <!-- Allow clients to publish requests -->
+                                        <routing_key>
+                                            <value>example.RequestQueue</value>
+                                            <users>
+                                                <user>client</user>
+                                            </users>
+                                        </routing_key>
+
+                                        <!-- Allow the processor to respond to a client on their Temporary Topic -->
+                                        <routing_key>
+                                            <value>tmp_*</value>
+                                            <users>
+                                                <user>server</user>
+                                            </users>
+                                        </routing_key>
+                                        <routing_key>
+                                            <value>TempQueue*</value>
+                                            <users>
+                                                <user>server</user>
+                                            </users>
+                                        </routing_key>
+                                    </routing_keys>
+
+                                </exchange>
+                            </exchanges>
+                        </publish>
+
+                        <!-- This section grants users the ability to consume from the broker -->
+                        <consume>
+                            <queues>
+
+                                <!-- Allow the clients to consume from their temporary queues-->
+                                <queue>
+                                    <temporary/>
+                                    <users>
+                                        <user>client</user>
+                                    </users>
+                                </queue>
+
+
+                                <!-- Only allow the server to consume from the Request Queue-->
+                                <queue>
+                                    <name>example.RequestQueue</name>
+                                    <users>
+                                        <user>server</user>
+                                    </users>
+                                </queue>
+
+
+                            </queues>
+                        </consume>
+
+                        <!-- This section grants clients the ability to create queues and exchanges -->
+                        <create>
+                            <queues>
+                                <!-- Allow clients to create temporary queues-->
+                                <queue>
+                                    <temporary/>
+                                    <exchanges>
+                                        <exchange>
+                                            <name>amq.direct</name>
+                                            <users>
+                                                <user>client</user>
+                                            </users>
+                                        </exchange>
+                                    </exchanges>
+                                </queue>
+                                <!-- Allow the server to create the Request Queue-->
+                                <queue>
+                                    <name>example.RequestQueue</name>
+                                    <users>
+                                        <user>server</user>
+                                    </users>
+                                </queue>
+
+                            </queues>
+                        </create>
+
+
+                    </access_control_list>
+
+                </security>
+            </test>
+        </virtualhost>
+
+
+        <virtualhost>
+            <name>development</name>
+            <development>
+                <store>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                </store>
+            </development>
+        </virtualhost>
+
+        <virtualhost>
+            <name>localhost</name>
+            <localhost>
+                <store>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                </store>
+            </localhost>
+        </virtualhost>
+
+    </virtualhosts>
+
+    <heartbeat>
+        <delay>0</delay>
+        <timeoutFactor>2.0</timeoutFactor>
+    </heartbeat>
+
+    <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
+</broker>
+
+

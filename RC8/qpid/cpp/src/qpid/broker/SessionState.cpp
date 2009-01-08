@@ -1,0 +1,271 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+#include "SessionState.h"
+#include "Broker.h"
+#include "ConnectionState.h"
+#include "DeliveryRecord.h"
+#include "SessionManager.h"
+#include "SessionHandler.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/ServerInvoker.h"
+#include "qpid/log/Statement.h"
+
+#include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+
+namespace qpid {
+namespace broker {
+
+using namespace framing;
+using sys::Mutex;
+using boost::intrusive_ptr;
+using qpid::management::ManagementAgent;
+using qpid::management::ManagementObject;
+using qpid::management::Manageable;
+using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::broker;
+
+SessionState::SessionState(
+    Broker& b, SessionHandler& h, const SessionId& id, const SessionState::Configuration& config) 
+    : qpid::SessionState(id, config),
+      broker(b), handler(&h),
+      semanticState(*this, *this),
+      adapter(semanticState),
+      msgBuilder(&broker.getStore(), broker.getStagingThreshold()),
+      enqueuedOp(boost::bind(&SessionState::enqueued, this, _1)),
+      mgmtObject(0)
+{
+    Manageable* parent = broker.GetVhostObject ();
+    if (parent != 0) {
+        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        if (agent != 0) {
+            mgmtObject = new _qmf::Session
+                (agent, this, parent, getId().getName());
+            mgmtObject->set_attached (0);
+            mgmtObject->set_detachedLifespan (0);
+            mgmtObject->clr_expireTime();
+            agent->addObject (mgmtObject);
+        }
+    }
+    attach(h);
+}
+
+SessionState::~SessionState() {
+    if (mgmtObject != 0)
+        mgmtObject->resourceDestroy ();
+}
+
+AMQP_ClientProxy& SessionState::getProxy() {
+    assert(isAttached());
+    return handler->getProxy();
+}
+
+ConnectionState& SessionState::getConnection() {
+    assert(isAttached());
+    return handler->getConnection();
+}
+
+bool SessionState::isLocal(const ConnectionToken* t) const
+{
+    return isAttached() && &(handler->getConnection()) == t;
+}
+
+void SessionState::detach() {
+    QPID_LOG(debug, getId() << ": detached on broker.");
+    disableOutput();
+    handler = 0;
+    if (mgmtObject != 0)
+        mgmtObject->set_attached  (0);
+}
+
+void SessionState::disableOutput() 
+{
+    semanticState.detached();//prevents further activateOutput calls until reattached
+    getConnection().outputTasks.removeOutputTask(&semanticState);
+}
+
+void SessionState::attach(SessionHandler& h) {
+    QPID_LOG(debug, getId() << ": attached on broker.");
+    handler = &h;
+    if (mgmtObject != 0)
+    {
+        mgmtObject->set_attached (1);
+        mgmtObject->set_connectionRef (h.getConnection().GetManagementObject()->getObjectId());
+        mgmtObject->set_channelId (h.getChannel());
+    }
+}
+
+void SessionState::activateOutput() {
+    if (isAttached()) 
+        getConnection().outputTasks.activateOutput();
+}
+
+void SessionState::giveReadCredit(int32_t credit) {
+    if (isAttached()) 
+        getConnection().outputTasks.giveReadCredit(credit);
+}
+
+ManagementObject* SessionState::GetManagementObject (void) const
+{
+    return (ManagementObject*) mgmtObject;
+}
+
+Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
+                                                     Args&    /*args*/,
+                                                     string&  /*text*/)
+{
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+
+    switch (methodId)
+    {
+    case _qmf::Session::METHOD_DETACH :
+        if (handler != 0) {
+            handler->sendDetach();
+        }
+        status = Manageable::STATUS_OK;
+        break;
+
+    case _qmf::Session::METHOD_CLOSE :
+        /*
+          if (handler != 0)
+          {
+          handler->getConnection().closeChannel(handler->getChannel());
+          }
+          status = Manageable::STATUS_OK;
+          break;
+        */
+
+    case _qmf::Session::METHOD_SOLICITACK :
+    case _qmf::Session::METHOD_RESETLIFESPAN :
+        status = Manageable::STATUS_NOT_IMPLEMENTED;
+        break;
+    }
+
+    return status;
+}
+
+void SessionState::handleCommand(framing::AMQMethodBody* method, const SequenceNumber& id) {
+    Invoker::Result invocation = invoke(adapter, *method);
+    receiverCompleted(id);                                    
+    if (!invocation.wasHandled()) {
+        throw NotImplementedException(QPID_MSG("Not implemented: " << *method));
+    } else if (invocation.hasResult()) {
+        getProxy().getExecution().result(id, invocation.getResult());
+    }
+    if (method->isSync()) { 
+        incomplete.process(enqueuedOp, true);
+        sendCompletion(); 
+    }
+}
+
+void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
+{
+    if (frame.getBof() && frame.getBos()) //start of frameset
+        msgBuilder.start(id);
+    intrusive_ptr<Message> msg(msgBuilder.getMessage());
+    msgBuilder.handle(frame);
+    if (frame.getEof() && frame.getEos()) {//end of frameset
+        if (frame.getBof()) {
+            //i.e this is a just a command frame, add a dummy header
+            AMQFrame header;
+            header.setBody(AMQHeaderBody());
+            header.setBof(false);
+            header.setEof(false);
+            msg->getFrames().append(header);                        
+        }
+        msg->setPublisher(&getConnection());
+        semanticState.handle(msg);        
+        msgBuilder.end();
+
+        if (msg->isEnqueueComplete()) {
+            enqueued(msg);
+        } else {
+            incomplete.add(msg);
+        }
+
+        //hold up execution until async enqueue is complete        
+        if (msg->getFrames().getMethod()->isSync()) { 
+            incomplete.process(enqueuedOp, true);
+            sendCompletion(); 
+        } else {
+            incomplete.process(enqueuedOp, false);
+        }
+    }
+}
+
+void SessionState::enqueued(boost::intrusive_ptr<Message> msg)
+{
+    receiverCompleted(msg->getCommandId());
+    if (msg->requiresAccept())         
+        getProxy().getMessage().accept(SequenceSet(msg->getCommandId()));        
+}
+
+void SessionState::handleIn(AMQFrame& frame) {
+    SequenceNumber commandId = receiverGetCurrent();
+    //TODO: make command handling more uniform, regardless of whether
+    //commands carry content.
+    AMQMethodBody* m = frame.getMethod();
+    if (m == 0 || m->isContentBearing()) {
+        handleContent(frame, commandId);
+    } else if (frame.getBof() && frame.getEof()) {
+        handleCommand(frame.getMethod(), commandId);                
+    } else {
+        throw InternalErrorException("Cannot handle multi-frame command segments yet");
+    }
+}
+
+void SessionState::handleOut(AMQFrame& frame) {
+    assert(handler);
+    handler->out(frame);
+}
+
+void SessionState::deliver(DeliveryRecord& msg)
+{
+    uint32_t maxFrameSize = getConnection().getFrameMax();
+    assert(senderGetCommandPoint().offset == 0);
+    SequenceNumber commandId = senderGetCommandPoint().command;
+    msg.deliver(getProxy().getHandler(), commandId, maxFrameSize);
+    assert(senderGetCommandPoint() == SessionPoint(commandId+1, 0)); // Delivery has moved sendPoint.
+}
+
+void SessionState::sendCompletion() { handler->sendCompletion(); }
+
+void SessionState::senderCompleted(const SequenceSet& commands) {
+    qpid::SessionState::senderCompleted(commands);
+    for (SequenceSet::RangeIterator i = commands.rangesBegin(); i != commands.rangesEnd(); i++)
+        semanticState.completed(i->first(), i->last());
+}
+
+void SessionState::readyToSend() {
+    QPID_LOG(debug, getId() << ": ready to send, activating output.");
+    assert(handler);
+    semanticState.attached();
+    sys::AggregateOutput& tasks = handler->getConnection().outputTasks;
+    tasks.addOutputTask(&semanticState);
+    tasks.activateOutput();
+}
+
+Broker& SessionState::getBroker() { return broker; }
+
+}} // namespace qpid::broker
