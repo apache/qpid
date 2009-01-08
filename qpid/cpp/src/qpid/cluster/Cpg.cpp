@@ -126,8 +126,16 @@ void Cpg::shutdown() {
     }
 }
 
-void Cpg::dispatch(cpg_dispatch_t type) {
-    check(cpg_dispatch(handle,type), "Error in CPG dispatch");
+void Cpg::dispatchOne() {
+    check(cpg_dispatch(handle,CPG_DISPATCH_ONE), "Error in CPG dispatch");
+}
+
+void Cpg::dispatchAll() {
+    check(cpg_dispatch(handle,CPG_DISPATCH_ALL), "Error in CPG dispatch");
+}
+
+void Cpg::dispatchBlocking() {
+    check(cpg_dispatch(handle,CPG_DISPATCH_BLOCKING), "Error in CPG dispatch");
 }
 
 string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
@@ -135,7 +143,7 @@ string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
       case CPG_OK: return msg+": ok";
       case CPG_ERR_LIBRARY: return msg+": library error";
       case CPG_ERR_TIMEOUT: return msg+": timeout";
-      case CPG_ERR_TRY_AGAIN: return msg+": timeout. The aisexec daemon may not be running";
+      case CPG_ERR_TRY_AGAIN: return msg+": timeout.";
       case CPG_ERR_INVALID_PARAM: return msg+": invalid param";
       case CPG_ERR_NO_MEMORY: return msg+": no memory";
       case CPG_ERR_BAD_HANDLE: return msg+": bad handle";
