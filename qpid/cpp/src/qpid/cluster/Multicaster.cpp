@@ -28,8 +28,9 @@
 namespace qpid {
 namespace cluster {
 
-Multicaster::Multicaster(Cpg& cpg_, const boost::shared_ptr<sys::Poller>& poller) :
-    cpg(cpg_), queue(boost::bind(&Multicaster::sendMcast, this, _1), poller),
+Multicaster::Multicaster(Cpg& cpg_, const boost::shared_ptr<sys::Poller>& poller, boost::function<void()> onError_) :
+    onError(onError_), cpg(cpg_),
+    queue(boost::bind(&Multicaster::sendMcast, this, _1), poller),
     holding(true)
 {
     queue.start();
@@ -70,7 +71,9 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
         values.erase(values.begin(), i);
     }
     catch (const std::exception& e) {
-        throw ClusterLeaveException(e.what());
+        QPID_LOG(critical, "Multicast error: " << e.what());
+        queue.stop();
+        onError();
     }
 }
 
