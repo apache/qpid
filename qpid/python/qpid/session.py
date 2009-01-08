@@ -18,7 +18,8 @@
 #
 
 from threading import Condition, RLock, Lock, currentThread
-from invoker import Invoker
+from spec import SPEC
+from generator import command_invoker
 from datatypes import RangedSet, Struct, Future
 from codec010 import StringCodec
 from assembler import Segment
@@ -43,11 +44,10 @@ def server(*args):
 
 INCOMPLETE = object()
 
-class Session(Invoker):
+class Session(command_invoker(SPEC)):
 
-  def __init__(self, name, spec, auto_sync=True, timeout=10, delegate=client):
+  def __init__(self, name, auto_sync=True, timeout=10, delegate=client):
     self.name = name
-    self.spec = spec
     self.auto_sync = auto_sync
     self.timeout = timeout
     self.channel = None
@@ -132,21 +132,6 @@ class Session(Invoker):
       notify(self.condition)
     finally:
       self.lock.release()
-
-  def resolve_method(self, name):
-    cmd = self.spec.instructions.get(name)
-    if cmd is not None and cmd.track == self.spec["track.command"].value:
-      return self.METHOD, cmd
-    else:
-      # XXX
-      for st in self.spec.structs.values():
-        if st.name == name:
-          return self.METHOD, st
-      if self.spec.structs_by_name.has_key(name):
-        return self.METHOD, self.spec.structs_by_name[name]
-      if self.spec.enums.has_key(name):
-        return self.VALUE, self.spec.enums[name]
-      return self.ERROR, None
 
   def invoke(self, type, args, kwargs):
     # XXX
