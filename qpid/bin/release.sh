@@ -22,17 +22,18 @@
 # Script to pull together an Apache Release
 #
 
-REV=$1
-VER=$2
+SVN=$1
+REV=$2
+VER=$3
 
-if [ -z "$REV" -o -z "$VER" ]; then
-    echo "Usage: release.sh <revision> <version>"
+if [ -z "$SVN" -o -z "$REV" -o -z "$VER" ]; then
+    echo "Usage: release.sh <svn-path> <svn-revision> <version>"
     exit 1
 fi
 
 set -xe
 
-svn export -r ${REV} https://svn.apache.org/repos/asf/qpid/trunk/qpid qpid-${VER}
+svn export -r ${REV} https://svn.apache.org/repos/asf/qpid/${SVN} qpid-${VER}
 
 mkdir artifacts
 
