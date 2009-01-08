@@ -176,6 +176,7 @@ dmoduledir=$(libdir)/qpid/daemon
 cmoduledir=$(libdir)/qpid/client
 dmodule_LTLIBRARIES =
 cmodule_LTLIBRARIES = 
+module_hdr =
 
 include cluster.mk
 include acl.mk
@@ -471,6 +472,7 @@ libqpidclient_la_SOURCES =			\
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
+  $(module_hdr) \
   qpid/amqp_0_10/apply.h \
   qpid/assert.h \
   qpid/Address.h \
@@ -495,8 +497,6 @@ nobase_include_HEADERS = \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/Version.h \
-  qpid/agent/ManagementAgent.h \
-  qpid/agent/ManagementAgentImpl.h \
   qpid/broker/Broker.h \
   qpid/broker/AclModule.h \
   qpid/broker/SessionAdapter.h \
