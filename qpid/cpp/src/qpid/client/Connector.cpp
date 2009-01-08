@@ -373,8 +373,6 @@ void TCPConnector::eof(AsynchIO&) {
     handleClosed();
 }
 
-// TODO: astitcher 20070908 This version of the code can never time out, so the idle processing
-// will never be called
 void TCPConnector::run() {
     // Keep the connection impl in memory until run() completes.
     boost::shared_ptr<ConnectionImpl> protect = impl.lock();

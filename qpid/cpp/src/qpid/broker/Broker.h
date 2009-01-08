@@ -205,8 +205,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
 			    const std::string& destQueue,
 			    uint32_t  qty); 
 
-    // TODO: There isn't a single ProtocolFactory so the use of the following needs to be fixed
-    // For the present just return the first ProtocolFactory registered.
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(const std::string& name = TCP_TRANSPORT) const;
 
     /** Expose poller so plugins can register their descriptors. */
