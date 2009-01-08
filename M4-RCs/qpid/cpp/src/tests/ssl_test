@@ -1,0 +1,71 @@
+#!/bin/sh
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run a simple test over SSL
+
+CONFIG=$(dirname $0)/config.null
+CERT_DIR=`pwd`/test_cert_db
+CERT_PW_FILE=`pwd`/cert.password
+HOSTNAME=`hostname`
+COUNT=10000
+
+trap stop_broker EXIT
+
+error() { echo $*; exit 1; }
+
+create_certs() {
+    #create certificate and key databases with single, simple, self-signed certificate in it
+    mkdir ${CERT_DIR}
+    certutil -N -d ${CERT_DIR} -f ${CERT_PW_FILE}
+    certutil -S -d ${CERT_DIR} -n ${HOSTNAME} -s "CN=${HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil 
+}
+
+start_broker() {
+    ../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no --config $CONFIG --load-module ../.libs/ssl.so --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE > qpidd.port
+    PORT=`cat qpidd.port`
+}
+
+stop_broker() {
+    if [[ $PORT ]] ; then
+        ../qpidd -q --port $PORT
+    fi
+}
+CERTUTIL=$(type -p certutil)
+if [[ !(-x $CERTUTIL) ]] ; then
+    echo "No certutil, skipping ssl test";
+    exit 0;
+fi
+
+if [[ !(-e ${CERT_PW_FILE}) ]] ;  then
+    echo password > ${CERT_PW_FILE}
+fi
+if [[ !(-e ${CERT_DIR}) ]] ;  then
+    create_certs || error "Could not create test certificate"
+fi
+
+start_broker || error "Could not start broker"
+echo "Running SSL test on port $PORT"
+export QPID_NO_MODULE_DIR=1
+export QPID_LOAD_MODULE=../.libs/sslconnector.so
+export QPID_SSL_CERT_DB=${CERT_DIR}
+export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
+./perftest --count ${COUNT} --port ${PORT} -P ssl -b $HOSTNAME --summary
+
