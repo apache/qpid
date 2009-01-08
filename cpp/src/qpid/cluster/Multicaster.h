@@ -46,7 +46,7 @@ class Multicaster
 {
   public:
     /** Starts in holding mode: connection data events are held, other events are mcast */
-    Multicaster(Cpg& cpg_, const boost::shared_ptr<sys::Poller>& );
+    Multicaster(Cpg& cpg_, const boost::shared_ptr<sys::Poller>&, boost::function<void()> onError );
     void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&);
     void mcastBuffer(const char*, size_t, const ConnectionId&);
     void mcast(const Event& e);
@@ -60,6 +60,7 @@ class Multicaster
     void sendMcast(PollableEventQueue::Queue& );
 
     sys::Mutex lock;
+    boost::function<void()> onError;
     Cpg& cpg;
     PollableEventQueue queue;
     bool holding;
