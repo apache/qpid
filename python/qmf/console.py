@@ -25,6 +25,7 @@ import struct
 import socket
 import re
 from qpid.peer       import Closed
+from qpid.session    import SessionDetached
 from qpid.connection import Connection, ConnectionFailed
 from qpid.datatypes  import UUID, uuid4, Message, RangedSet
 from qpid.util       import connect, ssl, URL
