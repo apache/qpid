@@ -33,11 +33,13 @@ fi
 
 set -xe
 
-svn export -r ${REV} https://svn.apache.org/repos/asf/qpid/${SVN} qpid-${VER}
+URL=https://svn.apache.org/repos/asf/qpid/${SVN}
+
+svn export -r ${REV} ${URL} qpid-${VER}
 
 mkdir artifacts
 
-echo ${REV} > artifacts/qpid-${VER}.svnversion
+echo ${URL} ${REV} > artifacts/qpid-${VER}.svnversion
 
 tar -czf artifacts/qpid-${VER}.tar.gz qpid-${VER}
 tar -czf artifacts/qpid-ruby-${VER}.tar.gz qpid-${VER}/ruby qpid-${VER}/specs
