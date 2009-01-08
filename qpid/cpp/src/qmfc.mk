@@ -22,6 +22,20 @@
 # 
 lib_LTLIBRARIES += libqmfconsole.la
 
+module_hdr += \
+  qpid/console/Agent.h \
+  qpid/console/Broker.h \
+  qpid/console/ClassKey.h \
+  qpid/console/ConsoleListener.h \
+  qpid/console/Event.h \
+  qpid/console/Object.h \
+  qpid/console/ObjectId.h \
+  qpid/console/Package.h \
+  qpid/console/Schema.h \
+  qpid/console/SequenceManager.h \
+  qpid/console/SessionManager.h \
+  qpid/console/Value.h
+
 libqmfconsole_la_SOURCES = \
   qpid/console/Agent.h \
   qpid/console/Agent.cpp \

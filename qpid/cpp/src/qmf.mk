@@ -22,6 +22,10 @@
 # 
 lib_LTLIBRARIES += libqmfagent.la
 
+module_hdr += \
+  qpid/agent/ManagementAgent.h \
+  qpid/agent/ManagementAgentImpl.h
+
 libqmfagent_la_SOURCES = \
   qpid/agent/ManagementAgent.h \
   qpid/agent/ManagementAgentImpl.cpp \
