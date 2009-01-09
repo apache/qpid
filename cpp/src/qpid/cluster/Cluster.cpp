@@ -187,14 +187,15 @@ void Cluster::deliver(
     Mutex::ScopedLock l(lock);
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
-    deliver(Event::decode(from, buf), l);
+    Event e(Event::decode(from, buf));
+    if (from == myId) // Record self-deliveries for flow control.
+        mcast.selfDeliver(e);
+    deliver(e, l);
 }
 
 void Cluster::deliver(const Event& e, Lock&) {
     if (state == LEFT) return;
     QPID_LOG(trace, *this << " PUSH: " << e);
-    if (e.getMemberId() == myId)
-        mcast.delivered(e);     // Note delivery for flow control
     deliverQueue.push(e);
 }
 
@@ -215,7 +216,7 @@ void Cluster::deliveredEvent(const Event& e) {
     if (e.isCluster())  {
         while (frame.decode(buf)) {
             QPID_LOG(trace, *this << " DLVR: " << e << " " << frame);
-            Mutex::ScopedLock l(lock); // FIXME aconway 2008-12-11: lock scope is too big.
+            Mutex::ScopedLock l(lock); // FIXME aconway 2008-12-11: lock scope too big?
             ClusterDispatcher dispatch(*this, e.getMemberId(), l);
             if (!framing::invoke(dispatch, *frame.getBody()).wasHandled())
                 throw Exception(QPID_MSG("Invalid cluster control"));
@@ -406,8 +407,6 @@ void Cluster::dumpOffer(const MemberId& dumper, uint64_t dumpeeInt, const Uuid& 
     }
 }
 
-// FIXME aconway 2008-10-15: no longer need a separate control now
-// that the dump control is in the deliver queue.
 void Cluster::dumpStart(const MemberId& dumpee, const Url& url, Lock&) {
     if (state == LEFT) return;
     assert(state == OFFER);

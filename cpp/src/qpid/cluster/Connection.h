@@ -167,8 +167,6 @@ class Connection :
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     
-    int FIXMEcredit;            // FIXME aconway 2008-12-05: remove
-    
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };
 
