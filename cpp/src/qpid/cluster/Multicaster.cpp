@@ -28,10 +28,14 @@
 namespace qpid {
 namespace cluster {
 
-Multicaster::Multicaster(Cpg& cpg_, const boost::shared_ptr<sys::Poller>& poller, boost::function<void()> onError_) :
-    onError(onError_), cpg(cpg_),
+Multicaster::Multicaster(Cpg& cpg_, size_t mcastMax_,
+                         const boost::shared_ptr<sys::Poller>& poller,
+                         boost::function<void()> onError_) :
+    onError(onError_), cpg(cpg_), 
     queue(boost::bind(&Multicaster::sendMcast, this, _1), poller),
-    holding(true)
+    holding(true),
+    mcastMax(mcastMax_),
+    pending(0)
 {
     queue.start();
 }
@@ -56,6 +60,7 @@ void Multicaster::mcast(const Event& e) {
         }
     }
     queue.push(e);
+
 }
 
 
@@ -64,9 +69,18 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
         PollableEventQueue::Queue::iterator i = values.begin();
         while( i != values.end()) {
             iovec iov = { const_cast<char*>(i->getStore()), i->getStoreSize() };
-            if (!cpg.mcast(&iov, 1)) break; // returns false for flow control
+            if (!cpg.mcast(&iov, 1))
+                break; // cpg.mcast returns false for flow control
             QPID_LOG(trace, " MCAST " << *i);
             ++i;
+            if (mcastMax) {
+                sys::Mutex::ScopedLock l(lock);
+                assert(pending < mcastMax);
+                if (++pending == mcastMax) {
+                    queue.stop();
+                    break ;
+                }
+            }
         }
         values.erase(values.begin(), i);
     }
@@ -82,6 +96,16 @@ void Multicaster::release() {
     holding = false;
     std::for_each(holdingQueue.begin(), holdingQueue.end(), boost::bind(&Multicaster::mcast, this, _1));
     holdingQueue.clear();
+}
+
+void Multicaster::delivered(const Event&) {
+    sys::Mutex::ScopedLock l(lock);
+    if (mcastMax) {
+        assert(pending <= mcastMax);
+        if  (pending == mcastMax) 
+            queue.start();
+        --pending;
+    }
 }
 
 }} // namespace qpid::cluster
