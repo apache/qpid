@@ -43,7 +43,6 @@ struct ClusterValues {
     bool quorum;
     size_t readMax, writeEstimate, mcastMax;
 
-    // FIXME aconway 2008-12-09: revisit default.
     ClusterValues() : quorum(false), readMax(10), writeEstimate(64), mcastMax(10) {}
   
     Url getUrl(uint16_t port) const {
