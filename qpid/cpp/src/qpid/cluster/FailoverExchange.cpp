@@ -79,7 +79,7 @@ void FailoverExchange::route(Deliverable&, const string& , const framing::FieldT
 void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue) {
     // Called with lock held.
     if (urls.empty()) return;
-    framing::Array array(0x95); // FIXME aconway 2008-10-06: Array is unusable like this. Need type constants or better mapping.
+    framing::Array array(0x95);
     for (Urls::const_iterator i = urls.begin(); i != urls.end(); ++i) 
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
     const ProtocolVersion v;

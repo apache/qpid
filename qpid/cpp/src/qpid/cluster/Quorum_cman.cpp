@@ -35,7 +35,7 @@ void Quorum::init() {
     enable = true;
     cman = cman_init(0);
     if (cman == 0) throw ErrnoException("Can't connect to cman service");
-    // FIXME aconway 2008-11-13: configure max wait.
+    // FIXME aconway 2008-11-13: configurable max wait.
     for (int retry = 0;  !cman_is_quorate(cman) && retry < 30; retry++) {
         QPID_LOG(info, "Waiting for cluster quorum: " << sys::strError(errno));
         sys::sleep(1);
