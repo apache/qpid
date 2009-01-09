@@ -21,29 +21,18 @@
 
 package org.apache.qpid.commands.objects;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
-import javax.management.MBeanInfo;
-import javax.management.MBeanException;
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.ReflectionException;
-import javax.management.Attribute;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.IOException;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: Jun 20, 2008
- * Time: 8:39:01 AM
- * To change this template use File | Settings | File Templates.
- */
-public class ObjectNames {
+public class ObjectNames
+{
     public String querystring = null;
     public MBeanServerConnection mbsc;
     public Set set = null;
@@ -51,33 +40,44 @@ public class ObjectNames {
     public String attributevalues = "";// = null;
 
     /* method return the Set objects according to the Object type */
-    public void ObjectNames(MBeanServerConnection mbsc) {
+    public void ObjectNames(MBeanServerConnection mbsc)
+    {
         this.mbsc = mbsc;
     }
 
-    public Set returnObjects() {
-        try {
+    public Set returnObjects()
+    {
+        try
+        {
             set = mbsc.queryNames(new ObjectName(querystring), null);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
         return set;
     }
 
-    public void echo(String str) {
+    public void echo(String str)
+    {
         System.out.println(str);
     }
+
     /* display appropriate objects according to the ojbect type */
 
-    public void displayobjects(String output, String seperator) {
+    public void displayobjects(String output, String seperator)
+    {
         Iterator it = set.iterator();
         String line = "";
         String temp2 = "";
         int iterator = 0;
-        try {
-            do {
+        try
+        {
+            do
+            {
                 ObjectName temp_object = null;
-                if (it.hasNext()) {
+                if (it.hasNext())
+                {
                     temp_object = (ObjectName) it.next();
                     if (temp_object == null)
                         System.out.println("null test");
@@ -85,7 +85,8 @@ public class ObjectNames {
                 // echo(temp_object.getCanonicalKeyPropertyListString());
                 MBeanInfo bean_info = mbsc.getMBeanInfo(temp_object);
                 MBeanAttributeInfo[] attr_info = bean_info.getAttributes();
-                if (attr_info == null) {
+                if (attr_info == null)
+                {
                     echo(temp_object.toString());
                     String temp = "";
                     while (temp_object.toString().length() > temp.length())
@@ -93,27 +94,37 @@ public class ObjectNames {
                     if (output == null)
                         echo(temp);
 
-                } else {
-                    for (MBeanAttributeInfo attr : attr_info) {
+                }
+                else
+                {
+                    for (MBeanAttributeInfo attr : attr_info)
+                    {
                         Object toWrite = null;
 
-                        try {
+                        try
+                        {
                             String temp1 = attr.getName();
-                            if (output == null) {
+                            if (output == null)
+                            {
                                 while (temp1.length() < 15)
                                     temp1 = " " + temp1;
                                 attributes = attributes + temp1 + "|";
-                            } else if (output.compareToIgnoreCase("csv") == 0)
+                            }
+                            else if (output.compareToIgnoreCase("csv") == 0)
                                 attributes = attributes + temp1 + seperator;
-                            else {
+                            else
+                            {
                                 echo("Wrong output format current version is supporting only for CSV");
                                 return;
                             }
-                        } catch (Exception x) {
+                        }
+                        catch (Exception x)
+                        {
                             x.printStackTrace();
                         }
                     }
-                    if (attributes.equalsIgnoreCase("")) {
+                    if (attributes.equalsIgnoreCase(""))
+                    {
                         echo(temp_object.toString());
                         String temp = "";
                         while (temp_object.toString().length() > temp.length())
@@ -122,34 +133,40 @@ public class ObjectNames {
                         echo("There are no attributes for this object Type");
                         continue;
                     }
-                    for (MBeanAttributeInfo attr : attr_info) {
+                    for (MBeanAttributeInfo attr : attr_info)
+                    {
                         Object toWrite = null;
                         temp2 = null;
-                        try {
+                        try
+                        {
                             toWrite = mbsc.getAttribute(temp_object, attr.getName());
-                        } catch (Exception x) {
+                        }
+                        catch (Exception x)
+                        {
                             temp2 = "-";
                         }
                         if (toWrite != null)
                             temp2 = toWrite.toString();
                         else
                             temp2 = "-";
-                        if (output == null) {
+                        if (output == null)
+                        {
 
                             while (temp2.length() < 15)
                                 temp2 = " " + temp2;
 
                             attributevalues = attributevalues + temp2 + "|";
-                        } else if (output.compareToIgnoreCase("csv") == 0)
+                        }
+                        else if (output.compareToIgnoreCase("csv") == 0)
                             attributevalues = attributevalues + temp2 + seperator;
 
-                        //echo(temp1 + "     " + temp2 + "      " + temp3);
-
+                        // echo(temp1 + "     " + temp2 + "      " + temp3);
 
                     }
                 }
                 iterator++;
-                if (iterator == 1) {
+                if (iterator == 1)
+                {
                     echo(attributes);
                     for (int i = 0; i < attributes.length(); i++)
                         line = line + "-";
@@ -161,21 +178,27 @@ public class ObjectNames {
                 attributes = "";
                 attributevalues = "";
             } while (it.hasNext());
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
 
     }
 
-    public void reportgenerator(String output, String seperator, List<String> column) {
+    public void reportgenerator(String output, String seperator, List<String> column)
+    {
         Iterator it = set.iterator();
         String line = "";
         String temp2 = "";
         int iterator = 0;
-        try {
-            do {
+        try
+        {
+            do
+            {
                 ObjectName temp_object = null;
-                if (it.hasNext()) {
+                if (it.hasNext())
+                {
                     temp_object = (ObjectName) it.next();
                     if (temp_object == null)
                         System.out.println("null test");
@@ -183,7 +206,8 @@ public class ObjectNames {
                 // echo(temp_object.getCanonicalKeyPropertyListString());
                 MBeanInfo bean_info = mbsc.getMBeanInfo(temp_object);
                 MBeanAttributeInfo[] attr_info = bean_info.getAttributes();
-                if (attr_info == null) {
+                if (attr_info == null)
+                {
                     echo(temp_object.toString());
                     String temp = "";
                     while (temp_object.toString().length() > temp.length())
@@ -191,29 +215,40 @@ public class ObjectNames {
                     if (output == null)
                         echo(temp);
 
-                } else {
-                    for (MBeanAttributeInfo attr : attr_info) {
+                }
+                else
+                {
+                    for (MBeanAttributeInfo attr : attr_info)
+                    {
                         Object toWrite = null;
 
-                        try {
+                        try
+                        {
                             String temp1 = attr.getName();
-                            if (column.contains(temp1)) {
-                                if (output == null) {
+                            if (column.contains(temp1))
+                            {
+                                if (output == null)
+                                {
                                     while (temp1.length() < 15)
                                         temp1 = " " + temp1;
                                     attributes = attributes + temp1 + "|";
-                                } else if (output.compareToIgnoreCase("csv") == 0)
+                                }
+                                else if (output.compareToIgnoreCase("csv") == 0)
                                     attributes = attributes + temp1 + seperator;
-                                else {
+                                else
+                                {
                                     echo("Wrong output format current version is supporting only for CSV");
                                     return;
                                 }
                             }
-                        } catch (Exception x) {
+                        }
+                        catch (Exception x)
+                        {
                             x.printStackTrace();
                         }
                     }
-                    if (attributes.equalsIgnoreCase("")) {
+                    if (attributes.equalsIgnoreCase(""))
+                    {
                         echo(temp_object.toString());
                         String temp = "";
                         while (temp_object.toString().length() > temp.length())
@@ -222,37 +257,44 @@ public class ObjectNames {
                         echo("There are no attributes for this object Type");
                         return;
                     }
-                    for (MBeanAttributeInfo attr : attr_info) {
+                    for (MBeanAttributeInfo attr : attr_info)
+                    {
                         Object toWrite = null;
                         temp2 = null;
-                        if (column.contains(attr.getName())) {
-                            try {
+                        if (column.contains(attr.getName()))
+                        {
+                            try
+                            {
                                 toWrite = mbsc.getAttribute(temp_object, attr.getName());
-                            } catch (Exception x) {
+                            }
+                            catch (Exception x)
+                            {
                                 temp2 = "-";
                             }
                             if (toWrite != null)
                                 temp2 = toWrite.toString();
                             else
                                 temp2 = "-";
-                            if (output == null) {
+                            if (output == null)
+                            {
 
                                 while (temp2.length() < 15)
                                     temp2 = " " + temp2;
 
                                 attributevalues = attributevalues + temp2 + "|";
-                            } else if (output.compareToIgnoreCase("csv") == 0)
+                            }
+                            else if (output.compareToIgnoreCase("csv") == 0)
                                 attributevalues = attributevalues + temp2 + seperator;
 
-                            //echo(temp1 + "     " + temp2 + "      " + temp3);
+                            // echo(temp1 + "     " + temp2 + "      " + temp3);
 
                         }
-
 
                     }
                 }
                 iterator++;
-                if (iterator == 1) {
+                if (iterator == 1)
+                {
                     echo(attributes);
                     for (int i = 0; i < attributes.length(); i++)
                         line = line + "-";
@@ -264,30 +306,37 @@ public class ObjectNames {
                 attributes = "";
                 attributevalues = "";
             } while (it.hasNext());
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
 
     }
 
-    public void displayqueues(String output, String seperator) {
+    public void displayqueues(String output, String seperator)
+    {
         Iterator it = set.iterator();
         String line = "";
         int iterator = 0;
         int attr_count = 0;
         String temp1 = "";
         String temp2 = "";
-        try {
-            do {
+        try
+        {
+            do
+            {
                 attr_count = 0;
                 ObjectName temp_object = null;
-                if (it.hasNext()) {
+                if (it.hasNext())
+                {
                     temp_object = (ObjectName) it.next();
                 }
                 // echo(temp_object.getCanonicalKeyPropertyListString());
                 MBeanInfo bean_info = mbsc.getMBeanInfo(temp_object);
                 MBeanAttributeInfo[] attr_info = bean_info.getAttributes();
-                if (attr_info == null) {
+                if (attr_info == null)
+                {
                     echo(temp_object.toString());
                     String temp = "";
                     while (temp_object.toString().length() > temp.length())
@@ -295,93 +344,106 @@ public class ObjectNames {
                     if (output == null)
                         echo(temp);
 
-                } else {
-                    for (MBeanAttributeInfo attr : attr_info) {
+                }
+                else
+                {
+                    for (MBeanAttributeInfo attr : attr_info)
+                    {
                         Object toWrite = null;
                         attr_count++;
-                        try {
+                        try
+                        {
                             toWrite = mbsc.getAttribute(temp_object, attr.getName());
-                            if (output == null) {
-                                switch (attr_count) {
-                                    case 1:
-                                    case 3:
-                                        temp1 = attr.getName();
-                                        while (temp1.length() < 10)
-                                            temp1 = " " + temp1;
-                                        attributes = attributes + temp1 + "|";
-                                        temp2 = toWrite.toString();
-                                        while (temp2.length() < 10)
-                                            temp2 = " " + temp2;
-                                        attributevalues = attributevalues + temp2 + "|";
-                                        break;
-                                    case 6:
-                                        temp1 = attr.getName();
-                                        while (temp1.length() < 20)
-                                            temp1 = " " + temp1;
-                                        attributes = attributes + temp1 + "|";
-                                        temp2 = toWrite.toString();
-                                        while (temp2.length() < 20)
-                                            temp2 = " " + temp2;
-                                        attributevalues = attributevalues + temp2 + "|";
-                                        break;
-                                    case 7:
-                                        temp1 = attr.getName();
-                                        while (temp1.length() < 13)
-                                            temp1 = " " + temp1;
-                                        attributes = attributes + temp1 + "|";
-                                        temp2 = toWrite.toString();
-                                        while (temp2.length() < 13)
-                                            temp2 = " " + temp2;
-                                        attributevalues = attributevalues + temp2 + "|";
-                                        break;
-                                    case 9:
-                                        temp1 = attr.getName();
-                                        while (temp1.length() < 20)
-                                            temp1 = " " + temp1;
-                                        attributes = attributes + temp1 + "|";
-                                        temp2 = toWrite.toString();
-                                        while (temp2.length() < 20)
-                                            temp2 = " " + temp2;
-                                        attributevalues = attributevalues + temp2 + "|";
-                                        break;
+                            if (output == null)
+                            {
+                                switch (attr_count)
+                                {
+                                case 1:
+                                case 3:
+                                    temp1 = attr.getName();
+                                    while (temp1.length() < 10)
+                                        temp1 = " " + temp1;
+                                    attributes = attributes + temp1 + "|";
+                                    temp2 = toWrite.toString();
+                                    while (temp2.length() < 10)
+                                        temp2 = " " + temp2;
+                                    attributevalues = attributevalues + temp2 + "|";
+                                    break;
+                                case 6:
+                                    temp1 = attr.getName();
+                                    while (temp1.length() < 20)
+                                        temp1 = " " + temp1;
+                                    attributes = attributes + temp1 + "|";
+                                    temp2 = toWrite.toString();
+                                    while (temp2.length() < 20)
+                                        temp2 = " " + temp2;
+                                    attributevalues = attributevalues + temp2 + "|";
+                                    break;
+                                case 7:
+                                    temp1 = attr.getName();
+                                    while (temp1.length() < 13)
+                                        temp1 = " " + temp1;
+                                    attributes = attributes + temp1 + "|";
+                                    temp2 = toWrite.toString();
+                                    while (temp2.length() < 13)
+                                        temp2 = " " + temp2;
+                                    attributevalues = attributevalues + temp2 + "|";
+                                    break;
+                                case 9:
+                                    temp1 = attr.getName();
+                                    while (temp1.length() < 20)
+                                        temp1 = " " + temp1;
+                                    attributes = attributes + temp1 + "|";
+                                    temp2 = toWrite.toString();
+                                    while (temp2.length() < 20)
+                                        temp2 = " " + temp2;
+                                    attributevalues = attributevalues + temp2 + "|";
+                                    break;
                                 }
-                            } else if (output.compareToIgnoreCase("csv") == 0) {
-                                switch (attr_count) {
-                                    case 1:
-                                    case 3:
-                                    case 6:
-                                        temp1 = attr.getName();
-                                        attributes = attributes + temp1 + seperator;
-                                        temp2 = toWrite.toString();
-                                        attributevalues = attributevalues + temp2 + seperator;
-                                        break;
-                                    case 7:
-                                        temp1 = attr.getName();
-                                        attributes = attributes + temp1 + seperator;
-                                        temp2 = toWrite.toString();
-                                        attributevalues = attributevalues + temp2 + seperator;
-                                        break;
-                                    case 9:
-                                        temp1 = attr.getName();
-                                        attributes = attributes + temp1 + seperator;
-                                        temp2 = toWrite.toString();
-                                        attributevalues = attributevalues + temp2 + seperator;
-                                        break;
+                            }
+                            else if (output.compareToIgnoreCase("csv") == 0)
+                            {
+                                switch (attr_count)
+                                {
+                                case 1:
+                                case 3:
+                                case 6:
+                                    temp1 = attr.getName();
+                                    attributes = attributes + temp1 + seperator;
+                                    temp2 = toWrite.toString();
+                                    attributevalues = attributevalues + temp2 + seperator;
+                                    break;
+                                case 7:
+                                    temp1 = attr.getName();
+                                    attributes = attributes + temp1 + seperator;
+                                    temp2 = toWrite.toString();
+                                    attributevalues = attributevalues + temp2 + seperator;
+                                    break;
+                                case 9:
+                                    temp1 = attr.getName();
+                                    attributes = attributes + temp1 + seperator;
+                                    temp2 = toWrite.toString();
+                                    attributevalues = attributevalues + temp2 + seperator;
+                                    break;
                                 }
-                            } else {
+                            }
+                            else
+                            {
                                 echo("Wrong output format specified currently CLI supports only csv output format");
                                 return;
                             }
 
-
-                        } catch (Exception x) {
+                        }
+                        catch (Exception x)
+                        {
                             x.printStackTrace();
                         }
 
                     }
                 }
                 iterator++;
-                if (iterator == 1) {
+                if (iterator == 1)
+                {
                     for (int i = 0; i < attributes.length(); i++)
                         line = line + "-";
                     if (output == null)
@@ -395,60 +457,76 @@ public class ObjectNames {
                 attributes = "";
                 attributevalues = "";
             } while (it.hasNext());
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
     }
 
-    public void displayinfo(String output, String seperator) {
+    public void displayinfo(String output, String seperator)
+    {
         Iterator it = set.iterator();
         String temp1, temp2 = "";
-        try {
-            do {
+        try
+        {
+            do
+            {
 
                 ObjectName temp_object = null;
-                if (it.hasNext()) {
+                if (it.hasNext())
+                {
                     temp_object = (ObjectName) it.next();
                 }
                 // echo(temp_object.getCanonicalKeyPropertyListString());
                 MBeanInfo bean_info = mbsc.getMBeanInfo(temp_object);
                 MBeanAttributeInfo[] attr_info = bean_info.getAttributes();
-                if (attr_info == null) {
+                if (attr_info == null)
+                {
                     echo(temp_object.toString());
                     String temp = "";
                     while (temp_object.toString().length() > temp.length())
                         temp = "=" + temp;
                     echo(temp);
 
-                } else {
+                }
+                else
+                {
                     echo(temp_object.toString());
                     String temp = "";
                     while (temp_object.toString().length() > temp.length())
                         temp = "=" + temp;
                     echo(temp);
 
-                    for (MBeanAttributeInfo attr : attr_info) {
+                    for (MBeanAttributeInfo attr : attr_info)
+                    {
                         Object toWrite = null;
 
-                        try {
+                        try
+                        {
                             toWrite = mbsc.getAttribute(temp_object, attr.getName());
-                        } catch (Exception x) {
+                        }
+                        catch (Exception x)
+                        {
                             temp2 = "-";
                         }
                         temp1 = attr.getName();
                         if (toWrite != null)
                             temp2 = toWrite.toString();
 
-                        if (output == null) {
+                        if (output == null)
+                        {
                             while (temp1.length() < 35)
                                 temp1 = " " + temp1;
 
                             while (temp2.length() < 35)
                                 temp2 = " " + temp2;
                             echo(temp1 + "     " + temp2);
-                        } else if (output.compareToIgnoreCase("csv") == 0)
+                        }
+                        else if (output.compareToIgnoreCase("csv") == 0)
                             echo(temp1 + seperator + temp2);
-                        else {
+                        else
+                        {
                             echo("Wrong output format specified currently CLI supports only csv output format");
                             return;
                         }
@@ -458,25 +536,31 @@ public class ObjectNames {
 
                 }
             } while (it.hasNext());
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
 
     }
 
-    public void setQueryString(String object, String name, String vhost) {
+    public void setQueryString(String object, String name, String vhost)
+    {
 
     }
 
-    public void setQueryStringforinfo(String object, String name, String virtualhost) {
+    public void setQueryStringforinfo(String object, String name, String virtualhost)
+    {
 
     }
 
-    public String getQueryString() {
+    public String getQueryString()
+    {
         return querystring;
     }
 
-    public Set getSet() {
+    public Set getSet()
+    {
         return set;
     }
 

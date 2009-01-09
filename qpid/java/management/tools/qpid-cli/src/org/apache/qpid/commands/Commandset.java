@@ -43,7 +43,10 @@ public class Commandset extends CommandImpl
 
     private void setAttribute(String option_value)
     {
-        /*print usage if use is not give the correct option letter or no options */
+        /*
+         * print usage if use is not give the correct option letter or no
+         * options
+         */
         if (option_value == null)
         {
             printusage();
@@ -140,8 +143,9 @@ public class Commandset extends CommandImpl
 
     public void execute()
     {
-        /* In here you it's easy to handle any number of otpions which are going to add with the list command which works
-        with main option object or o
+        /*
+         * In here you it's easy to handle any number of otpions which are going
+         * to add with the list command which works with main option object or o
          */
         if (checkoptionsetting("output"))
         {
@@ -254,8 +258,3 @@ public class Commandset extends CommandImpl
     }
 
 }
-
-
-
-
-

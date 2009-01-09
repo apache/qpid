@@ -18,48 +18,23 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 
 package org.apache.qpid.commands;
 
-import org.apache.qpid.utils.JMXinfo;
-import org.apache.qpid.commands.objects.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.StringTokenizer;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: Aug 6, 2008
- * Time: 5:34:51 PM
- * To change this template use File | Settings | File Templates.
- */
-public class Commanddelete extends CommandImpl {
+import org.apache.qpid.commands.objects.QueueObject;
+import org.apache.qpid.utils.JMXinfo;
+
+public class Commanddelete extends CommandImpl
+{
     private int number = 0;
     private QueueObject objname;
     private MBeanServerConnection mbsc;
@@ -67,7 +42,8 @@ public class Commanddelete extends CommandImpl {
     private ObjectName queue;
     public static final String COMMAND_NAME = "delete";
 
-    public Commanddelete(JMXinfo info) {
+    public Commanddelete(JMXinfo info)
+    {
         super(info);
         this.mbsc = info.getmbserverconnector();
         this.objname = new QueueObject(mbsc);
@@ -76,16 +52,20 @@ public class Commanddelete extends CommandImpl {
 
     }
 
-    public void deletemessages() {
+    public void deletemessages()
+    {
         Set set = null;
         objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
         set = objname.returnObjects();
 
-        if (objname.getSet().size() != 0) {
+        if (objname.getSet().size() != 0)
+        {
             Iterator it = set.iterator();
             this.queue = (ObjectName) it.next();
-            try {
-                if (this.number == 0) {
+            try
+            {
+                if (this.number == 0)
+                {
                     echo("");
                     System.out.print("Do you want to delete all the messages from the Queue [Y/N] :");
                     InputStreamReader isr = new InputStreamReader(System.in);
@@ -96,59 +76,79 @@ public class Commanddelete extends CommandImpl {
                         this.mbsc.invoke(queue, this.method2, null, null);
                     else
                         return;
-                } else if (objname.getmessagecount(this.queue) < this.number) {
+                }
+                else if (objname.getmessagecount(this.queue) < this.number)
+                {
                     echo("Given number is Greater than the Queue Depth");
                     return;
-                } else {
-                    for (int i = 0; i < this.number; i++) {
+                }
+                else
+                {
+                    for (int i = 0; i < this.number; i++)
+                    {
                         this.mbsc.invoke(queue, this.method1, null, null);
                     }
                 }
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 ex.printStackTrace();
             }
 
-        } else {
-            if (hasName()) {
+        }
+        else
+        {
+            if (hasName())
+            {
 
                 echo("The Queue you have specified is not in the current broker");
                 echo("");
-            } else {
+            }
+            else
+            {
                 printusage();
             }
         }
     }
 
-    public void execute() {
-        /* In here you it's easy to handle any number of otpions which are going to add with the list command which works
-        with main option object or o
+    public void execute()
+    {
+        /*
+         * In here you it's easy to handle any number of otpions which are going
+         * to add with the list command which works with main option object or o
          */
 
-        if (checkoptionsetting("object") || checkoptionsetting("o")) {
+        if (checkoptionsetting("object") || checkoptionsetting("o"))
+        {
             String object = optionchecker("object");
-            if (object == null) {
+            if (object == null)
+            {
                 object = optionchecker("o");
             }
             if (object.compareToIgnoreCase("queue") == 0)
                 setObject(object);
-            else {
+            else
+            {
                 unrecognizeoption();
                 echo("This command is only applicable for delete command so please start with queue");
             }
-            if (checkoptionsetting("name") || checkoptionsetting("n")) {
+            if (checkoptionsetting("name") || checkoptionsetting("n"))
+            {
                 String name = optionchecker("name");
                 if (name == null)
                     name = optionchecker("n");
 
                 setName(name);
             }
-            if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
+            if (checkoptionsetting("virtualhost") || checkoptionsetting("v"))
+            {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
                 setVirtualhost(vhost);
             }
-            if (checkoptionsetting("top") || checkoptionsetting("t")) {
+            if (checkoptionsetting("top") || checkoptionsetting("t"))
+            {
                 String number = optionchecker("top");
                 if (number == null)
                     number = optionchecker("t");
@@ -156,13 +156,15 @@ public class Commanddelete extends CommandImpl {
                 setnumber(removeSpaces(number));
             }
             this.deletemessages();
-        } else if (checkoptionsetting("h") || checkoptionsetting("help"))
+        }
+        else if (checkoptionsetting("h") || checkoptionsetting("help"))
             printusage();
         else
             unrecognizeoption();
     }
 
-    public void printusage() {
+    public void printusage()
+    {
         echo("");
         echo("Usage:delete [OPTION] ... [OBJECT TYPE]...\n");
         echo("Delete the top most messages from the given queue object\n");
@@ -175,19 +177,23 @@ public class Commanddelete extends CommandImpl {
 
     }
 
-    private void setnumber(String number) {
+    private void setnumber(String number)
+    {
         Integer i = new Integer(number);
         this.number = i.intValue();
     }
 
-    public int getnumber() {
+    public int getnumber()
+    {
         return this.number;
     }
 
-    private static String removeSpaces(String s) {
+    private static String removeSpaces(String s)
+    {
         StringTokenizer st = new StringTokenizer(s, " ", false);
         String t = "";
-        while (st.hasMoreElements()) t += st.nextElement();
+        while (st.hasMoreElements())
+            t += st.nextElement();
         return t;
     }
 }

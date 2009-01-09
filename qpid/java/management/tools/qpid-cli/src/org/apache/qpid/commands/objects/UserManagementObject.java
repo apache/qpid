@@ -23,22 +23,15 @@ package org.apache.qpid.commands.objects;
 
 import javax.management.MBeanServerConnection;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: Jun 24, 2008
- * Time: 12:11:52 AM
- * To change this template use File | Settings | File Templates.
- */
-public class UserManagementObject extends ObjectNames {
-    public UserManagementObject(MBeanServerConnection mbsc) {
+public class UserManagementObject extends ObjectNames
+{
+    public UserManagementObject(MBeanServerConnection mbsc)
+    {
         ObjectNames(mbsc);
-//        querystring = "org.apache.qpid:type=UserManagement,*";
-//        set = returnObjects();
-
     }
 
-    public void setQueryString(String object, String name, String vhost) {
+    public void setQueryString(String object, String name, String vhost)
+    {
         querystring = "org.apache.qpid:type=UserManagement,*";
     }
 

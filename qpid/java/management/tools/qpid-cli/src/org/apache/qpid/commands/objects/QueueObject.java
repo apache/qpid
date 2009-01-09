@@ -26,19 +26,15 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.ObjectName;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: Jun 20, 2008
- * Time: 8:49:56 AM
- * To change this template use File | Settings | File Templates.
- */
-public class QueueObject extends ObjectNames {
-    public QueueObject(MBeanServerConnection mbsc) {
+public class QueueObject extends ObjectNames
+{
+    public QueueObject(MBeanServerConnection mbsc)
+    {
         ObjectNames(mbsc);
     }
 
-    public void setQueryString(String object, String name, String vhost) {
+    public void setQueryString(String object, String name, String vhost)
+    {
         if (name != null && vhost == null)
             querystring = "org.apache.qpid:type=VirtualHost.Queue,name=" + name + ",*";
         else if (name != null && vhost != null)
@@ -49,23 +45,28 @@ public class QueueObject extends ObjectNames {
             querystring = "org.apache.qpid:type=VirtualHost.Queue,*";
     }
 
-    public int getmessagecount(ObjectName queue) {
+    public int getmessagecount(ObjectName queue)
+    {
         int attr_count = 0;
         String value;
         Integer depth = null;
 
-        try {
+        try
+        {
             MBeanInfo bean_info;
             bean_info = mbsc.getMBeanInfo(queue);
             MBeanAttributeInfo[] attr_info = bean_info.getAttributes();
             if (attr_info == null)
                 return 0;
-            else {
-                for (MBeanAttributeInfo attr : attr_info) {
+            else
+            {
+                for (MBeanAttributeInfo attr : attr_info)
+                {
                     Object toWrite = null;
                     attr_count++;
                     toWrite = mbsc.getAttribute(queue, attr.getName());
-                    if (attr_count == 7) {
+                    if (attr_count == 7)
+                    {
                         value = toWrite.toString();
                         depth = new Integer(value);
                     }
@@ -73,7 +74,9 @@ public class QueueObject extends ObjectNames {
 
             }
 
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
         if (depth != null)
@@ -81,6 +84,5 @@ public class QueueObject extends ObjectNames {
         else
             return -1;
     }
-
 
 }
