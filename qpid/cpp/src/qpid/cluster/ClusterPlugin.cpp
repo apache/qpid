@@ -41,10 +41,10 @@ struct ClusterValues {
     string name;
     string url;
     bool quorum;
-    size_t readMax, writeEstimate;
+    size_t readMax, writeEstimate, mcastMax;
 
     // FIXME aconway 2008-12-09: revisit default.
-    ClusterValues() : quorum(false), readMax(0), writeEstimate(64) {}
+    ClusterValues() : quorum(false), readMax(10), writeEstimate(64), mcastMax(10) {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
@@ -69,10 +69,11 @@ struct ClusterOptions : public Options {
             ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
             ("cluster-read-max", optValue(values.readMax,"N"),
-             "Experimental: Throttle read rate from client connections.")
+             "Experimental: Max unreplicated reads per connetion connection. 0=no limit.")
+            ("cluster-mcast-max", optValue(values.mcastMax,"N"),
+             "Experimental: Max outstanding multicasts per broker. 0=no limit.")
             ("cluster-write-estimate", optValue(values.writeEstimate, "Kb"),
-             "Experimental: initial estimate for connection write per multicast cycle")
-            ;
+             "Experimental: initial estimate for connection writes rate per multicast cycle");
     }
 };
 
@@ -91,7 +92,13 @@ struct ClusterPlugin : public Plugin {
         if (values.name.empty()) return; // Only if --cluster-name option was specified.
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
-        cluster = new Cluster(values.name, values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)), *broker, values.quorum, values.readMax, values.writeEstimate*1024);
+        cluster = new Cluster(
+            values.name,
+            values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)),
+            *broker,
+            values.quorum,
+            values.readMax, values.writeEstimate*1024, values.mcastMax
+        );
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
