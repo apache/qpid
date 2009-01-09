@@ -18,23 +18,6 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
 package org.apache.qpid.commands;
 
@@ -48,7 +31,7 @@ import java.util.Set;
 
 public class Commandget extends CommandImpl
 {
-    
+
     private String _attributeName;
     private String _value;
     public static String COMMAND_NAME = "get";
@@ -99,7 +82,7 @@ public class Commandget extends CommandImpl
             {
                 ObjectName object = (ObjectName) objname.getSet().iterator().next();
 
-                Object value= objname.getAttribute(object, _attributeName);
+                Object value = objname.getAttribute(object, _attributeName);
 
                 echo(value.toString());
             }
@@ -129,8 +112,9 @@ public class Commandget extends CommandImpl
 
     public void execute()
     {
-        /* In here you it's easy to handle any number of otpions which are going to add with the list command which works
-        with main option object or o
+        /*
+         * In here you it's easy to handle any number of otpions which are going
+         * to add with the list command which works with main option object or o
          */
         if (checkoptionsetting("output"))
         {
@@ -225,8 +209,3 @@ public class Commandget extends CommandImpl
 
     }
 }
-
-
-
-
-

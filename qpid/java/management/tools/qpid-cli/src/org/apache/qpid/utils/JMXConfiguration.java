@@ -18,31 +18,12 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package org.apache.qpid.utils;
-
-import org.apache.qpid.Command;
 
 import java.util.Map;
 
-public class JMXConfiguration {
+public class JMXConfiguration
+{
     private String hostname = "localhost";
     private String port = "8999";
     private String interval = "40000";
@@ -52,63 +33,81 @@ public class JMXConfiguration {
     private String username = null;
     private String password = null;
 
-    public JMXConfiguration(Map map) {
-        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.HOST_OPTION, map)) {
+    public JMXConfiguration(Map map)
+    {
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.HOST_OPTION, map))
+        {
             this.hostname = optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.HOST_OPTION, map);
         }
-        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.PORT_OPTION, map)) {
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.PORT_OPTION, map))
+        {
             this.port = optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.PORT_OPTION, map);
         }
-        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.REPORT_OPTION, map)) {
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.REPORT_OPTION, map))
+        {
 
-            this.report_file = optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.REPORT_OPTION, map);
+            this.report_file = optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.REPORT_OPTION,
+                    map);
         }
-        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.USER_OPTION, map)) {
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.USER_OPTION, map))
+        {
 
             this.setUsername(optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.USER_OPTION, map));
         }
 
-        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.PASSWORD_OPTION, map)) {
-            this.setPassword(optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.PASSWORD_OPTION, map));
+        if (checkoptionsetting(CommandLineOptionConstants.JMXCommandLineOptionConstants.PASSWORD_OPTION, map))
+        {
+            this.setPassword(optionchecker(CommandLineOptionConstants.JMXCommandLineOptionConstants.PASSWORD_OPTION,
+                    map));
         }
 
     }
 
-    public void sethostname(String hostname) {
+    public void sethostname(String hostname)
+    {
         this.hostname = hostname;
     }
 
-    public void setport(String port) {
+    public void setport(String port)
+    {
         this.port = port;
     }
 
-    public void setinterval(String interval) {
+    public void setinterval(String interval)
+    {
         this.interval = interval;
     }
 
-    public void setoutputpath(String output) {
+    public void setoutputpath(String output)
+    {
         this.outputpath = output;
     }
 
-    public String gethostname() {
+    public String gethostname()
+    {
         return this.hostname;
     }
 
-    public String getport() {
+    public String getport()
+    {
         return this.port;
     }
 
-    public String getinterval() {
+    public String getinterval()
+    {
         return this.interval;
     }
 
-    public String getoutputpath() {
+    public String getoutputpath()
+    {
         return this.outputpath;
     }
 
-    public CommandLineOption loadoption(String option, Map options) {
+    public CommandLineOption loadoption(String option, Map options)
+    {
         CommandLineOption op = null;
-        if (option != null) {
+        if (option != null)
+        {
             op = (CommandLineOption) options.get(option);
 
         }
@@ -116,21 +115,25 @@ public class JMXConfiguration {
 
     }
 
-    public void setreportfile(String reportfile) {
+    public void setreportfile(String reportfile)
+    {
         this.report_file = reportfile;
         this.isreport_mode = true;
 
     }
 
-    public boolean isreportmode() {
+    public boolean isreportmode()
+    {
         return this.isreport_mode;
     }
 
-    public String getreportfile() {
+    public String getreportfile()
+    {
         return this.report_file;
     }
 
-    public String optionchecker(String option_letter, Map map) {
+    public String optionchecker(String option_letter, Map map)
+    {
 
         if (map == null)
             return null;
@@ -141,7 +144,8 @@ public class JMXConfiguration {
         return value;
     }
 
-    public boolean checkoptionsetting(String option_letter, Map map) {
+    public boolean checkoptionsetting(String option_letter, Map map)
+    {
         if (map == null)
             return false;
         CommandLineOption option = (CommandLineOption) map.get(option_letter);

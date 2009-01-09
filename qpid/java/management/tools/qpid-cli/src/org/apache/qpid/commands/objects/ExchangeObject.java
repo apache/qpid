@@ -23,22 +23,16 @@ package org.apache.qpid.commands.objects;
 
 import javax.management.MBeanServerConnection;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: Jun 24, 2008
- * Time: 12:15:19 AM
- * To change this template use File | Settings | File Templates.
- */
-public class ExchangeObject extends ObjectNames {
-    public ExchangeObject(MBeanServerConnection mbsc) {
+public class ExchangeObject extends ObjectNames
+{
+    public ExchangeObject(MBeanServerConnection mbsc)
+    {
         ObjectNames(mbsc);
-//        querystring = "org.apache.qpid:type=VirtualHost.Exchange,*";
-//        set = returnObjects();
 
     }
 
-    public void setQueryString(String object, String name, String vhost) {
+    public void setQueryString(String object, String name, String vhost)
+    {
         if (name != null && vhost == null)
             querystring = "org.apache.qpid:type=VirtualHost.Exchange,name=" + name + ",*";
         else if (name != null && vhost != null)
@@ -50,4 +44,3 @@ public class ExchangeObject extends ObjectNames {
 
     }
 }
-

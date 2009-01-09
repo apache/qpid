@@ -18,48 +18,41 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
 package org.apache.qpid.commands;
 
-
-import org.apache.qpid.utils.CommandLineOptionParser;
-import org.apache.qpid.utils.JMXinfo;
-import org.apache.qpid.commands.objects.*;
-
-import javax.management.MBeanServerConnection;
 import java.util.Set;
 
+import javax.management.MBeanServerConnection;
 
-public class Commandinfo extends CommandImpl {
+import org.apache.qpid.commands.objects.AllObjects;
+import org.apache.qpid.commands.objects.ConnectionObject;
+import org.apache.qpid.commands.objects.ExchangeObject;
+import org.apache.qpid.commands.objects.ObjectNames;
+import org.apache.qpid.commands.objects.QueueObject;
+import org.apache.qpid.commands.objects.UserManagementObject;
+import org.apache.qpid.commands.objects.VirtualHostObject;
+import org.apache.qpid.utils.JMXinfo;
+
+public class Commandinfo extends CommandImpl
+{
 
     public static final String COMMAND_NAME = "info";
-    
+
     public Commandinfo(JMXinfo info)
     {
         super(info);
     }
 
-    private void listobjects(String option_value) {
-        /*pring usage if use is not give the correct option letter or no options */
-        if (option_value == null) {
-//            System.out.println("testing");
+    private void listobjects(String option_value)
+    {
+        /*
+         * pring usage if use is not give the correct option letter or no
+         * options
+         */
+        if (option_value == null)
+        {
+            // System.out.println("testing");
             printusage();
             return;
         }
@@ -67,95 +60,124 @@ public class Commandinfo extends CommandImpl {
         Set set = null;
         ObjectNames objname = null;
 
-        try {
-            if (option_value.compareToIgnoreCase("queue") == 0 || option_value.compareToIgnoreCase("queues") == 0) {
+        try
+        {
+            if (option_value.compareToIgnoreCase("queue") == 0 || option_value.compareToIgnoreCase("queues") == 0)
+            {
                 objname = new QueueObject(mbsc);
 
-            } else
-            if (option_value.compareToIgnoreCase("Virtualhosts") == 0 || option_value.compareToIgnoreCase("Virtualhost") == 0) {
+            }
+            else if (option_value.compareToIgnoreCase("Virtualhosts") == 0
+                    || option_value.compareToIgnoreCase("Virtualhost") == 0)
+            {
                 objname = new VirtualHostObject(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Exchange") == 0 || option_value.compareToIgnoreCase("Exchanges") == 0) {
+                // this.name = option_value;
+            }
+            else if (option_value.compareToIgnoreCase("Exchange") == 0
+                    || option_value.compareToIgnoreCase("Exchanges") == 0)
+            {
                 objname = new ExchangeObject(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Connection") == 0 || option_value.compareToIgnoreCase("Connections") == 0) {
+                // this.name = option_value;
+            }
+            else if (option_value.compareToIgnoreCase("Connection") == 0
+                    || option_value.compareToIgnoreCase("Connections") == 0)
+            {
                 objname = new ConnectionObject(mbsc);
-//                this.name = option_value;
-            } else if (option_value.compareToIgnoreCase("all") == 0) {
+                // this.name = option_value;
+            }
+            else if (option_value.compareToIgnoreCase("all") == 0)
+            {
                 objname = new AllObjects(mbsc);
-//                this.name = option_value;
-            } else
-            if (option_value.compareToIgnoreCase("Usermanagement") == 0 || option_value.compareToIgnoreCase("Usermanagmenets") == 0) {
+                // this.name = option_value;
+            }
+            else if (option_value.compareToIgnoreCase("Usermanagement") == 0
+                    || option_value.compareToIgnoreCase("Usermanagmenets") == 0)
+            {
                 objname = new UserManagementObject(mbsc);
-//                this.name = option_value;
-            } else {
+                // this.name = option_value;
+            }
+            else
+            {
                 printusage();
                 echo("Wrong objectName");
                 return;
             }
             objname.setQueryString(this.getObject(), this.getName(), this.getVirtualhost());
             objname.returnObjects();
-            if (objname.getSet().size() != 0) {
+            if (objname.getSet().size() != 0)
+            {
                 objname.displayinfo(this.getOutputFormat(), this.getSeperator());
 
-            } else {
-                if (hasName()) {
+            }
+            else
+            {
+                if (hasName())
+                {
 
                     echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
                     echo(this.getObject() + "Type Objects might not in the broker currently");
                     echo("");
-                } else {
+                }
+                else
+                {
                     printusage();
                 }
             }
 
-
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             ex.printStackTrace();
         }
 
-
     }
 
-    public void execute() {
-        /* In here you it's easy to handle any number of otpions which are going to add with the list command which works
-        with main option object or o
+    public void execute()
+    {
+        /*
+         * In here you it's easy to handle any number of otpions which are going
+         * to add with the list command which works with main option object or o
          */
-        if (checkoptionsetting("output")) {
+        if (checkoptionsetting("output"))
+        {
             setOutputFormat(optionchecker("output"));
             if (checkoptionsetting("separator"))
                 setSeperator(optionchecker("separator"));
         }
-        if (checkoptionsetting("object") || checkoptionsetting("o")) {
+        if (checkoptionsetting("object") || checkoptionsetting("o"))
+        {
             String object = optionchecker("object");
-            if (object == null) {
+            if (object == null)
+            {
                 object = optionchecker("o");
             }
             setObject(object);
-            if (checkoptionsetting("name") || checkoptionsetting("n")) {
+            if (checkoptionsetting("name") || checkoptionsetting("n"))
+            {
                 String name = optionchecker("name");
                 if (name == null)
                     name = optionchecker("n");
 
                 setName(name);
             }
-            if (checkoptionsetting("virtualhost") || checkoptionsetting("v")) {
+            if (checkoptionsetting("virtualhost") || checkoptionsetting("v"))
+            {
                 String vhost = optionchecker("virtualhost");
                 if (vhost == null)
                     vhost = optionchecker("v");
                 setVirtualhost(vhost);
             }
             listobjects(this.getObject());
-        } else if (checkoptionsetting("h") || checkoptionsetting("help"))
+        }
+        else if (checkoptionsetting("h") || checkoptionsetting("help"))
             printusage();
         else
             unrecognizeoption();
     }
 
-    public void printusage() {
+    public void printusage()
+    {
         echo("");
         echo("Usage:info [OPTION] ... [OBJECT TYPE]...\n");
         echo("Give ALL the information about the given object\n");

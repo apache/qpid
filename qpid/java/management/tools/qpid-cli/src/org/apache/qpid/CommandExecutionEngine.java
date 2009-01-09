@@ -18,23 +18,6 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.apache.qpid;
 
 import java.util.HashMap;
@@ -42,19 +25,21 @@ import java.util.Map;
 
 import org.apache.qpid.utils.JMXinfo;
 
-
-public class CommandExecutionEngine {
+public class CommandExecutionEngine
+{
     private static Map<String, Class<? extends Command>> _commands = new HashMap<String, Class<? extends Command>>();
     private Command currentcommand = null;
     private String commandname = null;
     private JMXinfo info = null;
 
-    public CommandExecutionEngine(JMXinfo info) {
+    public CommandExecutionEngine(JMXinfo info)
+    {
         this.info = info;
         this.commandname = info.getCommandLineOptionParser().getcommandname();
     }
 
-    public boolean CommandSelector() throws Exception {
+    public boolean CommandSelector() throws Exception
+    {
         Class<? extends Command> commandClass = _commands.get(this.commandname);
         if (commandClass != null)
         {
@@ -68,17 +53,19 @@ public class CommandExecutionEngine {
         }
         return true;
     }
-    
+
     public static void addCommand(String name, Class<? extends Command> newCommand)
     {
         _commands.put(name, newCommand);
     }
 
-    public void runcommand() {
+    public void runcommand()
+    {
         currentcommand.execute();
     }
 
-    public void usage() {
+    public void usage()
+    {
         System.out.println(commandname + ":Command not found");
     }
 }

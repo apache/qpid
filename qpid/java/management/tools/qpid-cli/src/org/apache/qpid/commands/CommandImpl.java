@@ -18,36 +18,17 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 
 package org.apache.qpid.commands;
 
-
-import org.apache.qpid.Command;
-import org.apache.qpid.CommandExecutionEngine;
-import org.apache.qpid.utils.JMXinfo;
-import org.apache.qpid.utils.CommandLineOption;
-
 import java.util.Map;
 
+import org.apache.qpid.Command;
+import org.apache.qpid.utils.CommandLineOption;
+import org.apache.qpid.utils.JMXinfo;
 
-public abstract class CommandImpl implements Command {
+public abstract class CommandImpl implements Command
+{
     protected JMXinfo info = null;
 
     private String name;
@@ -56,41 +37,48 @@ public abstract class CommandImpl implements Command {
 
     private String outputformat = null;
     private String seperator = ",";
-    
-    public CommandImpl(JMXinfo info) {
+
+    public CommandImpl(JMXinfo info)
+    {
         this.info = info;
     }
 
-    public CommandImpl() 
+    public CommandImpl()
     {
 
     }
-    
-    protected void setName(String name) {
+
+    protected void setName(String name)
+    {
         this.name = name;
     }
 
-    public String getName() {
+    public String getName()
+    {
         return this.name;
     }
-    
-    protected boolean hasName() {
+
+    protected boolean hasName()
+    {
         if (this.name == null)
             return false;
 
         else
             return true;
     }
-    
-    protected void setObject(String object) {
+
+    protected void setObject(String object)
+    {
         this.object = object;
     }
-    
-    public String getObject() {
+
+    public String getObject()
+    {
         return this.object;
     }
-    
-    protected void setOutputFormat(String outputformat) {
+
+    protected void setOutputFormat(String outputformat)
+    {
         this.outputformat = outputformat;
     }
 
@@ -98,8 +86,9 @@ public abstract class CommandImpl implements Command {
     {
         return outputformat;
     }
-    
-    protected void setSeperator(String seperator) {
+
+    protected void setSeperator(String seperator)
+    {
         this.seperator = seperator;
     }
 
@@ -107,16 +96,19 @@ public abstract class CommandImpl implements Command {
     {
         return seperator;
     }
-    
-    protected void setVirtualhost(String virtualhost) {
+
+    protected void setVirtualhost(String virtualhost)
+    {
         this.virtualhost = virtualhost;
     }
 
-    public String getVirtualhost() {
+    public String getVirtualhost()
+    {
         return this.virtualhost;
     }
 
-    public String optionchecker(String option_letter) {
+    public String optionchecker(String option_letter)
+    {
         Map map = info.getCommandLineOptionParser().getAlloptions();
         if (map == null)
             return null;
@@ -127,7 +119,8 @@ public abstract class CommandImpl implements Command {
         return value;
     }
 
-    public boolean checkoptionsetting(String option_letter) {
+    public boolean checkoptionsetting(String option_letter)
+    {
         Map map = info.getCommandLineOptionParser().getAlloptions();
         if (map == null)
             return false;
@@ -141,12 +134,14 @@ public abstract class CommandImpl implements Command {
         else
             return false;
     }
-    
-    public void echo(String str) {
+
+    public void echo(String str)
+    {
         System.out.println(str);
     }
 
-    public void unrecognizeoption() {
+    public void unrecognizeoption()
+    {
         echo("list: Unrecognized option");
         echo("Try `" + COMMAND_NAME + " --help` for more information");
     }
@@ -154,6 +149,5 @@ public abstract class CommandImpl implements Command {
     public abstract void execute();
 
     public abstract void printusage();
-
 
 }

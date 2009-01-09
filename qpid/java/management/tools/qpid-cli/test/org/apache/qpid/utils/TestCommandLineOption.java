@@ -18,43 +18,19 @@
  * under the License.
  *
  */
-/*
- *
- * Copyright (c) 2006 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.apache.qpid.utils;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Assert;
-import org.junit.After;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lahiru
- * Date: Jun 30, 2008
- * Time: 12:17:26 PM
- * To change this template use File | Settings | File Templates.
- */
-public class TestCommandLineOption {
+public class TestCommandLineOption
+{
     String input1;
     String input2;
     String options;
-    String [] list;
+    String[] list;
     CommandLineOption option;
 
     @Before
@@ -64,19 +40,22 @@ public class TestCommandLineOption {
         input2 = "--help";
         options = "localhost testing";
         list = options.split(" ");
-        option = new CommandLineOption(input1,list);
-        
+        option = new CommandLineOption(input1, list);
+
     }
+
     @Test
     public void TestGetOptinValue()
     {
-        Assert.assertEquals(option.getOptionValue(),"localhost");
+        Assert.assertEquals(option.getOptionValue(), "localhost");
     }
+
     @Test
     public void TestGetOptionType()
     {
-        Assert.assertEquals(option.getOptionType(),"h");
+        Assert.assertEquals(option.getOptionType(), "h");
     }
+
     @After
     public void cleanup()
     {
