@@ -1,0 +1,53 @@
+#!/bin/sh
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run the cli-utility tests.
+MY_DIR=`dirname \`which $0\``
+PYTHON_DIR=${MY_DIR}/../../../python
+CLI_DIR=${PYTHON_DIR}/commands
+
+trap stop_brokers INT TERM QUIT
+
+start_brokers() {
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    LOCAL_PORT=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    REMOTE_PORT=`cat qpidd.port`
+}
+
+stop_brokers() {
+        ../qpidd -q --port $LOCAL_PORT
+        ../qpidd -q --port $REMOTE_PORT
+}
+
+if test -d ${PYTHON_DIR} ;  then
+    start_brokers
+    echo "Running CLI tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
+    PYTHONPATH=${PYTHON_DIR}
+    export PYTHONPATH
+    ${MY_DIR}/cli_tests.py -v -s ${MY_DIR}/../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT --cli-dir $CLI_DIR $@
+    RETCODE=$?
+    stop_brokers
+    if test x$RETCODE != x0; then 
+        echo "FAIL CLI tests"; exit 1;
+    fi
+fi
+
