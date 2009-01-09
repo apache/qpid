@@ -46,13 +46,19 @@ class Multicaster
 {
   public:
     /** Starts in holding mode: connection data events are held, other events are mcast */
-    Multicaster(Cpg& cpg_, const boost::shared_ptr<sys::Poller>&, boost::function<void()> onError );
+    Multicaster(Cpg& cpg_,
+                size_t mcastMax, 
+                const boost::shared_ptr<sys::Poller>&,
+                boost::function<void()> onError
+    );
     void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&);
     void mcastBuffer(const char*, size_t, const ConnectionId&);
     void mcast(const Event& e);
     /** End holding mode, held events are mcast */
     void release();
-
+    /** Call when events are self-delivered to manage flow control. */
+    void delivered(const Event& e);
+    
   private:
     typedef sys::PollableQueue<Event> PollableEventQueue;
     typedef std::deque<Event> PlainEventQueue;
@@ -66,6 +72,7 @@ class Multicaster
     bool holding;
     PlainEventQueue holdingQueue;
     std::vector<struct ::iovec> ioVector;
+    size_t mcastMax, pending;
 };
 }} // namespace qpid::cluster
 

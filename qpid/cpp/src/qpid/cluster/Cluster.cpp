@@ -83,7 +83,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
 };
 
-Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool quorum_, size_t readMax_, size_t writeEstimate_) :
+Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool quorum_, size_t readMax_, size_t writeEstimate_, size_t mcastMax) :
     broker(b),
     poller(b.getPoller()),
     cpg(*this),
@@ -98,7 +98,7 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
         0,                                         // write
         boost::bind(&Cluster::disconnect, this, _1) // disconnect
     ),
-    mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
+    mcast(cpg, mcastMax, poller, boost::bind(&Cluster::leave, this)),
     mgmtObject(0),
     deliverQueue(boost::bind(&Cluster::delivered, this, _1), poller),
     state(INIT),
@@ -193,7 +193,9 @@ void Cluster::deliver(
 void Cluster::deliver(const Event& e, Lock&) {
     if (state == LEFT) return;
     QPID_LOG(trace, *this << " PUSH: " << e);
-    deliverQueue.push(e);       // Otherwise enqueue for processing.
+    if (e.getMemberId() == myId)
+        mcast.delivered(e);     // Note delivery for flow control
+    deliverQueue.push(e);
 }
 
 // Entry point: called when deliverQueue has events to process.

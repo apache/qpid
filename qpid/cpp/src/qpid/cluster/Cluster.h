@@ -70,7 +70,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
      * Join a cluster. 
      */
     Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum,
-            size_t readMax, size_t writeEstimate);
+            size_t readMax, size_t writeEstimate, size_t mcastMax);
 
     virtual ~Cluster();
 

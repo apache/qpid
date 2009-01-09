@@ -77,7 +77,7 @@ bool  OutputInterceptor::doOutput() {
 // which tranfers frames to the codec for writing.
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
-    size_t buf = next->getBuffered();
+    size_t buf = getBuffered();
     if (parent.isLocal())
         writeEstimate.delivered(requested, sent, buf); // Update the estimate.
 
