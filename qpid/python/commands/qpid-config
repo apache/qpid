@@ -101,7 +101,8 @@ class BrokerManager:
                 self.brokerAgent = a
 
     def Disconnect(self):
-        self.qmf.delBroker(self.broker)
+        if self.broker:
+            self.qmf.delBroker(self.broker)
 
     def Overview (self):
         exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
@@ -387,5 +388,5 @@ except KeyboardInterrupt:
 except Exception,e:
     print "Failed:", e.args
     sys.exit(1)
-finally:
-    bm.Disconnect()
+
+bm.Disconnect()
