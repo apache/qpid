@@ -198,7 +198,7 @@ DispatcherTest_LDADD=$(lib_common)
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests 
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -213,6 +213,7 @@ EXTRA_DIST +=								\
   config.null								\
   ais_check								\
   run_federation_tests							\
+  run_cli_tests								\
   run_acl_tests								\
   .valgrind.supp							\
   MessageUtils.h							\
