@@ -23,6 +23,7 @@
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace sys {
