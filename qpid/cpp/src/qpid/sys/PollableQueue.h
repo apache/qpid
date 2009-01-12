@@ -26,6 +26,7 @@
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/sys/Thread.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <algorithm>
@@ -71,12 +72,20 @@ class PollableQueue {
 
     size_t size() { ScopedLock l(lock); return queue.size(); }
     bool empty() { ScopedLock l(lock); return queue.empty(); }
+
+    /**
+     * Allow any queued events to be processed; intended for calling
+     * after all dispatch threads exit the Poller loop in order to
+     * ensure clean shutdown with no events left on the queue.
+     */
+    void shutdown();
     
   private:
     typedef sys::Monitor::ScopedLock ScopedLock;
     typedef sys::Monitor::ScopedUnlock ScopedUnlock;
 
     void dispatch(sys::DispatchHandle&);
+    void process();
     
     mutable sys::Monitor lock;
     Callback callback;
@@ -119,6 +128,14 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
     ScopedLock l(lock);
     assert(dispatcher.id() == 0);
     dispatcher = Thread::current();
+    process();
+    dispatcher = Thread();
+    if (queue.empty()) condition.clear();
+    if (stopped) lock.notifyAll();
+    else h.rewatch();
+}
+
+template <class T> void PollableQueue<T>::process() {
     while (!stopped && !queue.empty()) {
         assert(batch.empty());
         batch.swap(queue);
@@ -131,10 +148,11 @@ template <class T> void PollableQueue<T>::dispatch(sys::DispatchHandle& h) {
             batch.clear();
         }
     }
-    dispatcher = Thread();
-    if (queue.empty()) condition.clear();
-    if (stopped) lock.notifyAll();
-    else h.rewatch();
+}
+
+template <class T> void PollableQueue<T>::shutdown() {
+    ScopedLock l(lock);
+    process();
 }
 
 template <class T> void PollableQueue<T>::stop() {
