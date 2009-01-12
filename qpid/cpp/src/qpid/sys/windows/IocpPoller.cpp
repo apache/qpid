@@ -43,16 +43,19 @@ class PollerHandlePrivate {
 
     SOCKET fd;
     AsynchIoResult::Completer cb;
+    AsynchIO::RequestCallback cbRequest;
 
-    PollerHandlePrivate(SOCKET f, AsynchIoResult::Completer cb0 = 0) :
-      fd(f), cb(cb0)
+    PollerHandlePrivate(SOCKET f,
+                        AsynchIoResult::Completer cb0 = 0,
+                        AsynchIO::RequestCallback rcb = 0)
+      : fd(f), cb(cb0), cbRequest(rcb)
     {
     }
     
 };
 
 PollerHandle::PollerHandle(const IOHandle& h) :
-    impl(new PollerHandlePrivate(toFd(h.impl), h.impl->event))
+  impl(new PollerHandlePrivate(toFd(h.impl), h.impl->event, h.impl->cbRequest))
 {}
 
 PollerHandle::~PollerHandle() {
@@ -114,8 +117,19 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
         QPID_WINDOWS_CHECK_NULL(iocpHandle);
     }
     else {
-        AsynchWriteWanted *result = new AsynchWriteWanted(handle.impl->cb);
-        PostQueuedCompletionStatus(impl->iocp, 0, 0, result->overlapped());
+        // INPUT is used to request a callback; OUTPUT to request a write
+        assert(dir == Poller::INPUT || dir == Poller::OUTPUT);
+
+        if (dir == Poller::OUTPUT) {
+            AsynchWriteWanted *result = new AsynchWriteWanted(handle.impl->cb);
+            PostQueuedCompletionStatus(impl->iocp, 0, 0, result->overlapped());
+        }
+        else {
+            AsynchCallbackRequest *result =
+                new AsynchCallbackRequest(handle.impl->cb,
+                                          handle.impl->cbRequest);
+            PostQueuedCompletionStatus(impl->iocp, 0, 0, result->overlapped());
+        }
     }
 }
 

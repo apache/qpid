@@ -33,16 +33,20 @@ namespace sys {
 // There should be either a valid socket handle or a completer callback.
 // Handle is used to associate with poller's iocp; completer is used to
 // inject a completion that will very quickly trigger a callback to the
-// completer from an I/O thread.
+// completer from an I/O thread. If the callback mechanism is used, there
+// can be a RequestCallback set - this carries the callback object through
+// from AsynchIO::requestCallback() through to the I/O completion processing.
 class IOHandlePrivate {
 public:
     IOHandlePrivate(SOCKET f = INVALID_SOCKET,
-                    AsynchIoResult::Completer cb = 0) :
-    fd(f), event(cb)
+                    AsynchIoResult::Completer cb = 0,
+                    AsynchIO::RequestCallback reqCallback = 0) :
+    fd(f), event(cb), cbRequest(reqCallback)
     {}
     
     SOCKET fd;
     AsynchIoResult::Completer event;
+    AsynchIO::RequestCallback cbRequest;
 };
 
 SOCKET toFd(const IOHandlePrivate* h);
