@@ -180,6 +180,23 @@ public:
     }
 };
 
+class AsynchCallbackRequest : public AsynchIoResult {
+    // complete() needs to simply call the completionCallback; no buffers.
+    virtual void complete(void) {
+        completionCallback(this);
+    }
+
+public:
+    AsynchCallbackRequest(AsynchIoResult::Completer cb,
+                          AsynchIO::RequestCallback reqCb)
+      : AsynchIoResult(cb, 0, 0), reqCallback(reqCb) {
+        wsabuf.buf = 0;
+        wsabuf.len = 0;
+    }
+
+    AsynchIO::RequestCallback reqCallback;
+};
+
 }}
 
 #endif  /*!_windows_asynchIoResult_h*/
