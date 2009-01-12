@@ -386,11 +386,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
             BufferedReader reader = null;
             PrintStream writer = null;
-            File tmp = new File(_passwordFile.getAbsolutePath() + ".tmp");
-            if (tmp.exists())
-            {
-                tmp.delete();
-            }
+            File tmp = File.createTempFile(_passwordFile.getName(), ".tmp");
 
             try
             {
