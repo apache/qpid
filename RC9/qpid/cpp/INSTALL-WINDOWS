@@ -1,0 +1,127 @@
+		Installing Qpid/C++ on Windows
+		==============================
+
+Table of Contents
+=================
+1. Introduction
+
+2. Prerequisites
+   2.1. What to Install
+   2.2. Important Environment Variable Settings
+
+3. Building from a Source Distribution
+4. Building a Repository Working Copy
+5. Tests
+6. Doxygen
+7. Troubleshooting
+
+
+1. Introduction
+===============
+Note that the daemon and client API can be built and installed separately.
+They both link against a common library.
+
+This document describes how to build the Qpid/C++ broker and client, either
+from a checkout of the source or from a source distribution, on Windows using
+Microsoft Visual Studio 2008 (VC9).
+
+Please see INSTALL for information on building on Linux/UNIX.
+
+
+2. Prerequisites
+================
+We prefer to avoid spending time accommodating older versions of these
+packages, so please make sure that you have the latest stable versions.
+Known version numbers for a succesful build are given in brackets, take
+these as a recommended minimum version.
+
+2.1. What to Install
+====================
+
+The following libraries and header files must be installed to build
+a source distribution:
+ * boost      <http://www.boost.org>                   	(1.35)(*)
+
+(*) earlier versions of boost e.g. 1.33 also work
+
+If you want to build directly from the SVN repository you will need
+all of the above plus:
+
+ * python <http://www.python.org>                       (2.5.2)
+ * ruby   <http://www.ruby-lang.org>               	(1.8.4)
+
+2.2. Important Environment Variable Settings
+============================================
+Ensure that all the build tools are available on your path, when they are
+manually installed to non-standard locations. For example:
+
+ # set PATH=C:\python25;%PATH%
+
+It is also necessary to set BOOST_ROOT to refer to the base of your Boost
+installation. The Visual Studio build projects refer to it. For example:
+
+ # set BOOST_ROOT=C:\Program Files\boost\boost_1_35_0
+
+
+3. Building from a Source Distribution
+======================================
+The Qpid client/broker, examples, and tests are built with separate
+Visual Studio solution files. The procedure for all three is the same.
+
+Start the Visual Studio IDE and open the desired solution. They are located
+under the distribution directory in the following places:
+
+- broker/client:  src/qpid.sln
+- examples:       src/examples/examples.sln
+- tests:          src/tests/tests.sln
+
+Open the desired solution, select Debug/Release, and build.
+You can build both Release and Debug in the same directory.
+
+How to easily test????
+
+
+4. Building a Repository Working Copy
+=====================================
+To get the source code from the subversion repository (trunk) do:
+
+ # svn checkout https://svn.apache.org/repos/asf/incubator/qpid/trunk/.
+
+A large portion of the source code is generated using some contained
+scripts. The generated code is included in source distributions; however,
+when building a repository working copy this code must be generated.
+To generate the code and build a fresh checkout:
+
+  Open a Visual Studio Command Prompt window
+  cd to the qpid\cpp\src directory
+  nmake /f protocol_gen.mak
+
+Now follow instruction for building from a source distribution in step (3).
+
+
+5. Tests
+========
+See src/tests/README for details.
+
+
+6. Doxygen
+==========
+Doxygen generates documentation in several formats from source code
+using special comments. You can use javadoc style comments if you know
+javadoc, if you don't or want to know the fully story on doxygen
+markup see http://www.stack.nl/~dimitri/doxygen/
+
+Even even if the code is completely uncommented, doxygen generates
+UML-esque dependency diagrams that are ''extremely'' useful in navigating
+around the code, especially for newcomers.
+
+There's no Windows script for generating the Doxygen documentation. You
+can either obtain the documentation in a source distribution or, if you
+are using a repository working copy, you will need to generate it on
+Linux. To try it out "make doxygen" then open doxygen/html/index.html.
+
+
+7. Troubleshooting
+==================
+
+There are currently two JIRAs open against Windows.

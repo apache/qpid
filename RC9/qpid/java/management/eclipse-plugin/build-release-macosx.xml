@@ -1,0 +1,91 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ - 
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ - 
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<project name="Eclipse Plugin Binary Release" default="release-bin">
+
+   <import file="build-release.xml"/>
+
+   <property name="release.app" value="${release.subdir}/${application.dir}"/>
+
+   <target name="release-bin-mcplugin-jar">
+   	<jar destfile="${release.app}/plugins/${mcplugin.filename}.jar" basedir="${mcplugin.contents.dir}" manifest="${mcplugin.manifest}"/>
+   </target>
+
+   <target name="release-bin-jmxremote-plugin">
+       <!-- Copy the jmxremote.sasl plugin's manifest, creating its plugin directory -->
+       <copy todir="${release.app}/plugins/jmxremote.sasl_1.0.1/META-INF" flatten="true" failonerror="true">
+           <fileset file="${jmxremote.sasl.manifest}"/>
+       </copy>
+   </target>
+
+
+   <target name="release-bin-rcp-deps" description="copy eclipse-rcp dependencies into module release" 
+       depends="copy-executable">    	
+       
+       <!-- Copy remaining Eclipse binary and start-up files -->
+       <copy todir="${release.app}/Contents/MacOS" flatten="true" failonerror="true">
+           <fileset file="${eclipse.ini}"/>
+           <fileset file="${bin.includes}"/>
+       </copy>
+
+       <chmod dir="${release.app}/Contents/MacOS" perm="u+rx" includes="**/*"/>
+
+       <!-- Copy MacOS plist file -->
+       <copy todir="${release.app}/Contents" flatten="true" failonerror="true">
+           <fileset file="${macosx.plist}"/>
+       </copy>
+
+       <!-- Copy remaining Eclipse binary and start-up files -->
+       <copy todir="${release.app}/Contents/Resources" flatten="true" failonerror="true">
+           <fileset file="${eclipse.icns}"/>
+       </copy>
+
+       <!-- Copy License file -->
+       <copy todir="${release.app}" flatten="true" failonerror="true">
+           <fileset file="${license.eclipse.txt}"/>
+       </copy>
+
+       <!-- Copy the eclipse rcp module libs -->
+       <copy todir="${release.app}/plugins" failonerror="true">
+           <fileset dir="${project.root}" includes="${rcp.libs}"/>
+           <globmapper from="lib/*" to="*"/>
+       </copy>
+
+       <!-- Copy the relevant configuration dir -->
+       <copy todir="${release.app}/Configuration" failonerror="true">
+           <fileset dir="${rcp.configuration.dir}"/>
+       </copy>
+       <chmod dir="${release.app}/Configuration" perm="ugo+r" includes="**/*"/>
+   </target>
+
+    <target name="release-bin-zip" if="release.zip" description="build mc zip archive">
+
+        <zip destfile="${release.zip}">
+            <zipfileset dir="${release.subdir}" filemode="755">
+                <include name="${application.dir}/Contents/MacOS/**"/>
+            </zipfileset>
+
+            <zipfileset dir="${release.subdir}" filemode="644" dirmode="755">
+                <exclude name="${application.dir}/Contents/MacOS/**"/>
+            </zipfileset>
+        </zip>
+    </target>    		
+
+</project>

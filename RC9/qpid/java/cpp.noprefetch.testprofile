@@ -1,0 +1,4 @@
+broker.version=0-10
+broker=${project.root}/../cpp/src/qpidd -p @PORT --data-dir ${build.data}/@PORT -t --load-module ${project.root}/../../cppStore/cpp/lib/.libs/msgstore.so --auth no
+test.excludesfile=${project.root}/ExcludeList ${project.root}/010ExcludeList-noPrefetch
+max_prefetch=0
