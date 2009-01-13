@@ -38,7 +38,6 @@ windows_dist = \
   qpid/sys/windows/Condition.h \
   qpid/sys/windows/FileSysDir.cpp \
   qpid/sys/windows/IntegerTypes.h \
-  qpid/sys/windows/IocpDispatcher.cpp \
   qpid/sys/windows/IocpPoller.cpp \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
