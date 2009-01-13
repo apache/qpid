@@ -29,6 +29,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.thread.Threading;
+
 /**
  * Test Description
  * ================
@@ -67,7 +69,7 @@ public class MultiThreadedConsumer extends BaseTest
             {
 
                 final Session session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                Thread t = new Thread(new Runnable()
+                Runnable r = new Runnable()
                 {
                     public void run()
                     {
@@ -131,7 +133,18 @@ public class MultiThreadedConsumer extends BaseTest
 
                     }
 
-                });
+                };
+                
+                Thread t;
+                try
+                {
+                    t = Threading.getThreadFactory().createThread(r);                      
+                }
+                catch(Exception e)
+                {
+                    throw new Error("Error creating consumer thread",e);
+                }
+                
                 t.setName("session-" + i);
                 t.start();
             } // for loop
