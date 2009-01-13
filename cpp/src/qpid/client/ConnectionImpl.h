@@ -61,6 +61,8 @@ class ConnectionImpl : public Bounds,
     uint16_t nextChannel;
     sys::Mutex lock;
 
+    boost::intrusive_ptr<qpid::sys::TimerTask> heartbeatTask;
+
     template <class F> void closeInternal(const F&);
 
     void incoming(framing::AMQFrame& frame);    

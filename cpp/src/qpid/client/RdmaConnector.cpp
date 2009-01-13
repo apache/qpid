@@ -105,6 +105,7 @@ using boost::str;
     void connect(const std::string& host, int port);
     void close();
     void send(framing::AMQFrame& frame);
+    void abort() {} // TODO: need to fix this for heartbeat timeouts to work
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);

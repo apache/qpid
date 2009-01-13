@@ -89,8 +89,7 @@ struct ConnectionSettings {
      */
     std::string locale;
     /**
-     * Allows a heartbeat frequency to be specified (this feature is
-     * not yet implemented).
+     * Allows a heartbeat frequency to be specified
      */
     uint16_t heartbeat;
     /**
