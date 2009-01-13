@@ -20,22 +20,44 @@
  */
 package org.apache.qpid.tools;
 
-import java.lang.reflect.InvocationTargetException;
+import static org.apache.qpid.tools.QpidBench.Mode.BOTH;
+import static org.apache.qpid.tools.QpidBench.Mode.CONSUME;
+import static org.apache.qpid.tools.QpidBench.Mode.PUBLISH;
+
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import javax.jms.*;
+
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.TextMessage;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.transport.*;
-import org.apache.qpid.transport.network.io.IoTransport;
+import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.ExchangeBind;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageAcceptMode;
+import org.apache.qpid.transport.MessageAcquireMode;
+import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.transport.MessageFlowMode;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.MessageSubscribe;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.QueueDeclare;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.SessionListener;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
-
-import static org.apache.qpid.tools.QpidBench.Mode.*;
 
 /**
  * QpidBench
@@ -412,7 +434,7 @@ public class QpidBench
         {
         case CONSUME:
         case BOTH:
-            new Thread()
+            Runnable r = new Runnable()
             {
                 public void run()
                 {
@@ -432,7 +454,18 @@ public class QpidBench
                         throw new RuntimeException(e);
                     }
                 }
-            }.start();
+            };
+           
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);                      
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating consumer thread",e);
+            }
+            t.start();
             break;
         }
 
@@ -440,7 +473,7 @@ public class QpidBench
         {
         case PUBLISH:
         case BOTH:
-            new Thread()
+            Runnable r = new Runnable()
             {
                 public void run()
                 {
@@ -460,7 +493,17 @@ public class QpidBench
                         throw new RuntimeException(e);
                     }
                 }
-            }.start();
+            };
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);                      
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating publisher thread",e);
+            }
+            t.start();
             break;
         }
     }

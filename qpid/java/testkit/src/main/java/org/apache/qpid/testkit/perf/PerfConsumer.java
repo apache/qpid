@@ -27,6 +27,8 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.thread.Threading;
+
 /**
  * PerfConsumer will receive x no of messages in warmup mode.
  * Once it receives the Start message it will then signal the PerfProducer.
@@ -242,7 +244,24 @@ public class PerfConsumer extends PerfBase implements MessageListener
 
     public static void main(String[] args)
     {
-        PerfConsumer cons = new PerfConsumer();
-        cons.test();
+        final PerfConsumer cons = new PerfConsumer();
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                cons.test();
+            }
+        };
+        
+        Thread t;
+        try
+        {
+            t = Threading.getThreadFactory().createThread(r);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating consumer thread",e);
+        }
+        t.start(); 
     }
 }
