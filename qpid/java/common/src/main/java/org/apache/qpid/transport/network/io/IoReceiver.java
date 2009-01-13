@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.transport.network.io;
 
+import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  */
 
-final class IoReceiver extends Thread
+final class IoReceiver implements Runnable
 {
 
     private static final Logger log = Logger.get(IoReceiver.class);
@@ -47,6 +48,7 @@ final class IoReceiver extends Thread
     private final Socket socket;
     private final long timeout;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Thread receiverThread;
     private final boolean shutdownBroken =
         ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
 
@@ -58,10 +60,18 @@ final class IoReceiver extends Thread
         this.bufferSize = bufferSize;
         this.socket = transport.getSocket();
         this.timeout = timeout;
-
-        setDaemon(true);
-        setName(String.format("IoReceiver - %s", socket.getRemoteSocketAddress()));
-        start();
+        
+        try
+        {
+            receiverThread = Threading.getThreadFactory().createThread(this);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating IOReceiver thread",e);
+        }
+        receiverThread.setDaemon(true);
+        receiverThread.setName(String.format("IoReceiver - %s", socket.getRemoteSocketAddress()));
+        receiverThread.start();
     }
 
     void close(boolean block)
@@ -78,10 +88,10 @@ final class IoReceiver extends Thread
                 {
                     socket.shutdownInput();
                 }
-                if (block && Thread.currentThread() != this)
+                if (block && Thread.currentThread() != receiverThread)
                 {
-                    join(timeout);
-                    if (isAlive())
+                    receiverThread.join(timeout);
+                    if (receiverThread.isAlive())
                     {
                         throw new TransportException("join timed out");
                     }
@@ -133,6 +143,9 @@ final class IoReceiver extends Thread
                   t.getMessage().equalsIgnoreCase("socket closed") &&
                   closed.get()))
             {
+                log.error(t, "===========================================================");
+                log.error(t, "Exception");
+                log.error(t, "===========================================================");
                 receiver.exception(t);
             }
         }
