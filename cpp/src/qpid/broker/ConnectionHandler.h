@@ -62,7 +62,7 @@ class ConnectionHandler : public framing::FrameHandler
                      const std::string& locale);
         void secureOk(const std::string& response);
         void tuneOk(uint16_t channelMax, uint16_t frameMax, uint16_t heartbeat);
-        void heartbeat() {}
+        void heartbeat();
         void open(const std::string& virtualHost,
                   const framing::Array& capabilities, bool insist);
         void close(uint16_t replyCode, const std::string& replyText);
@@ -88,6 +88,7 @@ class ConnectionHandler : public framing::FrameHandler
   public:
     ConnectionHandler(Connection& connection, bool isClient);
     void close(framing::connection::CloseCode code, const std::string& text);
+    void heartbeat();
     void handle(framing::AMQFrame& frame);
     void setSecureConnection(SecureConnection* secured);
 };

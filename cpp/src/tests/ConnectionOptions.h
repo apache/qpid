@@ -44,6 +44,7 @@ struct  ConnectionOptions : public qpid::Options,
             ("mechanism", optValue(mechanism, "MECH"), "SASL mechanism to use when authenticating.")
             ("locale", optValue(locale, "LOCALE"), "locale to use.")
             ("max-channels", optValue(maxChannels, "N"), "the maximum number of channels the client requires.")
+            ("heartbeat", optValue(heartbeat, "N"), "Desired heartbeat interval in seconds.")
             ("max-frame-size", optValue(maxFrameSize, "N"), "the maximum frame size to request.")
             ("bounds-multiplier", optValue(bounds, "N"), 
              "bound size of write queue (as a multiple of the max frame size).")

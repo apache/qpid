@@ -133,6 +133,13 @@ void ConnectionHandler::close()
     }
 }
 
+void ConnectionHandler::heartbeat()
+{
+	// Do nothing - the purpose of heartbeats is just to make sure that there is some
+	// traffic on the connection within the heart beat interval, we check for the
+	// traffic and don't need to do anything in response to heartbeats
+}
+
 void ConnectionHandler::checkState(STATES s, const std::string& msg)
 {
     if (getState() != s) {
@@ -195,13 +202,19 @@ void ConnectionHandler::secure(const std::string& challenge)
 }
 
 void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSizeProposed, 
-                             uint16_t /*heartbeatMin*/, uint16_t /*heartbeatMax*/)
+                             uint16_t heartbeatMin, uint16_t heartbeatMax)
 {
     checkState(NEGOTIATING, INVALID_STATE_TUNE);
     maxChannels = std::min(maxChannels, maxChannelsProposed);
     maxFrameSize = std::min(maxFrameSize, maxFrameSizeProposed);
-    //TODO: implement heartbeats and check desired value is in valid range
+    // Clip the requested heartbeat to the maximum/minimum offered 
+    uint16_t heartbeat = ConnectionSettings::heartbeat;
+    heartbeat = heartbeat < heartbeatMin ? heartbeatMin :
+    			heartbeat > heartbeatMax ? heartbeatMax :
+    			heartbeat;    					 
     proxy.tuneOk(maxChannels, maxFrameSize, heartbeat);
+    // TODO set connection timeout to be 2x heart beat interval
+    // TODO and set an alarm for it.
     setState(OPENING);
     proxy.open(virtualhost, capabilities, insist);
 }

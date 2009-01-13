@@ -160,7 +160,7 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
     } else {
         connection.setUserId("anonymous");
     }   
-    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
+    client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
 }
 
 
@@ -341,7 +341,7 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
 
         connection.setUserId(const_cast<char*>(static_cast<const char*>(uid)));
 
-        client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
+        client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, connection.getHeartbeatMax());
     } else if (SASL_CONTINUE == code) {
         string challenge_str(challenge, challenge_len);
 

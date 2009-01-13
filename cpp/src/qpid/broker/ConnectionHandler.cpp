@@ -52,6 +52,11 @@ void ConnectionHandler::close(connection::CloseCode code, const string& text)
     handler->client.close(code, text);
 }
 
+void ConnectionHandler::heartbeat()
+{
+    handler->client.heartbeat();
+}
+
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
@@ -157,7 +162,7 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     uint16_t framemax, uint16_t heartbeat)
 {
     connection.setFrameMax(framemax);
-    connection.setHeartbeat(heartbeat);
+    connection.setHeartbeatInterval(heartbeat);
 }
 
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
@@ -194,6 +199,11 @@ void ConnectionHandler::Handler::closeOk(){
     connection.getOutput().close();
 } 
 
+void ConnectionHandler::Handler::heartbeat(){
+	// Do nothing - the purpose of heartbeats is just to make sure that there is some
+	// traffic on the connection within the heart beat interval, we check for the
+	// traffic and don't need to do anything in response to heartbeats
+}
 
 void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
                                        const framing::Array& /*mechanisms*/,
