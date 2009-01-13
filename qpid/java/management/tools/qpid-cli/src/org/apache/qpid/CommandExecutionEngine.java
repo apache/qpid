@@ -58,6 +58,11 @@ public class CommandExecutionEngine
     {
         _commands.put(name, newCommand);
     }
+    
+    public static Map<String, Class<? extends Command>> getCommands()
+    {
+        return _commands;
+    }
 
     public void runcommand()
     {

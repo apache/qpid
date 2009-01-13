@@ -22,6 +22,8 @@
 package org.apache.qpid;
 
 import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import javax.management.MBeanServerConnection;
@@ -46,6 +48,13 @@ import org.apache.qpid.utils.JMXinfo;
 
 public class CommandLineInterpreter
 {
+    private static final String OBJECT_VIRTUALHOST = "virtualhost";
+    private static final String OBJECT_USERMANAGEMENT = "usermanagement";
+    private static final String OBJECT_CONNECTION = "connection";
+    private static final String OBJECT_EXCHANGE = "exchange";
+    private static final String OBJECT_QUEUE = "queue";
+    private static final String COMMAND_QUIT = "quit";
+    private static final String COMMAND_EXIT = "exit";
 
     public static void main(String[] args)
     {
@@ -118,13 +127,9 @@ public class CommandLineInterpreter
                  */
                 for (int i = 0; i < args.length; i++)
                 {
-                    if (args[i].compareTo("list") == 0 || args[i].compareTo("info") == 0
-                            || args[i].compareTo("view") == 0 || args[i].compareTo("viewcontent") == 0
-                            || args[i].compareTo("delete") == 0 || args[i].compareTo("move") == 0
-                            || args[i].compareTo("set") == 0 || args[i].compareTo("get") == 0)
+                    if (CommandExecutionEngine.getCommands().keySet().contains(args[i]))
                     {
                         oneshotmode(args, commandlineoptionparser, jmxc, mbsc);
-
                         return;
                     }
                 }
@@ -140,13 +145,18 @@ public class CommandLineInterpreter
 
             /* prividing GNU readline features using Jline library */
             PrintWriter out = new PrintWriter(System.out);
-            reader.addCompletor(new ArgumentCompletor(new SimpleCompletor(new String[] { "get", "set", "list", "info",
-                    "exit", "quit", "delete", "move", "view", "viewcontent", "queue", "exchange", "connection",
-                    "usermanagement", "virtualhost" })));
+            SimpleCompletor completer = new SimpleCompletor(new String[] { 
+                    COMMAND_EXIT, COMMAND_QUIT, OBJECT_QUEUE, OBJECT_EXCHANGE, OBJECT_CONNECTION,
+                    OBJECT_USERMANAGEMENT, OBJECT_VIRTUALHOST});
+            for (String commandName : CommandExecutionEngine.getCommands().keySet())
+            {
+                completer.addCandidateString(commandName);
+            }
+            reader.addCompletor(new ArgumentCompletor(completer));
             while ((line = reader.readLine("qpid-admin-$ ")) != null)
             {
                 out.flush();
-                if (removeSpaces(line).equalsIgnoreCase("quit") || removeSpaces(line).equalsIgnoreCase("exit"))
+                if (removeSpaces(line).equalsIgnoreCase(COMMAND_QUIT) || removeSpaces(line).equalsIgnoreCase(COMMAND_EXIT))
                     break;
                 else if (line.length() == 0)
                     continue;
