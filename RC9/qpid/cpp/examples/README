@@ -1,0 +1,114 @@
+= Qpid C++ Examples =
+
+Apache Qpid Examples in C++ are found inside this directory, they are
+based on the 0-10 version of the AMQP specification (see amqp.org for
+details). A short description on each example is found below.
+
+Please note that you will have to start the Qpid broker on port 5672,
+on your localhost (127.0.0.1) before running these examples. However,
+it is possible to alternatively specify the host and port when running
+each example.
+
+ Ex:- ./declare_queues 127.0.0.1 5673
+
+The qpid C++ broker (known as qpidd) is found 
+- if installed, installed as /usr/sbin/qpidd
+- in /path-to-qpid-source/cpp/src/
+
+== Direct ==
+
+This is an example on how to create Point-to-Point applications using Qpid. This
+example contains three main components.
+
+ 1. declare_queues
+   This will bind a queue to the amq.direct exchange, so that the messages sent
+ to the amq.direct exchange, with a given routing key (routing_key) are 
+ delivered to a specific queue (message_queue).
+
+ 2. direct_producer
+   Publishes messages to the amq.direct exchange using the given routing key
+ (routing_key) discussed above.
+
+ 3. listener
+   Uses a message listener to listen messages from a specific queue
+ (message_queue) as discussed above.
+
+In order to run this example,
+
+On Linux:
+  # ./declare_queues
+  # ./direct_producer
+  # ./listener
+
+== Fanout ==
+
+This is an example on how to create Fanout exchange applications using Qpid.
+This example has two components unlike the previous. This is because Fanout
+exchange not needing a routing key to be specified.
+
+ 1. fanout_producer
+   Publishes a message to the amq.fanout exchange, without using a routing key.
+
+ 2. listener
+   Uses a message listener to listen messages from the amq.fanout exchange.
+
+Another difference between the above example and this example is that in the
+above example there is no requirement for the listener to be activated before
+the messages being published. However, in this example, it is required that a
+listener be active before the messages being published, if not they will be
+lost.
+
+In order to run this example,
+
+On Linux:
+  # ./listener
+  # ./fanout_producer
+
+== Publisher/Subscriber ==
+
+Showing The ability to create topic Publishers and Subscribers using Qpid is
+the main objective of this example. It is required that you subscribe first,
+before publishing any message due to the construction of this example. There
+are two main applications in this.
+
+ 1. topic_publisher
+   This application is used to publish messages to the amq.topic exchange using
+ multipart routing keys, usa.weather, europe.weather, usa.news and europe.news.
+
+ 2. topic_listener
+   This application is used to subscribe to several private queues, such as usa,
+ europe, weather and news. In here, each private queue created is bound to the
+ amq.topic exchange using bindings that match the corresponding parts of the
+ multipart routing keys.
+  Ex:- #.news will retrieve news irrespective of destination.
+
+This example also shows the use of the 'control' routing key which is used by
+control messages.
+
+In order to run this example,
+  
+On Linux:
+  # ./topic_listener
+  # ./topic_publisher
+
+== Request/Response ==
+
+This example shows a simple server that will accept string from a client and
+convert them to upper case and send them back to the client. This too has two
+main application like the previous sample.
+
+ 1. client
+   This sends lines of poetry to the server.
+
+ 2. server
+   This is a simple service that will convert incoming strings to upper case and
+ send the result to amq.direct exchange on which the client listens. It uses the
+ request's reply_to property as the response's routing key.
+
+In order to run this example,
+
+On Linux:
+  # ./server
+  # ./client
+
+
