@@ -91,7 +91,7 @@ public class TransportConnection
                 {
                     public IoConnector newSocketConnector()
                     {
-                        return new ExistingSocketConnector();
+                        return new ExistingSocketConnector(1,new QpidThreadExecutor());
                     }
                 });
             case TCP:
@@ -106,12 +106,12 @@ public class TransportConnection
                             _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
                                                                               ? "Qpid NIO is new default"
                                                                               : "Sysproperty 'qpidnio' is set"));
-                            result = new MultiThreadSocketConnector();
+                            result = new MultiThreadSocketConnector(1, new QpidThreadExecutor());
                         }
                         else
                         {
                             _logger.info("Using Mina NIO");
-                            result = new SocketConnector(); // non-blocking connector
+                            result = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking connector
                         }
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
