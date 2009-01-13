@@ -128,6 +128,7 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
     void init();
     void close();
     void send(framing::AMQFrame& frame);
+    void abort();
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
@@ -231,6 +232,10 @@ bool TCPConnector::closeInternal() {
         
 void TCPConnector::close() {
     closeInternal();
+}
+
+void TCPConnector::abort() {
+    aio->requestCallback(boost::bind(&TCPConnector::eof, this, _1));
 }
 
 void TCPConnector::setInputHandler(InputHandler* handler){

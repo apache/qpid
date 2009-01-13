@@ -35,6 +35,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/InputHandler.h"
 #include "qpid/sys/SecurityLayer.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/Url.h"
 #include <memory>
 
@@ -69,6 +70,7 @@ class ConnectionHandler : private StateManager,
     framing::FieldTable properties;
     std::auto_ptr<Sasl> sasl;
     std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;
+    boost::intrusive_ptr<qpid::sys::TimerTask> rcvTimeoutTask;
 
     void checkState(STATES s, const std::string& msg);
 
@@ -109,7 +111,8 @@ public:
     bool isClosed() const;
     bool isClosing() const;
 
-    std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer();    
+    std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer();
+    void setRcvTimeoutTask(boost::intrusive_ptr<qpid::sys::TimerTask>);
 
     CloseListener onClose;
     ErrorListener onError;
