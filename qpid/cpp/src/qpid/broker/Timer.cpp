@@ -38,6 +38,9 @@ TimerTask::~TimerTask(){}
 
 void TimerTask::reset() { time = AbsTime(AbsTime::now(), duration); }
 
+void TimerTask::cancel() { cancelled = true; }
+bool TimerTask::isCancelled() const { return cancelled; }
+
 Timer::Timer() : active(false) 
 {
     start();
@@ -56,7 +59,7 @@ void Timer::run()
             monitor.wait();
         } else {
             intrusive_ptr<TimerTask> t = tasks.top();
-            if (t->cancelled) {
+            if (t->isCancelled()) {
                 tasks.pop();
             } else if(t->time < AbsTime::now()) {
                 tasks.pop();
