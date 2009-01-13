@@ -114,9 +114,9 @@ public class Commandinfo extends CommandImpl
                 if (hasName())
                 {
 
-                    echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
+                    echo("You might querying wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
-                    echo(this.getObject() + "Type Objects might not in the broker currently");
+                    echo("No "+this.getObject() + "Type Objects might not be in the broker currently");
                     echo("");
                 }
                 else

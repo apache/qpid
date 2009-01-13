@@ -143,7 +143,7 @@ public abstract class CommandImpl implements Command
     public void unrecognizeoption()
     {
         echo("list: Unrecognized option");
-        echo("Try `" + COMMAND_NAME + " --help` for more information");
+        echo("Try --help for more information");
     }
 
     public abstract void execute();
