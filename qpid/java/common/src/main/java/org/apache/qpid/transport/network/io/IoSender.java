@@ -24,6 +24,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
@@ -32,7 +33,7 @@ import org.apache.qpid.transport.util.Logger;
 import static org.apache.qpid.transport.util.Functions.*;
 
 
-public final class IoSender extends Thread implements Sender<ByteBuffer>
+public final class IoSender implements Runnable, Sender<ByteBuffer>
 {
 
     private static final Logger log = Logger.get(IoSender.class);
@@ -54,7 +55,8 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
     private final Object notFull = new Object();
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-
+    private final Thread senderThread;
+    
     private volatile Throwable exception = null;
 
 
@@ -74,9 +76,18 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
             throw new TransportException("Error getting output stream for socket", e);
         }
 
-        setDaemon(true);
-        setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
-        start();
+        try
+        {
+            senderThread = Threading.getThreadFactory().createThread(this);                      
+        }
+        catch(Exception e)
+        {
+            throw new Error("Error creating IOSender thread",e);
+        }
+        
+        senderThread.setDaemon(true);
+        senderThread.setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
+        senderThread.start();
     }
 
     private static final int pof2(int n)
@@ -188,10 +199,10 @@ public final class IoSender extends Thread implements Sender<ByteBuffer>
 
             try
             {
-                if (Thread.currentThread() != this)
+                if (Thread.currentThread() != senderThread)
                 {
-                    join(timeout);
-                    if (isAlive())
+                    senderThread.join(timeout);
+                    if (senderThread.isAlive())
                     {
                         throw new SenderException("join timed out");
                     }
