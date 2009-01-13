@@ -352,7 +352,8 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/PollableCondition.h \
   qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
-  qpid/sys/Shlib.cpp
+  qpid/sys/Shlib.cpp \
+  qpid/sys/Timer.cpp
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
@@ -715,6 +716,7 @@ nobase_include_HEADERS = \
   qpid/sys/Waitable.h \
   qpid/sys/Thread.h \
   qpid/sys/Time.h \
+  qpid/sys/Timer.h \
   qpid/sys/TimeoutHandler.h \
   qpid/sys/uuid.h
 
