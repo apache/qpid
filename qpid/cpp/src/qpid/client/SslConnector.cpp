@@ -122,6 +122,7 @@ class SslConnector : public Connector, private sys::Runnable
     void init();
     void close();
     void send(framing::AMQFrame& frame);
+    void abort() {} // TODO: Need to fix for heartbeat timeouts to work
 
     void setInputHandler(framing::InputHandler* handler);
     void setShutdownHandler(sys::ShutdownHandler* handler);
@@ -372,8 +373,6 @@ void SslConnector::eof(SslIO&) {
     handleClosed();
 }
 
-// TODO: astitcher 20070908 This version of the code can never time out, so the idle processing
-// will never be called
 void SslConnector::run(){
     // Keep the connection impl in memory until run() completes.
     boost::shared_ptr<ConnectionImpl> protect = impl->shared_from_this();

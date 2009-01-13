@@ -64,6 +64,7 @@ class Connector : public framing::OutputHandler
     virtual void init() {};
     virtual void close() = 0;
     virtual void send(framing::AMQFrame& frame) = 0;
+    virtual void abort() = 0;
 
     virtual void setInputHandler(framing::InputHandler* handler) = 0;
     virtual void setShutdownHandler(sys::ShutdownHandler* handler) = 0;
