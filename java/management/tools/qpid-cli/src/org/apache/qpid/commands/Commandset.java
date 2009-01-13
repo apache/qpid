@@ -86,7 +86,7 @@ public class Commandset extends CommandImpl
 
             if (objname.getSet().size() != 1)
             {
-                echo("You quering return more than one queue to set was this intended?\n" + objname.getQueryString());
+                echo("Your query returned more than one object to set was this intended?" + objname.getQueryString());
             }
             else if (objname.getSet().size() == 1)
             {
@@ -122,9 +122,9 @@ public class Commandset extends CommandImpl
                 if (hasName())
                 {
 
-                    echo("You might quering wrong " + this.getObject() + " name with --name or -n option ");
+                    echo("You might be querying wrong " + this.getObject() + " name with --name or -n option ");
                     echo("");
-                    echo(this.getObject() + "Type Objects might not in the broker currently");
+                    echo("No " + this.getObject() + "Type Objects might not in the broker currently");
                     echo("");
                 }
                 else
