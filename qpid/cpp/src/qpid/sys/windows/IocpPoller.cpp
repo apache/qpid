@@ -105,9 +105,21 @@ bool Poller::interrupt(PollerHandle&) {
 }
 
 void Poller::run() {
-    Poller::shared_ptr p(this);
-    qpid::sys::Dispatcher d(p);
-    d.run();
+    do {
+        Poller::Event event = this->wait();
+
+        // Handle shutdown
+        switch (event.type) {
+        case Poller::SHUTDOWN:
+            return;
+            break;
+        case Poller::INVALID:  // On any type of success or fail completion
+            break;
+        default:
+          // This should be impossible
+          assert(false);
+        }
+    } while (true);
 }
 
 void Poller::addFd(PollerHandle& handle, Direction dir) {
