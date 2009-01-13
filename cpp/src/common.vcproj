@@ -930,6 +930,9 @@
 				RelativePath="qpid\sys\AsynchIOHandler.cpp">
 			</File>
 			<File
+				RelativePath="qpid\sys\Dispatcher.cpp">
+			</File>
+			<File
 				RelativePath="qpid\sys\PollableCondition.h">
 			</File>
 			<File
@@ -942,13 +945,13 @@
 				RelativePath="qpid\sys\Shlib.cpp">
 			</File>
 			<File
+				RelativePath="qpid\sys\Timer.cpp">
+			</File>
+			<File
 				RelativePath="qpid\sys\windows\AsynchIO.cpp">
 			</File>
 			<File
 				RelativePath="qpid\sys\windows\FileSysDir.cpp">
-			</File>
-			<File
-				RelativePath="qpid\sys\windows\IocpDispatcher.cpp">
 			</File>
 			<File
 				RelativePath="qpid\sys\windows\IocpPoller.cpp">
@@ -1832,6 +1835,9 @@
 			</File>
 			<File
 				RelativePath="qpid\sys\TimeoutHandler.h">
+			</File>
+			<File
+				RelativePath="qpid\sys\Timer.h">
 			</File>
 			<File
 				RelativePath="qpid\sys\uuid.h">
