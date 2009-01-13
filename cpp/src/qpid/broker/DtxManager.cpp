@@ -126,7 +126,7 @@ void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
     intrusive_ptr<DtxTimeout> timeout = record->getTimeout();
     if (timeout.get()) {
         if (timeout->timeout == secs) return;//no need to do anything further if timeout hasn't changed
-        timeout->cancelled = true;
+        timeout->cancel();
     }
     timeout = intrusive_ptr<DtxTimeout>(new DtxTimeout(secs, *this, xid));
     record->setTimeout(timeout);

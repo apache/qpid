@@ -34,7 +34,7 @@ DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const 
 DtxWorkRecord::~DtxWorkRecord() 
 {
     if (timeout.get()) {  
-        timeout->cancelled = true;
+        timeout->cancel();
     }
 }
 

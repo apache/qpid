@@ -34,7 +34,11 @@
 namespace qpid {
 namespace broker {
 
+class Timer;
+
 struct TimerTask : public RefCounted {
+    friend class Timer;
+
     const qpid::sys::Duration duration;
     qpid::sys::AbsTime time;
     volatile bool cancelled;
@@ -43,6 +47,8 @@ struct TimerTask : public RefCounted {
     TimerTask(qpid::sys::AbsTime time);
     virtual ~TimerTask();
     void reset();
+    void cancel();
+    bool isCancelled() const;
     virtual void fire() = 0;
 };
 
