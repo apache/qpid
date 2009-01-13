@@ -62,8 +62,15 @@ public class SSLSender implements Sender<ByteBuffer>
             }
             log.debug("Closing SSL connection");
             engine.closeOutbound();
-            send(ByteBuffer.allocate(0));
-            flush();  
+            try
+            {
+                tearDownSSLConnection();            
+            }
+            catch(Exception e)
+            {
+                throw new SenderException("Error closing SSL connection",e);
+            }
+            
             while (!engine.isOutboundDone())
             {
                 synchronized(engineState)
@@ -82,6 +89,37 @@ public class SSLSender implements Sender<ByteBuffer>
         }
     }
 
+    private void tearDownSSLConnection() throws Exception
+    {
+        SSLEngineResult result = engine.wrap(ByteBuffer.allocate(0), netData);
+        Status status = result.getStatus();
+        int read   = result.bytesProduced();
+        while (status != Status.CLOSED)
+        {
+            if (status == Status.BUFFER_OVERFLOW)
+            {
+                netData.clear();
+            }
+            if(read > 0)
+            {
+                int limit = netData.limit();
+                netData.limit(netData.position());
+                netData.position(netData.position() - read);
+                
+                ByteBuffer data = netData.slice();
+                
+                netData.limit(limit);
+                netData.position(netData.position() + read);
+                
+                delegate.send(data);
+                flush();
+            }            
+            result = engine.wrap(ByteBuffer.allocate(0), netData);
+            status = result.getStatus();             
+            read   = result.bytesProduced();
+        }
+    }
+    
     public void flush()
     {
         delegate.flush();        
@@ -92,7 +130,7 @@ public class SSLSender implements Sender<ByteBuffer>
         if (closed.get())
         {
             throw new SenderException("SSL Sender is closed");
-        }   
+        }
 
         HandshakeStatus handshakeStatus;
         Status status;
