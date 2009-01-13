@@ -518,7 +518,14 @@ public class QpidTestCase extends TestCase
         _logger.info("get ConnectionFactory");
         if (_connectionFactory == null)
         {
-            _connectionFactory = getConnectionFactory("default");
+            if (Boolean.getBoolean("profile.use_ssl"))
+            {
+                _connectionFactory = getConnectionFactory("ssl");
+            }
+            else
+            {
+                _connectionFactory = getConnectionFactory("default");
+            }
         }
         return _connectionFactory;
     }
