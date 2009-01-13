@@ -99,6 +99,9 @@ class Connection : public sys::ConnectionInputHandler,
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
     void setFederationLink(bool b);
+    
+    void setHeartbeatInterval(uint16_t heartbeat);
+    void sendHeartbeat();
 
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
@@ -112,7 +115,7 @@ class Connection : public sys::ConnectionInputHandler,
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     ChannelMap channels;
-    framing::AMQP_ClientProxy::Connection* client;
+    //framing::AMQP_ClientProxy::Connection* client;
     ConnectionHandler adapter;
     bool isLink;
     bool mgmtClosing;
@@ -121,6 +124,8 @@ class Connection : public sys::ConnectionInputHandler,
     qmf::org::apache::qpid::broker::Connection* mgmtObject;
     LinkRegistry& links;
     management::ManagementAgent* agent;
+    Timer& timer;
+    boost::intrusive_ptr<TimerTask> heartbeatTimer;
 };
 
 }}

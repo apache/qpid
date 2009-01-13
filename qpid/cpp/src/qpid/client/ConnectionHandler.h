@@ -86,6 +86,7 @@ class ConnectionHandler : private StateManager,
                   const framing::Array& knownHosts);    
     void close(uint16_t replyCode, const std::string& replyText);    
     void closeOk();
+    void heartbeat();
 
 public:
     using InputHandler::handle;
