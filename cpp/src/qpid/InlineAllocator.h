@@ -29,6 +29,10 @@
 
 namespace qpid {
 
+template <typename RequestedType, typename InlineType, typename BaseAllocator, size_t Max>
+struct InlineRebind;
+
+
 /**
  * An allocator that has inline storage for up to Max objects
  * of type BaseAllocator::value_type.
@@ -63,8 +67,7 @@ class InlineAllocator : public BaseAllocator {
 
     template<typename T1>
     struct rebind {
-        typedef typename BaseAllocator::template rebind<T1>::other BaseOther;
-        typedef InlineAllocator<BaseOther, Max> other;
+        typedef typename InlineRebind<T1, value_type, BaseAllocator, Max>::other other;
     };
 
   private:
@@ -77,6 +80,20 @@ class InlineAllocator : public BaseAllocator {
     } store;
     value_type* address() { return reinterpret_cast<value_type*>(&store); }
     bool allocated;
+};
+
+
+// Rebind: if RequestedType == InlineType, use the InlineAllocator,
+// otherwise, use the BaseAllocator without any inlining.
+
+template <typename RequestedType, typename InlineType, typename BaseAllocator, size_t Max>
+struct InlineRebind {
+    typedef typename BaseAllocator::template rebind<RequestedType>::other other;
+};
+
+template <typename T, typename BaseAllocator, size_t Max>
+struct InlineRebind<T, T, BaseAllocator, Max> {
+    typedef typename qpid::InlineAllocator<BaseAllocator, Max> other;
 };
 
 } // namespace qpid
