@@ -28,7 +28,8 @@ class QmfTest < Test::Unit::TestCase
     # Make sure errors in threads lead to a noisy death of the test
     Thread.abort_on_exception = true
 
-    sock = TCPSocket.new('localhost', 5672)
+    sock = TCPSocket.new(ENV.fetch("QMF_TEST_HOST", 'localhost'),
+                         ENV.fetch("QMF_TEST_PORT", 5672))
 
     @conn = Qpid::Connection.new(sock)
     @conn.start()
