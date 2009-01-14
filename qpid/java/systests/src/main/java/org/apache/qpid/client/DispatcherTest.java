@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.client;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -40,9 +36,11 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
-import java.util.Hashtable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue
@@ -56,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  * When setting the message listener later the _synchronousQueue is just poll()'ed and the first message delivered
  * the remaining messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
-public class DispatcherTest extends TestCase
+public class DispatcherTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(DispatcherTest.class);
 
@@ -78,28 +76,21 @@ public class DispatcherTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
 
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
 
-        env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
-        env.put("queue.queue", "MessageListenerTest");
-
-        _context = factory.getInitialContext(env);
-
-        Queue queue = (Queue) _context.lookup("queue");
-
         // Create Client 1
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _clientConnection = getConnection();
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
+        Queue queue = _clientSession.createQueue(this.getClass().getName());
         _consumer = _clientSession.createConsumer(queue);
 
         // Create Producer
-        _producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _producerConnection = getConnection();
 
         _producerConnection.start();
 
@@ -120,7 +111,6 @@ public class DispatcherTest extends TestCase
 
         _producerConnection.close();
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     public void testAsynchronousRecieve()

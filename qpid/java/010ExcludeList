@@ -55,3 +55,7 @@ org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueS
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
 // QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
+// c++ broker doesn't support priorities, TTL or message bouncing
+org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
+org.apache.qpid.server.queue.PriorityTest#*
+org.apache.qpid.server.queue.TimeToLiveTest#*
