@@ -24,6 +24,7 @@
 #include <vector>
 #include <limits>
 #include <iterator>
+#include <sstream>
 
 #include <unistd.h>
 
@@ -139,25 +140,27 @@ void Cpg::dispatchBlocking() {
 }
 
 string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
+    std::ostringstream  os;
+    os << msg << ": ";
     switch (err) {
-      case CPG_OK: return msg+": ok";
-      case CPG_ERR_TIMEOUT: return msg+": timeout";
-      case CPG_ERR_TRY_AGAIN: return msg+": timeout. The aisexec daemon may not be running";
-      case CPG_ERR_INVALID_PARAM: return msg+": invalid param";
-      case CPG_ERR_NO_MEMORY: return msg+": no memory";
-      case CPG_ERR_BAD_HANDLE: return msg+": bad handle";
-      case CPG_ERR_ACCESS: return msg+": access denied. You may need to set your group ID to 'ais'";
-      case CPG_ERR_NOT_EXIST: return msg+": not exist";
-      case CPG_ERR_EXIST: return msg+": exist";
-      case CPG_ERR_NOT_SUPPORTED: return msg+": not supported";
+      case CPG_OK: os << ": ok"; break;
+      case CPG_ERR_TIMEOUT: os << ": timeout"; break;
+      case CPG_ERR_TRY_AGAIN: os << ": timeout. The aisexec daemon may not be running"; break;
+      case CPG_ERR_INVALID_PARAM: os << ": invalid param"; break;
+      case CPG_ERR_NO_MEMORY: os << ": no memory"; break;
+      case CPG_ERR_BAD_HANDLE: os << ": bad handle"; break;
+      case CPG_ERR_ACCESS: os << ": access denied. You may need to set your group ID to 'ais'"; break;
+      case CPG_ERR_NOT_EXIST: os << ": not exist"; break;
+      case CPG_ERR_EXIST: os << ": exist"; break;
+      case CPG_ERR_NOT_SUPPORTED: os << ": not supported"; break;
         // The following are not mapped, or are incorrectly mapped in corosync 0-92-5
-        // case CPG_ERR_LIBRARY: return msg+": library";
-        // case CPG_ERR_SECURITY: return msg+": security";
-        // case CPG_ERR_TOO_MANY_GROUPS: return msg+": too many groups";
-
-      default:
-        return ": cpg error";
+        // case CPG_ERR_LIBRARY: os << ": library"; break;
+        // case CPG_ERR_SECURITY: os << ": security"; break;
+        // case CPG_ERR_TOO_MANY_GROUPS: os << ": too many groups"; break;
+      default: os << ": unknown cpg error";
     };
+    os << " (" << err << ")";
+    return os.str();
 }
 
 std::string Cpg::cantJoinMsg(const Name& group) {
