@@ -29,6 +29,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -42,22 +43,17 @@ import java.util.Hashtable;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Test Case provided by client Non-functional Test NF101: heap exhaustion behaviour */
-public class PriorityTest extends TestCase
+public class PriorityTest extends QpidTestCase
 {
     private static final int TIMEOUT = 1500;
 
 
     private static final Logger _logger = Logger.getLogger(PriorityTest.class);
 
-
-    protected final String BROKER = "vm://:1";
-    protected final String VHOST = "/test";
     protected final String QUEUE = "PriorityQueue";
 
     private static final int MSG_COUNT = 50;
 
-    private Context context = null;
     private Connection producerConnection;
     private MessageProducer producer;
     private Session producerSession;
@@ -72,41 +68,20 @@ public class PriorityTest extends TestCase
     {
         super.setUp();
 
-        if (usingInVMBroker())
-        {
-            TransportConnection.createVMBroker(1);
-        }
-
-        InitialContextFactory factory = new PropertiesFileInitialContextFactory();
-        Hashtable<String, String> env = new Hashtable<String, String>();
-
-        env.put("connectionfactory.connection", "amqp://guest:guest@PRIORITY_TEST_ID" + VHOST + "?brokerlist='" + BROKER + "'");
-        env.put("queue.queue", QUEUE);
-
-        context = factory.getInitialContext(env);
-        producerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
+        producerConnection = getConnection();
         producerSession = producerConnection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
         producerConnection.start();
         
-        consumerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
+        consumerConnection = getConnection();
         consumerSession = consumerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         
-    }
-
-    private boolean usingInVMBroker()
-    {
-        return BROKER.startsWith("vm://");
     }
 
     protected void tearDown() throws Exception
     {
         producerConnection.close();
         consumerConnection.close();
-        if (usingInVMBroker())
-        {
-            TransportConnection.killAllVMBrokers();
-        }
         super.tearDown();
     }
 

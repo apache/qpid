@@ -20,30 +20,26 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.Connection;
+import javax.jms.Session;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.Session;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This class tests all the alerts an AMQQueue can throw based on threshold
- * values of different parameters
- */
-public class AMQQueueDeferredOrderingTest extends TestCase
+public class AMQQueueDeferredOrderingTest extends QpidTestCase
 {
 
     private static final int NUM_MESSAGES = 1000;
 
-    private AMQConnection con;
+    private Connection con;
     private Session session;
     private AMQQueue queue;
     private MessageConsumer consumer;
@@ -51,7 +47,6 @@ public class AMQQueueDeferredOrderingTest extends TestCase
     private static final Logger _logger = LoggerFactory.getLogger(AMQQueueDeferredOrderingTest.class);
 
     private ASyncProducer producerThread;
-    private static final String BROKER = "vm://:1";
 
     private class ASyncProducer extends Thread
     {
@@ -95,11 +90,11 @@ public class AMQQueueDeferredOrderingTest extends TestCase
         TransportConnection.createVMBroker(1);
 
         _logger.info("Create Connection");
-        con = new AMQConnection(BROKER, "guest", "guest", "OrderingTest", "test");
+        con = getConnection();
         _logger.info("Create Session");
         session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _logger.info("Create Q");
-        queue = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q"), new AMQShortString("Q"),
+        queue = new AMQQueue(new AMQShortString("amq.direct"), new AMQShortString("Q"), new AMQShortString("Q"),
                 false, true);
         _logger.info("Create Consumer of Q");
         consumer = session.createConsumer(queue);
