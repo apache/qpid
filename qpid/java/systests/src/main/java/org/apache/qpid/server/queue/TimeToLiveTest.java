@@ -21,40 +21,26 @@
 
 package org.apache.qpid.server.queue;
 
-import junit.framework.TestCase;
-import junit.framework.Assert;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.log4j.Logger;
-
+import javax.jms.Connection;
 import javax.jms.JMSException;
-import javax.jms.Session;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
-import javax.jms.ConnectionFactory;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.naming.spi.InitialContextFactory;
-import javax.naming.Context;
-import javax.naming.NamingException;
-import java.util.Hashtable;
+import javax.jms.Session;
+
+import junit.framework.Assert;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 
-/** Test Case provided by client Non-functional Test NF101: heap exhaustion behaviour */
-public class TimeToLiveTest extends TestCase
+public class TimeToLiveTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(TimeToLiveTest.class);
 
-
-    protected final String BROKER = "vm://:1";
-    protected final String VHOST = "/test";
     protected final String QUEUE = "TimeToLiveQueue";
 
     private final long TIME_TO_LIVE = 1000L;
@@ -62,55 +48,18 @@ public class TimeToLiveTest extends TestCase
     private static final int MSG_COUNT = 50;
     private static final long SERVER_TTL_TIMEOUT = 60000L;
 
-    protected void setUp() throws Exception
+    public void testPassiveTTL() throws Exception
     {
-        super.setUp();
-
-        if (usingInVMBroker())
-        {
-            TransportConnection.createVMBroker(1);
-        }
-
-
-    }
-
-    private boolean usingInVMBroker()
-    {
-        return BROKER.startsWith("vm://");
-    }
-
-    protected void tearDown() throws Exception
-    {
-        if (usingInVMBroker())
-        {
-            TransportConnection.killVMBroker(1);
-            ApplicationRegistry.remove(1);
-        }
-        super.tearDown();
-    }
-
-    public void testPassiveTTL() throws JMSException, NamingException
-    {
-        InitialContextFactory factory = new PropertiesFileInitialContextFactory();
-
-        Hashtable<String, String> env = new Hashtable<String, String>();
-
-        env.put("connectionfactory.connection", "amqp://guest:guest@TTL_TEST_ID" + VHOST + "?brokerlist='" + BROKER + "'");
-        env.put("queue.queue", QUEUE);
-                                           
-        Context context = factory.getInitialContext(env);
-
-        Queue queue = (Queue) context.lookup("queue");
-
         //Create Client 1
-        Connection clientConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
-
+        Connection clientConnection = getConnection();
+        
         Session clientSession = clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
+        Queue queue = clientSession.createQueue(QUEUE); 
+            
         MessageConsumer consumer = clientSession.createConsumer(queue);
 
         //Create Producer
-        Connection producerConnection = ((ConnectionFactory) context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection();
 
         producerConnection.start();
 
@@ -176,10 +125,11 @@ public class TimeToLiveTest extends TestCase
 
     /**
      * Tests the expired messages get actively deleted even on queues which have no consumers
+     * @throws Exception 
      */
-    public void testActiveTTL() throws URLSyntaxException, AMQException, JMSException, InterruptedException
+    public void testActiveTTL() throws Exception
     {
-        Connection producerConnection = new AMQConnection(BROKER,"guest","guest","activeTTLtest","test");
+        Connection producerConnection = getConnection();
         AMQSession producerSession = (AMQSession) producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = producerSession.createTemporaryQueue();
         producerSession.declareAndBind((AMQDestination) queue);
