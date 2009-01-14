@@ -152,6 +152,7 @@ class Sender : public Client
     void sendByCount();
     Receiver& receiver;
     const string data;
+
 public:
     Sender(const string& queue, Receiver& receiver);
     void test();
@@ -340,34 +341,27 @@ void Sender::sendByRate()
     if (opts.durable) {
         msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
     }
-
-    //calculate interval (in micro secs) between messages to achieve desired rate
-    uint64_t interval = (1000*1000)/opts.rate;
-    uint64_t timeLimit(opts.timeLimit * TIME_SEC);
-    uint64_t start(current_time());
-
+    uint64_t interval = TIME_SEC/opts.rate;
+    int64_t timeLimit = opts.timeLimit * TIME_SEC;
+    uint64_t sent = 0, missedRate = 0;
+    AbsTime start = now();
     while (true) {
-        uint64_t start_msg(current_time());
-        msg.getDeliveryProperties().setTimestamp(start_msg);
+        AbsTime sentAt=now();
+        msg.getDeliveryProperties().setTimestamp(Duration(sentAt));
         async(session).messageTransfer(arg::content=msg, arg::acceptMode=1);
         if (opts.sync) session.sync();
-        
-	uint64_t now = current_time();
-
-	if (timeLimit != 0 && (now - start) > timeLimit) {
+        ++sent;
+        AbsTime waitTill(start, sent*interval);
+        Duration delay(sentAt, waitTill);
+        if (delay < 0)
+            ++missedRate;
+        else 
+            sys::usleep(delay / TIME_USEC);
+	if (timeLimit != 0 && Duration(start, now()) > timeLimit) {
 		session.sync();
 		receiver.stop();
 		break;
 	}
-
-        uint64_t timeTaken = (now - start_msg) / TIME_USEC;
-        if (timeTaken < interval) {
-            qpid::sys::usleep(interval - timeTaken);
-        } else if (timeTaken > interval &&
-                   !opts.csv && !opts.cumulative) { // Don't be so verbose in this case, we're piping the results to another program
-            std::cout << "Could not achieve desired rate! (Took " << timeTaken 
-                      << " microsecs to send message, aiming for " << interval << " microsecs)" << std::endl;
-        }
     }
 }
 
