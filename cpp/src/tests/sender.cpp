@@ -72,7 +72,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
     if (isRetry) sender.replay(session);
     else sender.init(session);
     string data;
-    while (std::cin >> data) {
+    while (getline(std::cin, data)) {
         message.setData(data);
         message.getHeaders().setInt("sn", ++sent);
         sender.send(message);
