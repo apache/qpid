@@ -95,7 +95,7 @@ void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, u
     session->setChannel(channel ? channel : nextChannel++);
     boost::weak_ptr<SessionImpl>& s = sessions[session->getChannel()];
     boost::shared_ptr<SessionImpl> ss = s.lock();
-    if (ss) throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attachd to " << ss->getId()));
+    if (ss) throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attached to " << ss->getId()));
     s = session;
 }
 
