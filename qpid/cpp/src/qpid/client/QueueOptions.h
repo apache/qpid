@@ -40,7 +40,7 @@ class QueueOptions: public framing::FieldTable
     virtual ~QueueOptions();
 	
     /**
-     * Sets the queue sizing plocy
+     * Sets the queue sizing policy
      * 
      * @param sp SizePolicy
      * REJECT - reject if queue greater than size/count
