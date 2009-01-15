@@ -25,6 +25,39 @@ slf4j-log4j=lib/slf4j-log4j12-1.4.0.jar
 
 xalan=lib/xalan-2.7.0.jar
 
+muse-core=lib/muse-core-2.2.0.jar
+muse-platform-mini=lib/muse-platform-mini-2.2.0.jar
+muse-util=lib/muse-util-2.2.0.jar
+muse-util-qname=lib/muse-util-qname-2.2.0.jar
+muse-util-xml=lib/muse-util-xml-2.2.0.jar
+muse-wsa-soap=lib/muse-wsa-soap-2.2.0.jar
+muse-wsdm-muws-adv-api=lib/muse-wsdm-muws-adv-api-2.2.0.jar
+muse-wsdm-muws-adv-impl=lib/muse-wsdm-muws-adv-impl-2.2.0.jar
+muse-wsdm-muws-api=lib/muse-wsdm-muws-api-2.2.0.jar
+muse-wsdm-muws-impl=lib/muse-wsdm-muws-impl-2.2.0.jar
+muse-wsdm-wef-api=lib/muse-wsdm-wef-api-2.2.0.jar
+muse-wsdm-wef-impl=lib/muse-wsdm-wef-impl-2.2.0.jar
+muse-wsn-api=lib/muse-wsn-api-2.2.0.jar
+muse-wsn-impl=lib/muse-wsn-impl-2.2.0.jar
+muse-wsrf-api=lib/muse-wsrf-api-2.2.0.jar
+muse-wsrf-impl=lib/muse-wsrf-impl-2.2.0.jar
+muse-wsrf-rmd=lib/muse-wsrf-rmd-2.2.0.jar
+muse-wsx-api=lib/muse-wsx-api-2.2.0.jar
+muse-wsx-impl=lib/muse-wsx-impl-2.2.0.jar
+wsdl4j=lib/wsdl4j-1.6.1.jar
+xercesImpl=lib/xercesImpl-2.8.1.jar
+xml-apis=lib/xml-apis-1.3.03.jar
+javassist=lib/javassist.jar
+jetty=lib/jetty-6.1.14.jar
+jetty-util=lib/jetty-util-6.1.14.jar
+jetty-bootstrap=lib/start.jar
+
+muse.libs = ${muse-core} ${muse-platform-mini} ${muse-util} ${muse-util-qname} \
+${muse-util-xml} ${muse-wsa-soap} ${muse-wsdm-muws-adv-api} ${muse-wsdm-muws-adv-impl} \
+${muse-wsdm-muws-api} ${muse-wsdm-muws-impl} ${muse-wsdm-wef-api} ${muse-wsdm-wef-impl} \
+${muse-wsn-api} ${muse-wsn-impl} ${muse-wsrf-api} ${muse-wsrf-impl} ${muse-wsrf-rmd} \
+${muse-wsx-api} ${muse-wsx-impl} ${wsdl4j} ${xercesImpl} ${xml-apis} ${jetty} ${jetty-util} ${jetty-bootstrap}
+
 osgi-core=lib/org.osgi.core-1.0.0.jar
 felix-framework=lib/org.apache.felix.framework-1.0.0.jar
 
@@ -40,7 +73,7 @@ broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs} ${build.lib}/${project.name}-common-${project.version}.jar
 
 broker-plugins.libs=${common.libs} ${felix.libs} 
-management-client.libs=${client.libs} ${commons-pool} ${log4j} ${slf4j-log4j} ${geronimo-servlet}
+management-client.libs=${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
