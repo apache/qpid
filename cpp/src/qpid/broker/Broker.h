@@ -32,6 +32,7 @@
 #include "LinkRegistry.h"
 #include "SessionManager.h"
 #include "QueueCleaner.h"
+#include "QueueEvents.h"
 #include "Vhost.h"
 #include "System.h"
 #include "Timer.h"
@@ -128,6 +129,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
     QueueCleaner queueCleaner;
+    QueueEvents queueEvents;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 
@@ -172,6 +174,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     DtxManager& getDtxManager() { return dtxManager; }
     DataDir& getDataDir() { return dataDir; }
     Options& getOptions() { return config; }
+    QueueEvents& getQueueEvents() { return queueEvents; }
 
     SessionManager& getSessionManager() { return sessionManager; }
     const std::string& getFederationTag() const { return federationTag; }

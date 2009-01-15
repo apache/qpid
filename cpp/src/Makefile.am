@@ -184,6 +184,7 @@ include qmfc.mk
 if HAVE_XML
 include xml.mk
 endif
+include replication.mk
 
 if RDMA
 
@@ -400,6 +401,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/QueueBindings.cpp \
+  qpid/broker/QueueEvents.cpp \
   qpid/broker/QueuePolicy.cpp \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/RateTracker.cpp \
@@ -545,6 +547,7 @@ nobase_include_HEADERS = \
   qpid/broker/PersistableMessage.h \
   qpid/broker/PersistableQueue.h \
   qpid/broker/QueueBindings.h \
+  qpid/broker/QueueEvents.h \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.h \
