@@ -121,7 +121,7 @@ private:
     int counter;
     MessageStore* store;
     management::Manageable* parent;
-	bool lastNode; //used to set mode on queue declare
+    bool lastNode; //used to set mode on queue declare
 
     //destroy impl that assumes lock is already held:
     void destroyLH (const string& name);

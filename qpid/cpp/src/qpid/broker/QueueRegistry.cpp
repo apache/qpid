@@ -97,11 +97,11 @@ void QueueRegistry::updateQueueClusterState(bool _lastNode)
     RWlock::ScopedRlock locker(lock);
     for (QueueMap::iterator i = queues.begin(); i != queues.end(); i++) {
         if (_lastNode){
-		    i->second->setLastNodeFailure();
-		} else {
-		    i->second->clearLastNodeFailure();
-		}
+            i->second->setLastNodeFailure();
+        } else {
+            i->second->clearLastNodeFailure();
+        }
     }
-	lastNode = _lastNode;
+    lastNode = _lastNode;
 }
 
