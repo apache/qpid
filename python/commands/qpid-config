@@ -33,8 +33,8 @@ _fileCount         = 8
 _fileSize          = 24
 _maxQueueSize      = None
 _maxQueueCount     = None
-_policyType        = None
-_lvq               = False
+_limitPolicy       = None
+_order             = None
 _msgSequence       = False
 _ive               = False
 _eventGeneration   = None
@@ -46,6 +46,7 @@ MAX_QUEUE_COUNT  = "qpid.max_count"
 POLICY_TYPE  = "qpid.policy_type"
 CLUSTER_DURABLE = "qpid.persist_last_node"
 LVQ = "qpid.last_value_queue"
+LVQNB = "qpid.last_value_queue_no_browse"
 MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
 QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
@@ -74,8 +75,18 @@ def Usage ():
     print "    --file-size  N (24)  File size in pages (64Kib/page)"
     print "    --max-queue-size N   Maximum in-memory queue size as bytes"
     print "    --max-queue-count N  Maximum in-memory queue size as a number of messages"
-    print "    --policy-type TYPE   Action taken when queue limit is reached (reject, flow_to_disk, ring, ring_strict)"
-    print "    --last-value-queue   Enable LVQ behavior on the queue"
+    print "    --limit-policy [none | reject | flow-to-disk | ring | ring-strict]"
+    print "                         Action taken when queue limit is reached:"
+    print "                             none (default) - Use broker's default policy"
+    print "                             reject         - Reject enqueued messages"
+    print "                             flow-to-disk   - Page messages to disk"
+    print "                             ring           - Replace oldest unacquired message with new"
+    print "                             ring-strict    - Replace oldest message, reject if oldest is acquired"
+    print "    --order [fifo | lvq | lvq-no-browse]"
+    print "                         Set queue ordering policy:"
+    print "                             fifo (default) - First in, first out"
+    print "                             lvq            - Last Value Queue ordering, allows queue browsing"
+    print "                             lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data"
     print "    --generate-queue-events N"
     print "                         If set to 1, every enqueue will generate an event that can be processed by"
     print "                         registered listeners (e.g. for replication). If set to 2, events will be"
@@ -197,8 +208,9 @@ class BrokerManager:
                 if FILECOUNT in args: print "--file-count=%d" % args[FILECOUNT],
                 if MAX_QUEUE_SIZE in args: print "--max-queue-size=%d" % args[MAX_QUEUE_SIZE],
                 if MAX_QUEUE_COUNT in args: print "--max-queue-count=%d" % args[MAX_QUEUE_COUNT],
-                if POLICY_TYPE in args: print "--policy-type=%s" % args[POLICY_TYPE],
-                if LVQ in args and args[LVQ] == 1: print "--last-value-queue",
+                if POLICY_TYPE in args: print "--limit-policy=%s" % args[POLICY_TYPE].replace("_", "-"),
+                if LVQ in args and args[LVQ] == 1: print "--order lvq",
+                if LVQNB in args and args[LVQNB] == 1: print "--order lvq-no-browse",
                 if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%d" % args[GENERATE_QUEUE_EVENTS],
                 print
 
@@ -250,12 +262,27 @@ class BrokerManager:
             declArgs[MAX_QUEUE_SIZE]  = _maxQueueSize
         if _maxQueueCount:
             declArgs[MAX_QUEUE_COUNT]  = _maxQueueCount
-        if _policyType:
-            declArgs[POLICY_TYPE]  = _policyType
+        if _limitPolicy:
+            if _limitPolicy == "none":
+                pass
+            elif _limitPolicy == "reject":
+                declArgs[POLICY_TYPE] = "reject"
+            elif _limitPolicy == "flow-to-disk":
+                declArgs[POLICY_TYPE] = "flow_to_disk"
+            elif _limitPolicy == "ring":
+                declArgs[POLICY_TYPE] = "ring"
+            elif _limitPolicy == "ring-strict":
+                declArgs[POLICY_TYPE] = "ring_strict"
+
         if _clusterDurable:
             declArgs[CLUSTER_DURABLE] = 1
-        if _lvq:
-            declArgs[LVQ] = 1
+        if _order:
+            if _order == "fifo":
+                pass
+            elif _order == "lvq":
+                declArgs[LVQ] = 1
+            elif _order == "lvq-no-browse":
+                declArgs[LVQNB] = 1
         if _eventGeneration:
             declArgs[QUEUE_EVENT_GENERATION]  = _eventGeneration
 
@@ -312,8 +339,8 @@ def YN (bool):
 
 try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
-                "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=",
-                "last-value-queue", "sequence", "ive", "generate-queue-events=")
+                "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
+                "order=", "sequence", "ive", "generate-queue-events=")
     (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -341,10 +368,16 @@ for opt in optlist:
         _maxQueueSize = int (opt[1])
     if opt[0] == "--max-queue-count":
         _maxQueueCount = int (opt[1])
-    if opt[0] == "--policy-type":
-        _policyType = opt[1]
-    if opt[0] == "--last-value-queue":
-        _lvq = True
+    if opt[0] == "--limit-policy":
+        _limitPolicy = opt[1]
+        if _limitPolicy not in ("none", "reject", "flow-to-disk", "ring", "ring-strict"):
+            print "Error: Invalid --limit-policy argument"
+            sys.exit(1)
+    if opt[0] == "--order":
+        _order = opt[1]
+        if _order not in ("fifo", "lvq", "lvq-no-browse"):
+            print "Error: Invalid --order argument"
+            sys.exit(1)
     if opt[0] == "--sequence":
         _msgSequence = True
     if opt[0] == "--ive":
