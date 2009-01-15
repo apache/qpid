@@ -30,8 +30,8 @@ if [ "$QMAN_HOME" = "" ] ; then
 	QMAN_HOME=..
 fi
 
-SET ADMIN_PORT=8079
-SET ADMIN_KEY=gazzax 
+ADMIN_PORT=8079
+ADMIN_KEY=gazzax 
 
 "$JAVA" -DSTOP.PORT=$ADMIN_PORT -DSTOP.KEY=$ADMIN_KEY -jar $QMAN_HOME/lib/start.jar --stop
 
