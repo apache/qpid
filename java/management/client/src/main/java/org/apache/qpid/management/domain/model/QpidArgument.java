@@ -24,6 +24,9 @@ import org.apache.qpid.management.Messages;
 import org.apache.qpid.transport.codec.Encoder;
 import org.apache.qpid.transport.util.Logger;
 
+/**
+ * An argument is the formal definition of a parameter belonging to a specific method / operation.
+ */
 class QpidArgument extends QpidProperty
 {
     private final static Logger LOGGER = Logger.get(QpidArgument.class);
@@ -32,27 +35,53 @@ class QpidArgument extends QpidProperty
     
     private Direction _direction;
     
+    /**
+     * Sets the direction of this argument.
+     * 
+     * @param the direction of this argument.
+     */
     public void setDirection(String code) 
     {
         this._direction = Direction.valueOf(code);
     }
     
+    /**
+     * Returns the direction of this argument.
+     * 
+     * @return the direction of this argument.
+     */
     public Direction getDirection()
     {
         return _direction;
     }
     
+    /**
+     * Sets the default value of this argument.
+     * 
+     * @param defaultValue the default value of this argument.
+     */
     public void setDefaultValue(Object defaultValue)
     {
         this._defaultValue = defaultValue;
     }
 
+    /**
+     * Returns the default value of this argument.
+     * 
+     * @return the default value of this argument.
+     */
     public Object getDefaultValue()
     {
         return _defaultValue;
     }
     
-    public boolean isInput(){
+    /**
+     * Returns true if this is an Input argument.
+     *  
+     * @return true if this is an Input argument.
+     */
+    public boolean isInput()
+    {
         return _direction != Direction.O;
     }
     
@@ -69,12 +98,24 @@ class QpidArgument extends QpidProperty
             .toString();
     }
 
+    /**
+     * Encodes the given value according to this argument type & definition.
+     * 
+     * @param value the value to be encoded.
+     * @param encoder the encoder.
+     */
     public void encode(Object value,Encoder encoder) 
     {
         _type.encode(value, encoder);
         LOGGER.debug(Messages.QMAN_200013_ARGUMENT_VALUE_ENCODED,value,_name,_type);
     }
     
+    /**
+     * Decodes the value for this argument according to its type & definition.
+     * 
+     * @param decoder the decoder
+     * @return the decoded value of this argument.
+     */
     public Object decode(org.apache.qpid.transport.codec.Decoder decoder) 
     {
         return _type.decode(decoder);

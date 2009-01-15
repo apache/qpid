@@ -18,30 +18,34 @@
  - under the License.
  -
  -->
-
-<configuration>
-  <brokers>
-	<broker>
-	  <host>localhost</host>
-	  <port>5672</port>
-	  <virtual-host>test</virtual-host>
-	  <user>guest</user>
-	  <password>guest</password>
-	  <max-pool-capacity>4</max-pool-capacity>
-	  <initial-pool-capacity>0</initial-pool-capacity>
-	  <max-wait-timeout>-1</max-wait-timeout>
-	</broker>
-<!--
-  <broker>
-	  <host>myhost</host>
-	  <port>5672</port>
-	  <virtual-host>test</virtual-host>
-	  <user>guest</user>
-	  <password>guest</password>
-	  <max-pool-capacity>4</max-pool-capacity>
-	  <initial-pool-capacity>0</initial-pool-capacity>
-	  <max-wait-timeout>-1</max-wait-timeout>
-	</broker>
+<!-- 
+Default configuration for QMan is empty; 
+that is, there's no broker configured at startup.
+If  you want to connect with a running broker when QMan starts up, 
+you can do that uncommenting and editing the template reported below.
 -->
+<configuration>
+<!-- 	<brokers>
+		<broker>
+			<host>localhost</host>
+			<port>5672</port>
+			<virtual-host>test</virtual-host>
+	  		<user>guest</user>
+	  		<password>guest</password>
+	  		<max-pool-capacity>4</max-pool-capacity>
+	  		<initial-pool-capacity>0</initial-pool-capacity>
+	  		<max-wait-timeout>-1</max-wait-timeout>
+		</broker>
+		<broker>
+			<host>localhost</host>
+			<port>5672</port>
+			<virtual-host>test</virtual-host>
+	  		<user>guest</user>
+	  		<password>guest</password>
+	  		<max-pool-capacity>4</max-pool-capacity>
+	  		<initial-pool-capacity>0</initial-pool-capacity>
+	  		<max-wait-timeout>-1</max-wait-timeout>
+		</broker>
   </brokers>
+  --> 
 </configuration>

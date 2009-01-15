@@ -22,8 +22,6 @@ package org.apache.qpid.management.domain.model;
 
 /**
  * Layer Supertype for all qpid management features.
- * 
- * @author Andrea Gazzarini
  */
 abstract class QpidFeature
 {    

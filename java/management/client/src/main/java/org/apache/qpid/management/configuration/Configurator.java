@@ -41,10 +41,6 @@ import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandl
 import org.apache.qpid.management.domain.model.AccessMode;
 import org.apache.qpid.management.domain.model.type.AbsTime;
 import org.apache.qpid.management.domain.model.type.DeltaTime;
-import org.apache.qpid.management.domain.model.type.Int16;
-import org.apache.qpid.management.domain.model.type.Int32;
-import org.apache.qpid.management.domain.model.type.Int64;
-import org.apache.qpid.management.domain.model.type.Int8;
 import org.apache.qpid.management.domain.model.type.ObjectReference;
 import org.apache.qpid.management.domain.model.type.Str16;
 import org.apache.qpid.management.domain.model.type.Str8;
@@ -61,8 +57,6 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * Director used for coordinating the build process of configuration.
  * This is the only component which has a read-write permission on Configuration object.
- * 
- * @author Andrea Gazzarini
  */
 public class Configurator extends DefaultHandler
 {    
@@ -135,12 +129,15 @@ public class Configurator extends DefaultHandler
         		if (initialConfigurationFile.canRead())
         		{
 	                SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-	                reader = new BufferedReader(new InputStreamReader(new FileInputStream(initialConfigFileName)));
+	                reader = new BufferedReader(
+	                		new InputStreamReader(
+	                				new FileInputStream(initialConfigFileName)));
 	                InputSource source = new InputSource(reader);
 	                parser.parse(source, this);        		
         		} else {
-        			LOGGER.warn(Messages.QMAN_300004_INVALID_CONFIGURATION_FILE, initialConfigFileName);
-        			throw new ConfigurationException(String.format(Messages.QMAN_300004_INVALID_CONFIGURATION_FILE, initialConfigFileName));
+        			LOGGER.warn(
+        					Messages.QMAN_300004_INVALID_CONFIGURATION_FILE, 
+        					initialConfigFileName);
         		}
         	}
             
@@ -233,55 +230,49 @@ public class Configurator extends DefaultHandler
     	configuration.addTypeMapping(new TypeMapping(9,new DeltaTime()));
     	configuration.addTypeMapping(new TypeMapping(10,new ObjectReference()));
     	configuration.addTypeMapping(new TypeMapping(11,new org.apache.qpid.management.domain.model.type.Boolean()));
-    	configuration.addTypeMapping(new TypeMapping(12,new org.apache.qpid.management.domain.model.type.Float(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(13,new org.apache.qpid.management.domain.model.type.Double(),Names.NUMBER_VALIDATOR));
     	configuration.addTypeMapping(new TypeMapping(14,new org.apache.qpid.management.domain.model.type.Uuid()));
     	configuration.addTypeMapping(new TypeMapping(15,new org.apache.qpid.management.domain.model.type.Map()));
-    	configuration.addTypeMapping(new TypeMapping(16,new Int8(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(17,new Int16(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(18,new Int32(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(19,new Int64(),Names.NUMBER_VALIDATOR));
     }
     
     /**
      * Configures the mandatory management message handlers.
      */
-    private void addMandatoryMethodReplyMessageHandlers ()
+    void addMandatoryMethodReplyMessageHandlers ()
     {
         Configuration.getInstance().addMethodReplyMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.OPERATION_INVOCATION_RESPONSE_OPCODE,
-                        MethodResponseMessageHandler.class.getName()));
+                        new MethodResponseMessageHandler()));
         
         Configuration.getInstance().addMethodReplyMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.SCHEMA_RESPONSE_OPCODE,
-                        SchemaResponseMessageHandler.class.getName()));  
+                        new SchemaResponseMessageHandler()));  
     }
 
     /**
      * Configures the mandatory management message handlers.
      */
-    private void addMandatoryManagementMessageHandlers ()
+    void addMandatoryManagementMessageHandlers ()
     {
         Configuration.getInstance().addManagementMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.INSTRUMENTATION_CONTENT_RESPONSE_OPCODE,
-                        InstrumentationMessageHandler.class.getName()));
+                        new InstrumentationMessageHandler()));
       
         Configuration.getInstance().addManagementMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.CONFIGURATION_CONTENT_RESPONSE_OPCDE,
-                        ConfigurationMessageHandler.class.getName()));        
+                        new ConfigurationMessageHandler()));        
         
         Configuration.getInstance().addManagementMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.EVENT_CONTENT_RESPONSE_OPCDE,
-                        EventContentMessageHandler.class.getName()));        
+                        new EventContentMessageHandler()));        
         
         Configuration.getInstance().addManagementMessageHandlerMapping(
                 new MessageHandlerMapping(
                         Protocol.HEARTBEAT_INDICATION_RESPONSE_OPCODE,
-                        HeartBeatIndicationMessageHandler.class.getName()));          
+                        new HeartBeatIndicationMessageHandler()));          
     }
 }

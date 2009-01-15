@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.UUID;
 
-import org.apache.qpid.management.messages.AmqpCoDec;
 import org.apache.qpid.transport.codec.Encoder;
 
 /**
@@ -90,7 +89,7 @@ public final class Binary implements Serializable
         this._bytes = bytes;
         byte [] array = new byte [8];
     	System.arraycopy(_bytes, 0, array, 0, 8);
-    	_first =  AmqpCoDec.unpack64(array);
+    	_first =  unpack64(array);
         uuid = UUID.randomUUID();
     }
     
@@ -148,4 +147,16 @@ public final class Binary implements Serializable
     {
     	return (_first & 281474708275200L) >> 28;
     }
+    
+    public final long unpack64(byte data[]) {
+		return (
+				((long) (data[0] & 0xff) << 56) | 
+				((long)(data[1] & 0xff) << 48) | 
+				((long)(data[2] & 0xff) << 40) | 
+				((long)(data[3] & 0xff) << 32) | 
+				((long)(data[4] & 0xff) << 24) | 
+				((long)(data[5] & 0xff) << 16) | 
+				((long)(data[6] & 0xff) << 8) | 
+				(long) data[7] & 0xff);		
+	}    
 }

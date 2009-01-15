@@ -28,6 +28,11 @@ package org.apache.qpid.management;
  */
 public interface Messages 
 {	
+	// MESSAGES
+	String EVENT_SEVERITY_ATTRIBUTE_DESCRIPTION = "Severity level for this event.";
+	String EVENT_TIMESTAMP_ATTRIBUTE_DESCRIPTION = "Current timestamp of this event.";
+	String ACTION_NOT_SUPPORTED="Action %S not supported by resource %s.";
+	
 	// INFO
 	String QMAN_000001_STARTING_QMAN = "<QMAN-000001> : Starting Q-Man...";
 	String QMAN_000002_READING_CONFIGURATION = "<QMAN-000002> : Reading Q-Man configuration...";
@@ -53,6 +58,11 @@ public interface Messages
 	String QMAN_000022_NO_BROKER_CONFIGURED = "<QMAN-000022> : Q-Man has no configured broker : in order to connect with a running one use Q-Man Administration interface.";
 	String QMAN_000023_QMAN_REGISTERED_AS_MBEAN = "<QMAN-000023> : Q-Man service is now available on MBeanServer.";
 	
+	String QMAN_000026_WSDM_ADAPTER_STARTS = "<QMAN-000026> : Initializing WS-DM Adapter Environment...";
+	String QMAN_000027_WSDM_ADAPTER_STARTED = "<QMAN-000027> : WS-DM Adapter ready for incoming requests.";
+	String QMAN_000028_TEST_MODULE_NOT_FOUND = "<QMAN-000028> : Qpid emulator not found. Test notifications are disabled.";
+	String QMAN_000029_DEFAULT_URI = "<QMAN-000029> : Default URI will be set to %s";
+		
 	 // DEBUG
 	String QMAN_200001_INCOMING_MESSAGE_HAS_BEEN_RECEIVED = "<QMAN-200001> : New incoming message has been received. Message content is %s";
 	String QMAN_200002_OPCODE_HANDLER_ASSOCIATION = "<QMAN-200002> : \"%s\" opcode is associated to handler %s";
@@ -86,6 +96,17 @@ public interface Messages
 	String QMAN_200030_BINDING_REMOVED = "<QMAN-200030> : Binding with %s as routing key has been removed between queue %s and exchange %s.";
 	String QMAN_200031_COMPOUND_MESSAGE_CONTAINS = "<QMAN-200031> : Incoming compound message contains %s message(s).";
 	String QMAN_200032_COMMAND_MESSAGE_ROUTING_KEY = "<QMAN-200032> : Command message routing key : %s";
+	String QMAN_200033_CAPABILITY_CLASS_HAS_BEEN_ADDED = "<QMAN-200033> : Capability has been added to this resource. Class is %s while URI is %s.";
+	String QMAN_200034_RMD_NAME = "<QMAN-200034> : Resource Metadata Descriptor name is %s.";
+	String QMAN_200035_RMD_PATH = "<QMAN-200035> : Resource Metadata Descriptor path is %s.";
+	String QMAN_200036_ADDITIONAL_RMD_PROPERTY = "<QMAN-200036> : Additional RMD property : %s";
+	String QMAN_200037_RMD = "<QMAN-200037> : Resource Metadata Descriptor : %s";
+	String QMAN_200038_WSRP = "<QMAN-200038> : WS Resource Properties fragment : %s";
+	String QMAN_200039_DEBUG_JMX_NOTIFICATION = "<QMAN-200039> : %s";
+	String QMAN_200040_WS_ARTIFACTS_CACHED = "<QMAN-200040> : WS Artifacts has been stored on cache with the following id : %s";
+	String QMAN_200041_INCOMING_OBJECT_NAME_AND_DERIVED_KEY = "<QMAN-200041> : Incoming object name : %s, derived search key : %s";
+	
+	
 	
 	// WARNING
     String QMAN_300001_MESSAGE_DISCARDED = "<QMAN-300001> : No handler has been configured for processing messages with \"%s\" as opcode. Message will be discarded.";
@@ -101,8 +122,6 @@ public interface Messages
 	String QMAN_100005_CLASS_SCHEMA_PROCESSING_FAILURE = "<QMAN-100005> : Q-Man was unable to process the schema response message.";
 	String QMAN_100006_EVENT_SCHEMA_PROCESSING_FAILURE = "<QMAN-100006> : Q-Man was unable to process the schema response message.";
 	String QMAN_100007_UNABLE_TO_CONNECT_WITH_BROKER = "<QMAN-100007> : Unable to connect with broker located on %s. This broker will be ignored.";
-	String QMAN_100008_MANAGEMENT_MESSAGE_HANDLER_NOT_AVAILABLE = "<QMAN-100008> : Management Message Handler configured for opcode %s is not available and therefore will be discarded.";
-	String QMAN_100009_METHOD_REPLY_MESSAGE_HANDLER_NOT_AVAILABLE = "<QMAN-100009> :Method-Reply Message Handler configured for opcode %s is not available and therefore will be discarded.";
 	String QMAN_100010_METHOD_INVOCATION_RESULT_FAILURE = "<QMAN-100010> : an exception occurred while storing the result of a method invocation. Sequence number was %s";
 	String QMAN_100011_UNKNOWN_CLASS_KIND = "<QMAN-100011> : Unknwon class kind : %s).";
 	String QMAN_100012_SCHEMA_MESSAGE_PROCESSING_FAILURE = "<QMAN-100012> : Q-Man was unable to process the schema response message.";
@@ -112,8 +131,12 @@ public interface Messages
 	String QMAN_100016_UNABLE_TO_DECODE_FEATURE_VALUE = "<QMAN-100016> : Unable to decode value for %s::%s::%s";
 	String QMAN_100017_UNABLE_TO_CONNECT = "<QMAN-100017>: Cannot connect to broker %s on %s";
 	String QMAN_100018_UNABLE_TO_STARTUP_CORRECTLY = "<QMAN-100018> : Q-Man was unable to startup correctly : see logs for further details.";
-	
-	// MESSAGES
-	String EVENT_SEVERITY_ATTRIBUTE_DESCRIPTION = "Severity level for this event.";
-	String EVENT_TIMESTAMP_ATTRIBUTE_DESCRIPTION = "Current timestamp of this event.";
+	String QMAN_100019_REQ_OR_RES_MALFORMED = "<QMAN-100019> : Unexpected exception occurred on WSDM adapter layer : probably request or response was malformed.";
+	String QMAN_100020_ACTION_NOT_SUPPORTED = "<QMAN-100020> : "+ACTION_NOT_SUPPORTED;	
+	String QMAN_100021_RMD_BUID_FAILURE = "<QMAN-100021> : Unable to build RDM for resource %s.";
+	String QMAN_100022_ISOLATION_LAYER_SHUTDOWN_FAILURE = "<QMAN-100022> : Unable to shutdown Isolation Layer.";
+	String QMAN_100023_BUILD_WS_ARTIFACTS_FAILURE = "<QMAN-100023> : Unable to build WS artifacts.";
+	String QMAN_100024_CAPABILITY_INSTANTIATION_FAILURE = "<QMAN-100024> : Unable to instantiate generated capability class for %s.";
+	String QMAN_100025_WSRF_FAILURE = "<QMAN-100025> : Resource manager raised an exception while creating capability for %s.";	
+	String QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE = "<QMAN-100026> : Exception occurred while replacing the placeholder soap address with resource actual location.";		
 }

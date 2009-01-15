@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
+
+	<!-- QMan Appender-->
+	<appender name="QMAN_LOG"
+		class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="../log/qman.log" />
+		<param name="Append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d %-5p [%c{1}] %m%n" />
+		</layout>
+	</appender>
+
+	<!-- XML messages appender -->
+	<appender name="MESSAGES_LOG"
+		class="org.apache.log4j.DailyRollingFileAppender">
+<!--		<param name="File" value="../log/messages.log" /> -->
+		<param name="File" value="../log/messages.log"/>
+		<param name="Append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d%n %m%n" />
+		</layout>
+	</appender>
+
+	<!-- Web Server Appender-->
+	<appender name="SERVER_LOG"
+		class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="../log/server.log" />
+		<param name="Append" value="true" />
+		<param name="DatePattern" value="'.'yyyy-MM-dd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%d %-5p [%c{1}] %m%n" />
+		</layout>
+	</appender>
+
+	<!-- Write to stdout -->
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<param name="Target" value="System.out" />
+		<param name="Threshold" value="DEBUG" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="%d{ABSOLUTE} %-5p [%c{1}] %m%n" />
+		</layout>
+	</appender>
+
+	<!-- Category for QMan module -->
+	<category name="org.apache.qpid.management">
+		<priority value="INFO" />
+		<appender-ref ref="QMAN_LOG" />
+	</category>
+
+	<!-- Category for Jetty module : if you are using the JMX distribution you don't need this category-->
+	<category name="org.mortbay">
+		<priority value="INFO" />
+		<appender-ref ref="SERVER_LOG" />
+	</category>
+	
+	<category name="org.apache.qpid.qman.debug.XmlDebugger">
+		<priority value="DEBUG" />
+		<appender-ref ref="MESSAGES_LOG" />
+	</category>	
+	
+	<root>
+		<priority value="ERROR" />
+	</root>
+	
+</log4j:configuration>
