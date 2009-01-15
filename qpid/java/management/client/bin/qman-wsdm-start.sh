@@ -33,7 +33,7 @@
 # **************************************************************************
 
 JAVA=$JAVA_HOME/bin/java
-JAVA_OPTS=-Xms128m -Xmx512m
+JAVA_OPTS="-Xms128m -Xmx512m"
 
 if [ "$JAVA_HOME" = "" ] ; then
     echo "JAVA_HOME is not set.  Unexpected results may occur."
@@ -47,7 +47,7 @@ if [ "$QMAN_WSDM_ADAPTER_PORT" = "" ] ; then
 	QMAN_WSDM_ADAPTER_PORT=8080
 fi
 if [ "$QMAN_WSDM_ADAPTER_HOST" = "" ] ; then
-	QMAN_WSDM_ADAPTER_PORT=$HOSTNAME
+	QMAN_WSDM_ADAPTER_HOST=$HOSTNAME
 fi
 if [ "$QMAN_CONFIG_FILE" = "" ] ; then
 	QMAN_CONFIG_FILE=$QMAN_HOME/etc/qman-config.xml
@@ -58,7 +58,7 @@ ADMIN_KEY=gazzax
 QMAN_LIBS=$QMAN_HOME/lib
 JETTY_CONFIG_FILE=$QMAN_HOME/etc/jetty.xml
  
-CLASSPATH=$QMAN_HOME/etc:$QMAN_LIBS/start.jar:$QMAN_LIBS/jetty-6.1.14.jar:$QMAN_LIBS/jetty-util-6.1.14.jar:$QMAN_LIBS/jetty-util-6.1.14.jar:$QMAN_LIBS/geronimo-servlet_2.5_spec-1.2.jar:$QMAN_LIBS/slf4j-api-1.4.0.jar:$QMAN_LIBS/slf4j-log4j12-1.4.0.jar:$QMAN_LIBS/log4j-1.2.12.jar
+QMAN_CLASSPATH=$QMAN_HOME/etc:$QMAN_LIBS/start.jar:$QMAN_LIBS/jetty-6.1.14.jar:$QMAN_LIBS/jetty-util-6.1.14.jar:$QMAN_LIBS/jetty-util-6.1.14.jar:$QMAN_LIBS/geronimo-servlet_2.5_spec-1.2.jar:$QMAN_LIBS/slf4j-api-1.4.0.jar:$QMAN_LIBS/slf4j-log4j12-1.4.0.jar:$QMAN_LIBS/log4j-1.2.12.jar
 
 echo "==============================================================================="
 echo""
@@ -77,11 +77,13 @@ echo	"Web Server Configuration File : $JETTY_CONFIG_FILE"
 echo""
 echo	"Web Server HTTP port : $QMAN_WSDM_ADAPTER_PORT"
 echo""
+echo	"Web Server HTTP host : $QMAN_WSDM_ADAPTER_HOST"
+echo""
 echo	"Web Server Admin port : $ADMIN_PORT"
 echo""
-echo	"Bootstrap classpath : $CLASSPATH"
+echo	"Bootstrap classpath : $QMAN_CLASSPATH"
 echo""
 echo "==============================================================================="
 echo""
 
-"$JAVA" $JAVA_OPTS -Djetty.home=$QMAN_HOME -Dqman.host=$QMAN_WSDM_ADAPTER_HOST -Dqman.port=$QMAN_WSDM_ADAPTER_HOST -DSTOP.PORT=$ADMIN_PORT -DSTOP.KEY=$ADMIN_KEY -Dqman-config=$QMAN_CONFIG_FILE org.mortbay.start.Main $JETTY_CONFIG_FILE
+"$JAVA" $JAVA_OPTS -cp $QMAN_CLASSPATH -DQMAN_HOME=$QMAN_HOME -Djetty.home=$QMAN_HOME -Dqman.host=$QMAN_WSDM_ADAPTER_HOST -Dqman.port=$QMAN_WSDM_ADAPTER_PORT -DSTOP.PORT=$ADMIN_PORT -DSTOP.KEY=$ADMIN_KEY -Dqman-config=$QMAN_CONFIG_FILE org.mortbay.start.Main $JETTY_CONFIG_FILE
