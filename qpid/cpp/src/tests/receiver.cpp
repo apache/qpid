@@ -82,7 +82,7 @@ Receiver::Receiver(const string& q, uint messages, bool ignoreDuplicates, uint c
     settings.autoAck = ackFrequency;
 }
 
-void Receiver::received(Message & message) 
+void Receiver::received(Message& message) 
 {
     if (!(skipDups && isDuplicate(message))) {
         bool eos = message.getData() == EOS;
