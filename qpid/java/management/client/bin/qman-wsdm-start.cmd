@@ -86,4 +86,4 @@ echo.
 echo ===============================================================================
 echo.
 
-%JAVA% -Djetty.home=%QMAN_HOME% -Dqman.host=%QMAN_WSDM_ADAPTER_HOST%  -Dqman.port=%QMAN_WSDM_ADAPTER_PORT% -DSTOP.PORT=%ADMIN_PORT% -DSTOP.KEY=%ADMIN_KEY% -Dqman-config=%QMAN_CONFIG_FILE%  org.mortbay.start.Main %JETTY_CONFIG_FILE%
+%JAVA% -cp %CLASSPATH% -DQMAN_HOME=%QMAN_HOME% -Djetty.home=%QMAN_HOME% -Dqman.host=%QMAN_WSDM_ADAPTER_HOST%  -Dqman.port=%QMAN_WSDM_ADAPTER_PORT% -DSTOP.PORT=%ADMIN_PORT% -DSTOP.KEY=%ADMIN_KEY% -Dqman-config=%QMAN_CONFIG_FILE%  org.mortbay.start.Main %JETTY_CONFIG_FILE%
