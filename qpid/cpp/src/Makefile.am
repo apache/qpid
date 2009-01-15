@@ -349,8 +349,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/DispatchHandle.cpp \
-  qpid/sys/PollableCondition.h \
-  qpid/sys/PollableQueue.h \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.cpp \
   qpid/sys/Timer.cpp
@@ -702,6 +700,8 @@ nobase_include_HEADERS = \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
   qpid/sys/OutputTask.h \
+  qpid/sys/PollableCondition.h \
+  qpid/sys/PollableQueue.h \
   qpid/sys/Poller.h \
   qpid/sys/ProtocolFactory.h \
   qpid/sys/Runnable.h \
