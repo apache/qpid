@@ -36,7 +36,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.configuration.ConfigurationException;
 import org.apache.qpid.management.configuration.Configurator;
-import org.apache.qpid.management.domain.model.QpidEvent.QpidManagedEvent;
+import org.apache.qpid.management.domain.model.QpidEvent.QManManagedEvent;
 
 /**
  * Test case for qpid class entity.
@@ -68,7 +68,7 @@ public class QpidEventTest extends TestCase
                 "A just created event should be empty. I mean there shouldn't be event instances inside.", 
         		_event.hasNoInstances());
 
-        QpidManagedEvent instance = createEventInstance();
+        QManManagedEvent instance = createEventInstance();
         
         assertFalse (
                 "Now a new instance should be there...",
@@ -136,7 +136,7 @@ public class QpidEventTest extends TestCase
     		}
     		
     		@Override
-    		void updateEventInstanceWithData(QpidManagedEvent instance) 
+    		void updateEventInstanceWithData(QManManagedEvent instance) 
     		{
     			// DO NOTHING : otherwise we should supply a valid raw data to be converted. ;-)
     		}
@@ -269,7 +269,7 @@ public class QpidEventTest extends TestCase
      * 
      * @return a new QpidManagedEvent with test data inside.
      */
-    private QpidManagedEvent createEventInstance()
+    private QManManagedEvent createEventInstance()
     {
     	return  _event.createEventInstance(
         		TestConstants.TEST_RAW_DATA, 

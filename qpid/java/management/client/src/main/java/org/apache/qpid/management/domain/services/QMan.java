@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.Map.Entry;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -35,6 +34,9 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationListener;
 import javax.management.ReflectionException;
 
 import org.apache.log4j.xml.DOMConfigurator;
@@ -43,20 +45,19 @@ import org.apache.qpid.management.Names;
 import org.apache.qpid.management.configuration.BrokerAlreadyConnectedException;
 import org.apache.qpid.management.configuration.BrokerConnectionData;
 import org.apache.qpid.management.configuration.BrokerConnectionException;
-import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.JmxService;
 import org.apache.qpid.transport.util.Logger;
 
 /**
  * Main entry point for starting Q-Man application.
- * 
- * @author Andrea Gazzarini
  */
-public class QMan implements DynamicMBean
+public class QMan extends NotificationBroadcasterSupport implements DynamicMBean, NotificationListener
 {
     private final static Logger LOGGER = Logger.get(QMan.class);
     private final List<ManagementClient> managementClients = new ArrayList<ManagementClient>();
+    
+    private Configurator _configurator = new Configurator();
     
     /**
      * Starts QMan.
@@ -67,50 +68,17 @@ public class QMan implements DynamicMBean
         LOGGER.info(Messages.QMAN_000001_STARTING_QMAN);
         LOGGER.info(Messages.QMAN_000002_READING_CONFIGURATION);
 
-        Configurator configurator = new Configurator();
         try
         {
-            configurator.configure();            
-            Configuration configuration = Configuration.getInstance();
-            if (configuration.hasOneOrMoreBrokersDefined())
-            {
-            	LOGGER.info(Messages.QMAN_000003_CREATING_MANAGEMENT_CLIENTS);
-	            for (Entry<UUID, BrokerConnectionData> entry : Configuration.getInstance().getConnectionInfos())
-	            {
-	            	createManagementClient(entry.getKey(), entry.getValue());
-	            }
-            } else 
-            {
-            	LOGGER.info(Messages.QMAN_000022_NO_BROKER_CONFIGURED);
-            }
-
-            registerQManService();
+        	 registerQManService();
+        	 
+            _configurator.configure();            
             
             LOGGER.info(Messages.QMAN_000019_QMAN_STARTED);
        } catch(Exception exception) {
             LOGGER.error(exception,Messages.QMAN_100018_UNABLE_TO_STARTUP_CORRECTLY );
             throw new StartupFailureException(exception);
         } 
-    }
-
-	/**
-     * Creates a management client using the given data.
-     * 
-     * @param brokerId the broker identifier.
-     * @param data the broker connection data.
-     */
-    private void createManagementClient(UUID brokerId, BrokerConnectionData data)
-    {
-        try 
-        {
-            ManagementClient client = new ManagementClient(brokerId,data);
-            client.estabilishFirstConnectionWithBroker();
-            managementClients.add(client);
-            
-            LOGGER.info(Messages.QMAN_000004_MANAGEMENT_CLIENT_CONNECTED,brokerId);
-        } catch(StartupFailureException exception) {
-            LOGGER.error(exception, Messages.QMAN_100017_UNABLE_TO_CONNECT,brokerId,data);
-        }
     }
     
 	/**
@@ -156,7 +124,7 @@ public class QMan implements DynamicMBean
 			throw exception;
 		}
 	}
-    
+	
     /**
      * Stop Qman
      */
@@ -173,6 +141,16 @@ public class QMan implements DynamicMBean
         {
         }
         LOGGER.info(Messages.QMAN_000021_SHUT_DOWN);                    	
+    }
+    
+    /**
+     * Injects the configurator on this QMan instance.
+     * That configutator later will be responsible to manage the configuration.
+     * 
+     * @param configurator the configurator to be injected.
+     */
+    public void setConfigurator(Configurator configurator){
+    	this._configurator = configurator;
     }
     
     /**
@@ -349,6 +327,17 @@ public class QMan implements DynamicMBean
 	{
 		return null;
 	}    
+
+	/**
+	 * Simply dispatches the incoming notification to registered listeners.
+	 * 
+	 * @param notification the incoming notification.
+	 * @param handback the context associated to this notification.
+	 */
+	public void handleNotification(Notification notification, Object handback) 
+	{
+		sendNotification(notification);
+	}	
 	
     /**
      * Registers QMan as an MBean on MBeanServer.
@@ -361,5 +350,25 @@ public class QMan implements DynamicMBean
     	service.registerQManService(this);
     	
     	LOGGER.info(Messages.QMAN_000023_QMAN_REGISTERED_AS_MBEAN);
-	}	
+	}
+    
+	/**
+     * Creates a management client using the given data.
+     * 
+     * @param brokerId the broker identifier.
+     * @param data the broker connection data.
+     */
+    public void createManagementClient(UUID brokerId, BrokerConnectionData data)
+    {
+        try 
+        {
+            ManagementClient client = new ManagementClient(brokerId,data);
+            client.estabilishFirstConnectionWithBroker();
+            managementClients.add(client);
+            
+            LOGGER.info(Messages.QMAN_000004_MANAGEMENT_CLIENT_CONNECTED,brokerId);
+        } catch(StartupFailureException exception) {
+            LOGGER.error(exception, Messages.QMAN_100017_UNABLE_TO_CONNECT,brokerId,data);
+        }
+    }    
 }

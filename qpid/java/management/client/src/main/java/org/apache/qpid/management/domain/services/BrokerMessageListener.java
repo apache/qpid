@@ -132,20 +132,26 @@ class BrokerMessageListener implements MessageListener
             IMessageHandler handler = entry.getValue();
             try 
             {
-                handler.setDomainModel(_domainModel);
-                _handlers.put(opcode, handler);
-            } catch(Exception exception) {
-                LOGGER.error(exception,Messages.QMAN_100004_HANDLER_INITIALIZATION_FAILURE, opcode);
-            }
-        }        
+				handler.setDomainModel(_domainModel);
+				_handlers.put(opcode, handler);
+			} catch (Exception exception) {
+				LOGGER.error(exception,
+						Messages.QMAN_100004_HANDLER_INITIALIZATION_FAILURE,
+						opcode);
+			}
+        }
     }
     
+    
+    
     /**
-     * Dispatches the given message to the appropriate handler.
-     * 
-     * @param message the incoming message.
-     * @throws IOException when the message content cannot be read.
-     */
+	 * Dispatches the given message to the appropriate handler.
+	 * 
+	 * @param message
+	 *            the incoming message.
+	 * @throws IOException
+	 *             when the message content cannot be read.
+	 */
     private void dispatch(Message message) throws IOException
     {
     	 ByteBuffer buffer = message.readData();

@@ -31,16 +31,14 @@ import javax.management.ObjectName;
 
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
-import org.apache.qpid.management.domain.model.QpidClass.QpidManagedObject;
-import org.apache.qpid.management.domain.model.QpidEvent.QpidManagedEvent;
+import org.apache.qpid.management.domain.model.QpidClass.QManManagedObject;
+import org.apache.qpid.management.domain.model.QpidEvent.QManManagedEvent;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.management.domain.services.QMan;
 import org.apache.qpid.transport.util.Logger;
 
 /**
  * A simple facade used to perform operations on Mbean server.
- * 
- * @author Andrea Gazzarini
  */
 public class JmxService
 {
@@ -67,8 +65,17 @@ public class JmxService
     	}
     }
     
-	void registerEventInstance(
-			QpidManagedEvent eventInstance,
+    /**
+     * Registers an event instance with MBean server.
+     * 
+     * @param eventInstance the mben event instance
+     * @param brokerId the broker identifier.
+     * @param packageName the package name.
+     * @param eventClassName the event class name.
+     * @return the object name used for registration.
+     */
+	ObjectName registerEventInstance(
+			QManManagedEvent eventInstance,
 			UUID brokerId, 
 			String packageName, 
 			String eventClassName) 
@@ -91,6 +98,7 @@ public class JmxService
                 throw new RuntimeException(exception);
             } 
         }
+        return name;
 }
     
     /**
@@ -102,9 +110,10 @@ public class JmxService
      * @param packageName the name of the package containing this instance.
      * @param className the name of the owner class of this instance.
      * @param objectId the object instance identifier.
+     *  @return the object name used for registration.
      */
-    void registerObjectInstance(
-            QpidManagedObject instance,
+    ObjectName registerObjectInstance(
+            QManManagedObject instance,
             UUID brokerId,
             String packageName, 
             String className, 
@@ -129,6 +138,7 @@ public class JmxService
                     throw new RuntimeException(exception);
                 } 
             }
+            return name;
     }
 
     /**
@@ -138,8 +148,9 @@ public class JmxService
      * @param packageName the name of the package containing this instance.
      * @param className the name of the owner class of this instance.
      * @param objectId the object instance identifier.
+     * @return obejctName the obejct name used for deregistration.
      */
-    void unregisterObjectInstance(
+    ObjectName unregisterObjectInstance(
             UUID brokerId,
             String packageName, 
             String className, 
@@ -164,6 +175,7 @@ public class JmxService
                     LOGGER.error(exception,Messages.QMAN_100013_MBEAN_REGISTRATION_FAILURE,name);
                 } 
             }
+            return name;
     }    
     
     /**
@@ -182,7 +194,8 @@ public class JmxService
 		}
     }
     
-    Set<ObjectName> getEventMBeans()
+    @SuppressWarnings("unchecked")
+	Set<ObjectName> getEventMBeans()
     {
     	return _mxServer.queryNames(createEventSearchName(),null);
     }
@@ -190,7 +203,8 @@ public class JmxService
     /**
      * Removes (unregister) all object instances from MBean Server.
      */
-    void unregisterObjectInstances()
+    @SuppressWarnings("unchecked")
+	void unregisterObjectInstances()
     {
     	Set<ObjectName> names = _mxServer.queryNames(createObjectInstanceSearchName(),null);
     	for (ObjectName name : names) 
@@ -266,6 +280,26 @@ public class JmxService
     }        
     
     /**
+     * Creates an object name that will be used for searching all registered events.
+     * 
+     * @return the object name that will be used for searching all registered events.
+     */
+    ObjectName createClassDefinitionSearchName() 
+    {
+        String asString = new StringBuilder()
+            .append(Names.DOMAIN_NAME)
+            .append(":Category=Schema,*")
+            .toString();
+        try
+        {
+            return new ObjectName(asString);
+        } catch (MalformedObjectNameException exception)
+        {
+            throw new RuntimeException(exception);
+        } 
+    }           
+    
+    /**
      * Creates an object name that will be used for searching all registered object instances.
      * 
      * @return the object name that will be used for searching all registered object instances.
@@ -284,7 +318,7 @@ public class JmxService
         } catch (MalformedObjectNameException exception)
         {
             throw new RuntimeException(exception);
-        } 
+        }         
     }
     
     /**
@@ -344,5 +378,55 @@ public class JmxService
         {
             throw new RuntimeException(exception);
         } 
-    }        
+    }
+
+    ObjectName createEntityDefinitionName(String packageName, String className, String type) 
+    {
+		String asString = new StringBuilder()
+		.append(Names.DOMAIN_NAME)
+		.append(':')
+		.append("Category=Schema,Type=")
+		.append(type)
+		.append(",package=")
+		.append(packageName)
+		.append(",name=")
+		.append(className)
+		.toString();
+        try
+        {
+            return new ObjectName(asString);
+        } catch (MalformedObjectNameException exception)
+        {
+            throw new RuntimeException(exception);
+        } 		
+    }
+    
+	public void registerEntityDefinition(ObjectName name, QpidEntity entity,String packageName, String className)
+	{
+		try 
+		{
+			if (!_mxServer.isRegistered(name))
+				_mxServer.registerMBean(entity, name);
+				_mxServer.addNotificationListener(name, createQManName(), null, null);
+		} catch(Exception exception)  
+		{
+			throw new RuntimeException(exception);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public void unregisterClassDefinitions()
+	{
+		Set<ObjectName> names = _mxServer.queryNames(createClassDefinitionSearchName(),null);
+    	for (ObjectName name : names) 
+    	{
+    		try 
+    		{
+    			_mxServer.unregisterMBean(name);
+    		} catch(Exception ignore)
+    		{
+    		}
+		}
+		
+	}        
 }

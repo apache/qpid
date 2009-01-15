@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<Definitions xmlns="http://docs.oasis-open.org/wsrf/rmd-1">
+	<MetadataDescriptor
+		xmlns:wsrf-sg="http://docs.oasis-open.org/wsrf/sg-2"
+		xmlns:wsrf-rp="http://docs.oasis-open.org/wsrf/rp-2"
+		xmlns:qman="http://amqp.apache.org/qpid/management/qman"
+		name="ServiceGroupMetadata" interface="wsrf-sg:ServiceGroupRP"
+		wsdlLocation="http://amqp.apache.org/qpid/management/qman QManAdapter.wsdl">
+		<Property name="wsrf-sg:MembershipContentRule" modifiability="read-only" mutability="mutable">
+			<StaticValues>
+				<wsrf-sg:MembershipContentRule MemberInterface="qman:QManWsResourcePortType"/>
+			</StaticValues>
+		</Property>
+		<Property name="wsrf-sg:Entry" modifiability="read-only" mutability="mutable" />
+		<Property name="wsrf-rp:QueryExpressionDialect" modifiability="read-only" mutability="constant" />
+	</MetadataDescriptor>
+</Definitions>

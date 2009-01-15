@@ -1,24 +1,3 @@
-/*
-*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
-
 package org.apache.qpid.management.domain.model;
 
 import java.util.HashMap;
@@ -28,26 +7,26 @@ import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.DynamicMBean;
 import javax.management.MBeanInfo;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.ObjectName;
 import javax.management.RuntimeOperationsException;
 
 import org.apache.qpid.management.Messages;
+import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.management.domain.services.QpidService;
+import org.apache.qpid.management.jmx.EntityLifecycleNotification;
 import org.apache.qpid.transport.util.Logger;
 
 /**
  * Layer supertype for QMan entities.
- * 
- * @author Andrea Gazzarini
  */
-public abstract class QpidEntity 
+public abstract class QpidEntity extends NotificationBroadcasterSupport
 {  
 	/**
 	 * Layer supertype for QMan managed bean entities. 
-	 * 
-	 * @author Andrea Gazzarini
 	 */
-	abstract class QpidManagedEntity implements DynamicMBean
+	abstract class QManManagedEntity implements DynamicMBean
 	{
         // After mbean is registered with the MBean server this collection holds the mbean attribute values.
         Map<String,Object> _attributes = new HashMap<String, Object>();
@@ -114,8 +93,11 @@ public abstract class QpidEntity
     
     final QpidPackage _parent;
     MBeanInfo _metadata;
-    
     final QpidService _service;
+
+    protected ObjectName _objectName;
+    
+    private final String _type;
     
     /**
      * Builds a new class with the given name and package as parent.
@@ -124,11 +106,12 @@ public abstract class QpidEntity
      * @param hash the class schema hash.
      * @param parentPackage the parent of this class.
      */
-    QpidEntity(String className, Binary hash, QpidPackage parentPackage)
+    QpidEntity(String className, Binary hash, QpidPackage parentPackage,String type)
     {
         this._name = className;
         this._parent = parentPackage;
         this._hash = hash;
+        this._type = type;
         this._service = new QpidService(_parent.getOwnerId());
         
         _logger.debug(
@@ -138,6 +121,16 @@ public abstract class QpidEntity
                 _name);        
     }
     
+    public String getName()
+    {
+    	return _name;
+    }
+    
+    public String getPackageName()
+    {
+    	return _parent.getName();
+    }
+    
     /**
      * Internal method used to send a schema request for this entity.
      * 
@@ -145,7 +138,11 @@ public abstract class QpidEntity
      */
     void requestSchema() throws Exception
     {     
-        try
+
+       	_objectName = JMX_SERVICE.createEntityDefinitionName(_parent.getName(), _name,_type);
+     	 JMX_SERVICE.registerEntityDefinition(_objectName,this,_parent.getName(),_name);
+
+    	try
         {
             _service.connect();
            _service.requestSchema(_parent.getName(), _name, _hash);
@@ -154,5 +151,13 @@ public abstract class QpidEntity
         {
             _service.close();
         }                
+        
+      	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
+          		 EntityLifecycleNotification.SCHEMA_REQUESTED,
+          		 _parent.getName(), 
+          		 _name, 
+          		 Names.CLASS,
+          		 _objectName);
+           sendNotification(notification);
     }    
 }

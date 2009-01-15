@@ -36,7 +36,8 @@ public class Map extends Type
         return decoder.readMap();
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void encode (Object value, Encoder encoder)
     {
         encoder.writeMap((java.util.Map<String, Object>)value);

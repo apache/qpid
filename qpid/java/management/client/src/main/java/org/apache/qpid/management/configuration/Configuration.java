@@ -43,8 +43,6 @@ import org.apache.qpid.transport.util.Logger;
 /**
  * Qpid Management bridge configuration.
  * Basically iy is a singleton that is holding all the configurtion data loaded at startup.
- * 
- * @author Andrea Gazzarini
  */
 public final class Configuration
 {    
@@ -57,8 +55,8 @@ public final class Configuration
     
     Map<UUID,BrokerConnectionData> _brokerConnectionInfos = new HashMap<UUID, BrokerConnectionData>();
     
-    Map<Character, String> _managementQueueHandlers = new HashMap<Character, String>();
-    Map<Character, String> _methodReplyQueueHandlers = new HashMap<Character, String>();
+    Map<Character, IMessageHandler> _managementQueueHandlers = new HashMap<Character, IMessageHandler>();
+    Map<Character, IMessageHandler> _methodReplyQueueHandlers = new HashMap<Character, IMessageHandler>();
     
     private String _managementQueueName;
     private String _methodReplyQueueName;
@@ -75,6 +73,11 @@ public final class Configuration
         createHeaderForCommandMessages();
     }
 
+    void clean()
+    {
+    	INSTANCE = new Configuration();
+    }
+    
     /**
      * Returns the singleton instance.
      * 
@@ -193,21 +196,7 @@ public final class Configuration
      */
     public Map<Character, IMessageHandler> getManagementQueueHandlers() 
     {
-        Map<Character, IMessageHandler> result = new HashMap<Character, IMessageHandler>();    
-        
-        for (Entry<Character, String> entry : _managementQueueHandlers.entrySet())
-        {
-            Character opcode = entry.getKey();
-            String className = entry.getValue();
-            try 
-            {
-                result.put(opcode, (IMessageHandler)Class.forName(className).newInstance());
-            } catch(Exception exception) 
-            {
-                LOGGER.error(exception,Messages.QMAN_100008_MANAGEMENT_MESSAGE_HANDLER_NOT_AVAILABLE,opcode);
-            }
-        }
-        return result;
+    	return _managementQueueHandlers;
     }
 
     /**
@@ -219,21 +208,7 @@ public final class Configuration
      */
     public Map<Character, IMessageHandler> getMethodReplyQueueHandlers() 
     {
-        Map<Character, IMessageHandler> result = new HashMap<Character, IMessageHandler>();
-       
-        for (Entry<Character, String> entry : _methodReplyQueueHandlers.entrySet())
-        {
-            Character opcode = entry.getKey();
-            String className = entry.getValue();
-            try 
-            {
-                result.put(opcode, (IMessageHandler)Class.forName(className).newInstance());
-            } catch(Exception exception) 
-            {
-                LOGGER.error(exception,Messages.QMAN_100009_METHOD_REPLY_MESSAGE_HANDLER_NOT_AVAILABLE,opcode);
-            }
-        }
-        return result;
+    	return _methodReplyQueueHandlers;
     }
 
     /**
@@ -304,10 +279,10 @@ public final class Configuration
     void addManagementMessageHandlerMapping (MessageHandlerMapping mapping)
     {
         Character opcode = mapping.getOpcode();
-        String handlerClass = mapping.getMessageHandlerClass();
-        _managementQueueHandlers.put(opcode, handlerClass);
+        IMessageHandler handler = mapping.getMessageHandler();
+        _managementQueueHandlers.put(opcode, handler);
         
-        LOGGER.info(Messages.QMAN_000007_MANAGEMENT_HANDLER_MAPPING_CONFIGURED, opcode,handlerClass); 
+        LOGGER.info(Messages.QMAN_000007_MANAGEMENT_HANDLER_MAPPING_CONFIGURED, opcode,handler.getClass().getName()); 
     }
 
     /**
@@ -320,10 +295,10 @@ public final class Configuration
     void addMethodReplyMessageHandlerMapping (MessageHandlerMapping mapping)
     {
         Character opcode = mapping.getOpcode();
-        String handlerClass = mapping.getMessageHandlerClass();
-        _methodReplyQueueHandlers.put(opcode, handlerClass);
+        IMessageHandler handler = mapping.getMessageHandler();
+        _methodReplyQueueHandlers.put(opcode, handler);
         
-        LOGGER.info(Messages.QMAN_000008_METHOD_REPLY_HANDLER_MAPPING_CONFIGURED, opcode,handlerClass);     
+        LOGGER.info(Messages.QMAN_000008_METHOD_REPLY_HANDLER_MAPPING_CONFIGURED, opcode,handler.getClass().getName());     
     }
     
     /**

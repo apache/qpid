@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -35,26 +36,25 @@ import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
+import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
 import org.apache.qpid.management.Messages;
+import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.model.type.Binary;
+import org.apache.qpid.management.jmx.EntityLifecycleNotification;
 import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
  * Qpid event definition.
- * 
- * @author Andrea Gazzarini
  */
-class QpidEvent extends QpidEntity
+class QpidEvent extends QpidEntity implements QpidEventMBean
 {        
     
     /**
      * State interface for this event definition.
      * Each state is responsible to handle the injection of the data and / or schema. 
-     * 
-     * @author Andrea Gazzarini
      */
     interface State 
     {    
@@ -99,9 +99,10 @@ class QpidEvent extends QpidEntity
             {
                 requestSchema();  
                 _state = _schemaRequestedButNotYetInjected;
-            } catch (Exception e)
+            } catch (Exception exception)
             {
                 _logger.error(
+                		exception,
                         Messages.QMAN_100015_UNABLE_TO_SEND_SCHEMA_REQUEST, 
                         _parent.getName(),
                         _name);
@@ -116,7 +117,7 @@ class QpidEvent extends QpidEntity
          */
         public  void  setSchema (List<Map<String, Object>> agumentDefinitions) throws UnableToBuildFeatureException
         {
-            throw new IllegalStateException("When a schema arrives it's not possible for this class to be in this state.");
+            throw new IllegalStateException("When a schema arrives it's not possible for this event to be in this state.");
         }
     };
     
@@ -155,12 +156,21 @@ class QpidEvent extends QpidEntity
         	_metadata = new MBeanInfo(_name,_name,attributesMetadata,null,null,null);
             
             // Converting stored object instances into JMX MBean and removing raw instance data.
-            for (QpidManagedEvent instance : _eventInstances)
+            for (QManManagedEvent instance : _eventInstances)
             {                    
             	updateEventInstanceWithData(instance);
-                JMX_SERVICE.registerEventInstance(instance,_parent.getOwnerId(),_parent.getName(),_name);
+                registerEventInstance(instance,_parent.getOwnerId(),_parent.getName(),_name);
             }
             _state = _schemaInjected;
+            
+            EntityLifecycleNotification notification = new EntityLifecycleNotification(
+              		 EntityLifecycleNotification.SCHEMA_INJECTED,
+              		 _parent.getName(), 
+              		 _name, 
+              		 Names.EVENT,
+              		 _objectName);
+               
+               sendNotification(notification);
         }
     };
     
@@ -177,9 +187,9 @@ class QpidEvent extends QpidEntity
          */
         public void addNewEventData (byte[] rawData,long currentTimestamp, int severity)
         {
-            QpidManagedEvent instance = createEventInstance(rawData,currentTimestamp, severity);            
+            QManManagedEvent instance = createEventInstance(rawData,currentTimestamp, severity);            
             updateEventInstanceWithData(instance);
-            JMX_SERVICE.registerEventInstance(instance,_parent.getOwnerId(),_parent.getName(),_name);
+            registerEventInstance(instance,_parent.getOwnerId(),_parent.getName(),_name);
         }
         
         /**
@@ -197,7 +207,7 @@ class QpidEvent extends QpidEntity
      * 
      * @author Andrea Gazzarini
      */
-    class QpidManagedEvent extends QpidManagedEntity
+    class QManManagedEvent extends QManManagedEntity
     {        
 
 
@@ -211,7 +221,7 @@ class QpidEvent extends QpidEntity
          * 
          * @param objectId the object identifier.
          */
-        private QpidManagedEvent(byte [] data, long timestamp, int severity)
+        private QManManagedEvent(byte [] data, long timestamp, int severity)
         {
         	this._rawEventData = data;
         	this._timestamp = timestamp;
@@ -284,7 +294,7 @@ class QpidEvent extends QpidEntity
     private List<QpidProperty> _schemaOrderedArguments = new ArrayList<QpidProperty>();
     
     Map<String, QpidProperty> _arguments  = new HashMap<String, QpidProperty>();     
-    List<QpidManagedEvent> _eventInstances = new LinkedList<QpidManagedEvent>();
+    List<QManManagedEvent> _eventInstances = new LinkedList<QManManagedEvent>();
     State _state = _schemaNotRequested;;
         
     /**
@@ -296,7 +306,7 @@ class QpidEvent extends QpidEntity
      */
     QpidEvent(String eventClassName, Binary hash, QpidPackage parentPackage)
     {
-    	super(eventClassName,hash,parentPackage);
+    	super(eventClassName,hash,parentPackage,Names.EVENT);
     }
     
     /**
@@ -393,9 +403,9 @@ class QpidEvent extends QpidEntity
      * @param registration a flag indicating whenever the (new ) instance must be registered with MBean server.
      * @return the object instance associated to the given identifier.
      */
-    QpidManagedEvent createEventInstance(byte [] data, long timestamp, int severity) 
+    QManManagedEvent createEventInstance(byte [] data, long timestamp, int severity) 
     {
-        QpidManagedEvent eventInstance = new QpidManagedEvent(data, timestamp, severity);
+        QManManagedEvent eventInstance = new QManManagedEvent(data, timestamp, severity);
         _eventInstances.add(eventInstance);
         return eventInstance;
     }
@@ -406,7 +416,7 @@ class QpidEvent extends QpidEntity
      * @param instance the managed object instance.
      * @param rawData the incoming configuration data which contains new values for instance properties.
      */
-    void updateEventInstanceWithData(QpidManagedEvent instance)
+    void updateEventInstanceWithData(QManManagedEvent instance)
     {
         BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(instance._rawEventData));
@@ -441,6 +451,7 @@ class QpidEvent extends QpidEntity
     {
     	_eventInstances.clear();
     	JMX_SERVICE.unregisterEvents();
+    	JMX_SERVICE.unregisterClassDefinitions();   
         _service.close();
     }
 
@@ -452,5 +463,31 @@ class QpidEvent extends QpidEntity
 	boolean hasNoInstances() 
 	{
 		return _eventInstances.isEmpty();
+	}
+	
+	/**
+	 * Compose method used for registering an mbean (event) instance.
+	 * 
+	 * @param instance the mbean event.
+	 * @param brokerId the broker identifier.
+	 * @param packageName the package name.
+	 * @param eventClassName the event class name.
+	 */
+	private void registerEventInstance(
+			QManManagedEvent instance,
+			UUID brokerId, 
+			String packageName, 
+			String eventClassName) 
+	{
+		ObjectName objectName = JMX_SERVICE.registerEventInstance(instance,brokerId,packageName,eventClassName);
+		
+   	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
+			 EntityLifecycleNotification.INSTANCE_ADDED,
+			 packageName,
+			 eventClassName,
+			 Names.EVENT,
+			 objectName);
+	 
+	 sendNotification(notification);
 	}
 }
