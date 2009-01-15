@@ -43,7 +43,7 @@ public class TimeToLiveTest extends QpidTestCase
 
     protected final String QUEUE = "TimeToLiveQueue";
 
-    private final long TIME_TO_LIVE = 1000L;
+    private final long TIME_TO_LIVE = 100L;
 
     private static final int MSG_COUNT = 50;
     private static final long SERVER_TTL_TIMEOUT = 60000L;
