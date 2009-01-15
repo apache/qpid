@@ -144,6 +144,7 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayHardLimit*1024),
         *this),
     queueCleaner(queues, timer),
+    queueEvents(poller),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (conf.enableMgmt) {

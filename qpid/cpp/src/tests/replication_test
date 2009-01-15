@@ -1,0 +1,98 @@
+#!/bin/sh
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run the federation tests.
+MY_DIR=`dirname \`which $0\``
+PYTHON_DIR=${MY_DIR}/../../../python
+
+trap stop_brokers INT TERM QUIT
+
+stop_brokers() {
+    if [[ $BROKER_A ]] ; then
+        ../qpidd -q --port $BROKER_A
+        unset BROKER_A
+    fi      
+    if [[ $BROKER_B ]] ; then
+        ../qpidd -q --port $BROKER_B
+        unset BROKER_B
+    fi
+}
+
+if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e ../.libs/replication_exchange.so ;  then
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true > qpidd.port
+    BROKER_A=`cat qpidd.port`
+
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so > qpidd.port
+    BROKER_B=`cat qpidd.port`
+
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
+    $PYTHON_DIR/commands/qpid-route queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
+
+    #create test queues
+
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-a --generate-queue-events 2
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-b --generate-queue-events 2
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-c --generate-queue-events 1
+
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-a
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-b
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-c
+
+    #publish and consume from test queus on broker A:
+    rm -f queue-*.repl
+    for i in `seq 1 10`; do echo Message $i for A >> queue-a-input.repl; done
+    for i in `seq 1 20`; do echo Message $i for B >> queue-b-input.repl; done
+    for i in `seq 1 15`; do echo Message $i for C >> queue-c-input.repl; done
+
+    ./sender --port $BROKER_A --routing-key queue-a --send-eos 1 < queue-a-input.repl
+    ./sender --port $BROKER_A --routing-key queue-b --send-eos 1 < queue-b-input.repl
+    ./sender --port $BROKER_A --routing-key queue-c --send-eos 1 < queue-c-input.repl
+
+    ./receiver --port $BROKER_A --queue queue-a --messages 5 > /dev/null 
+    ./receiver --port $BROKER_A --queue queue-b --messages 10 > /dev/null
+    ./receiver --port $BROKER_A --queue queue-c --messages 10 > /dev/null
+    
+    #shutdown broker A then check that broker Bs versions of the queues are as expected
+    ../qpidd -q --port $BROKER_A
+    unset BROKER_A
+
+    #validate replicated queues:
+    ./receiver --port $BROKER_B --queue queue-a > queue-a-backup.repl
+    ./receiver --port $BROKER_B --queue queue-b > queue-b-backup.repl
+    ./receiver --port $BROKER_B --queue queue-c > queue-c-backup.repl
+    tail -5 queue-a-input.repl > queue-a-expected.repl
+    tail -10 queue-b-input.repl > queue-b-expected.repl
+    diff queue-a-backup.repl queue-a-expected.repl || FAIL=1
+    diff queue-b-backup.repl queue-b-expected.repl || FAIL=1
+    diff queue-c-backup.repl queue-c-input.repl || FAIL=1
+
+    if [[ $FAIL ]]; then
+        echo replication test failed: expectations not met!
+    else 
+        echo queue state replicated as expected
+        rm queue-*.repl
+    fi
+
+    stop_brokers
+else
+    echo "Skipping replication test, plugins not built or python utils not located"
+fi
+

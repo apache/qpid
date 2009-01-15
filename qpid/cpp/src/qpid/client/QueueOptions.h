@@ -27,7 +27,7 @@ namespace qpid {
 namespace client {
 
 enum QueueSizePolicy {NONE, REJECT, FLOW_TO_DISK, RING, RING_STRICT};
-enum QueueOrderingPolicy {FIFO, LVQ, LVQ_NO_BROWSE};	
+enum QueueOrderingPolicy {FIFO, LVQ, LVQ_NO_BROWSE};
 
 /**
  * A help class to set options on the Queue. Create a configured args while
@@ -83,6 +83,13 @@ class QueueOptions: public framing::FieldTable
      * Use default odering policy
      */ 
     void clearOrdering();
+
+    /**
+     * Turns on event generation for this queue (either enqueue only
+     * or for enqueue and dequeue events); the events can then be
+     * processed by a regsitered broker plugin.
+     */
+    void enableQueueEvents(bool enqueueOnly);
 	
     static const std::string strMaxCountKey;
     static const std::string strMaxSizeKey;
@@ -95,6 +102,7 @@ class QueueOptions: public framing::FieldTable
     static const std::string strPersistLastNode;
     static const std::string strLVQMatchProperty;
     static const std::string strLastValueQueueNoBrowse;
+    static const std::string strQueueEventMode;
 };
 
 }
