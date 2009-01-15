@@ -42,6 +42,7 @@ if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e 
 
     ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so > qpidd.port
     BROKER_B=`cat qpidd.port`
+    export PYTHONPATH=$PYTHON_DIR
 
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
     $PYTHON_DIR/commands/qpid-route queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
