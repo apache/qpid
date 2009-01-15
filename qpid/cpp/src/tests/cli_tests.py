@@ -59,6 +59,45 @@ def cli_dir():
 
 class CliTests(TestBase010):
 
+    def makeQueue(self, qname, arguments):
+        ret = os.system(self.command(" add queue " + qname + " " + arguments))
+        self.assertEqual(ret, 0)
+        queues = self.qmf.getObjects(_class="queue")
+        for queue in queues:
+            if queue.name == qname:
+                return queue
+        assert False
+
+    def test_queue_params(self):
+        self.startQmf()
+        queue1 = self.makeQueue("test_queue_params1", "--limit-policy none")
+        queue2 = self.makeQueue("test_queue_params2", "--limit-policy reject")
+        queue3 = self.makeQueue("test_queue_params3", "--limit-policy flow-to-disk")
+        queue4 = self.makeQueue("test_queue_params4", "--limit-policy ring")
+        queue5 = self.makeQueue("test_queue_params5", "--limit-policy ring-strict")
+
+        LIMIT = "qpid.policy_type"
+        assert LIMIT not in queue1.arguments
+        self.assertEqual(queue2.arguments[LIMIT], "reject")
+        self.assertEqual(queue3.arguments[LIMIT], "flow_to_disk")
+        self.assertEqual(queue4.arguments[LIMIT], "ring")
+        self.assertEqual(queue5.arguments[LIMIT], "ring_strict")
+
+        queue6 = self.makeQueue("test_queue_params6", "--order fifo")
+        queue7 = self.makeQueue("test_queue_params7", "--order lvq")
+        queue8 = self.makeQueue("test_queue_params8", "--order lvq-no-browse")
+
+        LVQ = "qpid.last_value_queue"
+        LVQNB = "qpid.last_value_queue_no_browse"
+
+        assert LVQ not in queue6.arguments
+        assert LVQ     in queue7.arguments
+        assert LVQ not in queue8.arguments
+
+        assert LVQNB not in queue6.arguments
+        assert LVQNB not in queue7.arguments
+        assert LVQNB     in queue8.arguments
+
     def test_qpid_config(self):
         self.startQmf();
         qmf = self.qmf
