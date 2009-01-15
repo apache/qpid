@@ -50,6 +50,7 @@ namespace qpid {
     namespace broker {
         class Broker;
         class MessageStore;
+        class QueueEvents;
         class QueueRegistry;
         class TransactionContext;
         class Exchange;
@@ -96,6 +97,8 @@ namespace qpid {
             framing::SequenceNumber sequence;
             qmf::org::apache::qpid::broker::Queue* mgmtObject;
             RateTracker dequeueTracker;
+            int eventMode;
+            QueueEvents* eventMgr;
 
             void push(boost::intrusive_ptr<Message>& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -166,6 +169,7 @@ namespace qpid {
             void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
 
             bool acquire(const QueuedMessage& msg);
+            bool acquireMessageAt(const qpid::framing::SequenceNumber& position, QueuedMessage& message);
 
             /**
              * Delivers a message to the queue. Will record it as
@@ -279,6 +283,8 @@ namespace qpid {
              * Used by cluster to replicate queues.
              */
             void setPosition(framing::SequenceNumber pos);
+            int getEventMode();
+            void setQueueEventManager(QueueEvents&);
         };
     }
 }

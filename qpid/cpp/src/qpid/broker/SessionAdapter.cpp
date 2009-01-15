@@ -362,6 +362,10 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             getBroker().getExchanges().getDefault()->bind(queue, name, 0);
             queue->bound(getBroker().getExchanges().getDefault()->getName(), name, arguments);
 
+            //if event generation is turned on, pass in a pointer to
+            //the QueueEvents instance to use
+            if (queue->getEventMode()) queue->setQueueEventManager(getBroker().getQueueEvents());
+
             //handle automatic cleanup:
             if (exclusive) {
                 exclusiveQueues.push_back(queue);

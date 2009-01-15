@@ -66,8 +66,14 @@ struct  BrokerFixture : private boost::noncopyable {
         brokerThread = qpid::sys::Thread(*broker);
     };
 
-    ~BrokerFixture() {
+    void shutdownBroker()
+    {
         broker->shutdown();
+        broker = BrokerPtr();
+    }
+
+    ~BrokerFixture() {
+        if (broker) broker->shutdown();
         brokerThread.join();
     }
 

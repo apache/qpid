@@ -37,6 +37,7 @@ _policyType        = None
 _lvq               = False
 _msgSequence       = False
 _ive               = False
+_eventGeneration   = None
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
@@ -47,6 +48,7 @@ CLUSTER_DURABLE = "qpid.persist_last_node"
 LVQ = "qpid.last_value_queue"
 MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
+QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
 
 def Usage ():
     print "Usage:  qpid-config [OPTIONS]"
@@ -74,6 +76,10 @@ def Usage ():
     print "    --max-queue-count N  Maximum in-memory queue size as a number of messages"
     print "    --policy-type TYPE   Action taken when queue limit is reached (reject, flow_to_disk, ring, ring_strict)"
     print "    --last-value-queue   Enable LVQ behavior on the queue"
+    print "    --generate-queue-events N"
+    print "                         If set to 1, every enqueue will generate an event that can be processed by"
+    print "                         registered listeners (e.g. for replication). If set to 2, events will be"
+    print "                         generated for enqueues and dequeues"
     print
     print "Add Exchange Options:"
     print "    --durable    Exchange is durable"
@@ -193,6 +199,7 @@ class BrokerManager:
                 if MAX_QUEUE_COUNT in args: print "--max-queue-count=%d" % args[MAX_QUEUE_COUNT],
                 if POLICY_TYPE in args: print "--policy-type=%s" % args[POLICY_TYPE],
                 if LVQ in args and args[LVQ] == 1: print "--last-value-queue",
+                if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%d" % args[GENERATE_QUEUE_EVENTS],
                 print
 
     def QueueListRecurse (self, filter):
@@ -249,6 +256,8 @@ class BrokerManager:
             declArgs[CLUSTER_DURABLE] = 1
         if _lvq:
             declArgs[LVQ] = 1
+        if _eventGeneration:
+            declArgs[QUEUE_EVENT_GENERATION]  = _eventGeneration
 
         self.broker.getAmqpSession().queue_declare (queue=qname, durable=_durable, arguments=declArgs)
 
@@ -304,7 +313,7 @@ def YN (bool):
 try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "policy-type=",
-                "last-value-queue", "sequence", "ive")
+                "last-value-queue", "sequence", "ive", "generate-queue-events=")
     (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -340,6 +349,8 @@ for opt in optlist:
         _msgSequence = True
     if opt[0] == "--ive":
         _ive = True
+    if opt[0] == "--generate-queue-events":
+        _eventGeneration = int (opt[1])
 
 nargs = len (cargs)
 bm    = BrokerManager ()

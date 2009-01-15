@@ -88,7 +88,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ForkedBroker.h \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
-	ConsoleTest.cpp
+	ConsoleTest.cpp \
+	QueueEvents.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
@@ -198,7 +199,7 @@ DispatcherTest_LDADD=$(lib_common)
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -219,6 +220,7 @@ EXTRA_DIST +=								\
   MessageUtils.h							\
   TestMessageStore.h							\
   TxMocks.h								\
+  replication_test							\
   start_cluster stop_cluster restart_cluster
 
 check_LTLIBRARIES += libdlclose_noop.la
