@@ -36,8 +36,6 @@ import junit.framework.TestCase;
 
 /**
  * Test case for Configuration singleton.
- * 
- * @author Andrea Gazzarini
  */
 public class ConfigurationTest extends TestCase
 {
@@ -74,11 +72,11 @@ public class ConfigurationTest extends TestCase
     {
         try
         {
-            Configuration.getInstance().getType(Integer.MIN_VALUE);
+            Configuration.getInstance().getType(TestConstants.VALID_CODE*10001);
             fail("If an unknwon code is supplied an exception must be thrown.");
         } catch (UnknownTypeCodeException expected)
         {
-            assertEquals(Integer.MIN_VALUE,expected.getCode());
+            assertEquals(TestConstants.VALID_CODE*10001,expected.getCode());
         }        
     }
     
@@ -107,11 +105,11 @@ public class ConfigurationTest extends TestCase
     {
         try
         {
-            Configuration.getInstance().getAccessMode(Integer.MIN_VALUE);
+            Configuration.getInstance().getAccessMode(TestConstants.VALID_CODE*1528);
             fail("If an unknwon code is supplied an exception must be thrown.");
         } catch (UnknownAccessCodeException expected)
         {
-            assertEquals(Integer.MIN_VALUE,expected.getCode());
+            assertEquals(TestConstants.VALID_CODE*1528,expected.getCode());
         }        
     }    
     
@@ -178,29 +176,21 @@ public class ConfigurationTest extends TestCase
      * <br>postcondition : 2 management handlers are returned.
      */
     public void testGetManagementQueueHandlersOk() 
-    {
-        String i = "i";
-        String c = "c";
+    {        
+        IMessageHandler instrMessageHandler = new InstrumentationMessageHandler();
+        IMessageHandler configMessageHandler = new ConfigurationMessageHandler();
         
-        String instrMessageHandlerClassName = InstrumentationMessageHandler.class.getName();
-        String configMessageHandlerClassName = ConfigurationMessageHandler.class.getName();
-        
-        MessageHandlerMapping instrMapping = new MessageHandlerMapping();
-        MessageHandlerMapping configMapping = new MessageHandlerMapping();
-        
-        instrMapping.setOpcode(i);
-        instrMapping.setMessageHandlerClass(instrMessageHandlerClassName);
-
-        configMapping.setOpcode(c);
-        configMapping.setMessageHandlerClass(configMessageHandlerClassName);
-        
+        MessageHandlerMapping instrMapping = new MessageHandlerMapping('i',instrMessageHandler);
+        MessageHandlerMapping configMapping = new MessageHandlerMapping('c',configMessageHandler);
+                
         Configuration.getInstance().addManagementMessageHandlerMapping(instrMapping);
         Configuration.getInstance().addManagementMessageHandlerMapping(configMapping);
         
         Map<Character, IMessageHandler> handlerMappings = Configuration.getInstance().getManagementQueueHandlers();
         
-        assertEquals(instrMessageHandlerClassName,handlerMappings.get(instrMapping.getOpcode()).getClass().getName());
-        assertEquals(configMessageHandlerClassName,handlerMappings.get(configMapping.getOpcode()).getClass().getName());        
+        assertEquals(2,handlerMappings.size());
+        assertEquals(instrMessageHandler,handlerMappings.get(instrMapping.getOpcode()));
+        assertEquals(configMessageHandler,handlerMappings.get(configMapping.getOpcode()));        
     }
     
     /**
@@ -211,19 +201,14 @@ public class ConfigurationTest extends TestCase
      */
     public void testGetMethodReplyQueueHandlersOk() 
     {
-        String s = "s";
+        IMessageHandler schemaMessageHandler = new SchemaResponseMessageHandler();
         
-        String schemaMessageHandlerClassName = SchemaResponseMessageHandler.class.getName();
+        MessageHandlerMapping schemaMapping = new MessageHandlerMapping('s',schemaMessageHandler);
         
-        MessageHandlerMapping schemaMapping = new MessageHandlerMapping();
-        
-        schemaMapping.setOpcode(s);
-        schemaMapping.setMessageHandlerClass(schemaMessageHandlerClassName);
-
         Configuration.getInstance().addMethodReplyMessageHandlerMapping(schemaMapping);
         
         Map<Character, IMessageHandler> handlerMappings = Configuration.getInstance().getMethodReplyQueueHandlers();
         
-        assertEquals(schemaMessageHandlerClassName,handlerMappings.get(schemaMapping.getOpcode()).getClass().getName());
+        assertEquals(schemaMessageHandler,handlerMappings.get(schemaMapping.getOpcode()));
     }    
 }

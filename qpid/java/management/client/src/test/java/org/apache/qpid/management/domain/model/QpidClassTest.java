@@ -37,7 +37,7 @@ import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.configuration.ConfigurationException;
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
-import org.apache.qpid.management.domain.model.QpidClass.QpidManagedObject;
+import org.apache.qpid.management.domain.model.QpidClass.QManManagedObject;
 
 /**
  * Test case for Qpid Class.
@@ -71,7 +71,7 @@ public class QpidClassTest extends TestCase
                 "Nobody set instance #"+TestConstants.OBJECT_ID+" into this class so why is it there?", 
         		_class._objectInstances.containsKey(TestConstants.OBJECT_ID));
 
-        QpidManagedObject instance = _class.getObjectInstance(TestConstants.OBJECT_ID, false);
+        QManManagedObject instance = _class.getObjectInstance(TestConstants.OBJECT_ID, false);
         
         assertTrue (
                 "Now the instance #"+TestConstants.OBJECT_ID+" should be there...",
@@ -90,7 +90,7 @@ public class QpidClassTest extends TestCase
     public void testAddInstrumentationAndConfigurationDataBeforeSchemaInstallation() 
     {
         _class._state = _class._schemaRequestedButNotYetInjected;
-        QpidManagedObject objectInstance = _class.getObjectInstance(TestConstants.OBJECT_ID,false);
+        QManManagedObject objectInstance = _class.getObjectInstance(TestConstants.OBJECT_ID,false);
         
         assertTrue(
                 "This object instance is a new one so how is it possible that it has already instrumentation data? ",
@@ -180,7 +180,7 @@ public class QpidClassTest extends TestCase
     		}
     		
     		 @Override
-    		void updateInstanceWithConfigurationData(QpidManagedObject instance, byte[] rawData) 
+    		void updateInstanceWithConfigurationData(QManManagedObject instance, byte[] rawData) 
     		{
     			// DO NOTHING Given raw data is not valid so it cannot be converted.
 			}    		

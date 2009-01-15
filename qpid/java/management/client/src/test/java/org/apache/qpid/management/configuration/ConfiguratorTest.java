@@ -25,7 +25,6 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;

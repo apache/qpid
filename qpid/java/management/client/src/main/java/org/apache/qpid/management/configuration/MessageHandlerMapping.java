@@ -20,32 +20,26 @@
  */
 package org.apache.qpid.management.configuration;
 
+import org.apache.qpid.management.domain.handler.base.IMessageHandler;
+
 /**
  * Message Handler mapping used for associating an opcode with a message handler.
- * 
- * @author Andrea Gazzarini
  */
 class MessageHandlerMapping
 {
-    private Character _opcode;
-    private String _handlerClass;
-    
-    /**
-     * Builds an empty message handler mapping.
-     */
-    MessageHandlerMapping()
-    {
-    }
-    
+    private final Character _opcode;
+    private final IMessageHandler _handler;
+        
     /**
      * Builds a new mapping with the given opcode and handler class.
      * 
      * @param opcode the opcode.
      * @param handlerClass the handler class.
      */
-    MessageHandlerMapping(Character opcode, String handlerClass) {
+    MessageHandlerMapping(Character opcode, IMessageHandler handler) 
+    {
         this._opcode = opcode;
-        this._handlerClass = handlerClass;
+        this._handler = handler;
     }
     
     /**
@@ -59,32 +53,12 @@ class MessageHandlerMapping
     }
 
     /**
-     * Sets the opcode for this mapping.
-     * 
-     * @param codeAsString the opcode as a string.
-     */
-    void setOpcode (String codeAsString)
-    {
-      this._opcode = codeAsString.charAt(0);
-    }
-
-    /**
      * Returns the message handler for this mapping.
      * 
      * @return the message handler for this mapping.
      */
-    String getMessageHandlerClass()
+    IMessageHandler getMessageHandler()
     {
-        return _handlerClass;
-    }
-
-    /**
-     * Sets the message handler of this mapping. 
-     * 
-     * @param handlerClass the handler class as a string.
-     */
-    void setMessageHandlerClass(String handlerClass)
-    {
-        this._handlerClass = handlerClass;
+        return _handler;
     }
 }

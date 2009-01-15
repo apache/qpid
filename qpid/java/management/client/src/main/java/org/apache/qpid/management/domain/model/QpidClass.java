@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -47,11 +48,14 @@ import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 
 import org.apache.qpid.management.Messages;
+import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.impl.IMethodInvocationListener;
 import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.type.Binary;
 import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
+import org.apache.qpid.management.jmx.EntityLifecycleNotification;
+import org.apache.qpid.management.jmx.OperationHasBeenInvokedNotification;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.util.Logger;
 
@@ -60,16 +64,17 @@ import org.apache.qpid.transport.util.Logger;
  * A type definition for a manageable object.
  * This class is also responsible to manage incoming obejct instance data (configuration & instrumentation). 
  * How can we handle data before schema is injected into this class? simply we must retain that data in raw format.
- * This class has 2 states : 
- * 1) first state is when schema is not yet injected. In this case the incoming object data is retained as is (in raw format);
- * 2) second state is when schema is injected. In this case each injection of data will result in an update / create / delete of 
+ * This class has 3 states : 
+ * 1) first state is when schema is not yet injected. In this case the incoming object data is retained as is (in raw format) 
+ * and a schema request is sent;
+ * 2) second state is when schema has been requested but not yet injected. The incoming object data is still retained as is 
+ * (in raw format) 
+ * 3) third state is when schema is injected. Each injection of data will result in an update / create / delete of 
  * the corresponding object instance. In addition, the first time the state change, the old retained raw data is cnverted in 
  * object instance(s).
- * 
- * @author Andrea Gazzarini
- */
-class QpidClass extends QpidEntity
-{        
+ */ 
+class QpidClass extends QpidEntity implements QpidClassMBean 
+{        		
     /**
      * State interface for this class definition.
      * Each state is responsible to handle the injection of the data and / or schema. 
@@ -130,14 +135,15 @@ class QpidClass extends QpidEntity
             {
                 requestSchema();  
                 _state = _schemaRequestedButNotYetInjected;
-            } catch (Exception e)
+            } catch (Exception exception)
             {
                 _logger.error(
+                		exception,
                         Messages.QMAN_100015_UNABLE_TO_SEND_SCHEMA_REQUEST, 
                         _parent.getName(),
                         _name);
             } finally {
-                QpidManagedObject instance = getObjectInstance(objectId,false);
+                QManManagedObject instance = getObjectInstance(objectId,false);
                 instance._rawConfigurationData.add(rawData);       
             }
         }
@@ -162,7 +168,7 @@ class QpidClass extends QpidEntity
                         _parent.getName(),
                         _name);
             } finally {
-                QpidManagedObject instance = getObjectInstance(objectId,false);
+                QManManagedObject instance = getObjectInstance(objectId,false);
                 instance._rawConfigurationData.add(rawData);
             }
         }
@@ -194,7 +200,7 @@ class QpidClass extends QpidEntity
          */
         public void addConfigurationData (Binary objectId, byte[] rawData)
         {
-            QpidManagedObject instance = getObjectInstance(objectId,false);
+            QManManagedObject instance = getObjectInstance(objectId,false);
             instance._rawConfigurationData.add(rawData);
         }
 
@@ -206,7 +212,7 @@ class QpidClass extends QpidEntity
          */
         public void addInstrumentationData (Binary objectId, byte[] rawData)
         {
-            QpidManagedObject instance = getObjectInstance(objectId,false);
+            QManManagedObject instance = getObjectInstance(objectId,false);
             instance._rawInstrumentationData.add(rawData);
         }
 
@@ -231,12 +237,21 @@ class QpidClass extends QpidEntity
                 buildMethods(methodDefinitions,operationsMetadata);
                 
                 _metadata = new MBeanInfo(_name,_name,attributesMetadata,null,operationsMetadata,null);
-            
+
+                EntityLifecycleNotification notification = new EntityLifecycleNotification(
+                  		 EntityLifecycleNotification.SCHEMA_INJECTED,
+                  		 _parent.getName(), 
+                  		 _name, 
+                  		 Names.CLASS,
+                  		 _objectName);
+                   
+                   sendNotification(notification);
+                
                 // Converting stored object instances into JMX MBean and removing raw instance data.
-                for (Entry<Binary, QpidManagedObject> instanceEntry : _objectInstances.entrySet())
+                for (Entry<Binary, QManManagedObject> instanceEntry : _objectInstances.entrySet())
                 {
                     Binary objectId = instanceEntry.getKey();
-                    QpidManagedObject instance = instanceEntry.getValue();
+                    QManManagedObject instance = instanceEntry.getValue();
                     
                     for (Iterator<byte[]> iterator = instance._rawInstrumentationData.iterator(); iterator.hasNext();)
                     {
@@ -250,9 +265,10 @@ class QpidClass extends QpidEntity
                         iterator.remove();
                     }
 
-                    JMX_SERVICE.registerObjectInstance(instance,_parent.getOwnerId(),_parent.getName(),_name,objectId);
+                    registerMBean(instance,_parent.getOwnerId(),_parent.getName(),_name,objectId);
                 }
-            _state = _schemaInjected;
+            _state = _schemaInjected;     
+            
         }
     };
     
@@ -269,7 +285,7 @@ class QpidClass extends QpidEntity
          */
         public void addConfigurationData (Binary objectId, byte[] rawData)
         {
-            QpidManagedObject instance = getObjectInstance(objectId,true);            
+            QManManagedObject instance = getObjectInstance(objectId,true);            
             updateInstanceWithConfigurationData(instance, rawData);
         }
 
@@ -281,7 +297,7 @@ class QpidClass extends QpidEntity
          */
         public void addInstrumentationData (Binary objectId, byte[] rawData)
         {
-            QpidManagedObject instance = getObjectInstance(objectId,true);            
+            QManManagedObject instance = getObjectInstance(objectId,true);            
             updateInstanceWithInstrumentationData(instance, rawData);
         }
 
@@ -300,23 +316,21 @@ class QpidClass extends QpidEntity
     /**
      * MBean used for representing remote broker object instances.
      * This is the core component of the QMan domain model
-     * 
-     * @author Andrea Gazzarini
      */
-    class QpidManagedObject extends QpidManagedEntity implements MBeanRegistration
+    class QManManagedObject extends QManManagedEntity implements MBeanRegistration
     {
         private Binary _objectId;
         
         // Arrays used for storing raw data before this mbean is registered to mbean server.
         List<byte[]> _rawInstrumentationData = new ArrayList<byte[]>();
         List<byte[]>  _rawConfigurationData = new ArrayList<byte[]>();
-        
+         
         /**
          * Builds a new managed object with the given object identifier.
          * 
          * @param objectId the object identifier.
          */
-        QpidManagedObject(Binary objectId)
+        QManManagedObject(Binary objectId)
         {
             this._objectId = objectId;
         }
@@ -351,21 +365,33 @@ class QpidClass extends QpidEntity
          */
         public Object invoke (String actionName, Object[] params, String[] signature) throws MBeanException,ReflectionException
         {
-            // TODO : Overloaded methods
-            QpidMethod method = _methods.get(actionName);
-            if (method != null) 
-            {
-                try
-                {
-                    method.validate(params);
-                    return invokeMethod(_objectId, method, params);
-                } catch (Exception exception)
-                {
-                    throw new MBeanException(exception);
-                }
-            } else {
-                throw new ReflectionException(new NoSuchMethodException(actionName));
-            }
+        	OperationHasBeenInvokedNotification notification = null;
+        	try 
+        	{
+	            // TODO : Overloaded methods
+	            QpidMethod method = _methods.get(actionName);
+	            if (method != null) 
+	            {
+	                try
+	                {
+	                    method.validate(params);
+	                    InvocationResult result = invokeMethod(_objectId, method, params);
+	                    notification = new OperationHasBeenInvokedNotification(actionName,params,signature,result);
+	                    return result;
+	                } catch (Exception ex)
+	                {
+	                	MBeanException exception = new MBeanException(ex);
+	                    notification = new OperationHasBeenInvokedNotification(actionName,params,signature,exception);
+	                    throw exception;
+	                }
+	            } else {
+	            	ReflectionException exception = new ReflectionException(new NoSuchMethodException(actionName));
+	                notification = new OperationHasBeenInvokedNotification(actionName,params,signature,exception);
+	                throw exception;
+	            } 
+        	}finally {
+        		sendNotification(notification);
+        	}
         }
 
         /**
@@ -450,7 +476,7 @@ class QpidClass extends QpidEntity
     private BlockingQueue<InvocationResult> _exchangeChannelForMethodInvocations;
     private final IMethodInvocationListener _methodInvocationListener;
     
-    Map<Binary, QpidManagedObject> _objectInstances = new HashMap<Binary, QpidManagedObject>();
+    Map<Binary, QManManagedObject> _objectInstances = new HashMap<Binary, QManManagedObject>();
     State _state = _schemaNotRequested;;
     
     private final static class Log 
@@ -474,7 +500,7 @@ class QpidClass extends QpidEntity
      */
     QpidClass(String className, Binary hash, QpidPackage parentPackage)
     {
-    	super(className,hash, parentPackage);
+    	super(className,hash, parentPackage,Names.CLASS);
         this._methodInvocationListener = _parent.getMethodInvocationListener();
         this._exchangeChannelForMethodInvocations = new SynchronousQueue<InvocationResult>();
     }
@@ -602,16 +628,16 @@ class QpidClass extends QpidEntity
      * @param registration a flag indicating whenever the (new ) instance must be registered with MBean server.
      * @return the object instance associated to the given identifier.
      */
-    QpidManagedObject getObjectInstance(Binary objectId, boolean registration) 
+    QManManagedObject getObjectInstance(Binary objectId, boolean registration) 
     {
-        QpidManagedObject objectInstance = _objectInstances.get(objectId);
+        QManManagedObject objectInstance = _objectInstances.get(objectId);
         if (objectInstance == null) 
         {
-            objectInstance = new QpidManagedObject(objectId);
+            objectInstance = new QManManagedObject(objectId);
             _objectInstances.put(objectId, objectInstance);
             if (registration)
             {
-                JMX_SERVICE.registerObjectInstance(objectInstance,_parent.getOwnerId(),_parent.getName(),_name,objectId);
+            	registerMBean(objectInstance,_parent.getOwnerId(),_parent.getName(),_name,objectId);
             }
         }
         return objectInstance;
@@ -691,7 +717,7 @@ class QpidClass extends QpidEntity
      * @param instance the managed object instance.
      * @param rawData the incoming configuration data which contains new values for instance properties.
      */
-    void updateInstanceWithConfigurationData(QpidManagedObject instance,byte [] rawData)
+    void updateInstanceWithConfigurationData(QManManagedObject instance,byte [] rawData)
     {
         BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(rawData));
@@ -714,9 +740,9 @@ class QpidClass extends QpidEntity
      * @param instance the managed object instance.
      * @param rawData the incoming instrumentation data which contains new values for instance properties.
      */
-    void updateInstanceWithInstrumentationData(QpidManagedObject instance,byte [] rawData)
+    void updateInstanceWithInstrumentationData(QManManagedObject instance,byte [] rawData)
     {
-        BBDecoder decoder = new BBDecoder();
+    	BBDecoder decoder = new BBDecoder();
         decoder.init(ByteBuffer.wrap(rawData));
 
         for (QpidStatistic statistic : _schemaOrderedStatistics)
@@ -749,10 +775,19 @@ class QpidClass extends QpidEntity
      */
     void removeObjectInstance (Binary objectId)
     {
-        QpidManagedObject toBeRemoved = _objectInstances.remove(objectId);
+        QManManagedObject toBeRemoved = _objectInstances.remove(objectId);
         if (toBeRemoved != null)
         {
-            JMX_SERVICE.unregisterObjectInstance(_parent.getOwnerId(),_parent.getName(),_name,toBeRemoved._objectId);
+            ObjectName objectName = JMX_SERVICE.unregisterObjectInstance(_parent.getOwnerId(),_parent.getName(),_name,toBeRemoved._objectId);
+            
+       	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
+    			 EntityLifecycleNotification.INSTANCE_REMOVED,
+    			 _parent.getName(),
+    			 _name,
+    			 Names.CLASS,
+    			 objectName);
+    	 
+    	 sendNotification(notification);
         }
     }
 
@@ -763,6 +798,35 @@ class QpidClass extends QpidEntity
     {
     	_objectInstances.clear();
     	JMX_SERVICE.unregisterObjectInstances();
+    	JMX_SERVICE.unregisterClassDefinitions();    	
         _service.close();
+    }
+    
+    /**
+     * Compose method used for registering mbean instance.
+     * 
+     * @param instance the mbean instance.
+     * @param brokerId the broker identifier.
+     * @param packageName the package name.
+     * @param className the class name.
+     * @param objectId the object identifier.
+     */
+    private void registerMBean(
+    		QManManagedObject instance,
+            UUID brokerId,
+            String packageName, 
+            String className, 
+            Binary objectId)
+    {
+    	 ObjectName objectName = JMX_SERVICE.registerObjectInstance(instance,_parent.getOwnerId(),_parent.getName(),_name,objectId);
+    	 
+    	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
+    			 EntityLifecycleNotification.INSTANCE_ADDED,
+    			 packageName,
+    			 className,
+    			 Names.CLASS,
+    			 objectName);
+    	 
+    	 sendNotification(notification);
     }
 }

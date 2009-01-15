@@ -20,47 +20,53 @@
  */
 package org.apache.qpid.management.servlet;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
+import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.services.QMan;
 import org.apache.qpid.management.domain.services.StartupFailureException;
 
 /**
- * QMan initializer.  
+ * QMan lifecycle management.
  * 
  * @author Andrea Gazzarini
  */
-public class QManServlet extends HttpServlet {
-	
-	private static final long serialVersionUID = 6149614872902682208L;
-
-	// QMan instance
-	private QMan qman;
-	
+public class QManLifeCycleManager implements ServletContextListener 
+{
 	/**
-	 * Initializes QMan instance.
+	 * Stops QMan.
 	 * 
-	 * @throws ServletException when It's not possibile to proceed with initialization.
+	 * @param event the application context event.
 	 */
-	@Override
-	public void init() throws ServletException 
+	public void contextDestroyed(ServletContextEvent event) 
 	{
-		qman = new QMan();
-		try {
+		ServletContext context = event.getServletContext();
+		
+		QMan qman = (QMan) context.getAttribute(Names.APPLICATION_NAME);		
+		qman.stop();
+		
+		context.setAttribute(Names.APPLICATION_NAME, qman);
+	}
+
+	/**
+	 * Starts QMan.
+	 * 
+	 * @param event the application context event.
+	 */
+	public void contextInitialized(ServletContextEvent event) 
+	{
+		try 
+		{
+			QMan qman = new QMan();
 			qman.start();
+
+			event.getServletContext().setAttribute(Names.APPLICATION_NAME, qman);
 		} catch (StartupFailureException exception) 
 		{
-			throw new ServletException(exception);
+			// TODO : LOG ERROR.
+			exception.printStackTrace();
 		}
-	}
-	
-	/**
-	 * Stops QMan instance.
-	 */
-	@Override
-	public void destroy() 
-	{
-		qman.stop();
 	}
 }

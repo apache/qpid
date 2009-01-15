@@ -29,6 +29,9 @@ import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferO
 import org.apache.qpid.management.domain.model.DomainModel;
 import org.apache.qpid.management.domain.model.type.Binary;
 
+/**
+ * Collects all literal constants used in test cases.
+ */
 public interface TestConstants
 {
     UUID BROKER_ID = UUID.randomUUID();
