@@ -19,19 +19,19 @@
  *
  */
 
-#include "Cpg.h"
-#include "Event.h"
-#include "NoOpConnectionOutputHandler.h"
 #include "ClusterMap.h"
 #include "ConnectionMap.h"
+#include "Cpg.h"
+#include "Event.h"
 #include "FailoverExchange.h"
-#include "Quorum.h"
 #include "Multicaster.h"
+#include "NoOpConnectionOutputHandler.h"
+#include "PollerDispatch.h"
+#include "Quorum.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/sys/LockPtr.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/Url.h"
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
@@ -99,8 +99,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     size_t getWriteEstimate() { return writeEstimate; }
     
   private:
-    typedef sys::LockPtr<Cluster,sys::Monitor> LockPtr;
-    typedef sys::LockPtr<const Cluster,sys::Monitor> ConstLockPtr;
     typedef sys::Monitor::ScopedLock Lock;
 
     typedef sys::PollableQueue<Event> PollableEventQueue;
@@ -129,14 +127,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
     void delivered(PollableEventQueue::Queue&); // deliverQueue callback
-    void deliveredEvent(const Event&); 
+    void deliveredEvent(const EventHeader&, const char*); 
 
     // Helper, called in deliver thread.
     void dumpStart(const MemberId& dumpee, const Url& url, Lock&);
-
-    // CPG callbacks, called in CPG IO thread.
-    void dispatch(sys::DispatchHandle&); // Dispatch CPG events.
-    void disconnect(sys::DispatchHandle&); // PG was disconnected
 
     void deliver( // CPG deliver callback. 
         cpg_handle_t /*handle*/,
@@ -177,6 +171,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Immutable members set on construction, never changed.
     broker::Broker& broker;
+    qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
     boost::shared_ptr<sys::Poller> poller;
     Cpg cpg;
     const std::string name;
@@ -186,12 +181,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     const size_t writeEstimate;
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
-    sys::DispatchHandle cpgDispatchHandle;
-
 
     // Thread safe members
     Multicaster mcast;
-    qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
+    PollerDispatch dispatcher;
     PollableEventQueue deliverQueue;
     ConnectionMap connections;
     boost::shared_ptr<FailoverExchange> failoverExchange;

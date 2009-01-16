@@ -38,36 +38,40 @@ dmodule_LTLIBRARIES += cluster.la
 
 cluster_la_SOURCES = \
   $(CMAN_SOURCES) \
-  qpid/cluster/types.h \
   qpid/cluster/Cluster.cpp \
   qpid/cluster/Cluster.h \
-  qpid/cluster/Cpg.cpp \
-  qpid/cluster/Cpg.h \
-  qpid/cluster/Dispatchable.h \
+  qpid/cluster/ClusterLeaveException.h		\
+  qpid/cluster/ClusterMap.cpp			\
+  qpid/cluster/ClusterMap.h			\
   qpid/cluster/ClusterPlugin.cpp \
-  qpid/cluster/ConnectionCodec.h \
-  qpid/cluster/ConnectionCodec.cpp \
-  qpid/cluster/Connection.h \
   qpid/cluster/Connection.cpp \
+  qpid/cluster/Connection.h			\
+  qpid/cluster/ConnectionCodec.cpp		\
+  qpid/cluster/ConnectionCodec.h		\
   qpid/cluster/ConnectionMap.h \
-  qpid/cluster/NoOpConnectionOutputHandler.h \
-  qpid/cluster/WriteEstimate.h \
-  qpid/cluster/WriteEstimate.cpp \
-  qpid/cluster/OutputInterceptor.h \
-  qpid/cluster/OutputInterceptor.cpp \
-  qpid/cluster/ProxyInputHandler.h \
-  qpid/cluster/Event.h \
-  qpid/cluster/Event.cpp \
-  qpid/cluster/DumpClient.h \
+  qpid/cluster/Cpg.cpp				\
+  qpid/cluster/Cpg.h				\
+  qpid/cluster/Dispatchable.h			\
   qpid/cluster/DumpClient.cpp \
-  qpid/cluster/ClusterMap.h \
-  qpid/cluster/ClusterMap.cpp \
-  qpid/cluster/FailoverExchange.h \
+  qpid/cluster/DumpClient.h			\
+  qpid/cluster/Event.cpp			\
+  qpid/cluster/Event.h				\
   qpid/cluster/FailoverExchange.cpp \
-  qpid/cluster/Multicaster.h \
+  qpid/cluster/FailoverExchange.h		\
   qpid/cluster/Multicaster.cpp \
-  qpid/cluster/ClusterLeaveException.h \
-  qpid/cluster/Quorum.h
+  qpid/cluster/Multicaster.h			\
+  qpid/cluster/NoOpConnectionOutputHandler.h	\
+  qpid/cluster/OutputInterceptor.cpp		\
+  qpid/cluster/OutputInterceptor.h		\
+  qpid/cluster/PollerDispatch.cpp		\
+  qpid/cluster/PollerDispatch.h			\
+  qpid/cluster/ThreadDispatch.cpp		\
+  qpid/cluster/ThreadDispatch.h			\
+  qpid/cluster/ProxyInputHandler.h		\
+  qpid/cluster/Quorum.h				\
+  qpid/cluster/WriteEstimate.cpp		\
+  qpid/cluster/WriteEstimate.h			\
+  qpid/cluster/types.h 
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
