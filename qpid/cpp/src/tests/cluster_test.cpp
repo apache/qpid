@@ -234,17 +234,6 @@ QPID_AUTO_TEST_CASE(testSequenceOptions) {
     BOOST_CHECK_EQUAL(3, getMsgSequence(c1.subs.get("q", TIME_SEC)));
 }
 
-QPID_AUTO_TEST_CASE(testUnsupported) {
-    ScopedSuppressLogging sl;
-    ClusterFixture cluster(1);
-    Client c1(cluster[0], "c1");
-    BOOST_CHECK_THROW(c1.session.dtxSelect(), FramingErrorException);    
-    Client c2(cluster[0], "c2");
-    Message  m;
-    m.getDeliveryProperties().setTtl(1);
-    BOOST_CHECK_THROW(c2.session.messageTransfer(arg::content=m), Exception);    
-}
-
 QPID_AUTO_TEST_CASE(testTxTransaction) {
     ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
