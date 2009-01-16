@@ -187,7 +187,7 @@ void Cluster::deliver(
     Mutex::ScopedLock l(lock);
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
-    Event e(Event::decode(from, buf));
+    Event e(Event::decodeCopy(from, buf));
     if (from == myId) // Record self-deliveries for flow control.
         mcast.selfDeliver(e);
     deliver(e, l);
