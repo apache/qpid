@@ -21,6 +21,7 @@
 
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/console/ObjectId.h"
 #include "unit_test.h"
 
 QPID_AUTO_TEST_SUITE(ManagementTestSuite)
@@ -78,6 +79,32 @@ QPID_AUTO_TEST_CASE(testObjectIdAttach) {
     std::stringstream out2;
     out2 << oid;
     BOOST_CHECK_EQUAL(out2.str(), "10-20-30-40-50");
+}
+
+QPID_AUTO_TEST_CASE(testConsoleObjectId) {
+    qpid::console::ObjectId oid1, oid2;
+
+    oid1.setValue(1, 2);
+    oid2.setValue(3, 4);
+
+    BOOST_CHECK(oid1 < oid2);
+    BOOST_CHECK(oid1 <= oid2);
+    BOOST_CHECK(oid2 > oid1);
+    BOOST_CHECK(oid2 >= oid1);
+    BOOST_CHECK(oid1 != oid2);
+    BOOST_CHECK(oid1 == oid1);
+
+    oid1.setValue(3, 6);
+    oid2.setValue(3, 4);
+
+    BOOST_CHECK(oid1 > oid2);
+    BOOST_CHECK(oid1 >= oid2);
+    BOOST_CHECK(oid2 < oid1);
+    BOOST_CHECK(oid2 <= oid1);
+    BOOST_CHECK(oid1 != oid2);
+
+    oid2.setValue(3, 6);
+    BOOST_CHECK(oid1 == oid2);
 }
 
 QPID_AUTO_TEST_SUITE_END()

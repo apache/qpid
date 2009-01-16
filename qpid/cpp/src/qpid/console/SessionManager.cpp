@@ -437,8 +437,8 @@ void SessionManager::handleContentInd(Broker* broker, Buffer& buffer, uint32_t s
         if (syncSequenceList.count(sequence) == 1) {
             if (!object.isDeleted())
                 getResult.push_back(object);
+            return;
         }
-        return;
     }
 
     if (listener) {

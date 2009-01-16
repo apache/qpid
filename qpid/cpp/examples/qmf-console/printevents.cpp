@@ -37,7 +37,7 @@ public:
     }
 
     void brokerDisconnected(const Broker& broker) {
-        cout << qpid::sys::now() << " NOTIC qpid-printevents:brokerDisonnected broker=" <<
+        cout << qpid::sys::now() << " NOTIC qpid-printevents:brokerDisconnected broker=" <<
             broker.getUrl() << endl;
     }
 
