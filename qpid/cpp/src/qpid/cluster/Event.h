@@ -91,7 +91,7 @@ class Event : public EventHeader {
     RefCountedBuffer::pointer store;
 };
 
-std::ostream& operator << (std::ostream&, const Event&);
+std::ostream& operator << (std::ostream&, const EventHeader&);
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_EVENT_H*/
