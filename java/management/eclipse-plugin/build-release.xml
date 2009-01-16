@@ -30,11 +30,11 @@
                 <isset property ="mcplugin.filename"/>
                 <isset property ="bin.dir"/>
                 <isset property ="startup.jar"/>
-                <isset property ="eclipse.ini"/>
                 <isset property ="license.eclipse.txt"/>
                 <isset property ="jmxremote.sasl.manifest"/>
                 <isset property ="qpidmanagementcommon.manifest"/>
                 <!-- platform specific properties -->
+                <isset property ="eclipse.ini"/>
                 <isset property ="bin.includes"/>
                 <isset property ="release.name"/>
                 <isset property ="release.subdir"/>
