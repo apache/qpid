@@ -390,6 +390,18 @@ module Qpid::Qmf
       @result
     end
 
+    # Return one and only one object or nil.
+    def object(kwargs)
+      objs = objects(kwargs)
+      return objs.length == 1 ? objs[0] : nil
+    end
+
+    # Return the first of potentially many objects.
+    def first_object(kwargs)
+      objs = objects(kwargs)
+      return objs.length > 0 ? objs[0] : nil
+    end
+
     def set_event_filter(kwargs); end
 
     def handle_broker_connect(broker); end
