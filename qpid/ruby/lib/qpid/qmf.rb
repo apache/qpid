@@ -962,8 +962,17 @@ module Qpid::Qmf
       unless object_id == newer.object_id
         raise "Objects with different object-ids"
       end
-      @properties = newer.getProperties unless newer.properties.empty?
-      @statistics = newer.getStatistics unless newer.statistics.empty?
+      @properties = newer.properties unless newer.properties.empty?
+      @statistics = newer.statistics unless newer.statistics.empty?
+    end
+
+    def update
+      obj = @session.object(:object_id => @object_id, :broker => @broker)
+      if obj
+        merge_update(obj)
+      else
+        raise "Underlying object no longer exists."
+      end
     end
 
     def to_s
