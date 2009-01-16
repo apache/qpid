@@ -313,6 +313,7 @@ void Broker::shutdown() {
 
 Broker::~Broker() {
     shutdown();
+    queueEvents.shutdown();
     finalize();                 // Finalize any plugins.
     if (config.auth)
         SaslAuthenticator::fini();
