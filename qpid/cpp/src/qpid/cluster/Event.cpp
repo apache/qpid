@@ -93,7 +93,7 @@ Event::operator Buffer() const  {
 
 static const char* EVENT_TYPE_NAMES[] = { "data", "control" };
 
-std::ostream& operator << (std::ostream& o, const Event& e) {
+std::ostream& operator << (std::ostream& o, const EventHeader& e) {
     o << "[event " << e.getConnectionId() 
       << " " << EVENT_TYPE_NAMES[e.getType()]
       << " " << e.getSize() << " bytes]";
