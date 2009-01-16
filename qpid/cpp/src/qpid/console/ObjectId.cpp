@@ -43,6 +43,44 @@ void ObjectId::encode(framing::Buffer& buffer)
     buffer.putLongLong(second);
 }
 
+bool ObjectId::operator==(const ObjectId& other) const
+{
+    return second == other.second && first == other.first;
+}
+
+bool ObjectId::operator!=(const ObjectId& other) const
+{
+    return !(*this == other);
+}
+
+bool ObjectId::operator<(const ObjectId& other) const
+{
+    if (first < other.first)
+        return true;
+    if (first > other.first)
+        return false;
+    return second < other.second;
+}
+
+bool ObjectId::operator>(const ObjectId& other) const
+{
+    if (first > other.first)
+        return true;
+    if (first < other.first)
+        return false;
+    return second > other.second;
+}
+
+bool ObjectId::operator<=(const ObjectId& other) const
+{
+    return !(*this > other);
+}
+
+bool ObjectId::operator>=(const ObjectId& other) const
+{
+    return !(*this < other);
+}
+
 ostream& qpid::console::operator<<(ostream& o, const ObjectId& id)
 {
     o << (int) id.getFlags() << "-" << id.getSequence() << "-" << id.getBrokerBank() << "-" <<

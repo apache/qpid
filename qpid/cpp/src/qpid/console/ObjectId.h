@@ -49,6 +49,13 @@ namespace console {
         void encode(framing::Buffer& buffer);
         void setValue(uint64_t f, uint64_t s) { first = f; second = s; }
 
+        bool operator==(const ObjectId& other) const;
+        bool operator!=(const ObjectId& other) const;
+        bool operator<(const ObjectId& other) const;
+        bool operator>(const ObjectId& other) const;
+        bool operator<=(const ObjectId& other) const;
+        bool operator>=(const ObjectId& other) const;
+
     private:
         uint64_t first;
         uint64_t second;
