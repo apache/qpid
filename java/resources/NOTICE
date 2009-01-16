@@ -46,3 +46,51 @@ pphttp://jline.sourceforge.net/index.html
 Jython is used within ant scripts for generating code.
 Jython is hosted at http://www.jython.org
 The license for jython is located at http://www.jython.org/Project/license.txt
+
+The Apache Muse Project is a Java-based implementation 
+of the WS-ResourceFramework (WSRF), WS-BaseNotification (WSN), 
+and WS-DistributedManagement (WSDM) specifications.
+It is licensed under the Apache License 2.0.
+The original software is available from 
+
+http://ws.apache.org/muse/
+
+The Web Services Description Language for Java Toolkit (WSDL4J) allows 
+the creation, representation, and manipulation of WSDL documents
+It is licensed under the Common Public License 1.0
+The original software is available from 
+
+http://sourceforge.net/projects/wsdl4j
+
+Xml manipulation and all related xml common utilities are provider by the 
+xml-apis library, which is an open source software.
+It is licensed under the Apache License 2.0 and is available from :
+
+http://xml.apache.org/commons/
+
+Xerces Java is a library for parsing, validating and manipulating XML documents.
+It is licensed under the Apache License 2.0 and is available from :
+
+http://xerces.apache.org/
+
+Xalan is an XSLT processor for transforming XML documents into HTML, 
+text, or other XML document types.
+It is licensed under the Apache License 2.0.
+The original software is available from :
+
+http://xml.apache.org/xalan-j/
+
+Jetty is an open-source, standards-based, full-featured web server 
+implemented entirely in Java. It is used as a web server / servlet engine
+on WS-DM adapter.
+Licensed under the Apache License 2.0.
+The original software is available from :
+
+http://www.mortbay.org/jetty/
+
+Javassist is a load-time reflective system for Java. It is a class library 
+for editing bytecodes in Java; 
+Licensend under MPL or LGPL.
+The original software is available from :
+
+http://www.jboss.org/javassist/
