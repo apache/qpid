@@ -32,28 +32,37 @@ namespace cluster {
 
 using framing::Buffer;
 
-const size_t Event::HEADER_SIZE =
+const size_t EventHeader::HEADER_SIZE =
     sizeof(uint8_t) +  // type
     sizeof(uint64_t) + // connection pointer only, CPG provides member ID.
     sizeof(uint32_t);  // payload size
 
+EventHeader::EventHeader(EventType t, const ConnectionId& c,  size_t s)
+    : type(t), connectionId(c), size(s) {}
+
 Event::Event(EventType t, const ConnectionId& c,  size_t s)
-    : type(t), connectionId(c), size(s), store(RefCountedBuffer::create(s+HEADER_SIZE)) {
+    : EventHeader(t,c,s), store(RefCountedBuffer::create(s+HEADER_SIZE))
+{
     encodeHeader();
 }
 
-Event Event::decode(const MemberId& m, framing::Buffer& buf) {
+void EventHeader::decode(const MemberId& m, framing::Buffer& buf) {
     if (buf.available() <= HEADER_SIZE)
         throw ClusterLeaveException("Not enough for multicast header");
-    EventType type((EventType)buf.getOctet());
+    type = (EventType)buf.getOctet();
     if(type != DATA && type != CONTROL)
         throw ClusterLeaveException("Invalid multicast event type");
-    ConnectionId connection(m, reinterpret_cast<Connection*>(buf.getLongLong()));
-    uint32_t size = buf.getLong();
-    Event e(type, connection, size);
-    if (buf.available() < size)
+    connectionId = ConnectionId(m, reinterpret_cast<Connection*>(buf.getLongLong()));
+    size = buf.getLong();
+}
+
+Event Event::decodeCopy(const MemberId& m, framing::Buffer& buf) {
+    EventHeader h;
+    h.decode(m, buf);           // Header
+    Event e(h.getType(), h.getConnectionId(), h.getSize());
+    if (buf.available() < e.size)
         throw ClusterLeaveException("Not enough data for multicast event");
-    memcpy(e.getData(), buf.getPointer() + buf.getPosition(), size);
+    memcpy(e.getData(), buf.getPointer() + buf.getPosition(), e.size);
     return e;
 }
 
@@ -65,11 +74,16 @@ Event Event::control(const framing::AMQBody& body, const ConnectionId& cid) {
     return e;
 }
     
-void Event::encodeHeader () {
-    Buffer b(getStore(), HEADER_SIZE);
+void EventHeader::encode(Buffer& b) const {
     b.putOctet(type);
     b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
     b.putLong(size);
+}
+
+// Encode my header in my buffer.
+void Event::encodeHeader () {
+    Buffer b(getStore(), HEADER_SIZE);
+    encode(b);
     assert(b.getPosition() == HEADER_SIZE);
 }
 

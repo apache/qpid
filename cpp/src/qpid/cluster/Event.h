@@ -36,26 +36,44 @@ namespace cluster {
 // byte-stream data.
 // 
 
-/**
- * Events are sent to/received from the cluster.
- * Refcounted so they can be stored on queues.
- */
-class Event {
+/** Header data for a multicast event */
+class EventHeader {
   public:
-    /** Create an event with a buffer that can hold size bytes plus an event header. */
-    Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
+    EventHeader(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
+    void decode(const MemberId& m, framing::Buffer&);
+    void encode(framing::Buffer&) const;
 
-    /** Create an event copied from delivered data. */
-    static Event decode(const MemberId& m, framing::Buffer&);
-
-    /** Create an event containing a control */
-    static Event control(const framing::AMQBody&, const ConnectionId&);
-    
     EventType getType() const { return type; }
     ConnectionId getConnectionId() const { return connectionId; }
     MemberId getMemberId() const { return connectionId.getMember(); }
     size_t getSize() const { return size; }
 
+    bool isCluster() const { return connectionId.getPointer() == 0; }
+    bool isConnection() const { return connectionId.getPointer() != 0; }
+
+  protected:
+    static const size_t HEADER_SIZE;
+    
+    EventType type;
+    ConnectionId connectionId;
+    size_t size;
+};
+
+/**
+ * Events are sent to/received from the cluster.
+ * Refcounted so they can be stored on queues.
+ */
+class Event : public EventHeader {
+  public:
+    /** Create an event with a buffer that can hold size bytes plus an event header. */
+    Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
+
+    /** Create an event copied from delivered data. */
+    static Event decodeCopy(const MemberId& m, framing::Buffer&);
+
+    /** Create an event containing a control */
+    static Event control(const framing::AMQBody&, const ConnectionId&);
+    
     // Data excluding header.
     char* getData() { return store + HEADER_SIZE; }
     const char* getData() const { return store + HEADER_SIZE; }
@@ -65,19 +83,11 @@ class Event {
     const char* getStore() const { return store; }
     size_t getStoreSize() { return size + HEADER_SIZE; }
     
-    bool isCluster() const { return connectionId.getPointer() == 0; }
-    bool isConnection() const { return connectionId.getPointer() != 0; }
-
     operator framing::Buffer() const;
 
   private:
-    static const size_t HEADER_SIZE;
-    
     void encodeHeader();
 
-    EventType type;
-    ConnectionId connectionId;
-    size_t size;
     RefCountedBuffer::pointer store;
 };
 
