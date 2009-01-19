@@ -356,6 +356,30 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
 	
 }
 
+QPID_AUTO_TEST_CASE(testLVQEmptyKey){
+
+    client::QueueOptions args;
+    // set queue mode
+    args.setOrdering(client::LVQ);
+
+    Queue::shared_ptr queue(new Queue("my-queue", true ));
+    queue->configure(args);
+	
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+
+    string key;
+    args.getLVQKey(key);
+    BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
+	
+
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
+    
+}
+
 QPID_AUTO_TEST_CASE(testLVQAcquire){
 
     client::QueueOptions args;

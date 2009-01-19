@@ -206,8 +206,8 @@ void Queue::requeue(const QueuedMessage& msg){
 }
 
 void Queue::clearLVQIndex(const QueuedMessage& msg){
-    if (lastValueQueue){
-        const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
+    const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
+    if (lastValueQueue && ft){
         string key = ft->getAsString(qpidVQMatchProperty);
         lvq.erase(key);
     }
@@ -512,8 +512,8 @@ uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty) {
 
 void Queue::popMsg(QueuedMessage& qmsg)
 {
-    if (lastValueQueue){
-    	const framing::FieldTable* ft = qmsg.payload->getApplicationHeaders();
+    const framing::FieldTable* ft = qmsg.payload->getApplicationHeaders();
+    if (lastValueQueue && ft){
         string key = ft->getAsString(qpidVQMatchProperty);
         lvq.erase(key);
     }
@@ -529,15 +529,15 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
         if (policy.get()) policy->tryEnqueue(qm);
          
         LVQ::iterator i;
-        if (lastValueQueue){
-            const framing::FieldTable* ft = msg->getApplicationHeaders();
+        const framing::FieldTable* ft = msg->getApplicationHeaders();
+        if (lastValueQueue && ft){
             string key = ft->getAsString(qpidVQMatchProperty);
 
             i = lvq.find(key);
             if (i == lvq.end()){
                 messages.push_back(qm);
                 listeners.populate(copy);
-                lvq[key] = msg;
+                lvq[key] = msg; 
             }else {
                 i->second->setReplacementMessage(msg,this);
                 dequeued(QueuedMessage(qm.queue, i->second, qm.position));
