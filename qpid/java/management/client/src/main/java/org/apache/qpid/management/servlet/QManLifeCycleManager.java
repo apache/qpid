@@ -24,19 +24,46 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.services.QMan;
 import org.apache.qpid.management.domain.services.StartupFailureException;
+import org.apache.qpid.transport.util.Logger;
 
 /**
- * QMan lifecycle management.
+ * QMan JMX lifecycle manager.
+ * Provides lifecycle management of QMan JMX core including startup and shutdown. 
  * 
  * @author Andrea Gazzarini
  */
 public class QManLifeCycleManager implements ServletContextListener 
 {
+	private final static Logger LOGGER = Logger.get(QManLifeCycleManager.class);
+	
 	/**
-	 * Stops QMan.
+	 * Starts QMan JMX Core.
+	 * 
+	 * @param event the application context event.
+	 */
+	public void contextInitialized(ServletContextEvent event) 
+	{
+		try 
+		{
+			QMan qman = new QMan();
+			qman.start();
+			event.getServletContext().setAttribute(
+					Names.APPLICATION_NAME, 
+					qman);
+		} catch (StartupFailureException exception) 
+		{
+			LOGGER.error(
+					exception, 
+					Messages.QMAN_100030_JMX_CORE_STARTUP_FAILURE);
+		}
+	}
+	
+	/**
+	 * Sutdown QMan JMX Core.
 	 * 
 	 * @param event the application context event.
 	 */
@@ -47,26 +74,6 @@ public class QManLifeCycleManager implements ServletContextListener
 		QMan qman = (QMan) context.getAttribute(Names.APPLICATION_NAME);		
 		qman.stop();
 		
-		context.setAttribute(Names.APPLICATION_NAME, qman);
-	}
-
-	/**
-	 * Starts QMan.
-	 * 
-	 * @param event the application context event.
-	 */
-	public void contextInitialized(ServletContextEvent event) 
-	{
-		try 
-		{
-			QMan qman = new QMan();
-			qman.start();
-
-			event.getServletContext().setAttribute(Names.APPLICATION_NAME, qman);
-		} catch (StartupFailureException exception) 
-		{
-			// TODO : LOG ERROR.
-			exception.printStackTrace();
-		}
-	}
+		context.removeAttribute(Names.APPLICATION_NAME);
+	}	
 }

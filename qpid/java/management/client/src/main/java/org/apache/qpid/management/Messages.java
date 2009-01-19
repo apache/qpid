@@ -62,6 +62,8 @@ public interface Messages
 	String QMAN_000027_WSDM_ADAPTER_STARTED = "<QMAN-000027> : WS-DM Adapter ready for incoming requests.";
 	String QMAN_000028_TEST_MODULE_NOT_FOUND = "<QMAN-000028> : Qpid emulator not found. Test notifications are disabled.";
 	String QMAN_000029_DEFAULT_URI = "<QMAN-000029> : Default URI will be set to %s";
+	String QMAN_000030_RESOURCE_HAS_BEEN_CREATED =  "<QMAN-000030> : New resource instance has been created and registered. Resource id is %s";
+	String QMAN_000031_RESOURCE_HAS_BEEN_REMOVED = "<QMAN-200031> : WS-Resource %s has been removed";
 		
 	 // DEBUG
 	String QMAN_200001_INCOMING_MESSAGE_HAS_BEEN_RECEIVED = "<QMAN-200001> : New incoming message has been received. Message content is %s";
@@ -105,14 +107,15 @@ public interface Messages
 	String QMAN_200039_DEBUG_JMX_NOTIFICATION = "<QMAN-200039> : %s";
 	String QMAN_200040_WS_ARTIFACTS_CACHED = "<QMAN-200040> : WS Artifacts has been stored on cache with the following id : %s";
 	String QMAN_200041_INCOMING_OBJECT_NAME_AND_DERIVED_KEY = "<QMAN-200041> : Incoming object name : %s, derived search key : %s";
-	
-	
+	String QMAN_200042_REMOVING_RESOURCE = "<QMAN-200042> : WS-Resource %s is going to be removed";
 	
 	// WARNING
     String QMAN_300001_MESSAGE_DISCARDED = "<QMAN-300001> : No handler has been configured for processing messages with \"%s\" as opcode. Message will be discarded.";
 	String QMAN_300002_UNKNOWN_SEQUENCE_NUMBER = "<QMAN-300002> : Unable to deal with incoming message because it contains a unknown sequence number (%s).";
     String QMAN_300003_BROKER_ALREADY_CONNECTED = "<QMAN-300003> : Unable to enlist given broker connection data : QMan is already connected with broker %s";
     String QMAN_300004_INVALID_CONFIGURATION_FILE = "<QMAN-300004> : The given configuration file (%s) is not valid (it doesn't exist or cannot be read)";
+    
+    String QMAN_300005_QEMU_INITIALIZATION_FAILURE = "<QMAN-300005> : Unable to initialize QEmu module and therefore emulation won't be enabled...";
 	
 	// ERROR
 	String QMAN_100001_BAD_MAGIC_NUMBER_FAILURE = "<QMAN-100001> : Message processing failure : incoming message contains a bad magic number (%s) and therefore will be discaded.";
@@ -138,5 +141,13 @@ public interface Messages
 	String QMAN_100023_BUILD_WS_ARTIFACTS_FAILURE = "<QMAN-100023> : Unable to build WS artifacts.";
 	String QMAN_100024_CAPABILITY_INSTANTIATION_FAILURE = "<QMAN-100024> : Unable to instantiate generated capability class for %s.";
 	String QMAN_100025_WSRF_FAILURE = "<QMAN-100025> : Resource manager raised an exception while creating capability for %s.";	
-	String QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE = "<QMAN-100026> : Exception occurred while replacing the placeholder soap address with resource actual location.";		
+	String QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE = "<QMAN-100026> : Exception occurred while replacing the placeholder soap address with resource actual location.";
+	
+	//// NEW 
+	String QMAN_100027_RESOURCE_SHUTDOWN_FAILURE = "<QMAN-100027> : Shutdown failure while destroying resource %s.";
+	String QMAN_100029_MALFORMED_RESOURCE_URI_FAILURE = "<QMAN-100029> : Unable to define URI for QMan resources using \"%s\". It violates RFC 2396";
+	String QMAN_100030_JMX_CORE_STARTUP_FAILURE = "<QMAN-100030> : QMan JMX core Unexpected failure while starting up.";
+	String QMAN_100031_WS_RESOURCE_ALREADY_INITIALIZED = "<QMAN-100032> : Bad request has been received on this WS-Resource : Initialization is not possible because the resource has already been initialized.";
+	String QMAN_100032_WS_RESOURCE_NOT_YET_INITIALIZED = "<QMAN-100032> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource hasn't yet been initialized.";
+	String QMAN_100033_WS_RESOURCE_ALREADY_SHUTDOWN = "<QMAN-100033> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource has already been shutdown.";
 }

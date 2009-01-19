@@ -45,7 +45,7 @@ public abstract class Names
     public static String PACKAGE = "package";
     public static String CLASS = "class";
     public static String EVENT = "event";
-    public static String OBJECT_ID="objectID";    
+    public static String OBJECT_ID="objectId";    
     public static String BROKER_ID = "brokerID";
     public static String DOMAIN_NAME = "Q-MAN";
         
@@ -61,12 +61,34 @@ public abstract class Names
     
     public static String NOT_AVAILABLE = "N.A.";
     
+    public static ObjectName QPID_EMULATOR_OBJECT_NAME;
+    static 
+    {
+	    try 
+	    {
+	    	QPID_EMULATOR_OBJECT_NAME = new ObjectName(
+	    			new StringBuilder()
+	    				.append(DOMAIN_NAME)
+	    				.append(':')
+	    				.append("Name=Qpid,Type=Emulator")
+	    				.toString());
+	    } catch(Exception exception)
+	    {
+	    	throw new ExceptionInInitializerError(exception);
+	    }
+    }    
+    
     public static ObjectName QMAN_OBJECT_NAME;
     static 
     {
 	    try 
 	    {
-	    	QMAN_OBJECT_NAME = new ObjectName(new StringBuilder().append(DOMAIN_NAME).append(':').append("Type=Service").toString());
+	    	QMAN_OBJECT_NAME = new ObjectName(
+	    			new StringBuilder()
+	    				.append(DOMAIN_NAME)
+	    				.append(':')
+	    				.append("Type=Service")
+	    				.toString());
 	    } catch(Exception exception)
 	    {
 	    	throw new ExceptionInInitializerError(exception);
@@ -75,8 +97,13 @@ public abstract class Names
     
     // WSDM Stuff
     public static String NAMESPACE_URI = "http://amqp.apache.org/qpid/management/qman";
+    public static String ADDRESSING_URI = "http://amqp.apache.org/qpid/management/qman/addressing";
+    public static String ADDRESSING_PREFIX = "qman-wsa";
+    
+    public static final QName RESOURCE_ID_QNAME = new QName(ADDRESSING_URI, "ResourceId", ADDRESSING_PREFIX);   
 	public final static String PREFIX = "qman";
 	public final static String QMAN_RESOURCE_NAME = "QManWsResource";
+	
     public final static String VALIDATE_WSRP_PARAM = "validate-wsrp-schema";
 
     public static final String WEB_APP_CLASSES_FOLDER = "/WEB-INF/classes";
