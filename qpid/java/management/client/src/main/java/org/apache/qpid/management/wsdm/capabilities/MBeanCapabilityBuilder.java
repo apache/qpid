@@ -101,7 +101,6 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 			}		
 		} catch(Exception exception)
 		{
-			System.err.println(buffer);
 			throw new BuilderException(exception);
 		}
 	}
@@ -133,7 +132,7 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 	
 	public void onOperation(MBeanOperationInfo operation) 
 	{
-		// TODO
+		// TODO : operation on mbean capability
 	}
 
 	public Class<MBeanCapability> getCapabilityClass() 
@@ -157,7 +156,6 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 			_capabilityClassDefinition.addMethod(getPropertyNames);
 		} catch(Exception exception) 
 		{ 
-			System.err.println(_properties);
 			throw new BuilderException(exception);
 		}
 	}
@@ -167,7 +165,10 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 	{
 		try 
 		{
-			_capabilityClass = _capabilityClassDefinition.toClass();
+			// Class loader and protection domain are needed for Qpid emulation.
+			_capabilityClass = _capabilityClassDefinition.toClass(
+					QManAdapterCapability.class.getClassLoader(),
+					QManAdapterCapability.class.getProtectionDomain());
 		} catch (Exception exception) 
 		{
 			throw new BuilderException(exception);

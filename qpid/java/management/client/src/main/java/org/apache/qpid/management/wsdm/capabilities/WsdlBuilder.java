@@ -155,17 +155,17 @@ class WsdlBuilder implements IArtifactBuilder {
 	
 	public void onOperation(MBeanOperationInfo operation) 
 	{
-		// TODO
+		// TODO : Operations on wsdl
 	}
 
 	public void endAttributes() 
 	{
-		// TODO
+		// N.A.
 	}
 
 	public void endOperations() 
 	{
-		// TODO
+		// N.A.
 	}
 
 	public Document getWsdl() 
@@ -184,9 +184,10 @@ class WsdlBuilder implements IArtifactBuilder {
 		_document = WsdlUtils.createWSDL(_environment, wsdlPath, true);
 		try 
 		{
-			Attr location = (Attr) XPathAPI.selectSingleNode(_document, "/wsdl:definitions/wsdl:service/wsdl:port/wsdl-soap:address/@location");
+			Attr location = (Attr) XPathAPI.selectSingleNode(
+					_document, 
+					"/wsdl:definitions/wsdl:service/wsdl:port/wsdl-soap:address/@location");
 					
-			// TODO : come faccio a recuperare l'URL sul quale gira l'applicazione?
 			StringBuilder builder = new StringBuilder("http://")
 				.append(InetAddress.getLocalHost().getHostName())
 				.append(':')
@@ -198,7 +199,9 @@ class WsdlBuilder implements IArtifactBuilder {
 			location.setValue(builder.toString());
 		} catch(Exception exception)
 		{
-			LOGGER.error(exception,Messages.QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE);
+			LOGGER.error(
+					exception,
+					Messages.QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE);
 		}
 	}
 }

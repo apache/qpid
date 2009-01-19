@@ -23,19 +23,26 @@ package org.apache.qpid.management.wsdm.common;
 import javax.xml.namespace.QName;
 
 import org.apache.muse.core.routing.ResourceIdFactory;
-import org.apache.muse.ws.addressing.WsaConstants;
+import org.apache.qpid.management.Names;
 
 /**
  * ResourceIdFactory implementation that is using an objectName as 
  * resource identifier.
+ * This is done in order to make a relationship between an MBean (which is part of the
+ * JMX core domain model) and a WS-Resource (the same entity as is represented on WS-DM adapter side).
  * 
  * @author Andrea Gazzarini
  */
 public class ObjectNameIdFactory implements ResourceIdFactory 
 {
+	/**
+	 * Returns the name of the identifier element.
+	 * 
+	 *  @return the name of the identifier element.
+	 */
 	public QName getIdentifierName() 
 	{
-		return WsaConstants.DEFAULT_RESOURCE_ID_QNAME;
+		return Names.RESOURCE_ID_QNAME;
     }
 
 	/**

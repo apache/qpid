@@ -69,6 +69,14 @@ public class ConnectQManToBroker extends MiniServlet
 		}
 	}
 	
+	/**
+	 * This is a startup module only so an override of the default servlet 
+	 * behaviour must be done in order to prevent incoming http requests processing.
+	 * 
+	 * @param request the http request.
+	 * @param response the http response.
+	 * @throws ServletException each time this method is called.
+	 */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException
 	{

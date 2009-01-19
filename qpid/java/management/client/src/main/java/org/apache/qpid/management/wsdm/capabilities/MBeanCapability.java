@@ -160,13 +160,12 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * 
 	 * @param name
 	 * @param value
-	 * TODO TODO TODO!!! Vedi che poi fà co 'sto metodo che è un pò una monnezza!!!
+	 * TODO : Vedi che poi fà co 'sto metodo che è un pò una monnezza!!!
 	 * @return The XML representation of the resource property value(s).
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
-	protected Element[] getPropertyElements(QName name, Object value)
-			throws BaseFault {
+	protected Element[] getPropertyElements(QName name, Object value) throws BaseFault {
 		//
 		// in this case, we have to determine if there IS a property
 		// and it's null, or there is no property
@@ -226,19 +225,20 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 		Serializer ser = registry.getSerializer(type);
 
 		for (int n = 0; n < length; ++n)
+		{
 			properties[n] = serializeValue(ser, Array.get(valuesArray, n), name);
-
+		}
 		return properties;
 	}
 
 	private Element serializeValue(Serializer ser, Object value, QName name) throws BaseFault 
 	{
-		try {
+		try 
+		{
 			return ser.toXML(value, name);
-		}
-
-		catch (SoapFault error) {
-			throw WsbfUtils.convertToFault(error);
+		} catch (SoapFault exception) 
+		{
+			throw WsbfUtils.convertToFault(exception);
 		}
 	}
 }
