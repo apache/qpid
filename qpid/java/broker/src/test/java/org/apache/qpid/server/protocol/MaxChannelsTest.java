@@ -33,38 +33,54 @@ import org.apache.qpid.protocol.AMQConstant;
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
 {
-//    private MessageStore _messageStore = new SkeletonMessageStore();
+	private IApplicationRegistry _appRegistry;
+	private AMQMinaProtocolSession _session;
 
     public void testChannels() throws Exception
     {
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        AMQMinaProtocolSession _protocolSession = new AMQMinaProtocolSession(new MockIoSession(),
-                                                                             appRegistry.getVirtualHostRegistry(),
-                                                                             new AMQCodecFactory(true),
-                                                                             null);
-        _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
+        _session = new AMQMinaProtocolSession(new MockIoSession(), _appRegistry
+				.getVirtualHostRegistry(), new AMQCodecFactory(true), null);
+        _session.setVirtualHost(_appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
 
         // check the channel count is correct
-        int channelCount = _protocolSession.getChannels().size();
+        int channelCount = _session.getChannels().size();
         assertEquals("Initial channel count wrong", 0, channelCount);
 
         long maxChannels = 10L;
-        _protocolSession.setMaximumNumberOfChannels(maxChannels);
-        assertEquals("Number of channels not correctly set.", new Long(maxChannels), _protocolSession.getMaximumNumberOfChannels());
+        _session.setMaximumNumberOfChannels(maxChannels);
+        assertEquals("Number of channels not correctly set.", new Long(maxChannels), _session.getMaximumNumberOfChannels());
 
 
         try
         {
             for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
             {
-                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null));
+                _session.addChannel(new AMQChannel(_session, (int) currentChannel, null));
             }
         }
         catch (AMQException e)
         {
             assertEquals("Wrong exception recevied.", e.getErrorCode(), AMQConstant.NOT_ALLOWED);
         }
-        assertEquals("Maximum number of channels not set.", new Long(maxChannels), new Long(_protocolSession.getChannels().size()));
+        assertEquals("Maximum number of channels not set.", new Long(maxChannels), new Long(_session.getChannels().size()));
+    }
+    
+    @Override
+    public void setUp()
+    {
+        _appRegistry = ApplicationRegistry.getInstance(1);
+    }
+    
+    @Override
+    public void tearDown()
+    {
+    	try {
+			_session.closeSession();
+		} catch (AMQException e) {
+			// Yikes
+			fail(e.getMessage());
+		}
+    	ApplicationRegistry.remove(1);
     }
 
 }

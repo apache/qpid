@@ -35,6 +35,7 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
 
     public void test() throws AMQException
     {
+        assertEquals("References exist before start!", 0, ReferenceCountingExecutorService.getInstance().getReferenceCount());
         VirtualHost test = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHost("test");
 
         try
@@ -43,8 +44,8 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
                                                                                        new AMQShortString("owner"),
                                                                                        false, test, null);
 
-            assertTrue("Creation did not start Pool.", !ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
-
+            assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
+            
             queue.stop();
 
             assertEquals("References still exist", 0, ReferenceCountingExecutorService.getInstance().getReferenceCount());
