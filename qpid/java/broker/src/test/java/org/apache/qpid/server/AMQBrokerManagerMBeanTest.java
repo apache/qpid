@@ -28,7 +28,6 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.client.transport.TransportConnection;
 
 public class AMQBrokerManagerMBeanTest extends TestCase
 {

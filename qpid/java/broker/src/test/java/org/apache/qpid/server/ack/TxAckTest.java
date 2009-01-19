@@ -68,6 +68,14 @@ public class TxAckTest extends TestCase
         combined.update(1, false);//should be ignored
         combined.update(10, false);
     }
+    
+    @Override
+    protected void tearDown() throws Exception
+    {
+    	individual.stop();
+    	multiple.stop();
+    	combined.stop();
+    }
 
     public void testPrepare() throws AMQException
     {
@@ -102,6 +110,7 @@ public class TxAckTest extends TestCase
         private final List<Long> _acked;
         private final List<Long> _unacked;
         private StoreContext _storeContext = new StoreContext();
+		private AMQQueue _queue;
 
         Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws Exception
         {
@@ -109,9 +118,8 @@ public class TxAckTest extends TestCase
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>()
             );
-            AMQQueue queue =
-                    AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false, new VirtualHost("test", new MemoryMessageStore()),
-                                                       null);
+            _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false, new VirtualHost("test", new MemoryMessageStore()),
+			                                   null);
 
             for (int i = 0; i < messageCount; i++)
             {
@@ -147,7 +155,7 @@ public class TxAckTest extends TestCase
                 };
 
                 TestMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
-                _map.add(deliveryTag, queue.enqueue(new StoreContext(), message));
+                _map.add(deliveryTag, _queue.enqueue(new StoreContext(), message));
             }
             _acked = acked;
             _unacked = unacked;
@@ -200,6 +208,11 @@ public class TxAckTest extends TestCase
             keys = new HashSet<Long>(_unacked);
             keys.removeAll(_map.getDeliveryTags());
             assertTrue("Expected messages with following tags to still be in map: " + keys, keys.isEmpty());
+        }
+        
+        public void stop()
+        {
+        	_queue.stop();
         }
     }
 
