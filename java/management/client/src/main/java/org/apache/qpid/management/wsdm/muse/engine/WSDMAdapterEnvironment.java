@@ -23,7 +23,8 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
 {
 	private final static Logger LOGGER = Logger.get(WSDMAdapterEnvironment.class);
 	private final File _realDirectory;
-    
+    private final ServletContext _servletContext;
+	
     /**
      * Builds a new qman environment with the given application context.
      *  
@@ -31,32 +32,17 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
      */
     public WSDMAdapterEnvironment(ServletContext servletContext)
     {
-        String realDirectoryPath = servletContext.getRealPath(Names.WEB_APP_CLASSES_FOLDER);
+    	this._servletContext = servletContext;
+    	String realDirectoryPath = servletContext.getRealPath(Names.WEB_APP_CLASSES_FOLDER);
         
         _realDirectory = (realDirectoryPath != null) 
         	? new File(realDirectoryPath) 
         	: FileUtils.CURRENT_DIR;
-
-        String host = null;
-   
-        try {
-			host = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			host = "localhost";
-		}
         	
-        String defaultURI = new StringBuilder()
-        	.append("http://")
-        	.append(host)
-        	.append(":")
-        	.append(System.getProperty(Names.ADAPTER_PORT))
-        	.append(servletContext.getContextPath())
-        	.append("/services/adapter")
-        	.toString();
+        String defaultURI = getDefaultURIPrefix()+"adapter";
+        setDefaultURI(defaultURI);
         
         LOGGER.info(Messages.QMAN_000029_DEFAULT_URI, defaultURI);
-        
-        setDefaultURI(defaultURI);
     }
     
     /**
@@ -77,5 +63,24 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
     public File getRealDirectory()
     {
         return _realDirectory;
+    }
+    
+    public String getDefaultURIPrefix()
+    {
+    	String host = null;
+    	  try {
+  			host = InetAddress.getLocalHost().getHostName();
+  		} catch (UnknownHostException e) {
+  			host = "localhost";
+  		}
+  		
+        return new StringBuilder()
+    		.append("http://")
+    		.append(host)
+    		.append(":")
+    		.append(System.getProperty(Names.ADAPTER_PORT))
+    		.append(_servletContext.getContextPath())
+    		.append("/services/")
+    		.toString();    	
     }
 }

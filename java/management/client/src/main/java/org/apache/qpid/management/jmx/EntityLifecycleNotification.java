@@ -46,8 +46,8 @@ public class EntityLifecycleNotification extends Notification
 	public static final String SCHEMA_REQUESTED = "org.apache.qpid.management.lifecycle.entity.schema.requested";
 	public static final String MALFORMED_SCHEMA = "org.apache.qpid.management.lifecycle.error.schema";
 	
-	public static final String INSTANCE_ADDED = "org.apache.qpid.management.lifecycle.entity.instance.created";
-	public static final String INSTANCE_REMOVED = "org.apache.qpid.management.lifecycle.entity.instance.removed";
+	public static final String INSTANCE_ADDED = "qman.lifecycle.entity.instance.created";
+	public static final String INSTANCE_REMOVED = "qman.lifecycle.entity.instance.removed";
 	
 	private String _packageName = Names.NOT_AVAILABLE;
 	private String _className = Names.NOT_AVAILABLE;

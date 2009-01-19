@@ -51,9 +51,15 @@ public class WSDMAdapter extends HttpServlet
 	
 	@Override
 	public void init() throws ServletException {
-		_isolationLayer = new WSDMAdapterIsolationLayer(getServletContext());
+        LOGGER.debug(Messages.QMAN_000026_WSDM_ADAPTER_STARTS);
+        
+        
+        _isolationLayer = new WSDMAdapterIsolationLayer(getServletContext());
         _isolationLayer.initialize();
-	}
+        
+        LOGGER.debug(Messages.QMAN_000027_WSDM_ADAPTER_STARTED);
+        
+ 	}
 	
 	/**
 	 * Accepts http requests containing a soap envelope (request) and therefore
@@ -92,23 +98,11 @@ public class WSDMAdapter extends HttpServlet
 			writer.flush();	
 			
 			XmlDebugger.debug(soapEnvelopeRequest);
-			XmlDebugger.debug(soapEnvelopeResposeAsString);
-		}
-	}
-
-	/**
-	 * Stops QMan Adapter.
-	 */
-	public void destroy() 
-	{
-		try 
-		{
-			_isolationLayer.shutdown();
-		} catch (Exception exception) 
-		{
-			LOGGER.error(
-					exception, 
-					Messages.QMAN_100022_ISOLATION_LAYER_SHUTDOWN_FAILURE);
+			try {
+				XmlDebugger.debug(soapEnvelopeResposeAsString);
+			} catch(Exception exception) {
+				System.out.println("Unable to parse response.");
+			}
 		}
 	}
 }
