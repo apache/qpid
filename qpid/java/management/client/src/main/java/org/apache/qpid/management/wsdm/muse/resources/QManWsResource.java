@@ -535,7 +535,7 @@ public class QManWsResource implements WsResource
         {
         	Object[]parameters = handler.fromXML(requestBody);
             Object result = method.invoke(capability, parameters);
-            return handler.toXML(result);
+            return handler.toXML(result); 
         }
         catch (Throwable throwable)
         {

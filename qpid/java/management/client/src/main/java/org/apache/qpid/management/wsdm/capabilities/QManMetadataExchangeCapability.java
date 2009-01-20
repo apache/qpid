@@ -42,6 +42,11 @@ import org.w3c.dom.Element;
  */
 public class QManMetadataExchangeCapability extends WsrfMetadataExchange 
 {		
+	/**
+	 * Returns the WSDL associated with the owner of this capability.
+	 * 
+	 *  @return the WSDL associated with the owner of this capability.
+	 */
 	@Override
 	protected Element getWSDL() 
 	{
