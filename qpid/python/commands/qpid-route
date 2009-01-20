@@ -48,6 +48,7 @@ def Usage():
     print "    -d [ --durable ]         Added configuration shall be durable"
     print "    -e [ --del-empty-link ]  Delete link after deleting last route on the link"
     print "    -s [ --src-local ]       Make connection to source broker (push route)"
+    print "    --ack N                  Acknowledge transfers over the bridge in batches of N"
     print "    -t <transport> [ --transport <transport>]"
     print "                             Specify transport to use for links, defaults to tcp"
     print
@@ -62,6 +63,7 @@ _durable   = False
 _dellink   = False
 _srclocal  = False
 _transport = "tcp"
+_ack       = 0
 
 class RouteManager:
     def __init__(self, localBroker):
@@ -234,7 +236,7 @@ class RouteManager:
 
         if _verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, False, _srclocal, dynamic)
+        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, False, _srclocal, dynamic, _ack)
         if res.status != 0:
             raise Exception(res.text)
         if _verbose:
@@ -256,7 +258,7 @@ class RouteManager:
 
         if _verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(_durable, queue, exchange, "", "", "", True, _srclocal, False)
+        res = link.bridge(_durable, queue, exchange, "", "", "", True, _srclocal, False, _ack)
         if res.status != 0:
             raise Exception(res.text)
         if _verbose:
@@ -401,7 +403,7 @@ def YN(val):
 ##
 
 try:
-    longOpts = ("verbose", "quiet", "durable", "del-empty-link", "src-local", "transport=")
+    longOpts = ("verbose", "quiet", "durable", "del-empty-link", "src-local", "transport=", "ack=")
     (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "vqdest:", longOpts)
 except:
     Usage()
@@ -425,6 +427,8 @@ for opt in optlist:
         _srclocal = True
     if opt[0] == "-t" or opt[0] == "--transport":
         _transport = opt[1]
+    if opt[0] == "--ack":
+        _ack = int(opt[1])
 
 nargs = len(cargs)
 if nargs < 2:

@@ -92,7 +92,8 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
                                                      bool         isLocal,
                                                      std::string& tag,
                                                      std::string& excludes,
-                                                     bool         dynamic)
+                                                     bool         dynamic,
+                                                     uint16_t     sync)
 {
     Mutex::ScopedLock locker(lock);
     stringstream      keystream;
@@ -121,6 +122,7 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
         args.i_tag        = tag;
         args.i_excludes   = excludes;
         args.i_dynamic    = dynamic;
+        args.i_sync       = sync;
 
         bridge = Bridge::shared_ptr
             (new Bridge (l->second.get(), l->second->nextChannel(),

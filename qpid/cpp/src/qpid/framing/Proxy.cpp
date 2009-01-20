@@ -18,15 +18,21 @@
 
 #include "Proxy.h"
 #include "AMQFrame.h"
+#include "AMQMethodBody.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace framing {
 
-Proxy::Proxy(FrameHandler& h) : out(&h) {}
+Proxy::Proxy(FrameHandler& h) : out(&h), sync(false) {}
 
 Proxy::~Proxy() {}
 
 void Proxy::send(const AMQBody& b) {
+    if (sync) {
+        const AMQMethodBody* m = dynamic_cast<const AMQMethodBody*>(&b);
+        if (m)  m->setSync(sync);
+    }
     AMQFrame f(b);
     out->handle(f);
 }
@@ -38,5 +44,8 @@ ProtocolVersion Proxy::getVersion() const {
 FrameHandler& Proxy::getHandler() { return *out; }
 
 void Proxy::setHandler(FrameHandler& f) { out=&f; }
+
+Proxy::ScopedSync::ScopedSync(Proxy& p) : proxy(p) { proxy.sync = true; }
+Proxy::ScopedSync::~ScopedSync() { proxy.sync = false; }
 
 }} // namespace qpid::framing

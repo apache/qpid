@@ -77,6 +77,8 @@ class SemanticState : public sys::OutputTask,
         uint32_t msgCredit;
         uint32_t byteCredit;
         bool notifyEnabled;
+        const int syncFrequency;
+        int deliveryCount;
 
         bool checkCredit(boost::intrusive_ptr<Message>& msg);
         void allocateCredit(boost::intrusive_ptr<Message>& msg);
@@ -197,7 +199,7 @@ class SemanticState : public sys::OutputTask,
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
     void recover(bool requeue);
-    void deliver(DeliveryRecord& message);            
+    void deliver(DeliveryRecord& message, bool sync);            
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last, bool setRedelivered);
     void reject(DeliveryId first, DeliveryId last);

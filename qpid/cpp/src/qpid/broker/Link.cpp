@@ -125,17 +125,19 @@ void Link::startConnectionLH ()
 
 void Link::established ()
 {
-    Mutex::ScopedLock mutex(lock);
     stringstream addr;
     addr << host << ":" << port;
 
     QPID_LOG (info, "Inter-broker link established to " << addr.str());
     agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
-    setStateLH(STATE_OPERATIONAL);
-    currentInterval = 1;
-    visitCount      = 0;
-    if (closing)
-        destroy();
+    {
+        Mutex::ScopedLock mutex(lock);
+        setStateLH(STATE_OPERATIONAL);
+        currentInterval = 1;
+        visitCount      = 0;
+        if (closing)
+            destroy();
+    }
 }
 
 void Link::closed (int, std::string text)
@@ -170,9 +172,9 @@ void Link::closed (int, std::string text)
 
 void Link::destroy ()
 {
+    Bridges toDelete;
     {
         Mutex::ScopedLock mutex(lock);
-        Bridges toDelete;
 
         AclModule* acl = getBroker()->getAcl();
         std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
@@ -195,12 +197,11 @@ void Link::destroy ()
         for (Bridges::iterator i = created.begin(); i != created.end(); i++)
             toDelete.push_back(*i);
         created.clear();
-
-        // Now delete all bridges on this link.
-        for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
-            (*i)->destroy();
-        toDelete.clear();
     }
+    // Now delete all bridges on this link (don't hold the lock for this).
+    for (Bridges::iterator i = toDelete.begin(); i != toDelete.end(); i++)
+        (*i)->destroy();
+    toDelete.clear();
     links->destroy (host, port);
 }
 
@@ -386,7 +387,7 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
             links->declare (host, port, iargs.i_durable, iargs.i_src,
                             iargs.i_dest, iargs.i_key, iargs.i_srcIsQueue,
                             iargs.i_srcIsLocal, iargs.i_tag, iargs.i_excludes,
-                            iargs.i_dynamic);
+                            iargs.i_dynamic, iargs.i_sync);
 
         if (result.second && iargs.i_durable)
             store->create(*result.first);

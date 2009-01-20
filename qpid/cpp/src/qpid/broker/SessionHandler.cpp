@@ -89,13 +89,14 @@ void SessionHandler::readyToSend() {
 // in the bridge.
 // 
 void SessionHandler::attached(const std::string& name) {
-    if (session.get())
+    if (session.get()) {
         checkName(name);
-    else {
+    } else {
         SessionId id(connection.getUserId(), name);
         SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
         session.reset(new SessionState(connection.getBroker(), *this, id, config));
-}
+        markReadyToSend();
+    }
 }
     
 }} // namespace qpid::broker

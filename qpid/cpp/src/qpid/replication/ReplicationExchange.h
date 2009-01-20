@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/Exchange.h"
+#include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
 namespace replication {
@@ -51,8 +52,12 @@ class ReplicationExchange : public qpid::broker::Exchange
     bool isBound(qpid::broker::Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args);
   private:
     qpid::broker::QueueRegistry& queues;
-    bool expectingEnqueue;
-    std::string targetQueue;
+    qpid::framing::SequenceNumber sequence;
+    bool init;
+
+    bool isDuplicate(const qpid::framing::FieldTable* args);
+    void handleEnqueueEvent(const qpid::framing::FieldTable* args, qpid::broker::Deliverable& msg);
+    void handleDequeueEvent(const qpid::framing::FieldTable* args);
 };
 }} // namespace qpid::replication
 

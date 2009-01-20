@@ -60,6 +60,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     void sendAttach(bool force);
     void sendTimeout(uint32_t t);
     void sendFlush();
+    void markReadyToSend();//TODO: only needed for inter-broker bridge; cleanup
 
     /** True if the handler is ready to send and receive */
     bool ready() const;

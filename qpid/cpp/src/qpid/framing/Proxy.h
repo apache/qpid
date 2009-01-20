@@ -33,6 +33,14 @@ class AMQBody;
 class Proxy
 {
   public:
+    class ScopedSync
+    {
+        Proxy& proxy;
+      public:
+        ScopedSync(Proxy& p);
+        ~ScopedSync();
+    };
+
     Proxy(FrameHandler& h);
     virtual ~Proxy();
 
@@ -42,9 +50,9 @@ class Proxy
 
     FrameHandler& getHandler();
     void setHandler(FrameHandler&);
-
   private:
     FrameHandler* out;
+    bool sync;
 };
 
 }} // namespace qpid::framing

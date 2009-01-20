@@ -168,7 +168,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing)
         BOOST_CHECK_EQUAL(incoming.pop().getData(), (boost::format("%1%_%2%") % "Message" % (i+1)).str());
     }
     fixture.connection.close();
-    fixture.shutdownBroker();
+    fixture.broker->getQueueEvents().shutdown();
 
     //check listener was notified of all events, and in correct order
     SequenceNumber enqueueId(1);
@@ -215,7 +215,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing_enqueuesOnly)
         BOOST_CHECK_EQUAL(incoming.pop().getData(), (boost::format("%1%_%2%") % "Message" % (i+1)).str());
     }
     fixture.connection.close();
-    fixture.shutdownBroker();
+    fixture.broker->getQueueEvents().shutdown();
 
     //check listener was notified of all events, and in correct order
     SequenceNumber enqueueId(1);

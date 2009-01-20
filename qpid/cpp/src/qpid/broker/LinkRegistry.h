@@ -85,7 +85,8 @@ namespace broker {
                     bool         isLocal,
                     std::string& id,
                     std::string& excludes,
-                    bool         dynamic);
+                    bool         dynamic,
+                    uint16_t     sync);
 
         void destroy(const std::string& host, const uint16_t port);
         void destroy(const std::string& host,
