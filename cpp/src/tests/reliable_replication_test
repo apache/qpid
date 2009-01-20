@@ -39,11 +39,11 @@ stop_brokers() {
 
 setup() {
     rm -f replication-source.log replication-dest.log
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable trace+ --log-to-file replication-source.log --log-to-stderr 0 > qpidd.port
-    BROKER_A=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable trace+ --log-to-file replication-source.log --log-to-stderr 0 > qpidd-repl.port
+    BROKER_A=`cat qpidd-repl.port`
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log --log-to-stderr 0 > qpidd.port
-    BROKER_B=`cat qpidd.port`
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log --log-to-stderr 0 > qpidd-repl.port
+    BROKER_B=`cat qpidd-repl.port`
 
     #../qpidd --port 5555 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable trace+ --log-to-file replication-source.log --log-to-stderr 0 &
     #BROKER_A=5555
@@ -92,7 +92,7 @@ if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e 
         echo reliable replication test failed: expectations not met!
     else 
         echo replication reliable in the face of link failures
-        rm -f replication.actual replication.expected replication-source.log replication-dest.log
+        rm -f replication.actual replication.expected replication-source.log replication-dest.log qpidd-repl.port
     fi
 fi
 
