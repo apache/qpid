@@ -27,7 +27,6 @@
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/shared_ptr.hpp>
-#include <sys/uio.h>            // For iovec
 
 namespace qpid {
 
