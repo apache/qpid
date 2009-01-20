@@ -206,7 +206,7 @@ void Queue::requeue(const QueuedMessage& msg){
 }
 
 void Queue::clearLVQIndex(const QueuedMessage& msg){
-    const framing::FieldTable* ft = msg.payload->getApplicationHeaders();
+    const framing::FieldTable* ft = msg.payload ? msg.payload->getApplicationHeaders() : 0;
     if (lastValueQueue && ft){
         string key = ft->getAsString(qpidVQMatchProperty);
         lvq.erase(key);
