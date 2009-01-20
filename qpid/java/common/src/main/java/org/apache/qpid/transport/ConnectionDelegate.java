@@ -64,6 +64,11 @@ public abstract class ConnectionDelegate
         conn.dispatch(method);
     }
 
+    @Override public void connectionHeartbeat(Connection conn, ConnectionHeartbeat hearbeat)
+    {
+        // do nothing
+    }
+
     @Override public void connectionClose(Connection conn, ConnectionClose close)
     {
         conn.connectionCloseOk();
