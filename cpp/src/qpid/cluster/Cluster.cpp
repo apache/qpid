@@ -38,6 +38,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/log/Helpers.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/LatencyMetric.h"
 #include "qpid/memory.h"
 #include "qpid/shared_ptr.h"
 #include "qmf/org/apache/qpid/cluster/Package.h"
@@ -182,7 +183,7 @@ void Cluster::deliver(
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     Event e(Event::decodeCopy(from, buf));
-    if (from == myId) // Record self-deliveries for flow control.
+    if (from == myId)  // Record self-deliveries for flow control.
         mcast.selfDeliver(e);
     deliver(e, l);
 }
@@ -206,6 +207,7 @@ void Cluster::delivered(PollableEventQueue::Queue& events) {
 }
 
 void Cluster::deliveredEvent(const EventHeader& e, const char* data) {
+    QPID_LATENCY_RECORD("deliver queue", e);
     Buffer buf(const_cast<char*>(data), e.getSize());
     AMQFrame frame;
     if (e.isCluster())  {
