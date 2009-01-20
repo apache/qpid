@@ -27,6 +27,8 @@
 #include "Connection.h"
 #include "qpid/RefCountedBuffer.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/sys/LatencyMetric.h"
+#include <sys/uio.h>            // For iovec
 #include <iosfwd>
 
 namespace qpid {
@@ -37,7 +39,7 @@ namespace cluster {
 // 
 
 /** Header data for a multicast event */
-class EventHeader {
+class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
   public:
     EventHeader(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
     void decode(const MemberId& m, framing::Buffer&);
@@ -65,8 +67,9 @@ class EventHeader {
  */
 class Event : public EventHeader {
   public:
+    Event();
     /** Create an event with a buffer that can hold size bytes plus an event header. */
-    Event(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
+    Event(EventType t, const ConnectionId& c, size_t);
 
     /** Create an event copied from delivered data. */
     static Event decodeCopy(const MemberId& m, framing::Buffer&);
@@ -85,6 +88,8 @@ class Event : public EventHeader {
     
     operator framing::Buffer() const;
 
+    iovec toIovec();
+    
   private:
     void encodeHeader();
 

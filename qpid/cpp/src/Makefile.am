@@ -349,6 +349,8 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/DispatchHandle.cpp \
+  qpid/sys/LatencyMetric.cpp \
+  qpid/sys/LatencyMetric.h \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.cpp \
   qpid/sys/Timer.cpp

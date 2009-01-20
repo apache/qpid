@@ -23,7 +23,7 @@
 #include "Cpg.h"
 #include "ClusterLeaveException.h"
 #include "qpid/log/Statement.h"
-
+#include "qpid/sys/LatencyMetric.h"
 
 namespace qpid {
 namespace cluster {
@@ -59,8 +59,8 @@ void Multicaster::mcast(const Event& e) {
             return;
         }
     }
+    QPID_LATENCY_INIT(e);
     queue.push(e);
-
 }
 
 
@@ -76,7 +76,8 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
                 }
                 ++pending;
             }
-            iovec iov = { const_cast<char*>(i->getStore()), i->getStoreSize() };
+            QPID_LATENCY_RECORD("mcast send queue", *i);
+            iovec iov = i->toIovec();
             if (!cpg.mcast(&iov, 1)) {
                 // cpg didn't send because of CPG flow control.
                 if (mcastMax) {
@@ -104,8 +105,9 @@ void Multicaster::release() {
     holdingQueue.clear();
 }
 
-void Multicaster::selfDeliver(const Event&) {
+void Multicaster::selfDeliver(const Event& e) {
     sys::Mutex::ScopedLock l(lock);
+    QPID_LATENCY_RECORD("cpg self deliver", e);
     if (mcastMax) {
         assert(pending > 0);
         assert(pending <= mcastMax);
