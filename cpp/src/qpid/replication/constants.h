@@ -22,10 +22,12 @@ namespace qpid {
 namespace replication {
 namespace constants {
 
-const std::string REPLICATION_EVENT_TYPE("qpid.replication_event_type");
-const std::string ENQUEUE("enqueue");
-const std::string DEQUEUE("dequeue");
-const std::string REPLICATION_TARGET_QUEUE("qpid.replication_target_queue");
-const std::string DEQUEUED_MESSAGE_POSITION("qpid.dequeued_message_position");
+const std::string REPLICATION_EVENT_TYPE("qpid.replication.type");
+const std::string REPLICATION_EVENT_SEQNO("qpid.replication.seqno");
+const std::string REPLICATION_TARGET_QUEUE("qpid.replication.target_queue");
+const std::string DEQUEUED_MESSAGE_POSITION("qpid.replication.message");
+
+const int ENQUEUE(1);
+const int DEQUEUE(2);
 
 }}}

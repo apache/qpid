@@ -37,7 +37,7 @@ class ProxyGen < CppGen
   
   def inner_class_decl(c)
     cname=c.name.caps
-    cpp_class(cname, "Proxy") {
+    cpp_class(cname, "public Proxy") {
           gen <<EOS
 public:
 #{cname}(FrameHandler& f) : Proxy(f) {}
@@ -92,7 +92,7 @@ EOS
       genl
       namespace("qpid::framing") { 
         genl "#{@classname}::#{@classname}(FrameHandler& f) :"
-        gen "    Proxy(f)"
+        gen "   Proxy(f)"
         @amqp.classes.each { |c| gen ",\n    "+proxy_member(c)+"(f)" }
         genl "{}\n"
         @amqp.classes.each { |c| inner_class_defn(c) }

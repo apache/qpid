@@ -245,6 +245,7 @@
       <arg name="srcIsQueue"  dir="I" type="bool"/>
       <arg name="srcIsLocal"  dir="I" type="bool"/>
       <arg name="dynamic"     dir="I" type="bool"/>
+      <arg name="sync"        dir="I" type="uint16"/>
     </method>
   </class>
 
@@ -266,6 +267,7 @@
     <property name="tag"         type="sstr"   access="RC"/>
     <property name="excludes"    type="sstr"   access="RC"/>
     <property name="dynamic"     type="bool"   access="RC"/>
+    <property name="sync"        type="uint16" access="RC"/>
     <method name="close"/> 
   </class>
 
