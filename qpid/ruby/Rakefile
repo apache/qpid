@@ -27,20 +27,48 @@ PKG_NAME='ruby-qpid'
 PKG_VERSION='0.10.2'
 GEM_NAME='qpid'
 
+EXT_CONF="ext/sasl/extconf.rb"
+MAKEFILE="ext/sasl/Makefile"
+SASL_MODULE="ext/sasl/sasl.so"
+SASL_SRC=SASL_MODULE.gsub(/.so$/, ".c")
+
 #
 # Additional files for clean/clobber
 #
 
-CLEAN.include [ "**/*~", "lib/*/spec_cache" ]
+CLEAN.include [ "**/*~", "lib/*/spec_cache", SASL_MODULE, "ext/**/*.o" ]
+
+CLOBBER.include [ "config.save", "ext/**/mkmf.log",
+                  MAKEFILE ]
+
+file MAKEFILE => EXT_CONF do |t|
+   Dir::chdir(File::dirname(EXT_CONF)) do
+    unless sh "ruby #{File::basename(EXT_CONF)}"
+      $stderr.puts "Failed to run extconf"
+      break
+    end
+  end
+end
+
+file SASL_MODULE => [ MAKEFILE, SASL_SRC ] do |t|
+  Dir::chdir(File::dirname(EXT_CONF)) do
+    unless sh "make"
+      $stderr.puts "make failed"
+      break
+    end
+  end
+end
+desc "Build the native library"
+task :build => SASL_MODULE
 
 Rake::TestTask.new(:test) do |t|
   t.test_files = FileList['tests/*.rb'].exclude("tests/util.rb")
-  t.libs = [ 'lib' ]
+  t.libs = [ 'lib', 'ext/sasl' ]
 end
 
 Rake::TestTask.new(:"test_0-8") do |t|
   t.test_files = FileList["tests_0-8/*.rb"]
-  t.libs = [ 'lib' ]
+  t.libs = [ 'lib', 'ext/sasl' ]
 end
 
 desc "Create cached versions of the AMQP specs"
@@ -63,7 +91,8 @@ end
 PKG_FILES = FileList[
   "DISCLAIMER", "LICENSE.txt", "NOTICE.txt",
   "Rakefile", "RELEASE_NOTES",
-  "lib/**/*.rb", "lib/*/spec_cache/*.rb*", "tests/**/*", "examples/**"
+  "lib/**/*.rb", "lib/*/spec_cache/*.rb*", "tests/**/*", "examples/**", "ext/**/*.[ch]",
+  "ext/**/MANIFEST", "ext/**/extconf.rb"
 ]
 
 DIST_FILES = FileList[

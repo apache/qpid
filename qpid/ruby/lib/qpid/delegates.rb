@@ -18,6 +18,7 @@
 #
 
 require 'rbconfig'
+require 'sasl'
 
 module Qpid
 
@@ -173,9 +174,17 @@ module Qpid
       def initialize(connection, args)
         super(connection)
 
-        @username = args[:username] || "guest"
-        @password = args[:password] || "guest"
-        @mechanism= args[:mechanism] || "PLAIN"
+        result = Sasl::client_init
+
+        @mechanism= args[:mechanism]
+        @username = args[:username]
+        @password = args[:password]
+        @service = args[:service] || "qpidd"
+        @min_ssf = args[:min_ssf] || 0
+        @max_ssf = args[:max_ssf] || 65535
+
+        @saslConn = Sasl.client_new(@mechanism, @service, args[:host],
+                                    @username, @password, @min_ssf, @max_ssf)
       end
 
       def start
@@ -184,18 +193,31 @@ module Qpid
       end
 
       def connection_start(ch, start)
-        r = "\0%s\0%s" % [@username, @password]
+        mech_list = ""
+        start.mechanisms.each do |m|
+          mech_list += m + " "
+        end
+        resp = Sasl.client_start(@saslConn, mech_list)
         ch.connection_start_ok(:client_properties => PROPERTIES,
-                               :mechanism => @mechanism,
-                               :response => r)
+                               :mechanism => resp[2],
+                               :response => resp[1])
+      end
+
+      def connection_secure(ch, secure)
+        resp = Sasl.client_step(@saslConn, secure.challenge)
+        ch.connection_secure_ok(:response => resp[1])
       end
 
       def connection_tune(ch, tune)
-        ch.connection_tune_ok()
+        ch.connection_tune_ok(:channel_max => tune.channel_max,
+                              :max_frame_size => tune.max_frame_size,
+                              :heartbeat => 0)
         ch.connection_open()
+        @connection.security_layer_tx = @saslConn
       end
 
       def connection_open_ok(ch, open_ok)
+        @connection.security_layer_rx = @saslConn
         @connection.opened = true
         @connection.signal
       end
