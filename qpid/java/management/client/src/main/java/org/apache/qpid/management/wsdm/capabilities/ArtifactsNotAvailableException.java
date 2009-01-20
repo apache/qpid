@@ -34,6 +34,13 @@ public class ArtifactsNotAvailableException extends Exception
 	private final WsArtifacts _artifacts;
 	private final ObjectName _objectName;
 	
+	/**
+	 * Builds a new exception with the given arguments.
+	 * 
+	 * @param artifacts the artifacts built.
+	 * @param cause the exception cause.
+	 * @param objectName the object name of the corresponding JMX entity.
+	 */
 	public ArtifactsNotAvailableException(WsArtifacts artifacts,Throwable cause, ObjectName objectName) 
 	{
 		super(cause);

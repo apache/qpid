@@ -131,7 +131,7 @@ class WSDMArtifactsDirector
 	 * 
 	 * @throws BuilderException when one builder raises an exception during this operation.
 	 */
-	void processOperations() 
+	void processOperations() throws BuilderException
 	{
 		for (MBeanOperationInfo operation : _metadata.getOperations()) 
 		{

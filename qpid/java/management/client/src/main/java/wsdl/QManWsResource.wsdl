@@ -60,7 +60,14 @@
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
-			<xsd:element name="OperationInvocationFault">
+			<xsd:element name="QManFault">
+				<xsd:complexType>
+					<xsd:complexContent>
+						<xsd:extension base="wsrf-bf:BaseFaultType"/>
+					</xsd:complexContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="MethodInvocationFault">
 				<xsd:complexType>
 					<xsd:complexContent>
 						<xsd:extension base="wsrf-bf:BaseFaultType"/>

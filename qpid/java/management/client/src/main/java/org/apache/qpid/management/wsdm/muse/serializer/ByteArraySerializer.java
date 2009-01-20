@@ -26,10 +26,8 @@ import javax.xml.namespace.QName;
 import org.apache.muse.core.serializer.Serializer;
 import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.addressing.soap.SoapFault;
+import org.apache.xerces.impl.dv.util.Base64;
 import org.w3c.dom.Element;
-
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 /**
  * Implementation of Muse Serializer for byte array type.
@@ -48,7 +46,7 @@ public class ByteArraySerializer implements Serializer {
 	{
 		try 
 		{
-			return new BASE64Decoder().decodeBuffer(xml.getTextContent());
+			return Base64.decode(xml.getTextContent());
 		} catch (Exception exception) 
 		{
 			throw new SoapFault(exception);
@@ -77,7 +75,7 @@ public class ByteArraySerializer implements Serializer {
 	{
 		Element element = XmlUtils.createElement(
 				qname, 
-				new BASE64Encoder().encode((byte[]) object));
+				Base64.encode((byte[]) object));
 		element.setAttribute("xmlns:xsi", XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);
 		element.setAttribute("xsi:type","xsd:base64Binary");
 		return element;
