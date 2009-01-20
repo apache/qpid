@@ -60,6 +60,22 @@ public class PrincipalPermissions
         _permissions = new ConcurrentHashMap();
     }
 
+    /**
+     * 
+     * @param permission the type of permission to check
+     * 
+     * @param parameters vararg depending on what permission was passed in
+     *  ACCESS: none
+     *  BIND: none
+     *  CONSUME: AMQShortString queueName, Boolean temporary, Boolean ownQueueOnly
+     *  CREATE:  Boolean temporary, AMQShortString queueName, AMQShortString exchangeName, AMQShortString routingKey
+     *                      or
+     *           AMQShortString exchangeName, AMQShortString Class
+     *  DELETE: none
+     *  PUBLISH: Exchange exchange, AMQShortString routingKey
+     *  PURGE: none
+     *  UNBIND: none
+     */
     public void grant(Permission permission, Object... parameters)
     {
         switch (permission)
@@ -306,6 +322,20 @@ public class PrincipalPermissions
 
     }
 
+    /**
+     * 
+     * @param permission the type of permission to check
+     * 
+     * @param parameters vararg depending on what permission was passed in
+     *  ACCESS: none
+     *  BIND: QueueBindBody bindmethod, Exchange exchange, AMQQueue queue, AMQShortString routingKey
+     *  CONSUME: AMQQueue queue
+     *  CREATE:  QueueDeclareBody obj || ExchangeDeclareBody obj
+     *  DELETE: none
+     *  PUBLISH: Exchange exchange, AMQShortString routingKey
+     *  PURGE: none
+     *  UNBIND: none
+     */
     public boolean authorise(Permission permission, Object... parameters)
     {
 
