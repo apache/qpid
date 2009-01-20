@@ -95,19 +95,20 @@ public class TimeToLiveTest extends QpidTestCase
         clientConnection.start();
 
         //Receive Message 0
-        Message received = consumer.receive(1000);
-        Assert.assertNotNull("First message not received", received);
-        Assert.assertTrue("First message doesn't have first set.", received.getBooleanProperty("first"));
-        Assert.assertEquals("First message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
+        Message receivedFirst = consumer.receive(1000);
+        Message receivedSecond = consumer.receive(1000);
+        Message receivedThird = consumer.receive(1000);
+        
+        // Only first and last messages sent should survive expiry
+        Assert.assertNull("More messages received", receivedThird); 
 
+        Assert.assertNotNull("First message not received", receivedFirst);
+        Assert.assertTrue("First message doesn't have first set.", receivedFirst.getBooleanProperty("first"));
+        Assert.assertEquals("First message has incorrect TTL.", 0L, receivedFirst.getLongProperty("TTL"));
 
-        received = consumer.receive(1000);
-        Assert.assertNotNull("Final message not received", received);
-        Assert.assertFalse("Final message has first set.", received.getBooleanProperty("first"));
-        Assert.assertEquals("Final message has incorrect TTL.", 0L, received.getLongProperty("TTL"));
-
-        received = consumer.receive(1000);
-        Assert.assertNull("More messages received", received);
+        Assert.assertNotNull("Final message not received", receivedSecond);
+        Assert.assertFalse("Final message has first set.", receivedSecond.getBooleanProperty("first"));
+        Assert.assertEquals("Final message has incorrect TTL.", 0L, receivedSecond.getLongProperty("TTL"));
 
         clientConnection.close();
 
