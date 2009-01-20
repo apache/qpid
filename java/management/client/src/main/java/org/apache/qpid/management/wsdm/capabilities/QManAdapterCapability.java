@@ -21,7 +21,10 @@
 package org.apache.qpid.management.wsdm.capabilities;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -29,10 +32,13 @@ import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.xml.namespace.QName;
 
 import org.apache.muse.core.AbstractCapability;
 import org.apache.muse.core.Resource;
 import org.apache.muse.core.ResourceManager;
+import org.apache.muse.core.routing.MessageHandler;
+import org.apache.muse.core.routing.ReflectionMessageHandler;
 import org.apache.muse.core.serializer.SerializerRegistry;
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.muse.ws.addressing.soap.SoapFault;
@@ -94,6 +100,8 @@ public class QManAdapterCapability extends AbstractCapability
 				
 				resource.setWsdlPortType(Names.QMAN_RESOURCE_PORT_TYPE_NAME);
 				capability.setCapabilityURI(Names.NAMESPACE_URI+"/"+capability.getClass().getSimpleName());
+				capability.setMessageHandlers(createMessageHandlers(capability));
+				
 				resource.addCapability(capability);
 				resource.initialize();
 				resourceManager.addResource(resource.getEndpointReference(), resource);
@@ -266,4 +274,29 @@ public class QManAdapterCapability extends AbstractCapability
 	{
 		
 	}
+
+	/**
+	 * Creates the message handlers for the given capability.
+	 * 
+	 * @param capability the QMan capability.
+	 * @return a collection with message handlers for the given capability.
+	 */
+	protected Collection<MessageHandler> createMessageHandlers(MBeanCapability capability)
+	{
+        Collection<MessageHandler> handlers = new ArrayList<MessageHandler>();
+        
+        for (Method method :  capability.getClass().getDeclaredMethods())
+        {
+        	String name = method.getName();
+        	
+        	QName requestName = new QName(Names.NAMESPACE_URI,name,Names.PREFIX);
+        	QName returnValueName = new QName(Names.NAMESPACE_URI,name+"Response",Names.PREFIX);
+        	
+        	String actionURI = Names.NAMESPACE_URI+"/"+name;
+            MessageHandler handler = new ReflectionMessageHandler(actionURI, requestName, returnValueName);
+            handler.setMethod(method);
+            handlers.add(handler);
+        }
+        return handlers;	
+    }  
 }

@@ -26,6 +26,7 @@ import java.lang.reflect.Array;
 import javax.management.Attribute;
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.xml.namespace.QName;
@@ -39,7 +40,10 @@ import org.apache.muse.ws.resource.basefaults.BaseFault;
 import org.apache.muse.ws.resource.basefaults.WsbfUtils;
 import org.apache.muse.ws.resource.impl.AbstractWsResourceCapability;
 import org.apache.muse.ws.resource.properties.ResourcePropertyCollection;
+import org.apache.qpid.management.domain.handler.impl.InvocationResult;
+import org.apache.qpid.management.domain.services.MethodInvocationException;
 import org.apache.qpid.management.wsdm.common.EntityInstanceNotFoundFault;
+import org.apache.qpid.management.wsdm.common.MethodInvocationFault;
 import org.apache.qpid.management.wsdm.common.NoSuchAttributeFault;
 import org.apache.qpid.management.wsdm.common.QManFault;
 import org.apache.qpid.management.wsdm.muse.serializer.ByteArraySerializer;
@@ -73,7 +77,7 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * 
 	 * @param objectName the object name of the target mbean.
 	 */
-	public void setResourceObjectName(ObjectName objectName) 
+	void setResourceObjectName(ObjectName objectName) 
 	{
 		this._objectName = objectName;
 	}
@@ -89,7 +93,7 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * 			be found.
 	 * @throws QManFault in case of internal system failure.
 	 */
-	protected Object getAttribute(String attributeName) throws QManFault 
+	Object getAttribute(String attributeName) throws QManFault 
 	{
 		try 
 		{
@@ -98,7 +102,6 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 		{
 			throw new NoSuchAttributeFault(
 					getWsResource().getEndpointReference(), 
-					_objectName, 
 					attributeName);
 		} catch (InstanceNotFoundException exception) 
 		{
@@ -131,17 +134,15 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * @throws QManFault
 	 *             in case of internal system failure.
 	 */
-	protected void setAttribute(String attributeName, Object value) throws QManFault 
+	void setAttribute(String attributeName, Object value) throws QManFault 
 	{
 		try 
 		{
-			_mxServer.setAttribute(_objectName, new Attribute(attributeName,
-					value));
+			_mxServer.setAttribute(_objectName, new Attribute(attributeName,value));
 		} catch (AttributeNotFoundException exception) 
 		{
 			throw new NoSuchAttributeFault(
 					getWsResource().getEndpointReference(), 
-					_objectName, 
 					attributeName);
 		} catch (InstanceNotFoundException exception) 
 		{
@@ -156,6 +157,49 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 		}
 	}
 
+	/**
+	 * Invokes the requested operation on target JMX resource.
+	 * 
+	 * @param operationName the name of the operation to be invoked.
+	 * @param params parameters used for operation invocation.
+	 * @param signature the operation / method signature.
+	 * @throws QManFault when invocation fails.
+	 */
+	Result invoke(String operationName, Object [] params, String [] signature) throws QManFault 
+	{
+		try
+		{
+			InvocationResult output =  (InvocationResult) _mxServer.invoke(_objectName, operationName, params, signature);
+			Result result = new Result(output.getReturnCode(),output.getStatusText(),output.getOutputSection());
+			return result;
+		} catch (InstanceNotFoundException e)
+		{
+			throw new EntityInstanceNotFoundFault(
+					getWsResource().getEndpointReference(), 
+					_objectName);
+		} catch (MBeanException exception)
+		{
+			if (exception.getTargetException() instanceof MethodInvocationException)
+			{
+				MethodInvocationException failure = (MethodInvocationException) exception.getTargetException();
+				throw new MethodInvocationFault(
+						getWsResource().getEndpointReference(),
+						operationName,
+						failure.getStatusText(),
+						failure.getReturnCode());				
+			} else {
+				throw new QManFault(
+						getWsResource().getEndpointReference(),
+						exception);							
+			}
+		}catch(Exception exception)
+		{
+			throw new QManFault(
+					getWsResource().getEndpointReference(),
+					exception);			
+		}
+	}
+	
 	/**
 	 * 
 	 * @param name
@@ -192,13 +236,8 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 		//
 		Object valuesArray = null;
 		Class type = null;
-
+		// TODO
 		if (value.getClass().isArray()) {
-			// TODO : 'sta porcheria non va bene. L'ho inserita perché se il
-			// value è un array non vivne
-			// utilizzato il mio ByteArraySerializer ma array serializer che fa
-			// il serial degli elementi uno a uno : quindi
-			// cercava un serializer per "byte"
 			if (value.getClass() == byte[].class) {
 				Serializer serializer = new ByteArraySerializer();
 				try {

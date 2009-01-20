@@ -53,7 +53,6 @@ public class WSDMAdapter extends HttpServlet
 	public void init() throws ServletException {
         LOGGER.debug(Messages.QMAN_000026_WSDM_ADAPTER_STARTS);
         
-        
         _isolationLayer = new WSDMAdapterIsolationLayer(getServletContext());
         _isolationLayer.initialize();
         

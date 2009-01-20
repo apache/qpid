@@ -50,17 +50,6 @@ public class EntityInstanceNotFoundFault extends QManFault
 	 */
 	public EntityInstanceNotFoundFault(EndpointReference endpointReference, ObjectName targetEntityName) 
 	{
-		super(endpointReference,EXCEPTION_QNAME,createMessage(targetEntityName));
-	}
-
-	/**
-	 * "Compose method" which creates the detail message for this exception.
-	 * 
-	 * @param targetEntityName the object name.
-	 * @return the detail message for this exception.
-	 */
-	private static String createMessage(ObjectName targetEntityName) 
-	{
-		return String.format("Entity associated with name %s was not found.",targetEntityName);
+		super(endpointReference,EXCEPTION_QNAME, targetEntityName.getCanonicalName());
 	}
 }

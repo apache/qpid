@@ -29,34 +29,42 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * This is the exception encapsulating the fault that will be thrown when a requested 
- * attribute is not found on the target ws resource.
+ * This is the exception encapsulating the fault that will be thrown in case of 
+ * method invocation failure.
  * 
  * @author Andrea Gazzarini
  */
-public class NoSuchAttributeFault extends QManFault 
+public class MethodInvocationFault extends QManFault 
 {
 	private static final long serialVersionUID = 5977379710882983474L;
 
-	private String _attributeName;
+	private String _message;
+	private long _returnCode;
 	
 	/**
-	 * Builds a new exception with the given endpoint reference, JMX object name 
-	 * and attribute that hasn't been found.
+	 * Builds a new exception with the given endpoint reference and method invocation exception.
+	 * This constructor will be used when the invocation thrown the MethodInvocationException.
 	 * 
 	 * @param endpointReference the endpoint reference.
-	 * @param attributeName the name of the attribute that hasn't been found.
+	 * @param methodName the name of the method.
+	 * @param message the explanatio message.
+	 * @param returnCode the a mnemonic code associated with the failure.
 	 */
-	public NoSuchAttributeFault(EndpointReference endpointReference, String attributeName) 
+	public MethodInvocationFault(
+			EndpointReference endpointReference, 
+			String methodName,
+			String message,
+			long returnCode) 
 	{
 		super(
 				endpointReference,
 				new QName(
 						Names.NAMESPACE_URI,
-						"NoSuchAttributeFault",
+						"OperationInvocationFault",
 						Names.PREFIX),
-				"Attribute not found on this WS-Resource.");
-		_attributeName = attributeName;
+				String.format("OPERATION \"%s\" FAILURE. See detail section for further details.",methodName));
+		this._message = message;
+		this._returnCode = returnCode;
 	}
 	
 	@Override
@@ -64,7 +72,8 @@ public class NoSuchAttributeFault extends QManFault
 	{
 		Element detail = super.getDetail();
 		Document owner = detail.getOwnerDocument();
-		detail.appendChild(XmlUtils.createElement(owner, Names.QMAN_STATUS_ATTRIBUTE_NAME,_attributeName));
+		detail.appendChild(XmlUtils.createElement(owner, Names.QMAN_STATUS_TEXT_NAME,_message));
+		detail.appendChild(XmlUtils.createElement(owner, Names.QMAN_STATUS_CODE_NAME,_returnCode));
 		return detail;
 	}
 }

@@ -16,11 +16,15 @@
 		<java-serializable-type>java.util.UUID</java-serializable-type>
    		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.UUIDSerializer</java-serializer-class>
 	</custom-serializer>
+	<custom-serializer>
+		<java-serializable-type>org.apache.qpid.management.wsdm.capabilities.Result</java-serializable-type>
+   		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.InvocationResultSerializer</java-serializer-class>
+	</custom-serializer>
 	<router>
 		<java-router-class>org.apache.muse.core.routing.SimpleResourceRouter</java-router-class>
 		<logging>
 			<log-file>log/muse.log</log-file>
-			<log-level>SEVERE</log-level>
+			<log-level>FINE</log-level>
 		</logging>
 		<persistence>
 			<java-persistence-class>org.apache.muse.core.routing.RouterFilePersistence</java-persistence-class>

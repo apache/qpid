@@ -28,7 +28,6 @@ import javax.xml.namespace.QName;
  */
 public abstract class Names
 {
-    /** Name of the qpid management exchange. */
     public static String MANAGEMENT_EXCHANGE = "qpid.management";    
     public static String MANAGEMENT_ROUTING_KEY = "console.#";
    
@@ -114,6 +113,21 @@ public abstract class Names
 			"QManWsResourcePortType",
 			Names.PREFIX);
 
+	public final static QName QMAN_STATUS_TEXT_NAME = new QName(
+			Names.NAMESPACE_URI,
+			"Message",
+			Names.PREFIX);
+	
+	public final static QName QMAN_STATUS_CODE_NAME = new QName(
+			Names.NAMESPACE_URI,
+			"ReturnCode",
+			Names.PREFIX);
+	
+	public final static QName QMAN_STATUS_ATTRIBUTE_NAME= new QName(
+			Names.NAMESPACE_URI,
+			"AttributeName",
+			Names.PREFIX);
+	
 	public final static String NAME_ATTRIBUTE = "name";
 	public final static String MODIFIABILITY = "modifiability";
 	public final static String READ_WRITE = "read-write";

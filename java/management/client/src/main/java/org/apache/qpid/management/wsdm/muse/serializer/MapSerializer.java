@@ -75,13 +75,7 @@ public class MapSerializer implements Serializer
 					key = objectDeserializer.fromXML(element);
 				} else if (Names.VALUE.equals(element.getNodeName()))
 				{
-					if (value.getClass()==byte[].class) 
-					{
-						value = byteArraySerializer.fromXML(element);
-					} else 
-					{
-						value = objectDeserializer.fromXML(element);
-					}
+					value = objectDeserializer.fromXML(element);
 				}
 			}
 			result.put(key, value);
@@ -111,13 +105,10 @@ public class MapSerializer implements Serializer
 	{
 		Serializer objectSerializer = SerializerRegistry.getInstance().getSerializer(Object.class);
 		Map<?, ?> data = (Map<?, ?>) obj;
-		
-		String namespaceURI = qname.getNamespaceURI();
-		String prefix = qname.getPrefix();
-		
-		QName entryQName = new QName(namespaceURI,Names.ENTRY,prefix);
-		QName keyQName = new QName(namespaceURI,Names.KEY,prefix);
-		QName valueQName = new QName(namespaceURI,Names.VALUE,prefix);
+
+		QName entryQName = new QName(Names.ENTRY);
+		QName keyQName = new QName(Names.KEY);
+		QName valueQName = new QName(Names.VALUE);
 		
 		Element root = XmlUtils.createElement(qname);
 		root.setAttribute("xmlns:xsi", XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);

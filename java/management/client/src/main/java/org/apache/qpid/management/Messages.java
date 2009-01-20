@@ -114,7 +114,6 @@ public interface Messages
 	String QMAN_300002_UNKNOWN_SEQUENCE_NUMBER = "<QMAN-300002> : Unable to deal with incoming message because it contains a unknown sequence number (%s).";
     String QMAN_300003_BROKER_ALREADY_CONNECTED = "<QMAN-300003> : Unable to enlist given broker connection data : QMan is already connected with broker %s";
     String QMAN_300004_INVALID_CONFIGURATION_FILE = "<QMAN-300004> : The given configuration file (%s) is not valid (it doesn't exist or cannot be read)";
-    
     String QMAN_300005_QEMU_INITIALIZATION_FAILURE = "<QMAN-300005> : Unable to initialize QEmu module and therefore emulation won't be enabled...";
 	
 	// ERROR
@@ -125,6 +124,8 @@ public interface Messages
 	String QMAN_100005_CLASS_SCHEMA_PROCESSING_FAILURE = "<QMAN-100005> : Q-Man was unable to process the schema response message.";
 	String QMAN_100006_EVENT_SCHEMA_PROCESSING_FAILURE = "<QMAN-100006> : Q-Man was unable to process the schema response message.";
 	String QMAN_100007_UNABLE_TO_CONNECT_WITH_BROKER = "<QMAN-100007> : Unable to connect with broker located on %s. This broker will be ignored.";
+
+	
 	String QMAN_100010_METHOD_INVOCATION_RESULT_FAILURE = "<QMAN-100010> : an exception occurred while storing the result of a method invocation. Sequence number was %s";
 	String QMAN_100011_UNKNOWN_CLASS_KIND = "<QMAN-100011> : Unknwon class kind : %s).";
 	String QMAN_100012_SCHEMA_MESSAGE_PROCESSING_FAILURE = "<QMAN-100012> : Q-Man was unable to process the schema response message.";
@@ -137,17 +138,16 @@ public interface Messages
 	String QMAN_100019_REQ_OR_RES_MALFORMED = "<QMAN-100019> : Unexpected exception occurred on WSDM adapter layer : probably request or response was malformed.";
 	String QMAN_100020_ACTION_NOT_SUPPORTED = "<QMAN-100020> : "+ACTION_NOT_SUPPORTED;	
 	String QMAN_100021_RMD_BUID_FAILURE = "<QMAN-100021> : Unable to build RDM for resource %s.";
-	String QMAN_100022_ISOLATION_LAYER_SHUTDOWN_FAILURE = "<QMAN-100022> : Unable to shutdown Isolation Layer.";
+
 	String QMAN_100023_BUILD_WS_ARTIFACTS_FAILURE = "<QMAN-100023> : Unable to build WS artifacts.";
 	String QMAN_100024_CAPABILITY_INSTANTIATION_FAILURE = "<QMAN-100024> : Unable to instantiate generated capability class for %s.";
 	String QMAN_100025_WSRF_FAILURE = "<QMAN-100025> : Resource manager raised an exception while creating capability for %s.";	
 	String QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE = "<QMAN-100026> : Exception occurred while replacing the placeholder soap address with resource actual location.";
-	
-	//// NEW 
 	String QMAN_100027_RESOURCE_SHUTDOWN_FAILURE = "<QMAN-100027> : Shutdown failure while destroying resource %s.";
 	String QMAN_100029_MALFORMED_RESOURCE_URI_FAILURE = "<QMAN-100029> : Unable to define URI for QMan resources using \"%s\". It violates RFC 2396";
 	String QMAN_100030_JMX_CORE_STARTUP_FAILURE = "<QMAN-100030> : QMan JMX core Unexpected failure while starting up.";
-	String QMAN_100031_WS_RESOURCE_ALREADY_INITIALIZED = "<QMAN-100032> : Bad request has been received on this WS-Resource : Initialization is not possible because the resource has already been initialized.";
+	String QMAN_100031_WS_RESOURCE_ALREADY_INITIALIZED = "<QMAN-100031> : Bad request has been received on this WS-Resource : Initialization is not possible because the resource has already been initialized.";
 	String QMAN_100032_WS_RESOURCE_NOT_YET_INITIALIZED = "<QMAN-100032> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource hasn't yet been initialized.";
 	String QMAN_100033_WS_RESOURCE_ALREADY_SHUTDOWN = "<QMAN-100033> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource has already been shutdown.";
+	String QMAN_100034_WSDL_SCHEMA_SECTION_NOT_FOUND = "<QMAN-100034> : Unable to get via XPath the schema section in WSDL.";
 }
