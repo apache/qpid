@@ -28,8 +28,10 @@ class QmfTest < Test::Unit::TestCase
     # Make sure errors in threads lead to a noisy death of the test
     Thread.abort_on_exception = true
 
-    sock = TCPSocket.new(ENV.fetch("QMF_TEST_HOST", 'localhost'),
-                         ENV.fetch("QMF_TEST_PORT", 5672))
+    host = ENV.fetch("QMF_TEST_HOST", 'localhost')
+    port = ENV.fetch("QMF_TEST_PORT", 5672)
+
+    sock = TCPSocket.new(host, port)
 
     @conn = Qpid::Connection.new(sock)
     @conn.start()
@@ -39,7 +41,7 @@ class QmfTest < Test::Unit::TestCase
     # It's a bit odd that we're using two connections but that's the way
     # the python one works afaict.
     @qmf = Qpid::Qmf::Session.new()
-    @qmf_broker = @qmf.add_broker("amqp://localhost:5672")
+    @qmf_broker = @qmf.add_broker("amqp://%s:%d" % [host, port])
 
     brokers = @qmf.objects(:class => "broker")
     assert_equal(1, brokers.length)
