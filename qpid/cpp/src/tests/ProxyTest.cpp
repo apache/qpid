@@ -18,36 +18,35 @@
  * under the License.
  *
  */
-#ifndef _DeliveryAdapter_
-#define _DeliveryAdapter_
+#include <iostream>
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/ExecutionSyncBody.h"
+#include "qpid/framing/Proxy.h"
+#include <alloca.h>
 
-#include "DeliveryId.h"
-#include "Message.h"
-#include "qpid/framing/amqp_types.h"
+#include "unit_test.h"
 
-namespace qpid {
-namespace broker {
+using namespace qpid::framing;
 
-class DeliveryRecord;
+QPID_AUTO_TEST_SUITE(ProxyTestSuite)
 
-/**
- * The intention behind this interface is to separate the generic
- * handling of some form of message delivery to clients that is
- * contained in the version independent Channel class from the
- * details required for a particular situation or
- * version. i.e. where the existing adapters allow (through
- * supporting the generated interface for a version of the
- * protocol) inputs of a channel to be adapted to the version
- * independent part, this does the same for the outputs.
- */
-class DeliveryAdapter
+
+QPID_AUTO_TEST_CASE(testScopedSync)
 {
-  public:
-    virtual void deliver(DeliveryRecord&, bool sync) = 0;
-    virtual ~DeliveryAdapter(){}
-};
-
-}}
-
-
-#endif
+    struct DummyHandler : FrameHandler
+    {
+        void handle(AMQFrame& f) {
+            AMQMethodBody* m = f.getMethod();
+            BOOST_CHECK(m);
+            BOOST_CHECK(m->isA<ExecutionSyncBody>());
+            BOOST_CHECK(m->isSync());
+        }
+    };
+    DummyHandler f;
+    Proxy p(f);
+    Proxy::ScopedSync s(p);
+    p.send(ExecutionSyncBody(p.getVersion()));
+}
+ 
+QPID_AUTO_TEST_SUITE_END()

@@ -299,6 +299,12 @@ void SessionHandler::sendCommandPoint(const SessionPoint& point)  {
     }
 }
 
+void SessionHandler::markReadyToSend() {
+    if (!sendReady) {
+        sendReady = true;
+    }
+}
+
 void SessionHandler::sendTimeout(uint32_t t) {
     checkAttached();
     peer.requestTimeout(t);

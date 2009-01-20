@@ -93,12 +93,12 @@ class SessionState : public qpid::SessionState,
     void sendCompletion();
 
     //delivery adapter methods:
-    void deliver(DeliveryRecord&);
+    void deliver(DeliveryRecord&, bool sync);
 
     // Manageable entry points
     management::ManagementObject* GetManagementObject (void) const;
     management::Manageable::status_t
-        ManagementMethod (uint32_t methodId, management::Args& args, std::string&);
+    ManagementMethod (uint32_t methodId, management::Args& args, std::string&);
 
     void readyToSend();
 
@@ -119,6 +119,8 @@ class SessionState : public qpid::SessionState,
     void handleInLast(framing::AMQFrame& frame);
     void handleOutLast(framing::AMQFrame& frame);
 
+    void sendAcceptAndCompletion();
+
     Broker& broker;
     SessionHandler* handler;    
     sys::AbsTime expiry;        // Used by SessionManager.
@@ -128,7 +130,8 @@ class SessionState : public qpid::SessionState,
     IncompleteMessageList incomplete;
     IncompleteMessageList::CompletionListener enqueuedOp;
     qmf::org::apache::qpid::broker::Session* mgmtObject;
-
+    qpid::framing::SequenceSet accepted;
+    
   friend class SessionManager;
 };
 

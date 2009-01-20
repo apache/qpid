@@ -23,6 +23,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 
@@ -35,27 +36,14 @@ using namespace qpid::replication::constants;
 
 void ReplicatingEventListener::handle(QueueEvents::Event event)
 {
-    //create event message and enqueue it on replication queue
-    FieldTable headers;
-    boost::intrusive_ptr<Message> message;
     switch (event.type) {
       case QueueEvents::ENQUEUE:
-        headers.setString(REPLICATION_EVENT_TYPE, ENQUEUE);
-        headers.setString(REPLICATION_TARGET_QUEUE, event.msg.queue->getName());
-        message = createEventMessage(headers);
-        queue->deliver(message);
-        //if its an enqueue, enqueue the message itself on the
-        //replication queue also:
-        queue->deliver(event.msg.payload);
-        QPID_LOG(debug, "Queued 'enqueue' event on " << event.msg.queue->getName() << " for replication");
+        deliverEnqueueMessage(event.msg);
+        QPID_LOG(debug, "Queuing 'enqueue' event on " << event.msg.queue->getName() << " for replication");
         break;
       case QueueEvents::DEQUEUE:
-        headers.setString(REPLICATION_EVENT_TYPE, DEQUEUE);
-        headers.setString(REPLICATION_TARGET_QUEUE, event.msg.queue->getName());
-        headers.setInt(DEQUEUED_MESSAGE_POSITION, event.msg.position);
-        message = createEventMessage(headers);
-        queue->deliver(message);
-        QPID_LOG(debug, "Queued 'dequeue' event from " << event.msg.queue->getName() << " for replication, (from position "
+        deliverDequeueMessage(event.msg);
+        QPID_LOG(debug, "Queuing 'dequeue' event from " << event.msg.queue->getName() << " for replication, (from position "
                  << event.msg.position << ")");
         break;
     }
@@ -65,20 +53,64 @@ namespace {
 const std::string EMPTY;
 }
 
-boost::intrusive_ptr<Message> ReplicatingEventListener::createEventMessage(const FieldTable& headers)
+void ReplicatingEventListener::deliverDequeueMessage(const QueuedMessage& dequeued)
 {
-        boost::intrusive_ptr<Message> msg(new Message());
-        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), EMPTY, 0, 0));
-        AMQFrame header(in_place<AMQHeaderBody>());
-        header.setBof(false);
-        header.setEof(true);
-        header.setBos(true);
-        header.setEos(true);
-        msg->getFrames().append(method);
-        msg->getFrames().append(header);
-        MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-        props->setApplicationHeaders(headers);
-        return msg;
+    FieldTable headers;
+    headers.setString(REPLICATION_TARGET_QUEUE, dequeued.queue->getName());
+    headers.setInt(REPLICATION_EVENT_SEQNO, ++sequence);
+    headers.setInt(REPLICATION_EVENT_TYPE, DEQUEUE);
+    headers.setInt(DEQUEUED_MESSAGE_POSITION, dequeued.position);
+    boost::intrusive_ptr<Message> msg(createMessage(headers));
+    queue->deliver(msg);
+}
+
+void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueued)
+{
+    boost::intrusive_ptr<Message> msg(cloneMessage(*(enqueued.queue), enqueued.payload));
+    FieldTable& headers = msg->getProperties<MessageProperties>()->getApplicationHeaders();
+    headers.setString(REPLICATION_TARGET_QUEUE, enqueued.queue->getName());
+    headers.setInt(REPLICATION_EVENT_SEQNO, ++sequence);
+    headers.setInt(REPLICATION_EVENT_TYPE, ENQUEUE);
+    queue->deliver(msg);
+}
+
+boost::intrusive_ptr<Message> ReplicatingEventListener::createMessage(const FieldTable& headers)
+{
+    boost::intrusive_ptr<Message> msg(new Message());
+    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), EMPTY, 0, 0));
+    AMQFrame header(in_place<AMQHeaderBody>());
+    header.setBof(false);
+    header.setEof(true);
+    header.setBos(true);
+    header.setEos(true);
+    msg->getFrames().append(method);
+    msg->getFrames().append(header);
+    MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
+    props->setApplicationHeaders(headers);
+    return msg;
+}
+
+struct AppendingHandler : FrameHandler
+{
+    boost::intrusive_ptr<Message> msg;
+    
+    AppendingHandler(boost::intrusive_ptr<Message> m) : msg(m) {}
+
+    void handle(AMQFrame& f)
+    {
+        msg->getFrames().append(f);
+    }
+};
+
+boost::intrusive_ptr<Message> ReplicatingEventListener::cloneMessage(Queue& queue, boost::intrusive_ptr<Message> original)
+{
+    boost::intrusive_ptr<Message> copy(new Message());
+    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), EMPTY, 0, 0));
+    AppendingHandler handler(copy);
+    handler.handle(method);
+    original->sendHeader(handler, std::numeric_limits<int16_t>::max());
+    original->sendContent(queue, handler, std::numeric_limits<int16_t>::max());
+    return copy;
 }
     
 Options* ReplicatingEventListener::getOptions() 

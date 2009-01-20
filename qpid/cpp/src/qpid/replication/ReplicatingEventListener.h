@@ -28,6 +28,7 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
 namespace replication {
@@ -57,8 +58,14 @@ class ReplicatingEventListener : public Plugin
 
     PluginOptions options;    
     qpid::broker::Queue::shared_ptr queue;
+    qpid::framing::SequenceNumber sequence;
 
-    boost::intrusive_ptr<qpid::broker::Message> createEventMessage(const qpid::framing::FieldTable& headers);
+    void deliverDequeueMessage(const qpid::broker::QueuedMessage& enqueued);
+    void deliverEnqueueMessage(const qpid::broker::QueuedMessage& enqueued);
+
+    boost::intrusive_ptr<qpid::broker::Message> createMessage(const qpid::framing::FieldTable& headers);
+    boost::intrusive_ptr<qpid::broker::Message> cloneMessage(qpid::broker::Queue& queue, 
+                                                             boost::intrusive_ptr<qpid::broker::Message> original);
 };
 
 }} // namespace qpid::replication
