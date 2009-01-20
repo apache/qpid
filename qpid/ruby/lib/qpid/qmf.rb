@@ -65,16 +65,15 @@ module Qpid::Qmf
 
   class BrokerURL
 
-    attr_reader :host, :port, :auth_name, :auth_pass, :auth_mech
+    attr_reader :host, :port, :auth_name, :auth_pass
 
     def initialize(text)
       uri = URI.parse(text)
 
       @host = uri.host
       @port = uri.port ? uri.port : 5672
-      @auth_name = uri.user ? uri.user : "guest"
-      @auth_pass = uri.password ? uri.password: "guest"
-      @auth_mech = "PLAIN"
+      @auth_name = uri.user
+      @auth_pass = uri.password
 
       return uri
     end
@@ -178,9 +177,32 @@ module Qpid::Qmf
     end
 
     # Connect to a Qpid broker.  Returns an object of type Broker
-    def add_broker(target="amqp://localhost")
+    #
+    #  To supply a username for authentication, use the URL syntax:
+    #
+    #      amqp://username@hostname:port
+    #
+    #  If the broker needs a password for the client, an interactive prompt will be
+    #  provided to the user.
+    #
+    #  To supply a username and a password, use
+    #
+    #      amqp://username:password@hostname:port
+    #
+    #  The following keyword arguments may be used to control authentication:
+    #
+    #      :mechanism  - SASL mechanism (i.e. "PLAIN", "GSSAPI", "ANONYMOUS", etc.
+    #                  - defaults to unspecified (the system chooses for you)
+    #      :service    - SASL service name (i.e. the kerberos principal of the broker)
+    #                  - defaults to "qpidd"
+    #      :min_ssf    - Minimum Security Strength Factor for SASL security layers
+    #                  - defaults to 0
+    #      :max_ssf    - Maximum Security Strength Factor for SASL security layers
+    #                  - defaults to 65535
+    #
+    def add_broker(target = "amqp://localhost", kwargs = {})
       url = BrokerURL.new(target)
-      broker = Broker.new(self, url.host, url.port, url.auth_mech, url.auth_name, url.auth_pass)
+      broker = Broker.new(self, url.host, url.port, url.auth_name, url.auth_pass, kwargs)
       unless broker.connected? || @manage_connections
         raise broker.error
       end
@@ -1201,7 +1223,7 @@ module Qpid::Qmf
 
     attr_accessor :broker_id, :sync_result
 
-    def initialize(session, host, port, auth_mech, auth_name, auth_pass)
+    def initialize(session, host, port, auth_name, auth_pass, kwargs)
       super()
 
       # For debugging..
@@ -1212,6 +1234,8 @@ module Qpid::Qmf
       @port     = port
       @auth_name = auth_name
       @auth_pass = auth_pass
+      @auth_mechanism = kwargs[:mechanism]
+      @auth_service = kwargs[:service]
       @broker_bank = 1
       @agents   = {}
       @agents["1.0"] = Agent.new(self, 0, "BrokerAgent")
@@ -1368,8 +1392,11 @@ module Qpid::Qmf
       # FIXME: Need sth for Qpid::Util::connect
 
       @conn = Qpid::Connection.new(TCPSocket.new(@host, @port),
+                                   :mechanism => @auth_mechanism,
                                    :username => @auth_name,
-                                   :password => @auth_pass)
+                                   :password => @auth_pass,
+                                   :host => @host,
+                                   :service => @auth_service)
       @conn.start
       @reply_name = "reply-%s" % amqp_session_id
       @amqp_session = @conn.session(@amqp_session_id)

@@ -19,6 +19,7 @@
 
 require 'monitor'
 require 'logger'
+require 'sasl'
 
 module Qpid
 
@@ -109,21 +110,31 @@ module Qpid
     def initialize(sock)
       @sock = sock
       @sock.extend(MonitorMixin)
-      @buf = ""
+      @tx_buf = ""
+      @rx_buf = ""
+      @security_layer_tx = nil
+      @security_layer_rx = nil
+      @maxbufsize = 65535
     end
 
     attr_reader :sock
+    attr_accessor :security_layer_tx, :security_layer_rx
 
     def aborted? ; false ; end
 
     def write(buf)
-      @buf += buf
+      @tx_buf += buf
     end
 
     def flush
       @sock.synchronize do
-        _write(@buf)
-        @buf = ""
+        if @security_layer_tx
+          cipher_buf = Sasl.encode(@security_layer_tx, @tx_buf)
+          _write(cipher_buf)
+        else
+          _write(@tx_buf)
+        end
+        @tx_buf = ""
         frm.debug("FLUSHED") if frm
       end
     end
@@ -139,12 +150,14 @@ module Qpid
     end
 
     def read(n)
-      data = ""
-      while data.size < n
+      while @rx_buf.size < n
         begin
-          s = @sock.read(n - data.size)
+          s = @sock.recv(@maxbufsize)
+          if @security_layer_rx
+            s = Sasl.decode(@security_layer_rx, s)
+          end
         rescue IOError => e
-          raise e if data != ""
+          raise e if @rx_buf != ""
           @sock.close unless @sock.closed?
           raise Closed
         end
@@ -153,9 +166,11 @@ module Qpid
           @sock.close unless @sock.closed?
           raise Closed
         end
-        data += s
-        raw.debug("RECV #{n}/#{data.size} #{s.inspect}") if raw
+        @rx_buf += s
+        raw.debug("RECV #{n}/#{@rx_buf.size} #{s.inspect}") if raw
       end
+      data = @rx_buf[0, n]
+      @rx_buf = @rx_buf[n, @rx_buf.size - n]
       return data
     end
 
