@@ -382,4 +382,13 @@ public class ConnectionTest extends TestCase implements SessionListener
         ssn.sync();
     }
 
+    public void testHeartbeat()
+    {
+        startServer();
+        Connection conn = new Connection();
+        conn.connect("localhost", port, null, "guest", "guest");
+        conn.connectionHeartbeat();
+        conn.close();
+    }
+
 }
