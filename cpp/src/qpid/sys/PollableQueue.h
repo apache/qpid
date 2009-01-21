@@ -91,7 +91,7 @@ class PollableQueue {
     Callback callback;
     boost::shared_ptr<sys::Poller> poller;
     PollableCondition condition;
-    DispatchHandle handle;
+    DispatchHandleRef handle;
     Queue queue, batch;
     Thread dispatcher;
     bool stopped;
