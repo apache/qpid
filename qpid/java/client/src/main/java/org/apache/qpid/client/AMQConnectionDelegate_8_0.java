@@ -217,6 +217,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         }
     }
 
+    public void failoverPrep()
+    {
+        // do nothing
+    }
+
     /**
      * For all sessions, and for all consumers in those sessions, resubscribe. This is called during failover handling.
      * The caller must hold the failover mutex before calling this method.

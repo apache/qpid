@@ -292,6 +292,13 @@ public class Session extends SessionInvoker
         synchronized (processedLock)
         {
             log.debug("%s", processed);
+
+            if (ge(range.getUpper(), commandsIn))
+            {
+                throw new IllegalArgumentException
+                    ("range exceeds max received command-id: " + range);
+            }
+
             processed.add(range);
             Range first = processed.getFirst();
             int lower = first.getLower();

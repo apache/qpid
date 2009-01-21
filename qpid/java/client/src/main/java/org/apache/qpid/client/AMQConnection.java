@@ -1198,6 +1198,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _failoverMutex;
     }
 
+    public void failoverPrep()
+    {
+        _delegate.failoverPrep();
+    }
+
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
         _delegate.resubscribeSessions();
