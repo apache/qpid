@@ -35,9 +35,6 @@ namespace broker {
 
 class ConnectionState : public ConnectionToken, public management::Manageable
 {
-    // Minimum allowed frameMax
-    static const uint32_t MIN_FRAME_MAX = 4096;
-
   protected:
     sys::ConnectionOutputHandlerPtr out;
 
@@ -54,6 +51,9 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         {}
 
     virtual ~ConnectionState () {}
+
+    // Minimum allowed frameMax
+    static const uint32_t MIN_FRAME_MAX = 4096;
 
     uint32_t getFrameMax() const { return framemax; }
     uint16_t getHeartbeat() const { return heartbeat; }
