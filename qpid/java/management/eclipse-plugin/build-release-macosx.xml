@@ -18,14 +18,17 @@
  - under the License.
  -
  -->
-<project name="Eclipse Plugin Binary Release" default="release-bin">
+<project name="Eclipse Plugin MacOSX Binary Release" default="release-bin">
 
    <import file="build-release.xml"/>
 
    <property name="release.app" value="${release.subdir}/${application.dir}"/>
 
-   <target name="release-bin-mcplugin-jar">
-   	<jar destfile="${release.app}/plugins/${mcplugin.filename}.jar" basedir="${mcplugin.contents.dir}" manifest="${mcplugin.manifest}"/>
+   <target name="release-bin-qpid-mc-plugin">
+        <!-- Copy the qpid management-eclipse-plugin module jar -->
+        <copy tofile="${release.app}/plugins/${mcplugin.filename}.jar" flatten="true" failonerror="true">
+            <fileset file="${build.lib}/qpid-management-eclipse-plugin-${project.version}.jar"/>
+        </copy>
    </target>
 
    <target name="release-bin-jmxremote-plugin">
@@ -35,14 +38,24 @@
        </copy>
    </target>
 
+   <target name="release-bin-qpidmanagementcommon-plugin">
+       <!-- Copy the management common plugin's manifest, creating its plugin directory -->
+       <copy todir="${release.app}/plugins/qpid-management-common_1.0.0/META-INF" flatten="true" failonerror="true">
+           <fileset file="${qpidmanagementcommon.manifest}"/>
+       </copy>
+        <!-- Copy the qpid management-common module jar -->
+       <copy tofile="${release.app}/plugins/qpid-management-common_1.0.0/qpid-management-common.jar" flatten="true" failonerror="true">
+           <fileset file="${build.lib}/qpid-management-common-${project.version}.jar"/>
+       </copy>
+   </target>
 
-   <target name="release-bin-rcp-deps" description="copy eclipse-rcp dependencies into module release" 
-       depends="copy-executable">    	
+
+   <target name="release-bin-rcp-deps" description="copy eclipse-rcp dependencies into module release">    	
        
-       <!-- Copy remaining Eclipse binary and start-up files -->
+       <!-- Copy Eclipse binary and start-up files -->
        <copy todir="${release.app}/Contents/MacOS" flatten="true" failonerror="true">
-           <fileset file="${eclipse.ini}"/>
-           <fileset file="${bin.includes}"/>
+           <fileset file="${qpidmc.ini}"/>
+           <fileset file="${qpidmc.executable}"/>
        </copy>
 
        <chmod dir="${release.app}/Contents/MacOS" perm="u+rx" includes="**/*"/>
@@ -52,14 +65,9 @@
            <fileset file="${macosx.plist}"/>
        </copy>
 
-       <!-- Copy remaining Eclipse binary and start-up files -->
+       <!-- Copy Icns icon file -->
        <copy todir="${release.app}/Contents/Resources" flatten="true" failonerror="true">
            <fileset file="${eclipse.icns}"/>
-       </copy>
-
-       <!-- Copy License file -->
-       <copy todir="${release.app}" flatten="true" failonerror="true">
-           <fileset file="${license.eclipse.txt}"/>
        </copy>
 
        <!-- Copy the eclipse rcp module libs -->

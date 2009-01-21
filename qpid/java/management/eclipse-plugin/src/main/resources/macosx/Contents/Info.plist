@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
-	<string>eclipse</string>
+	<string>qpidmc</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Apache Qpid Management Console for Mac OS X</string>
 	<key>CFBundleIconFile</key>
@@ -26,6 +26,10 @@
 	<array>
 		<string>-consoleLog</string>
 		<string>-showlocation</string>
+		<!-- WARNING:
+		If you try to add a single VM argument (-vmargs) here,
+		*all* vmargs specified in qpidmc.ini will be ignored.
+		We recommend to add all arguments in MacOS/qpidmc.ini  -->
 	</array>
 </dict>
 </plist>

@@ -61,9 +61,7 @@
 
     </target>
 
-
-    <!-- Override imported module.xml build target, create module jar containing plugin files -->
-    <target name="build" depends="prepare, compile, copy-plugin-files, create-version, jar, jar-tests"/>
+    <target name="precompile" depends="copy-plugin-files, create-version" />
 
     <!-- Override imported module.xml release-bin target -->
     <target name="release-bin" depends="build">

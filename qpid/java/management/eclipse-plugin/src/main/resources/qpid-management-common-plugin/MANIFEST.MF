@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 1
 Bundle-Name: Qpid management commonPlug-in
 Bundle-SymbolicName: qpid-management-common
 Bundle-Version: 1.0.0
-Bundle-ClassPath: qpid-management-common-M4.jar
+Bundle-ClassPath: qpid-management-common.jar
 Export-Package: org.apache.qpid.management.common,
  org.apache.qpid.management.common.sasl
 Bundle-Vendor:
