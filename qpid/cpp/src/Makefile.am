@@ -350,7 +350,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/DispatchHandle.cpp \
   qpid/sys/LatencyMetric.cpp \
-  qpid/sys/LatencyMetric.h \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.cpp \
   qpid/sys/Timer.cpp
@@ -698,6 +697,7 @@ nobase_include_HEADERS = \
   qpid/sys/FileSysDir.h \
   qpid/sys/IntegerTypes.h \
   qpid/sys/IOHandle.h \
+  qpid/sys/LatencyMetric.h \
   qpid/sys/LockFile.h \
   qpid/sys/LockPtr.h \
   qpid/sys/Monitor.h \
