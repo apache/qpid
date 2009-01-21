@@ -27,6 +27,7 @@
 #include "qpid/sys/ConnectionOutputHandlerPtr.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/Url.h"
 #include "Broker.h"
 
 namespace qpid {
@@ -73,6 +74,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     bool isFederationLink() const { return federationLink; }
     void setFederationPeerTag(const string& tag) { federationPeerTag = string(tag); }
     const string& getFederationPeerTag() const { return federationPeerTag; }
+    std::vector<Url>& getKnownHosts() { return knownHosts; }
 
     Broker& getBroker() { return broker; }
 
@@ -97,6 +99,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     string url;
     bool federationLink;
     string federationPeerTag;
+    std::vector<Url> knownHosts;
 };
 
 }}

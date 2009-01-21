@@ -236,8 +236,12 @@ void ConnectionHandler::Handler::tune(uint16_t channelMax,
     server.open("/", Array(), true);
 }
 
-void ConnectionHandler::Handler::openOk(const framing::Array& /*knownHosts*/)
+void ConnectionHandler::Handler::openOk(const framing::Array& knownHosts)
 {
+    for (Array::ValueVector::const_iterator i = knownHosts.begin(); i != knownHosts.end(); ++i) {
+        Url url((*i)->get<std::string>());
+        connection.getKnownHosts().push_back(url);
+    }
 }
 
 void ConnectionHandler::Handler::redirect(const string& /*host*/, const framing::Array& /*knownHosts*/)

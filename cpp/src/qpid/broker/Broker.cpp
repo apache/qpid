@@ -118,7 +118,8 @@ Broker::Options::Options(const std::string& name) :
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
         ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)") 
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
-        ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted");
+        ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
+        ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)");
 }
 
 const std::string empty;
@@ -127,6 +128,7 @@ const std::string amq_topic("amq.topic");
 const std::string amq_fanout("amq.fanout");
 const std::string amq_match("amq.match");
 const std::string qpid_management("qpid.management");
+const std::string knownHostsNone("none");
 
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
@@ -248,9 +250,13 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     //initialize known broker urls (TODO: add support for urls for other transports (SSL, RDMA)):
-    boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
-    if (factory) { 
-        knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( factory->getPort() ) );
+    if (conf.knownHosts.empty()) {
+        boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
+        if (factory) { 
+            knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( factory->getPort() ) );
+        }
+    } else if (conf.knownHosts != knownHostsNone) {
+        knownBrokers.push_back(Url(conf.knownHosts));        
     }
 }
 
