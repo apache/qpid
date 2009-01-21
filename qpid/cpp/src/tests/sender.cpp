@@ -58,14 +58,15 @@ class Sender : public FailoverManager::Command
     Sender(const std::string& destination, const std::string& key, uint sendEos);
     void execute(AsyncSession& session, bool isRetry);
   private:
+    const std::string destination;
     MessageReplayTracker sender;
     Message message;  
     const uint sendEos;
     uint sent;
 };
 
-Sender::Sender(const std::string& destination, const std::string& key, uint eos) : 
-    sender(10), message(destination, key), sendEos(eos), sent(0) {}
+Sender::Sender(const std::string& dest, const std::string& key, uint eos) : 
+    destination(dest), sender(10), message("", key), sendEos(eos), sent(0) {}
 
 void Sender::execute(AsyncSession& session, bool isRetry)
 {
@@ -75,11 +76,11 @@ void Sender::execute(AsyncSession& session, bool isRetry)
     while (getline(std::cin, data)) {
         message.setData(data);
         message.getHeaders().setInt("sn", ++sent);
-        sender.send(message);
+        sender.send(message, destination);
     }
     for (uint i = sendEos; i > 0; --i) {
         message.setData(EOS);
-        sender.send(message);
+        sender.send(message, destination);
     }
 }
 
