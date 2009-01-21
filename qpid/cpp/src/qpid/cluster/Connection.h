@@ -26,6 +26,8 @@
 #include "WriteEstimate.h"
 #include "OutputInterceptor.h"
 #include "NoOpConnectionOutputHandler.h"
+#include "Event.h"
+#include "EventFrame.h"
 
 #include "qpid/broker/Connection.h"
 #include "qpid/amqp_0_10/Connection.h"
@@ -49,6 +51,7 @@ class TxAccept;
 
 namespace cluster {
 class Cluster;
+class Event;
 
 /** Intercept broker::Connection calls for shadow and local cluster connections. */
 class Connection :
@@ -58,6 +61,8 @@ class Connection :
         
 {
   public:
+    typedef sys::PollableQueue<EventFrame> EventFrameQueue;
+
     /** Local connection, use this in ConnectionId */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, MemberId, bool catchUp);
     /** Shadow connection */
@@ -96,8 +101,8 @@ class Connection :
     size_t decode(const char* buffer, size_t size);
 
     // Called for data delivered from the cluster.
-    void deliverBuffer(framing::Buffer&);
-    void delivered(framing::AMQFrame&);
+    void deliveredEvent(const Event&, EventFrameQueue&);
+    void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled);
     
@@ -166,6 +171,7 @@ class Connection :
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
+    int readCredit;
     
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };
