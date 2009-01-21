@@ -39,6 +39,7 @@
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/LatencyMetric.h"
 
 #include <boost/current_function.hpp>
 
@@ -73,7 +74,7 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 
 void Connection::init() {
     QPID_LOG(debug, cluster << " new connection: " << *this);
-    if (isLocal() && !isCatchUp()) {
+    if (isLocal() && !isCatchUp() && cluster.getReadMax()) {
         output.giveReadCredit(cluster.getReadMax());
     }
 }
@@ -137,6 +138,7 @@ bool Connection::checkUnsupported(const AMQBody& body) {
 // Delivered from cluster.
 void Connection::delivered(framing::AMQFrame& f) {
     QPID_LOG(trace, cluster << " RECV: " << *this << ": " << f);
+    QPID_LATENCY_INIT(f);
     assert(!catchUp);
     currentChannel = f.getChannel(); 
     if (!framing::invoke(*this, *f.getBody()).wasHandled() // Connection contol.

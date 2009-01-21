@@ -25,6 +25,7 @@
 #include "WriteEstimate.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/broker/ConnectionFactory.h"
+#include "qpid/sys/LatencyMetric.h"
 #include <boost/function.hpp>
 
 namespace qpid {
@@ -36,7 +37,7 @@ class Connection;
 /**
  * Interceptor for connection OutputHandler, manages outgoing message replication.
  */
-class OutputInterceptor : public sys::ConnectionOutputHandler {
+class OutputInterceptor : public sys::ConnectionOutputHandler, sys::LatencyMetricTimestamp {
   public:
     OutputInterceptor(cluster::Connection& p, sys::ConnectionOutputHandler& h);
 
