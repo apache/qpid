@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageConsumer;
 
 
@@ -30,7 +31,7 @@ import org.apache.qpid.client.BasicMessageConsumer;
  * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
  * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
-public abstract class UnprocessedMessage
+public abstract class UnprocessedMessage implements AMQSession.Dispatchable
 {
     private final int _consumerTag;
 
@@ -49,5 +50,9 @@ public abstract class UnprocessedMessage
         return _consumerTag;
     }
 
+    public void dispatch(AMQSession ssn)
+    {
+        ssn.dispatch(this);
+    }
 
 }

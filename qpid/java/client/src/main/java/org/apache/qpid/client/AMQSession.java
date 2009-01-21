@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -1811,6 +1812,26 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     }
 
+    void failoverPrep()
+    {
+        startDispatcherIfNecessary();
+        final CountDownLatch signal = new CountDownLatch(1);
+        _queue.add(new Dispatchable() {
+            public void dispatch(AMQSession ssn)
+            {
+                signal.countDown();
+            }
+        });
+        try
+        {
+            signal.await();
+        }
+        catch (InterruptedException e)
+        {
+            // pass
+        }
+    }
+
     /**
      * Resubscribes all producers and consumers. This is called when performing failover.
      *
@@ -1822,7 +1843,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _failedOverDirty = true;
         }
-        
+
         _rollbackMark.set(-1);
         resubscribeProducers();
         resubscribeConsumers();
@@ -2509,7 +2530,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _consumers.clear();
 
         for (C consumer : consumers)
-        {            
+        {
             consumer.failedOver();
             registerConsumer(consumer, true);
         }
@@ -2626,6 +2647,21 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
         }
 
+    }
+
+    public interface Dispatchable
+    {
+        void dispatch(AMQSession ssn);
+    }
+
+    public void dispatch(UnprocessedMessage message)
+    {
+        if (_dispatcher == null)
+        {
+            throw new java.lang.IllegalStateException("dispatcher is not started");
+        }
+
+        _dispatcher.dispatchMessage(message);
     }
 
     /** Used for debugging in the dispatcher. */
@@ -2750,37 +2786,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             try
             {
-                while (!_closed.get() && ((message = (UnprocessedMessage) _queue.take()) != null))
+                Dispatchable disp;
+                while (!_closed.get() && ((disp = (Dispatchable) _queue.take()) != null))
                 {
-                    long deliveryTag = message.getDeliveryTag();
-
-                    synchronized (_lock)
-                    {
-
-                        while (connectionStopped())
-                        {
-                            _lock.wait();
-                        }
-
-                        if (!(message instanceof CloseConsumerMessage)
-                            && tagLE(deliveryTag, _rollbackMark.get()))
-                        {
-                            rejectMessage(message, true);
-                        }
-                        else
-                        {
-                            synchronized (_messageDeliveryLock)
-                            {
-                                dispatchMessage(message);
-                            }
-                        }
-                    }
-
-                    long current = _rollbackMark.get();
-                    if (updateRollbackMark(current, deliveryTag))
-                    {
-                        _rollbackMark.compareAndSet(current, deliveryTag);
-                    }
+                    disp.dispatch(AMQSession.this);
                 }
             }
             catch (InterruptedException e)
@@ -2821,11 +2830,47 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         private void dispatchMessage(UnprocessedMessage message)
         {
-            //This if block is not needed anymore as bounce messages are handled separately
-            //if (message.getDeliverBody() != null)
-            //{
-            final C consumer =
-                    _consumers.get(message.getConsumerTag());
+            long deliveryTag = message.getDeliveryTag();
+
+            synchronized (_lock)
+            {
+
+                try
+                {
+                    while (connectionStopped())
+                    {
+                        _lock.wait();
+                    }
+                }
+                catch (InterruptedException e)
+                {
+                    // pass
+                }
+
+                if (!(message instanceof CloseConsumerMessage)
+                    && tagLE(deliveryTag, _rollbackMark.get()))
+                {
+                    rejectMessage(message, true);
+                }
+                else
+                {
+                    synchronized (_messageDeliveryLock)
+                    {
+                        notifyConsumer(message);
+                    }
+                }
+            }
+
+            long current = _rollbackMark.get();
+            if (updateRollbackMark(current, deliveryTag))
+            {
+                _rollbackMark.compareAndSet(current, deliveryTag);
+            }
+        }
+
+        private void notifyConsumer(UnprocessedMessage message)
+        {
+            final C consumer = _consumers.get(message.getConsumerTag());
 
             if ((consumer == null) || consumer.isClosed())
             {
@@ -2833,7 +2878,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 {
                     if (consumer == null)
                     {
-                        _dispatcherLogger.info("Dispatcher(" + dispatcherID + ")Received a message(" + System.identityHashCode(message) + ")" + "["
+                        _dispatcherLogger.info("Dispatcher(" + dispatcherID + ")Received a message("
+                                               + System.identityHashCode(message) + ")" + "["
                                                + message.getDeliveryTag() + "] from queue "
                                                + message.getConsumerTag() + " )without a handler - rejecting(requeue)...");
                     }
@@ -2841,7 +2887,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     {
                         if (consumer.isNoConsume())
                         {
-                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                            _dispatcherLogger.info("Received a message("
+                                                   + System.identityHashCode(message) + ")" + "["
                                                    + message.getDeliveryTag() + "] from queue " + " consumer("
                                                    + message.getConsumerTag() + ") is closed and a browser so dropping...");
                             //DROP MESSAGE
@@ -2850,7 +2897,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         }
                         else
                         {
-                            _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
+                            _dispatcherLogger.info("Received a message("
+                                                   + System.identityHashCode(message) + ")" + "["
                                                    + message.getDeliveryTag() + "] from queue " + " consumer("
                                                    + message.getConsumerTag() + ") is closed rejecting(requeue)...");
                         }
@@ -2866,7 +2914,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 consumer.notifyMessage(message);
             }
-
         }
     }
 

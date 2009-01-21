@@ -154,6 +154,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     //------- overwritten methods of class AMQSession
 
+    void failoverPrep()
+    {
+        super.failoverPrep();
+        clearUnacked();
+    }
+
     /**
      * Acknowledge one or many messages.
      *
