@@ -36,29 +36,30 @@ if HAVE_LIBCPG
 
 dmodule_LTLIBRARIES += cluster.la
 
-cluster_la_SOURCES = \
-  $(CMAN_SOURCES) \
-  qpid/cluster/Cluster.cpp \
-  qpid/cluster/Cluster.h \
+cluster_la_SOURCES =				\
+  $(CMAN_SOURCES)				\
+  qpid/cluster/Cluster.cpp			\
+  qpid/cluster/Cluster.h			\
   qpid/cluster/ClusterLeaveException.h		\
   qpid/cluster/ClusterMap.cpp			\
   qpid/cluster/ClusterMap.h			\
-  qpid/cluster/ClusterPlugin.cpp \
-  qpid/cluster/Connection.cpp \
+  qpid/cluster/ClusterPlugin.cpp		\
+  qpid/cluster/Connection.cpp			\
   qpid/cluster/Connection.h			\
   qpid/cluster/ConnectionCodec.cpp		\
   qpid/cluster/ConnectionCodec.h		\
-  qpid/cluster/ConnectionMap.h \
+  qpid/cluster/ConnectionMap.h			\
   qpid/cluster/Cpg.cpp				\
   qpid/cluster/Cpg.h				\
   qpid/cluster/Dispatchable.h			\
-  qpid/cluster/DumpClient.cpp \
+  qpid/cluster/DumpClient.cpp			\
   qpid/cluster/DumpClient.h			\
   qpid/cluster/Event.cpp			\
   qpid/cluster/Event.h				\
-  qpid/cluster/FailoverExchange.cpp \
+  qpid/cluster/EventFrame.h			\
+  qpid/cluster/FailoverExchange.cpp		\
   qpid/cluster/FailoverExchange.h		\
-  qpid/cluster/Multicaster.cpp \
+  qpid/cluster/Multicaster.cpp			\
   qpid/cluster/Multicaster.h			\
   qpid/cluster/NoOpConnectionOutputHandler.h	\
   qpid/cluster/OutputInterceptor.cpp		\

@@ -25,6 +25,7 @@
 #include "Event.h"
 #include "FailoverExchange.h"
 #include "Multicaster.h"
+#include "EventFrame.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "PollerDispatch.h"
 #include "Quorum.h"
@@ -102,7 +103,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef sys::Monitor::ScopedLock Lock;
 
     typedef sys::PollableQueue<Event> PollableEventQueue;
-    typedef std::deque<Event> PlainEventQueue;
+    typedef sys::PollableQueue<EventFrame> PollableFrameQueue;
 
     // NB: The final Lock& parameter on functions below is used to mark functions
     // that should only be called by a function that already holds the lock.
@@ -126,8 +127,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
-    void delivered(PollableEventQueue::Queue&); // deliverQueue callback
-    void deliveredEvent(const EventHeader&, const char*); 
+    void deliveredEvents(PollableEventQueue::Queue&);
+    void deliveredFrames(PollableFrameQueue::Queue&);
+    void deliveredEvent(const Event&); 
+    void deliveredFrame(const EventFrame&); 
 
     // Helper, called in deliver thread.
     void dumpStart(const MemberId& dumpee, const Url& url, Lock&);
@@ -185,7 +188,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Thread safe members
     Multicaster mcast;
     PollerDispatch dispatcher;
-    PollableEventQueue deliverQueue;
+    PollableEventQueue deliverEventQueue;
+    PollableFrameQueue deliverFrameQueue;
     ConnectionMap connections;
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
