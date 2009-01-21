@@ -25,7 +25,6 @@
 #ifdef QPID_LATENCY_METRIC
 
 #include "qpid/sys/IntegerTypes.h"
-#include "qpid/sys/Mutex.h"
 
 namespace qpid {
 namespace sys {
@@ -53,7 +52,6 @@ class LatencyMetric {
 
   private:
     void report();
-    Mutex lock;
     const char* message;
     int64_t ignore, count, total, skipped, skip;
 };
