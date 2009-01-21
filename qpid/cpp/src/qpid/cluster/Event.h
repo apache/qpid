@@ -31,12 +31,15 @@
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
 
-namespace qpid {
-namespace cluster {
+#include "types.h"
 
-// TODO aconway 2008-09-03: more efficient solution for shared
-// byte-stream data.
-// 
+namespace qpid {
+
+namespace framing {
+class AMQBody;
+}
+
+namespace cluster {
 
 /** Header data for a multicast event */
 class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
