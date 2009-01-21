@@ -238,6 +238,7 @@ void Cluster::deliveredEvent(const EventHeader& e, const char* data) {
             }
         }
     }
+    QPID_LATENCY_RECORD("decode+execute", e);
 }
 
 struct AddrList {

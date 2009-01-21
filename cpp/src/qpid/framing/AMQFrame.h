@@ -27,6 +27,7 @@
 #include "AMQHeartbeatBody.h"
 #include "ProtocolVersion.h"
 #include "BodyHolder.h"
+#include "qpid/sys/LatencyMetric.h"
 
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
@@ -36,7 +37,7 @@ namespace framing {
 
 class BodyHolder;
 
-class AMQFrame : public AMQDataBlock
+class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
 {
   public:
     AMQFrame(boost::intrusive_ptr<BodyHolder> b=0) : body(b) { init(); }

@@ -1,4 +1,12 @@
 {
+   Benign leak in CPG - patched version.
+   Memcheck:Leak
+   fun:*
+   fun:openais_service_connect
+   fun:cpg_initialize
+}
+
+{
    Benign error in libcpg.
    Memcheck:Param
    socketcall.sendmsg(msg.msg_iov[i])

@@ -39,7 +39,6 @@ LatencyMetric::LatencyMetric(const char* msg, int64_t skip_) :
 LatencyMetric::~LatencyMetric() { report(); }
     
 void LatencyMetric::record(const LatencyMetricTimestamp& start) {
-    Mutex::ScopedLock l(lock);  // FIXME aconway 2009-01-20: atomics?
     if (!start.latency_metric_timestamp) return; // Ignore 0 timestamps.
     if (skip) {
         if (++skipped < skip) return;

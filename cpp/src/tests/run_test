@@ -24,7 +24,7 @@
 # Output nothing if test passes, show the output if it fails and
 # leave output in <test>.log for examination.  
 #
-# If qpidd.port exists run test with QPID_PORT=`cat qpidd.port`
+# If qpidd.port exists and is not empty run test with QPID_PORT=`cat qpidd.port`
 # 
 # If $VALGRIND if is set run under valgrind. If there are valgrind
 # erros show valgrind output, also leave it in <test>.valgrind for
@@ -38,7 +38,7 @@ srcdir=`dirname $0`
 export VALGRIND srcdir
 
 # Set QPID_PORT if qpidd.port exists.
-test -f qpidd.port && QPID_PORT=`cat qpidd.port`
+test -s qpidd.port && QPID_PORT=`cat qpidd.port`
 export QPID_PORT
 
 # Avoid silly libtool error messages if these are not defined
