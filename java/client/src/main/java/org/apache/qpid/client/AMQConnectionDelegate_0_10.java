@@ -162,9 +162,15 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return null;
     }
 
-    /**
-     * Not supported at this level.
-     */
+    public void failoverPrep()
+    {
+        List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
+        for (AMQSession s : sessions)
+        {
+            s.failoverPrep();
+        }
+    }
+
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
         List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
@@ -218,6 +224,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             {
                 if (_conn.firePreFailover(false) && _conn.attemptReconnection())
                 {
+                    _conn.failoverPrep();
                     _qpidConnection.resume();
 
                     if (_conn.firePreResubscribe())
