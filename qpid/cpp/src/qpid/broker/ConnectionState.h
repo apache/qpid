@@ -52,15 +52,12 @@ class ConnectionState : public ConnectionToken, public management::Manageable
 
     virtual ~ConnectionState () {}
 
-    // Minimum allowed frameMax
-    static const uint32_t MIN_FRAME_MAX = 4096;
-
     uint32_t getFrameMax() const { return framemax; }
     uint16_t getHeartbeat() const { return heartbeat; }
     uint16_t getHeartbeatMax() const { return heartbeatmax; }
     uint64_t getStagingThreshold() const { return stagingThreshold; }
 
-    void setFrameMax(uint32_t fm) { framemax = std::max(fm, MIN_FRAME_MAX); }
+    void setFrameMax(uint32_t fm) { framemax = std::max(fm, (uint32_t) 4096); }
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
     void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
