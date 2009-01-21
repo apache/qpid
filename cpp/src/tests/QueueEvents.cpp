@@ -79,13 +79,14 @@ QPID_AUTO_TEST_CASE(testBasicEventProcessing)
     QueuedMessage event1(&queue, MessageUtils::createMessage(), id);
     QueuedMessage event2(&queue, MessageUtils::createMessage(), ++id);
 
-    events.enqueued(event1);
-    events.enqueued(event2);
-    events.dequeued(event1);
     //define events expected by listener:
     listener.expect(QueueEvents::Event(QueueEvents::ENQUEUE, event1));
     listener.expect(QueueEvents::Event(QueueEvents::ENQUEUE, event2));
     listener.expect(QueueEvents::Event(QueueEvents::DEQUEUE, event1));
+
+    events.enqueued(event1);
+    events.enqueued(event2);
+    events.dequeued(event1);
 
     dispatchThread.join();
     events.shutdown();
