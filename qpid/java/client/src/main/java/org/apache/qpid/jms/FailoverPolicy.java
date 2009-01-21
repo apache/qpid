@@ -272,7 +272,7 @@ public class FailoverPolicy
 
     public FailoverMethod getCurrentMethod()
     {
-        if ((_currentMethod >= 0) && (_currentMethod < (_methods.length - 1)))
+        if ((_currentMethod >= 0) && (_currentMethod < (_methods.length)))
         {
             return _methods[_currentMethod];
         }
