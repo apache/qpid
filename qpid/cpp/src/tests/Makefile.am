@@ -90,7 +90,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
 	QueueEvents.cpp \
-	ProxyTest.cpp
+	ProxyTest.cpp \
+	RetryList.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
