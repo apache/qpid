@@ -19,6 +19,7 @@
  *
  */
 #include "LinkRegistry.h"
+#include "qpid/log/Statement.h"
 #include <iostream>
 
 using namespace qpid::broker;
@@ -52,6 +53,38 @@ void LinkRegistry::periodicMaintenance ()
     bridgesToDestroy.clear();
     for (LinkMap::iterator i = links.begin(); i != links.end(); i++)
         i->second->maintenanceVisit();
+    //now process any requests for re-addressing
+    for (AddressMap::iterator i = reMappings.begin(); i != reMappings.end(); i++)
+        updateAddress(i->first, i->second);
+    reMappings.clear();
+}
+
+void LinkRegistry::changeAddress(const TcpAddress& oldAddress, const TcpAddress& newAddress)
+{
+    //done on periodic maintenance thread; hold changes in separate
+    //map to avoid modifying the link map that is iterated over
+    reMappings[createKey(oldAddress)] = newAddress;
+}
+
+bool LinkRegistry::updateAddress(const std::string& oldKey, const TcpAddress& newAddress)
+{
+    std::string newKey = createKey(newAddress);
+    if (links.find(newKey) != links.end()) {
+        QPID_LOG(error, "Attempted to update key from " << oldKey << " to " << newKey << " which is already in use");
+        return false;
+    } else {
+        LinkMap::iterator i = links.find(oldKey);
+        if (i == links.end()) {
+            QPID_LOG(error, "Attempted to update key from " << oldKey << " which does not exist, to " << newKey);
+            return false;
+        } else {
+            links[newKey] = i->second;
+            i->second->reconnect(newAddress);
+            links.erase(oldKey);
+            QPID_LOG(info, "Updated link key from " << oldKey << " to " << newKey);
+            return true;
+        }
+    }
 }
 
 pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
@@ -252,3 +285,9 @@ std::string LinkRegistry::getAuthIdentity(const std::string& key)
 }
 
 
+std::string LinkRegistry::createKey(const TcpAddress& a)
+{
+    stringstream        keystream;
+    keystream << a.host << ":" << a.port;
+    return string(keystream.str());
+}

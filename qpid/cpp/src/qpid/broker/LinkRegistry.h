@@ -27,6 +27,7 @@
 #include "Bridge.h"
 #include "MessageStore.h"
 #include "Timer.h"
+#include "qpid/Address.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
 
@@ -50,11 +51,13 @@ namespace broker {
 
         typedef std::map<std::string, Link::shared_ptr> LinkMap;
         typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
+        typedef std::map<std::string, TcpAddress> AddressMap;
 
         LinkMap   links;
         LinkMap   linksToDestroy;
         BridgeMap bridges;
         BridgeMap bridgesToDestroy;
+        AddressMap reMappings;
 
         qpid::sys::Mutex lock;
         Broker* broker;
@@ -63,6 +66,8 @@ namespace broker {
         MessageStore* store;
 
         void periodicMaintenance ();
+        bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);
+        static std::string createKey(const TcpAddress& address);
 
     public:
         LinkRegistry (Broker* _broker);
@@ -116,6 +121,8 @@ namespace broker {
         std::string getAuthMechanism   (const std::string& key);
         std::string getAuthCredentials (const std::string& key);
         std::string getAuthIdentity    (const std::string& key);
+
+        void changeAddress(const TcpAddress& oldAddress, const TcpAddress& newAddress);
     };
 }
 }

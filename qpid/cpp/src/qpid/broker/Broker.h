@@ -104,6 +104,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         uint queueLimit;
         bool tcpNoDelay;
         bool requireEncrypted;
+        std::string knownHosts;
     };
  
   private:

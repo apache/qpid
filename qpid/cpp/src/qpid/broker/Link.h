@@ -26,6 +26,7 @@
 #include "MessageStore.h"
 #include "PersistableConfig.h"
 #include "Bridge.h"
+#include "RetryList.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
@@ -60,6 +61,8 @@ namespace qpid {
             uint32_t visitCount;
             uint32_t currentInterval;
             bool     closing;
+            RetryList urls;
+            bool updateUrls;
 
             typedef std::vector<Bridge::shared_ptr> Bridges;
             Bridges created;   // Bridges pending creation
@@ -80,6 +83,7 @@ namespace qpid {
             void startConnectionLH();        // Start the IO Connection
             void destroy();                  // Called when mgmt deletes this link
             void ioThreadProcessing();       // Called on connection's IO thread by request
+            bool tryFailover();               // Called during maintenance visit
 
         public:
             typedef boost::shared_ptr<Link> shared_ptr;
@@ -108,6 +112,7 @@ namespace qpid {
             void established();              // Called when connection is created
             void closed(int, std::string);   // Called when connection goes away
             void setConnection(Connection*); // Set pointer to the AMQP Connection
+            void reconnect(const TcpAddress&); //called by LinkRegistry
 
             string getAuthMechanism() { return authMechanism; }
             string getUsername()      { return username; }

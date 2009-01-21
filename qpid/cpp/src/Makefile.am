@@ -408,6 +408,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
+  qpid/broker/RetryList.cpp \
   qpid/broker/SaslAuthenticator.cpp \
   qpid/broker/SecureConnection.cpp \
   qpid/broker/SecureConnectionFactory.cpp \
@@ -561,6 +562,7 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveredEnqueue.h \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
+  qpid/broker/RetryList.h \
   qpid/broker/SaslAuthenticator.h \
   qpid/broker/SecureConnection.h \
   qpid/broker/SecureConnectionFactory.h \
