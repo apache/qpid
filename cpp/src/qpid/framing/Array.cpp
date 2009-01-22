@@ -75,6 +75,7 @@ void Array::encode(Buffer& buffer) const{
 }
 
 void Array::decode(Buffer& buffer){
+    values.clear();
     uint32_t size = buffer.getLong();//size added only when array is a top-level type
     uint32_t available = buffer.available();
     if (available < size) {

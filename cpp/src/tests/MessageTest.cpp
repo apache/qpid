@@ -46,11 +46,10 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
 
     intrusive_ptr<Message> msg(new Message());
 
-    AMQFrame method(in_place<MessageTransferBody>(
-                        ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
-    AMQFrame content1(in_place<AMQContentBody>(data1));
-    AMQFrame content2(in_place<AMQContentBody>(data2));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content1((AMQContentBody(data1)));
+    AMQFrame content2((AMQContentBody(data2)));
 
     msg->getFrames().append(method);
     msg->getFrames().append(header);

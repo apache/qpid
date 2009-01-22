@@ -45,8 +45,7 @@ T applyAccumulate(Iter begin, Iter end, T seed, const F& f) {
 
 // Create a frame with a one-char string.
 AMQFrame& frame(char s) {
-    static AMQFrame frame;
-    frame.setBody(AMQContentBody(string(&s, 1)));
+    static AMQFrame frame((AMQContentBody(string(&s, 1))));
     return frame;
 }
 
@@ -64,7 +63,7 @@ string str(const boost::iterator_range<vector<AMQFrame>::const_iterator>& frames
 }
 // Make a transfer command frame.
 AMQFrame transferFrame(bool hasContent) {
-    AMQFrame t(in_place<MessageTransferBody>());
+    AMQFrame t((MessageTransferBody()));
     t.setFirstFrame(true);
     t.setLastFrame(true);
     t.setFirstSegment(true);
@@ -73,7 +72,7 @@ AMQFrame transferFrame(bool hasContent) {
 }
 // Make a content frame
 AMQFrame contentFrame(string content, bool isLast=true) {
-    AMQFrame f(in_place<AMQContentBody>(content));
+    AMQFrame f((AMQContentBody(content)));
     f.setFirstFrame(true);
     f.setLastFrame(true);
     f.setFirstSegment(false);
@@ -116,8 +115,8 @@ size_t transfers(qpid::SessionState& s, string content) {
                            bind(transfer1Char, ref(s), _1));
 }
 
-size_t contentFrameSize(size_t n=1) { return AMQFrame(in_place<AMQContentBody>()).encodedSize() + n; }
-size_t transferFrameSize() { return AMQFrame(in_place<MessageTransferBody>()).encodedSize(); }
+size_t contentFrameSize(size_t n=1) { return AMQFrame(( AMQContentBody())).encodedSize() + n; }
+size_t transferFrameSize() { return AMQFrame((MessageTransferBody())).encodedSize(); }
 
 // ==== qpid::SessionState test classes
 
@@ -134,7 +133,7 @@ QPID_AUTO_TEST_CASE(testSendGetReplyList) {
     transferN(s, "xyz");
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(0,0))),"CabcCdCeCfCxyz");
     // Ignore controls.
-    s.senderRecord(AMQFrame(in_place<SessionFlushBody>()));
+    s.senderRecord(AMQFrame(new SessionFlushBody()));
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(2,0))),"CeCfCxyz");    
 }
 

@@ -301,10 +301,9 @@ void ManagementBroker::sendBuffer(Buffer&  buf,
         return;
 
     intrusive_ptr<Message> msg(new Message());
-    AMQFrame method(in_place<MessageTransferBody>(
-        ProtocolVersion(), exchange->getName (), 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
-    AMQFrame content(in_place<AMQContentBody>());
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange->getName (), 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content((AMQContentBody()));
 
     content.castBody<AMQContentBody>()->decode(buf, length);
 

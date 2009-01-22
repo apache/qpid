@@ -77,8 +77,8 @@ void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueu
 boost::intrusive_ptr<Message> ReplicatingEventListener::createMessage(const FieldTable& headers)
 {
     boost::intrusive_ptr<Message> msg(new Message());
-    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), EMPTY, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), EMPTY, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
     header.setBof(false);
     header.setEof(true);
     header.setBos(true);
@@ -105,7 +105,7 @@ struct AppendingHandler : FrameHandler
 boost::intrusive_ptr<Message> ReplicatingEventListener::cloneMessage(Queue& queue, boost::intrusive_ptr<Message> original)
 {
     boost::intrusive_ptr<Message> copy(new Message());
-    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), EMPTY, 0, 0));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), EMPTY, 0, 0)));
     AppendingHandler handler(copy);
     handler.handle(method);
     original->sendHeader(handler, std::numeric_limits<int16_t>::max());
