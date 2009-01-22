@@ -31,7 +31,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 #define LINK_MAINT_INTERVAL 2
 
-LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0)
+LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0), passive(false), passiveChanged(false)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this)));
 }
@@ -51,6 +51,14 @@ void LinkRegistry::periodicMaintenance ()
 
     linksToDestroy.clear();
     bridgesToDestroy.clear();
+    if (passiveChanged) {
+        if (passive) { QPID_LOG(info, "Passivating links"); }
+        else { QPID_LOG(info, "Activating links"); }
+        for (LinkMap::iterator i = links.begin(); i != links.end(); i++) {
+            i->second->setPassive(passive);
+        }
+        passiveChanged = false;
+    }
     for (LinkMap::iterator i = links.begin(); i != links.end(); i++)
         i->second->maintenanceVisit();
     //now process any requests for re-addressing
@@ -109,6 +117,7 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
         link = Link::shared_ptr (new Link (this, store, host, port, transport, durable,
                                            authMechanism, username, password,
                                            broker, parent));
+        if (passive) link->setPassive(true);
         links[key] = link;
         return std::pair<Link::shared_ptr, bool>(link, true);
     }
@@ -129,6 +138,8 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
                                                      uint16_t     sync)
 {
     Mutex::ScopedLock locker(lock);
+    QPID_LOG(debug, "Bridge declared " << host << ": " << port << " from " << src << " to " << dest << " (" << key << ")");
+
     stringstream      keystream;
     keystream << host << ":" << port;
     string linkKey = string(keystream.str());
@@ -290,4 +301,12 @@ std::string LinkRegistry::createKey(const TcpAddress& a)
     stringstream        keystream;
     keystream << a.host << ":" << a.port;
     return string(keystream.str());
+}
+
+void LinkRegistry::setPassive(bool p) 
+{
+    Mutex::ScopedLock locker(lock);
+    passiveChanged = p != passive;
+    passive = p;
+    //will activate or passivate links on maintenance visit
 }

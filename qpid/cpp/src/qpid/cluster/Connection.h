@@ -64,7 +64,7 @@ class Connection :
     typedef sys::PollableQueue<EventFrame> EventFrameQueue;
 
     /** Local connection, use this in ConnectionId */
-    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, MemberId, bool catchUp);
+    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, MemberId, bool catchUp, bool isLink);
     /** Shadow connection */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, ConnectionId);
     ~Connection();
@@ -172,6 +172,7 @@ class Connection :
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     int readCredit;
+    bool expectProtocolHeader;
     
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };

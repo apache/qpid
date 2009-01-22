@@ -72,6 +72,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
         if (!args.i_durable)
             agent->addObject(mgmtObject);
     }
+    QPID_LOG(debug, "Bridge created from " << args.i_src << " to " << args.i_dest);
 }
 
 Bridge::~Bridge() 
@@ -104,10 +105,11 @@ void Bridge::create(ConnectionState& c)
     session->attach(name, false);
     session->commandPoint(0,0);
         
-    if (args.i_srcIsQueue) {
+    if (args.i_srcIsQueue) {        
         peer->getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, options);
         peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
+        QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);
     } else {
         FieldTable queueSettings;
 
@@ -141,6 +143,9 @@ void Bridge::create(ConnectionState& c)
             if (exchange.get() == 0)
                 throw Exception("Exchange not found for dynamic route");
             exchange->registerDynamicBridge(this);
+            QPID_LOG(debug, "Activated dynamic route for exchange " << args.i_src);
+        } else {
+            QPID_LOG(debug, "Activated static route from exchange " << args.i_src << " to " << args.i_dest);
         }
     }
 }

@@ -76,6 +76,7 @@ namespace qpid {
             static const int STATE_OPERATIONAL = 3;
             static const int STATE_FAILED      = 4;
             static const int STATE_CLOSED      = 5;
+            static const int STATE_PASSIVE     = 6;
 
             static const uint32_t MAX_INTERVAL = 32;
 
@@ -120,6 +121,7 @@ namespace qpid {
             Broker* getBroker()       { return broker; }
 
             void notifyConnectionForced(const std::string text);
+            void setPassive(bool p);
             
             // PersistableConfig:
             void     setPersistenceId(uint64_t id) const;

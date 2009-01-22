@@ -106,6 +106,7 @@ void Link::setStateLH (int newState)
     case STATE_OPERATIONAL : mgmtObject->set_state("Operational"); break;
     case STATE_FAILED      : mgmtObject->set_state("Failed");      break;
     case STATE_CLOSED      : mgmtObject->set_state("Closed");      break;
+    case STATE_PASSIVE     : mgmtObject->set_state("Passive");      break;
     }
 }
 
@@ -239,6 +240,7 @@ void Link::ioThreadProcessing()
 
     if (state != STATE_OPERATIONAL)
         return;
+    QPID_LOG(debug, "Link::ioThreadProcessing()");
 
     //process any pending creates
     if (!created.empty()) {
@@ -404,6 +406,7 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
 
     case _qmf::Link::METHOD_BRIDGE :
         _qmf::ArgsLinkBridge& iargs = (_qmf::ArgsLinkBridge&) args;
+        QPID_LOG(debug, "Link::bridge() request received");
 
         // Durable bridges are only valid on durable links
         if (iargs.i_durable && !durable) {
@@ -436,4 +439,18 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
     }
 
     return Manageable::STATUS_UNKNOWN_METHOD;
+}
+
+void Link::setPassive(bool passive)
+{
+    Mutex::ScopedLock mutex(lock);
+    if (passive) {
+        setStateLH(STATE_PASSIVE);
+    } else {
+        if (state == STATE_PASSIVE) {
+            setStateLH(STATE_WAITING);
+        } else {
+            QPID_LOG(warning, "Ignoring attempt to activate non-passive link");
+        }
+    }
 }
