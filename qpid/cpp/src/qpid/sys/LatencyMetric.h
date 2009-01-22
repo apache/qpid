@@ -33,6 +33,7 @@ namespace sys {
 struct LatencyMetricTimestamp {
     LatencyMetricTimestamp() : latency_metric_timestamp(0) {}
     static void initialize(const LatencyMetricTimestamp&);
+    static void clear(const LatencyMetricTimestamp&);
     int64_t latency_metric_timestamp;
 };
     
@@ -53,14 +54,18 @@ class LatencyMetric {
   private:
     void report();
     const char* message;
-    int64_t ignore, count, total, skipped, skip;
+    int64_t count, total, skipped, skip;
 };
 
 }} // namespace qpid::sys
 
 #define QPID_LATENCY_INIT(x) ::qpid::sys::LatencyMetricTimestamp::initialize(x)
+#define QPID_LATENCY_CLEAR(x) ::qpid::sys::LatencyMetricTimestamp::clear(x)
 #define QPID_LATENCY_RECORD(msg, x) do {                                 \
         static ::qpid::sys::LatencyMetric metric__(msg); metric__.record(x); \
+    } while (false)
+#define QPID_LATENCY_RECORD_SKIP(msg, x, skip) do {                          \
+        static ::qpid::sys::LatencyMetric metric__(msg, skip); metric__.record(x); \
     } while (false)
 
 
@@ -71,7 +76,9 @@ class LatencyMetricTimestamp {};
 }}
 
 #define QPID_LATENCY_INIT(x) (void)x
+#define QPID_LATENCY_CLEAR(x) (void)x
 #define QPID_LATENCY_RECORD(msg, x) (void)x
+#define QPID_LATENCY_RECORD_SKIP(msg, x, skip) (void)x
 
 #endif /* defined QPID_LATENCY_METRIC */
 

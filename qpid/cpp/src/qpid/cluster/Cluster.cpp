@@ -242,6 +242,7 @@ void Cluster::deliveredEvent(const Event& e) {
 }
 
 void Cluster::deliveredFrame(const EventFrame& e) {
+    QPID_LATENCY_RECORD("delivered frame queue", e.frame);
     QPID_LOG(trace, *this << " DLVR: " << e.frame);
     if (e.connection)   {
         e.connection->deliveredFrame(e);
@@ -252,6 +253,7 @@ void Cluster::deliveredFrame(const EventFrame& e) {
         if (!framing::invoke(dispatch, *e.frame.getBody()).wasHandled())
             throw Exception(QPID_MSG("Invalid cluster control"));
     }
+    QPID_LATENCY_RECORD("processed", e.frame);
 }
   
 struct AddrList {
