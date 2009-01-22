@@ -43,8 +43,8 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    AMQBody* getBody() { return body.get(); }
-    const AMQBody* getBody() const { return body.get(); }
+    AMQBody* getBody();
+    const AMQBody* getBody() const;
 
     AMQMethodBody* getMethod() { return getBody()->getMethod(); }
     const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
@@ -102,6 +102,7 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     bool eof : 1;
     bool bos : 1;
     bool eos : 1;
+    mutable uint32_t encodedSizeCache;
 };
 
 std::ostream& operator<<(std::ostream&, const AMQFrame&);

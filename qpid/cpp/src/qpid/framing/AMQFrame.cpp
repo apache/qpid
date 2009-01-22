@@ -30,7 +30,12 @@
 namespace qpid {
 namespace framing {
 
-void AMQFrame::init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
+void AMQFrame::init() {
+    bof = eof = bos = eos = true;
+    subchannel=0;
+    channel=0;
+    encodedSizeCache = 0;
+}
 
 AMQFrame::AMQFrame(const boost::intrusive_ptr<AMQBody>& b) : body(b) { init(); }
 
@@ -38,13 +43,28 @@ AMQFrame::AMQFrame(const AMQBody& b) : body(b.clone()) { init(); }
 
 AMQFrame::~AMQFrame() {}
 
-void AMQFrame::setMethod(ClassId c, MethodId m) { body = MethodBodyFactory::create(c,m); }
+AMQBody* AMQFrame::getBody() {
+    // Non-const AMQBody* may be used to modify the body.
+    encodedSizeCache = 0;
+    return body.get();
+}
+
+const AMQBody* AMQFrame::getBody() const {
+    return body.get();
+}
+
+void AMQFrame::setMethod(ClassId c, MethodId m) {
+    encodedSizeCache = 0;
+    body = MethodBodyFactory::create(c,m);
+}
 
 uint32_t AMQFrame::encodedSize() const {
-    uint32_t size = frameOverhead() + body->encodedSize();
-    if (body->getMethod())
-        size +=  sizeof(ClassId)+sizeof(MethodId);
-    return size;
+    if (!encodedSizeCache) {
+        encodedSizeCache = frameOverhead() + body->encodedSize();
+        if (body->getMethod())
+            encodedSizeCache +=  sizeof(ClassId)+sizeof(MethodId);
+    }
+    return encodedSizeCache;
 }
 
 uint32_t AMQFrame::frameOverhead() {
@@ -80,11 +100,13 @@ void AMQFrame::encode(Buffer& buffer) const
 }
 
 bool AMQFrame::decode(Buffer& buffer)
-{    
+{
     if(buffer.available() < frameOverhead())
         return false;
     buffer.record();
 
+    encodedSizeCache = 0;
+    uint32_t start = buffer.getPosition();
     uint8_t  flags = buffer.getOctet();
     uint8_t framing_version = (flags & 0xc0) >> 6;
     if (framing_version != 0)
@@ -133,7 +155,7 @@ bool AMQFrame::decode(Buffer& buffer)
 	throw IllegalArgumentException(QPID_MSG("Invalid frame type " << type));
     }
     body->decode(buffer, body_size);
-
+    encodedSizeCache = buffer.getPosition() - start;
     return true;
 }
 
