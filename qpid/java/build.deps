@@ -84,45 +84,56 @@ integrationtests.libs=${systests.libs}
 client-example.libs=${client.libs}
 testkit.libs=${client.libs}
 
-ibm-icu=lib/com.ibm.icu_3.4.4.jar
-ecl-core-jface=lib/org.eclipse.jface_3.2.0.jar
-ecl-core-commands=lib/org.eclipse.core.commands_3.2.0.jar
-ecl-core-contenttype=lib/org.eclipse.core.contenttype_3.2.0.jar
-ecl-core-expressions=lib/org.eclipse.core.expressions_3.2.0.jar
-ecl-core-jobs=lib/org.eclipse.core.jobs_3.2.0.jar
-ecl-core-runtime=lib/org.eclipse.core.runtime_3.2.0.jar
-ecl-core-runtime-compat-auth=lib/org.eclipse.core.runtime.compatibility.auth_3.2.0.jar
-ecl-core-runtime-compat-registry=lib/org.eclipse.core.runtime.compatibility.registry_3.2.0.jar
-ecl-equinox-common=lib/org.eclipse.equinox.common_3.2.0.jar
-ecl-equinox-prefs=lib/org.eclipse.equinox.preferences_3.2.0.jar
-ecl-equinox-registry=lib/org.eclipse.equinox.registry_3.2.0.jar
-ecl-help=lib/org.eclipse.help_3.2.0.jar
+
+ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
+ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
+ecl-core-jface-databinding=lib/org.eclipse.jface.databinding_1.2.1.M20080827-0800a.jar
+ecl-core-commands=lib/org.eclipse.core.commands_3.4.0.I20080509-2000.jar
+ecl-core-contenttype=lib/org.eclipse.core.contenttype_3.3.0.v20080604-1400.jar
+ecl-core-databinding=lib/org.eclipse.core.databinding_1.1.1.M20080827-0800b.jar
+ecl-core-expressions=lib/org.eclipse.core.expressions_3.4.0.v20080603-2000.jar
+ecl-core-jobs=lib/org.eclipse.core.jobs_3.4.0.v20080512.jar
+ecl-core-runtime=lib/org.eclipse.core.runtime_3.4.0.v20080512.jar
+ecl-core-runtime-compat-registry=lib/org.eclipse.core.runtime.compatibility.registry_3.2.200.v20080610/**
+ecl-equinox-app=lib/org.eclipse.equinox.app_1.1.0.v20080421-2006.jar
+ecl-equinox-common=lib/org.eclipse.equinox.common_3.4.0.v20080421-2006.jar
+ecl-equinox-launcher=lib/org.eclipse.equinox.launcher_1.0.101.R34x_v20080819.jar
+ecl-equinox-prefs=lib/org.eclipse.equinox.preferences_3.2.201.R34x_v20080709.jar
+ecl-equinox-registry=lib/org.eclipse.equinox.registry_3.4.0.v20080516-0950.jar
+ecl-help=lib/org.eclipse.help_3.3.101.v20080702_34x.jar
 ecl-osgi=lib/org.eclipse.osgi_3.4.2.R34x_v20080826-1230.jar
 ecl-swt=lib/org.eclipse.swt_3.4.1.v3449c.jar
-ecl-swt-win32-win32-x86=lib/org.eclipse.swt.win32.win32.x86_3.2.0.jar
-ecl-unix-shared=lib/org.eclipse.equinox.launcher_1.0.101.R34x_v20080819.jar
-ecl-swt-linux-gtk-x86=lib/org.eclipse.swt.gtk.linux.x86_3.4.1.v3449c.jar \
-  lib/org.eclipse.equinox.launcher.gtk.linux.x86_1.0.101.R34x_v20080805/*
-ecl-swt-macosx=lib/org.eclipse.swt.carbon.macosx_3.4.1.v3449c.jar \
-  lib/org.eclipse.equinox.launcher.carbon.macosx_1.0.101.R34x_v20080731/*
-  
-ecl-ui=lib/org.eclipse.ui_3.2.0.jar
-ecl-ui-forms=lib/org.eclipse.ui.forms_3.2.0.jar
-ecl-ui-workbench=lib/org.eclipse.ui.workbench_3.2.1.jar
+ecl-ui=lib/org.eclipse.ui_3.4.1.M20080910-0800.jar
+ecl-ui-forms=lib/org.eclipse.ui.forms_3.3.101.v20080708_34x.jar
+ecl-ui-workbench=lib/org.eclipse.ui.workbench_3.4.1.M20080827-0800a.jar
 
-management-eclipse-plugin.core-libs=${ibm-icu} ${ecl-core-jface} \
-    ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-expressions} \
-    ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-core-runtime-compat-auth} \
-    ${ecl-core-runtime-compat-registry} ${ecl-equinox-common} \
-    ${ecl-equinox-prefs} ${ecl-equinox-registry} ${ecl-help} ${ecl-osgi} \
-    ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench}
-    
-management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} ${ecl-swt-win32-win32-x86}
-management-eclipse-plugin-linux-gtk-x86.libs=${management-eclipse-plugin.core-libs} ${ecl-unix-shared} ${ecl-swt-linux-gtk-x86}
-management-eclipse-plugin-macosx.libs=${management-eclipse-plugin.core-libs} ${ecl-unix-shared} ${ecl-swt-macosx} 
+ecl-swt-win32-win32-x86=lib/org.eclipse.swt.win32.win32.x86_3.4.1.v3449c.jar
+ecl-equinox-launcher-win32-win32-x86=lib/org.eclipse.equinox.launcher.win32.win32.x86_1.0.101.R34x_v20080731/**
+ecl-swt-linux-gtk-x86=lib/org.eclipse.swt.gtk.linux.x86_3.4.1.v3449c.jar
+ecl-equinox-launcher-linux-gtk-x86=lib/org.eclipse.equinox.launcher.gtk.linux.x86_1.0.101.R34x_v20080805/**
+ecl-swt-macosx-carbon=lib/org.eclipse.swt.carbon.macosx_3.4.1.v3449c.jar
+ecl-equinox-launcher-macosx-carbon=lib/org.eclipse.equinox.launcher.carbon.macosx_1.0.101.R34x_v20080731/**
 
-management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${ecl-swt-win32-win32-x86} ${ecl-swt-linux-gtk-x86} ${ecl-swt-macosx}
+management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-win32-win32-x86} ${ecl-equinox-launcher-win32-win32-x86}
+management-eclipse-plugin-linux-gtk-x86.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-linux-gtk-x86} ${ecl-equinox-launcher-linux-gtk-x86}
+management-eclipse-plugin-macosx.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-macosx-carbon} ${ecl-equinox-launcher-macosx-carbon}
+
+management-eclipse-plugin.core-libs=${ibm-icu} ${ecl-core-jface} ${ecl-core-jface-databinding} \
+    ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-databinding} ${ecl-core-expressions} \
+    ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-core-runtime-compat-registry} ${ecl-equinox-app} \
+    ${ecl-equinox-common} ${ecl-equinox-launcher} ${ecl-equinox-prefs} ${ecl-equinox-registry} \
+    ${ecl-help} ${ecl-osgi} ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench}
     
+management-eclipse-plugin.platform-libs=${ecl-equinox-launcher-win32-win32-x86} \
+    ${ecl-equinox-launcher-linux-gtk-x86} ${ecl-equinox-launcher-macosx-carbon} \
+    ${ecl-swt-win32-win32-x86} ${ecl-swt-linux-gtk-x86} ${ecl-swt-macosx-carbon}
+
+management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${management-eclipse-plugin.platform-libs}
+    
+
 management-tools-qpid-cli.libs=${common.libs} ${jline}
 
 common.test.libs=${test.libs}
