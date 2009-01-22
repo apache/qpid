@@ -55,8 +55,13 @@ public class TimeToLiveTest extends QpidTestCase
         
         Session clientSession = clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = clientSession.createQueue(QUEUE); 
-            
+        
+        // Create then close the consumer so the queue is actually created
+        // Closing it then reopening it ensures that the consumer shouldn't get messages
+        // which should have expired and allows a shorter sleep period. See QPID-1418
+        
         MessageConsumer consumer = clientSession.createConsumer(queue);
+        consumer.close();
 
         //Create Producer
         Connection producerConnection = getConnection();
@@ -82,10 +87,11 @@ public class TimeToLiveTest extends QpidTestCase
         producer.setTimeToLive(0L);
         producer.send(nextMessage(String.valueOf(msg), false, producerSession, producer));
 
-         try
+        consumer = clientSession.createConsumer(queue);
+        try
         {
             // Sleep to ensure TTL reached
-            Thread.sleep(2000);
+            Thread.sleep(TIME_TO_LIVE);
         }
         catch (InterruptedException e)
         {
