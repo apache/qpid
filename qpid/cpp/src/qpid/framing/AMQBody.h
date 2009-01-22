@@ -22,7 +22,9 @@
  *
  */
 #include "qpid/framing/amqp_types.h"
-
+#include "qpid/RefCounted.h"
+#include "qpid/framing/BodyFactory.h"
+#include <boost/intrusive_ptr.hpp>
 #include <ostream>
 
 namespace qpid {
@@ -43,10 +45,14 @@ struct AMQBodyConstVisitor {
     virtual void visit(const AMQMethodBody&) = 0;
 };
 
-class AMQBody
-{
+class AMQBody : public RefCounted {
   public:
+    AMQBody() {}
     virtual ~AMQBody();
+
+    // Make AMQBody copyable even though RefCounted. 
+    AMQBody(const AMQBody&) : RefCounted() {}  
+    AMQBody& operator=(const AMQBody&) { return *this; }
 
     virtual uint8_t type() const = 0;
 
@@ -62,6 +68,7 @@ class AMQBody
 
     /** Match if same type and same class/method ID for methods */
     static bool match(const AMQBody& , const AMQBody& );
+    virtual boost::intrusive_ptr<AMQBody> clone() const = 0;
 };
 
 std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;

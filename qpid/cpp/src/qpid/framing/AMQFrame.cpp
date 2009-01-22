@@ -20,25 +20,31 @@
  */
 #include "AMQFrame.h"
 
-#include "qpid/framing/variant.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/reply_exceptions.h"
-
+#include "qpid/framing/BodyFactory.h"
+#include "qpid/framing/MethodBodyFactory.h"
 #include <boost/format.hpp>
-
 #include <iostream>
 
 namespace qpid {
 namespace framing {
 
+void AMQFrame::init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
+
+AMQFrame::AMQFrame(const boost::intrusive_ptr<AMQBody>& b) : body(b) { init(); }
+
+AMQFrame::AMQFrame(const AMQBody& b) : body(b.clone()) { init(); }
+
 AMQFrame::~AMQFrame() {}
 
-void AMQFrame::setBody(const AMQBody& b) { body = new BodyHolder(b); }
-
-void AMQFrame::setMethod(ClassId c, MethodId m) { body = new BodyHolder(c,m); }
+void AMQFrame::setMethod(ClassId c, MethodId m) { body = MethodBodyFactory::create(c,m); }
 
 uint32_t AMQFrame::encodedSize() const {
-    return frameOverhead() + body->encodedSize();
+    uint32_t size = frameOverhead() + body->encodedSize();
+    if (body->getMethod())
+        size +=  sizeof(ClassId)+sizeof(MethodId);
+    return size;
 }
 
 uint32_t AMQFrame::frameOverhead() {
@@ -65,6 +71,11 @@ void AMQFrame::encode(Buffer& buffer) const
     buffer.putOctet(0x0f & track);
     buffer.putShort(channel);    
     buffer.putLong(0);
+    const AMQMethodBody* method=getMethod();
+    if (method) {
+        buffer.putOctet(method->amqpClassId());
+        buffer.putOctet(method->amqpMethodId());
+    }
     body->encode(buffer);
 }
 
@@ -105,8 +116,24 @@ bool AMQFrame::decode(Buffer& buffer)
         buffer.restore();
         return false;
     }
-    body = new BodyHolder();
-    body->decode(type,buffer, body_size);
+
+    switch(type)
+    {
+      case 0://CONTROL 
+      case METHOD_BODY: {
+          ClassId c = buffer.getOctet();
+          MethodId m = buffer.getOctet();
+          body = MethodBodyFactory::create(c, m);
+          break;
+      }
+      case HEADER_BODY: body =  BodyFactory::create<AMQHeaderBody>(); break;
+      case CONTENT_BODY: body = BodyFactory::create<AMQContentBody>(); break;
+      case HEARTBEAT_BODY: body = BodyFactory::create<AMQHeartbeatBody>(); break;
+      default:
+	throw IllegalArgumentException(QPID_MSG("Invalid frame type " << type));
+    }
+    body->decode(buffer, body_size);
+
     return true;
 }
 

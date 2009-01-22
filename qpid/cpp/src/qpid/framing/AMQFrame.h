@@ -26,46 +26,28 @@
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
 #include "ProtocolVersion.h"
-#include "BodyHolder.h"
 #include "qpid/sys/LatencyMetric.h"
-
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
 
 namespace qpid {
 namespace framing {
 
-class BodyHolder;
-
 class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
 {
   public:
-    AMQFrame(boost::intrusive_ptr<BodyHolder> b=0) : body(b) { init(); }
-    AMQFrame(const AMQBody& b) { setBody(b); init(); }
+    AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);
+    AMQFrame(const AMQBody& b);
     ~AMQFrame();
-
-    template <class InPlace>
-    AMQFrame(const InPlace& ip, typename EnableInPlace<InPlace>::type* =0) {
-        init(); setBody(ip);
-    }
 
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    boost::intrusive_ptr<BodyHolder> getHolder() { return body; }
-    
-    AMQBody* getBody() { return body ? body->get() : 0; }
-    const AMQBody* getBody() const { return body ? body->get() : 0; }
+    AMQBody* getBody() { return body.get(); }
+    const AMQBody* getBody() const { return body.get(); }
 
     AMQMethodBody* getMethod() { return getBody()->getMethod(); }
     const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
-
-    void setBody(const AMQBody& b);
-
-    template <class InPlace>
-    typename EnableInPlace<InPlace>::type setBody(const InPlace& ip) {
-        body = new BodyHolder(ip);
-    }
 
     void setMethod(ClassId c, MethodId m);
 
@@ -109,10 +91,11 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     static uint32_t frameOverhead();
     /** Must point to at least DECODE_SIZE_MIN bytes of data */
     static uint16_t decodeSize(char* data);
-  private:
-    void init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
 
-    boost::intrusive_ptr<BodyHolder> body;
+  private:
+    void init();
+
+    boost::intrusive_ptr<AMQBody> body;
     uint16_t channel : 16;
     uint8_t subchannel : 8;
     bool bof : 1;

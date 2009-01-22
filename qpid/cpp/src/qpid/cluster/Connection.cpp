@@ -109,7 +109,7 @@ void Connection::received(framing::AMQFrame& f) {
                 QPID_LOG(debug, cluster << " inserting connection " << *this);
                 cluster.insert(boost::intrusive_ptr<Connection>(this));
             }
-            AMQFrame ok(in_place<ConnectionCloseOkBody>());
+            AMQFrame ok((ConnectionCloseOkBody()));
             connection.getOutput().send(ok);
             output.setOutputHandler(discardHandler);
             catchUp = false;

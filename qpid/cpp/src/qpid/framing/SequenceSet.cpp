@@ -46,6 +46,7 @@ void SequenceSet::encode(Buffer& buffer) const
 
 void SequenceSet::decode(Buffer& buffer)
 {
+    clear();
     uint16_t size = buffer.getShort();
     uint16_t count = size / RANGE_SIZE;//number of ranges
     if (size % RANGE_SIZE)

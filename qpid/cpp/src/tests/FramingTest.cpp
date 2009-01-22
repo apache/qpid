@@ -123,7 +123,7 @@ QPID_AUTO_TEST_CASE(testConnectionRedirectBodyFrame)
     hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
     hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
         
-    AMQFrame in(in_place<ConnectionRedirectBody>(version, a, hosts));
+    AMQFrame in((ConnectionRedirectBody(version, a, hosts)));
     in.setChannel(999);
     in.encode(wbuff);
 
@@ -138,7 +138,7 @@ QPID_AUTO_TEST_CASE(testMessageCancelBodyFrame)
     char buffer[1024];
     ProtocolVersion version(highestProtocolVersion);
     Buffer wbuff(buffer, sizeof(buffer));
-    AMQFrame in(in_place<MessageCancelBody>(version, "tag"));
+    AMQFrame in((MessageCancelBody(version, "tag")));
     in.setChannel(999);
     in.encode(wbuff);
 

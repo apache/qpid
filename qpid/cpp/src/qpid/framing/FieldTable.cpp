@@ -201,6 +201,7 @@ void FieldTable::encode(Buffer& buffer) const{
 }
 
 void FieldTable::decode(Buffer& buffer){
+    clear();
     uint32_t len = buffer.getLong();
     if (len) {
         uint32_t available = buffer.available();

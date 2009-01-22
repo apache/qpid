@@ -33,6 +33,7 @@ void SequenceNumberSet::encode(Buffer& buffer) const
 
 void SequenceNumberSet::decode(Buffer& buffer)
 {
+    clear();
     uint16_t count = (buffer.getShort() / 4);
     for (uint16_t i = 0; i < count; i++) {
         push_back(SequenceNumber(buffer.getLong()));

@@ -188,8 +188,7 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
     if (frame.getEof() && frame.getEos()) {//end of frameset
         if (frame.getBof()) {
             //i.e this is a just a command frame, add a dummy header
-            AMQFrame header;
-            header.setBody(AMQHeaderBody());
+            AMQFrame header((AMQHeaderBody()));
             header.setBof(false);
             header.setEof(false);
             msg->getFrames().append(header);                        

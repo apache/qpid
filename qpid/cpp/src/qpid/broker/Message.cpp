@@ -157,8 +157,7 @@ void Message::decodeContent(framing::Buffer& buffer)
     if (buffer.available()) {
         //get the data as a string and set that as the content
         //body on a frame then add that frame to the frameset
-        AMQFrame frame;
-        frame.setBody(AMQContentBody());
+        AMQFrame frame((AMQContentBody()));
         frame.castBody<AMQContentBody>()->decode(buffer, buffer.available());
         frames.append(frame);
     } else {
@@ -208,7 +207,7 @@ void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t max
         bool done = false;
         for (uint64_t offset = 0; !done; offset += maxContentSize)
         {            
-            AMQFrame frame(in_place<AMQContentBody>());
+            AMQFrame frame((AMQContentBody()));
             string& data = frame.castBody<AMQContentBody>()->getData();
 
             store->loadContent(queue, pmsg, data, offset, maxContentSize);

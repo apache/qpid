@@ -25,7 +25,7 @@ CONFIG=$(dirname $0)/config.null
 CERT_DIR=`pwd`/test_cert_db
 CERT_PW_FILE=`pwd`/cert.password
 HOSTNAME=`hostname`
-COUNT=10000
+COUNT=10
 
 trap stop_broker EXIT
 

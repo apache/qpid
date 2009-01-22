@@ -49,8 +49,7 @@ void MessageBuilder::handle(AMQFrame& frame)
         if (type == CONTENT_BODY) {
             //TODO: rethink how to handle non-existent headers(?)...
             //didn't get a header: add in a dummy
-            AMQFrame header;
-            header.setBody(AMQHeaderBody());
+            AMQFrame header((AMQHeaderBody()));
             header.setBof(false);
             header.setEof(false);
             message->getFrames().append(header);            

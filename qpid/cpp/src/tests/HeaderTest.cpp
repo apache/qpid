@@ -49,7 +49,7 @@ QPID_AUTO_TEST_CASE(testGenericProperties)
 
 QPID_AUTO_TEST_CASE(testMessageProperties) 
 {
-    AMQFrame out(in_place<AMQHeaderBody>());
+    AMQFrame out((AMQHeaderBody()));
     MessageProperties* props1 = 
         out.castBody<AMQHeaderBody>()->get<MessageProperties>(true);
 
@@ -84,7 +84,7 @@ QPID_AUTO_TEST_CASE(testMessageProperties)
 
 QPID_AUTO_TEST_CASE(testDeliveryProperies) 
 {
-    AMQFrame out(in_place<AMQHeaderBody>());
+    AMQFrame out((AMQHeaderBody()));
     DeliveryProperties* props1 = 
         out.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true);
 
