@@ -76,6 +76,7 @@ class ClusterMap {
     size_t aliveCount() const { return alive.size(); }
     size_t memberCount() const { return members.size(); }
     std::vector<Url> memberUrls() const;
+    Set getAlive() const;
 
     bool dumpRequest(const MemberId& id, const std::string& url);       
     /** Return non-empty Url if accepted */
@@ -84,6 +85,10 @@ class ClusterMap {
     /**@return true If this is a new member */ 
     bool ready(const MemberId& id, const Url&);
 
+    /**
+     * Utility method to return intersection of two member sets
+     */
+    static Set intersection(const Set& a, const Set& b);
   private:
     Url getUrl(const Map& map, const  MemberId& id);
     

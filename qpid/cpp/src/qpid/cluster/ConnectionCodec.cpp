@@ -38,21 +38,22 @@ using namespace framing;
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
     if (v == ProtocolVersion(0, 10))
-        return new ConnectionCodec(out, id, cluster, false);
+        return new ConnectionCodec(out, id, cluster, false, false);
     else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10))
-        return new ConnectionCodec(out, id, cluster, true); // Catch-up connection
+        return new ConnectionCodec(out, id, cluster, true, false); // Catch-up connection
     return 0;
 }
 
 // Used for outgoing Link connections, we don't care.
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id) {
-    return next->create(out, id);
+    return new ConnectionCodec(out, id, cluster, false, true);
+    //return next->create(out, id);
 }
 
-ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster, bool catchUp)
-    : codec(out, id, false),
-      interceptor(new Connection(cluster, codec, id, cluster.getId(), catchUp)),
+ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster, bool catchUp, bool isLink)
+    : codec(out, id, isLink),
+      interceptor(new Connection(cluster, codec, id, cluster.getId(), catchUp, isLink)),
       id(interceptor->getId()),
       localId(id)
 {

@@ -184,6 +184,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     const size_t writeEstimate;
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
+    ClusterMap::Set myElders;
 
     // Thread safe members
     Multicaster mcast;

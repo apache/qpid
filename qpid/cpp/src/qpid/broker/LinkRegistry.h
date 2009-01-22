@@ -64,6 +64,8 @@ namespace broker {
         Timer   timer;
         management::Manageable* parent;
         MessageStore* store;
+        bool passive;
+        bool passiveChanged;
 
         void periodicMaintenance ();
         bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);
@@ -122,7 +124,17 @@ namespace broker {
         std::string getAuthCredentials (const std::string& key);
         std::string getAuthIdentity    (const std::string& key);
 
+        /**
+         * Called by links failing over to new address
+         */
         void changeAddress(const TcpAddress& oldAddress, const TcpAddress& newAddress);
+        /**
+         * Called to alter passive state. In passive state the links
+         * and bridges managed by a link registry will be recorded and
+         * updated but links won't actually establish connections and
+         * bridges won't therefore pull or push any messages.
+         */
+        void setPassive(bool);
     };
 }
 }

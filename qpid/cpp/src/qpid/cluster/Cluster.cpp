@@ -323,10 +323,20 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
             state = NEWBIE;
             QPID_LOG(info, *this << " joining cluster: " << map);
             mcast.mcastControl(ClusterDumpRequestBody(ProtocolVersion(), myUrl.str()), myId);
+            ClusterMap::Set members = map.getAlive();
+            members.erase(myId);
+            myElders = members;
+            broker.getLinks().setPassive(true);
         }
     }
-    else if (state >= READY && memberChange)
+    else if (state >= READY && memberChange) {
         memberUpdate(l);
+        myElders = ClusterMap::intersection(myElders, map.getAlive());
+        if (myElders.empty()) {
+            //assume we are oldest, reactive links if necessary
+            broker.getLinks().setPassive(false);
+        }
+    }
 }
 
 
@@ -495,6 +505,8 @@ void Cluster::memberUpdate(Lock& l) {
         broker.getQueues().updateQueueClusterState(false);
     }
     lastSize = size;
+
+    //
 
     if (mgmtObject) {
         mgmtObject->set_clusterSize(size); 

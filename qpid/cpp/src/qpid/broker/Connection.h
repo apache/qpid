@@ -117,7 +117,7 @@ class Connection : public sys::ConnectionInputHandler,
     ChannelMap channels;
     //framing::AMQP_ClientProxy::Connection* client;
     ConnectionHandler adapter;
-    bool isLink;
+    const bool isLink;
     bool mgmtClosing;
     const std::string mgmtId;
     boost::function0<void> ioCallback;
