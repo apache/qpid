@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
@@ -38,7 +39,9 @@ struct EventFrame
 {
     // Connection event frame
     EventFrame(const boost::intrusive_ptr<Connection>& c, const MemberId& m, const framing::AMQFrame& f, int rc=0)
-        : connection(c), member(m), frame(f), readCredit(rc) {}
+        : connection(c), member(m), frame(f), readCredit(rc) {
+        QPID_LATENCY_INIT(frame);
+    }
 
     bool isCluster() const { return !connection; }
     bool isConnection() const { return connection; }

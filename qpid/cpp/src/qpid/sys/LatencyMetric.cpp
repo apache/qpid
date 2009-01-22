@@ -32,6 +32,10 @@ void LatencyMetricTimestamp::initialize(const LatencyMetricTimestamp& ts) {
     const_cast<int64_t&>(ts.latency_metric_timestamp) = Duration(now());
 }
 
+void LatencyMetricTimestamp::clear(const LatencyMetricTimestamp& ts) {
+    const_cast<int64_t&>(ts.latency_metric_timestamp) = 0;
+}
+
 LatencyMetric::LatencyMetric(const char* msg, int64_t skip_) : 
     message(msg), count(0), total(0), skipped(0), skip(skip_)
 {}
