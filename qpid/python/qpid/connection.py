@@ -71,8 +71,11 @@ class Connection(Assembler):
     self.sessions = {}
 
     self.condition = Condition()
+    # XXX: we should combine this into a single comprehensive state
+    # model (whatever that means)
     self.opened = False
     self.failed = False
+    self.closed = False
     self.close_code = (None, "connection aborted")
 
     self.thread = Thread(target=self.run)
@@ -160,15 +163,14 @@ class Connection(Assembler):
       raise ConnectionFailed(*self.close_code)
 
   def run(self):
-    # XXX: we don't really have a good way to exit this loop without
-    # getting the other end to kill the socket
-    while True:
+    while not self.closed:
       try:
         seg = self.read_segment()
       except Closed:
         self.detach_all()
         break
       self.delegate.received(seg)
+    self.sock.close()
 
   def close(self, timeout=None):
     if not self.opened: return
