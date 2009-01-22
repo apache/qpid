@@ -59,6 +59,7 @@ class Delegate:
 
   def connection_close_ok(self, ch, close_ok):
     self.connection.opened = False
+    self.connection.closed = True
     notify(self.connection.condition)
 
   def connection_heartbeat(self, ch, hrt):
