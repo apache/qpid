@@ -39,11 +39,13 @@ class RefCounted : boost::noncopyable {
 public:
     RefCounted() : count(0) {}
     void addRef() const { ++count; }
-    void release() const { if (--count==0) delete this; }
+    void release() const { if (--count==0) released(); }
     long refCount() { return count; }
 
 protected:
     virtual ~RefCounted() {};
+    // Allow subclasses to over-ride behavior when refcount reaches 0.
+    virtual void released() const { delete this; }
 };
 
 

@@ -93,7 +93,7 @@ void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, ui
         msg.payload->getProperties<framing::DeliveryProperties>()->setRedelivered(true);
     }
 
-    framing::AMQFrame method(framing::in_place<framing::MessageTransferBody>(framing::ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1));
+    framing::AMQFrame method((framing::MessageTransferBody(framing::ProtocolVersion(), tag, acceptExpected ? 0 : 1, acquired ? 0 : 1)));
     method.setEof(false);
     h.handle(method);
     msg.payload->sendHeader(h, framesize);

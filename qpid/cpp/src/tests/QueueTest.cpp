@@ -67,8 +67,8 @@ public:
 
 intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey) {
     intrusive_ptr<Message> msg(new Message());
-    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
     msg->getFrames().append(method);
     msg->getFrames().append(header);
     msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);

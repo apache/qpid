@@ -1,3 +1,6 @@
+#ifndef QPID_FRAMING_BODYFACTORY_H
+#define QPID_FRAMING_BODYFACTORY_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,30 +21,27 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
-#include "AMQBody.h"
-#include "Buffer.h"
 
-#ifndef _AMQHeartbeatBody_
-#define _AMQHeartbeatBody_
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace framing {
 
-class AMQHeartbeatBody :  public AMQBody
-{
-public:
-    virtual ~AMQHeartbeatBody();
-    inline uint32_t encodedSize() const { return 0; }
-    inline uint8_t type() const { return HEARTBEAT_BODY; }
-    inline void encode(Buffer& ) const {}
-    inline void decode(Buffer& , uint32_t /*size*/) {}
-    virtual void print(std::ostream& out) const;
-    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
-    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
+/**
+ * Indirect creation of body types to allow centralized changes to
+ * memory management strategy.
+ */
+class BodyFactory {
+  public:
+    template <class BodyType> static boost::intrusive_ptr<BodyType> create() {
+        return new BodyType;
+    }
+
+    template <class BodyType> static boost::intrusive_ptr<BodyType> copy(const BodyType& body) {
+        return new BodyType(body);
+    }
 };
 
-}
-}
+}} // namespace qpid::framing
 
-#endif
+#endif  /*!QPID_FRAMING_BODYFACTORY_H*/

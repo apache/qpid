@@ -44,6 +44,7 @@ public:
     void decode(Buffer& buffer, uint32_t size);
     void print(std::ostream& out) const;
     void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
+    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
 };
 
 }

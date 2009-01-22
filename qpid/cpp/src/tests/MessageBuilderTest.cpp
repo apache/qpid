@@ -101,9 +101,8 @@ QPID_AUTO_TEST_CASE(testHeaderOnly)
     std::string exchange("builder-exchange");
     std::string key("builder-exchange");
 
-    AMQFrame method(in_place<MessageTransferBody>(
-                        ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
 
     header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(0);        
     header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);
@@ -126,9 +125,9 @@ QPID_AUTO_TEST_CASE(test1ContentFrame)
     std::string exchange("builder-exchange");
     std::string key("builder-exchange");
 
-    AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
-    AMQFrame content(in_place<AMQContentBody>(data));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content((AMQContentBody(data)));
     method.setEof(false);
     header.setBof(false);
     header.setEof(false);
@@ -160,11 +159,10 @@ QPID_AUTO_TEST_CASE(test2ContentFrames)
     std::string exchange("builder-exchange");
     std::string key("builder-exchange");
 
-    AMQFrame method(in_place<MessageTransferBody>(
-                        ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
-    AMQFrame content1(in_place<AMQContentBody>(data1));
-    AMQFrame content2(in_place<AMQContentBody>(data2));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content1((AMQContentBody(data1)));
+    AMQFrame content2((AMQContentBody(data2)));
     method.setEof(false);
     header.setBof(false);
     header.setEof(false);
@@ -197,11 +195,10 @@ QPID_AUTO_TEST_CASE(testStaging)
     std::string exchange("builder-exchange");
     std::string key("builder-exchange");
 
-    AMQFrame method(in_place<MessageTransferBody>(
-                        ProtocolVersion(), exchange, 0, 0));
-    AMQFrame header(in_place<AMQHeaderBody>());
-    AMQFrame content1(in_place<AMQContentBody>(data1));
-    AMQFrame content2(in_place<AMQContentBody>(data2));
+    AMQFrame method(MessageTransferBody(ProtocolVersion(), exchange, 0, 0));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content1((AMQContentBody(data1)));
+    AMQFrame content2((AMQContentBody(data2)));
 
     header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data1.size() + data2.size());        
     header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);

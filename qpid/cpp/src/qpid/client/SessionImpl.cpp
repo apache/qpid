@@ -364,7 +364,7 @@ void SessionImpl::sendContent(const MethodContent& content)
         const uint32_t frag_size = maxFrameSize - AMQFrame::frameOverhead(); 
 
         if(data_length < frag_size){
-            AMQFrame frame(in_place<AMQContentBody>(content.getData()));
+            AMQFrame frame((AMQContentBody(content.getData())));
             frame.setFirstSegment(false);
             handleOut(frame);
         }else{
@@ -373,7 +373,7 @@ void SessionImpl::sendContent(const MethodContent& content)
             while (remaining > 0) {
                 uint32_t length = remaining > frag_size ? frag_size : remaining;
                 string frag(content.getData().substr(offset, length));
-                AMQFrame frame(in_place<AMQContentBody>(frag));
+                AMQFrame frame((AMQContentBody(frag)));
                 frame.setFirstSegment(false);
                 frame.setLastSegment(true);
                 if (offset > 0) {

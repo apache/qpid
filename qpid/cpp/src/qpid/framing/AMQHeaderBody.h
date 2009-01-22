@@ -99,6 +99,8 @@ public:
     template <class T> const T* get() const {
         return properties.OptProps<T>::props.get_ptr();
     }
+
+    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
 };
 
 }}

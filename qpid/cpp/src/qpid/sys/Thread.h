@@ -25,10 +25,10 @@
 
 #ifdef _WIN32
 #  define QPID_TSS __declspec(thread)
-#elif defined (gcc)
+#elif defined (__GNUC__)
 #  define QPID_TSS __thread
 #else
-#  define QPID_TSS
+#  error "Dont know how to define QPID_TSS for this platform"
 #endif
 
 namespace qpid {

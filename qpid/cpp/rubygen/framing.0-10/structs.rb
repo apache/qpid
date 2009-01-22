@@ -233,6 +233,7 @@ class StructGen < CppGen
 
     using  AMQMethodBody::accept;
     void accept(MethodBodyConstVisitor& v) const { v.visit(*this); }
+    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
 
     ClassId amqpClassId() const { return CLASS_ID; }
     MethodId amqpMethodId() const { return METHOD_ID; }
