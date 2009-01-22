@@ -114,6 +114,10 @@ std::vector<Url> ClusterMap::memberUrls() const {
     return urls;
 }
 
+ClusterMap::Set ClusterMap::getAlive() const {
+    return alive;
+}
+
 std::ostream& operator<<(std::ostream& o, const ClusterMap::Map& m) {
     std::ostream_iterator<MemberId> oi(o);
     std::transform(m.begin(), m.end(), oi, boost::bind(&ClusterMap::Map::value_type::first, _1));
@@ -170,4 +174,13 @@ boost::optional<Url> ClusterMap::dumpOffer(const MemberId& from, const MemberId&
     return boost::optional<Url>();
 }
 
+ClusterMap::Set ClusterMap::intersection(const ClusterMap::Set& a, const ClusterMap::Set& b)
+{
+    Set intersection;
+    std::set_intersection(a.begin(), a.end(),
+                          b.begin(), b.end(),
+                          std::inserter(intersection, intersection.begin()));
+    return intersection;
+
+}
 }} // namespace qpid::cluster
