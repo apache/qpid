@@ -46,7 +46,7 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
     }
     if (!parent.isCatchUp())
         sent += f.encodedSize();
-    QPID_LATENCY_RECORD("on write queue", f);
+    QPID_LATENCY_RECORD("up to write queue", f);
 }
 
 void OutputInterceptor::activateOutput() {
@@ -79,6 +79,7 @@ bool  OutputInterceptor::doOutput() {
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
     QPID_LATENCY_RECORD("deliver do-output", *this);
+    QPID_LATENCY_CLEAR(*this);
     size_t buf = getBuffered();
     if (parent.isLocal())
         writeEstimate.delivered(requested, sent, buf); // Update the estimate.
