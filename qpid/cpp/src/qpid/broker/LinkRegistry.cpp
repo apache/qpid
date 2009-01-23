@@ -67,14 +67,14 @@ void LinkRegistry::periodicMaintenance ()
     reMappings.clear();
 }
 
-void LinkRegistry::changeAddress(const TcpAddress& oldAddress, const TcpAddress& newAddress)
+void LinkRegistry::changeAddress(const qpid::TcpAddress& oldAddress, const qpid::TcpAddress& newAddress)
 {
     //done on periodic maintenance thread; hold changes in separate
     //map to avoid modifying the link map that is iterated over
     reMappings[createKey(oldAddress)] = newAddress;
 }
 
-bool LinkRegistry::updateAddress(const std::string& oldKey, const TcpAddress& newAddress)
+bool LinkRegistry::updateAddress(const std::string& oldKey, const qpid::TcpAddress& newAddress)
 {
     std::string newKey = createKey(newAddress);
     if (links.find(newKey) != links.end()) {
@@ -296,7 +296,7 @@ std::string LinkRegistry::getAuthIdentity(const std::string& key)
 }
 
 
-std::string LinkRegistry::createKey(const TcpAddress& a)
+std::string LinkRegistry::createKey(const qpid::TcpAddress& a)
 {
     stringstream        keystream;
     keystream << a.host << ":" << a.port;

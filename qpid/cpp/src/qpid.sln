@@ -8,8 +8,6 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 #
 # MPC Command:
 # C:\ace\MPC\mwc.pl -type vc9 -features boost=1 -static qpid.mwc
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MaxMethodBodySize", "MaxMethodBodySize.vcproj", "{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "broker", "broker.vcproj", "{09613D48-FECA-1BAD-9D20-8C374564ADCF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF} = {C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}
@@ -21,9 +19,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client", "client.vcproj", "
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common.vcproj", "{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF} = {CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qmfconsole", "qmfconsole.vcproj", "{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -38,14 +33,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Debug|Win32.ActiveCfg = Debug|Win32
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Debug|Win32.Build.0 = Debug|Win32
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Debug|x64.ActiveCfg = Debug|x64
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Debug|x64.Build.0 = Debug|x64
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|Win32.ActiveCfg = Release|Win32
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|Win32.Build.0 = Release|Win32
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|x64.ActiveCfg = Release|x64
-		{CB5C939B-FECA-1BAD-BB9C-8C3A4564ADCF}.Release|x64.Build.0 = Release|x64
 		{09613D48-FECA-1BAD-9D20-8C374564ADCF}.Debug|Win32.ActiveCfg = Debug|Win32
 		{09613D48-FECA-1BAD-9D20-8C374564ADCF}.Debug|Win32.Build.0 = Debug|Win32
 		{09613D48-FECA-1BAD-9D20-8C374564ADCF}.Debug|x64.ActiveCfg = Debug|x64
