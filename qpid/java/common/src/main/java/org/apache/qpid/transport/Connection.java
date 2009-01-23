@@ -83,7 +83,8 @@ public class Connection extends ConnectionInvoker
     private String locale;
     private SaslServer saslServer;
     private SaslClient saslClient;
-
+    private long idleTimeout = 0;
+    
     // want to make this final
     private int _connectionId;
 
@@ -114,6 +115,7 @@ public class Connection extends ConnectionInvoker
     public void setSender(Sender<ProtocolEvent> sender)
     {
         this.sender = sender;
+        sender.setIdleTimeout(idleTimeout);         
     }
 
     void setState(State state)
@@ -497,6 +499,20 @@ public class Connection extends ConnectionInvoker
         }
     }
 
+    public void setIdleTimeout(long l)
+    {
+        idleTimeout = l;       
+        if (sender != null)
+        {            
+            sender.setIdleTimeout(l);    
+        }
+    }
+    
+    public long getIdleTimeout()
+    {
+        return idleTimeout;
+    }
+    
     public String toString()
     {
         return String.format("conn:%x", System.identityHashCode(this));

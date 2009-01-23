@@ -24,7 +24,6 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.WriteFuture;
-
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 
@@ -77,5 +76,15 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
         CloseFuture closed = session.close();
         closed.join();
     }
-
+    
+    public void setIdleTimeout(long l)
+    {
+      //noop
+    }
+    
+    public long getIdleTimeout()
+    {
+        return 0;
+    }
+    
 }

@@ -20,7 +20,15 @@
  */
 package org.apache.qpid.transport.network;
 
-import org.apache.qpid.transport.codec.BBEncoder;
+import static java.lang.Math.min;
+import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
+import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
+import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
+import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
+import static org.apache.qpid.transport.network.Frame.LAST_SEG;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
@@ -31,13 +39,7 @@ import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.SegmentType;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import static org.apache.qpid.transport.network.Frame.*;
-
-import static java.lang.Math.*;
+import org.apache.qpid.transport.codec.BBEncoder;
 
 
 /**
@@ -235,5 +237,9 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     {
         throw new IllegalArgumentException("" + error);
     }
-
+    
+    public void setIdleTimeout(long l)
+    {
+        sender.setIdleTimeout(l);
+    }
 }

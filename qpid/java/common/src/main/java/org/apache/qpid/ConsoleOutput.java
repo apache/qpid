@@ -20,11 +20,11 @@
  */
 package org.apache.qpid;
 
+import static org.apache.qpid.transport.util.Functions.str;
+
 import java.nio.ByteBuffer;
 
 import org.apache.qpid.transport.Sender;
-
-import static org.apache.qpid.transport.util.Functions.*;
 
 
 /**
@@ -50,5 +50,14 @@ public class ConsoleOutput implements Sender<ByteBuffer>
     {
         System.out.println("CLOSED");
     }
+
+    @Override
+    public void setIdleTimeout(long l)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+    
+    
 
 }

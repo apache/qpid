@@ -20,27 +20,17 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.ArrayList;
+import static org.apache.qpid.transport.Connection.State.OPEN;
+
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-
-import java.io.UnsupportedEncodingException;
-
-import org.apache.qpid.QpidException;
-
-import org.apache.qpid.security.UsernamePasswordCallbackHandler;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
 
-
-import static org.apache.qpid.transport.Connection.State.*;
+import org.apache.qpid.security.UsernamePasswordCallbackHandler;
+import org.apache.qpid.transport.util.Logger;
 
 
 /**
@@ -50,6 +40,7 @@ import static org.apache.qpid.transport.Connection.State.*;
 
 public class ClientDelegate extends ConnectionDelegate
 {
+    private static final Logger log = Logger.get(ClientDelegate.class);
 
     private String vhost;
     private String username;
@@ -121,7 +112,14 @@ public class ClientDelegate extends ConnectionDelegate
     @Override public void connectionTune(Connection conn, ConnectionTune tune)
     {
         conn.setChannelMax(tune.getChannelMax());
-        conn.connectionTuneOk(tune.getChannelMax(), tune.getMaxFrameSize(), tune.getHeartbeatMax());
+        int hb_interval = calculateHeartbeatInterval(conn,
+                                                     tune.getHeartbeatMin(),
+                                                     tune.getHeartbeatMax()
+                                                     );
+        conn.connectionTuneOk(tune.getChannelMax(), 
+                              tune.getMaxFrameSize(), 
+                              hb_interval);
+        conn.setIdleTimeout(hb_interval*1000);
         conn.connectionOpen(vhost, null, Option.INSIST);
     }
 
@@ -134,5 +132,22 @@ public class ClientDelegate extends ConnectionDelegate
     {
         throw new UnsupportedOperationException();
     }
-
+    
+    /**
+     * Currently the spec specified the min and max for heartbeat using secs
+     */
+    private int calculateHeartbeatInterval(Connection conn,int min, int max)
+    {
+        long l = conn.getIdleTimeout()/1000;
+        if (l !=0 && l >= min && l <= max)
+        {
+            return (int)l;
+        }
+        else
+        {
+            log.warn("Ignoring the idle timeout %s set by the connection," +
+            		" using the brokers max value %s", l,max);
+            return max;
+        }
+    }
 }
