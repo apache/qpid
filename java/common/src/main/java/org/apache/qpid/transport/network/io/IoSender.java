@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.transport.network.io;
 
+import static org.apache.qpid.transport.util.Functions.mod;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -29,8 +31,6 @@ import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
-
-import static org.apache.qpid.transport.util.Functions.*;
 
 
 public final class IoSender implements Runnable, Sender<ByteBuffer>
@@ -56,6 +56,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     private final Object notEmpty = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread senderThread;
+    private long idleTimeout;
     
     private volatile Throwable exception = null;
 
@@ -223,8 +224,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
 
     public void run()
     {
-        final int size = buffer.length;
-
+        final int size = buffer.length;       
         while (true)
         {
             final int hd = head;
@@ -294,4 +294,16 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
     }
 
+    public void setIdleTimeout(long l)
+    {
+        try
+        {
+            socket.setSoTimeout((int)l*2);
+            idleTimeout = l;
+        }
+        catch (Exception e)
+        {
+            throw new SenderException(e);
+        }
+    }
 }
