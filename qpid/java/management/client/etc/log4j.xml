@@ -60,7 +60,12 @@
 	</category>
 	
 	<category name="org.apache.qpid.qman.debug.XmlDebugger">
-		<priority value="DEBUG" />
+		<priority value="INFO" />
+		<appender-ref ref="MESSAGES_LOG" />
+	</category>	
+	
+	<category name="org.apache.qpid.qman.debug.WsdlDebugger">
+		<priority value="INFO" />
 		<appender-ref ref="MESSAGES_LOG" />
 	</category>	
 	
