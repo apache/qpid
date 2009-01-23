@@ -708,13 +708,6 @@ void Queue::configure(const FieldTable& _settings)
     noLocal = _settings.get(qpidNoLocal);
     QPID_LOG(debug, "Configured queue with no-local=" << noLocal);
 
-    /* In some pathways (cluster sync) we may get to this
-     * point with a durable queue that does not yet have 
-     * a store created for it.
-     */
-    if ( isDurable() && (! getPersistenceId() ) )
-        store->create(*this, _settings);
-
     lastValueQueue= _settings.get(qpidLastValueQueue);
     if (lastValueQueue) QPID_LOG(debug, "Configured queue as Last Value Queue");
 
