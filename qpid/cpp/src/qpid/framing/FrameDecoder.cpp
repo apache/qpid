@@ -22,13 +22,14 @@
 #include "Buffer.h"
 #include "qpid/log/Statement.h"
 #include <algorithm>
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace framing {
 
 namespace {
-/** Move up to n bytes from start of buf to end of bytes. */
-void move(std::vector<char>& bytes, Buffer& buffer, size_t n) {
+/** Append up to n bytes from start of buf to end of bytes. */
+void append(std::vector<char>& bytes, Buffer& buffer, size_t n) {
     size_t oldSize = bytes.size();
     n = std::min(n, size_t(buffer.available()));
     bytes.resize(oldSize+n);
@@ -39,21 +40,22 @@ void move(std::vector<char>& bytes, Buffer& buffer, size_t n) {
 
 bool FrameDecoder::decode(Buffer& buffer) {
     if (buffer.available() == 0) return false;
-    if (fragment.empty()) {     
+    if (fragment.empty()) {
         if (frame.decode(buffer)) // Decode from buffer
             return true;
         else                    // Store fragment
-            move(fragment, buffer, buffer.available());
-    }
+            append(fragment, buffer, buffer.available());
+        }
     else {                      // Already have a fragment
         // Get enough data to decode the frame size.
         if (fragment.size() < AMQFrame::DECODE_SIZE_MIN) {
-            move(fragment, buffer, AMQFrame::DECODE_SIZE_MIN - fragment.size());
+            append(fragment, buffer, AMQFrame::DECODE_SIZE_MIN - fragment.size());
         }
         if (fragment.size() >= AMQFrame::DECODE_SIZE_MIN) {
             uint16_t size = AMQFrame::decodeSize(&fragment[0]);
-            assert(size > fragment.size());
-            move(fragment, buffer, size-fragment.size());
+            if (size <= fragment.size())
+                throw FramingErrorException(QPID_MSG("Frame size " << size << " is too small."));
+            append(fragment, buffer, size-fragment.size());
             Buffer b(&fragment[0], fragment.size());
             if (frame.decode(b)) {
                 assert(b.available() == 0);
