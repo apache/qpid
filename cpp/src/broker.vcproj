@@ -760,6 +760,9 @@
 				RelativePath="qpid\broker\QueueCleaner.cpp">
 			</File>
 			<File
+				RelativePath="qpid\broker\QueueEvents.cpp">
+			</File>
+			<File
 				RelativePath="qpid\broker\QueueListeners.cpp">
 			</File>
 			<File
@@ -779,6 +782,9 @@
 			</File>
 			<File
 				RelativePath="qpid\broker\RecoveryManagerImpl.cpp">
+			</File>
+			<File
+				RelativePath="qpid\broker\RetryList.cpp">
 			</File>
 			<File
 				RelativePath="qpid\broker\SecureConnection.cpp">
@@ -1166,6 +1172,9 @@
 				RelativePath="qpid\broker\QueueCleaner.h">
 			</File>
 			<File
+				RelativePath="qpid\broker\QueueEvents.h">
+			</File>
+			<File
 				RelativePath="qpid\broker\QueueListeners.h">
 			</File>
 			<File
@@ -1206,6 +1215,9 @@
 			</File>
 			<File
 				RelativePath="qpid\broker\RecoveryManagerImpl.h">
+			</File>
+			<File
+				RelativePath="qpid\broker\RetryList.h">
 			</File>
 			<File
 				RelativePath="qpid\broker\SaslAuthenticator.h">

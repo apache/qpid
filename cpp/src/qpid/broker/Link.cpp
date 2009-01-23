@@ -288,7 +288,7 @@ void Link::maintenanceVisit ()
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
-void Link::reconnect(const TcpAddress& a)
+void Link::reconnect(const qpid::TcpAddress& a)
 {
     Mutex::ScopedLock mutex(lock);
     host = a.host;
