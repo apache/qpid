@@ -354,9 +354,6 @@
 				RelativePath="gen\qpid\framing\AMQP_ServerProxy.cpp">
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\BodyHolder_gen.cpp">
-			</File>
-			<File
 				RelativePath="gen\qpid\framing\ClientInvoker.cpp">
 			</File>
 			<File
@@ -630,6 +627,9 @@
 				RelativePath="gen\qpid\framing\MethodBodyDefaultVisitor.cpp">
 			</File>
 			<File
+				RelativePath="gen\qpid\framing\MethodBodyFactory.cpp">
+			</File>
+			<File
 				RelativePath="gen\qpid\framing\QueueDeclareBody.cpp">
 			</File>
 			<File
@@ -786,13 +786,7 @@
 				RelativePath="qpid\framing\Array.cpp">
 			</File>
 			<File
-				RelativePath="qpid\framing\Blob.cpp">
-			</File>
-			<File
 				RelativePath="qpid\framing\BodyHandler.cpp">
-			</File>
-			<File
-				RelativePath="qpid\framing\BodyHolder.cpp">
 			</File>
 			<File
 				RelativePath="qpid\framing\Buffer.cpp">
@@ -811,9 +805,6 @@
 			</File>
 			<File
 				RelativePath="qpid\framing\FrameSet.cpp">
-			</File>
-			<File
-				RelativePath="qpid\framing\MaxMethodBodySize.h">
 			</File>
 			<File
 				RelativePath="qpid\framing\ProtocolInitiation.cpp">
@@ -933,10 +924,7 @@
 				RelativePath="qpid\sys\Dispatcher.cpp">
 			</File>
 			<File
-				RelativePath="qpid\sys\PollableCondition.h">
-			</File>
-			<File
-				RelativePath="qpid\sys\PollableQueue.h">
+				RelativePath="qpid\sys\LatencyMetric.cpp">
 			</File>
 			<File
 				RelativePath="qpid\sys\Runnable.cpp">
@@ -1522,13 +1510,10 @@
 				RelativePath="qpid\framing\Array.h">
 			</File>
 			<File
-				RelativePath="qpid\framing\Blob.h">
+				RelativePath="qpid\framing\BodyFactory.h">
 			</File>
 			<File
 				RelativePath="qpid\framing\BodyHandler.h">
-			</File>
-			<File
-				RelativePath="qpid\framing\BodyHolder.h">
 			</File>
 			<File
 				RelativePath="qpid\framing\Buffer.h">
@@ -1576,7 +1561,7 @@
 				RelativePath="qpid\framing\Invoker.h">
 			</File>
 			<File
-				RelativePath="qpid\framing\MaxMethodBodySize.h">
+				RelativePath="qpid\framing\MethodBodyFactory.h">
 			</File>
 			<File
 				RelativePath="qpid\framing\MethodContent.h">
@@ -1766,6 +1751,9 @@
 			</File>
 			<File
 				RelativePath="qpid\sys\IOHandle.h">
+			</File>
+			<File
+				RelativePath="qpid\sys\LatencyMetric.h">
 			</File>
 			<File
 				RelativePath="qpid\sys\LockFile.h">
