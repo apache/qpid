@@ -94,7 +94,7 @@ DumpClient::DumpClient(const MemberId& dumper, const MemberId& dumpee, const Url
       done(ok), failed(fail)
 {
     connection.open(url);
-    session = connection.newSession("dump_shared");
+    session = connection.newSession(DUMP);
 }
 
 DumpClient::~DumpClient() {}

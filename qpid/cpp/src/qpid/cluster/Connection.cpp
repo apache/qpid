@@ -69,7 +69,7 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& wrappedId, MemberId myId, bool isCatchUp, bool isLink)
     : cluster(c), self(myId, this), catchUp(isCatchUp), output(*this, out),
-      connection(&output, cluster.getBroker(), wrappedId, isLink), readCredit(0),
+      connection(&output, cluster.getBroker(), wrappedId, isLink, catchUp ? ++catchUpId : 0), readCredit(0),
       expectProtocolHeader(isLink)
 { init(); }
 
@@ -395,6 +395,8 @@ void Connection::queue(const std::string& encoded) {
     broker::Queue::shared_ptr q = broker::Queue::decode(cluster.getBroker().getQueues(), buf);
     QPID_LOG(debug, cluster << " decoded queue " << q->getName());    
 }
+
+qpid::sys::AtomicValue<uint64_t> Connection::catchUpId(0x5000000000000000LL);
 
 }} // namespace qpid::cluster
 

@@ -30,6 +30,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"
+#include "qpid/management/ManagementBroker.h"
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
@@ -41,6 +42,7 @@ using namespace framing;
 using sys::Mutex;
 using boost::intrusive_ptr;
 using qpid::management::ManagementAgent;
+using qpid::management::ManagementBroker;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
@@ -65,7 +67,8 @@ SessionState::SessionState(
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
-            agent->addObject (mgmtObject);
+            ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
+            agent->addObject (mgmtObject, mb ? mb->allocateId(this) : 0);
         }
     }
     attach(h);

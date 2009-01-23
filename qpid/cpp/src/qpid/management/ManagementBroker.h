@@ -32,9 +32,12 @@
 #include "Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
 #include <qpid/framing/AMQFrame.h>
+#include <memory>
 
 namespace qpid {
 namespace management {
+
+struct IdAllocator;
 
 class ManagementBroker : public ManagementAgent
 {
@@ -43,7 +46,6 @@ private:
     int threadPoolSize;
 
 public:
-
     ManagementBroker ();
     virtual ~ManagementBroker ();
 
@@ -78,6 +80,8 @@ public:
     uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
     int getSignalFd () { assert(0); return -1; }
 
+    void setAllocator(std::auto_ptr<IdAllocator> allocator);
+    uint64_t allocateId(Manageable* object);
 private:
     friend class ManagementAgent;
 
@@ -178,6 +182,8 @@ private:
     uint32_t                     nextRemoteBank;
     uint32_t                     nextRequestSequence;
     bool                         clientWasAdded;
+
+    std::auto_ptr<IdAllocator> allocator;
 
 #   define MA_BUFFER_SIZE 65536
     char inputBuffer[MA_BUFFER_SIZE];

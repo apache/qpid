@@ -22,6 +22,7 @@
 #include "Exchange.h"
 #include "ExchangeRegistry.h"
 #include "qpid/agent/ManagementAgent.h"
+#include "qpid/management/ManagementBroker.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/MessageProperties.h"
 #include "DeliverableMessage.h"
@@ -32,6 +33,7 @@ using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
 using qpid::sys::Mutex;
 using qpid::management::ManagementAgent;
+using qpid::management::ManagementBroker;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
@@ -109,12 +111,14 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
             mgmtExchange->set_arguments(args);
             if (!durable) {
-                if (name == "")
+                if (name == "") {
                     agent->addObject (mgmtExchange, 0x1000000000000004LL);  // Special default exchange ID
-                else if (name == "qpid.management")
+                } else if (name == "qpid.management") {
                     agent->addObject (mgmtExchange, 0x1000000000000005LL);  // Special management exchange ID
-                else
-                    agent->addObject (mgmtExchange);
+                } else {
+                    ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
+                    agent->addObject (mgmtExchange, mb ? mb->allocateId(this) : 0);
+                }
             }
         }
     }
@@ -245,7 +249,8 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
                     (agent, this, (Manageable*) parent, queueId, key, args);
                 if (!origin.empty())
                     mgmtBinding->set_origin(origin);
-                agent->addObject (mgmtBinding);
+                ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
+                agent->addObject (mgmtBinding, mb ? mb->allocateId(this) : 0);
             }
         }
     }
