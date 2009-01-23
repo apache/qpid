@@ -53,8 +53,8 @@ Subscription SubscriptionManager::subscribe(
     LocalQueue& lq, const std::string& q, const SubscriptionSettings& ss, const std::string& n)
 {
     std::string name=n.empty() ? q:n;
-    lq.queue=session.getExecution().getDemux().add(name, ByTransferDest(name));
     boost::intrusive_ptr<SubscriptionImpl> si = new SubscriptionImpl(*this, q, ss, name, 0);
+    lq.queue=si->divert();
     si->subscribe();
     lq.subscription = Subscription(si.get());
     return subscriptions[name] = lq.subscription;
@@ -74,8 +74,14 @@ Subscription SubscriptionManager::subscribe(
 
 void SubscriptionManager::cancel(const std::string& dest)
 {
-    sync(session).messageCancel(dest);
-    dispatcher.cancel(dest);
+    std::map<std::string, Subscription>::iterator i = subscriptions.find(dest);
+    if (i != subscriptions.end()) {
+        sync(session).messageCancel(dest);
+        dispatcher.cancel(dest);
+        Subscription s = i->second;
+        if (s.isValid()) subscriptions[dest].impl->cancelDiversion();
+        subscriptions.erase(dest);
+    }
 }
 
 void SubscriptionManager::setAutoStop(bool set) { autoStop=set; }

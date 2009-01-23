@@ -468,6 +468,25 @@ QPID_AUTO_TEST_CASE(testExclusiveBinding) {
     BOOST_CHECK(!fix.subs.get(got, "queue-2"));
 }
 
+QPID_AUTO_TEST_CASE(testResubscribeWithLocalQueue) {
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="some-queue", arg::exclusive=true, arg::autoDelete=true);
+    LocalQueue p, q;
+    fix.subs.subscribe(p, "some-queue");
+    fix.subs.cancel("some-queue");
+    fix.subs.subscribe(q, "some-queue");
+    
+    fix.session.messageTransfer(arg::content=Message("some-data", "some-queue"));
+    fix.session.messageFlush(arg::destination="some-queue");
+
+    Message got;
+    BOOST_CHECK(!p.get(got));
+
+    BOOST_CHECK(q.get(got));
+    BOOST_CHECK_EQUAL("some-data", got.getData());
+    BOOST_CHECK(!q.get(got));
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 

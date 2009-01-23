@@ -107,6 +107,8 @@ class Subscription : public Handle<SubscriptionImpl> {
 
     /** Grant the specified amount of byte credit */
     void grantByteCredit(uint32_t);
+
+  friend class SubscriptionManager;
 };
 }} // namespace qpid::client
 
