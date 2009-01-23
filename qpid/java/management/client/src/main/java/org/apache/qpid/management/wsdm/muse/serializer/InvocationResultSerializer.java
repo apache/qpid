@@ -38,7 +38,6 @@ import org.w3c.dom.Element;
  */
 public class InvocationResultSerializer implements Serializer 
 {	
-	
 	private Serializer _longSerializer = SerializerRegistry.getInstance().getSerializer(long.class);
 	private Serializer _stringSerializer = SerializerRegistry.getInstance().getSerializer(String.class);
 	private Serializer _mapSerializer = SerializerRegistry.getInstance().getSerializer(Map.class);

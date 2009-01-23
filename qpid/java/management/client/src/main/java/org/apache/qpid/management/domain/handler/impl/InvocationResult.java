@@ -36,7 +36,7 @@ import org.apache.qpid.management.domain.services.MethodInvocationException;
 public class InvocationResult implements Serializable
 {
     private static final long serialVersionUID = 2062662997326399693L;
-   
+    
     private final long _returnCode;
     private final String _statusText;
     private final byte [] _outputAndBidirectionalArgumentValues;

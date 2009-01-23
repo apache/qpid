@@ -38,7 +38,6 @@ import org.apache.muse.core.AbstractCapability;
 import org.apache.muse.core.Resource;
 import org.apache.muse.core.ResourceManager;
 import org.apache.muse.core.routing.MessageHandler;
-import org.apache.muse.core.routing.ReflectionMessageHandler;
 import org.apache.muse.core.serializer.SerializerRegistry;
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.muse.ws.addressing.soap.SoapFault;
@@ -293,7 +292,7 @@ public class QManAdapterCapability extends AbstractCapability
         	QName returnValueName = new QName(Names.NAMESPACE_URI,name+"Response",Names.PREFIX);
         	
         	String actionURI = Names.NAMESPACE_URI+"/"+name;
-            MessageHandler handler = new ReflectionMessageHandler(actionURI, requestName, returnValueName);
+            MessageHandler handler = new QManMessageHandler(actionURI, requestName, returnValueName);
             handler.setMethod(method);
             handlers.add(handler);
         }

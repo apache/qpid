@@ -321,16 +321,6 @@ public class QManWsResource implements WsResource
         return _capabilitiesByURI.get(capabilityURI);
     }
     
-//    /**
-//     * Returns all the WS-Action URIs supported by this resource.
-//     * 
-//     * @return all of the WS-A Action URIs supported by this resource.
-//     */
-//    protected Collection getCapabilityActions()
-//    {
-//        return Collections.unmodifiableSet(_capabilitiesByAction.keySet());
-//    }
-    
     /**
      * Returns a collection with all registered capability URIs.
      * 
@@ -539,6 +529,10 @@ public class QManWsResource implements WsResource
         }
         catch (Throwable throwable)
         {
+        	LOGGER.error(
+        			throwable, 
+        			Messages.QMAN_100037_INVOKE_OPERATION_FAILURE);
+        	
             SoapFault response = SoapUtils.convertToFault(
             		(throwable.getCause()!= null) 
             			? throwable.getCause()
@@ -725,15 +719,20 @@ public class QManWsResource implements WsResource
         
 	        for (Element element : additionalProperties) 
 	        {
-				rmdDoc.adoptNode(element);
-				metadataDescriptor.appendChild(element);
+	        	
+//	        	rmdDoc.importNode(element, true);
+				Element adopted = (Element) rmdDoc.importNode(element,false);
+				metadataDescriptor.appendChild(adopted);
 			}
 			
 			return new SimpleMetadataDescriptor(metadataDescriptor);
         } 
         catch(Exception exception)
         {
-        	LOGGER.error(exception,Messages.QMAN_100021_RMD_BUID_FAILURE,getContextPath());
+        	LOGGER.error(
+        			exception,
+        			Messages.QMAN_100021_RMD_BUID_FAILURE,
+        			getContextPath());
         	throw new SoapFault(exception);
         }
     }    
