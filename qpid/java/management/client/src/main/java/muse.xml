@@ -13,6 +13,10 @@
    		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.MapSerializer</java-serializer-class>
 	</custom-serializer>
 	<custom-serializer>
+		<java-serializable-type>java.util.HashMap</java-serializable-type>
+   		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.MapSerializer</java-serializer-class>
+	</custom-serializer>
+	<custom-serializer>
 		<java-serializable-type>java.util.UUID</java-serializable-type>
    		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.UUIDSerializer</java-serializer-class>
 	</custom-serializer>
@@ -20,11 +24,15 @@
 		<java-serializable-type>org.apache.qpid.management.wsdm.capabilities.Result</java-serializable-type>
    		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.InvocationResultSerializer</java-serializer-class>
 	</custom-serializer>
+	<custom-serializer>
+		<java-serializable-type>java.util.Date</java-serializable-type>
+   		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.DateSerializer</java-serializer-class>
+	</custom-serializer>
 	<router>
 		<java-router-class>org.apache.muse.core.routing.SimpleResourceRouter</java-router-class>
 		<logging>
 			<log-file>log/muse.log</log-file>
-			<log-level>FINE</log-level>
+			<log-level>SEVERE</log-level>
 		</logging>
 		<persistence>
 			<java-persistence-class>org.apache.muse.core.routing.RouterFilePersistence</java-persistence-class>

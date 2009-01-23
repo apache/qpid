@@ -141,5 +141,6 @@ public abstract class Names
 	public final static String TYPE = "type";
 	public final static String XSI_TYPE = "xsi:"+TYPE;
 	
-	public final static String ADAPTER_PORT= "qman.port";	
+	public final static String ADAPTER_HOST_PROPERTY_NAME = "qman.host";		
+	public final static String ADAPTER_PORT_PROPERTY_NAME = "qman.port";	
 }

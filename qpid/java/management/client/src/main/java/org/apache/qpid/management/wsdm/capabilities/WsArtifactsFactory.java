@@ -85,7 +85,8 @@ class WsArtifactsFactory
 			
 			LOGGER.debug(
 					Messages.QMAN_200041_INCOMING_OBJECT_NAME_AND_DERIVED_KEY,
-					objectName,searchKey);
+					objectName,
+					searchKey);
 						
 			result = _cache.get(searchKey);
 			if (result == null)

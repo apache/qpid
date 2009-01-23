@@ -108,6 +108,8 @@ public interface Messages
 	String QMAN_200040_WS_ARTIFACTS_CACHED = "<QMAN-200040> : WS Artifacts has been stored on cache with the following id : %s";
 	String QMAN_200041_INCOMING_OBJECT_NAME_AND_DERIVED_KEY = "<QMAN-200041> : Incoming object name : %s, derived search key : %s";
 	String QMAN_200042_REMOVING_RESOURCE = "<QMAN-200042> : WS-Resource %s is going to be removed";
+	String QMAN_200043_GENERATED_ACCESSOR_METHOD = "<QMAN-200043> : Generated accessor method for %s : %s";
+	String QMAN_200044_GENERATED_METHOD = "<QMAN-200044> : Generated method for %s : %s";
 	
 	// WARNING
     String QMAN_300001_MESSAGE_DISCARDED = "<QMAN-300001> : No handler has been configured for processing messages with \"%s\" as opcode. Message will be discarded.";
@@ -150,4 +152,10 @@ public interface Messages
 	String QMAN_100032_WS_RESOURCE_NOT_YET_INITIALIZED = "<QMAN-100032> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource hasn't yet been initialized.";
 	String QMAN_100033_WS_RESOURCE_ALREADY_SHUTDOWN = "<QMAN-100033> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource has already been shutdown.";
 	String QMAN_100034_WSDL_SCHEMA_SECTION_NOT_FOUND = "<QMAN-100034> : Unable to get via XPath the schema section in WSDL.";
+	String QMAN_100035_RESOURCE_CAPABILITY_INVOCATION_FAILURE = "<QMAN-100035> : Resource thrown a failure while invoking a capability operation.";
+	
+	// NEW
+	String QMAN_100035_GET_ATTRIBUTE_FAILURE = "<QMAN-100035> : Get Attribute invocation failure for attribute %s, resource %s.";
+	String QMAN_100036_SET_ATTRIBUTE_FAILURE = "<QMAN-100036> : Set Attribute invocation failure for attribute %s, resource %s.";
+	String QMAN_100037_INVOKE_OPERATION_FAILURE = "<QMAN-100037> : Operation Invocation failure for operation.";	
 }

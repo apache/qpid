@@ -21,26 +21,36 @@
 package org.apache.qpid.management.wsdm.capabilities;
 
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.ObjectName;
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
 import org.apache.muse.core.Environment;
+import org.apache.muse.util.ReflectUtils;
 import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.wsdl.WsdlUtils;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.wsdm.muse.serializer.ObjectSerializer;
-import org.apache.qpid.qman.debug.XmlDebugger;
+import org.apache.qpid.qman.debug.WsdlDebugger;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
+/**
+ * TO BE IMPROVED USING JAXB!!
+ * 
+ * @author Andrea Gazzarini
+ */
 class WsdlBuilder implements IArtifactBuilder {
 
 	private final static Logger LOGGER = Logger.get(WsdlBuilder.class);
@@ -52,6 +62,10 @@ class WsdlBuilder implements IArtifactBuilder {
 	private ObjectSerializer serializer = new ObjectSerializer();
 
 	private ObjectName _objectName;
+	
+	private boolean mapTypeHasBeenDeclared;
+	private boolean uuidTypeHasBeenDeclared;
+	private Map<String, String> arrayTypesAlreadyDeclared = new HashMap<String, String>();
 	
 	public void onAttribute(MBeanAttributeInfo attributeMetadata) throws BuilderException  
 	{
@@ -73,14 +87,17 @@ class WsdlBuilder implements IArtifactBuilder {
 	        </xs:complexType>
 	       </xs:element>
 */			
-			schema.appendChild(defineSchemaFor(attributeMetadata.getType(), attributeMetadata.getName()));
-			
+			schema.appendChild(defineSchemaFor(attributeMetadata.getType(), attributeMetadata.getName()));				
 			Element wsrpProperties = (Element) XPathAPI.selectSingleNode(
 					_document, 
-					"/wsdl:definitions/wsdl:types/xsd:schema[@targetNamespace='http://amqp.apache.org/qpid/management/qman']/xsd:element[@name='QManWsResourceProperties']/xsd:complexType/xsd:sequence");
+					"/wsdl:definitions/wsdl:types/xsd:schema[" +
+					"@targetNamespace='http://amqp.apache.org/qpid/management/qman']" +
+					"/xsd:element[@name='QManWsResourceProperties']/xsd:complexType/xsd:sequence");
 
-			Element propertyRef= XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-			propertyRef.setAttribute("ref", "qman:"+attributeMetadata.getName());
+			Element propertyRef= XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+			propertyRef.setAttribute(
+					"ref", 
+					Names.PREFIX+":"+attributeMetadata.getName());
 			
 			wsrpProperties.appendChild(propertyRef);
 			
@@ -90,56 +107,95 @@ class WsdlBuilder implements IArtifactBuilder {
 		}
 	}
 	
+	private final static QName XSD_ELEMENT_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"element","xsd");
+	private final static QName XSD_COMPLEX_TYPE_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"complexType","xsd");
+	private final static QName XSD_SEQUENCE_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"sequence","xsd");
+	
 	private Element defineSchemaFor(String type, String attributeName) throws Exception
 	{
 		if (type.equals("java.util.Map")) 
 		{
-			Element prop = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-			prop.setAttribute("name",attributeName);
+			if (!mapTypeHasBeenDeclared)
+			{				
+					Element complexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
+					complexType.setAttribute("name","map");
+						Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
+	
+						Element entry = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+						entry.setAttribute("name", "entry");
+						entry.setAttribute("minOccurs", "0");
+						entry.setAttribute("maxOccurs", "unbounded");
+	
+						Element complexType2 = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
+						Element sequence2 = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
+	
+							Element key = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+							key.setAttribute("name", "key");
+							key.setAttribute("type", "xsd:string");
+	
+							Element value = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+							value.setAttribute("name", "value");
+							value.setAttribute("type", "xsd:anyType");
 			
-				Element complexType = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","complexType","xsd"));
+							sequence2.appendChild(key);
+							sequence2.appendChild(value);
+							complexType2.appendChild(sequence2);
+							entry.appendChild(complexType2);
+							sequence.appendChild(entry);
+							complexType.appendChild(sequence);
+							schema.appendChild(complexType);			
+							mapTypeHasBeenDeclared = true;
+			} 
+			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+			propertyDeclaration.setAttribute("name",attributeName);
+			propertyDeclaration.setAttribute("type", "qman:map");
+			return propertyDeclaration;
 			
-					Element sequence = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","sequence","xsd"));
-
-					Element entry = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-					entry.setAttribute("name", "entry");
-					entry.setAttribute("minOccurs", "0");
-					entry.setAttribute("maxOccurs", "unbounded");
-
-					Element complexType2 = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","complexType","xsd"));
-					Element sequence2 = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","sequence","xsd"));
-
-						Element key = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-						key.setAttribute("name", "key");
-						key.setAttribute("type", "xsd:string");
-
-						Element value = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-						value.setAttribute("name", "value");
-						value.setAttribute("type", "xsd:anyType");
-		
-						sequence2.appendChild(key);
-						sequence2.appendChild(value);
-						complexType2.appendChild(sequence2);
-						entry.appendChild(complexType2);
-						sequence.appendChild(entry);
-						complexType.appendChild(sequence);
-						prop.appendChild(complexType);
-						return prop;
 		} else if ("java.util.UUID".equals(type)) 
 		{
-			Element prop = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-			prop.setAttribute("name", attributeName);
-				Element complexType = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","complexType","xsd"));
-					Element sequence = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","sequence","xsd"));
-						Element uuid = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
-						uuid.setAttribute("name", "uuid");
-						uuid.setAttribute("type", "xsd:string");						
-			sequence.appendChild(uuid);
-			complexType.appendChild(sequence);
-			prop.appendChild(complexType);
-			return prop;
-		} else {			
-			Element propertyDeclaration = XmlUtils.createElement(_document, new QName("http://www.w3.org/2001/XMLSchema","element","xsd"));
+			if (!uuidTypeHasBeenDeclared)
+			{
+					Element complexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
+					complexType.setAttribute("name", "uuid");
+						Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
+							Element uuid = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+							uuid.setAttribute("name", "uuid");
+							uuid.setAttribute("type", "xsd:string");						
+				sequence.appendChild(uuid);
+				complexType.appendChild(sequence);
+				schema.appendChild(complexType);
+				uuidTypeHasBeenDeclared = true;
+			}
+			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+			propertyDeclaration.setAttribute("name",attributeName);
+			propertyDeclaration.setAttribute("type", "qman:uuid");
+			return propertyDeclaration;
+		} else if (type.startsWith("["))
+		{
+			Class arrayClass =  Class.forName(type);
+			Class clazz = ReflectUtils.getClassFromArrayClass(arrayClass);
+			String arrayType = arrayClass.getSimpleName().replace("[]", "").trim();
+			arrayType = Character.toUpperCase(arrayType.charAt(0))+arrayType.substring(1);
+			if (!arrayTypesAlreadyDeclared.containsKey(type))
+			{
+					Element complexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
+					complexType.setAttribute("name", "arrayOf"+arrayType);
+						Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
+							Element entry = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+							entry.setAttribute("name", "entry");
+							entry.setAttribute("type", serializer.getXmlType(clazz));						
+				sequence.appendChild(entry);
+				complexType.appendChild(sequence);
+				schema.appendChild(complexType);
+				arrayTypesAlreadyDeclared.put(type, arrayType);
+			}
+			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+			propertyDeclaration.setAttribute("name",attributeName);
+			propertyDeclaration.setAttribute("type", "qman:arrayOf"+arrayTypesAlreadyDeclared.get(type));
+			return propertyDeclaration;
+		}
+		else {			
+			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
 			propertyDeclaration.setAttribute("name",attributeName);
 			propertyDeclaration.setAttribute("type", serializer.getXmlType(Class.forName(type)));
 			return propertyDeclaration;
@@ -158,7 +214,7 @@ class WsdlBuilder implements IArtifactBuilder {
 			StringBuilder builder = new StringBuilder("http://")
 				.append(InetAddress.getLocalHost().getHostName())
 				.append(':')
-				.append(System.getProperty(Names.ADAPTER_PORT,"8080"))
+				.append(System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME,"8080"))
 				.append('/')
 				.append("qman")
 				.append('/')
@@ -218,14 +274,15 @@ class WsdlBuilder implements IArtifactBuilder {
 		statusCode.setAttribute("type", "xsd:long");
 
 		Element statusText = _document.createElement("xsd:element");
-		statusCode.setAttribute("name", "statusText");
-		statusCode.setAttribute("type", "xsd:string");
+		statusText.setAttribute("name", "statusText");
+		statusText.setAttribute("type", "xsd:string");
 		
 		sequence.appendChild(statusCode);
 		sequence.appendChild(statusText);
 		
 		Element outputParams = _document.createElement("xsd:complexType");
 		outputParams.setAttribute("name", "outputParameters");
+		sequence.appendChild(outputParams);		
 		
 		Element complexTypeOutput = _document.createElement("xsd:complexType");
 		Element outputSequence = _document.createElement("xsd:sequence");
@@ -243,9 +300,10 @@ class WsdlBuilder implements IArtifactBuilder {
 		Element entryComplexType = _document.createElement("xsd:complexType");
 		Element entrySequence = _document.createElement("xsd:sequence");
 		entryComplexType.appendChild(entrySequence);
+		entry.appendChild(entryComplexType);
 		
 		Element name = _document.createElement("xsd:name");
-		name.setAttribute("name", "name");
+		name.setAttribute("name", "key");
 		name.setAttribute("type", "xsd:string");
 		
 		Element value = _document.createElement("xsd:element");
@@ -324,6 +382,7 @@ class WsdlBuilder implements IArtifactBuilder {
 			Element methodNameRequestComplexType =  _document.createElement("xsd:complexType");
 			methodNameRequestComplexType.setAttribute("name", methodNameRequest);
 			Element methodNameRequestComplexTypeSequence = _document.createElement("xsd:sequence");
+			
 			for(MBeanParameterInfo parameter : operationMetadata.getSignature())
 			{
 				methodNameRequestComplexTypeSequence.appendChild(defineSchemaFor(parameter.getType(), parameter.getName()));
@@ -340,7 +399,7 @@ class WsdlBuilder implements IArtifactBuilder {
 			
 			Element result = _document.createElement("xsd:element");
 			result.setAttribute("name", "result");
-			result.setAttribute("type", "qman:invocationResult");
+			result.setAttribute("type", "qman:result");
 			methodNameResponseSequence.appendChild(result);
 			
 			schema.appendChild(methodNameResponseComplexType);
@@ -459,7 +518,7 @@ class WsdlBuilder implements IArtifactBuilder {
 
 	public Document getWsdl() 
 	{
-		XmlDebugger.debug(_objectName,_document);
+		WsdlDebugger.debug(_objectName,_document);
 		return _document;
 	}
 
