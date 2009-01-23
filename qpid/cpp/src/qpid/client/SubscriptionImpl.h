@@ -25,10 +25,12 @@
 #include "qpid/client/SubscriptionSettings.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/MessageListener.h"
+#include "qpid/client/Demux.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/RefCounted.h"
+#include <memory>
 
 namespace qpid {
 namespace client {
@@ -93,7 +95,17 @@ class SubscriptionImpl : public RefCounted, public MessageListener {
     void grantCredit(framing::message::CreditUnit unit, uint32_t value);
 
     void received(Message&);
-    
+
+    /**
+     * Set up demux diversion for messages sent to this subscription
+     */
+    Demux::QueuePtr divert();
+    /**
+     * Cancel any demux diversion that may have been setup for this
+     * subscription
+     */
+    void cancelDiversion();
+
   private:
 
     mutable sys::Mutex lock;
@@ -102,6 +114,7 @@ class SubscriptionImpl : public RefCounted, public MessageListener {
     SubscriptionSettings settings;
     framing::SequenceSet unacquired, unaccepted;
     MessageListener* listener;
+    std::auto_ptr<ScopedDivert> demuxRule;
 };
 
 }} // namespace qpid::client

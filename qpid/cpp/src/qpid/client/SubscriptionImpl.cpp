@@ -145,5 +145,15 @@ void SubscriptionImpl::received(Message& m) {
     }
 }
 
+Demux::QueuePtr SubscriptionImpl::divert()
+{
+    demuxRule = std::auto_ptr<ScopedDivert>(new ScopedDivert(name, manager.getSession().getExecution().getDemux()));
+    return demuxRule->getQueue();
+}
+
+void SubscriptionImpl::cancelDiversion() { 
+    demuxRule.reset();
+}
+
 }} // namespace qpid::client
 
