@@ -31,6 +31,7 @@
 
 #include "qpid/broker/Connection.h"
 #include "qpid/amqp_0_10/Connection.h"
+#include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/framing/FrameDecoder.h"
@@ -173,6 +174,8 @@ class Connection :
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     int readCredit;
     bool expectProtocolHeader;
+
+    static qpid::sys::AtomicValue<uint64_t> catchUpId;
     
   friend std::ostream& operator<<(std::ostream&, const Connection&);
 };

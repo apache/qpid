@@ -39,6 +39,22 @@ namespace broker {
 class ExchangeRegistry;
 
 class Exchange : public PersistableExchange, public management::Manageable {
+public:
+    struct Binding : public management::Manageable {
+        typedef boost::shared_ptr<Binding>       shared_ptr;
+        typedef std::vector<Binding::shared_ptr> vector;
+
+        Queue::shared_ptr         queue;
+        const std::string         key;
+        const framing::FieldTable args;
+        qmf::org::apache::qpid::broker::Binding* mgmtBinding;
+
+        Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
+                framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
+        ~Binding();
+        management::ManagementObject* GetManagementObject() const;
+    };
+
 private:
     const std::string name;
     const bool durable;
@@ -64,20 +80,6 @@ protected:
            
     void routeIVE();
            
-    struct Binding : public management::Manageable {
-        typedef boost::shared_ptr<Binding>       shared_ptr;
-        typedef std::vector<Binding::shared_ptr> vector;
-
-        Queue::shared_ptr         queue;
-        const std::string         key;
-        const framing::FieldTable args;
-        qmf::org::apache::qpid::broker::Binding* mgmtBinding;
-
-        Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
-                framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
-        ~Binding();
-        management::ManagementObject* GetManagementObject() const;
-    };
 
     struct MatchQueue {
         const Queue::shared_ptr queue;        
