@@ -368,7 +368,6 @@ class QpidClass extends QpidEntity implements QpidClassMBean
         	OperationHasBeenInvokedNotification notification = null;
         	try 
         	{
-	            // TODO : Overloaded methods
 	            QpidMethod method = _methods.get(actionName);
 	            if (method != null) 
 	            {
@@ -384,12 +383,14 @@ class QpidClass extends QpidEntity implements QpidClassMBean
 	                    notification = new OperationHasBeenInvokedNotification(actionName,params,signature,exception);
 	                    throw exception;
 	                }
-	            } else {
+	            } else 
+	            {
 	            	ReflectionException exception = new ReflectionException(new NoSuchMethodException(actionName));
 	                notification = new OperationHasBeenInvokedNotification(actionName,params,signature,exception);
 	                throw exception;
 	            } 
-        	}finally {
+        	} finally 
+        	{
         		sendNotification(notification);
         	}
         }

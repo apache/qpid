@@ -49,7 +49,9 @@ import org.w3c.dom.Element;
 public class MapSerializer implements Serializer 
 {
 	
-	ByteArraySerializer byteArraySerializer = new ByteArraySerializer();
+	ByteArraySerializer _byteArraySerializer = new ByteArraySerializer();
+	Serializer _objectSerializer = SerializerRegistry.getInstance().getSerializer(Object.class);
+	Serializer _stringSerializer = SerializerRegistry.getInstance().getSerializer(String.class);
 	
 	/**
 	 * Return a map representation of the given xml element.
@@ -70,10 +72,10 @@ public class MapSerializer implements Serializer
 			Object value = null;
 			for (Element element : keysAndValues) 
 			{
-				if (Names.KEY.equals(element.getNodeName()))
+				if (Names.KEY.equals(element.getLocalName()))
 				{
-					key = objectDeserializer.fromXML(element);
-				} else if (Names.VALUE.equals(element.getNodeName()))
+					key = _stringSerializer.fromXML(element);
+				} else if (Names.VALUE.equals(element.getLocalName()))
 				{
 					value = objectDeserializer.fromXML(element);
 				}
@@ -103,23 +105,23 @@ public class MapSerializer implements Serializer
 	 */
 	public Element toXML(Object obj, QName qname) throws SoapFault 
 	{
-		Serializer objectSerializer = SerializerRegistry.getInstance().getSerializer(Object.class);
+		
 		Map<?, ?> data = (Map<?, ?>) obj;
 
-		QName entryQName = new QName(Names.ENTRY);
-		QName keyQName = new QName(Names.KEY);
-		QName valueQName = new QName(Names.VALUE);
+		QName entryQName = new QName(qname.getNamespaceURI(),Names.ENTRY,qname.getPrefix());
+		QName keyQName = new QName(qname.getNamespaceURI(),Names.KEY,qname.getPrefix());
+		QName valueQName = new QName(qname.getNamespaceURI(),Names.VALUE,qname.getPrefix());
 		
 		Element root = XmlUtils.createElement(qname);
 		root.setAttribute("xmlns:xsi", XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);
 		for (Entry<?, ?> mapEntry: data.entrySet()) 
 		{
 			Element entry = XmlUtils.createElement(entryQName);									
-			entry.appendChild(objectSerializer.toXML(mapEntry.getKey(), keyQName));
+			entry.appendChild(_stringSerializer.toXML(mapEntry.getKey(), keyQName));
 			if (mapEntry.getValue().getClass() == byte[].class) {				
-				entry.appendChild(byteArraySerializer.toXML(mapEntry.getValue(), valueQName));
+				entry.appendChild(_byteArraySerializer.toXML(mapEntry.getValue(), valueQName));
 			} else {
-				entry.appendChild(objectSerializer.toXML(mapEntry.getValue(), valueQName));
+				entry.appendChild(_objectSerializer.toXML(mapEntry.getValue(), valueQName));
 			}
 			root.appendChild(entry);
 		}

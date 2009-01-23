@@ -31,7 +31,7 @@ import org.apache.muse.core.Environment;
 import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.resource.metadata.WsrmdConstants;
 import org.apache.qpid.management.Names;
-import org.apache.qpid.qman.debug.XmlDebugger;
+import org.apache.qpid.qman.debug.WsdlDebugger;
 import org.w3c.dom.Element;
 
 /**
@@ -45,7 +45,7 @@ class RmdBuilder implements IArtifactBuilder
 {
 	private List<Element> _metadataDescriptor = new ArrayList<Element>();
 	
-	private ObjectName _objectName;
+	ObjectName _objectName;
 	
 	/**
 	 * Nothing to be done here on this builder. 
@@ -96,7 +96,7 @@ class RmdBuilder implements IArtifactBuilder
 					: Names.READ_ONLY);
 		property.setAttribute(Names.MUTABILITY,Names.MUTABLE);
 		
-		XmlDebugger.debug(_objectName, property);
+		WsdlDebugger.debug(_objectName, property);
 		
 		_metadataDescriptor.add(property);
 	}

@@ -20,22 +20,22 @@
  -->
 <project name="QMan - Qpid JMX / WS-DM Adapter" default="build">
 
-    <property name="module.depends" value="client common systests"/>
+    <property name="module.depends" value="client common"/>
+    <property name="module.test.depends" value="client common"/>
+	
 	<import file="../../module.xml"/>
 
 	<property name="war.name" value="qman.war"/>
     <property name="build.root" value="${module.build}"/>
-    <property name="web.module" value="${module.build}/WsdmModule"/>	
-    <property name="web-inf.folder" value="${web.module}/WEB-INF"/>
-    <property name="classes.folder" value="${web-inf.folder}/classes"/>
+    <property name="web.module" value="${module.build}${file.separator}WsdmModule"/>	
+    <property name="web-inf.folder" value="${web.module}${file.separator}WEB-INF"/>
+    <property name="classes.folder" value="${web-inf.folder}${file.separator}classes"/>
 
 	<target name="release-bin-other">
 		<mkdir dir="${module.release}${file.separator}log"/>
 	</target>
 	
 	<target name="libs-release" description="copy dependencies into module release">
-	    
-		<!-- Copy the module dependencies for JMX Bridge release-->
 	    <copy todir="${module.release}${file.separator}" failonerror="true" verbose="true">
 	    	<fileset dir="${build}" casesensitive="yes" includes="${module.libs}">
 	    		<not><filename name="**/*javassist*"/></not>	
@@ -46,38 +46,29 @@
 	    		<not><filename name="**/*muse*"/></not>
 	    	</fileset>
 	    </copy>
-		
-	    <!-- qpid-management-client.jar : this should be copied only on jmx dist -->
-		<copy todir="${module.release}/lib" failonerror="true">
+		<copy todir="${module.release}${file.separator}lib" failonerror="true">
 		    <fileset file="${module.jar}"/>
 		    <fileset dir="${build.lib}" includes="${module.depends.jars}"/>
 		</copy>
-		
-		<!-- qman.war -->
-		<copy todir="${module.release}/lib" failonerror="true">
-		    <fileset file="${web.module}${file.separator}${war.name}"/>
-		</copy>
+		<jar destfile="${module.release}${file.separator}lib${file.separator}${war.name}" basedir="${web.module}"/>
 	</target>
 	
 	<target name="prepare-wsdm-module">        
         <mkdir dir="${web.module}"/>
         <mkdir dir="${web-inf.folder}"/>
     	<mkdir dir="${classes.folder}"/>
-        <copy file="./web.xml" todir="${web-inf.folder}" verbose="false"/>
-		 <copy todir="${classes.folder}" verbose="false">
-            <fileset dir="${module.classes}">            	
-                <include name="org/apache/qpid/management/servlet/*"/>
-                <include name="org/apache/qpid/management/wsdm/**"/>
-                <include name="org/apache/qpid/qman/**"/>            	
-            	<include name="wsdl/**"/>
+        <copy file=".${file.separator}web.xml" todir="${web-inf.folder}" verbose="false"/>
+	 	<copy todir="${classes.folder}" verbose="false">
+        	<fileset dir="${module.classes}">            	
+				<include name="wsdl/**"/>
             	<include name="muse.xml"/>
             	<include name="router-entries/**"/>
-            </fileset>  
-        </copy>         
+			</fileset>  
+		</copy>         
         <copy todir="${web-inf.folder}">
             <fileset dir="${build}" includes="${module.libs}"/>
         </copy>
-        <copy todir="${web-inf.folder}/lib">
+        <copy todir="${web-inf.folder}${file.separator}lib">
             <fileset dir="${build}/lib">
                 <include name="qpid-client-*.jar"/>
                 <include name="qpid-common-*.jar"/>
@@ -89,45 +80,69 @@
             </fileset>
         </copy>
     </target> 
-	  <target name="jar.manifest" depends="compile" if="module.manifest">
-	    <jar destfile="${module.jar}" manifest="${module.manifest}">
-	    	<fileset dir="${module.classes}" casesensitive="yes">
+	<target name="jar.manifest" depends="compile" if="module.manifest">
+		<jar destfile="${module.jar}" manifest="${module.manifest}">
+			<fileset dir="${module.classes}" casesensitive="yes">
 				<include name="**/**"/>
-				<exclude name="org/apache/qpid/management/servlet/*"/>
-                <exclude name="org/apache/qpid/management/wsdm/**"/>
-	    		<exclude name="org/apache/qpid/qman/**"/>      
+            	<exclude name="wsdl/**"/>
+            	<exclude name="muse.xml"/>
+            	<exclude name="router-entries/**"/>
+			</fileset>
+		</jar>
+	</target>
+	<target name="jar.nomanifest" depends="compile" unless="module.manifest">
+		<jar destfile="${module.jar}">
+			<metainf dir="${project.root}${file.separator}resources/" />
+			<fileset dir="${module.classes}" casesensitive="yes">
+				<include name="**/**"/>
             	<exclude name="wsdl/**"/>
             	<exclude name="muse.xml"/>
             	<exclude name="router-entries/**"/>
 	    	</fileset>
-	    </jar>
-	  </target>
-	  <target name="jar.nomanifest" depends="compile" unless="module.manifest">
-	    <jar destfile="${module.jar}">
-	       <metainf dir="${project.root}/resources/" />
-	    	<fileset dir="${module.classes}" casesensitive="yes">
-				<include name="**/**"/>
-				<exclude name="org/apache/qpid/management/servlet/*"/>
-                <exclude name="org/apache/qpid/management/wsdm/**"/>
-	    		<exclude name="org/apache/qpid/qman/**"/>      
-            	<exclude name="wsdl/**"/>
-            	<exclude name="muse.xml"/>
-            	<exclude name="router-entries/**"/>
-	    	</fileset>
-	    </jar>
-	  </target>
-	
-    <target name="clean-wsdm-module" description="Clean up web module directory before proceed.">
-      <delete dir="${web.module}"/>
-    </target>
+		</jar>
+	</target>
+    <target name="postbuild" depends="prepare-wsdm-module" description="Build WS-DM module"/>
+		<path id="module.test.path">
+	    	<pathelement path="${module.test.classes}" />
+	    	<path refid="module.test.libs"/>
+	        <fileset dir="${build}/lib">
+	            <include name="qpid-client-*.jar"/>
+	            <include name="qpid-common-*.jar"/>
+	            <include name="qpid-management-client-*.jar"/>           
+	        	<exclude name="qpid-client-example*.jar"/>
+	        	<exclude name="qpid-client-tests*.jar"/>
+	        	<exclude name="qpid-common-tests*.jar"/>
+	            <exclude name="qpid-management-client-tests*.jar"/>           
+	        </fileset> 
+		</path>
+	<target name="test" depends="build,compile-tests" if="module.test.src.exists" unless="${dontruntest}" description="execute unit tests">
+		<delete file="${module.failed}"/>
+		<echo message="Using config:${config}" level="info"/>
+	     <junit fork="${test.fork}" maxmemory="1024M" reloading="no"
+			haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
+	        failureproperty="test.failures" printsummary="on" timeout="600000" >
+	        	
+			<jvmarg value="${jvm.args}"/>
+			<sysproperty key="qman.war" value="${web.module}"/>
+	    	
+			<formatter type="plain"/>
+			<formatter type="xml"/>
 
-	<target name="clenaup-wsdm-module-tmp-files" description="Clean up all the temporary files used for build WSDM module.">
-      <delete dir="${web-inf.folder}"/>
-    </target>
+			<classpath refid="module.test.path"/>
 
-    <target name="create-wsdm-module" description="Creates WSDM Module (Web Application Archive ).">
-        <jar destfile="${web.module}/${war.name}" basedir="${web.module}"/>
-    </target>
- 
-    <target name="postbuild" depends="clean-wsdm-module,prepare-wsdm-module,create-wsdm-module,clenaup-wsdm-module-tmp-files" description="Build WS-DM module"/>
+			<batchtest fork="${test.fork}" todir="${module.results}">
+	        	<fileset dir="${module.test.src}" excludes="${module.test.excludes}">
+					<include name="**/${test}.java"/>
+	        	</fileset>
+			</batchtest>
+		</junit>
+		<antcall target="touch-failed"/>
+		<condition property="failed">
+			<and>
+				<isfalse value="${test.failures.ignore}"/>
+				<available file="${module.failed}"/>
+			</and>
+		</condition>
+		<fail if="failed" message="TEST SUITE FAILED"/>
+	</target>
 </project>

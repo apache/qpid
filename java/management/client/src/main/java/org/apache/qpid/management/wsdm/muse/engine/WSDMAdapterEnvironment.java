@@ -67,18 +67,11 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
     
     public String getDefaultURIPrefix()
     {
-    	String host = null;
-    	  try {
-  			host = InetAddress.getLocalHost().getHostName();
-  		} catch (UnknownHostException e) {
-  			host = "localhost";
-  		}
-  		
         return new StringBuilder()
     		.append("http://")
-    		.append(host)
+    		.append(System.getProperty(Names.ADAPTER_HOST_PROPERTY_NAME,"localhost"))
     		.append(":")
-    		.append(System.getProperty(Names.ADAPTER_PORT))
+    		.append(System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME,"8080"))
     		.append(_servletContext.getContextPath())
     		.append("/services/")
     		.toString();    	

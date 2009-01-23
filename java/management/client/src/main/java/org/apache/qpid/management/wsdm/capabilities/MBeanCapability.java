@@ -21,7 +21,6 @@
 package org.apache.qpid.management.wsdm.capabilities;
 
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Array;
 
 import javax.management.Attribute;
 import javax.management.AttributeNotFoundException;
@@ -29,25 +28,16 @@ import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import javax.xml.namespace.QName;
 
-import org.apache.muse.core.serializer.Serializer;
-import org.apache.muse.core.serializer.SerializerRegistry;
-import org.apache.muse.util.ReflectUtils;
-import org.apache.muse.util.xml.XmlUtils;
-import org.apache.muse.ws.addressing.soap.SoapFault;
-import org.apache.muse.ws.resource.basefaults.BaseFault;
-import org.apache.muse.ws.resource.basefaults.WsbfUtils;
 import org.apache.muse.ws.resource.impl.AbstractWsResourceCapability;
-import org.apache.muse.ws.resource.properties.ResourcePropertyCollection;
+import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.services.MethodInvocationException;
 import org.apache.qpid.management.wsdm.common.EntityInstanceNotFoundFault;
 import org.apache.qpid.management.wsdm.common.MethodInvocationFault;
 import org.apache.qpid.management.wsdm.common.NoSuchAttributeFault;
 import org.apache.qpid.management.wsdm.common.QManFault;
-import org.apache.qpid.management.wsdm.muse.serializer.ByteArraySerializer;
-import org.w3c.dom.Element;
+import org.apache.qpid.transport.util.Logger;
 
 /**
  * Abstract capability used for centralize common behaviour of the QMan
@@ -57,11 +47,11 @@ import org.w3c.dom.Element;
  */
 public abstract class MBeanCapability extends AbstractWsResourceCapability 
 {
-	private static final Element[] _NO_VALUES = new Element[0];
+	private static final Logger LOGGER = Logger.get(MBeanCapability.class);
 
 	protected final MBeanServer _mxServer;
 	protected ObjectName _objectName;
-
+	
 	/**
 	 * Builds a new capability related to the given object name.
 	 * 
@@ -93,7 +83,7 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * 			be found.
 	 * @throws QManFault in case of internal system failure.
 	 */
-	Object getAttribute(String attributeName) throws QManFault 
+	Object getAttribute(String attributeName) throws NoSuchAttributeFault,EntityInstanceNotFoundFault,QManFault 
 	{
 		try 
 		{
@@ -110,6 +100,10 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 					_objectName);
 		} catch (Exception exception) 
 		{
+			LOGGER.error(
+					Messages.QMAN_100035_GET_ATTRIBUTE_FAILURE,
+					attributeName,
+					_objectName);			
 			throw new QManFault(
 					getWsResource().getEndpointReference(),
 					exception);
@@ -134,7 +128,7 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * @throws QManFault
 	 *             in case of internal system failure.
 	 */
-	void setAttribute(String attributeName, Object value) throws QManFault 
+	void setAttribute(String attributeName, Object value) throws NoSuchAttributeFault,EntityInstanceNotFoundFault,QManFault 
 	{
 		try 
 		{
@@ -151,6 +145,10 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 					_objectName);
 		} catch (Exception exception) 
 		{
+			LOGGER.error(
+					Messages.QMAN_100036_SET_ATTRIBUTE_FAILURE,
+					attributeName,
+					_objectName);			
 			throw new QManFault(
 					getWsResource().getEndpointReference(),
 					exception);
@@ -163,16 +161,31 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * @param operationName the name of the operation to be invoked.
 	 * @param params parameters used for operation invocation.
 	 * @param signature the operation / method signature.
-	 * @throws QManFault when invocation fails.
+	 * @throws EntityInstanceNotFoundFault 
+	 * 		when the target MBean doesn't exist on Management server.
+	 * @throws MethodInvocationFault 
+	 * 		when the invocation of the requested operation raises an exception.
+	 * @throws QManFault 
+	 * 		in case of not-well known failure.
 	 */
-	Result invoke(String operationName, Object [] params, String [] signature) throws QManFault 
+	Result invoke(String operationName, Object [] params, String [] signature) throws EntityInstanceNotFoundFault, MethodInvocationFault,QManFault 
 	{
 		try
 		{
-			InvocationResult output =  (InvocationResult) _mxServer.invoke(_objectName, operationName, params, signature);
-			Result result = new Result(output.getReturnCode(),output.getStatusText(),output.getOutputSection());
+			InvocationResult output =  (InvocationResult) _mxServer
+				.invoke(
+						_objectName, 
+						operationName, 
+						params, 
+						signature);
+			
+			Result result = new Result(
+					output.getReturnCode(),
+					output.getStatusText(),
+					output.getOutputSection());
+			
 			return result;
-		} catch (InstanceNotFoundException e)
+		} catch (InstanceNotFoundException exception)
 		{
 			throw new EntityInstanceNotFoundFault(
 					getWsResource().getEndpointReference(), 
@@ -188,96 +201,23 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 						failure.getStatusText(),
 						failure.getReturnCode());				
 			} else {
+				LOGGER.error(
+						Messages.QMAN_100037_INVOKE_OPERATION_FAILURE,
+						operationName,
+						_objectName);			
 				throw new QManFault(
 						getWsResource().getEndpointReference(),
 						exception);							
 			}
 		}catch(Exception exception)
 		{
+			LOGGER.error(
+					Messages.QMAN_100037_INVOKE_OPERATION_FAILURE,
+					operationName,
+					_objectName);			
 			throw new QManFault(
 					getWsResource().getEndpointReference(),
 					exception);			
-		}
-	}
-	
-	/**
-	 * 
-	 * @param name
-	 * @param value
-	 * TODO : Vedi che poi fà co 'sto metodo che è un pò una monnezza!!!
-	 * @return The XML representation of the resource property value(s).
-	 * 
-	 */
-	@SuppressWarnings("unchecked")
-	protected Element[] getPropertyElements(QName name, Object value) throws BaseFault {
-		//
-		// in this case, we have to determine if there IS a property
-		// and it's null, or there is no property
-		//
-		if (value == null) {
-			ResourcePropertyCollection props = getWsResource().getPropertyCollection();
-
-			//
-			// property is nillable - we say it exists. not 100% accurate,
-			// but as close as we're going to get
-			//
-			if (props.getSchema().isNillable(name))
-				return new Element[] { XmlUtils.createElement(name) };
-
-			//
-			// not nillable - must not exist
-			//
-			return _NO_VALUES;
-		}
-
-		//
-		// in all other cases, we determine the type of the property
-		// values and use that to serialize into XML
-		//
-		Object valuesArray = null;
-		Class type = null;
-		// TODO
-		if (value.getClass().isArray()) {
-			if (value.getClass() == byte[].class) {
-				Serializer serializer = new ByteArraySerializer();
-				try {
-					return new Element[] { serializer.toXML(value, name) };
-				} catch (SoapFault e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-
-			valuesArray = value;
-			type = ReflectUtils.getClassFromArrayClass(value.getClass());
-		}
-
-		else {
-			valuesArray = new Object[] { value };
-			type = value.getClass();
-		}
-
-		int length = Array.getLength(valuesArray);
-		Element[] properties = new Element[length];
-
-		SerializerRegistry registry = SerializerRegistry.getInstance();
-		Serializer ser = registry.getSerializer(type);
-
-		for (int n = 0; n < length; ++n)
-		{
-			properties[n] = serializeValue(ser, Array.get(valuesArray, n), name);
-		}
-		return properties;
-	}
-
-	private Element serializeValue(Serializer ser, Object value, QName name) throws BaseFault 
-	{
-		try 
-		{
-			return ser.toXML(value, name);
-		} catch (SoapFault exception) 
-		{
-			throw WsbfUtils.convertToFault(exception);
 		}
 	}
 }
