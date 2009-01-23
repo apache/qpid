@@ -34,6 +34,7 @@ public interface BrokerDetails
     public static final String OPTIONS_RETRY = "retries";
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final String OPTIONS_CONNECT_DELAY = "connectdelay";
+    public static final String OPTIONS_IDLE_TIMEOUT = "idle_timeout";
     public static final int DEFAULT_PORT = 5672;
 
     public static final String SOCKET = "socket";
@@ -55,7 +56,7 @@ public interface BrokerDetails
     public static final String VIRTUAL_HOST = "virtualhost";
     public static final String CLIENT_ID = "client_id";
     public static final String USERNAME = "username";
-    public static final String PASSWORD = "password";
+    public static final String PASSWORD = "password";    
 
     String getHost();
 

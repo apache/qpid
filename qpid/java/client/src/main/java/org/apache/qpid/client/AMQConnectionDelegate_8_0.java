@@ -48,7 +48,6 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
-import org.apache.qpid.transport.network.io.IoTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -288,5 +287,6 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             }
         }
     }
-
+    
+    public void setIdleTimeout(long l){}
 }

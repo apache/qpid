@@ -22,7 +22,6 @@ package org.apache.qpid.client;
 
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,21 +30,19 @@ import javax.jms.JMSException;
 import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQProtocolException;
-import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.ErrorCode;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionClose;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ProtocolVersionException;
 import org.apache.qpid.transport.TransportException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,6 +143,17 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                               " username: " + _conn.getUsername() +
                               " password: " + _conn.getPassword());
             }
+            
+            if (brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT) != null)
+            {
+                this.setIdleTimeout(Long.parseLong(brokerDetail.getProperty(BrokerDetails.OPTIONS_IDLE_TIMEOUT)));
+            }
+            else
+            {
+                // use the default value set for all connections
+                this.setIdleTimeout(Long.getLong(ClientProperties.IDLE_TIMEOUT_PROP_NAME,0));
+            }
+            
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
                                     _conn.getUsername(), _conn.getPassword(), brokerDetail.useSSL());
             _conn._connected = true;
@@ -273,4 +281,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
     }
 
+    public void setIdleTimeout(long l)
+    {
+        _qpidConnection.setIdleTimeout(l);
+    }
 }

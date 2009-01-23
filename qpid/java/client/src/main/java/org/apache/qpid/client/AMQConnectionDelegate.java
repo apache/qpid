@@ -48,5 +48,6 @@ public interface AMQConnectionDelegate
     void closeConnection(long timeout) throws JMSException, AMQException;
 
     <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E;
-
+    
+    void setIdleTimeout(long l);
 }

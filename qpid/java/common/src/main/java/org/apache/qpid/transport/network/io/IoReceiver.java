@@ -143,9 +143,6 @@ final class IoReceiver implements Runnable
                   t.getMessage().equalsIgnoreCase("socket closed") &&
                   closed.get()))
             {
-                log.error(t, "===========================================================");
-                log.error(t, "Exception");
-                log.error(t, "===========================================================");
                 receiver.exception(t);
             }
         }

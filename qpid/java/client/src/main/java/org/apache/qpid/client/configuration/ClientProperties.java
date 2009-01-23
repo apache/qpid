@@ -46,6 +46,18 @@ public class ClientProperties
      * type: boolean
      */
     public static final String SYNC_PERSISTENT_PROP_NAME = "sync_persistence";
+    
+    
+    /**
+     * This value will be used in the following settings
+     * To calculate the SO_TIMEOUT option of the socket (2*idle_timeout)
+     * If this values is between the max and min values specified for heartbeat
+     * by the broker in TuneOK it will be used as the heartbeat interval.
+     * If not a warning will be printed and the max value specified for 
+     * heartbeat in TuneOK will be used
+     */
+    public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
+    
 
      /**
      * ==========================================================

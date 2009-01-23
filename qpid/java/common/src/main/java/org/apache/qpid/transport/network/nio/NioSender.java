@@ -118,4 +118,9 @@ public class NioSender implements Sender<java.nio.ByteBuffer>
             }
         }
     }
+    
+    public void setIdleTimeout(long l)
+    {
+      //noop
+    }
 }

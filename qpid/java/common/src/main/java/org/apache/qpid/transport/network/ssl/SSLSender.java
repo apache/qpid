@@ -232,4 +232,9 @@ public class SSLSender implements Sender<ByteBuffer>
     {
         return engineState;
     }
+    
+    public void setIdleTimeout(long l)
+    {
+        delegate.setIdleTimeout(l);
+    }
 }
