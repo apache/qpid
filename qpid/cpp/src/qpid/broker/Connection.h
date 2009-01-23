@@ -64,7 +64,7 @@ class Connection : public sys::ConnectionInputHandler,
                    public RefCounted
 {
   public:
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false);
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false, uint64_t objectId = 0);
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */

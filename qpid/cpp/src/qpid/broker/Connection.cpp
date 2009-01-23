@@ -48,7 +48,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink_) :
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink_, uint64_t objectId) :
     ConnectionState(out_, broker_),
     adapter(*this, isLink_),
     isLink(isLink_),
@@ -70,9 +70,10 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 		
 		
         // TODO set last bool true if system connection
-        if (agent != 0)
+        if (agent != 0) {
             mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
-        agent->addObject(mgmtObject);
+            agent->addObject(mgmtObject, objectId);
+        }
         ConnectionState::setUrl(mgmtId);
     }
 }

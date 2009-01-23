@@ -20,6 +20,7 @@
  */
  
 #include "ManagementBroker.h"
+#include "IdAllocator.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
@@ -1134,4 +1135,17 @@ size_t ManagementBroker::validateEventSchema(Buffer& inBuffer)
     end = inBuffer.getPosition();
     inBuffer.restore(); // restore original position
     return end - start;
+}
+
+void ManagementBroker::setAllocator(std::auto_ptr<IdAllocator> a)
+{
+    Mutex::ScopedLock lock (addLock);
+    allocator = a;
+}
+
+uint64_t ManagementBroker::allocateId(Manageable* object)
+{
+    Mutex::ScopedLock lock (addLock);
+    if (allocator.get()) return allocator->getIdFor(object);
+    return 0;
 }
