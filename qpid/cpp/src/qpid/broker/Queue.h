@@ -163,7 +163,9 @@ namespace qpid {
             bool checkForMessages(Consumer::shared_ptr);
 
             void create(const qpid::framing::FieldTable& settings);
-            void configure(const qpid::framing::FieldTable& settings);
+
+            // "recovering" means we are doing a MessageStore recovery.
+            void configure(const qpid::framing::FieldTable& settings, bool recovering = false);
             void destroy();
             void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
             void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
@@ -253,7 +255,8 @@ namespace qpid {
             void encode(framing::Buffer& buffer) const;
             uint32_t encodedSize() const;
 
-            static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer);
+            // "recovering" means we are doing a MessageStore recovery.
+            static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer, bool recovering = false );
             static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
 
             virtual void setExternalQueueStore(ExternalQueueStore* inst);
