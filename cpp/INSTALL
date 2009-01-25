@@ -101,6 +101,10 @@ The optional clustering packages changed name in Fedora 10. On Fedora 9 or earli
 On Fedora 10 or later
  # yum install corosync-devel cmanlib-devel
 
+For SASL and SSL, include
+ # yum install cyrussasl-devel
+
+
 Follow the manual installation instruction below for any packages not
 available through your distributions packaging tool.
 

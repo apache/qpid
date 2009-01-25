@@ -705,7 +705,7 @@ void Queue::create(const FieldTable& _settings)
     configure(_settings);
 }
 
-void Queue::configure(const FieldTable& _settings)
+void Queue::configure(const FieldTable& _settings, bool recovering)
 {
     setPolicy(QueuePolicy::createQueuePolicy(_settings));
     //set this regardless of owner to allow use of no-local with exclusive consumers also
@@ -736,6 +736,9 @@ void Queue::configure(const FieldTable& _settings)
 
     if (mgmtObject != 0)
         mgmtObject->set_arguments (_settings);
+
+    if ( isDurable() && ! getPersistenceId() && ! recovering )
+      store->create(*this, _settings);
 }
 
 void Queue::destroy()
@@ -815,16 +818,17 @@ uint32_t Queue::encodedSize() const
         + (policy.get() ? (*policy).encodedSize() : 0);
 }
 
-Queue::shared_ptr Queue::decode(QueueRegistry& queues, Buffer& buffer)
+Queue::shared_ptr Queue::decode ( QueueRegistry& queues, Buffer& buffer, bool recovering )
 {
     string name;
     buffer.getShortString(name);
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
     buffer.get(result.first->settings);
-    result.first->configure(result.first->settings);
+    result.first->configure(result.first->settings, recovering );
     if (result.first->policy.get() && buffer.available() >= result.first->policy->encodedSize()) {
         buffer.get ( *(result.first->policy) );
     }
+
     return result.first;
 }
 

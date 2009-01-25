@@ -107,7 +107,7 @@ RecoverableExchange::shared_ptr RecoveryManagerImpl::recoverExchange(framing::Bu
 
 RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& buffer)
 {
-    Queue::shared_ptr queue = Queue::decode(queues, buffer);
+    Queue::shared_ptr queue = Queue::decode(queues, buffer, true);
     try {
         Exchange::shared_ptr exchange = exchanges.getDefault();
         if (exchange) {
