@@ -90,7 +90,7 @@ static struct SslPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             if (options.certDbPath.empty()) {
-                QPID_LOG(warning, "SSL plugin not enabled, you must set --qpid-ssl-cert-db to enable it.");                    
+                QPID_LOG(info, "SSL plugin not enabled, you must set --qpid-ssl-cert-db to enable it.");                    
             } else {
                 try {
                     ssl::initNSS(options, true);

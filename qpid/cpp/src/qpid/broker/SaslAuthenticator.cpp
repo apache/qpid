@@ -128,7 +128,7 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connecti
     if (c.getBroker().getOptions().auth) {
         return std::auto_ptr<SaslAuthenticator>(new CyrusAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     } else {
-        QPID_LOG(warning, "SASL: No Authentication Performed");
+        QPID_LOG(debug, "SASL: No Authentication Performed");
         needWarning = false;
         return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c));
     }
