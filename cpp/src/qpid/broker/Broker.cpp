@@ -237,6 +237,8 @@ Broker::Broker(const Broker::Options& conf) :
     if (conf.auth) {
         SaslAuthenticator::init(qpid::saslName);
         QPID_LOG(info, "SASL enabled");
+    } else {
+        QPID_LOG(notice, "SASL disabled: No Authentication Performed");
     }
 
     // Initialize plugins
