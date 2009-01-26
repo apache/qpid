@@ -108,7 +108,16 @@ boost::intrusive_ptr<Message> ReplicatingEventListener::cloneMessage(Queue& queu
     AMQFrame method((MessageTransferBody(ProtocolVersion(), EMPTY, 0, 0)));
     AppendingHandler handler(copy);
     handler.handle(method);
-    original->sendHeader(handler, std::numeric_limits<int16_t>::max());
+
+    //To avoid modifying original headers, create new frame with
+    //cloned body:
+    AMQFrame header(*original->getFrames().getHeaders());
+    header.setBof(false);
+    header.setEof(!original->getFrames().getContentSize());//if there is any content then the header is not the end of the frameset
+    header.setBos(true);
+    header.setEos(true);
+    handler.handle(header);
+
     original->sendContent(queue, handler, std::numeric_limits<int16_t>::max());
     return copy;
 }
