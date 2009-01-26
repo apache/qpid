@@ -657,6 +657,7 @@ nobase_include_HEADERS = \
   qpid/log/SinkOptions.h \
   qpid/log/Statement.h \
   qpid/management/Args.h \
+  qpid/management/IdAllocator.h \
   qpid/management/Manageable.h \
   qpid/management/ManagementBroker.h \
   qpid/management/ManagementEvent.h \
