@@ -83,4 +83,9 @@ public class TestPrincipalDatabase implements PrincipalDatabase
         return false;
     }
 
+    public void reload() throws IOException
+    {
+        // TODO Auto-generated method stub
+    }
+
 }

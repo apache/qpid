@@ -161,4 +161,9 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
             return null;
         }
     }
+
+    public void reload() throws IOException
+    {
+        //No file to update from, so do nothing.
+    }
 }
