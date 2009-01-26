@@ -80,6 +80,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void erase(ConnectionId);       
     
     // URLs of current cluster members - called in connection threads.
+    std::vector<std::string> getIds() const;
     std::vector<Url> getUrls() const;
     boost::shared_ptr<FailoverExchange> getFailoverExchange() const { return failoverExchange; }
 
@@ -111,6 +112,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // a Lock to call the unlocked functions.
 
     void leave(Lock&);
+    std::vector<std::string> getIds(Lock&) const;
     std::vector<Url> getUrls(Lock&) const;
 
     // Make an offer if we can - called in deliver thread.
@@ -185,6 +187,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
     ClusterMap::Set myElders;
+    qpid::management::ManagementAgent* mAgent;
 
     // Thread safe members
     Multicaster mcast;
