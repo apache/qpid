@@ -173,6 +173,10 @@ public class MBeanUtility
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
         }
+        else if (ex instanceof SecurityException)
+        {
+            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
+        }
         else 
         {
             if (ex.getCause() != null)
