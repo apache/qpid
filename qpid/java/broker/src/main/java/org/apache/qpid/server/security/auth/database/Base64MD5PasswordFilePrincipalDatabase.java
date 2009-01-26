@@ -492,4 +492,9 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
+    public void reload() throws IOException
+    {
+        loadPasswordFile();
+    }
+
 }

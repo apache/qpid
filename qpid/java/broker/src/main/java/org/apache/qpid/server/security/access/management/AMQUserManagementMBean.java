@@ -226,27 +226,23 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     public boolean reloadData()
     {
-        try
-        {
             try
             {
                 loadAccessFile();
+                _principalDatabase.reload();
             }
             catch (ConfigurationException e)
             {
                 _logger.info("Reload failed due to:" + e);
                 return false;
             }
-
+            catch (IOException e)
+            {
+                _logger.info("Reload failed due to:" + e);
+                return false;
+            }
             // Reload successful
             return true;
-        }
-        catch (IOException e)
-        {
-            _logger.info("Reload failed due to:" + e);
-            // Reload unsuccessful
-            return false;
-        }
     }
 
 
