@@ -75,6 +75,7 @@ class ClusterMap {
 
     size_t aliveCount() const { return alive.size(); }
     size_t memberCount() const { return members.size(); }
+    std::vector<std::string> memberIds() const;
     std::vector<Url> memberUrls() const;
     Set getAlive() const;
 

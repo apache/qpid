@@ -40,13 +40,17 @@ If access rights are omitted for a property, they are assumed to be RO.
   <class name="Cluster">
     <property name="brokerRef"        type="objId"  references="Broker" access="RC" index="y" parentRef="y"/>
     <property name="clusterName"      type="sstr"   access="RC" desc="Name of cluster this server is a member of"/>
-    <property name="clusterID"        type="sstr"   access="RO" desc="Globally uniquie ID (UUID) for this cluster instance"/>
+    <property name="clusterID"        type="sstr"   access="RO" desc="Globally unique ID (UUID) for this cluster instance"/>
+    <property name="memberID"         type="sstr"   access="RO" desc="ID of this member of the cluster"/>
     <property name="publishedURL"     type="sstr"   access="RC" desc="URL this node advertizes itself as"/>
     <property name="clusterSize"      type="uint16" access="RO" desc="Number of brokers currently in the cluster"/>
     <property name="status"           type="sstr"   access="RO" desc="Cluster node status (STALLED,ACTIVE,JOINING)"/>
-    <property name="members"          type="lstr"    access="RO" desc="List of member URLs delimited by ';'"/> 
+    <property name="members"          type="lstr"   access="RO" desc="List of member URLs delimited by ';'"/> 
+    <property name="memberIDs"        type="lstr"   access="RO" desc="List of member IDs delimited by ';'"/> 
 
-    <method name="stopClusterNode"/>
+    <method name="stopClusterNode">
+      <arg name="brokerId" type="sstr" dir="I"/>
+    </method>
     <method name="stopFullCluster"/>
 
   </class>

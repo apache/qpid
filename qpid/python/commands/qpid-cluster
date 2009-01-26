@@ -1,0 +1,180 @@
+#!/usr/bin/env python
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+import os
+import getopt
+import sys
+import locale
+from qmf.console import Session
+
+_host = "localhost"
+_stopId = None
+_stopAll = False
+_force = False
+
+def Usage ():
+    print "Usage:  qpid-cluster [OPTIONS] [broker-addr]"
+    print
+    print "             broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
+    print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
+    print
+    print "Options:"
+    print "          -s [--stop] ID   Stop one member of the cluster by its ID"
+    print "          -k [--all-stop]  Shut down the whole cluster"
+    print "          -f [--force]     Suppress the 'are-you-sure?' prompt"
+    print
+    sys.exit (1)
+
+class BrokerManager:
+    def __init__(self):
+        self.brokerName = None
+        self.qmf        = None
+        self.broker     = None
+
+    def SetBroker(self, brokerUrl):
+        self.url = brokerUrl
+        self.qmf = Session()
+        self.broker = self.qmf.addBroker(brokerUrl)
+        agents = self.qmf.getAgents()
+        for a in agents:
+            if a.getAgentBank() == 0:
+                self.brokerAgent = a
+
+    def Disconnect(self):
+        if self.broker:
+            self.qmf.delBroker(self.broker)
+
+    def overview(self):
+        packages = self.qmf.getPackages()
+        if "org.apache.qpid.cluster" not in packages:
+            print "Clustering is not installed on the broker."
+            sys.exit(0)
+
+        clusters = self.qmf.getObjects(_class="cluster", _agent=self.brokerAgent)
+        if len(clusters) == 0:
+            print "Clustering is installed but not enabled on the broker."
+            sys.exit(0)
+
+        cluster = clusters[0]
+        myUrl = cluster.publishedURL
+        memberList = cluster.members.split(";")
+        idList = cluster.memberIDs.split(";")
+
+        print "  Cluster Name: %s" % cluster.clusterName
+        print "Cluster Status: %s" % cluster.status
+        print "  Cluster Size: %d" % cluster.clusterSize
+        print "       Members: ID=%s URL=%s" % (idList[0], memberList[0])
+        for idx in range(1,len(idList)):
+            print "              : ID=%s URL=%s" % (idList[idx], memberList[idx])
+
+    def stopMember(self, id):
+        clusters = self.qmf.getObjects(_class="cluster", _agent=self.brokerAgent)
+        if len(clusters) == 0:
+            print "Clustering is installed but not enabled on the broker."
+            sys.exit(0)
+
+        cluster = clusters[0]
+        idList = cluster.memberIDs.split(";")
+        if id not in idList:
+            print "No member with matching ID found"
+            sys.exit(1)
+
+        if not _force:
+            prompt = "Warning: "
+            if len(idList) == 1:
+                prompt += "This command will shut down the last running cluster member."
+            else:
+                prompt += "This command will shut down a cluster member."
+            prompt += " Are you sure? [N]: "
+
+            confirm = raw_input(prompt)
+            if len(confirm) == 0 or confirm[0].upper() != 'Y':
+                print "Operation canceled"
+                sys.exit(1)
+
+        cluster.stopClusterNode(id)
+
+    def stopAll(self):
+        clusters = self.qmf.getObjects(_class="cluster", _agent=self.brokerAgent)
+        if len(clusters) == 0:
+            print "Clustering is installed but not enabled on the broker."
+            sys.exit(0)
+
+        if not _force:
+            prompt = "Warning: This command will shut down the entire cluster."
+            prompt += " Are you sure? [N]: "
+
+            confirm = raw_input(prompt)
+            if len(confirm) == 0 or confirm[0].upper() != 'Y':
+                print "Operation canceled"
+                sys.exit(1)
+
+        cluster = clusters[0]
+        cluster.stopFullCluster()
+
+##
+## Main Program
+##
+
+try:
+    longOpts = ("stop=", "all-stop", "force")
+    (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "s:kf", longOpts)
+except:
+    Usage ()
+
+try:
+    encoding = locale.getpreferredencoding()
+    cargs = [a.decode(encoding) for a in encArgs]
+except:
+    cargs = encArgs
+
+for opt in optlist:
+    if opt[0] == "-s" or opt[0] == "--stop":
+        _stopId = opt[1]
+    if opt[0] == "-k" or opt[0] == "--all-stop":
+        _stopAll = True
+    if opt[0] == "-f" or opt[0] == "--force":
+        _force = True
+
+nargs = len(cargs)
+bm    = BrokerManager()
+
+if nargs == 1:
+    _host = cargs[0]
+
+try:
+    bm.SetBroker(_host)
+    if _stopId:
+        bm.stopMember(_stopId)
+    elif _stopAll:
+        bm.stopAll()
+    else:
+        bm.overview()
+except KeyboardInterrupt:
+    print
+except Exception,e:
+    if e.__repr__().find("connection aborted") > 0:
+        # we expect this when asking the connected broker to shut down
+        sys.exit(0)
+    print "Failed:", e.args
+    sys.exit(1)
+
+bm.Disconnect()
