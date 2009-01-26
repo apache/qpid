@@ -75,6 +75,11 @@ class ConnectionMap
         }
     }
 
+    void clear() {
+        ScopedLock l(lock);
+        map.clear();
+    }
+
     size_t size() const { return map.size(); }
   private:
     typedef std::map<ConnectionId, ConnectionPtr> Map;

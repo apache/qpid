@@ -107,6 +107,17 @@ MemberId ClusterMap::firstNewbie() const {
     return newbies.empty() ? MemberId() : newbies.begin()->first;
 }
 
+std::vector<string> ClusterMap::memberIds() const {
+    std::vector<string> ids;
+    for (Map::const_iterator iter = members.begin();
+         iter != members.end(); iter++) {
+        std::stringstream stream;
+        stream << iter->first;
+        ids.push_back(stream.str());
+    }
+    return ids;
+}
+
 std::vector<Url> ClusterMap::memberUrls() const {
     std::vector<Url> urls(members.size());
     std::transform(members.begin(), members.end(), urls.begin(),
