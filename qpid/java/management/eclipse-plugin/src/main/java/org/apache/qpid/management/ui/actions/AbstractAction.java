@@ -43,9 +43,8 @@ public class AbstractAction
     
     protected IWorkbenchWindow _window;
     
-    public static final String RMI_SASL_ERROR = "non-JRMP server";
-    public static final String SECURITY_FAILURE = "User authentication has failed";   
-    public static final String SERVER_UNAVAILABLE = "Qpid server is not running";
+    public static final String SECURITY_FAILURE = "User authentication failed";   
+    public static final String SERVER_UNAVAILABLE = "Unable to connect to the specified Qpid JMX server";
     public static final String INVALID_PERSPECTIVE = "Invalid Perspective";
     public static final String CHANGE_PERSPECTIVE = "Please use the Qpid Management Perspective";
       
@@ -73,10 +72,9 @@ public class AbstractAction
         return _navigationView;
     }
     
-    
     protected void handleException(Throwable ex, String title, String msg)
     {
-        MBeanUtility.printStackTrace(ex);
+        //ensure first that the exception is not due to running in the wrong eclipse perspective
         NavigationView view = (NavigationView)_window.getActivePage().findView(NavigationView.ID);
         if (view == null)
         {
@@ -85,48 +83,62 @@ public class AbstractAction
             ErrorDialog.openError(_window.getShell(), "Warning", INVALID_PERSPECTIVE, status);
             return;
         }
-        if (msg == null)
-        {
-            if (ex instanceof IOException)
-            {
-                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
-                {
-                    msg = SECURITY_FAILURE;
-                }
-                else
-                {
-                    msg = SERVER_UNAVAILABLE;
-                }
-            }
-            else if (ex instanceof SecurityException)
-            {
-                msg = SECURITY_FAILURE;
-            }
-            else
-            {
-                msg = ex.getMessage();
-            }
-        }
-        
-        if ((msg == null) && (ex.getCause() != null))
-        {
-            msg = ex.getCause().getMessage();
-        }
-        
-        if (msg == null)
-        {
-            msg = ERROR_SERVER_CONNECTION;
-        }
-        
+
+        //default title if none given
         if (title == null)
         {
             title = ERROR_SERVER_CONNECTION;
         }
-        IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                    IStatus.OK, msg, null); 
-        ErrorDialog.openError(_window.getShell(), "Error", title, status);
+
+        //determine the error message to display
+        if (msg == null)
+        {
+            if (ex instanceof IOException)
+            {
+                //IOException, eg when trying to connect to a server/port with no JMX server running
+                msg = SERVER_UNAVAILABLE;
+                //Display error dialogue and return
+                displayErrorDialogue(msg, title);
+                return;
+            }
+            else if (ex instanceof SecurityException)
+            {
+                //SecurityException when providing incorrect login credentials
+                msg = SECURITY_FAILURE;
+                //Display error dialogue and return
+                displayErrorDialogue(msg, title);
+                return;
+            }
+            else
+            {
+                //Unknown exception type/reason. 
+                msg = ex.getMessage();
+            }
+
+            //if msg is still null, try reporting the cause.
+            if ((msg == null) && (ex.getCause() != null))
+            {
+                msg = ex.getCause().getMessage();
+            }
+
+            //failing all else, default non-descript error message.
+            if (msg == null)
+            {
+                msg = "An unknown error has occured.";
+            }
+        }
+
+        //Display error dialogue and print the exception stack trace
+        MBeanUtility.printStackTrace(ex);
+        displayErrorDialogue(msg, title);
     }
     
+    private void displayErrorDialogue(String msg, String title)
+    {
+        IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
+                IStatus.OK, msg, null); 
+        ErrorDialog.openError(_window.getShell(), "Error", title, status);      
+    }
 
     /**
      * Selection in the workbench has been changed. We can change the state of the 'real' action here
