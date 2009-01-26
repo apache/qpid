@@ -237,4 +237,9 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             }
         }
     }
+
+    public void reload() throws IOException
+    {
+        //This PD is not cached, so do nothing.
+    }
 }
