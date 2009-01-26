@@ -80,7 +80,6 @@ public class NavigationView extends ViewPart
     private static final String INI_EXCHANGES = EXCHANGE + "s";
 
     private TreeViewer _treeViewer = null;
-    private TreeObject _rootNode = null;
     private TreeObject _serversRootNode = null;
 
     private PreferenceStore _preferences;
@@ -444,7 +443,6 @@ public class NavigationView extends ViewPart
      * @throws IOException
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
     private void populateDomain(TreeObject domain) throws IOException, Exception
     {
         ManagedServer server = (ManagedServer) domain.getParent().getManagedObject();
@@ -466,14 +464,18 @@ public class NavigationView extends ViewPart
         }
         // To make it work with the broker without virtual host implementation.
         // This will add the default nodes to the domain node
+        boolean hasVirtualHost = false;
         for (TreeObject child : domain.getChildren())
         {
-            if (!child.getName().startsWith(VIRTUAL_HOST))
+            if (child.getName().startsWith(VIRTUAL_HOST))
             {
-                addDefaultNodes(domain);
+                hasVirtualHost = true;
+                break;      
             }
-
-            break;
+        }
+        
+        if (!hasVirtualHost){
+            addDefaultNodes(domain);
         }
     }
 
@@ -954,11 +956,9 @@ public class NavigationView extends ViewPart
         composite.setLayout(gridLayout);
 
         createTreeViewer(composite);
-        _rootNode = new TreeObject("ROOT", "ROOT");
         _serversRootNode = new TreeObject(NAVIGATION_ROOT, "ROOT");
-        _serversRootNode.setParent(_rootNode);
 
-        _treeViewer.setInput(_rootNode);
+        _treeViewer.setInput(_serversRootNode);
         // set viewer as selection event provider for MBeanView
         getSite().setSelectionProvider(_treeViewer);
 
