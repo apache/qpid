@@ -24,8 +24,8 @@ from spec010 import Control
 def METHOD(module, inst):
   method = lambda self, *args, **kwargs: self.invoke(inst, args, kwargs)
   if sys.version_info[:2] > (2, 3):
-    method.__name__ = inst.pyname
-    method.__doc__ = inst.pydoc
+    method.__name__ = str(inst.pyname)
+    method.__doc__ = str(inst.pydoc)
     method.__module__ = module
   return method
 
