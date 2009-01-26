@@ -32,7 +32,8 @@
    <extension
          point="org.eclipse.ui.perspectives">
       <perspective
-            name="qpid.management.perspective"
+            name="Qpid Management"
+            icon="icons/mbean_view.png"
             class="org.apache.qpid.management.ui.Perspective"
             id="org.apache.qpid.management.ui.perspective">
       </perspective>
