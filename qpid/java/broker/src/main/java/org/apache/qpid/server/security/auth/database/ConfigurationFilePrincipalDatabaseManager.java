@@ -95,7 +95,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             PrincipalDatabase pd = databases.get(name);
             if (pd != null)
             {
-                throw new Exception("Duplicate principal database name not provided");
+                throw new Exception("Duplicate principal database name not permitted");
             }
 
             _logger.info("Initialised principal database '" + name + "' successfully");
