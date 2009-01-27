@@ -21,7 +21,7 @@
 
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/ConnectionCodec.h"
-#include "qpid/cluster/DumpClient.h"
+#include "qpid/cluster/UpdateClient.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
@@ -87,43 +87,43 @@ struct ClusterOptions : public Options {
     }
 };
 
-struct DumpClientIdAllocator : management::IdAllocator
+struct UpdateClientIdAllocator : management::IdAllocator
 {
     qpid::sys::AtomicValue<uint64_t> sequence;
 
-    DumpClientIdAllocator() : sequence(0x4000000000000000LL) {}
+    UpdateClientIdAllocator() : sequence(0x4000000000000000LL) {}
 
     uint64_t getIdFor(management::Manageable* m)
     {
-        if (isDumpQueue(m) || isDumpExchange(m) || isDumpSession(m) || isDumpBinding(m)) {
+        if (isUpdateQueue(m) || isUpdateExchange(m) || isUpdateSession(m) || isUpdateBinding(m)) {
             return ++sequence;
         } else {
             return 0;
         }
     }
 
-    bool isDumpQueue(management::Manageable* manageable)
+    bool isUpdateQueue(management::Manageable* manageable)
     {
         qpid::broker::Queue* queue = dynamic_cast<qpid::broker::Queue*>(manageable);
-        return queue && queue->getName() == DumpClient::DUMP;
+        return queue && queue->getName() == UpdateClient::UPDATE;
     }
 
-    bool isDumpExchange(management::Manageable* manageable)
+    bool isUpdateExchange(management::Manageable* manageable)
     {
         qpid::broker::Exchange* exchange = dynamic_cast<qpid::broker::Exchange*>(manageable);
-        return exchange && exchange->getName() == DumpClient::DUMP;
+        return exchange && exchange->getName() == UpdateClient::UPDATE;
     }
 
-    bool isDumpSession(management::Manageable* manageable)
+    bool isUpdateSession(management::Manageable* manageable)
     {
         broker::SessionState* session = dynamic_cast<broker::SessionState*>(manageable);
-        return session && session->getId().getName() == DumpClient::DUMP;
+        return session && session->getId().getName() == UpdateClient::UPDATE;
     }
 
-    bool isDumpBinding(management::Manageable* manageable)
+    bool isUpdateBinding(management::Manageable* manageable)
     {
         broker::Exchange::Binding* binding = dynamic_cast<broker::Exchange::Binding*>(manageable);
-        return binding && binding->queue->getName() == DumpClient::DUMP;
+        return binding && binding->queue->getName() == UpdateClient::UPDATE;
     }
 };
 
@@ -155,7 +155,7 @@ struct ClusterPlugin : public Plugin {
         broker->getExchanges().registerExchange(cluster->getFailoverExchange());
         ManagementBroker* mgmt = dynamic_cast<ManagementBroker*>(ManagementAgent::Singleton::getInstance());
         if (mgmt) {
-            std::auto_ptr<IdAllocator> allocator(new DumpClientIdAllocator());
+            std::auto_ptr<IdAllocator> allocator(new UpdateClientIdAllocator());
             mgmt->setAllocator(allocator);
         }
     }

@@ -59,7 +59,7 @@ class Connection;
 /**
  * Connection to the cluster
  *
- * Threading notes: 3 thread categories: connection, deliver, dump.
+ * Threading notes: 3 thread categories: connection, deliver, update.
  * 
  */
 class Cluster : private Cpg::Handler, public management::Manageable {
@@ -87,8 +87,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Leave the cluster - called in any thread.
     void leave();
 
-    // Dump completed - called in dump thread
-    void dumpInDone(const ClusterMap&);
+    // Update completed - called in update thread
+    void updateInDone(const ClusterMap&);
 
     MemberId getId() const;
     broker::Broker& getBroker() const;
@@ -124,8 +124,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Cluster controls implement XML methods from cluster.xml.
     // Called in deliver thread.
     // 
-    void dumpRequest(const MemberId&, const std::string&, Lock&);
-    void dumpOffer(const MemberId& dumper, uint64_t dumpee, const framing::Uuid&, Lock&);
+    void updateRequest(const MemberId&, const std::string&, Lock&);
+    void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
@@ -133,7 +133,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void deliveredFrame(const EventFrame&); 
 
     // Helper, called in deliver thread.
-    void dumpStart(const MemberId& dumpee, const Url& url, Lock&);
+    void updateStart(const MemberId& updatee, const Url& url, Lock&);
 
     void deliver( // CPG deliver callback. 
         cpg_handle_t /*handle*/,
@@ -163,12 +163,12 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
 
     // Called in connection IO threads .
-    void checkDumpIn(Lock&);
+    void checkUpdateIn(Lock&);
 
-    // Called in DumpClient thread.
-    void dumpOutDone();
-    void dumpOutError(const std::exception&);
-    void dumpOutDone(Lock&);
+    // Called in UpdateClient thread.
+    void updateOutDone();
+    void updateOutError(const std::exception&);
+    void updateOutDone(Lock&);
 
     void setClusterId(const framing::Uuid&);
 
@@ -201,23 +201,23 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     //    Local cluster state, cluster map
     enum {
-        INIT,                   ///< Initial state, no CPG messages received.
-        NEWBIE,                 ///< Sent dump request, waiting for dump offer.
-        DUMPEE,                 ///< Stalled receive queue at dump offer, waiting for dump to complete.
-        CATCHUP,                ///< Dump complete, unstalled but has not yet seen own "ready" event.
-        READY,                  ///< Fully operational 
-        OFFER,                  ///< Sent an offer, waiting for accept/reject.
-        DUMPER,                 ///< Offer accepted, sending a state dump.
-        LEFT                    ///< Final state, left the cluster.
+        INIT,    ///< Initial state, no CPG messages received.
+        JOINER,  ///< Sent update request, waiting for update offer.
+        UPDATEE, ///< Stalled receive queue at update offer, waiting for update to complete.
+        CATCHUP, ///< Update complete, unstalled but has not yet seen own "ready" event.
+        READY,   ///< Fully operational 
+        OFFER,   ///< Sent an offer, waiting for accept/reject.
+        UPDATER, ///< Offer accepted, sending a state update.
+        LEFT     ///< Final state, left the cluster.
     } state;
     ClusterMap map;
     size_t lastSize;
     bool lastBroker;
     uint64_t sequence;
 
-    //     Dump related
-    sys::Thread dumpThread;
-    boost::optional<ClusterMap> dumpedMap;
+    //     Update related
+    sys::Thread updateThread;
+    boost::optional<ClusterMap> updatedMap;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;

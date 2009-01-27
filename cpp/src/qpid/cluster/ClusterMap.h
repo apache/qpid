@@ -39,7 +39,7 @@ namespace qpid {
 namespace cluster {
 
 /**
- * Map of established cluster members and newbies waiting for a brain dump.
+ * Map of established cluster members and joiners waiting for an update.
  */
 class ClusterMap {
   public:
@@ -60,15 +60,15 @@ class ClusterMap {
 
     bool configChange(const std::string& addresses);
 
-    bool isNewbie(const MemberId& id) const { return newbies.find(id) != newbies.end(); }
+    bool isJoiner(const MemberId& id) const { return joiners.find(id) != joiners.end(); }
     bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }
     bool isAlive(const MemberId& id) const { return alive.find(id) != alive.end(); }
     
-    Url getNewbieUrl(const MemberId& id) { return getUrl(newbies, id); }
+    Url getJoinerUrl(const MemberId& id) { return getUrl(joiners, id); }
     Url getMemberUrl(const MemberId& id) { return getUrl(members, id); }
 
-    /** First newbie in the cluster in ID order, target for offers */
-    MemberId firstNewbie() const;
+    /** First joiner in the cluster in ID order, target for offers */
+    MemberId firstJoiner() const;
 
     /** Convert map contents to a cluster control body. */
     framing::ClusterConnectionMembershipBody asMethodBody() const;
@@ -79,9 +79,9 @@ class ClusterMap {
     std::vector<Url> memberUrls() const;
     Set getAlive() const;
 
-    bool dumpRequest(const MemberId& id, const std::string& url);       
+    bool updateRequest(const MemberId& id, const std::string& url);       
     /** Return non-empty Url if accepted */
-    boost::optional<Url> dumpOffer(const MemberId& from, const MemberId& to);
+    boost::optional<Url> updateOffer(const MemberId& from, const MemberId& to);
 
     /**@return true If this is a new member */ 
     bool ready(const MemberId& id, const Url&);
@@ -93,7 +93,7 @@ class ClusterMap {
   private:
     Url getUrl(const Map& map, const  MemberId& id);
     
-    Map newbies, members;
+    Map joiners, members;
     Set alive;
 
   friend std::ostream& operator<<(std::ostream&, const Map&);

@@ -52,8 +52,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/Cpg.cpp				\
   qpid/cluster/Cpg.h				\
   qpid/cluster/Dispatchable.h			\
-  qpid/cluster/DumpClient.cpp			\
-  qpid/cluster/DumpClient.h			\
+  qpid/cluster/UpdateClient.cpp			\
+  qpid/cluster/UpdateClient.h			\
   qpid/cluster/Event.cpp			\
   qpid/cluster/Event.h				\
   qpid/cluster/EventFrame.h			\

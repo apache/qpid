@@ -1,5 +1,5 @@
-#ifndef QPID_CLUSTER_DUMPCLIENT_H
-#define QPID_CLUSTER_DUMPCLIENT_H
+#ifndef QPID_CLUSTER_UPDATECLIENT_H
+#define QPID_CLUSTER_UPDATECLIENT_H
 
 /*
  *
@@ -56,38 +56,38 @@ class Connection;
 class ClusterMap;
 
 /**
- * A client that dumps the contents of a local broker to a remote one using AMQP.
+ * A client that updates the contents of a local broker to a remote one using AMQP.
  */
-class DumpClient : public sys::Runnable {
+class UpdateClient : public sys::Runnable {
   public:
-    static const std::string DUMP; // Name for special dump queue and exchange.
+    static const std::string UPDATE; // Name for special update queue and exchange.
     
-    DumpClient(const MemberId& dumper, const MemberId& dumpee, const Url&,
+    UpdateClient(const MemberId& updater, const MemberId& updatee, const Url&,
                broker::Broker& donor, const ClusterMap& map, const std::vector<boost::intrusive_ptr<Connection> >& ,
                const boost::function<void()>& done,
                const boost::function<void(const std::exception&)>& fail);
 
-    ~DumpClient();
-    void dump();
+    ~UpdateClient();
+    void update();
     void run();                 // Will delete this when finished.
 
-    void dumpUnacked(const broker::DeliveryRecord&);
+    void updateUnacked(const broker::DeliveryRecord&);
 
   private:
-    void dumpQueue(const boost::shared_ptr<broker::Queue>&);
-    void dumpExchange(const boost::shared_ptr<broker::Exchange>&);
-    void dumpMessage(const broker::QueuedMessage&);
-    void dumpMessageTo(const broker::QueuedMessage&, const std::string& queue, client::Session s);
-    void dumpBinding(const std::string& queue, const broker::QueueBinding& binding);
-    void dumpConnection(const boost::intrusive_ptr<Connection>& connection);
-    void dumpSession(broker::SessionHandler& s);
-    void dumpTxState(broker::SemanticState& s);
-    void dumpConsumer(const broker::SemanticState::ConsumerImpl*);
+    void updateQueue(const boost::shared_ptr<broker::Queue>&);
+    void updateExchange(const boost::shared_ptr<broker::Exchange>&);
+    void updateMessage(const broker::QueuedMessage&);
+    void updateMessageTo(const broker::QueuedMessage&, const std::string& queue, client::Session s);
+    void updateBinding(const std::string& queue, const broker::QueueBinding& binding);
+    void updateConnection(const boost::intrusive_ptr<Connection>& connection);
+    void updateSession(broker::SessionHandler& s);
+    void updateTxState(broker::SemanticState& s);
+    void updateConsumer(const broker::SemanticState::ConsumerImpl*);
 
-    MemberId dumperId;
-    MemberId dumpeeId;
-    Url dumpeeUrl;
-    broker::Broker& dumperBroker;
+    MemberId updaterId;
+    MemberId updateeId;
+    Url updateeUrl;
+    broker::Broker& updaterBroker;
     ClusterMap map;
     std::vector<boost::intrusive_ptr<Connection> > connections;
     client::Connection connection, shadowConnection;
@@ -98,4 +98,4 @@ class DumpClient : public sys::Runnable {
 
 }} // namespace qpid::cluster
 
-#endif  /*!QPID_CLUSTER_DUMPCLIENT_H*/
+#endif  /*!QPID_CLUSTER_UPDATECLIENT_H*/
