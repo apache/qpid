@@ -23,10 +23,7 @@
  */
 
 #include "types.h"
-#include "Cpg.h"
-#include "Connection.h"
 #include "qpid/RefCountedBuffer.h"
-#include "qpid/framing/Buffer.h"
 #include "qpid/sys/LatencyMetric.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
@@ -37,6 +34,7 @@ namespace qpid {
 
 namespace framing {
 class AMQBody;
+class Buffer;
 }
 
 namespace cluster {
@@ -52,6 +50,8 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     ConnectionId getConnectionId() const { return connectionId; }
     MemberId getMemberId() const { return connectionId.getMember(); }
     size_t getSize() const { return size; }
+    uint64_t getSequence() const { return sequence; }
+    void setSequence(uint64_t n) { sequence = n; }
 
     bool isCluster() const { return connectionId.getPointer() == 0; }
     bool isConnection() const { return connectionId.getPointer() != 0; }
@@ -62,6 +62,7 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     EventType type;
     ConnectionId connectionId;
     size_t size;
+    uint64_t sequence;
 };
 
 /**

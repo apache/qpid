@@ -46,6 +46,7 @@ template <class T>
 class PollableQueue {
   public:
     typedef std::deque<T> Queue;
+    typedef T value_type;
 
     /**
      * Callback to process a batch of items from the queue.

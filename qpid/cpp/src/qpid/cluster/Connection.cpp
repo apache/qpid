@@ -137,7 +137,7 @@ bool Connection::checkUnsupported(const AMQBody& body) {
 }
 
 // Decode buffer and put frames on frameq.
-void Connection::deliveredEvent(const Event& e, EventFrameQueue& frameq) {
+void Connection::deliveredEvent(const Event& e, PollableFrameQueue& frameq) {
     assert(!catchUp);
     Buffer buf(e);
     // Set read credit on the last frame.
@@ -145,10 +145,10 @@ void Connection::deliveredEvent(const Event& e, EventFrameQueue& frameq) {
     if (!mcastDecoder.decode(buf)) return;
     AMQFrame frame(mcastDecoder.frame);
     while (mcastDecoder.decode(buf)) {
-        frameq.push(EventFrame(this, getId().getMember(), frame));
+        frameq.push(EventFrame(this, e, frame));
         frame = mcastDecoder.frame;
     }
-    frameq.push(EventFrame(this, getId().getMember(), frame, readCredit));
+    frameq.push(EventFrame(this, e, frame, readCredit));
     readCredit = 0;
 }
 

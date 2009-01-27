@@ -26,7 +26,6 @@
 #include "WriteEstimate.h"
 #include "OutputInterceptor.h"
 #include "NoOpConnectionOutputHandler.h"
-#include "Event.h"
 #include "EventFrame.h"
 
 #include "qpid/broker/Connection.h"
@@ -62,7 +61,7 @@ class Connection :
         
 {
   public:
-    typedef sys::PollableQueue<EventFrame> EventFrameQueue;
+    typedef sys::PollableQueue<EventFrame> PollableFrameQueue;
 
     /** Local connection, use this in ConnectionId */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& id, MemberId, bool catchUp, bool isLink);
@@ -102,7 +101,7 @@ class Connection :
     size_t decode(const char* buffer, size_t size);
 
     // Called for data delivered from the cluster.
-    void deliveredEvent(const Event&, EventFrameQueue&);
+    void deliveredEvent(const Event&, PollableFrameQueue&);
     void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled);

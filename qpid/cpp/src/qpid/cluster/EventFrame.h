@@ -23,6 +23,7 @@
  */
 
 #include "types.h"
+#include "Event.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
@@ -37,19 +38,30 @@ class Connection;
  */
 struct EventFrame
 {
+    EventFrame() : sequence(0) {}
     // Connection event frame
-    EventFrame(const boost::intrusive_ptr<Connection>& c, const MemberId& m, const framing::AMQFrame& f, int rc=0)
-        : connection(c), member(m), frame(f), readCredit(rc) {
+    EventFrame(const boost::intrusive_ptr<Connection>& c, const Event& e, const framing::AMQFrame& f, int rc=0)
+        : connection(c), member(e.getMemberId()), frame(f), sequence(e.getSequence()), readCredit(rc)
+    {
         QPID_LATENCY_INIT(frame);
     }
 
     bool isCluster() const { return !connection; }
     bool isConnection() const { return connection; }
+    bool isLastInEvent() const { return readCredit; }
+
+    // True if this frame follows immediately after frame e. 
+    bool follows(const EventFrame& e) const {
+        return sequence == e.sequence || (sequence == e.sequence+1 && e.readCredit);
+    }
+
+    bool operator<(const EventFrame& e) const { return sequence < e.sequence; }
     
     boost::intrusive_ptr<Connection> connection;
     MemberId member;
     framing::AMQFrame frame;   
-    int readCredit;             // restore this much read credit when frame is processed
+    uint64_t sequence;
+    int readCredit;             // last frame in an event, give credit when processed.
 };
 }} // namespace qpid::cluster
 
