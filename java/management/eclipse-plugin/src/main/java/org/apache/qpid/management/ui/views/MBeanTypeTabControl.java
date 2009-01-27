@@ -204,6 +204,11 @@ public abstract class MBeanTypeTabControl
                 for (int i = 0; i < selectedItems.length; i++)
                 {
                     String name = selectedItems[i];
+                    int nameEnd = name.indexOf(" (");                	
+                    if (nameEnd != -1)
+                    {
+                        name = name.substring(0, nameEnd);                		
+                    }                	
                     // pass the ManagedBean to the navigation view to be added
                     ManagedBean mbean = _objectsMap.get(name);
                     IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 

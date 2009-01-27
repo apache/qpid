@@ -246,11 +246,10 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
             {
                 continue;
             }
-            AttributeData data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_DEPTH);
-            String value = mbean.getName() + " (" + data.getValue().toString() + " KB)";
+            String value = mbean.getName();
             items.add(value);
-            //items[i] = mbean.getName() + " (" + value + " KB)";
             getMBeansMap().put(value, mbean);
+            AttributeData data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_DEPTH);
             _queueDepthMap.put(data, mbean);
             data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_CONSUMERCOUNT);
             _queueConsumerCountMap.put(data, mbean);
@@ -289,7 +288,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         {
             ManagedBean mbean = _queueConsumerCountMap.get(data);
             String value = data.getValue().toString();
-            items[i++] = mbean.getName() + " (" + value + " )";
+            items[i++] = mbean.getName() + " (" + value + ")";
         }
         getListWidget().setItems(items);
     }
