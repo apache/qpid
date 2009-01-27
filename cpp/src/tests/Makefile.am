@@ -91,7 +91,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	ConsoleTest.cpp \
 	QueueEvents.cpp \
 	ProxyTest.cpp \
-	RetryList.cpp
+	RetryList.cpp \
+	RateFlowcontrolTest.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp

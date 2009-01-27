@@ -105,6 +105,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
         bool tcpNoDelay;
         bool requireEncrypted;
         std::string knownHosts;
+        uint32_t maxSessionRate;
     };
  
   private:

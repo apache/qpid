@@ -90,7 +90,8 @@ Broker::Options::Options(const std::string& name) :
     replayHardLimit(0),
     queueLimit(100*1048576/*100M default limit*/),
     tcpNoDelay(false),
-    requireEncrypted(false)
+    requireEncrypted(false),
+    maxSessionRate(0)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -119,7 +120,8 @@ Broker::Options::Options(const std::string& name) :
         ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)") 
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
-        ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)");
+        ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
+        ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)");
 }
 
 const std::string empty;
