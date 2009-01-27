@@ -177,6 +177,8 @@ std::ostream& operator<<(std::ostream& o, ::rdma_cm_event_type t) {
         CHECK_TYPE(RDMA_CM_EVENT_DEVICE_REMOVAL)
         CHECK_TYPE(RDMA_CM_EVENT_MULTICAST_JOIN)
         CHECK_TYPE(RDMA_CM_EVENT_MULTICAST_ERROR)
+    default:
+         o << "UNKNOWN_EVENT";
     }
 #   undef CHECK_TYPE
     return o;
