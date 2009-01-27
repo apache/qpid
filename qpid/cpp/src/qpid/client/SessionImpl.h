@@ -61,7 +61,8 @@ class SessionHandler;
 class SessionImpl : public framing::FrameHandler::InOutHandler,
                     public Execution,
                     private framing::AMQP_ClientOperations::SessionHandler,
-                    private framing::AMQP_ClientOperations::ExecutionHandler
+                    private framing::AMQP_ClientOperations::ExecutionHandler,
+                    private framing::AMQP_ClientOperations::MessageHandler
 {
 public:
     SessionImpl(const std::string& name, shared_ptr<ConnectionImpl>);
@@ -123,6 +124,7 @@ private:
     };
     typedef framing::AMQP_ClientOperations::SessionHandler SessionHandler;
     typedef framing::AMQP_ClientOperations::ExecutionHandler ExecutionHandler;
+    typedef framing::AMQP_ClientOperations::MessageHandler MessageHandler;
     typedef sys::StateMonitor<State, DETACHED> StateMonitor;
     typedef StateMonitor::Set States;
 
@@ -138,6 +140,7 @@ private:
 
     void handleIn(framing::AMQFrame& frame);
     void handleOut(framing::AMQFrame& frame);
+    void handleContentOut(framing::AMQFrame& frame);
     /**
      * Sends session controls. This case is treated slightly
      * differently than command frames sent by the application via
@@ -181,6 +184,18 @@ private:
                    uint8_t fieldIndex,
                    const std::string& description,
                    const framing::FieldTable& errorInfo);
+                   
+    // Note: Following methods are called by network thread in
+    // response to message commands from the broker
+    // EXCEPT Message.Transfer
+    void accept(const qpid::framing::SequenceSet&);
+    void reject(const qpid::framing::SequenceSet&, uint16_t, const std::string&);
+    void release(const qpid::framing::SequenceSet&, bool);
+    qpid::framing::MessageResumeResult resume(const std::string&, const std::string&);
+    void setFlowMode(const std::string&, uint8_t);
+    void flow(const std::string&, uint8_t, uint32_t);
+    void stop(const std::string&);
+
 
     sys::ExceptionHolder exceptionHolder;
     mutable StateMonitor state;
@@ -210,6 +225,9 @@ private:
     framing::SequenceNumber nextOut;
 
     SessionState sessionState;
+
+    // Only keep track of message credit 
+    sys::Semaphore* sendMsgCredit;
 
   friend class client::SessionHandler;
 };

@@ -55,6 +55,8 @@ class ConnectionState;
 class Message;
 class SessionHandler;
 class SessionManager;
+class RateFlowcontrol;
+class TimerTask;
 
 /**
  * Broker-side session state includes session's handler chains, which
@@ -132,7 +134,11 @@ class SessionState : public qpid::SessionState,
     qmf::org::apache::qpid::broker::Session* mgmtObject;
     qpid::framing::SequenceSet accepted;
     
-  friend class SessionManager;
+    // State used for producer flow control (rate limited)
+    RateFlowcontrol* rateFlowcontrol;
+    boost::intrusive_ptr<TimerTask> flowControlTimer;
+
+    friend class SessionManager;
 };
 
 
