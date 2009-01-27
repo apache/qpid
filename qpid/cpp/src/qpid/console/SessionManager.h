@@ -61,8 +61,8 @@ class SessionManager
         uint32_t methodTimeout;
         uint32_t getTimeout;
 
-        Settings() : rcvObjects(true), rcvEvents(true), rcvHeartbeats(true), userBindings(false),
-                     methodTimeout(20), getTimeout(20)
+        Settings() : rcvObjects(true), rcvEvents(true), rcvHeartbeats(true),
+                     userBindings(false), methodTimeout(20), getTimeout(20)
         {}
     };
 
@@ -72,13 +72,13 @@ class SessionManager
      * asynchronously or leave it as its default and use only synchronous methods.
      *
      *@param listener Listener object to receive asynchronous indications.
-     *@param rcvObjects Listener wishes to receive managed object data.
-     *@param rcvEvents Listener wishes to receive events.
-     *@param rcvHeartbeats Listener wishes to receive agent heartbeats.
-     *@param userBindings If rcvObjects is true, userBindings allows the console client
-     * to control which object classes are received.  See the bindPackage and bindClass
-     * methods.  If userBindings is false, the listener will receive updates for all
-     * object classes.
+     *@param settings.rcvObjects Listener wishes to receive managed object data.
+     *@param settings.rcvEvents Listener wishes to receive events.
+     *@param settings.rcvHeartbeats Listener wishes to receive agent heartbeats.
+     *@param settings.userBindings If rcvObjects is true, userBindings allows the
+     * console client to control which object classes are received.  See the bindPackage
+     * and bindClass methods.  If userBindings is false, the listener will receive
+     * updates for all object classes.
      */
     SessionManager(ConsoleListener* listener = 0,
                    Settings settings = Settings());
