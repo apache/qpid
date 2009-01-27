@@ -539,6 +539,7 @@ nobase_include_HEADERS = \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.h \
+  qpid/broker/RateFlowcontrol.h \
   qpid/broker/RateTracker.h \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
