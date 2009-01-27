@@ -42,7 +42,7 @@ const size_t EventHeader::HEADER_SIZE =
     ;
 
 EventHeader::EventHeader(EventType t, const ConnectionId& c,  size_t s)
-    : type(t), connectionId(c), size(s) {}
+    : type(t), connectionId(c), size(s), sequence(0) {}
 
 
 Event::Event() {}
@@ -53,10 +53,10 @@ Event::Event(EventType t, const ConnectionId& c,  size_t s)
 
 void EventHeader::decode(const MemberId& m, framing::Buffer& buf) {
     if (buf.available() <= HEADER_SIZE)
-        throw ClusterLeaveException("Not enough for multicast header");
+        throw Exception("Not enough for multicast header");
     type = (EventType)buf.getOctet();
     if(type != DATA && type != CONTROL)
-        throw ClusterLeaveException("Invalid multicast event type");
+        throw Exception("Invalid multicast event type");
     connectionId = ConnectionId(m, reinterpret_cast<Connection*>(buf.getLongLong()));
     size = buf.getLong();
 #ifdef QPID_LATENCY_METRIC
@@ -68,7 +68,7 @@ Event Event::decodeCopy(const MemberId& m, framing::Buffer& buf) {
     Event e;
     e.decode(m, buf);           // Header
     if (buf.available() < e.size)
-        throw ClusterLeaveException("Not enough data for multicast event");
+        throw Exception("Not enough data for multicast event");
     e.store = RefCountedBuffer::create(e.size + HEADER_SIZE);
     memcpy(e.getData(), buf.getPointer() + buf.getPosition(), e.size);
     return e;

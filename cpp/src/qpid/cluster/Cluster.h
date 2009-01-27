@@ -129,8 +129,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void shutdown(const MemberId&, Lock&);
-    void deliveredEvents(PollableEventQueue::Queue&);
-    void deliveredFrames(PollableFrameQueue::Queue&);
     void deliveredEvent(const Event&); 
     void deliveredFrame(const EventFrame&); 
 
@@ -215,6 +213,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     ClusterMap map;
     size_t lastSize;
     bool lastBroker;
+    uint64_t sequence;
 
     //     Dump related
     sys::Thread dumpThread;
