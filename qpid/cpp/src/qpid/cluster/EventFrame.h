@@ -27,6 +27,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
+#include <iosfwd>
 
 namespace qpid {
 namespace cluster {
@@ -38,13 +39,10 @@ class Connection;
  */
 struct EventFrame
 {
-    EventFrame() : sequence(0) {}
-    // Connection event frame
-    EventFrame(const boost::intrusive_ptr<Connection>& c, const Event& e, const framing::AMQFrame& f, int rc=0)
-        : connection(c), member(e.getMemberId()), frame(f), sequence(e.getSequence()), readCredit(rc)
-    {
-        QPID_LATENCY_INIT(frame);
-    }
+    EventFrame();
+
+    EventFrame(const boost::intrusive_ptr<Connection>& c, const Event& e,
+               const framing::AMQFrame& f, int rc=0);
 
     bool isCluster() const { return !connection; }
     bool isConnection() const { return connection; }
@@ -63,6 +61,9 @@ struct EventFrame
     uint64_t sequence;
     int readCredit;             // last frame in an event, give credit when processed.
 };
+
+std::ostream& operator<<(std::ostream& o, const EventFrame& e);
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_EVENTFRAME_H*/

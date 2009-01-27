@@ -155,7 +155,6 @@ void Connection::deliveredEvent(const Event& e, PollableFrameQueue& frameq) {
 
 // Delivered from cluster.
 void Connection::deliveredFrame(const EventFrame& f) {
-    QPID_LOG(trace, cluster << " DLVR: " << *this << ": " << f.frame);
     assert(!catchUp);
     currentChannel = f.frame.getChannel(); 
     if (!framing::invoke(*this, *f.frame.getBody()).wasHandled() // Connection contol.
