@@ -27,7 +27,7 @@
 #include "qpid/client/FailoverListener.h"
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/Cpg.h"
-#include "qpid/cluster/DumpClient.h"
+#include "qpid/cluster/UpdateClient.h"
 #include "qpid/framing/AMQBody.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -352,8 +352,8 @@ QPID_AUTO_TEST_CASE(testUnacked) {
     BOOST_CHECK_EQUAL(c1.subs.get("q2", TIME_SEC).getData(), "22");
 }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testDumpTxState, 1) {
-    // Verify that we dump transaction state correctly to new members.
+QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testUpdateTxState, 1) {
+    // Verify that we update transaction state correctly to new members.
     ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
 
@@ -386,8 +386,8 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testDumpTxState, 1) {
     BOOST_CHECK_EQUAL(m.getData(), "3");
 }
 
-QPID_AUTO_TEST_CASE(testDumpMessageBuilder) {
-    // Verify that we dump a partially recieved message to a new member.
+QPID_AUTO_TEST_CASE(testUpdateMessageBuilder) {
+    // Verify that we update a partially recieved message to a new member.
     ClusterFixture cluster(1);    
     Client c0(cluster[0], "c0");
     c0.session.queueDeclare("q");
@@ -452,7 +452,7 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     BOOST_CHECK_EQUAL(kb0, kb2);
 }
 
-QPID_AUTO_TEST_CASE(DumpConsumers) {
+QPID_AUTO_TEST_CASE(UpdateConsumers) {
     ClusterFixture cluster(1, 1);  
 
     Client c0(cluster[0], "c0"); 

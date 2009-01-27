@@ -23,6 +23,7 @@
 #include "Cpg.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/LatencyMetric.h"
+#include "qpid/framing/AMQBody.h"
 
 namespace qpid {
 namespace cluster {
@@ -40,12 +41,14 @@ Multicaster::Multicaster(Cpg& cpg_, size_t mcastMax_,
 }
 
 void Multicaster::mcastControl(const framing::AMQBody& body, const ConnectionId& id) {
+    QPID_LOG(trace, "MCAST " << id << ": " << body);
     mcast(Event::control(body, id));
 }
 
 void Multicaster::mcastBuffer(const char* data, size_t size, const ConnectionId& id) {
     Event e(DATA, id, size);
     memcpy(e.getData(), data, size);
+    QPID_LOG(trace, "MCAST " << e);
     mcast(e);
 }
 
@@ -54,7 +57,6 @@ void Multicaster::mcast(const Event& e) {
         sys::Mutex::ScopedLock l(lock);
         if (e.getType() == DATA && e.isConnection() && holding) {
             holdingQueue.push_back(e); 
-            QPID_LOG(trace, " MCAST held: " << e );
             return;
         }
     }
@@ -85,7 +87,6 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
                 }
                 break; 
             }
-            QPID_LOG(trace, " MCAST " << *i); 
             ++i;
         }
         values.erase(values.begin(), i); // Erase sent events.

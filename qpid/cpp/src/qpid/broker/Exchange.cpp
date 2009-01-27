@@ -98,6 +98,8 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
     }
 }
 
+static const std::string QPID_MANAGEMENT("qpid.management");
+
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent)
     : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0), 
@@ -111,9 +113,9 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
             mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
             mgmtExchange->set_arguments(args);
             if (!durable) {
-                if (name == "") {
+                if (name.empty()) {
                     agent->addObject (mgmtExchange, 0x1000000000000004LL);  // Special default exchange ID
-                } else if (name == "qpid.management") {
+                } else if (name == QPID_MANAGEMENT) {
                     agent->addObject (mgmtExchange, 0x1000000000000005LL);  // Special management exchange ID
                 } else {
                     ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
@@ -125,12 +127,12 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
 
     sequence = _args.get(qpidMsgSequence);
     if (sequence) {
-        QPID_LOG(debug, "Configured exchange "+ _name +" with Msg sequencing");
+        QPID_LOG(debug, "Configured exchange " <<  _name  << " with Msg sequencing");
         args.setInt64(std::string(qpidSequenceCounter), sequenceNo);
     }
 
     ive = _args.get(qpidIVE);
-    if (ive) QPID_LOG(debug, "Configured exchange "+ _name +" with Initial Value");
+    if (ive) QPID_LOG(debug, "Configured exchange " <<  _name  << " with Initial Value");
 }
 
 Exchange::~Exchange ()

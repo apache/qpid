@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "DumpClient.h"
+#include "UpdateClient.h"
 #include "Cluster.h"
 #include "ClusterMap.h"
 #include "Connection.h"
@@ -83,49 +83,49 @@ void send(client::AsyncSession& s, const AMQBody& body) {
     sb.get()->send(body);
 }
 
-// TODO aconway 2008-09-24: optimization: dump connections/sessions in parallel.
+// TODO aconway 2008-09-24: optimization: update connections/sessions in parallel.
 
-DumpClient::DumpClient(const MemberId& dumper, const MemberId& dumpee, const Url& url,
+UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, const Url& url,
                        broker::Broker& broker, const ClusterMap& m, const Cluster::Connections& cons,
                        const boost::function<void()>& ok,
                        const boost::function<void(const std::exception&)>& fail)
-    : dumperId(dumper), dumpeeId(dumpee), dumpeeUrl(url), dumperBroker(broker), map(m), connections(cons), 
+    : updaterId(updater), updateeId(updatee), updateeUrl(url), updaterBroker(broker), map(m), connections(cons), 
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
       done(ok), failed(fail)
 {
     connection.open(url);
-    session = connection.newSession(DUMP);
+    session = connection.newSession("update_shared");
 }
 
-DumpClient::~DumpClient() {}
+UpdateClient::~UpdateClient() {}
 
 // Illegal exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
-static const char DUMP_CHARS[] = "\000qpid-dump";
-const std::string DumpClient::DUMP(DUMP_CHARS, sizeof(DUMP_CHARS)); 
+static const char UPDATE_CHARS[] = "\000qpid-update";
+const std::string UpdateClient::UPDATE(UPDATE_CHARS, sizeof(UPDATE_CHARS)); 
 
-void DumpClient::dump() {
-    QPID_LOG(debug, dumperId << " dumping state to " << dumpeeId << " at " << dumpeeUrl);
-    Broker& b = dumperBroker;
-    b.getExchanges().eachExchange(boost::bind(&DumpClient::dumpExchange, this, _1));
+void UpdateClient::update() {
+    QPID_LOG(debug, updaterId << " updateing state to " << updateeId << " at " << updateeUrl);
+    Broker& b = updaterBroker;
+    b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
 
-    // Dump exchange is used to route messages to the proper queue without modifying routing key.
-    session.exchangeDeclare(arg::exchange=DUMP, arg::type="fanout", arg::autoDelete=true);
-    b.getQueues().eachQueue(boost::bind(&DumpClient::dumpQueue, this, _1));
-    // Dump queue is used to transfer acquired messages that are no longer on their original queue.
-    session.queueDeclare(arg::queue=DUMP, arg::autoDelete=true);
+    // Update exchange is used to route messages to the proper queue without modifying routing key.
+    session.exchangeDeclare(arg::exchange=UPDATE, arg::type="fanout", arg::autoDelete=true);
+    b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueue, this, _1));
+    // Update queue is used to transfer acquired messages that are no longer on their original queue.
+    session.queueDeclare(arg::queue=UPDATE, arg::autoDelete=true);
     session.sync();
     session.close();
 
-    std::for_each(connections.begin(), connections.end(), boost::bind(&DumpClient::dumpConnection, this, _1));
+    std::for_each(connections.begin(), connections.end(), boost::bind(&UpdateClient::updateConnection, this, _1));
     AMQFrame frame(map.asMethodBody());
     client::ConnectionAccess::getImpl(connection)->handle(frame);
     connection.close();
-    QPID_LOG(debug,  dumperId << " dumped state to " << dumpeeId << " at " << dumpeeUrl);
+    QPID_LOG(debug,  updaterId << " updated state to " << updateeId << " at " << updateeUrl);
 }
 
-void DumpClient::run() {
+void UpdateClient::run() {
     try {
-        dump();
+        update();
         done();
     } catch (const std::exception& e) {
         failed(e);
@@ -143,16 +143,16 @@ template <class T> std::string encode(const T& t) {
 }
 } // namespace
 
-void DumpClient::dumpExchange(const boost::shared_ptr<Exchange>& ex) {
-    QPID_LOG(debug, dumperId << " dumping exchange " << ex->getName());
+void UpdateClient::updateExchange(const boost::shared_ptr<Exchange>& ex) {
+    QPID_LOG(debug, updaterId << " updateing exchange " << ex->getName());
     ClusterConnectionProxy proxy(session);
     proxy.exchange(encode(*ex));
 }
 
-/** Bind a queue to the dump exchange and dump messges to it
+/** Bind a queue to the update exchange and update messges to it
  * setting the message possition as needed.
  */
-class MessageDumper {
+class MessageUpdater {
     std::string queue;
     bool haveLastPos;
     framing::SequenceNumber lastPos;
@@ -160,15 +160,15 @@ class MessageDumper {
 
   public:
 
-    MessageDumper(const string& q, const client::AsyncSession s) : queue(q), haveLastPos(false), session(s) {
-        session.exchangeBind(queue, DumpClient::DUMP);
+    MessageUpdater(const string& q, const client::AsyncSession s) : queue(q), haveLastPos(false), session(s) {
+        session.exchangeBind(queue, UpdateClient::UPDATE);
     }
 
-    ~MessageDumper() {
-        session.exchangeUnbind(queue, DumpClient::DUMP);
+    ~MessageUpdater() {
+        session.exchangeUnbind(queue, UpdateClient::UPDATE);
     }
 
-    void dumpQueuedMessage(const broker::QueuedMessage& message) {
+    void updateQueuedMessage(const broker::QueuedMessage& message) {
         if (!haveLastPos || message.position - lastPos != 1)  {
             ClusterConnectionProxy(session).queuePosition(queue, message.position.getValue()-1);
             haveLastPos = true;
@@ -176,52 +176,52 @@ class MessageDumper {
         lastPos = message.position;
         SessionBase_0_10Access sb(session);
         framing::MessageTransferBody transfer(
-            framing::ProtocolVersion(), DumpClient::DUMP, message::ACCEPT_MODE_NONE, message::ACQUIRE_MODE_PRE_ACQUIRED);
+            framing::ProtocolVersion(), UpdateClient::UPDATE, message::ACCEPT_MODE_NONE, message::ACQUIRE_MODE_PRE_ACQUIRED);
         sb.get()->send(transfer, message.payload->getFrames());
     }
 
-    void dumpMessage(const boost::intrusive_ptr<broker::Message>& message) {
-        dumpQueuedMessage(broker::QueuedMessage(0, message, haveLastPos? lastPos.getValue()+1 : 1));
+    void updateMessage(const boost::intrusive_ptr<broker::Message>& message) {
+        updateQueuedMessage(broker::QueuedMessage(0, message, haveLastPos? lastPos.getValue()+1 : 1));
     }
 };
 
 
-void DumpClient::dumpQueue(const boost::shared_ptr<Queue>& q) {
-    QPID_LOG(debug, dumperId << " dumping queue " << q->getName());
+void UpdateClient::updateQueue(const boost::shared_ptr<Queue>& q) {
+    QPID_LOG(debug, updaterId << " updateing queue " << q->getName());
     ClusterConnectionProxy proxy(session);
     proxy.queue(encode(*q));
-    MessageDumper dumper(q->getName(), session);
-    q->eachMessage(boost::bind(&MessageDumper::dumpQueuedMessage, &dumper, _1));
-    q->eachBinding(boost::bind(&DumpClient::dumpBinding, this, q->getName(), _1));
+    MessageUpdater updater(q->getName(), session);
+    q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
+    q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, q->getName(), _1));
 }
 
 
-void DumpClient::dumpBinding(const std::string& queue, const QueueBinding& binding) {
+void UpdateClient::updateBinding(const std::string& queue, const QueueBinding& binding) {
     session.exchangeBind(queue, binding.exchange, binding.key, binding.args);
 }
 
-void DumpClient::dumpConnection(const boost::intrusive_ptr<Connection>& dumpConnection) {
-    QPID_LOG(debug, dumperId << " dumping connection " << *dumpConnection);
+void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& updateConnection) {
+    QPID_LOG(debug, updaterId << " updateing connection " << *updateConnection);
     shadowConnection = catchUpConnection();
 
-    broker::Connection& bc = dumpConnection->getBrokerConnection();
+    broker::Connection& bc = updateConnection->getBrokerConnection();
     // FIXME aconway 2008-10-20: What authentication info to use on reconnect?
-    shadowConnection.open(dumpeeUrl, bc.getUserId(), ""/*password*/, "/"/*vhost*/, bc.getFrameMax());
-    bc.eachSessionHandler(boost::bind(&DumpClient::dumpSession, this, _1));
+    shadowConnection.open(updateeUrl, bc.getUserId(), ""/*password*/, "/"/*vhost*/, bc.getFrameMax());
+    bc.eachSessionHandler(boost::bind(&UpdateClient::updateSession, this, _1));
     ClusterConnectionProxy(shadowConnection).shadowReady(
-        dumpConnection->getId().getMember(),
-        reinterpret_cast<uint64_t>(dumpConnection->getId().getPointer()));
+        updateConnection->getId().getMember(),
+        reinterpret_cast<uint64_t>(updateConnection->getId().getPointer()));
     shadowConnection.close();
-    QPID_LOG(debug, dumperId << " dumped connection " << *dumpConnection);
+    QPID_LOG(debug, updaterId << " updated connection " << *updateConnection);
 }
 
-void DumpClient::dumpSession(broker::SessionHandler& sh) {
-    QPID_LOG(debug, dumperId << " dumping session " << &sh.getConnection()  << "[" << sh.getChannel() << "] = "
+void UpdateClient::updateSession(broker::SessionHandler& sh) {
+    QPID_LOG(debug, updaterId << " updateing session " << &sh.getConnection()  << "[" << sh.getChannel() << "] = "
              << sh.getSession()->getId());
     broker::SessionState* ss = sh.getSession();
     if (!ss) return;            // no session.
 
-    // Create a client session to dump session state. 
+    // Create a client session to update session state. 
     boost::shared_ptr<client::ConnectionImpl> cimpl = client::ConnectionAccess::getImpl(shadowConnection);
     boost::shared_ptr<client::SessionImpl> simpl = cimpl->newSession(ss->getId().getName(), ss->getTimeout(), sh.getChannel());
     client::SessionBase_0_10Access(shadowSession).set(simpl);
@@ -229,15 +229,15 @@ void DumpClient::dumpSession(broker::SessionHandler& sh) {
 
     // Re-create session state on remote connection.
 
-    // Dump consumers. For reasons unknown, boost::bind does not work here with boost 1.33.
-    QPID_LOG(debug, dumperId << " dumping consumers.");
-    ss->getSemanticState().eachConsumer(std::bind1st(std::mem_fun(&DumpClient::dumpConsumer),this));
+    // Update consumers. For reasons unknown, boost::bind does not work here with boost 1.33.
+    QPID_LOG(debug, updaterId << " updateing consumers.");
+    ss->getSemanticState().eachConsumer(std::bind1st(std::mem_fun(&UpdateClient::updateConsumer),this));
 
-    QPID_LOG(debug, dumperId << " dumping unacknowledged messages.");
+    QPID_LOG(debug, updaterId << " updateing unacknowledged messages.");
     broker::DeliveryRecords& drs = ss->getSemanticState().getUnacked();
-    std::for_each(drs.begin(), drs.end(),  boost::bind(&DumpClient::dumpUnacked, this, _1));
+    std::for_each(drs.begin(), drs.end(),  boost::bind(&UpdateClient::updateUnacked, this, _1));
 
-    dumpTxState(ss->getSemanticState());           // Tx transaction state.
+    updateTxState(ss->getSemanticState());           // Tx transaction state.
 
     //  Adjust for command counter for message in progress, will be sent after state update.
     boost::intrusive_ptr<Message> inProgress = ss->getMessageInProgress();
@@ -263,11 +263,11 @@ void DumpClient::dumpSession(broker::SessionHandler& sh) {
 
     // FIXME aconway 2008-09-23: update session replay list.
 
-    QPID_LOG(debug, dumperId << " dumped session " << sh.getSession()->getId());
+    QPID_LOG(debug, updaterId << " updated session " << sh.getSession()->getId());
 }
 
-void DumpClient::dumpConsumer(const broker::SemanticState::ConsumerImpl* ci) {
-    QPID_LOG(debug, dumperId << " dumping consumer " << ci->getName() << " on " << shadowSession.getId());
+void UpdateClient::updateConsumer(const broker::SemanticState::ConsumerImpl* ci) {
+    QPID_LOG(debug, updaterId << " updateing consumer " << ci->getName() << " on " << shadowSession.getId());
     using namespace message;
     shadowSession.messageSubscribe(
         arg::queue       = ci->getQueue()->getName(),
@@ -289,15 +289,15 @@ void DumpClient::dumpConsumer(const broker::SemanticState::ConsumerImpl* ci) {
         ci->isNotifyEnabled()
     );
     client::SessionBase_0_10Access(shadowSession).get()->send(state);
-    QPID_LOG(debug, dumperId << " dumped consumer " << ci->getName() << " on " << shadowSession.getId());
+    QPID_LOG(debug, updaterId << " updated consumer " << ci->getName() << " on " << shadowSession.getId());
 }
     
-void DumpClient::dumpUnacked(const broker::DeliveryRecord& dr) {
+void UpdateClient::updateUnacked(const broker::DeliveryRecord& dr) {
     if (!dr.isEnded() && dr.isAcquired() && dr.getMessage().payload) {
         // If the message is acquired then it is no longer on the
-        // dumpees queue, put it on the dump queue for dumpee to pick up.
+        // updatees queue, put it on the update queue for updatee to pick up.
         //
-        MessageDumper(DUMP, shadowSession).dumpQueuedMessage(dr.getMessage());
+        MessageUpdater(UPDATE, shadowSession).updateQueuedMessage(dr.getMessage());
     }
     ClusterConnectionProxy(shadowSession).deliveryRecord(
         dr.getQueue()->getName(),
@@ -314,22 +314,22 @@ void DumpClient::dumpUnacked(const broker::DeliveryRecord& dr) {
     );
 }
 
-class TxOpDumper : public broker::TxOpConstVisitor, public MessageDumper {
+class TxOpUpdater : public broker::TxOpConstVisitor, public MessageUpdater {
   public:
-    TxOpDumper(DumpClient& dc, client::AsyncSession s)
-        : MessageDumper(DumpClient::DUMP, s), parent(dc), session(s), proxy(s) {}
+    TxOpUpdater(UpdateClient& dc, client::AsyncSession s)
+        : MessageUpdater(UpdateClient::UPDATE, s), parent(dc), session(s), proxy(s) {}
 
     void operator()(const broker::DtxAck& ) {
         throw InternalErrorException("DTX transactions not currently supported by cluster.");
     }
     
     void operator()(const broker::RecoveredDequeue& rdeq) {
-        dumpMessage(rdeq.getMessage());
+        updateMessage(rdeq.getMessage());
         proxy.txEnqueue(rdeq.getQueue()->getName());
     }
 
     void operator()(const broker::RecoveredEnqueue& renq) {
-        dumpMessage(renq.getMessage());
+        updateMessage(renq.getMessage());
         proxy.txEnqueue(renq.getQueue()->getName());
     }
 
@@ -338,7 +338,7 @@ class TxOpDumper : public broker::TxOpConstVisitor, public MessageDumper {
     }
 
     void operator()(const broker::TxPublish& txPub) {
-        dumpMessage(txPub.getMessage());
+        updateMessage(txPub.getMessage());
         typedef std::list<Queue::shared_ptr> QueueList;
         const QueueList& qlist = txPub.getQueues();
         Array qarray(TYPE_CODE_STR8);
@@ -348,20 +348,20 @@ class TxOpDumper : public broker::TxOpConstVisitor, public MessageDumper {
     }
 
   private:
-    DumpClient& parent;
+    UpdateClient& parent;
     client::AsyncSession session;
     ClusterConnectionProxy proxy;
 };
     
-void DumpClient::dumpTxState(broker::SemanticState& s) {
-    QPID_LOG(debug, dumperId << " dumping TX transaction state.");
+void UpdateClient::updateTxState(broker::SemanticState& s) {
+    QPID_LOG(debug, updaterId << " updateing TX transaction state.");
     ClusterConnectionProxy proxy(shadowSession);
     proxy.accumulatedAck(s.getAccumulatedAck());
     broker::TxBuffer::shared_ptr txBuffer = s.getTxBuffer();
     if (txBuffer) {
         proxy.txStart();
-        TxOpDumper dumper(*this, shadowSession);
-        txBuffer->accept(dumper);
+        TxOpUpdater updater(*this, shadowSession);
+        txBuffer->accept(updater);
         proxy.txEnd();
     }
 }
