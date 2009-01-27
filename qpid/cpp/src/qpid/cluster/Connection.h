@@ -81,8 +81,8 @@ class Connection :
     /** True if the connection is in "catch-up" mode: building initial broker state. */
     bool isCatchUp() const { return catchUp; }
 
-    /** True if the connection is a completed shared dump connection */
-    bool isDumped() const;
+    /** True if the connection is a completed shared update connection */
+    bool isUpdated() const;
 
     Cluster& getCluster() { return cluster; }
 
@@ -108,7 +108,7 @@ class Connection :
     
     // ==== Used in catch-up mode to build initial state.
     // 
-    // State dump methods.
+    // State update methods.
     void sessionState(const framing::SequenceNumber& replayStart,
                       const framing::SequenceNumber& sendCommandPoint,
                       const framing::SequenceSet& sentIncomplete,
@@ -156,7 +156,7 @@ class Connection :
     boost::shared_ptr<broker::Queue> findQueue(const std::string& qname);
     broker::SessionState& sessionState();
     broker::SemanticState& semanticState();
-    broker::QueuedMessage getDumpMessage();
+    broker::QueuedMessage getUpdateMessage();
 
     static NoOpConnectionOutputHandler discardHandler;
 

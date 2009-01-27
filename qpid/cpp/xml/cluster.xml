@@ -27,12 +27,12 @@
   <class name = "cluster" code = "0x80" label="Qpid clustering extensions.">
     <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
 
-    <control name="dump-request" code="0x1" label="URL for a member.">
+    <control name="update-request" code="0x1" label="URL for a member.">
       <field name="url" type="str16"/>
     </control>
 
-    <control name = "dump-offer" code="0x2" label="Member offering to be dumper for dumpee.">
-      <field name="dumpee" type="uint64"/>
+    <control name = "update-offer" code="0x2" label="Member offering to be updater for updatee.">
+      <field name="updatee" type="uint64"/>
       <field name="cluster-id" type="uuid"/>
     </control>
 
@@ -60,13 +60,13 @@ Min     <control name="ready" code="0x10" label="New member is ready.">
       <field name="bytes" type="uint32"/>
     </control>
 
-    <!-- Brain-dump controls. Sent to a new broker in joining mode.
-	 A connection is dumped as followed:
+    <!-- Update controls. Sent to a new broker in joining mode.
+	 A connection is updateed as followed:
 	 - open as a normal connection.
 	 - attach sessions, create consumers, set flow with normal AMQP cokmmands.
 	 - send /reset additional session state with controls below.
-	 - send shadow-ready to mark end of shadow dump.
-	 - send dump-complete when entire dump is complete.
+	 - send shadow-ready to mark end of shadow update.
+	 - send update-complete when entire update is complete.
     -->
     
     <!-- Consumer state that cannot be set by standard AMQP controls. -->
@@ -103,8 +103,8 @@ Min     <control name="ready" code="0x10" label="New member is ready.">
     <control name="tx-end" code="0x17"/>
     <control name="accumulated-ack" code="0x18"> <field name="commands" type="sequence-set"/> </control>
     
-    <!-- Complete a session state dump. -->
-    <control name="session-state" code="0x1F" label="Set session state during a brain dump.">
+    <!-- Complete a session state update. -->
+    <control name="session-state" code="0x1F" label="Set session state during a brain update.">
       <!-- Target session deduced from channel number.  -->
       <field name="replay-start" type="sequence-no"/>	       <!-- Replay frames will start from this point.-->
       <field name="command-point" type="sequence-no"/>	       <!-- Id of next command sent -->
@@ -116,15 +116,15 @@ Min     <control name="ready" code="0x10" label="New member is ready.">
       <field name="received-incomplete" type="sequence-set"/>  <!-- Received and incomplete -->
     </control>
 
-    <!-- Complete a shadow connection dump. -->
-    <control name="shadow-ready" code="0x20" label="End of shadow connection dump.">
+    <!-- Complete a shadow connection update. -->
+    <control name="shadow-ready" code="0x20" label="End of shadow connection update.">
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
     </control>
 
-    <!-- Complete a cluster state dump. -->
+    <!-- Complete a cluster state update. -->
     <control name="membership" code="0x21" label="Cluster membership details.">
-      <field name="newbies" type="map"/> <!-- member-id -> URL -->
+      <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
     </control>
 

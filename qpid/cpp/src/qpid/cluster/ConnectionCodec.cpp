@@ -66,7 +66,6 @@ ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id,
 ConnectionCodec::~ConnectionCodec() {}
 
 size_t ConnectionCodec::decode(const char* buffer, size_t size) {
-    QPID_LOG(trace, "RECVB [" << localId << "]: " << size << " bytes");
     return interceptor->decode(buffer, size);
 }
 
