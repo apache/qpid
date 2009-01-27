@@ -40,7 +40,7 @@ cluster_la_SOURCES =				\
   $(CMAN_SOURCES)				\
   qpid/cluster/Cluster.cpp			\
   qpid/cluster/Cluster.h			\
-  qpid/cluster/ClusterLeaveException.h		\
+  qpid/cluster/ClusterQueueHandler.h		\
   qpid/cluster/ClusterMap.cpp			\
   qpid/cluster/ClusterMap.h			\
   qpid/cluster/ClusterPlugin.cpp		\

@@ -21,7 +21,6 @@
 
 #include "Multicaster.h"
 #include "Cpg.h"
-#include "ClusterLeaveException.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/LatencyMetric.h"
 
