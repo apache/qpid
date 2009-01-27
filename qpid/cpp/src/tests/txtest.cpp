@@ -157,7 +157,13 @@ struct Transfer : public Client, public Runnable
                 }
                 for (uint m = 0; m < opts.msgsPerTx; m++) {
                     in = lq.pop();
-                    out.setData(in.getData());
+                    std::string& data = in.getData();
+                    if (data.size() != opts.size) {
+                        std::ostringstream oss;
+                        oss << "Message size incorrect: size=" << in.getData().size() << "; expected " << opts.size;
+                        throw std::runtime_error(oss.str());
+                    }
+                    out.setData(data);
                     out.getMessageProperties().setCorrelationId(in.getMessageProperties().getCorrelationId());
                     out.getDeliveryProperties().setDeliveryMode(in.getDeliveryProperties().getDeliveryMode());
                     session.messageTransfer(arg::content=out, arg::acceptMode=1);
