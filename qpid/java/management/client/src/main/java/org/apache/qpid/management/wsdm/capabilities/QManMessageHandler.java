@@ -60,6 +60,7 @@ public class QManMessageHandler extends ReflectionMessageHandler
 	 * 
 	 * @throws SoapFaul when unmarshal operation fails.
 	 */
+	@SuppressWarnings("unchecked")
 	public Object[] fromXML(Element xml) throws SoapFault
 	{
 		Method method = getMethod();

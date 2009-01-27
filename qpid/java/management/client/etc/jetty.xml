@@ -20,7 +20,7 @@
 	<Set name="handler">
 		<New class="org.mortbay.jetty.webapp.WebAppContext">
 			<Set name="contextPath">/qman</Set>
-			<Set name="war"><SystemProperty name="QMAN_HOME" default=".." />/lib/qman.war</Set>
+			<Set name="war"><SystemProperty name="QMAN_HOME" default=".." />/app/qman</Set>
 		</New>
 	</Set>
 </Configure>

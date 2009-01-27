@@ -229,7 +229,7 @@ public class QManWsResource implements WsResource
 	        initializeCapabilities();
 	        	        
 	        _properties.applyMetadata();
-	        _properties.validateMetadata();
+//	        _properties.validateMetadata();
 	        
 	        // Resource intialization completed : Let's make a state change.
 	        _currentState = _hasBeenInitialized;

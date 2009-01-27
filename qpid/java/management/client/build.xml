@@ -27,13 +27,28 @@
 
 	<property name="war.name" value="qman.war"/>
     <property name="build.root" value="${module.build}"/>
-    <property name="web.module" value="${module.build}${file.separator}WsdmModule"/>	
+    <property name="web.module" value="${module.build}${file.separator}wsdm-module"/>	
     <property name="web-inf.folder" value="${web.module}${file.separator}WEB-INF"/>
     <property name="classes.folder" value="${web-inf.folder}${file.separator}classes"/>
+	<property name="examples.folder" value="${module.build}${file.separator}examples"/>
 
 	<target name="release-bin-other">
 		<mkdir dir="${module.release}${file.separator}log"/>
+		<mkdir dir="${module.release}${file.separator}examples"/>
+		<mkdir dir="${module.release}${file.separator}examples${file.separator}sample_messages"/>
+	
 	</target>
+	
+	<target name="resources-release" description="copy resources into module release">
+		<copy todir="${module.release}" failonerror="false" flatten="true">
+			<fileset dir="${resources}" excludes="META-INF">
+				<exclude name="META-INF"/>
+				<exclude name="README"/>
+			</fileset>
+			<fileset file="${module.build}${file.separator}README"/>
+	    </copy>
+	</target>
+
 	
 	<target name="libs-release" description="copy dependencies into module release">
 	    <copy todir="${module.release}${file.separator}" failonerror="true" verbose="true">
@@ -50,7 +65,14 @@
 		    <fileset file="${module.jar}"/>
 		    <fileset dir="${build.lib}" includes="${module.depends.jars}"/>
 		</copy>
-		<jar destfile="${module.release}${file.separator}lib${file.separator}${war.name}" basedir="${web.module}"/>
+		<mkdir dir="${module.release}${file.separator}app${file.separator}qman"/>
+		<copy todir="${module.release}${file.separator}app${file.separator}qman" failonerror="true">
+		    <fileset dir="${web.module}" includes="*/**"/>
+		</copy>
+		<mkdir dir="${module.release}${file.separator}examples"/>
+		<copy todir="${module.release}${file.separator}examples">
+			<fileset dir="${examples.folder}"/> 		
+		</copy>	
 	</target>
 	
 	<target name="prepare-wsdm-module">        
@@ -101,20 +123,53 @@
 	    	</fileset>
 		</jar>
 	</target>
-    <target name="postbuild" depends="prepare-wsdm-module" description="Build WS-DM module"/>
-		<path id="module.test.path">
-	    	<pathelement path="${module.test.classes}" />
-	    	<path refid="module.test.libs"/>
-	        <fileset dir="${build}/lib">
-	            <include name="qpid-client-*.jar"/>
-	            <include name="qpid-common-*.jar"/>
-	            <include name="qpid-management-client-*.jar"/>           
-	        	<exclude name="qpid-client-example*.jar"/>
-	        	<exclude name="qpid-client-tests*.jar"/>
-	        	<exclude name="qpid-common-tests*.jar"/>
-	            <exclude name="qpid-management-client-tests*.jar"/>           
-	        </fileset> 
-		</path>
+    <target name="postbuild" depends="prepare-wsdm-module,copy-examples-to-build,copy-README-to-build" description="Build WS-DM module"/>
+		
+	<path id="module.test.path">
+		<pathelement path="${module.test.classes}" />
+	    <path refid="module.test.libs"/>
+		<fileset dir="${build}/lib">
+	    	<include name="qpid-client-*.jar"/>
+	        <include name="qpid-common-*.jar"/>
+	        <include name="qpid-management-client-*.jar"/>           
+	        <exclude name="qpid-client-example*.jar"/>
+	        <exclude name="qpid-client-tests*.jar"/>
+	        <exclude name="qpid-common-tests*.jar"/>
+	        <exclude name="qpid-management-client-tests*.jar"/>           
+		</fileset> 
+	</path>
+	
+	<target name="copy-README-to-build">
+		<copy todir="${module.build}">
+			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}..">
+				<include name="README"/>				
+			</fileset>
+		</copy>			
+	</target>
+	
+	<target name="copy-examples-to-build">
+		<mkdir dir="${examples.folder}${file.separator}src"/>
+		<mkdir dir="${examples.folder}${file.separator}sample_messages"/>
+		<copy todir="${examples.folder}">
+			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}example">
+				<include name="README"/>				
+			</fileset>
+		</copy>		
+		<copy todir="${examples.folder}${file.separator}src">
+			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}example">
+				<include name="**/*.java"/>
+				<exclude name="**/*.out.*"/>
+			</fileset>
+		</copy>
+		<copy todir="${examples.folder}${file.separator}sample_messages">
+			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}example" >
+				<exclude name="**/*.java"/>
+				<exclude name="**/README"/>				
+				<include name="**/*.out.*"/>
+			</fileset>
+		</copy>
+	</target>
+	
 	<target name="test" depends="build,compile-tests" if="module.test.src.exists" unless="${dontruntest}" description="execute unit tests">
 		<delete file="${module.failed}"/>
 		<echo message="Using config:${config}" level="info"/>

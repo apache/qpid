@@ -224,4 +224,11 @@ public interface QpidDomainObjectMBean
 	 * @return the type property value.
 	 */	
 	String getType();
+	
+//	/**
+//	 * Returns the byteArray property value.
+//	 * 
+//	 * @return the byteArray property value.
+//	 */
+//	byte[] getByteArray();
 }
