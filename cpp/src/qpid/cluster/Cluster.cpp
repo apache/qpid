@@ -234,12 +234,12 @@ void Cluster::deliveredEvent(const Event& e) {
 }
 
 void Cluster::deliveredFrame(const EventFrame& e) {
+    QPID_LOG(trace, *this << " DLVR: " << e);
     QPID_LATENCY_RECORD("delivered frame queue", e.frame);
-    if (e.connection)   {
+    if (e.connection) {
         e.connection->deliveredFrame(e);
     }
     else {
-        QPID_LOG(trace, *this << " DLVR: " << e.frame);
         Mutex::ScopedLock l(lock); // FIXME aconway 2008-12-11: lock scope too big?
         ClusterDispatcher dispatch(*this, e.member, l);
         if (!framing::invoke(dispatch, *e.frame.getBody()).wasHandled())
