@@ -103,7 +103,7 @@ public class MBeanCapabilityBuilderTest extends TestCase
 			name+
 			"\"); }";
 		
-		String result = _builder.generateGetter(type, name);
+		String result = _builder.generateGetter(type, name,name);
 		assertEquals(expected,result);
 	}
 	
@@ -121,7 +121,7 @@ public class MBeanCapabilityBuilderTest extends TestCase
 			name+
 			"\", newValue); }";
 		
-		String result = _builder.generateSetter(type, name);
+		String result = _builder.generateSetter(type, name,name);
 		assertEquals(expected,result);
 	}
 	

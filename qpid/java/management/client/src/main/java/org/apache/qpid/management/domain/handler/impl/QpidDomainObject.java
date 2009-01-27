@@ -44,6 +44,7 @@ public class QpidDomainObject implements QpidDomainObjectMBean
 	private Short _mgmtPubInterval;
 	private Date _expireTime;
 	private String _type;
+	private byte [] _byteArray;
 	
 	/**
 	 * Builds a new QpidDomainObject with default values for 
@@ -60,11 +61,12 @@ public class QpidDomainObject implements QpidDomainObjectMBean
 		_arguments.put("Key3", Integer.MAX_VALUE);
 		_arguments.put("Key4", Double.MIN_VALUE);
 		_arguments.put("Key4", Float.MAX_VALUE);
-		
+
 		_msgTotalEnqueues = Long.MAX_VALUE-10;
 		_consumerCount =  Integer.MIN_VALUE+10;
 		_mgmtPubInterval = Short.MAX_VALUE;
 		_expireTime = new Date(Long.MAX_VALUE);
+		_byteArray = new byte[]{1,2,3,5,6,7,8,7,56};
 	}
 	
 	/**
@@ -303,5 +305,10 @@ public class QpidDomainObject implements QpidDomainObjectMBean
 	public String getType()
 	{
 		return _type;
+	}
+	
+	public byte[] getByteArray()
+	{
+		return _byteArray;
 	}
 }

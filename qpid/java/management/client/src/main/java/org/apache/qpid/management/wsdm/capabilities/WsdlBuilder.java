@@ -22,8 +22,6 @@ package org.apache.qpid.management.wsdm.capabilities;
 
 import java.net.InetAddress;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import javax.management.MBeanAttributeInfo;
@@ -111,6 +109,7 @@ class WsdlBuilder implements IArtifactBuilder {
 	private final static QName XSD_COMPLEX_TYPE_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"complexType","xsd");
 	private final static QName XSD_SEQUENCE_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"sequence","xsd");
 	
+	@SuppressWarnings("unchecked")
 	private Element defineSchemaFor(String type, String attributeName) throws Exception
 	{
 		if (type.equals("java.util.Map")) 

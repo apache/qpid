@@ -82,6 +82,7 @@ public class QManAdapterCapability extends AbstractCapability
 			{				
 				EntityLifecycleNotification lifecycleNotification = (EntityLifecycleNotification) notification;
 				eventSourceName = lifecycleNotification.getObjectName();
+				
 				ThreadSessionManager.getInstance().getSession().setObjectName(eventSourceName);
 			
 				LOGGER.debug(Messages.QMAN_200039_DEBUG_JMX_NOTIFICATION, notification);
@@ -268,10 +269,49 @@ public class QManAdapterCapability extends AbstractCapability
 		}
 	}
 			
+	/**
+	 * Connects QMan with a broker with the given connection data.
+	 * 
+	 * @param host the host where the broker is running.
+	 * @param port the port number where the broker is running.
+	 * @param username username for estabilshing connection.
+	 * @param password password for estabilshing connection.
+	 * @param virtualHost the virtualHost name.
+	 * @param initialPoolCapacity the initial size of broker connection pool. 
+	 * @param maxPoolCapacity the max allowed size of broker connection pool.
+	 * @param maxWaitTimeout the max wait timeout for retrieving connections.
+	 * @throws SoapFault when the connection with broker cannot be estabilished.
+	 */
 	@SuppressWarnings("unchecked")
-	public void connect(String host, int port, String username, String password, String virtualHost) throws SoapFault 
+	public void connect(
+			String host, 
+			int port, 
+			String username, 
+			String password, 
+			String virtualHost,
+			int initialPoolCapacity,
+			int maxPoolCapacity, 
+			long maxWaitTimeout) throws SoapFault 
 	{
-		
+		try 
+		{
+			_mxServer.invoke(
+					Names.QMAN_OBJECT_NAME, 
+					"addBroker", 
+					new Object[]{host,port,username,password,virtualHost,initialPoolCapacity,maxPoolCapacity,maxWaitTimeout}, 
+					new String[]{
+							String.class.getName(),
+							int.class.getName(),
+							String.class.getName(),
+							String.class.getName(),
+							String.class.getName(),
+							int.class.getName(),
+							int.class.getName(),
+							long.class.getName()});
+		} catch(Exception exception)
+		{			
+			throw new SoapFault(exception);
+		}
 	}
 
 	/**
