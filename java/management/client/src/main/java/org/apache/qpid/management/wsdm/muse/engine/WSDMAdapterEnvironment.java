@@ -1,9 +1,7 @@
 package org.apache.qpid.management.wsdm.muse.engine;
 
 import java.io.File;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 
 import javax.servlet.ServletContext;
 

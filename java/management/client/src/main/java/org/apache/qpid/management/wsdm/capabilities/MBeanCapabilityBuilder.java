@@ -211,7 +211,7 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 				
 				if (attribute.isReadable()) 
 				{
-					String accessor = generateGetter(type, nameForAccessors);
+					String accessor = generateGetter(type, nameForAccessors,name);
 					CtMethod getter = CtNewMethod.make(accessor,_capabilityClassDefinition);
 					_capabilityClassDefinition.addMethod(getter);		
 					appendToPropertiesArray(name);
@@ -224,7 +224,7 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 				
 				if (attribute.isWritable()) 
 				{
-					String accessor = generateSetter(type, nameForAccessors);
+					String accessor = generateSetter(type, nameForAccessors,name);
 					CtMethod setter = CtNewMethod.make(accessor,_capabilityClassDefinition);
 					_capabilityClassDefinition.addMethod(setter);					
 
@@ -435,10 +435,11 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 	 * Generates the get accessor method for the given property.
 	 *  
 	 * @param type the type of the property.
-	 * @param name the name of the property.
+	 * @param name the name of the property with the first letter capitalized.
+	 * @param plainName the plain name of the property.
 	 * @return the getter method (as a string).
 	 */
-	String generateGetter(String type, String name) 
+	String generateGetter(String type, String name,String plainName) 
 	{
 		return new StringBuilder()
 			.append("public ")
@@ -449,7 +450,7 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 			.append("() throws NoSuchAttributeFault,EntityInstanceNotFoundFault,QManFault { return (")
 			.append(type)
 			.append(") getAttribute(\"")
-			.append(name)
+			.append(plainName)
 			.append("\"); }")
 			.toString();
 	}
@@ -458,10 +459,11 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 	 * Generates the set accessor method for the given property.
 	 *  
 	 * @param type the type of the property.
-	 * @param name the name of the property.
+	 * @param name the name of the property with the first letter capitalized.
+	 * @param plainName the plain name of the property.
 	 * @return the setter method (as a string).
 	 */
-	String generateSetter(String type, String name) 
+	String generateSetter(String type, String name, String plainName) 
 	{
 		return new StringBuilder()
 			.append("public void ")
@@ -471,7 +473,7 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 			.append(type)
 			.append(" newValue) throws NoSuchAttributeFault,EntityInstanceNotFoundFault,QManFault {")
 			.append(" setAttribute(\"")
-			.append(name)
+			.append(plainName)
 			.append("\", newValue); }")
 			.toString();
 	}

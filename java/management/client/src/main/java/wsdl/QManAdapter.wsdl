@@ -91,6 +91,9 @@
 		            	<xsd:element name="username" type="xsd:string" minOccurs="1" nillable="false"/>
 		            	<xsd:element name="password" type="xsd:string" minOccurs="1" nillable="false"/>
 		            	<xsd:element name="virtualHost" type="xsd:string" minOccurs="1" nillable="false"/>
+		            	<xsd:element name="initialPoolCapacity" type="xsd:integer" minOccurs="1" nillable="false"/>
+		            	<xsd:element name="maxPoolCapacity" type="xsd:integer" minOccurs="1" nillable="false"/>
+		            	<xsd:element name="maxWaitTimeout" type="xsd:long" minOccurs="1" nillable="false"/>		            	
 		          </xsd:sequence>
 		        </xsd:complexType>
 			</xsd:element>
