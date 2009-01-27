@@ -58,8 +58,8 @@ file SASL_MODULE => [ MAKEFILE, SASL_SRC ] do |t|
     end
   end
 end
-desc "Build the native library"
-task :build => SASL_MODULE
+desc "Build the native library and AMQP spec cache"
+task :build => :spec_cache
 
 Rake::TestTask.new(:test) do |t|
   t.test_files = FileList['tests/*.rb'].exclude("tests/util.rb")
@@ -72,16 +72,13 @@ Rake::TestTask.new(:"test_0-8") do |t|
 end
 
 desc "Create cached versions of the AMQP specs"
-task :spec_cache do |t|
-  AMQP_SPEC_FILES.each do |f|
-    pid = fork do
-      $: << "lib"
-      require 'qpid'
-      Qpid::Spec010::load(f)
-      puts "Cached #{f}"
-    end
-    Process.wait(pid)
+task :spec_cache => SASL_MODULE do |t|
+  pid = fork do
+    $:.insert(0, "lib", "ext/sasl")
+    require 'qpid'
+    Qpid::Spec010::load()
   end
+  Process.wait(pid)
 end
 
 #
