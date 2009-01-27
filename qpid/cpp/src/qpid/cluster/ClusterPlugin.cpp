@@ -54,7 +54,7 @@ struct ClusterValues {
     bool quorum;
     size_t readMax, writeEstimate, mcastMax;
 
-    ClusterValues() : quorum(false), readMax(10), writeEstimate(64), mcastMax(10) {}
+    ClusterValues() : quorum(false), readMax(10), writeEstimate(64), mcastMax(0) {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
