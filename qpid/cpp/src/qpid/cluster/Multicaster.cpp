@@ -28,14 +28,12 @@
 namespace qpid {
 namespace cluster {
 
-Multicaster::Multicaster(Cpg& cpg_, size_t mcastMax_,
+Multicaster::Multicaster(Cpg& cpg_, 
                          const boost::shared_ptr<sys::Poller>& poller,
                          boost::function<void()> onError_) :
     onError(onError_), cpg(cpg_), 
     queue(boost::bind(&Multicaster::sendMcast, this, _1), poller),
-    holding(true),
-    mcastMax(mcastMax_),
-    pending(0)
+    holding(true)
 {
     queue.start();
 }
@@ -69,22 +67,10 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
     try {
         PollableEventQueue::Queue::iterator i = values.begin();
         while( i != values.end()) {
-            if (mcastMax) {
-                sys::Mutex::ScopedLock l(lock);
-                if (pending == mcastMax) {
-                    queue.stop();
-                    break ;
-                }
-                ++pending;
-            }
             QPID_LATENCY_RECORD("mcast send queue", *i);
             iovec iov = i->toIovec();
             if (!cpg.mcast(&iov, 1)) {
                 // cpg didn't send because of CPG flow control.
-                if (mcastMax) {
-                    sys::Mutex::ScopedLock l(lock);
-                    --pending;
-                }
                 break; 
             }
             ++i;
@@ -108,13 +94,6 @@ void Multicaster::release() {
 void Multicaster::selfDeliver(const Event& e) {
     sys::Mutex::ScopedLock l(lock);
     QPID_LATENCY_RECORD("cpg self deliver", e);
-    if (mcastMax) {
-        assert(pending > 0);
-        assert(pending <= mcastMax);
-        if  (pending == mcastMax) 
-            queue.start();
-        --pending;
-    }
 }
 
 }} // namespace qpid::cluster

@@ -86,7 +86,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
 };
 
-Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool quorum_, size_t readMax_, size_t writeEstimate_, size_t mcastMax) :
+Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool quorum_, size_t readMax_, size_t writeEstimate_) :
     broker(b),
     mgmtObject(0),
     poller(b.getPoller()),
@@ -96,7 +96,7 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
     myId(cpg.self()),
     readMax(readMax_),
     writeEstimate(writeEstimate_),
-    mcast(cpg, mcastMax, poller, boost::bind(&Cluster::leave, this)),
+    mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),
     deliverEventQueue(ClusterQueueHandler<Event>(this, boost::bind(&Cluster::deliveredEvent, this, _1), "event queue"),  poller),
     deliverFrameQueue(ClusterQueueHandler<EventFrame>(this, boost::bind(&Cluster::deliveredFrame, this, _1), "frame queue"), poller),
