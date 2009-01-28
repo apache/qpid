@@ -52,9 +52,9 @@ struct ClusterValues {
     string name;
     string url;
     bool quorum;
-    size_t readMax, writeEstimate, mcastMax;
+    size_t readMax, writeEstimate;
 
-    ClusterValues() : quorum(false), readMax(10), writeEstimate(64), mcastMax(0) {}
+    ClusterValues() : quorum(false), readMax(10), writeEstimate(64) {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
@@ -79,11 +79,9 @@ struct ClusterOptions : public Options {
             ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
             ("cluster-read-max", optValue(values.readMax,"N"),
-             "Experimental: Max unreplicated reads per connetion connection. 0=no limit.")
-            ("cluster-mcast-max", optValue(values.mcastMax,"N"),
-             "Experimental: Max outstanding multicasts per broker. 0=no limit.")
+             "Experimental: Limit per-client-connection queue of read buffers. 0=no limit.")
             ("cluster-write-estimate", optValue(values.writeEstimate, "Kb"),
-             "Experimental: initial estimate for connection writes rate per multicast cycle");
+             "Experimental: initial estimate for connection write rate per multicast cycle");
     }
 };
 
@@ -147,7 +145,7 @@ struct ClusterPlugin : public Plugin {
             values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)),
             *broker,
             values.quorum,
-            values.readMax, values.writeEstimate*1024, values.mcastMax
+            values.readMax, values.writeEstimate*1024
         );
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
