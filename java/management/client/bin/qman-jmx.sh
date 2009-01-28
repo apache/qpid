@@ -42,17 +42,28 @@ if [ "$JAVA_HOME" = "" ] ; then
 fi
 
 if [ "$QMAN_HOME" = "" ] ; then
-	QMAN_HOME=..
-fi
 
-if [ "$QMAN_CONFIG_FILE" = "" ] ; then
-	QMAN_CONFIG_FILE=$QMAN_HOME/etc/qman-config.xml
-fi
+    if [ "$QPID_LIB_PATH" = "" ] ; then
+        QPID_LIB_PATH=/usr/share/java
+    fi
 
-QMAN_LIBS=$QMAN_HOME/lib
+    if [ "$QMAN_CONFIG_FILE" = "" ] ; then
+	QMAN_CONFIG_FILE=/etc/qman-config.xml
+        QMAN_LOG4J=/etc/qman.log4j
+    fi
+else
+    if [ "$QPID_LIB_PATH" = "" ] ; then
+        QPID_LIB_PATH=$QMAN_HOME/lib
+    fi
+
+    if [ "$QMAN_CONFIG_FILE" = "" ] ; then
+        QMAN_CONFIG_FILE=$QMAN_HOME/etc/qman-config.xml
+        QMAN_LOG4J=$QMAN_HOME/etc/qman.log4j
+    fi
+fi
 
 QMAN_CLASSPATH=`find $QMAN_LIBS | tr '\n' ":"`
-QMAN_CLASSPATH=$QMAN_CLASSPATH:$QMAN_HOME/etc
+QMAN_CLASSPATH=$QMAN_LOG4J:$QMAN_CLASSPATH
 
 echo "==============================================================================="
 echo ""
@@ -67,9 +78,9 @@ echo	 "Java Opts : $JAVA_OPTS"
 echo ""
 echo	 "Configuration file : $QMAN_CONFIG_FILE"
 echo ""
-echo	 "Bootstrap classpath : $QMAN_CLASSPATH"
+echo     "Log4J file :  $QMAN_LOG4J"
 echo ""
 echo "==============================================================================="
 echo ""
 
-"$JAVA" $JAVA_OPTS -cp $QMAN_CLASSPATH -Dcom.sun.management.jmxremote -Dqman-config=$QMAN_CONFIG_FILE org.apache.qpid.management.domain.services.QMan
+"$JAVA" $JAVA_OPTS -cp $QMAN_CLASSPATH -Dcom.sun.management.jmxremote -Dlog4j.configuration=qman.log4j -Dqman-config=$QMAN_CONFIG_FILE org.apache.qpid.management.domain.services.QMan
