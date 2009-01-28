@@ -46,7 +46,6 @@ class Multicaster
   public:
     /** Starts in holding mode: connection data events are held, other events are mcast */
     Multicaster(Cpg& cpg_,
-                size_t mcastMax, 
                 const boost::shared_ptr<sys::Poller>&,
                 boost::function<void()> onError
     );
@@ -71,7 +70,6 @@ class Multicaster
     bool holding;
     PlainEventQueue holdingQueue;
     std::vector<struct ::iovec> ioVector;
-    size_t mcastMax, pending;
 };
 }} // namespace qpid::cluster
 
