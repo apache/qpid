@@ -36,6 +36,7 @@ check_LTLIBRARIES=
 TESTS=
 EXTRA_DIST=
 CLEANFILES=
+LONG_TESTS=
 
 #
 # Unit test program
@@ -224,7 +225,7 @@ EXTRA_DIST +=								\
   TestMessageStore.h							\
   TxMocks.h								\
   replication_test							\
-  start_cluster stop_cluster restart_cluster
+  run_perftest
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -252,7 +253,10 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
-LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test
-EXTRA_DIST+=$(LONG_TESTS) run_perftest
+
+LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test stop_broker
+
+EXTRA_DIST+=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test 
+
 check-long:
-	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=
+	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
