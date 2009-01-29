@@ -30,17 +30,14 @@ with_ais_group() {
 
 test -f cluster.ports && { echo "cluster.ports file already exists" ; exit 1; }
 rm -f cluster*.log
-SIZE=$1; shift
+SIZE=${1:-1}; shift
 CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.
 OPTS="-d --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $*"
 
-if test "$SIZE" = "one"; then	# Special case of singleton cluster, use default port.
-    ../qpidd -q
-    with_ais_group ../qpidd $OPTS --log-to-file=cluster.log || exit 1
-else
-    for (( i=0; i<SIZE; ++i )); do
-	PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS`  || exit 1
-	echo $PORT >> cluster.ports
-    done
-fi
+for (( i=0; i<SIZE; ++i )); do
+    PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS`  || exit 1
+    echo $PORT >> cluster.ports
+done
+
+head cluster.ports > qpidd.port	# First member's port for tests.
 
