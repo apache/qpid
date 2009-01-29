@@ -209,7 +209,7 @@ void Cluster::deliveredEvent(const Event& e) {
     Buffer buf(const_cast<char*>(e.getData()), e.getSize());
     boost::intrusive_ptr<Connection> connection;
     if (e.isConnection()) {
-        if (state == JOINER) {
+        if (state <= JOINER) {
             QPID_LOG(trace, *this << " DROP: " << e);
             return;
         }
