@@ -98,9 +98,6 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     virtual void handleIn(framing::AMQFrame&);
     virtual void handleOut(framing::AMQFrame&);
 
-    void checkAttached();
-    void checkName(const std::string& name);
-
     framing::ChannelHandler channel;
     framing::AMQP_AllProxy::Session  peer;
     bool ignoring;

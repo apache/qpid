@@ -58,9 +58,6 @@ class Connection;
 
 /**
  * Connection to the cluster
- *
- * Threading notes: 3 thread categories: connection, deliver, update.
- * 
  */
 class Cluster : private Cpg::Handler, public management::Manageable {
   public:

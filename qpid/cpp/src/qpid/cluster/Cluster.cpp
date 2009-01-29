@@ -65,12 +65,6 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = ::qmf::org::apache::qpid::cluster;
 
-/**@file
-   Threading notes:
-   - Public functions may be called in local connection IO threads.
-   see .h.
-*/ 
-
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
     MemberId member;

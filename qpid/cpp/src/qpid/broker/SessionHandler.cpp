@@ -90,7 +90,7 @@ void SessionHandler::readyToSend() {
 // 
 void SessionHandler::attached(const std::string& name) {
     if (session.get()) {
-        checkName(name);
+        amqp_0_10::SessionHandler::attached(name);
     } else {
         SessionId id(connection.getUserId(), name);
         SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();

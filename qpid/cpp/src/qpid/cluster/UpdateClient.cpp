@@ -104,7 +104,7 @@ static const char UPDATE_CHARS[] = "\000qpid-update";
 const std::string UpdateClient::UPDATE(UPDATE_CHARS, sizeof(UPDATE_CHARS)); 
 
 void UpdateClient::update() {
-    QPID_LOG(debug, updaterId << " updateing state to " << updateeId << " at " << updateeUrl);
+    QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
     Broker& b = updaterBroker;
     b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
 
@@ -144,7 +144,7 @@ template <class T> std::string encode(const T& t) {
 } // namespace
 
 void UpdateClient::updateExchange(const boost::shared_ptr<Exchange>& ex) {
-    QPID_LOG(debug, updaterId << " updateing exchange " << ex->getName());
+    QPID_LOG(debug, updaterId << " updating exchange " << ex->getName());
     ClusterConnectionProxy proxy(session);
     proxy.exchange(encode(*ex));
 }
@@ -187,7 +187,7 @@ class MessageUpdater {
 
 
 void UpdateClient::updateQueue(const boost::shared_ptr<Queue>& q) {
-    QPID_LOG(debug, updaterId << " updateing queue " << q->getName());
+    QPID_LOG(debug, updaterId << " updating queue " << q->getName());
     ClusterConnectionProxy proxy(session);
     proxy.queue(encode(*q));
     MessageUpdater updater(q->getName(), session);
@@ -201,7 +201,7 @@ void UpdateClient::updateBinding(const std::string& queue, const QueueBinding& b
 }
 
 void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& updateConnection) {
-    QPID_LOG(debug, updaterId << " updateing connection " << *updateConnection);
+    QPID_LOG(debug, updaterId << " updating connection " << *updateConnection);
     shadowConnection = catchUpConnection();
 
     broker::Connection& bc = updateConnection->getBrokerConnection();
@@ -216,7 +216,7 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
 }
 
 void UpdateClient::updateSession(broker::SessionHandler& sh) {
-    QPID_LOG(debug, updaterId << " updateing session " << &sh.getConnection()  << "[" << sh.getChannel() << "] = "
+    QPID_LOG(debug, updaterId << " updating session " << &sh.getConnection()  << "[" << sh.getChannel() << "] = "
              << sh.getSession()->getId());
     broker::SessionState* ss = sh.getSession();
     if (!ss) return;            // no session.
@@ -230,10 +230,10 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     // Re-create session state on remote connection.
 
     // Update consumers. For reasons unknown, boost::bind does not work here with boost 1.33.
-    QPID_LOG(debug, updaterId << " updateing consumers.");
+    QPID_LOG(debug, updaterId << " updating consumers.");
     ss->getSemanticState().eachConsumer(std::bind1st(std::mem_fun(&UpdateClient::updateConsumer),this));
 
-    QPID_LOG(debug, updaterId << " updateing unacknowledged messages.");
+    QPID_LOG(debug, updaterId << " updating unacknowledged messages.");
     broker::DeliveryRecords& drs = ss->getSemanticState().getUnacked();
     std::for_each(drs.begin(), drs.end(),  boost::bind(&UpdateClient::updateUnacked, this, _1));
 
@@ -267,7 +267,7 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
 }
 
 void UpdateClient::updateConsumer(const broker::SemanticState::ConsumerImpl* ci) {
-    QPID_LOG(debug, updaterId << " updateing consumer " << ci->getName() << " on " << shadowSession.getId());
+    QPID_LOG(debug, updaterId << " updating consumer " << ci->getName() << " on " << shadowSession.getId());
     using namespace message;
     shadowSession.messageSubscribe(
         arg::queue       = ci->getQueue()->getName(),
@@ -354,7 +354,7 @@ class TxOpUpdater : public broker::TxOpConstVisitor, public MessageUpdater {
 };
     
 void UpdateClient::updateTxState(broker::SemanticState& s) {
-    QPID_LOG(debug, updaterId << " updateing TX transaction state.");
+    QPID_LOG(debug, updaterId << " updating TX transaction state.");
     ClusterConnectionProxy proxy(shadowSession);
     proxy.accumulatedAck(s.getAccumulatedAck());
     broker::TxBuffer::shared_ptr txBuffer = s.getTxBuffer();
