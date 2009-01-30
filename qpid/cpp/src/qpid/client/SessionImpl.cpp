@@ -322,6 +322,11 @@ Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
     return f;
 }
 
+void SessionImpl::sendRawFrame(AMQFrame& frame) {
+    Acquire a(sendLock);
+    handleOut(frame);
+}
+
 Future SessionImpl::sendCommand(const AMQBody& command, const MethodContent* content)
 {
     Acquire a(sendLock);
@@ -765,6 +770,11 @@ void SessionImpl::setWeakPtr(bool weak) {
         connectionShared.reset();   // Only keep weak pointer
     else
         connectionShared = connectionWeak.lock();
+}
+
+shared_ptr<ConnectionImpl> SessionImpl::getConnection()
+{
+    return connectionWeak.lock();
 }
 
 }}

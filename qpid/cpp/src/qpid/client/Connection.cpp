@@ -119,6 +119,13 @@ void Connection::open(const ConnectionSettings& settings)
         impl->registerFailureCallback ( failureCallback );
 }
 
+const ConnectionSettings& Connection::getNegotiatedSettings()
+{
+    if (!isOpen())
+        throw Exception(QPID_MSG("Connection is not open."));
+     return impl->getNegotiatedSettings();
+}
+
 Session Connection::newSession(const std::string& name, uint32_t timeout) {
     if (!isOpen())
         throw Exception(QPID_MSG("Connection has not yet been opened"));

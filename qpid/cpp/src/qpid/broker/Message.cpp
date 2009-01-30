@@ -197,30 +197,39 @@ void Message::destroy()
     }
 }
 
-void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const
+bool Message::getContentFrame(const Queue& queue, AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const
 {
     if (isContentReleased()) {
-        //load content from store in chunks of maxContentSize
-        uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
         intrusive_ptr<const PersistableMessage> pmsg(this);
         
         bool done = false;
-        for (uint64_t offset = 0; !done; offset += maxContentSize)
+        string& data = frame.castBody<AMQContentBody>()->getData();
+        store->loadContent(queue, pmsg, data, offset, maxContentSize);
+        done = data.size() < maxContentSize;
+        frame.setBof(false);
+        frame.setEof(true);
+        QPID_LOG(debug, "loaded frame" << frame);
+        if (offset > 0) {
+            frame.setBos(false);
+        }
+        if (!done) {
+            frame.setEos(false);
+        } else return false;
+        return true;
+    }
+    else return false;
+}
+
+void Message::sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const
+{
+    if (isContentReleased()) {
+
+        uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
+        bool morecontent = true;
+        for (uint64_t offset = 0; morecontent; offset += maxContentSize)
         {            
             AMQFrame frame((AMQContentBody()));
-            string& data = frame.castBody<AMQContentBody>()->getData();
-
-            store->loadContent(queue, pmsg, data, offset, maxContentSize);
-            done = data.size() < maxContentSize;
-            frame.setBof(false);
-            frame.setEof(true);
-            if (offset > 0) {
-                frame.setBos(false);
-            }
-            if (!done) {
-                frame.setEos(false);
-            }
-            QPID_LOG(debug, "loaded frame for delivery: " << frame);
+            morecontent = getContentFrame(queue, frame, maxContentSize, offset);
             out.handle(frame);
         }
     } else {

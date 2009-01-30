@@ -131,7 +131,8 @@ public:
     void releaseContent(MessageStore* store);
     void destroy();
 
-    void sendContent(Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
+    bool getContentFrame(const Queue& queue, framing::AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const;
+    void sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
     void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize) const;
 
     bool isContentLoaded() const;
