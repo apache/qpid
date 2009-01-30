@@ -44,15 +44,19 @@ struct Args : public qpid::TestOptions {
     string queue;
     bool declare;
     bool summary;
+    bool print;
+    bool durable;
     
     Args() : count(1000), ack(0), queue("publish-consume"),
-             declare(false), summary(false)
+             declare(false), summary(false), print(false)
     {
         addOptions()
             ("count", optValue(count, "N"), "number of messages to publish")
             ("ack-frequency", optValue(ack, "N"), "ack every N messages (0 means use no-ack mode)")
             ("queue", optValue(queue, "<queue name>"), "queue to consume from")
             ("declare", optValue(declare), "declare the queue")
+            ("durable", optValue(durable), "declare the queue durable, use with declare")
+            ("print-data", optValue(print), "Print the recieved data at info level")
             ("s,summary", optValue(summary), "Print undecorated rate.");
     }
 };
@@ -73,7 +77,7 @@ struct Client
     void consume()
     {
         if (opts.declare)
-            session.queueDeclare(opts.queue);
+            session.queueDeclare(arg::queue=opts.queue, arg::durable=opts.durable);
         SubscriptionManager subs(session);
         LocalQueue lq;
         SubscriptionSettings settings;
@@ -85,6 +89,7 @@ struct Client
         for (size_t i = 0; i < opts.count; ++i) {
             msg=lq.pop();
             QPID_LOG(info, "Received: " << msg.getMessageProperties().getCorrelationId());
+            if (opts.print) QPID_LOG(info, "Data: " << msg.getData());
         }
         if (opts.ack != 0)
             sub.accept(sub.getUnaccepted()); // Cumulative ack for final batch.

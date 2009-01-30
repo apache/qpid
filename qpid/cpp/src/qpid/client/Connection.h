@@ -175,6 +175,11 @@ class Connection
     std::vector<Url> getKnownBrokers();
     void registerFailureCallback ( boost::function<void ()> fn );
 
+    /**
+     * Return the set of client negotiated settings
+     */
+    const ConnectionSettings& getNegotiatedSettings();
+
   friend class ConnectionAccess; ///<@internal
   friend class SessionBase_0_10; ///<@internal
 };
