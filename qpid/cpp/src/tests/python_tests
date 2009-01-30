@@ -26,7 +26,9 @@ QPID_PYTHON_DIR=${QPID_PYTHON_DIR:-`dirname $0`/../../../python}
 SPEC=${SPEC:-0-10-errata}
 FAILING=${FAILING:-cpp_failing_0-10.txt}
 
-test -d $QPID_PYTHON_DIR || { echo "WARNING: No python tests. $QPID_PYTHON_DIR not found."; exit 1; }
-cd $QPID_PYTHON_DIR
-./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || { echo "FAIL python tests for $SPEC"; exit 1; }
-
+if test -d $QPID_PYTHON_DIR; then 
+    cd $QPID_PYTHON_DIR
+    ./run-tests --skip-self-test -v -s $SPEC -I $FAILING -b localhost:$QPID_PORT $PYTHON_TESTS || { echo "FAIL python tests for $SPEC"; exit 1; }
+else
+    echo "WARNING: No python tests. $QPID_PYTHON_DIR not found."
+fi
