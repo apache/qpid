@@ -87,6 +87,7 @@ public:
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
     Future send(const framing::AMQBody& command, const framing::FrameSet& content);
+    void sendRawFrame(framing::AMQFrame& frame);
 
     Demux& getDemux();
     void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
@@ -113,6 +114,11 @@ public:
      * Used for sessions created by the ConnectionImpl itself.
      */
     void setWeakPtr(bool weak=true);
+
+    /** 
+     * get the Connection associated with this connection
+     */
+    shared_ptr<ConnectionImpl> getConnection();
 
 private:
     enum State {
@@ -204,7 +210,6 @@ private:
     const uint64_t maxFrameSize;
     const SessionId id;
 
-    shared_ptr<ConnectionImpl> connection();
     shared_ptr<ConnectionImpl> connectionShared;
     boost::weak_ptr<ConnectionImpl> connectionWeak;
     bool weakPtr;
