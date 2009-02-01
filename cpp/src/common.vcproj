@@ -411,16 +411,16 @@
 				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.cpp">
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterDumpOfferBody.cpp">
-			</File>
-			<File
-				RelativePath="gen\qpid\framing\ClusterDumpRequestBody.cpp">
-			</File>
-			<File
 				RelativePath="gen\qpid\framing\ClusterReadyBody.cpp">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterShutdownBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterUpdateOfferBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterUpdateRequestBody.cpp">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ConnectionCloseBody.cpp">
@@ -1111,16 +1111,16 @@
 				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.h">
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterDumpOfferBody.h">
-			</File>
-			<File
-				RelativePath="gen\qpid\framing\ClusterDumpRequestBody.h">
-			</File>
-			<File
 				RelativePath="gen\qpid\framing\ClusterReadyBody.h">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterShutdownBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterUpdateOfferBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterUpdateRequestBody.h">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ConnectionCloseBody.h">
