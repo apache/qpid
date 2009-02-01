@@ -1187,6 +1187,9 @@
 				RelativePath="qpid\broker\QueueRegistry.h">
 			</File>
 			<File
+				RelativePath="qpid\broker\RateFlowcontrol.h">
+			</File>
+			<File
 				RelativePath="qpid\broker\RateTracker.h">
 			</File>
 			<File
@@ -1281,6 +1284,9 @@
 			</File>
 			<File
 				RelativePath="qpid\management\Args.h">
+			</File>
+			<File
+				RelativePath="qpid\management\IdAllocator.h">
 			</File>
 			<File
 				RelativePath="qpid\management\Manageable.h">
