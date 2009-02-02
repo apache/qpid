@@ -16,9 +16,9 @@ mgmt_specs=$(specdir)\management-schema.xml \
            .\qpid\acl\management-schema.xml \
            .\qpid\cluster\management-schema.xml
 
-all: rubygen.mk gen\generate_MaxMethodBodySize_h.cpp managementgen.mk
+all: rubygen.mk managementgen.mk
 
-rubygen.mk gen\generate_MaxMethodBodySize_h.cpp: $(specs)
+rubygen.mk: $(specs)
   ruby -I $(rgen_dir) $(rgen_dir)\generate gen $(specs) all rubygen.mk
 
 # Management code generation... uses Python
