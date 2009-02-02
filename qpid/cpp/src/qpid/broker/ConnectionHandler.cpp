@@ -45,6 +45,8 @@ const std::string PLAIN     = "PLAIN";
 const std::string en_US     = "en_US";
 const std::string QPID_FED_LINK = "qpid.fed_link";
 const std::string QPID_FED_TAG  = "qpid.federation_tag";
+const std::string SESSION_FLOW_CONTROL("qpid.session_flow");
+const int SESSION_FLOW_CONTROL_VER = 1;
 }
 
 void ConnectionHandler::close(connection::CloseCode code, const string& text)
@@ -138,6 +140,9 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
             return;
         }
         QPID_LOG(info, "Connection is a federation link");
+    }
+    if ( clientProperties.getAsInt(SESSION_FLOW_CONTROL) == SESSION_FLOW_CONTROL_VER ) {
+        connection.setClientThrottling();
     }
 }
 

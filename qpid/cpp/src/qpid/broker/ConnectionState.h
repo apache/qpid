@@ -47,7 +47,8 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         heartbeat(0),
         heartbeatmax(120),
         stagingThreshold(broker.getStagingThreshold()),
-        federationLink(true)
+        federationLink(true),
+        clientSupportsThrottling(false)
         {}
 
     virtual ~ConnectionState () {}
@@ -73,6 +74,9 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setFederationPeerTag(const string& tag) { federationPeerTag = string(tag); }
     const string& getFederationPeerTag() const { return federationPeerTag; }
     std::vector<Url>& getKnownHosts() { return knownHosts; }
+    
+    void setClientThrottling() { clientSupportsThrottling = true; }
+    bool getClientThrottling() const { return clientSupportsThrottling; }
 
     Broker& getBroker() { return broker; }
 
@@ -98,6 +102,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     bool federationLink;
     string federationPeerTag;
     std::vector<Url> knownHosts;
+    bool clientSupportsThrottling;
 };
 
 }}

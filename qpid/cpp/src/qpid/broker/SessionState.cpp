@@ -77,8 +77,12 @@ SessionState::SessionState(
         }
     }
     uint32_t maxRate = broker.getOptions().maxSessionRate;
-    if (maxRate) {
-        rateFlowcontrol = new RateFlowcontrol(maxRate);
+    if (maxRate) { 
+        if (handler->getConnection().getClientThrottling()) {
+            rateFlowcontrol = new RateFlowcontrol(maxRate);
+        } else {
+            QPID_LOG(warning, getId() << ": Unable to flow control client - client doesn't support");
+        }
     }
     attach(h);
 }

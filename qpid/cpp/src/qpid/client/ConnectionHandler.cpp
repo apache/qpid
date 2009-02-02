@@ -51,6 +51,8 @@ const std::string INVALID_STATE_TUNE("tune received in invalid state");
 const std::string INVALID_STATE_OPEN_OK("open-ok received in invalid state");
 const std::string INVALID_STATE_CLOSE_OK("close-ok received in invalid state");
 
+const std::string SESSION_FLOW_CONTROL("qpid.session_flow");
+const int SESSION_FLOW_CONTROL_VER = 1;
 }
 
 CloseCode ConnectionHandler::convert(uint16_t replyCode)
@@ -76,6 +78,8 @@ ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersio
 
     FINISHED.insert(FAILED);
     FINISHED.insert(CLOSED);
+    
+    properties.setInt(SESSION_FLOW_CONTROL, SESSION_FLOW_CONTROL_VER);
 }
 
 void ConnectionHandler::incoming(AMQFrame& frame)
