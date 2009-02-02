@@ -968,9 +968,10 @@ class ObjectId:
     return (self.first, self.second).__eq__(other)
 
 class Object(object):
-  """ """
+  """ This class defines a 'proxy' object representing a real managed object on an agent.
+      Actions taken on this proxy are remotely affected on the real managed object.
+  """
   def __init__(self, session, broker, schema, codec, prop, stat):
-    """ """
     self._session = session
     self._broker  = broker
     self._schema  = schema
@@ -1015,6 +1016,10 @@ class Object(object):
     """ Return the current, creation, and deletion times for this object. """
     return self._currentTime, self._createTime, self._deleteTime
 
+  def isDeleted(self):
+    """ Return True iff this object has been deleted. """
+    return self._deleteTime != 0
+
   def getIndex(self):
     """ Return a string describing this object's primary key. """
     result = u""
@@ -1030,9 +1035,11 @@ class Object(object):
     return result
 
   def getProperties(self):
+    """ Return a list of object properties """
     return self._properties
 
   def getStatistics(self):
+    """ Return a list of object statistics """
     return self._statistics
 
   def mergeUpdate(self, newer):
@@ -1040,9 +1047,17 @@ class Object(object):
     if self._objectId != newer._objectId:
       raise Exception("Objects with different object-ids")
     if len(newer.getProperties()) > 0:
-      self.properties = newer.getProperties()
+      self._properties = newer.getProperties()
     if len(newer.getStatistics()) > 0:
-      self.statistics = newer.getStatistics()
+      self._statistics = newer.getStatistics()
+
+  def update(self):
+    """ Contact the agent and retrieve the lastest property and statistic values for this object. """
+    obj = self._session.getObjects(_objectId = self._objectId, _broker=self._broker)
+    if obj:
+      self.mergeUpdate(obj[0])
+    else:
+      raise Exception("Underlying object no longer exists")
 
   def __repr__(self):
     key = self.getClassKey()
