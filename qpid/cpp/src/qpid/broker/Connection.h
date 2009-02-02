@@ -115,7 +115,6 @@ class Connection : public sys::ConnectionInputHandler,
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     ChannelMap channels;
-    //framing::AMQP_ClientProxy::Connection* client;
     ConnectionHandler adapter;
     const bool isLink;
     bool mgmtClosing;
