@@ -27,7 +27,6 @@
 #include "unit_test.h"
 #include <list>
 
-using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
@@ -37,7 +36,7 @@ class MockMessageStore : public NullMessageStore
     enum Op {STAGE=1, APPEND=2};
 
     uint64_t id;
-    intrusive_ptr<PersistableMessage> expectedMsg;        
+    boost::intrusive_ptr<PersistableMessage> expectedMsg;        
     string expectedData;
     std::list<Op> ops;
         
@@ -63,18 +62,18 @@ class MockMessageStore : public NullMessageStore
         ops.push_back(APPEND); 
     }
 
-    void stage(const intrusive_ptr<PersistableMessage>& msg)
+    void stage(const boost::intrusive_ptr<PersistableMessage>& msg)
     {
         checkExpectation(STAGE);
         BOOST_CHECK_EQUAL(expectedMsg, msg);
         msg->setPersistenceId(++id);
     }
 
-    void appendContent(const intrusive_ptr<const PersistableMessage>& msg,
+    void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
                        const string& data)
     {
         checkExpectation(APPEND);
-        BOOST_CHECK_EQUAL(static_pointer_cast<const PersistableMessage>(expectedMsg), msg);
+        BOOST_CHECK_EQUAL(boost::static_pointer_cast<const PersistableMessage>(expectedMsg), msg);
         BOOST_CHECK_EQUAL(expectedData, data);            
     }
 
