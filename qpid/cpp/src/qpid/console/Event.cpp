@@ -52,14 +52,14 @@ const ClassKey& Event::getClassKey() const
 string Event::getSeverityString() const
 {
     switch (severity) {
-    case EMERGENCY : return string("EMER");
-    case ALERT     : return string("ALERT");
-    case CRITICAL  : return string("CRIT");
-    case ERROR     : return string("ERROR");
-    case WARNING   : return string("WARN");
-    case NOTICE    : return string("NOTIC");
-    case INFO      : return string("INFO");
-    case DEBUG     : return string("DEBUG");
+    case SEV_EMERGENCY : return string("EMER");
+    case SEV_ALERT     : return string("ALERT");
+    case SEV_CRITICAL  : return string("CRIT");
+    case SEV_ERROR     : return string("ERROR");
+    case SEV_WARNING   : return string("WARN");
+    case SEV_NOTICE    : return string("NOTIC");
+    case SEV_INFO      : return string("INFO");
+    case SEV_DEBUG     : return string("DEBUG");
     }
     return string("<UNKNOWN>");
 }
