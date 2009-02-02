@@ -21,7 +21,6 @@
 #include <iostream>
 #include "qpid/framing/Array.h"
 #include "qpid/client/QueueOptions.h"
-#include <alloca.h>
 
 #include "unit_test.h"
 
