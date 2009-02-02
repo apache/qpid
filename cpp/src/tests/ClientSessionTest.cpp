@@ -25,6 +25,7 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/sys/Time.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/TransferContent.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -223,7 +224,7 @@ struct DelayedTransfer : sys::Runnable
 
     void run()
     {
-        sleep(1);
+        qpid::sys::sleep(1);
         fixture.session.messageTransfer(arg::content=Message("foo2", "getq"));
     }
 };
@@ -275,7 +276,7 @@ QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     }
 
     BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 10u);
-    sleep(2);
+    qpid::sys::sleep(2);
     BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 5u);
 }
 
@@ -289,7 +290,7 @@ QPID_AUTO_TEST_CASE(testExpirationOnPop) {
         fix.session.messageTransfer(arg::content=m);
     }
 
-    ::usleep(300* 1000);
+    qpid::sys::usleep(300* 1000);
 
     for (uint i = 0; i < 10; i++) {        
         if (i % 2) continue;
