@@ -42,8 +42,8 @@ namespace console {
     class Event {
     public:
         typedef enum {
-        EMERGENCY = 0, ALERT = 1, CRITICAL = 2, ERROR = 3,  WARNING = 4,
-        NOTICE = 5, INFO = 6, DEBUG = 7
+        SEV_EMERGENCY = 0, SEV_ALERT = 1, SEV_CRITICAL = 2, SEV_ERROR = 3,
+        SEV_WARNING = 4, SEV_NOTICE = 5, SEV_INFO = 6, SEV_DEBUG = 7
         } Severity;
 
         Event(Broker* broker, SchemaClass* schemaClass, framing::Buffer& buffer);
