@@ -40,7 +40,6 @@
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Monitor.h"
-#include <unistd.h>
 #include "qpid/sys/Time.h"
 #include <cstdlib>
 #include <iostream>
@@ -142,7 +141,7 @@ int main(int argc, char** argv) {
             int64_t min(0);
             int64_t sum(0);
             for(int i = 0; i < batchSize; i++){
-                if(i > 0 && args.delay) sleep(args.delay);
+                if(i > 0 && args.delay) qpid::sys::sleep(args.delay);
                 int64_t msecs =
                     publisher.publish(args.messages,
                                       args.subscribers,
