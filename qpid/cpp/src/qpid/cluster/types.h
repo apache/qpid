@@ -24,11 +24,10 @@
 
 #include "config.h"
 #include "qpid/Url.h"
-
+#include <boost/intrusive_ptr.hpp>
 #include <utility>
 #include <iosfwd>
 #include <string>
-
 #include <stdint.h>
 
 extern "C" {
@@ -45,6 +44,7 @@ namespace qpid {
 namespace cluster {
 
 class Connection;
+typedef boost::intrusive_ptr<Connection> ConnectionPtr;
 
 /** Types of cluster event. */
 enum EventType { DATA, CONTROL };

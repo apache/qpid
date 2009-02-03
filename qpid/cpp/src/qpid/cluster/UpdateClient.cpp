@@ -117,7 +117,10 @@ void UpdateClient::update() {
     session.close();
 
     std::for_each(connections.begin(), connections.end(), boost::bind(&UpdateClient::updateConnection, this, _1));
-    AMQFrame frame(map.asMethodBody());
+
+    ClusterConnectionMembershipBody membership;
+    map.toMethodBody(membership);
+    AMQFrame frame(membership);
     client::ConnectionAccess::getImpl(connection)->handle(frame);
     connection.close();
     QPID_LOG(debug,  updaterId << " updated state to " << updateeId << " at " << updateeUrl);

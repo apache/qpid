@@ -36,7 +36,7 @@
       <field name="cluster-id" type="uuid"/>
     </control>
 
-Min     <control name="ready" code="0x10" label="New member is ready.">
+    <control name="ready" code="0x10" label="New member is ready.">
       <field name="url" type="str16"/>
     </control>
 
@@ -45,6 +45,7 @@ Min     <control name="ready" code="0x10" label="New member is ready.">
     </control>
     
     <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
+
   </class>
 
   <!-- TODO aconway 2008-09-10: support for un-attached connections. -->
@@ -53,8 +54,7 @@ Min     <control name="ready" code="0x10" label="New member is ready.">
 
   <class name="cluster-connection" code="0x81" label="Qpid clustering extensions.">
 
-    <control name="deliver-close" code="0x2">
-    </control>
+    <control name="deliver-close" code="0x2"/>
 
     <control name="deliver-do-output" code="0x3">
       <field name="bytes" type="uint32"/>

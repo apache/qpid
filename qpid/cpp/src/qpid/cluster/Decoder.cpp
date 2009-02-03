@@ -18,32 +18,29 @@
  * under the License.
  *
  */
-#include "Quorum_cman.h"
-#include "qpid/log/Statement.h"
-#include "qpid/Options.h"
-#include "qpid/sys/Time.h"
+
+#include "Decoder.h"
+#include "Event.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/ptr_map.h"
 
 namespace qpid {
 namespace cluster {
 
-Quorum::Quorum() : enable(false), cman(0) {}
+using namespace framing;
 
-Quorum::~Quorum() { if (cman) cman_finish(cman); }
+Decoder::Decoder(const Handler& h) : handler(h) {}
 
-void Quorum::init() {
-    QPID_LOG(info, "Waiting for cluster quorum");
-    enable = true;
-    cman = cman_init(0);
-    if (cman == 0) throw ErrnoException("Can't connect to cman service");
-    // TODO aconway 2008-11-13: configurable max wait.
-    for (int retry = 0;  !cman_is_quorate(cman) && retry < 30; retry++) {
-        QPID_LOG(info, "Waiting for cluster quorum: " << sys::strError(errno));
-        sys::sleep(1);
-    }
-    if (!cman_is_quorate(cman))
-        throw ErrnoException("Timed out waiting for cluster quorum.");
+void Decoder::decode(const EventHeader& eh, const void* data) {
+    ConnectionId id = eh.getConnectionId();
+    std::pair<Map::iterator, bool> ib = map.insert(id, new ConnectionDecoder(handler));
+    ptr_map_ptr(ib.first)->decode(eh, data);
 }
 
-bool Quorum::isQuorate() { return enable ? cman_is_quorate(cman) : true; }
+void Decoder::erase(const ConnectionId& c) {
+    Map::iterator i = map.find(c);
+    if (i != map.end())     // FIXME aconway 2009-02-03: 
+        map.erase(i);
+}
 
 }} // namespace qpid::cluster

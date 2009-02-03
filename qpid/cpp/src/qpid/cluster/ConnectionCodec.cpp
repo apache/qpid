@@ -59,8 +59,6 @@ ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id,
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);
-    if (!catchUp)               // Don't put catchUp connections in the cluster map.
-        cluster.insert(interceptor);
 }
 
 ConnectionCodec::~ConnectionCodec() {}

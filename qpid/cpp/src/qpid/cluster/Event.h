@@ -49,7 +49,12 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     EventType getType() const { return type; }
     ConnectionId getConnectionId() const { return connectionId; }
     MemberId getMemberId() const { return connectionId.getMember(); }
+
+    /** Size of payload data, excluding header. */
     size_t getSize() const { return size; }
+    /** Size of header + payload. */ 
+    size_t getStoreSize() { return size + HEADER_SIZE; }
+
     uint64_t getSequence() const { return sequence; }
     void setSequence(uint64_t n) { sequence = n; }
 
@@ -88,7 +93,6 @@ class Event : public EventHeader {
     // Store including header
     char* getStore() { return store; }
     const char* getStore() const { return store; }
-    size_t getStoreSize() { return size + HEADER_SIZE; }
     
     operator framing::Buffer() const;
 
