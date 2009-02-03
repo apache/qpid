@@ -99,8 +99,8 @@ UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, con
 
 UpdateClient::~UpdateClient() {}
 
-// Illegal exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
-static const char UPDATE_CHARS[] = "\000qpid-update";
+// Reserved exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
+static const char UPDATE_CHARS[] = "qpid.qpid-update";
 const std::string UpdateClient::UPDATE(UPDATE_CHARS, sizeof(UPDATE_CHARS)); 
 
 void UpdateClient::update() {
