@@ -71,7 +71,7 @@ class ClusterMap {
     MemberId firstJoiner() const;
 
     /** Convert map contents to a cluster control body. */
-    framing::ClusterConnectionMembershipBody asMethodBody() const;
+    void toMethodBody(framing::ClusterConnectionMembershipBody&) const;
 
     size_t aliveCount() const { return alive.size(); }
     size_t memberCount() const { return members.size(); }

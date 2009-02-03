@@ -24,6 +24,7 @@
 #include "types.h"
 #include "Connection.h"
 #include "ClusterMap.h"
+#include "NoOpConnectionOutputHandler.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/intrusive_ptr.hpp>
 #include <map>
@@ -31,61 +32,48 @@
 namespace qpid {
 namespace cluster {
 
+class Cluster;
+
 /**
- * Thread safe map of connections.
+ * Thread safe map of connections. The map is used in:
+ * - deliver thread to look connections and create new shadow connections.
+ * - local catch-up connection threads to add a caught-up shadow connections.
+ * - local client connection threads when local connections are created.
  */
-class ConnectionMap
-{
+class ConnectionMap {
   public:
     typedef boost::intrusive_ptr<cluster::Connection> ConnectionPtr;
     typedef std::vector<ConnectionPtr> Vector;
     
-    void insert(ConnectionId id, ConnectionPtr p) {
-        ScopedLock l(lock);
-        map.insert(Map::value_type(id,p));
-    }
+    ConnectionMap(Cluster& c) : cluster(c) {}
+    
+    /** Insert a local connection or a caught up shadow connection.
+     * Called in local connection thread.
+     */
+    void insert(ConnectionPtr p); 
 
-    void erase(ConnectionId id) {
-        ScopedLock l(lock);
-        map.erase(id);
-    }
+    /** Erase a closed connection. Called in deliver thread. */
+    void erase(const ConnectionId& id);
 
-    ConnectionPtr find(ConnectionId id) const {
-        ScopedLock l(lock);
-        Map::const_iterator i = map.find(id);
-        return i == map.end() ? ConnectionPtr() : i->second;
-    }
+    /** Get an existing connection. */ 
+    ConnectionPtr get(const ConnectionId& id);
 
-    Vector values() const {
-        Vector result(map.size());
-        std::transform(map.begin(), map.end(), result.begin(),
-                       boost::bind(&Map::value_type::second, _1));
-        return result;
-    }
+    /** Get connections for sending an update. */
+    Vector values() const;
 
-    void update(MemberId myId, const ClusterMap& cluster) {
-        for (Map::iterator i = map.begin(); i != map.end(); ) {
-            MemberId member = i->first.getMember();
-            if (member != myId && !cluster.isMember(member)) { 
-                i->second->left();
-                map.erase(i++);
-            } else {
-                i++;
-            }
-        }
-    }
+    /** Remove connections who's members are no longer in the cluster. Deliver thread. */
+    void update(MemberId myId, const ClusterMap& cluster); 
 
-    void clear() {
-        ScopedLock l(lock);
-        map.clear();
-    }
+    
+    void clear();
 
-    size_t size() const { return map.size(); }
+    size_t size() const;
+
   private:
     typedef std::map<ConnectionId, ConnectionPtr> Map;
-    typedef sys::Mutex::ScopedLock ScopedLock;
-    
-    mutable sys::Mutex lock;
+
+    Cluster& cluster;
+    NoOpConnectionOutputHandler shadowOut;
     Map map;
 };
 

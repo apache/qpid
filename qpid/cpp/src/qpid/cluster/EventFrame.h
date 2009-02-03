@@ -32,21 +32,20 @@
 namespace qpid {
 namespace cluster {
 
-class Connection;
-
 /**
  * A frame decoded from an Event.
  */
 struct EventFrame
 {
+  public:
     EventFrame();
 
-    EventFrame(const boost::intrusive_ptr<Connection>& c, const Event& e,
-               const framing::AMQFrame& f, int rc=0);
+    EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc=0);
 
-    bool isCluster() const { return !connection; }
-    bool isConnection() const { return connection; }
+    bool isCluster() const { return !connectionId.getPointer(); }
+    bool isConnection() const { return connectionId.getPointer(); }
     bool isLastInEvent() const { return readCredit; }
+
 
     // True if this frame follows immediately after frame e. 
     bool follows(const EventFrame& e) const {
@@ -55,8 +54,7 @@ struct EventFrame
 
     bool operator<(const EventFrame& e) const { return sequence < e.sequence; }
     
-    boost::intrusive_ptr<Connection> connection;
-    MemberId member;
+    ConnectionId connectionId;
     framing::AMQFrame frame;   
     uint64_t sequence;
     int readCredit;             // last frame in an event, give credit when processed.

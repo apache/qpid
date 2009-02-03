@@ -219,7 +219,7 @@ QPID_AUTO_TEST_CASE(testSequenceOptions) {
     ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
     FieldTable args;
-    args.setInt("qpid.msg_sequence", 1); // FIXME aconway 2008-11-11: works with "qpid.sequence_counter"??
+    args.setInt("qpid.msg_sequence", 1); 
     c0.session.queueDeclare(arg::queue="q");
     c0.session.exchangeDeclare(arg::exchange="ex", arg::type="direct", arg::arguments=args);
     c0.session.exchangeBind(arg::exchange="ex", arg::queue="q", arg::bindingKey="k");
@@ -452,7 +452,7 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     BOOST_CHECK_EQUAL(kb0, kb2);
 }
 
-QPID_AUTO_TEST_CASE(UpdateConsumers) {
+QPID_AUTO_TEST_CASE(testUpdateConsumers) {
     ClusterFixture cluster(1, 1);  
 
     Client c0(cluster[0], "c0"); 

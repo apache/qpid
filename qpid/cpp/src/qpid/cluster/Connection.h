@@ -72,8 +72,10 @@ class Connection :
     ConnectionId getId() const { return self; }
     broker::Connection& getBrokerConnection() { return connection; }
 
-    /** True for connections from direct clients of local broker */
+    /** Local connections may be clients or catch-up connections */
     bool isLocal() const;
+
+    bool isLocalClient() const { return isLocal() && !isCatchUp(); }
 
     /** True for connections that are shadowing remote broker connections */
     bool isShadow() const;
@@ -101,7 +103,6 @@ class Connection :
     size_t decode(const char* buffer, size_t size);
 
     // Called for data delivered from the cluster.
-    void deliveredEvent(const Event&, PollableFrameQueue&);
     void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled);
@@ -166,7 +167,6 @@ class Connection :
     WriteEstimate writeEstimate;
     OutputInterceptor output;
     framing::FrameDecoder localDecoder;
-    framing::FrameDecoder mcastDecoder;
     broker::Connection connection;
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;

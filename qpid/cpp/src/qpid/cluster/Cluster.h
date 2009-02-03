@@ -29,9 +29,10 @@
 #include "NoOpConnectionOutputHandler.h"
 #include "PollerDispatch.h"
 #include "Quorum.h"
+#include "Decoder.h"
+#include "PollableQueue.h"
 
 #include "qpid/broker/Broker.h"
-#include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/Url.h"
@@ -73,8 +74,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     virtual ~Cluster();
 
     // Connection map - called in connection threads.
-    void insert(const ConnectionPtr&); 
-    void erase(ConnectionId);       
+    void addLocalConnection(const ConnectionPtr&); 
+    void addShadowConnection(const ConnectionPtr&); 
+    void erase(const ConnectionId&);       
     
     // URLs of current cluster members - called in connection threads.
     std::vector<std::string> getIds() const;
@@ -100,8 +102,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
-    typedef sys::PollableQueue<Event> PollableEventQueue;
-    typedef sys::PollableQueue<EventFrame> PollableFrameQueue;
+    typedef PollableQueue<Event> PollableEventQueue;
+    typedef PollableQueue<EventFrame> PollableFrameQueue;
 
     // NB: The final Lock& parameter on functions below is used to mark functions
     // that should only be called by a function that already holds the lock.
@@ -132,6 +134,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Helper, called in deliver thread.
     void updateStart(const MemberId& updatee, const Url& url, Lock&);
 
+    void setReady(Lock&);
+
     void deliver( // CPG deliver callback. 
         cpg_handle_t /*handle*/,
         struct cpg_name *group,
@@ -140,7 +144,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         void* /*msg*/,
         int /*msg_len*/);
 
-    void deliver(const Event& e, Lock&); 
+    void deliver(const Event&);
     
     void configChange( // CPG config change callback.
         cpg_handle_t /*handle*/,
@@ -149,8 +153,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         struct cpg_address */*left*/, int /*nLeft*/,
         struct cpg_address */*joined*/, int /*nJoined*/
     );
-
-    boost::intrusive_ptr<cluster::Connection> getConnection(const ConnectionId&);
 
     virtual qpid::management::ManagementObject* GetManagementObject() const;
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
@@ -193,7 +195,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
 
-    // Remaining members are protected by lock.
+    // Called only from event delivery thread
+    Decoder decoder;
+    
+    // Remaining members are protected by lock
     mutable sys::Monitor lock;
 
     //    Local cluster state, cluster map

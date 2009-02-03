@@ -26,21 +26,14 @@ namespace cluster {
 
 EventFrame::EventFrame() : sequence(0) {}
 
-EventFrame::EventFrame(
-    const boost::intrusive_ptr<Connection>& c, const Event& e,
-    const framing::AMQFrame& f, int rc
-) : connection(c), member(e.getMemberId()), frame(f),
-    sequence(e.getSequence()), readCredit(rc)
+EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
+    : connectionId(e.getConnectionId()), frame(f), sequence(e.getSequence()), readCredit(rc)
 {
     QPID_LATENCY_INIT(frame);
 }
 
 std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    if (e.connection)
-        o << e.connection->getId();
-    else
-        o << e.member;
-    return o  << "/" << e.sequence << " " << e.frame << " rc=" << e.readCredit;
+    return o << e.connectionId << "/" << e.sequence << " " << e.frame << " rc=" << e.readCredit;
 }
 
 }} // namespace qpid::cluster
