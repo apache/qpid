@@ -15,6 +15,12 @@ autom4te.cache
 qpid/cpp/examples/direct/declare_queues
 qpid/cpp/examples/direct/direct_producer
 qpid/cpp/examples/direct/listener
+qpid/cpp/examples/failover/declare_queues
+qpid/cpp/examples/failover/replaying_sender
+qpid/cpp/examples/failover/resuming_receiver
+qpid/cpp/examples/qmf-console/console
+qpid/cpp/examples/qmf-console/ping
+qpid/cpp/examples/qmf-console/printevents
 qpid/cpp/examples/fanout/fanout_producer
 qpid/cpp/examples/fanout/listener
 qpid/cpp/examples/pub-sub/topic_listener
@@ -32,6 +38,9 @@ qpid/cpp/src/tests/topic_listener
 qpid/cpp/src/tests/topic_publisher
 qpid/cpp/src/tests/txtest
 qpid/cpp/src/tests/unit_test
+qpid/cpp/src/boost
+qpid/cpp/src/generate_MaxMethodBodySize_h
+qpid/cpp/src/stamp-h1
 aclocal.m4
 developer.doxygen
 user.doxygen
@@ -57,6 +66,7 @@ release
 .settings
 generated/
 target
+qpid/java/lib/cobertura/
 # Intellij Project files
 *.iml
 *.ipr
