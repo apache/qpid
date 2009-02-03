@@ -18,32 +18,32 @@
  * under the License.
  *
  */
-#include "Quorum_cman.h"
-#include "qpid/log/Statement.h"
-#include "qpid/Options.h"
-#include "qpid/sys/Time.h"
+
+#include "ConnectionDecoder.h"
+#include "EventFrame.h"
 
 namespace qpid {
 namespace cluster {
 
-Quorum::Quorum() : enable(false), cman(0) {}
+using namespace framing;
 
-Quorum::~Quorum() { if (cman) cman_finish(cman); }
+ConnectionDecoder::ConnectionDecoder(const Handler& h) : handler(h), readCredit(0) {}
 
-void Quorum::init() {
-    QPID_LOG(info, "Waiting for cluster quorum");
-    enable = true;
-    cman = cman_init(0);
-    if (cman == 0) throw ErrnoException("Can't connect to cman service");
-    // TODO aconway 2008-11-13: configurable max wait.
-    for (int retry = 0;  !cman_is_quorate(cman) && retry < 30; retry++) {
-        QPID_LOG(info, "Waiting for cluster quorum: " << sys::strError(errno));
-        sys::sleep(1);
+void ConnectionDecoder::decode(const EventHeader& eh, const void* data) {
+    assert(eh.getType() == DATA); // Only handle connection data events.
+    const char* cp = static_cast<const char*>(data);
+    Buffer buf(const_cast<char*>(cp), eh.getSize());
+    // Set read credit on the last frame in the event.
+    ++readCredit;               // One credit per event = connection read buffer.
+    if (decoder.decode(buf)) { // Decoded a frame
+        AMQFrame frame(decoder.frame);
+        while (decoder.decode(buf)) {
+            handler(EventFrame(eh, frame));
+            frame = decoder.frame;
+        }
+        handler(EventFrame(eh, frame, readCredit));
+        readCredit = 0;         // Reset credit for next event.
     }
-    if (!cman_is_quorate(cman))
-        throw ErrnoException("Timed out waiting for cluster quorum.");
 }
-
-bool Quorum::isQuorate() { return enable ? cman_is_quorate(cman) : true; }
 
 }} // namespace qpid::cluster

@@ -69,8 +69,7 @@ ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt)
     std::for_each(membersFt.begin(), membersFt.end(), boost::bind(&addFieldTableValue, _1, boost::ref(members), boost::ref(alive)));
 }
 
-ClusterConnectionMembershipBody ClusterMap::asMethodBody() const {
-    framing::ClusterConnectionMembershipBody b;
+void ClusterMap::toMethodBody(framing::ClusterConnectionMembershipBody& b) const {
     b.getJoiners().clear();
     std::for_each(joiners.begin(), joiners.end(), boost::bind(&insertFieldTableFromMapValue, boost::ref(b.getJoiners()), _1));
     for(Set::const_iterator i = alive.begin(); i != alive.end(); ++i) {
@@ -79,7 +78,6 @@ ClusterConnectionMembershipBody ClusterMap::asMethodBody() const {
     }
     b.getMembers().clear();
     std::for_each(members.begin(), members.end(), boost::bind(&insertFieldTableFromMapValue, boost::ref(b.getMembers()), _1));
-    return b;
 }
 
 bool ClusterMap::configChange(
