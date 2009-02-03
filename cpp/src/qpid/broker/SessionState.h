@@ -62,7 +62,7 @@ class TimerTask;
  * Broker-side session state includes session's handler chains, which
  * may themselves have state.
  */
-class SessionState : public qpid::SessionState, 
+class SessionState : public qpid::SessionState,
                      public SessionContext,
                      public DeliveryAdapter,
                      public management::Manageable,
@@ -79,7 +79,7 @@ class SessionState : public qpid::SessionState,
 
     /** @pre isAttached() */
     framing::AMQP_ClientProxy& getProxy();
-    
+
     /** @pre isAttached() */
     ConnectionState& getConnection();
     bool isLocal(const ConnectionToken* t) const;
@@ -91,7 +91,7 @@ class SessionState : public qpid::SessionState,
     void giveReadCredit(int32_t);
 
     void senderCompleted(const framing::SequenceSet& ranges);
-    
+
     void sendCompletion();
 
     //delivery adapter methods:
@@ -107,6 +107,8 @@ class SessionState : public qpid::SessionState,
     // Used by cluster to create replica sessions.
     SemanticState& getSemanticState() { return semanticState; }
     boost::intrusive_ptr<Message> getMessageInProgress() { return msgBuilder.getMessage(); }
+
+    bool processSendCredit(uint32_t msgs);
 
   private:
 
@@ -124,7 +126,7 @@ class SessionState : public qpid::SessionState,
     void sendAcceptAndCompletion();
 
     Broker& broker;
-    SessionHandler* handler;    
+    SessionHandler* handler;
     sys::AbsTime expiry;        // Used by SessionManager.
     SemanticState semanticState;
     SessionAdapter adapter;
@@ -133,7 +135,7 @@ class SessionState : public qpid::SessionState,
     IncompleteMessageList::CompletionListener enqueuedOp;
     qmf::org::apache::qpid::broker::Session* mgmtObject;
     qpid::framing::SequenceSet accepted;
-    
+
     // State used for producer flow control (rate limited)
     RateFlowcontrol* rateFlowcontrol;
     boost::intrusive_ptr<TimerTask> flowControlTimer;

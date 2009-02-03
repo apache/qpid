@@ -329,6 +329,10 @@ void SessionImpl::sendRawFrame(AMQFrame& frame) {
 
 Future SessionImpl::sendCommand(const AMQBody& command, const MethodContent* content)
 {
+    // Only message transfers have content
+    if (content && sendMsgCredit) {
+        sendMsgCredit->acquire();
+    }
     Acquire a(sendLock);
     SequenceNumber id = nextOut++;
     {
@@ -366,7 +370,7 @@ void SessionImpl::sendContent(const MethodContent& content)
     uint64_t data_length = content.getData().length();
     if(data_length > 0){
         header.setLastSegment(false);
-        handleContentOut(header);   
+        handleOut(header);   
         /*Note: end of frame marker included in overhead but not in size*/
         const uint32_t frag_size = maxFrameSize - AMQFrame::frameOverhead(); 
 
@@ -395,7 +399,7 @@ void SessionImpl::sendContent(const MethodContent& content)
             }
         }
     } else {
-        handleContentOut(header);   
+        handleOut(header);   
     }
 }
 
@@ -445,14 +449,6 @@ void SessionImpl::handleIn(AMQFrame& frame) // network thread
 
 void SessionImpl::handleOut(AMQFrame& frame) // user thread
 {
-    sendFrame(frame, true);
-}
-
-void SessionImpl::handleContentOut(AMQFrame& frame) // user thread
-{
-    if (sendMsgCredit) {
-        sendMsgCredit->acquire();
-    }
     sendFrame(frame, true);
 }
 
