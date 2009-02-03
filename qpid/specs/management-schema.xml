@@ -285,6 +285,7 @@
     <property name="detachedLifespan" type="uint32"  access="RO" unit="second"/>
     <property name="attached"         type="bool"    access="RO"/>
     <property name="expireTime"       type="absTime" access="RO" optional="y"/>
+    <property name="maxClientRate"    type="uint32"  access="RO" unit="msgs/sec" optional="y"/>
 
     <statistic name="framesOutstanding" type="count32"/>
 
@@ -292,6 +293,8 @@
     <statistic name="TxnCommits"   type="count64"  unit="transaction" desc="Total transactions committed"/>
     <statistic name="TxnRejects"   type="count64"  unit="transaction" desc="Total transactions rejected"/>
     <statistic name="TxnCount"     type="count32"  unit="transaction" desc="Current pending transactions"/>
+
+    <statistic name="clientCredit" type="count32" unit="message" desc="Client message credit"/>
 
     <method name="solicitAck"/>
     <method name="detach"/>

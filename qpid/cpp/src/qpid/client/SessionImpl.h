@@ -146,7 +146,6 @@ private:
 
     void handleIn(framing::AMQFrame& frame);
     void handleOut(framing::AMQFrame& frame);
-    void handleContentOut(framing::AMQFrame& frame);
     /**
      * Sends session controls. This case is treated slightly
      * differently than command frames sent by the application via
