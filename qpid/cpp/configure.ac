@@ -172,8 +172,8 @@ AC_ARG_WITH([cpg],
   [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
   [case "${withval}" in
     yes)			# yes - require dependencies
-    test x$have_libcpg = xyes || AC_MSG_ERROR([libcpg not found, install openais-devel or corosync-devel])
-    test x$have_cpg_h = xyes || AC_MSG_ERROR([cpg.h not found, install openais-devel or corosync-devel])
+    test x$have_libcpg = xyes || AC_MSG_ERROR([libcpg not found, install openais-devel and corosync-devel])
+    test x$have_cpg_h = xyes || AC_MSG_ERROR([cpg.h not found, install openais-devel and corosync-devel])
     with_cpg=yes
     ;;
     no) with_cpg=no ;; 
