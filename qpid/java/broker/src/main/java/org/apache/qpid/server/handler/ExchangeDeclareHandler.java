@@ -61,8 +61,14 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
 
         if (!body.getPassive())
         {
-            //Perform ACL if request is not passive
-            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+            // Perform ACL if request is not passive
+            if (!virtualHost.getAccessManager().authoriseCreateExchange(session, body.getAutoDelete(),
+                    body.getDurable(), body.getExchange(), body.getInternal(), body.getNowait(), body.getPassive(),
+                    body.getType()))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
+
         }
 
         if (_logger.isDebugEnabled())

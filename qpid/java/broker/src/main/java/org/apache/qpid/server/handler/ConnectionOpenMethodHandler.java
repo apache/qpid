@@ -78,7 +78,10 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             session.setVirtualHost(virtualHost);
 
             //Perform ACL
-            virtualHost.getAccessManager().authorise(session, Permission.ACCESS ,body, virtualHost);
+            if (!virtualHost.getAccessManager().authoriseConnect(session, virtualHost))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
             if (session.getContextKey() == null)

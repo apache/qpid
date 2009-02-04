@@ -78,10 +78,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
         if (!body.getPassive())
         {
-            //Perform ACL if request is not passive
-            virtualHost.getAccessManager().authorise(session, Permission.CREATE, body);
+            // Perform ACL if request is not passive
+            if (!virtualHost.getAccessManager().authoriseCreateQueue(session, body.getAutoDelete(), body.getDurable(),
+                    body.getExclusive(), body.getNowait(), body.getPassive(), body.getQueue()))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
         }
-
 
         final AMQShortString queueName;
 

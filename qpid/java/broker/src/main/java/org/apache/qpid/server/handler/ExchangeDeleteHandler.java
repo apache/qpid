@@ -23,6 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -51,8 +52,11 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
 
         //Perform ACLs
-        virtualHost.getAccessManager().authorise(session, Permission.DELETE,body,
-                                                 exchangeRegistry.getExchange(body.getExchange()));
+        if (!virtualHost.getAccessManager().authoriseDelete(session,
+                exchangeRegistry.getExchange(body.getExchange())))
+        {
+            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+        }
 
         try
         {
