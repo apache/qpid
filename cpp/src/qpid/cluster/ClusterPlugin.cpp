@@ -158,8 +158,10 @@ struct ClusterPlugin : public Plugin {
         }
     }
 
-    void initialize(Plugin::Target& ) {
-        cluster->initialize();
+    void initialize(Plugin::Target& target) {
+        Broker* broker = dynamic_cast<Broker*>(&target);
+        if (broker && cluster)
+            cluster->initialize();
     }
 };
 
