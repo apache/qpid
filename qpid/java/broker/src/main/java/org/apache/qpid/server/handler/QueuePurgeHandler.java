@@ -101,7 +101,10 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         {
 
                 //Perform ACLs
-                virtualHost.getAccessManager().authorise(session, Permission.PURGE, body, queue);
+                if (!virtualHost.getAccessManager().authorisePurge(session, queue))
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                }
 
                 long purged = queue.clearQueue(channel.getStoreContext());
 

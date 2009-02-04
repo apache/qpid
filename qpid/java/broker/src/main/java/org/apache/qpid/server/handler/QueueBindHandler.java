@@ -108,7 +108,11 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
 
             //Perform ACLs
-            virtualHost.getAccessManager().authorise(session, Permission.BIND, body, exch, queue, routingKey);
+            if (!virtualHost.getAccessManager().authoriseBind(session, exch,
+                    queue, routingKey))
+            {
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+            }
 
             if (!exch.isBound(routingKey, body.getArguments(), queue))
             {

@@ -101,7 +101,10 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         }
 
         //Perform ACLs
-        virtualHost.getAccessManager().authorise(session, Permission.UNBIND, body, queue);
+        if (!virtualHost.getAccessManager().authoriseUnbind(session, exch, routingKey, queue))
+        {
+            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+        }
 
         try
         {

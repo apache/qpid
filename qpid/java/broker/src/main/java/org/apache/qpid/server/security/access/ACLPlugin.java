@@ -20,39 +20,45 @@
  */
 package org.apache.qpid.server.security.access;
 
-import org.apache.qpid.framing.AMQMethodBody;
-
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQConnectionException;
 import org.apache.commons.configuration.Configuration;
-
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface ACLPlugin
 {
-    /**
-     * Pseudo-Code:
-     * Identify requested RighConnectiont
-     * Lookup users ability for that right.
-     * if rightsExists
-     * Validate right on object
-     * Return result
-     * e.g
-     * User, CONSUME , Queue
-     * User, CONSUME , Exchange + RoutingKey
-     * User, PUBLISH , Exchange + RoutingKey
-     * User, CREATE  , Exchange || Queue
-     * User, BIND    , Exchange + RoutingKey + Queue
-     *
-     * @param session      - The session requesting access
-     * @param permission   - The permission requested
-     * @param parameters   - The above objects that are used to authorise the request.
-     * @return The AccessResult decision
-     */
-    //todo potential refactor this ConnectionException Out of here
-    AccessResult authorise(AMQProtocolSession session, Permission permission, AMQMethodBody body, Object... parameters) throws AMQConnectionException;
-
     String getPluginName();
 
     void setConfiguaration(Configuration config);
+
+    // These return true if the plugin thinks the action should be allowed, and false if not. 
+    
+    boolean authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue, AMQShortString routingKey);
+
+    boolean authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
+            AMQShortString exchangeName, boolean internal, boolean nowait, boolean passive, AMQShortString exchangeType);
+
+    boolean authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable, boolean exclusive,
+            boolean nowait, boolean passive, AMQShortString queue);
+
+    boolean authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost);
+
+    boolean authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue);
+
+    boolean authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
+            boolean nowait, AMQQueue queue);
+
+    boolean authoriseDelete(AMQProtocolSession session, AMQQueue queue);
+
+    boolean authoriseDelete(AMQProtocolSession session, Exchange exchange);
+
+    boolean authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
+            AMQShortString routingKey, Exchange e);
+
+    boolean authorisePurge(AMQProtocolSession session, AMQQueue queue);
+
+    boolean authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey, AMQQueue queue);
 
 }

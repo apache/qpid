@@ -54,7 +54,7 @@ public class PrincipalPermissionsTest extends TestCase
     private AMQShortString _exchangeType = new AMQShortString("direct");
     private boolean _internal = false;
 
-    private DirectExchange _exchange = new DirectExchange();
+    private DirectExchange _exchange;
     private VirtualHost _virtualHost;
     private AMQShortString _owner = new AMQShortString(this.getClass().getName()+"owner");
     private AMQQueue _queue;
@@ -67,6 +67,7 @@ public class PrincipalPermissionsTest extends TestCase
         try 
         {
             _virtualHost = new VirtualHost("localhost", new SkeletonMessageStore());
+            _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
             _queue = AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, _virtualHost, _arguments);
         } 
         catch (Exception e)
@@ -96,15 +97,11 @@ public class PrincipalPermissionsTest extends TestCase
     public void testQueueCreate()
     {
         Object[] grantArgs = new Object[]{_temporary , _queueName, _exchangeName, _routingKey};
+        Object[] authArgs = new Object[]{_autoDelete, _queueName};
         
-        
-        QueueDeclareBodyImpl queueDeclare = new QueueDeclareBodyImpl(
-                _ticket, _queueName, _passive, _durable, _exclusive, _autoDelete, _nowait, _arguments);
-        Object[] authArgs = new Object[]{queueDeclare};
-        
-        assertFalse(_perms.authorise(Permission.CREATE, authArgs));
-        _perms.grant(Permission.CREATE, grantArgs);
-        assertTrue(_perms.authorise(Permission.CREATE, authArgs));
+        assertFalse(_perms.authorise(Permission.CREATEQUEUE, authArgs));
+        _perms.grant(Permission.CREATEQUEUE, grantArgs);
+        assertTrue(_perms.authorise(Permission.CREATEQUEUE, authArgs));
     }
     
     
@@ -117,9 +114,9 @@ public class PrincipalPermissionsTest extends TestCase
         Object[] authArgs = new Object[]{exchangeDeclare};
         Object[] grantArgs = new Object[]{_exchangeName, _exchangeType};
         
-        assertFalse(_perms.authorise(Permission.CREATE, authArgs));
-        _perms.grant(Permission.CREATE, grantArgs);
-        assertTrue(_perms.authorise(Permission.CREATE, authArgs));
+        assertFalse(_perms.authorise(Permission.CREATEEXCHANGE, authArgs));
+        _perms.grant(Permission.CREATEEXCHANGE, grantArgs);
+        assertTrue(_perms.authorise(Permission.CREATEEXCHANGE, authArgs));
     }
     
     public void testConsume()
@@ -137,9 +134,10 @@ public class PrincipalPermissionsTest extends TestCase
     public void testPublish()
     {
         Object[] authArgs = new Object[]{_exchange, _routingKey};
+        Object[] grantArgs = new Object[]{_exchange.getName(), _routingKey};
         
         assertFalse(_perms.authorise(Permission.PUBLISH, authArgs));
-        _perms.grant(Permission.PUBLISH, authArgs);
+        _perms.grant(Permission.PUBLISH, grantArgs);
         assertTrue(_perms.authorise(Permission.PUBLISH, authArgs));
     }
     

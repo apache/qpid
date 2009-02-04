@@ -97,8 +97,13 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
 
                 final AMQShortString consumerTagName;
 
-                //Perform ACLs
-                vHost.getAccessManager().authorise(session, Permission.CONSUME, body, queue);
+                // Check authz
+                if (!vHost.getAccessManager().authoriseConsume(session,
+                        body.getExclusive(), body.getNoAck(),
+                        body.getNoLocal(), body.getNowait(), queue))
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                }
 
                 if (body.getConsumerTag() != null)
                 {

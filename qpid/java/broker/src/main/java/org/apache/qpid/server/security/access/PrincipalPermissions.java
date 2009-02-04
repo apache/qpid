@@ -68,9 +68,8 @@ public class PrincipalPermissions
      *  ACCESS: none
      *  BIND: none
      *  CONSUME: AMQShortString queueName, Boolean temporary, Boolean ownQueueOnly
-     *  CREATE:  Boolean temporary, AMQShortString queueName, AMQShortString exchangeName, AMQShortString routingKey
-     *                      or
-     *           AMQShortString exchangeName, AMQShortString Class
+     *  CREATEQUEUE:  Boolean temporary, AMQShortString queueName, AMQShortString exchangeName, AMQShortString routingKey
+     *  CREATEEXCHANGE: AMQShortString exchangeName, AMQShortString Class
      *  DELETE: none
      *  PUBLISH: Exchange exchange, AMQShortString routingKey
      *  PURGE: none
@@ -134,9 +133,8 @@ public class PrincipalPermissions
 
 
                 break;
-            case CREATE:  // Parameters : Boolean temporary, AMQShortString queueName
+            case CREATEQUEUE:  // Parameters : Boolean temporary, AMQShortString queueName
                 // , AMQShortString exchangeName , AMQShortString routingKey
-                // || AMQShortString exchangeName , AMQShortString Class
 
                 Map createRights = (Map) _permissions.get(permission);
 
@@ -153,121 +151,122 @@ public class PrincipalPermissions
                     return;
                 }
 
+                Boolean temporary = (Boolean) parameters[0];
 
-                if (parameters[0] instanceof Boolean) //Create Queue :
-                // Boolean temporary, [AMQShortString queueName, AMQShortString exchangeName , AMQShortString routingKey]
+                AMQShortString queueName = parameters.length > 1 ? (AMQShortString) parameters[1] : null;
+                AMQShortString exchangeName = parameters.length > 2 ? (AMQShortString) parameters[2] : null;
+                //Set the routingkey to the specified value or the queueName if present
+                AMQShortString routingKey = parameters.length > 3 ? (AMQShortString) parameters[3] : queueName;
+
+                // Get the queues map
+                Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
+
+                if (create_queues == null)
                 {
-                    Boolean temporary = (Boolean) parameters[0];
+                    create_queues = new ConcurrentHashMap();
+                    createRights.put(CREATE_QUEUES_KEY, create_queues);
+                }
 
-                    AMQShortString queueName = parameters.length > 1 ? (AMQShortString) parameters[1] : null;
-                    AMQShortString exchangeName = parameters.length > 2 ? (AMQShortString) parameters[2] : null;
-                    //Set the routingkey to the specified value or the queueName if present
-                    AMQShortString routingKey = parameters.length > 3 ? (AMQShortString) parameters[3] : queueName;
+                //Allow all temp queues to be created
+                create_queues.put(CREATE_QUEUE_TEMPORARY_KEY, temporary);
 
-                    // Get the queues map
-                    Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
+                //Create empty list of queues
+                Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
 
-                    if (create_queues == null)
+                if (create_queues_queues == null)
+                {
+                    create_queues_queues = new ConcurrentHashMap();
+                    create_queues.put(CREATE_QUEUE_QUEUES_KEY, create_queues_queues);
+                }
+
+                // We are granting CREATE rights to all temporary queues only
+                if (parameters.length == 1)
+                {
+                    return;
+                }
+
+                // if we have a queueName then we need to store any associated exchange / rk bindings
+                if (queueName != null)
+                {
+                    Map queue = (Map) create_queues_queues.get(queueName);
+                    if (queue == null)
                     {
-                        create_queues = new ConcurrentHashMap();
-                        createRights.put(CREATE_QUEUES_KEY, create_queues);
+                        queue = new ConcurrentHashMap();
+                        create_queues_queues.put(queueName, queue);
                     }
 
-                    //Allow all temp queues to be created
-                    create_queues.put(CREATE_QUEUE_TEMPORARY_KEY, temporary);
-
-                    //Create empty list of queues
-                    Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
-
-                    if (create_queues_queues == null)
-                    {
-                        create_queues_queues = new ConcurrentHashMap();
-                        create_queues.put(CREATE_QUEUE_QUEUES_KEY, create_queues_queues);
-                    }
-
-                    // We are granting CREATE rights to all temporary queues only
-                    if (parameters.length == 1)
-                    {
-                        return;
-                    }
-
-                    // if we have a queueName then we need to store any associated exchange / rk bindings
-                    if (queueName != null)
-                    {
-                        Map queue = (Map) create_queues_queues.get(queueName);
-                        if (queue == null)
-                        {
-                            queue = new ConcurrentHashMap();
-                            create_queues_queues.put(queueName, queue);
-                        }
-
-                        if (exchangeName != null)
-                        {
-                            queue.put(exchangeName, routingKey);
-                        }
-
-                        //If no exchange is specified then the presence of the queueName in the map says any exchange is ok
-                    }
-
-                    // Store the exchange that we are being granted rights to. This will be used as part of binding
-
-                    //Lookup the list of exchanges
-                    Map create_queues_exchanges = (Map) create_queues.get(CREATE_QUEUE_EXCHANGES_KEY);
-
-                    if (create_queues_exchanges == null)
-                    {
-                        create_queues_exchanges = new ConcurrentHashMap();
-                        create_queues.put(CREATE_QUEUE_EXCHANGES_KEY, create_queues_exchanges);
-                    }
-
-                    //if we have an exchange
                     if (exchangeName != null)
                     {
-                        //Retrieve the list of permitted exchanges.
-                        Map exchanges = (Map) create_queues_exchanges.get(exchangeName);
-
-                        if (exchanges == null)
-                        {
-                            exchanges = new ConcurrentHashMap();
-                            create_queues_exchanges.put(exchangeName, exchanges);
-                        }
-
-                        //Store the temporary setting CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY
-                        exchanges.put(CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY, temporary);
-
-                        //Store the binding details of queue/rk for this exchange.
-                        if (queueName != null)
-                        {
-                            //Retrieve the list of permitted routingKeys.
-                            Map rKeys = (Map) exchanges.get(exchangeName);
-
-                            if (rKeys == null)
-                            {
-                                rKeys = new ConcurrentHashMap();
-                                exchanges.put(CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY, rKeys);
-                            }
-
-                            rKeys.put(queueName, routingKey);
-                        }
+                        queue.put(exchangeName, routingKey);
                     }
+
+                    //If no exchange is specified then the presence of the queueName in the map says any exchange is ok
                 }
-                else // Create Exchange : AMQShortString exchangeName , AMQShortString Class
+
+                // Store the exchange that we are being granted rights to. This will be used as part of binding
+
+                //Lookup the list of exchanges
+                Map create_queues_exchanges = (Map) create_queues.get(CREATE_QUEUE_EXCHANGES_KEY);
+
+                if (create_queues_exchanges == null)
                 {
-                    Map create_exchanges = (Map) createRights.get(CREATE_EXCHANGES_KEY);
+                    create_queues_exchanges = new ConcurrentHashMap();
+                    create_queues.put(CREATE_QUEUE_EXCHANGES_KEY, create_queues_exchanges);
+                }
 
-                    if (create_exchanges == null)
+                //if we have an exchange
+                if (exchangeName != null)
+                {
+                    //Retrieve the list of permitted exchanges.
+                    Map exchanges = (Map) create_queues_exchanges.get(exchangeName);
+
+                    if (exchanges == null)
                     {
-                        create_exchanges = new ConcurrentHashMap();
-                        createRights.put(CREATE_EXCHANGES_KEY, create_exchanges);
+                        exchanges = new ConcurrentHashMap();
+                        create_queues_exchanges.put(exchangeName, exchanges);
                     }
 
-                    //Should perhaps error if parameters[0] is null;
-                    AMQShortString exchangeName = parameters.length > 0 ? (AMQShortString) parameters[0] : null;
-                    AMQShortString className = parameters.length > 1 ? (AMQShortString) parameters[1] : null;
+                    //Store the temporary setting CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY
+                    exchanges.put(CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY, temporary);
 
-                    //Store the exchangeName / class mapping if the mapping is null
-                    createRights.put(exchangeName, className);
+                    //Store the binding details of queue/rk for this exchange.
+                    if (queueName != null)
+                    {
+                        //Retrieve the list of permitted routingKeys.
+                        Map rKeys = (Map) exchanges.get(exchangeName);
+
+                        if (rKeys == null)
+                        {
+                            rKeys = new ConcurrentHashMap();
+                            exchanges.put(CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY, rKeys);
+                        }
+
+                        rKeys.put(queueName, routingKey);
+                    }
                 }
+                break;
+            case CREATEEXCHANGE:
+                // Parameters AMQShortString exchangeName , AMQShortString Class
+                Map rights = (Map) _permissions.get(permission);
+                if (rights == null)
+                {
+                    rights = new ConcurrentHashMap();
+                    _permissions.put(permission, rights);
+                }
+
+                Map create_exchanges = (Map) rights.get(CREATE_EXCHANGES_KEY);
+                if (create_exchanges == null)
+                {
+                    create_exchanges = new ConcurrentHashMap();
+                    rights.put(CREATE_EXCHANGES_KEY, create_exchanges);
+                }
+
+                //Should perhaps error if parameters[0] is null;
+                AMQShortString name = parameters.length > 0 ? (AMQShortString) parameters[0] : null;
+                AMQShortString className = parameters.length > 1 ? (AMQShortString) parameters[1] : new AMQShortString("direct");
+
+                //Store the exchangeName / class mapping if the mapping is null
+                rights.put(name, className);
                 break;
             case DELETE:
                 break;
@@ -330,7 +329,8 @@ public class PrincipalPermissions
      *  ACCESS: none
      *  BIND: QueueBindBody bindmethod, Exchange exchange, AMQQueue queue, AMQShortString routingKey
      *  CONSUME: AMQQueue queue
-     *  CREATE:  QueueDeclareBody obj || ExchangeDeclareBody obj
+     *  CREATEQUEUE:  Boolean autodelete, AMQShortString name
+     *  CREATEEXCHANGE: AMQShortString exchangeName
      *  DELETE: none
      *  PUBLISH: Exchange exchange, AMQShortString routingKey
      *  PURGE: none
@@ -352,7 +352,7 @@ public class PrincipalPermissions
                 AMQShortString routingKey = (AMQShortString) parameters[3];
 
                 //Get all Create Rights for this user
-                Map bindCreateRights = (Map) _permissions.get(Permission.CREATE);
+                Map bindCreateRights = (Map) _permissions.get(Permission.CREATEQUEUE);
 
                 //Look up the Queue Creation Rights
                 Map bind_create_queues = (Map) bindCreateRights.get(CREATE_QUEUES_KEY);
@@ -435,7 +435,7 @@ public class PrincipalPermissions
                     return true;
                 }
 
-            case CREATE:// Paramters : QueueDeclareBody || ExchangeDeclareBody
+            case CREATEQUEUE:// Parameters : boolean autodelete, AMQShortString name
 
                 Map createRights = (Map) _permissions.get(permission);
 
@@ -445,46 +445,33 @@ public class PrincipalPermissions
                     return false;
                 }
 
-                if (parameters.length == 1)
+                //Look up the Queue Creation Rights
+                Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
+
+                //Lookup the list of queues allowed to be created
+                Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
+
+
+                AMQShortString queueName = (AMQShortString) parameters[1];
+                Boolean autoDelete = (Boolean) parameters[0];
+
+                if (autoDelete)// we have a temporary queue
                 {
-                    if (parameters[0] instanceof QueueDeclareBody)
-                    {
-                        QueueDeclareBody body = (QueueDeclareBody) parameters[0];
-
-                        //Look up the Queue Creation Rights
-                        Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
-
-                        //Lookup the list of queues allowed to be created
-                        Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
-
-
-                        AMQShortString queueName = body.getQueue();
-
-
-                        if (body.getAutoDelete())// we have a temporary queue
-                        {
-                            return (Boolean) create_queues.get(CREATE_QUEUE_TEMPORARY_KEY);
-                        }
-                        else
-                        {
-                            // If there is a white list then check
-                            return create_queues_queues == null || create_queues_queues.containsKey(queueName);
-                        }
-
-                    }
-                    else if (parameters[0] instanceof ExchangeDeclareBody)
-                    {
-                        ExchangeDeclareBody body = (ExchangeDeclareBody) parameters[0];
-
-                        AMQShortString exchangeName = body.getExchange();
-
-                        Map create_exchanges = (Map) createRights.get(CREATE_EXCHANGES_KEY);
-
-                        // If the exchange list is doesn't exist then all is allowed else check the valid exchanges
-                        return create_exchanges == null || create_exchanges.containsKey(exchangeName);
-                    }
+                    return (Boolean) create_queues.get(CREATE_QUEUE_TEMPORARY_KEY);
                 }
-                break;
+                else
+                {
+                    // If there is a white list then check
+                    return create_queues_queues == null || create_queues_queues.containsKey(queueName);
+                }
+            case CREATEEXCHANGE:
+                Map rights = (Map) _permissions.get(permission);
+
+                AMQShortString exchangeName = (AMQShortString) parameters[0];
+
+                // If the exchange list is doesn't exist then all is allowed else
+                // check the valid exchanges
+                return rights == null || rights.containsKey(exchangeName);
             case CONSUME: // Parameters :  AMQQueue
 
                 if (parameters.length == 1 && parameters[0] instanceof AMQQueue)
@@ -557,7 +544,7 @@ public class PrincipalPermissions
                 // Otherwise exchange must be listed in the white list
 
                 // If the map doesn't have the exchange then it isn't allowed
-                if (!exchanges.containsKey(parameters[0]))
+                if (!exchanges.containsKey(((Exchange) parameters[0]).getName()))
                 {
                     return false;
                 }
@@ -565,7 +552,7 @@ public class PrincipalPermissions
                 {
 
                     // Get valid routing keys
-                    HashSet routingKeys = (HashSet) exchanges.get(parameters[0]);
+                    HashSet routingKeys = (HashSet) exchanges.get(((Exchange)parameters[0]).getName());
 
                     // Having no routingKeys in the map then all are allowed.
                     if (routingKeys == null)
