@@ -149,6 +149,7 @@ Broker::Broker(const Broker::Options& conf) :
         *this),
     queueCleaner(queues, timer),
     queueEvents(poller),
+    recovery(true),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (conf.enableMgmt) {
@@ -209,11 +210,17 @@ Broker::Broker(const Broker::Options& conf) :
         setStore (new NullMessageStore());
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
-    
+
     if (store.get() != 0) {
-        RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, 
-                                      conf.stagingThreshold);
-        store->recover(recoverer);
+        // The cluster plug-in will setRecovery(false) on all but the first
+        // broker to join a cluster.
+        if (getRecovery()) {
+            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, 
+                                          conf.stagingThreshold);
+            store->recover(recoverer);
+        }
+        else
+            QPID_LOG(notice, "Recovering from cluster, no recovery from local journal");
     }
 
     //ensure standard exchanges exist (done after recovery from store)

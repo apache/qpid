@@ -64,14 +64,16 @@ class Cluster : private Cpg::Handler, public management::Manageable {
   public:
     typedef boost::intrusive_ptr<Connection> ConnectionPtr;
     typedef std::vector<ConnectionPtr> Connections;
-    
-    /**
-     * Join a cluster. 
-     */
+
+    /** Construct the cluster in plugin earlyInitialize */ 
     Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum,
             size_t readMax, size_t writeEstimate);
 
     virtual ~Cluster();
+
+    /** Join the cluster in plugin initialize. Requires transport
+     * plugins to be available.. */
+    void initialize();
 
     // Connection map - called in connection threads.
     void addLocalConnection(const ConnectionPtr&); 
@@ -177,7 +179,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::shared_ptr<sys::Poller> poller;
     Cpg cpg;
     const std::string name;
-    const Url myUrl;
+    Url myUrl;
     const MemberId myId;
     const size_t readMax;
     const size_t writeEstimate;
@@ -197,7 +199,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Called only from event delivery thread
     Decoder decoder;
-    
+
+    // Used only during initialization
+    bool initialized;
+
     // Remaining members are protected by lock
     mutable sys::Monitor lock;
 

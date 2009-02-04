@@ -136,13 +136,13 @@ struct ClusterPlugin : public Plugin {
 
     Options* getOptions() { return &options; }
 
-    void initialize(Plugin::Target& target) {
+    void earlyInitialize(Plugin::Target& target) {
         if (values.name.empty()) return; // Only if --cluster-name option was specified.
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
         cluster = new Cluster(
             values.name,
-            values.getUrl(broker->getPort(Broker::TCP_TRANSPORT)),
+            values.url.empty() ? Url() : Url(values.url),
             *broker,
             values.quorum,
             values.readMax, values.writeEstimate*1024
@@ -158,7 +158,9 @@ struct ClusterPlugin : public Plugin {
         }
     }
 
-    void earlyInitialize(Plugin::Target&) {}
+    void initialize(Plugin::Target& ) {
+        cluster->initialize();
+    }
 };
 
 static ClusterPlugin instance; // Static initialization.
