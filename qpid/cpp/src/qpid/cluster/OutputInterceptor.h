@@ -53,7 +53,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler, sys::LatencyMetri
     // Intercept doOutput requests on Connection.
     bool doOutput();
 
-    void setOutputHandler(sys::ConnectionOutputHandler& h);
+    void closeOutput(sys::ConnectionOutputHandler& h);
 
     cluster::Connection& parent;
     
@@ -63,6 +63,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler, sys::LatencyMetri
     void sendDoOutput();
 
     mutable sys::Mutex lock;
+    bool closing;
     sys::ConnectionOutputHandler* next;
     size_t sent;
     size_t lastDoOutput;

@@ -34,7 +34,8 @@ using namespace framing;
 
 OutputInterceptor::OutputInterceptor(
     cluster::Connection& p, sys::ConnectionOutputHandler& h)
-    : parent(p), next(&h), sent(), writeEstimate(p.getCluster().getWriteEstimate()),
+    : parent(p), closing(false), next(&h), sent(),
+      writeEstimate(p.getCluster().getWriteEstimate()),
       moreOutput(), doingOutput()
 {}
 
@@ -54,7 +55,7 @@ void OutputInterceptor::activateOutput() {
         sys::Mutex::ScopedLock l(lock);
         next->activateOutput();
     }
-    else {
+    else if (!closing) {        // Don't send do ouput after output stopped.
         QPID_LOG(trace,  parent << " activateOutput - sending doOutput");
         moreOutput = true;
         sendDoOutput();
@@ -117,8 +118,9 @@ void OutputInterceptor::sendDoOutput() {
     QPID_LOG(trace, parent << "Send doOutput request for " << request);
 }
 
-void OutputInterceptor::setOutputHandler(sys::ConnectionOutputHandler& h) {
+void OutputInterceptor::closeOutput(sys::ConnectionOutputHandler& h) {
     sys::Mutex::ScopedLock l(lock);
+    closing = true;
     next = &h;
 }
 
