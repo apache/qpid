@@ -55,7 +55,9 @@ class ConnectionMap {
     /** Erase a closed connection. Called in deliver thread. */
     void erase(const ConnectionId& id);
 
-    /** Get an existing connection. */ 
+    /** Get an existing connection. Returns 0 if id is a closed local
+     * connections, frames for closed connections should be ignored.
+     */ 
     ConnectionPtr get(const ConnectionId& id);
 
     /** Get connections for sending an update. */
