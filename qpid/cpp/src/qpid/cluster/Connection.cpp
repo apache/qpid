@@ -112,7 +112,7 @@ void Connection::received(framing::AMQFrame& f) {
                 cluster.addShadowConnection(this);
             AMQFrame ok((ConnectionCloseOkBody()));
             connection.getOutput().send(ok);
-            output.setOutputHandler(discardHandler);
+            output.closeOutput(discardHandler);
             catchUp = false;
         }
         else
@@ -165,7 +165,7 @@ void Connection::closed() {
             // This was a local replicated connection. Multicast a deliver
             // closed and process any outstanding frames from the cluster
             // until self-delivery of deliver-close.
-            output.setOutputHandler(discardHandler);
+            output.closeOutput(discardHandler);
             cluster.getMulticast().mcastControl(ClusterConnectionDeliverCloseBody(), self);
         }
     }
