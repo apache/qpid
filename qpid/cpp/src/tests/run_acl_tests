@@ -38,9 +38,8 @@ stop_brokers() {
 test_loading_acl_from_absolute_path(){
     POLICY_FILE=$PWD/$srcdir/policy.acl
     rm -f temp.log
-   ../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module ../.libs/acl.so --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null
-    PORT=`grep "Listening on TCP port" temp.log | awk '{print $8}'`
-    ACL_FILE=`grep "notice Read ACL file" temp.log | awk '{print $7}'`    
+    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module ../.libs/acl.so --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
+    ACL_FILE=`grep "notice Read ACL file" temp.log | awk '{print $5x}'`
    ../qpidd -q --port $PORT
    if test "$ACL_FILE" != "\"$POLICY_FILE\""; then
      echo "unable to load policy file from an absolute path";
