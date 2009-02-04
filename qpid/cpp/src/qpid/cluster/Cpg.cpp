@@ -144,8 +144,9 @@ string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
     os << msg << ": ";
     switch (err) {
       case CPG_OK: os << "ok"; break;
+      case CPG_ERR_LIBRARY: os << "library"; break;
       case CPG_ERR_TIMEOUT: os << "timeout"; break;
-      case CPG_ERR_TRY_AGAIN: os << "timeout. The aisexec daemon may not be running"; break;
+      case CPG_ERR_TRY_AGAIN: os << "try again"; break;
       case CPG_ERR_INVALID_PARAM: os << "invalid param"; break;
       case CPG_ERR_NO_MEMORY: os << "no memory"; break;
       case CPG_ERR_BAD_HANDLE: os << "bad handle"; break;
@@ -153,10 +154,8 @@ string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
       case CPG_ERR_NOT_EXIST: os << "not exist"; break;
       case CPG_ERR_EXIST: os << "exist"; break;
       case CPG_ERR_NOT_SUPPORTED: os << "not supported"; break;
-        // The following are not mapped, or are incorrectly mapped in corosync 0-92-5
-        // case CPG_ERR_LIBRARY: os << "library"; break;
-        // case CPG_ERR_SECURITY: os << "security"; break;
-        // case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
+      case CPG_ERR_SECURITY: os << "security"; break;
+      case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
       default: os << ": unknown cpg error " << err;
     };
     os << " (" << err << ")";
