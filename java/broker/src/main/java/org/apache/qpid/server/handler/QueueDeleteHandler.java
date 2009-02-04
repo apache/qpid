@@ -105,7 +105,10 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
             {
                 
                 //Perform ACLs
-                virtualHost.getAccessManager().authorise(session, Permission.DELETE, body, queue);
+                if (!virtualHost.getAccessManager().authoriseDelete(session, queue))
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                }
 
                 int purged = queue.delete();
 

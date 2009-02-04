@@ -94,7 +94,10 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             {
 
                 //Perform ACLs
-                vHost.getAccessManager().authorise(session, Permission.CONSUME, body, queue);
+                if (!vHost.getAccessManager().authoriseConsume(session, body.getNoAck(), queue))
+                {
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
+                }
 
                 if (!performGet(queue,session, channel, !body.getNoAck()))
                 {

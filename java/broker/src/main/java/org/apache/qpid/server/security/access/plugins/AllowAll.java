@@ -20,40 +20,10 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.Accessable;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.commons.configuration.Configuration;
 
-public class AllowAll implements ACLPlugin
+public class AllowAll extends BasicACLPlugin
 {
-    public AccessResult authorise(AMQProtocolSession session, Permission permission, AMQMethodBody body, Object... parameters)
-    {
-        if (ACLManager.getLogger().isDebugEnabled())
-        {
-            ACLManager.getLogger().debug("Allowing user:" + session.getAuthorizedID() + " for :" + permission.toString()
-                                        + " on " + body.getClass().getSimpleName()
-                                        + (parameters == null || parameters.length == 0 ? "" : "-" + accessablesToString(parameters)));
-        }
-
-        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
-    }
-
-    public static String accessablesToString(Object[] accessObject)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        for (Object access : accessObject)
-        {
-            sb.append(access.getClass().getSimpleName() + ":" + access.toString() + ", ");
-        }
-
-        return sb.delete(sb.length() - 2, sb.length()).toString();
-    }
 
     public String getPluginName()
     {
@@ -62,7 +32,13 @@ public class AllowAll implements ACLPlugin
 
     public void setConfiguaration(Configuration config)
     {
-        //no-op
+        // no-op
     }
 
+    @Override
+    protected boolean getResult()
+    {
+        // Always allow
+        return true;
+    }
 }
