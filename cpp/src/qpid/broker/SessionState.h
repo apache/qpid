@@ -137,6 +137,7 @@ class SessionState : public qpid::SessionState,
     qpid::framing::SequenceSet accepted;
 
     // State used for producer flow control (rate limited)
+    qpid::sys::Mutex rateLock;
     RateFlowcontrol* rateFlowcontrol;
     boost::intrusive_ptr<TimerTask> flowControlTimer;
 
