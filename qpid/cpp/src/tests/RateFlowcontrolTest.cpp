@@ -42,21 +42,23 @@ QPID_AUTO_TEST_CASE(RateFlowcontrolTest)
    fc.sentCredit(n, 0);
    
    BOOST_CHECK_EQUAL( fc.receivedMessage(n, 0), 0U );
-   fc.sentCredit(n, 100);
+   fc.sentCredit(n, 50);
 
    Duration d=250*TIME_MSEC;
    
    n = AbsTime(n,d);
-   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 48), 25U );
-   fc.sentCredit(n, 25);
+   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 25), 0U );
+   BOOST_CHECK_EQUAL( fc.availableCredit(n), 25U );
 
    n = AbsTime(n,d);
-   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 0), 23U );
-   fc.sentCredit(n, 23);
-   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 100), 0U);
+   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 23), 48U );
+   BOOST_CHECK_EQUAL( fc.availableCredit(n), 48U );
+   fc.sentCredit(n, 48);
+   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 50), 0U);
    BOOST_CHECK(fc.flowStopped());
 
    n = AbsTime(n,d);
+   BOOST_CHECK_EQUAL( fc.receivedMessage(n, 0), 25U);
    n = AbsTime(n,d);
    BOOST_CHECK_EQUAL( fc.receivedMessage(n, 0), 50U);
 }

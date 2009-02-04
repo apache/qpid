@@ -62,6 +62,7 @@ public:
     }
     void sentCredit(const qpid::sys::AbsTime& t, uint32_t credit);
     uint32_t receivedMessage(const qpid::sys::AbsTime& t, uint32_t  msgs);
+    uint32_t availableCredit(const qpid::sys::AbsTime& t);
     bool flowStopped() const;
 };
 
@@ -79,12 +80,20 @@ inline void RateFlowcontrol::sentCredit(const qpid::sys::AbsTime& t, uint32_t cr
     creditSent = t;
 }
 
-inline uint32_t RateFlowcontrol::receivedMessage(const qpid::sys::AbsTime& t, uint32_t  msgs) {
-    requestedCredit +=msgs;    
+inline uint32_t RateFlowcontrol::availableCredit(const qpid::sys::AbsTime& t) {
     qpid::sys::Duration d(creditSent, t);
     // Could be -ve before first sentCredit
     int64_t toSend = std::min(rate * d / qpid::sys::TIME_SEC, static_cast<int64_t>(requestedCredit));
     return toSend > 0 ? toSend : 0;
+}
+
+inline uint32_t RateFlowcontrol::receivedMessage(const qpid::sys::AbsTime& t, uint32_t  msgs) {
+    requestedCredit +=msgs;
+    // Don't send credit for every message, only send if more than 0.5s since last credit or
+    // we've got less than .25 of the max left (heuristic)
+    return requestedCredit*4 >= maxCredit*3 || qpid::sys::Duration(creditSent, t) >= 500*qpid::sys::TIME_MSEC
+        ? availableCredit(t)
+        : 0;
 }
 
 inline bool RateFlowcontrol::flowStopped() const {
