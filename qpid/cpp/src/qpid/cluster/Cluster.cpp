@@ -251,7 +251,8 @@ void Cluster::deliveredFrame(const EventFrame& e) {
             return;
         }
         boost::intrusive_ptr<Connection> connection = connections.get(e.connectionId);
-        connection->deliveredFrame(e);
+        if (connection)         // Ignore frames to closed local connections.
+            connection->deliveredFrame(e);
     }
     QPID_LATENCY_RECORD("processed", e.frame);
 }
@@ -321,11 +322,11 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
 
     if (state == INIT) {        // First configChange
         if (map.aliveCount() == 1) {
-            QPID_LOG(notice, *this << " first in cluster");
             setClusterId(true);
             setReady(l);
             map = ClusterMap(myId, myUrl, true);
             memberUpdate(l);
+            QPID_LOG(notice, *this << " first in cluster");
         }
         else {                  // Joining established group.
             state = JOINER;
@@ -380,8 +381,8 @@ void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
     if (map.ready(id, Url(url))) 
         memberUpdate(l);
     if (state == CATCHUP && id == myId) {
-        QPID_LOG(notice, *this << " caught up, active cluster member");
         setReady(l);
+        QPID_LOG(notice, *this << " caught up, active cluster member");
     }
 }
 

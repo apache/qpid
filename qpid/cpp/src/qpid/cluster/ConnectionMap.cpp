@@ -48,7 +48,9 @@ void ConnectionMap::erase(const ConnectionId& id) {
 ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
     Map::const_iterator i = map.find(id);
     if (i == map.end()) {
-        assert(id.getMember() != cluster.getId());
+        // Deleted local connection.
+        if(id.getMember() == cluster.getId())
+            return 0;
         // New remote connection, create a shadow.
         std::ostringstream mgmtId;
         mgmtId << id;
