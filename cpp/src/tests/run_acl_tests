@@ -20,6 +20,7 @@
 #
 
 # Run the acl tests. $srcdir is set by the Makefile.
+set -x
 PYTHON_DIR=$srcdir/../../../python
 DATA_DIR=`pwd`/data_dir
 
