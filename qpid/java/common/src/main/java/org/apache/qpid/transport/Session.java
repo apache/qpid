@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.qpid.transport.Option.*;
 import static org.apache.qpid.transport.Session.State.*;
@@ -99,6 +101,10 @@ public class Session extends SessionInvoker
 
     private State state = NEW;
 
+    // transfer flow control
+    private volatile boolean flowControl = false;
+    private Semaphore credit = new Semaphore(0);
+
     Session(Connection connection, Binary name, long expiry)
     {
         this.connection = connection;
@@ -163,6 +169,41 @@ public class Session extends SessionInvoker
         {
             this.state = state;
             commands.notifyAll();
+        }
+    }
+
+    void setFlowControl(boolean value)
+    {
+        flowControl = value;
+    }
+
+    void addCredit(int value)
+    {
+        credit.release(value);
+    }
+
+    void drainCredit()
+    {
+        credit.drainPermits();
+    }
+
+    void acquireCredit()
+    {
+        if (flowControl)
+        {
+            try
+            {
+                if (!credit.tryAcquire(timeout, TimeUnit.MILLISECONDS))
+                {
+                    throw new SessionException
+                        ("timed out waiting for message credit");
+                }
+            }
+            catch (InterruptedException e)
+            {
+                throw new SessionException
+                    ("interrupted while waiting for credit", null, e);
+            }
         }
     }
 
@@ -428,6 +469,11 @@ public class Session extends SessionInvoker
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
+            if (m.hasPayload())
+            {
+                acquireCredit();
+            }
+
             synchronized (commands)
             {
                 if (state != OPEN && state != CLOSED)

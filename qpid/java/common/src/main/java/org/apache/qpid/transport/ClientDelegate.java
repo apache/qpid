@@ -22,8 +22,9 @@ package org.apache.qpid.transport;
 
 import static org.apache.qpid.transport.Connection.State.OPEN;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
@@ -63,11 +64,14 @@ public class ClientDelegate extends ConnectionDelegate
 
     @Override public void connectionStart(Connection conn, ConnectionStart start)
     {
+        Map clientProperties = new HashMap();
+        clientProperties.put("qpid.session_flow", 1);
+
         List<Object> mechanisms = start.getMechanisms();
         if (mechanisms == null || mechanisms.isEmpty())
         {
             conn.connectionStartOk
-                (Collections.EMPTY_MAP, null, null, conn.getLocale());
+                (clientProperties, null, null, conn.getLocale());
             return;
         }
 
@@ -86,7 +90,7 @@ public class ClientDelegate extends ConnectionDelegate
             byte[] response = sc.hasInitialResponse() ?
                 sc.evaluateChallenge(new byte[0]) : null;
             conn.connectionStartOk
-                (Collections.EMPTY_MAP, sc.getMechanismName(), response,
+                (clientProperties, sc.getMechanismName(), response,
                  conn.getLocale());
         }
         catch (SaslException e)
@@ -132,7 +136,7 @@ public class ClientDelegate extends ConnectionDelegate
     {
         throw new UnsupportedOperationException();
     }
-    
+
     /**
      * Currently the spec specified the min and max for heartbeat using secs
      */
