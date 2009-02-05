@@ -536,7 +536,7 @@
 	</wsdl:binding>
 	<wsdl:service name="QManWsResourceService">
     	<wsdl:port name="QManWsResourcePort" binding="qman:QManWsResourceBinding">
-    		<wsdl-soap:address location="http://localhost:8080/qman/wsresource"/>
+    		<wsdl-soap:address location="http://localhost:8080/qman/services/QManWsResource"/>
     	</wsdl:port>
 	</wsdl:service>
 </wsdl:definitions>

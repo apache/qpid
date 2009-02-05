@@ -117,6 +117,9 @@ public interface Messages
     String QMAN_300003_BROKER_ALREADY_CONNECTED = "<QMAN-300003> : Unable to enlist given broker connection data : QMan is already connected with broker %s";
     String QMAN_300004_INVALID_CONFIGURATION_FILE = "<QMAN-300004> : The given configuration file (%s) is not valid (it doesn't exist or cannot be read)";
     String QMAN_300005_QEMU_INITIALIZATION_FAILURE = "<QMAN-300005> : Unable to initialize QEmu module and therefore emulation won't be enabled...";
+    
+    String QMAN_300006_OS_MBEAN_FAILURE = "<QMAN-300006> : Unable to retrieve Operating System properties. No values will be displayed for underlying Operation System.";
+    String QMAN_300007_RUNTIME_MBEAN_FAILURE = "<QMAN-300007> : Unable to retrieve Runtime Environment properties. No values will be displayed.";
 	
 	// ERROR
 	String QMAN_100001_BAD_MAGIC_NUMBER_FAILURE = "<QMAN-100001> : Message processing failure : incoming message contains a bad magic number (%s) and therefore will be discaded.";

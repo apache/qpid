@@ -371,4 +371,14 @@ public class QMan extends NotificationBroadcasterSupport implements DynamicMBean
             LOGGER.error(exception, Messages.QMAN_100017_UNABLE_TO_CONNECT,brokerId,data);
         }
     }    
+    
+    /**
+     * Returns the list of management clients currently handled by QMan.
+     * 
+     * @return the list of management clients currently handled by QMan.
+     */
+    public List<ManagementClient> getManagementClients()
+    {
+    	return managementClients;
+    }
 }

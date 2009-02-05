@@ -101,6 +101,11 @@
                 <exclude name="qpid-management-client-tests*.jar"/>           
             </fileset>
         </copy>
+        <copy todir="${web.module}">
+        	<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}..${file.separator}console">            	
+				<include name="*/**"/>
+			</fileset>          	
+        </copy>	
     </target> 
 	<target name="jar.manifest" depends="compile" if="module.manifest">
 		<jar destfile="${module.jar}" manifest="${module.manifest}">
