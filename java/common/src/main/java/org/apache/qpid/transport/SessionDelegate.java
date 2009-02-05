@@ -146,4 +146,42 @@ public class SessionDelegate
         ssn.getSessionListener().message(ssn, xfr);
     }
 
+    @Override public void messageSetFlowMode(Session ssn, MessageSetFlowMode sfm)
+    {
+        if ("".equals(sfm.getDestination()) &&
+            MessageFlowMode.CREDIT.equals(sfm.getFlowMode()))
+        {
+            ssn.setFlowControl(true);
+        }
+        else
+        {
+            super.messageSetFlowMode(ssn, sfm);
+        }
+    }
+
+    @Override public void messageFlow(Session ssn, MessageFlow flow)
+    {
+        if ("".equals(flow.getDestination()) &&
+            MessageCreditUnit.MESSAGE.equals(flow.getUnit()))
+        {
+            ssn.addCredit((int) flow.getValue());
+        }
+        else
+        {
+            super.messageFlow(ssn, flow);
+        }
+    }
+
+    @Override public void messageStop(Session ssn, MessageStop stop)
+    {
+        if ("".equals(stop.getDestination()))
+        {
+            ssn.drainCredit();
+        }
+        else
+        {
+            super.messageStop(ssn, stop);
+        }
+    }
+
 }
