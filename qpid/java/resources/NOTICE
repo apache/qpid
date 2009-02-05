@@ -94,3 +94,20 @@ Licensend under MPL or LGPL.
 The original software is available from :
 
 http://www.jboss.org/javassist/
+
+The core library is an eclipse plugin that  contains a bytecode disassembler 
+("Disassembler") that can produce a listing of the Java assembler mnemonics ("Assembler Mnemonics") 
+for a Java method. It is needed in order to enable JSP support in Jetty.
+It is licensed under Eclipse Public License Version 1.0
+
+The JSP implementation library is used for QMan admin console that is a web application running
+on Jetty.
+It is licensed under Common Development and Distribution license version 1.0. License information
+is available from :
+
+https://glassfish.dev.java.net/public/CDDLv1.0.html
+
+The JSP API library is used is used for QMan admin console that is a web application running
+on Jetty. 
+It is licensed under Apache License Version 2.0.
+ 
