@@ -319,6 +319,11 @@ void Connection::deliveryRecord(const string& qname,
     if (completed) dr.complete();
     if (ended) dr.setEnded();   // Exsitance of message
     semanticState().record(dr); // Part of the session's unacked list.
+
+    // If the message was unacked, the newbie broker must place
+    // it in its messageStore.
+    if ( m.payload && m.payload->isPersistent() && !completed && !ended && !accepted && !cancelled )
+        queue->enqueue ( 0, m.payload );
 }
 
 void Connection::queuePosition(const string& qname, const SequenceNumber& position) {
