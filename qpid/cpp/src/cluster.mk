@@ -76,7 +76,6 @@ cluster_la_SOURCES =				\
   qpid/cluster/ThreadDispatch.h			\
   qpid/cluster/ProxyInputHandler.h		\
   qpid/cluster/Quorum.h				\
-  qpid/cluster/Updatee.h			\
   qpid/cluster/WriteEstimate.cpp		\
   qpid/cluster/WriteEstimate.h			\
   qpid/cluster/types.h 
