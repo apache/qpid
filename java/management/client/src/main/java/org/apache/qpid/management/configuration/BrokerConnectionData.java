@@ -44,7 +44,7 @@ public class BrokerConnectionData
 	 * @param username the username for connecting with the broker.
 	 * @param password the password for connecting with the broker.
 	 * @param virtualHost the virtual host.
-	 * @param initialPoolCapacity the number of the connection that must  be immediately opened.
+	 * @param initialPoolCapacity the number of connections that must  be immediately opened.
 	 * @param maxPoolCapacity the maximum number of opened connection.
 	 * @param maxWaitTimeout the maximum amount of time that a client will wait for obtaining a connection.
      */

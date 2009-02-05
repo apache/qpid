@@ -80,7 +80,6 @@ public class GetResourcePropertyDocumentExample extends AbstractQManExample
 		
 		@SuppressWarnings("unused")
 		Element resourcePropertyDocument = wsResourceClient.getResourcePropertyDocument();
-
 	}
 	/**
 	 * Prints out a description of this example.

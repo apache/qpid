@@ -37,7 +37,7 @@ import org.apache.qpid.transport.util.Logger;
  *
  * @author Andrea Gazzarini
  */
-final class ManagementClient
+public final class ManagementClient
 {      
     private final static Logger LOGGER = Logger.get(ManagementClient.class);
     
@@ -46,6 +46,8 @@ final class ManagementClient
     
     private DomainModel _domainModel;
     private QpidService _service;
+   
+    private final BrokerConnectionData _connectionData;
     
     /**
      * Builds a new <code>ManagementClient</code> with the given identifier and connection data.
@@ -55,12 +57,29 @@ final class ManagementClient
      */
     ManagementClient(UUID brokerId,BrokerConnectionData connectionData)
     {
+    	_connectionData = connectionData;
         _service = new QpidService(brokerId);
         _domainModel = new DomainModel(brokerId);
         _managementQueueName = Configuration.getInstance().getManagementQueueName();
         _methodReplyQueueName = Configuration.getInstance().getMethodReplyQueueName();
     }
 
+    @Override
+    public String toString()
+    {
+    	return _connectionData.toString();
+    }
+    
+    /**
+     * Returns the connection data associated with this management client.
+     * 
+     * @return the connection data associated with this management client.
+     */
+    public BrokerConnectionData getBrokerConnectionData()
+    {
+    	return _connectionData;
+    }
+    
     /**
      * Establishing initial communication Between Client and Broker.
      * According to specification :
