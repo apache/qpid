@@ -52,11 +52,17 @@ jetty=lib/jetty-6.1.14.jar
 jetty-util=lib/jetty-util-6.1.14.jar
 jetty-bootstrap=lib/start.jar
 
+jsp-api=lib/jsp-api-2.1.jar
+jsp-impl=lib/jsp-2.1.jar
+core-lib=lib/core-3.1.1.jar
+
 muse.libs = ${muse-core} ${muse-platform-mini} ${muse-util} ${muse-util-qname} \
 ${muse-util-xml} ${muse-wsa-soap} ${muse-wsdm-muws-adv-api} ${muse-wsdm-muws-adv-impl} \
 ${muse-wsdm-muws-api} ${muse-wsdm-muws-impl} ${muse-wsdm-wef-api} ${muse-wsdm-wef-impl} \
 ${muse-wsn-api} ${muse-wsn-impl} ${muse-wsrf-api} ${muse-wsrf-impl} ${muse-wsrf-rmd} \
 ${muse-wsx-api} ${muse-wsx-impl} ${wsdl4j} ${xercesImpl} ${xml-apis} ${jetty} ${jetty-util} ${jetty-bootstrap}
+
+jsp.libs = ${jsp-api} ${jsp-impl} ${core-lib}
 
 osgi-core=lib/org.osgi.core-1.0.0.jar
 felix-framework=lib/org.apache.felix.framework-1.0.0.jar
@@ -73,7 +79,7 @@ broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
     ${slf4j-log4j} ${xalan} ${felix.libs} ${build.lib}/${project.name}-common-${project.version}.jar
 
 broker-plugins.libs=${common.libs} ${felix.libs} 
-management-client.libs=${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
+management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
