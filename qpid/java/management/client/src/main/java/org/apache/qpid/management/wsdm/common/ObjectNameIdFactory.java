@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.wsdm.common;
 
+import javax.management.ObjectName;
 import javax.xml.namespace.QName;
 
 import org.apache.muse.core.routing.ResourceIdFactory;
@@ -54,6 +55,7 @@ public class ObjectNameIdFactory implements ResourceIdFactory
 	 */
 	public String getNextIdentifier() 
 	{
-		return ThreadSessionManager.getInstance().getSession().getObjectName().getCanonicalName();
+		ObjectName objectName = ThreadSessionManager.getInstance().getSession().getObjectName();
+		return objectName.getKeyProperty(Names.OBJECT_ID);
 	}
 }

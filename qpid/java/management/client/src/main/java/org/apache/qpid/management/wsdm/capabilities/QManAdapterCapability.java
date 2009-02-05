@@ -163,14 +163,14 @@ public class QManAdapterCapability extends AbstractCapability
 			EndpointReference endpointPointReference = new EndpointReference(_resourceURI);			
 			endpointPointReference.addParameter(
 					Names.RESOURCE_ID_QNAME, 
-					eventSourceName.getCanonicalName());
+					eventSourceName.getKeyProperty(Names.OBJECT_ID));
 			
 			ResourceManager resourceManager = getResource().getResourceManager();
 			try 
 			{
 				Resource resource = resourceManager.getResource(endpointPointReference);
 				resource.shutdown();
-				
+					
 				LOGGER.info(
 						Messages.QMAN_000031_RESOURCE_HAS_BEEN_REMOVED, 
 						eventSourceName);
