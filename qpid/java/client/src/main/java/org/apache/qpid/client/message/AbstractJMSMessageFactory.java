@@ -27,7 +27,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.DeliveryProperties;
 
@@ -109,7 +108,8 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     protected abstract AbstractJMSMessage createMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException;
 
 
-    protected AbstractJMSMessage create010MessageWithBody(long messageNbr, Struct[] contentHeader,
+    protected AbstractJMSMessage create010MessageWithBody(long messageNbr, MessageProperties msgProps,
+                                                          DeliveryProperties deliveryProps,  
                                                           java.nio.ByteBuffer body) throws AMQException
     {
         ByteBuffer data;
@@ -130,21 +130,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data
                     .remaining());
         }
-        // set the properties of this message
-        MessageProperties mprop;
-        DeliveryProperties devprop;
-        if( contentHeader.length >1 )
-        {
-          mprop = (MessageProperties) contentHeader[0];
-          devprop = (DeliveryProperties) contentHeader[1];
-        }
-        else
-        {
-          mprop = new MessageProperties();
-          devprop = (DeliveryProperties) contentHeader[0];
-        }
-
-        AMQMessageDelegate delegate = new AMQMessageDelegate_0_10(mprop, devprop, messageNbr);
+        AMQMessageDelegate delegate = new AMQMessageDelegate_0_10(msgProps, deliveryProps, messageNbr);
 
         AbstractJMSMessage message = createMessage(delegate, data);
         return message;
@@ -173,12 +159,12 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         return msg;
     }
 
-    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, Struct[] contentHeader,
-                                            java.nio.ByteBuffer body)
+    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, MessageProperties msgProps,
+                                            DeliveryProperties deliveryProps, java.nio.ByteBuffer body)
             throws JMSException, AMQException
     {
         final AbstractJMSMessage msg =
-                create010MessageWithBody(messageNbr, contentHeader, body);
+                create010MessageWithBody(messageNbr,msgProps,deliveryProps, body);
         msg.setJMSRedelivered(redelivered);
         msg.receivedFromServer();
         return msg;
