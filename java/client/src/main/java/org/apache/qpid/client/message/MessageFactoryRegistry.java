@@ -148,7 +148,11 @@ public class MessageFactoryRegistry
             {
                 redelivered = deliverProps.getRedelivered();
             }
-            return mf.createMessage(transfer.getId(), redelivered, transfer.getHeader().getStructs(), transfer.getBody());
+            return mf.createMessage(transfer.getId(), 
+                                    redelivered, 
+                                    mprop == null? new MessageProperties():mprop,
+                                    deliverProps == null? new DeliveryProperties():deliverProps,
+                                    transfer.getBody());
         }
     }
 
