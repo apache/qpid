@@ -109,17 +109,6 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _messagePublishInfo;
     }
 
-    public boolean isRedelivered()
-    {
-        return _redelivered;
-    }
-
-
-    public void setRedelivered(boolean redelivered)
-    {
-        _redelivered = redelivered;
-    }
-
     public boolean isPersistent()
     {
         return false;

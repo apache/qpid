@@ -405,6 +405,21 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 {
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
                 }
+
+                public ContentHeaderBody getContentHeaderBody() throws AMQException
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isPersistent() throws AMQException
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isRedelivered()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
             };
         }
 

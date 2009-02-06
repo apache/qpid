@@ -63,10 +63,6 @@ public interface AMQMessageHandle
 
     MessagePublishInfo getMessagePublishInfo(StoreContext context) throws AMQException;
 
-    boolean isRedelivered();
-
-    void setRedelivered(boolean redelivered);
-
     boolean isPersistent();
 
     void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo,

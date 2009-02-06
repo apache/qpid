@@ -358,7 +358,7 @@ public class Show extends AbstractCommand
                 ispersitent.add("n/a");
             }
 
-            isredelivered.add(msg.isRedelivered() ? "true" : "false");
+            isredelivered.add(entry.isRedelivered() ? "true" : "false");
 
             isdelivered.add(msg.getDeliveredToConsumer() ? "true" : "false");
 

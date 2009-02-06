@@ -27,6 +27,7 @@
 package org.apache.qpid.server.output;
 
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -41,10 +42,10 @@ public interface ProtocolOutputConverter
         ProtocolOutputConverter newInstance(AMQProtocolSession session);
     }
 
-    void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
+    void writeDeliver(QueueEntry queueEntry, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException;
 
-    void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException;
+    void writeGetOk(QueueEntry queueEntry, int channelId, long deliveryTag, int queueSize) throws AMQException;
 
     byte getProtocolMinorVersion();
 

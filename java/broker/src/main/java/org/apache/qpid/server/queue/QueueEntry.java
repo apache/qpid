@@ -24,11 +24,8 @@ import org.apache.qpid.server.subscription.Subscription;
 * under the License.
 *
 */
-public interface QueueEntry extends Comparable<QueueEntry>
+public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQException>
 {
-
-
-
     public static enum State
     {
         AVAILABLE,
