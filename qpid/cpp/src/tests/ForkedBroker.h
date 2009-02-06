@@ -1,4 +1,5 @@
 #ifndef TESTS_FORKEDBROKER_H
+#define TESTS_FORKEDBROKER_H
 
 
 /*

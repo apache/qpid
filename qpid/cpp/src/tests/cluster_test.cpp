@@ -20,6 +20,7 @@
 #include "unit_test.h"
 #include "ForkedBroker.h"
 #include "BrokerFixture.h"
+#include "ClusterFixture.h"
 
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionAccess.h"
@@ -69,87 +70,6 @@ Broker::Options parseOpts(size_t argc, const char* argv[]) {
     Plugin::addOptions(opts); // Pick up cluster options.
     opts.parse(argc, argv, "", true); // Allow-unknown for --load-module
     return opts;
-}
-
-/** Cluster fixture is a vector of ports for the replicas.
- * 
- * At most one replica (by default replica 0) is in the current
- * process, all others are forked as children.
- */
-class ClusterFixture : public vector<uint16_t>  {
-    string name;
-    std::auto_ptr<BrokerFixture> localBroker;
-    int localIndex;
-    std::vector<shared_ptr<ForkedBroker> > forkedBrokers;
-
-  public:
-    /** @param localIndex can be -1 meaning don't automatically start a local broker.
-     * A local broker can be started with addLocal().
-     */
-    ClusterFixture(size_t n, int localIndex=0);
-    void add(size_t n) { for (size_t i=0; i < n; ++i) add(); }
-    void add();                 // Add a broker.
-    void addLocal();            // Add a local broker.
-    void setup();
-
-    bool hasLocal() const { return localIndex >= 0 && size_t(localIndex) < size(); }
-    
-    /** Kill a forked broker with sig, or shutdown localBroker if n==0. */
-    void kill(size_t n, int sig=SIGINT) {
-        if (n == size_t(localIndex))
-            localBroker->broker->shutdown();
-        else
-            forkedBrokers[n]->kill(sig);
-    }
-
-    /** Kill a broker and suppress errors from connection. */
-    void killWithSilencer(size_t n, client::Connection& c, int sig=SIGINT) {
-        ScopedSuppressLogging sl;
-        kill(n,sig);
-        try { c.close(); } catch(...) {}
-    }
-};
-
-ClusterFixture::ClusterFixture(size_t n, int localIndex_) : name(Uuid(true).str()), localIndex(localIndex_) {
-    add(n);
-}
-
-void ClusterFixture::add() {
-    if (size() != size_t(localIndex))  { // fork a broker process.
-        std::ostringstream os; os << "fork" << size();
-        std::string prefix = os.str();
-        const char* argv[] = {
-            "qpidd " __FILE__ ,
-            "--no-module-dir",
-            "--load-module=../.libs/cluster.so",
-            "--cluster-name", name.c_str(), 
-            "--auth=no", "--no-data-dir",
-            "--log-prefix", prefix.c_str(),
-        };
-        size_t argc = sizeof(argv)/sizeof(argv[0]);
-        forkedBrokers.push_back(shared_ptr<ForkedBroker>(new ForkedBroker(argc, argv)));
-        push_back(forkedBrokers.back()->getPort());
-    }
-    else {                      // Run in this process
-        addLocal();
-    }
-}
-
-void ClusterFixture::addLocal() {
-    assert(int(size()) == localIndex || localIndex == -1);
-    localIndex = size();
-    const char* argv[] = {
-        "qpidd " __FILE__ ,
-        "--load-module=../.libs/cluster.so",
-        "--cluster-name", name.c_str(), 
-        "--auth=no", "--no-data-dir"
-    };
-    size_t argc = sizeof(argv)/sizeof(argv[0]);
-    ostringstream os; os << "local" << localIndex;
-    qpid::log::Logger::instance().setPrefix(os.str());
-    localBroker.reset(new BrokerFixture(parseOpts(argc, argv)));
-    push_back(localBroker->getPort());
-    forkedBrokers.push_back(shared_ptr<ForkedBroker>());
 }
 
 ostream& operator<<(ostream& o, const cpg_name* n) {
