@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.log4j.Logger;
@@ -44,6 +45,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private AMQMessage _message;
 
+    private boolean _redelivered;
 
     private Set<Subscription> _rejectedBy = null;
 
@@ -186,9 +188,26 @@ public class QueueEntryImpl implements QueueEntry
         return _message.immediateAndNotDelivered();
     }
 
-    public void setRedelivered(boolean b)
+    public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
-        getMessage().setRedelivered(b);
+        return _message.getContentHeaderBody();
+    }
+
+    public boolean isPersistent() throws AMQException
+    {
+        return _message.isPersistent();
+    }
+
+    public boolean isRedelivered()
+    {
+        return _redelivered;
+    }
+
+    public void setRedelivered(boolean redelivered)
+    {
+        _redelivered = redelivered;
+        // todo - here we could mark this message as redelivered so we don't have to mark
+        // all messages on recover as redelivered.       
     }
 
     public Subscription getDeliveredSubscription()

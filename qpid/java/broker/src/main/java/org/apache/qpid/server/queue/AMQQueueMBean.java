@@ -397,11 +397,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             // Create the tabular list of message header contents
             for (int i = beginIndex; (i <= endIndex) && (i <= list.size()); i++)
             {
-                AMQMessage msg = list.get(i - 1).getMessage();
+                QueueEntry queueEntry = list.get(i - 1);
+                AMQMessage msg = queueEntry.getMessage();
                 ContentHeaderBody headerBody = msg.getContentHeaderBody();
                 // Create header attributes list
                 String[] headerAttributes = getMessageHeaderProperties(headerBody);
-                Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered() };
+                Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize,
+                                        queueEntry.isRedelivered() };
                 CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
                 _messageList.put(messageData);
             }

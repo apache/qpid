@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A deliverable message.
  */
-public class AMQMessage implements Filterable<AMQException>
+public class AMQMessage
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -394,16 +394,6 @@ public class AMQMessage implements Filterable<AMQException>
     public MessagePublishInfo getMessagePublishInfo() throws AMQException
     {
         return _messageHandle.getMessagePublishInfo(getStoreContext());
-    }
-
-    public boolean isRedelivered()
-    {
-        return _messageHandle.isRedelivered();
-    }
-
-    public void setRedelivered(boolean redelivered)
-    {
-        _messageHandle.setRedelivered(redelivered);
     }
 
     public long getArrivalTime()

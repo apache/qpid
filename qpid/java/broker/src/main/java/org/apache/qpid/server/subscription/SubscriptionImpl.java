@@ -434,7 +434,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private boolean checkFilters(QueueEntry msg)
     {
-        return (_filters == null) || _filters.allAllow(msg.getMessage());
+        return (_filters == null) || _filters.allAllow(msg);
     }
 
     public boolean isAutoClose()

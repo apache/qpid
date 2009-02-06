@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
 
@@ -28,6 +29,7 @@ public class MockQueueEntry implements QueueEntry
 {
 
     private AMQMessage _message;
+    private boolean _redelivered;
 
     public boolean acquire()
     {
@@ -176,10 +178,9 @@ public class MockQueueEntry implements QueueEntry
     }
 
     
-    public void setRedelivered(boolean b)
+    public void setRedelivered(boolean redelivered)
     {
-
-
+         _redelivered = redelivered;
     }
 
     
@@ -194,4 +195,18 @@ public class MockQueueEntry implements QueueEntry
         _message = msg;
     }
 
+    public ContentHeaderBody getContentHeaderBody() throws AMQException
+    {
+        return _message.getContentHeaderBody();
+    }
+
+    public boolean isPersistent() throws AMQException
+    {
+        return _message.isPersistent();
+    }
+
+    public boolean isRedelivered()
+    {
+        return _redelivered;
+    }
 }

@@ -42,5 +42,8 @@ public class MessageHandleFactory
         {
             return new InMemoryMessageHandle(messageId);
         }
+
+//        return new AMQMessage(messageId, store, persistent);
     }
+
 }
