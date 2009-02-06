@@ -109,6 +109,14 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
     lastBroker(false),
     sequence(0)
 {
+    mAgent = ManagementAgent::Singleton::getInstance();
+    if (mAgent != 0){
+        _qmf::Package  packageInit(mAgent);
+        mgmtObject = new _qmf::Cluster (mAgent, this, &broker,name,myUrl.str());
+        mAgent->addObject (mgmtObject);
+        mgmtObject->set_status("JOINING");
+    }
+
     failoverExchange.reset(new FailoverExchange(this));
     if (quorum_) quorum.init();
     cpg.join(name);
@@ -125,13 +133,6 @@ void Cluster::initialize() {
     if (myUrl.empty())
         myUrl = Url::getIpAddressesUrl(broker.getPort(broker::Broker::TCP_TRANSPORT));
     QPID_LOG(notice, *this << " joining cluster " << name << " with url=" << myUrl);
-    mAgent = ManagementAgent::Singleton::getInstance();
-    if (mAgent != 0){
-        _qmf::Package  packageInit(mAgent);
-        mgmtObject = new _qmf::Cluster (mAgent, this, &broker,name,myUrl.str());
-        mAgent->addObject (mgmtObject);
-        mgmtObject->set_status("JOINING");
-    }
     broker.getKnownBrokers = boost::bind(&Cluster::getUrls, this);
     dispatcher.start();
     deliverEventQueue.start();
