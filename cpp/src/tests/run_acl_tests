@@ -20,7 +20,6 @@
 #
 
 # Run the acl tests. $srcdir is set by the Makefile.
-set -x
 PYTHON_DIR=$srcdir/../../../python
 DATA_DIR=`pwd`/data_dir
 
@@ -39,7 +38,7 @@ test_loading_acl_from_absolute_path(){
     POLICY_FILE=$PWD/$srcdir/policy.acl
     rm -f temp.log
     PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module ../.libs/acl.so --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
-    ACL_FILE=`grep "notice Read ACL file" temp.log | awk '{print $5x}'`
+    ACL_FILE=`grep "notice Read ACL file" temp.log | sed 's/^.*Read ACL file //'`
    ../qpidd -q --port $PORT
    if test "$ACL_FILE" != "\"$POLICY_FILE\""; then
      echo "unable to load policy file from an absolute path";
