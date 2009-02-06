@@ -29,6 +29,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQMessageHandle;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.ContentChunk;
@@ -68,10 +69,12 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return _protocolSession;
     }
 
-    public void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
+    public void writeDeliver(QueueEntry queueEntry, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
-        AMQBody deliverBody = createEncodedDeliverFrame(message, channelId, deliveryTag, consumerTag);
+        AMQMessage message = queueEntry.getMessage();
+
+        AMQBody deliverBody = createEncodedDeliverFrame(queueEntry, channelId, deliveryTag, consumerTag);
         final ContentHeaderBody contentHeaderBody = message.getContentHeaderBody();
 
 
@@ -126,13 +129,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
 
-    public void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(QueueEntry queueEntry, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
 
+        final AMQMessage message = queueEntry.getMessage();
         final AMQMessageHandle messageHandle = message.getMessageHandle();
         final StoreContext storeContext = message.getStoreContext();
 
-        AMQFrame deliver = createEncodedGetOkFrame(message, channelId, deliveryTag, queueSize);
+        AMQFrame deliver = createEncodedGetOkFrame(queueEntry, channelId, deliveryTag, queueSize);
 
 
         AMQDataBlock contentHeader = createContentHeaderBlock(channelId, message.getContentHeaderBody());
@@ -175,14 +179,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
 
-    private AMQBody createEncodedDeliverFrame(AMQMessage message, final int channelId, final long deliveryTag, final AMQShortString consumerTag)
+    private AMQBody createEncodedDeliverFrame(QueueEntry queueEntry, final int channelId, final long deliveryTag, final AMQShortString consumerTag)
             throws AMQException
     {
+        AMQMessage message= queueEntry.getMessage();
+
         final MessagePublishInfo pb = message.getMessagePublishInfo();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
 
-
-        final boolean isRedelivered = messageHandle.isRedelivered();
+        final boolean isRedelivered = queueEntry.isRedelivered();
         final AMQShortString exchangeName = pb.getExchange();
         final AMQShortString routingKey = pb.getRoutingKey();
 
@@ -237,16 +241,15 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return returnBlock;
     }
 
-    private AMQFrame createEncodedGetOkFrame(AMQMessage message, int channelId, long deliveryTag, int queueSize)
+    private AMQFrame createEncodedGetOkFrame(QueueEntry queueEntry, int channelId, long deliveryTag, int queueSize)
             throws AMQException
     {
+        final AMQMessage message = queueEntry.getMessage();
         final MessagePublishInfo pb = message.getMessagePublishInfo();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
-
 
         BasicGetOkBody getOkBody =
                 METHOD_REGISTRY.createBasicGetOkBody(deliveryTag,
-                                                    messageHandle.isRedelivered(),
+                                                    queueEntry.isRedelivered(),
                                                     pb.getExchange(),
                                                     pb.getRoutingKey(),
                                                     queueSize);

@@ -25,8 +25,8 @@ import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.AMQChannel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,7 +99,7 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     {
     }
 
-    public void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
+    public void writeDeliver(QueueEntry queueEntry, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
     {
         _deliveryCount.incrementAndGet();
 
@@ -121,11 +121,11 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
                 consumers.put(consumerTag, consumerDelivers);
             }
 
-            consumerDelivers.add(new DeliveryPair(deliveryTag, message));
+            consumerDelivers.add(new DeliveryPair(deliveryTag, queueEntry));
         }
     }
 
-    public void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(QueueEntry queueEntry, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
     }
 
@@ -147,17 +147,17 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     public class DeliveryPair
     {
         private long _deliveryTag;
-        private AMQMessage _message;
+        private QueueEntry _queueEntry;
 
-        public DeliveryPair(long deliveryTag, AMQMessage message)
+        public DeliveryPair(long deliveryTag, QueueEntry queueEntry)
         {
             _deliveryTag = deliveryTag;
-            _message = message;
+            _queueEntry = queueEntry;
         }
 
-        public AMQMessage getMessage()
+        public QueueEntry getMessage()
         {
-            return _message;
+            return _queueEntry;
         }
 
         public long getDeliveryTag()

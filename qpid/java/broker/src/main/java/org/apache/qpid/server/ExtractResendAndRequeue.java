@@ -54,22 +54,21 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
         _storeContext = storeContext;
     }
 
-    public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
+    public boolean callback(final long deliveryTag, QueueEntry queueEntry) throws AMQException
     {
-
-        AMQMessage msg = message.getMessage();
-        msg.setRedelivered(true);
-        final Subscription subscription = message.getDeliveredSubscription();
+       
+        queueEntry.setRedelivered(true);
+        final Subscription subscription = queueEntry.getDeliveredSubscription();
         if (subscription != null)
         {
             // Consumer exists
             if (!subscription.isClosed())
             {
-                _msgToResend.put(deliveryTag, message);
+                _msgToResend.put(deliveryTag, queueEntry);
             }
             else // consumer has gone
             {
-                _msgToRequeue.put(deliveryTag, message);
+                _msgToRequeue.put(deliveryTag, queueEntry);
             }
         }
         else
@@ -77,22 +76,22 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
             // Message has no consumer tag, so was "delivered" to a GET
             // or consumer no longer registered
             // cannot resend, so re-queue.
-            if (!message.isQueueDeleted())
+            if (!queueEntry.isQueueDeleted())
             {
                 if (_requeueIfUnabletoResend)
                 {
-                    _msgToRequeue.put(deliveryTag, message);
+                    _msgToRequeue.put(deliveryTag, queueEntry);
                 }
                 else
                 {
-                    message.discard(_storeContext);
-                    _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
+                    queueEntry.discard(_storeContext);
+                    _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + queueEntry);
                 }
             }
             else
             {
-                message.discard(_storeContext);
-                _log.warn("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
+                queueEntry.discard(_storeContext);
+                _log.warn("Message.queue is null and no DeadLetter Queue so dropping message:" + queueEntry);
             }
         }
 

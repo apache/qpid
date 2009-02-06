@@ -71,13 +71,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
         JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration", new ExpirationExpression());
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new Expression<E>()
-                                     {
-                                         public Object evaluate(Filterable message) throws E
-                                         {
-                                             return message.isRedelivered();
-                                         }
-                                     });
+        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new RedeliveredExpression());
     }
 
     private final String name;
@@ -265,4 +259,13 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
         }
     }
+        
+    private static class RedeliveredExpression<E extends Exception> implements Expression<E>
+    {
+        public Object evaluate(Filterable<E> message) throws E
+        {
+            return message.isRedelivered();
+        }
+    }
+
 }
