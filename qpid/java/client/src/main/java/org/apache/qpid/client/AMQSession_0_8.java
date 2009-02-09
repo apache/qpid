@@ -298,7 +298,9 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final AMQProtocolHandler protocolHandler,
             final boolean nowait) throws AMQException, FailoverException
     {
-        ExchangeDeclareBody body = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,false,false,false,false,nowait,null);
+        ExchangeDeclareBody body = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,
+                                                                                 name.toString().startsWith("amq."),
+                                                                                 false,false,false,nowait,null);
         AMQFrame exchangeDeclare = body.generateFrame(_channelId);
 
         protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
