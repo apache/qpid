@@ -33,31 +33,31 @@ public abstract class BasicACLPlugin implements ACLPlugin
 {
 
     // Returns true or false if the plugin should authorise or deny the request    
-    protected abstract boolean getResult();
+    protected abstract AuthzResult getResult();
     
     @Override
-    public boolean authoriseBind(AMQProtocolSession session, Exchange exch,
+    public AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch,
             AMQQueue queue, AMQShortString routingKey)
     {
         return getResult();
     }
 
     @Override
-    public boolean authoriseConnect(AMQProtocolSession session,
+    public AuthzResult authoriseConnect(AMQProtocolSession session,
             VirtualHost virtualHost)
     {
         return getResult();
     }
 
     @Override
-    public boolean authoriseConsume(AMQProtocolSession session, boolean noAck,
+    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck,
             AMQQueue queue)
     {
         return getResult();    
     }
 
     @Override
-    public boolean authoriseConsume(AMQProtocolSession session,
+    public AuthzResult authoriseConsume(AMQProtocolSession session,
             boolean exclusive, boolean noAck, boolean noLocal, boolean nowait,
             AMQQueue queue)
     {
@@ -65,7 +65,7 @@ public abstract class BasicACLPlugin implements ACLPlugin
     }
 
     @Override
-    public boolean authoriseCreateExchange(AMQProtocolSession session,
+    public AuthzResult authoriseCreateExchange(AMQProtocolSession session,
             boolean autoDelete, boolean durable, AMQShortString exchangeName,
             boolean internal, boolean nowait, boolean passive,
             AMQShortString exchangeType)
@@ -74,7 +74,7 @@ public abstract class BasicACLPlugin implements ACLPlugin
     }
 
     @Override
-    public boolean authoriseCreateQueue(AMQProtocolSession session,
+    public AuthzResult authoriseCreateQueue(AMQProtocolSession session,
             boolean autoDelete, boolean durable, boolean exclusive,
             boolean nowait, boolean passive, AMQShortString queue)
     {
@@ -82,19 +82,19 @@ public abstract class BasicACLPlugin implements ACLPlugin
     }
 
     @Override
-    public boolean authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
     {
         return getResult();
     }
 
     @Override
-    public boolean authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
     {
         return getResult();
     }
 
     @Override
-    public boolean authorisePublish(AMQProtocolSession session,
+    public AuthzResult authorisePublish(AMQProtocolSession session,
             boolean immediate, boolean mandatory, AMQShortString routingKey,
             Exchange e)
     {
@@ -102,22 +102,28 @@ public abstract class BasicACLPlugin implements ACLPlugin
     }
 
     @Override
-    public boolean authorisePurge(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue)
     {
         return getResult();
     }
 
     @Override
-    public boolean authoriseUnbind(AMQProtocolSession session, Exchange exch,
+    public AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch,
             AMQShortString routingKey, AMQQueue queue)
     {
         return getResult();
     }
 
     @Override
-    public void setConfiguaration(Configuration config)
+    public void setConfiguration(Configuration config)
     {
         // no-op
+    }
+
+    public boolean supportsTag(String name)
+    {
+        // This plugin doesn't support any tags
+        return false;
     }
 
 }

@@ -30,6 +30,11 @@ import org.apache.felix.framework.cache.BundleCache;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.framework.util.StringMap;
 import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLPluginFactory;
+import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.security.access.plugins.DenyAll;
+import org.apache.qpid.server.security.access.plugins.SimpleXML;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
 import org.osgi.util.tracker.ServiceTracker;
@@ -46,8 +51,10 @@ public class PluginManager
 
     private Felix _felix = null;
     private ServiceTracker _exchangeTracker = null;
+    private ServiceTracker _securityTracker = null;
     private Activator _activator = null;
     private boolean _empty;
+    private Map<String, ACLPluginFactory> _securityPlugins;
 
     public PluginManager(String plugindir) throws Exception
     {
@@ -115,8 +122,13 @@ public class PluginManager
         try
         {
             _felix.start();
+            
             _exchangeTracker = new ServiceTracker(_activator.getContext(), ExchangeType.class.getName(), null);
             _exchangeTracker.open();
+            
+            _securityTracker = new ServiceTracker(_activator.getContext(), ACLPlugin.class.getName(), null);
+            _exchangeTracker.open();
+            
         }
         catch (BundleException e)
         {
@@ -124,22 +136,37 @@ public class PluginManager
         }
     }
 
-    public Map<String, ExchangeType<?>> getExchanges()
-    {
-        if (_empty)
+    private <type> Map<String, type> getServices(ServiceTracker tracker)
+    {   
+        Map<String, type>exchanges = new HashMap<String, type>();
+        
+        if (tracker != null)
         {
-            return null;
-        }
-        Map<String, ExchangeType<?>>exchanges = new HashMap<String, ExchangeType<?>>();
-        for (Object service : _exchangeTracker.getServices())
-        {
-            if (service instanceof ExchangeType<?>)
+            for (Object service : tracker.getServices())
             {
-                exchanges.put(service.getClass().getName(), (ExchangeType<?>) service);
+                exchanges.put(service.getClass().getName(), (type) service);
             }
         }
         
         return exchanges;
+    }
+    
+    public Map<String, ExchangeType<?>> getExchanges()
+    {
+        return getServices(_exchangeTracker);
+    }
+    
+    public Map<String, ACLPluginFactory> getSecurityPlugins()
+    {
+        if (_securityPlugins == null)
+        {
+            _securityPlugins = getServices(_securityTracker);
+            // A little gross that we have to add them here, but not all the plugins are OSGIfied
+            _securityPlugins.put(SimpleXML.class.getName(), SimpleXML.FACTORY);
+            _securityPlugins.put(AllowAll.class.getName(), AllowAll.FACTORY);
+            _securityPlugins.put(DenyAll.class.getName(), DenyAll.FACTORY);
+        }
+        return _securityPlugins;
     }
 
 }

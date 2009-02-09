@@ -31,6 +31,7 @@ import org.apache.qpid.framing.amqp_8_0.QueueBindBodyImpl;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -79,7 +80,7 @@ public class PrincipalPermissionsTest extends TestCase
     public void testPrincipalPermissions()
     {
         assertNotNull(_perms);
-        assertTrue(_perms.authorise(Permission.ACCESS, (Object[]) null));
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.ACCESS, (Object[]) null));
     }
 
     // FIXME: test has been disabled since the permissions assume that the user has tried to create
@@ -89,9 +90,9 @@ public class PrincipalPermissionsTest extends TestCase
         QueueBindBodyImpl bind = new QueueBindBodyImpl(_ticket, _queueName, _exchangeName, _routingKey, _nowait, _arguments);
         Object[] args = new Object[]{bind, _exchange, _queue, _routingKey};
         
-        assertFalse(_perms.authorise(Permission.BIND, args));
+        assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.BIND, args));
         _perms.grant(Permission.BIND, (Object[]) null);
-        assertTrue(_perms.authorise(Permission.BIND, args));
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.BIND, args));
     }
 
     public void testQueueCreate()
@@ -99,9 +100,9 @@ public class PrincipalPermissionsTest extends TestCase
         Object[] grantArgs = new Object[]{_temporary , _queueName, _exchangeName, _routingKey};
         Object[] authArgs = new Object[]{_autoDelete, _queueName};
         
-        assertFalse(_perms.authorise(Permission.CREATEQUEUE, authArgs));
+        assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
         _perms.grant(Permission.CREATEQUEUE, grantArgs);
-        assertTrue(_perms.authorise(Permission.CREATEQUEUE, authArgs));
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
     }
     
     
@@ -114,9 +115,9 @@ public class PrincipalPermissionsTest extends TestCase
         Object[] authArgs = new Object[]{exchangeDeclare};
         Object[] grantArgs = new Object[]{_exchangeName, _exchangeType};
         
-        assertFalse(_perms.authorise(Permission.CREATEEXCHANGE, authArgs));
+        assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.CREATEEXCHANGE, authArgs));
         _perms.grant(Permission.CREATEEXCHANGE, grantArgs);
-        assertTrue(_perms.authorise(Permission.CREATEEXCHANGE, authArgs));
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEEXCHANGE, authArgs));
     }
     
     public void testConsume()
@@ -128,7 +129,7 @@ public class PrincipalPermissionsTest extends TestCase
          * assertFalse(_perms.authorise(Permission.CONSUME, authArgs));
          */
         _perms.grant(Permission.CONSUME, grantArgs);
-        assertTrue(_perms.authorise(Permission.CONSUME, authArgs));
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authArgs));
     }
     
     public void testPublish()
@@ -136,9 +137,9 @@ public class PrincipalPermissionsTest extends TestCase
         Object[] authArgs = new Object[]{_exchange, _routingKey};
         Object[] grantArgs = new Object[]{_exchange.getName(), _routingKey};
         
-        assertFalse(_perms.authorise(Permission.PUBLISH, authArgs));
+        assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.PUBLISH, authArgs));
         _perms.grant(Permission.PUBLISH, grantArgs);
-        assertTrue(_perms.authorise(Permission.PUBLISH, authArgs));
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.PUBLISH, authArgs));
     }
     
 }
