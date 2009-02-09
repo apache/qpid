@@ -20,142 +20,300 @@
  */
 package org.apache.qpid.server.security.access;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.access.plugins.DenyAll;
-import org.apache.qpid.configuration.PropertyUtils;
-import org.apache.log4j.Logger;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import java.util.List;
-import java.lang.reflect.Method;
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
+import org.apache.qpid.server.security.access.plugins.SimpleXML;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ACLManager
 {
     private static final Logger _logger = Logger.getLogger(ACLManager.class);
+    private PluginManager _pluginManager;
+    private Map<String, ACLPluginFactory> _allSecurityPlugins = new HashMap<String, ACLPluginFactory>();
+    private Map<String, ACLPlugin> _globalPlugins = new HashMap<String, ACLPlugin>();
+    private Map<String, ACLPlugin> _hostPlugins = new HashMap<String, ACLPlugin>();
 
-    public static ACLPlugin loadACLManager(String name, Configuration hostConfig) throws ConfigurationException
+    public ACLManager(Configuration configuration, PluginManager manager)
     {
-        ACLPlugin aclPlugin = ApplicationRegistry.getInstance().getAccessManager();
+        this(configuration, manager, null);
+    }
 
-        if (hostConfig == null)
+    public ACLManager(Configuration configuration, PluginManager manager, ACLPluginFactory securityPlugin)
+    {
+        _pluginManager = manager;
+
+        if (manager == null) // No plugin manager, no plugins
         {
-            _logger.warn("No Configuration specified. Using default ACLPlugin '" + aclPlugin.getPluginName()
-                         + "' for VirtualHost:'" + name + "'");
-            return aclPlugin;
+            return;
         }
 
-        String accessClass = hostConfig.getString("security.access.class");
-        if (accessClass == null)
+        _allSecurityPlugins = _pluginManager.getSecurityPlugins();
+        if (securityPlugin != null)
         {
-
-            _logger.warn("No ACL Plugin specified. Using default ACL Plugin '" + aclPlugin.getPluginName() +
-                         "' for VirtualHost:'" + name + "'");
-            return aclPlugin;
+            _allSecurityPlugins.put(securityPlugin.getClass().getName(), securityPlugin);
         }
 
-        Object o;
-        try
-        {
-            o = Class.forName(accessClass).newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new ConfigurationException("Error initialising ACL: " + e, e);
-        }
-
-        if (!(o instanceof ACLPlugin))
-        {
-            throw new ConfigurationException("ACL Plugins must implement the ACLPlugin interface");
-        }
-
-        initialiseAccessControl((ACLPlugin) o, hostConfig);
-
-        aclPlugin = getManager((ACLPlugin) o);
-        if (_logger.isInfoEnabled())
-        {
-            _logger.info("Initialised ACL Plugin '" + aclPlugin.getPluginName()
-                         + "' for virtualhost '" + name + "' successfully");
-        }
-
-        return aclPlugin;
+        _globalPlugins = configurePlugins(configuration);
     }
 
 
-    private static void initialiseAccessControl(ACLPlugin accessManager, Configuration config)
-            throws ConfigurationException
+    public void configureHostPlugins(Configuration hostConfig)
     {
-        //First provide the ACLPlugin with the host configuration
-
-        accessManager.setConfiguaration(config);
-
-        //Provide additional attribute customisation.        
-        String baseName = "security.access.attributes.attribute.";
-        List<String> argumentNames = config.getList(baseName + "name");
-        List<String> argumentValues = config.getList(baseName + "value");
-        for (int i = 0; i < argumentNames.size(); i++)
-        {
-            String argName = argumentNames.get(i);
-            if (argName == null || argName.length() == 0)
-            {
-                throw new ConfigurationException("Access Control argument names must have length >= 1 character");
-            }
-            if (Character.isLowerCase(argName.charAt(0)))
-            {
-                argName = Character.toUpperCase(argName.charAt(0)) + argName.substring(1);
-            }
-            String methodName = "set" + argName;
-            Method method = null;
-            try
-            {
-                method = accessManager.getClass().getMethod(methodName, String.class);
-            }
-            catch (NoSuchMethodException e)
-            {
-                //do nothing as method will be null
-            }
-
-            if (method == null)
-            {
-                throw new ConfigurationException("No method " + methodName + " found in class " + accessManager.getClass() +
-                                                 " hence unable to configure access control. The method must be public and " +
-                                                 "have a single String argument with a void return type");
-            }
-            try
-            {
-                method.invoke(accessManager, PropertyUtils.replaceProperties(argumentValues.get(i)));
-            }
-            catch (Exception e)
-            {
-                ConfigurationException ce = new ConfigurationException(e.getMessage(), e.getCause());
-                ce.initCause(e);
-                throw ce;
-            }
-        }
+        _hostPlugins = configurePlugins(hostConfig);
     }
-
-
-    private static ACLPlugin getManager(ACLPlugin manager)
+    
+    public Map<String, ACLPlugin> configurePlugins(Configuration configuration)
     {
-        if (manager == null)
+        Configuration securityConfig = configuration.subset("security");
+        Map<String, ACLPlugin> plugins = new HashMap<String, ACLPlugin>();
+        Iterator keys = securityConfig.getKeys();
+        Collection<String> handledTags = new HashSet();
+        while (keys.hasNext())
         {
-            if (ApplicationRegistry.getInstance().getAccessManager() == null)
+            // Splitting the string is necessary here because of the way that getKeys() returns only
+            // bottom level children
+            String tag = ((String) keys.next()).split("\\.", 2)[0];
+            
+            if (!handledTags.contains(tag))
             {
-                return new DenyAll();
+                for (ACLPluginFactory plugin : _allSecurityPlugins.values())
+                {
+                    if (plugin.supportsTag(tag))
+                    {
+                        _logger.warn("Plugin handling security section "+tag+" is "+plugin.getClass().getSimpleName());
+                        handledTags.add(tag);
+                        plugins.put(plugin.getClass().getName(), plugin.newInstance(securityConfig));
+                    }
+                }
             }
-            else
+            if (!handledTags.contains(tag))
             {
-                return ApplicationRegistry.getInstance().getAccessManager();
+                _logger.warn("No plugin handled security section "+tag);
             }
         }
-        else
-        {
-            return manager;
-        }
-    }
+        return plugins;
+    }    
 
     public static Logger getLogger()
     {
         return _logger;
+    }
+
+    private abstract class AccessCheck
+    {
+        abstract AuthzResult allowed(ACLPlugin plugin);
+    }
+
+    private boolean checkAllPlugins(AccessCheck checker)
+    {
+        AuthzResult result = AuthzResult.ABSTAIN;
+        HashMap<String, ACLPlugin> remainingPlugins = new HashMap<String, ACLPlugin>();
+        remainingPlugins.putAll(_globalPlugins);
+        for (Entry<String, ACLPlugin> plugin : _hostPlugins.entrySet())
+        {
+            result = checker.allowed(plugin.getValue());
+            if (result == AuthzResult.DENIED)
+            {
+                // Something vetoed the access, we're done
+                return false; 
+            }
+            else if (result == AuthzResult.ALLOWED)
+            {
+                // Remove plugin from global check list since 
+                // host allow overrides global allow
+                remainingPlugins.remove(plugin.getKey());
+            }
+        }
+        
+        for (ACLPlugin plugin : remainingPlugins.values())
+        {   
+            result = checker.allowed(plugin);
+            if (result == AuthzResult.DENIED)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean authoriseBind(final AMQProtocolSession session, final Exchange exch, final AMQQueue queue,
+            final AMQShortString routingKey)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseBind(session, exch, queue, routingKey);
+            }
+
+        });
+    }
+
+    public boolean authoriseConnect(final AMQProtocolSession session, final VirtualHost virtualHost)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseConnect(session, virtualHost);
+            }
+
+        });
+    }
+
+    public boolean authoriseConsume(final AMQProtocolSession session, final boolean noAck, final AMQQueue queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseConsume(session, noAck, queue);
+            }
+
+        });
+    }
+
+    public boolean authoriseConsume(final AMQProtocolSession session, final boolean exclusive, final boolean noAck,
+            final boolean noLocal, final boolean nowait, final AMQQueue queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseConsume(session, exclusive, noAck, noLocal, nowait, queue);
+            }
+
+        });
+    }
+
+    public boolean authoriseCreateExchange(final AMQProtocolSession session, final boolean autoDelete,
+            final boolean durable, final AMQShortString exchangeName, final boolean internal, final boolean nowait,
+            final boolean passive, final AMQShortString exchangeType)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseCreateExchange(session, autoDelete, durable, exchangeName, internal, nowait,
+                        passive, exchangeType);
+            }
+
+        });
+    }
+
+    public boolean authoriseCreateQueue(final AMQProtocolSession session, final boolean autoDelete,
+            final boolean durable, final boolean exclusive, final boolean nowait, final boolean passive,
+            final AMQShortString queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseCreateQueue(session, autoDelete, durable, exclusive, nowait, passive, queue);
+            }
+
+        });
+    }
+
+    public boolean authoriseDelete(final AMQProtocolSession session, final AMQQueue queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseDelete(session, queue);
+            }
+
+        });
+    }
+
+    public boolean authoriseDelete(final AMQProtocolSession session, final Exchange exchange)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseDelete(session, exchange);
+            }
+
+        });
+    }
+    
+    public boolean authorisePublish(final AMQProtocolSession session, final boolean immediate, final boolean mandatory,
+            final AMQShortString routingKey, final Exchange e)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authorisePublish(session, immediate, mandatory, routingKey, e);
+            }
+
+        });
+    }
+
+    public boolean authorisePurge(final AMQProtocolSession session, final AMQQueue queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authorisePurge(session, queue);
+            }
+
+        });
+    }
+
+    public boolean authoriseUnbind(final AMQProtocolSession session, final Exchange exch,
+            final AMQShortString routingKey, final AMQQueue queue)
+    {
+        return checkAllPlugins(new AccessCheck()
+        {
+
+            @Override
+            AuthzResult allowed(ACLPlugin plugin)
+            {
+                return plugin.authoriseUnbind(session, exch, routingKey, queue);
+            }
+
+        });
+    }
+
+    public void addHostPlugin(ACLPlugin aclPlugin)
+    {
+        _hostPlugins.put(aclPlugin.getClass().getName(), aclPlugin);
     }
 }

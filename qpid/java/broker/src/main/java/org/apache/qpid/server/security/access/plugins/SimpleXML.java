@@ -35,9 +35,11 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.PrincipalPermissions;
+import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
@@ -48,6 +50,21 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SimpleXML implements ACLPlugin
 {
+    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
+    {
+        public boolean supportsTag(String name)
+        {
+            return name.startsWith("access_control_list");
+        }
+
+        public ACLPlugin newInstance(Configuration config)
+        {
+            SimpleXML plugin = new SimpleXML();
+            plugin.setConfiguration(config);
+            return plugin;
+        }
+    };
+    
     private Map<String, PrincipalPermissions> _users;
     private final AccessResult GRANTED = new AccessResult(this, AccessResult.AccessStatus.GRANTED);
 
@@ -56,7 +73,7 @@ public class SimpleXML implements ACLPlugin
         _users = new ConcurrentHashMap<String, PrincipalPermissions>();
     }
 
-    public void setConfiguaration(Configuration config)
+    public void setConfiguration(Configuration config)
     {
         processConfig(config);
     }
@@ -78,7 +95,7 @@ public class SimpleXML implements ACLPlugin
      */
     private void processPublish(Configuration config)
     {
-        Configuration publishConfig = config.subset("security.access_control_list.publish");
+        Configuration publishConfig = config.subset("access_control_list.publish");
 
         // Process users that have full publish permission
         String[] users = publishConfig.getStringArray("users.user");
@@ -149,7 +166,7 @@ public class SimpleXML implements ACLPlugin
 
     private void processConsume(Configuration config)
     {
-        Configuration consumeConfig = config.subset("security.access_control_list.consume");
+        Configuration consumeConfig = config.subset("access_control_list.consume");
 
         // Process queue limited users
         int queueCount = 0;
@@ -186,7 +203,7 @@ public class SimpleXML implements ACLPlugin
 
     private void processCreate(Configuration config)
     {
-        Configuration createConfig = config.subset("security.access_control_list.create");
+        Configuration createConfig = config.subset("access_control_list.create");
 
         // Process create permissions for queue creation
         int queueCount = 0;
@@ -273,13 +290,12 @@ public class SimpleXML implements ACLPlugin
         return "Simple";
     }
 
-    @Override
-    public boolean authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue, AMQShortString routingKey)
+    public AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue, AMQShortString routingKey)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -287,13 +303,12 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost)
+    public AuthzResult authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -301,13 +316,12 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue)
+    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -315,21 +329,19 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
+    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
             boolean nowait, AMQQueue queue)
     {
         return authoriseConsume(session, noAck, queue);
     }
 
-    @Override
-    public boolean authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
+    public AuthzResult authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
             AMQShortString exchangeName, boolean internal, boolean nowait, boolean passive, AMQShortString exchangeType)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -337,14 +349,13 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable, boolean exclusive,
+    public AuthzResult authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable, boolean exclusive,
             boolean nowait, boolean passive, AMQShortString queue)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -352,13 +363,12 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -366,13 +376,12 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -380,14 +389,13 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
+    public AuthzResult authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
             AMQShortString routingKey, Exchange e)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -395,13 +403,12 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authorisePurge(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
@@ -409,17 +416,17 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    @Override
-    public boolean authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey, AMQQueue queue)
+    public AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey, AMQQueue queue)
     {
         PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
         if (principalPermissions == null)
         {
-            return false;
+            return AuthzResult.DENIED;
         }
         else
         {
             return principalPermissions.authorise(Permission.UNBIND);
         }
     }
+
 }
