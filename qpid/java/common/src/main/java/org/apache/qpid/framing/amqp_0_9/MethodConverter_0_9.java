@@ -27,6 +27,7 @@ import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.*;
 import org.apache.qpid.framing.amqp_0_9.BasicPublishBodyImpl;
@@ -78,7 +79,7 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
         final AMQShortString exchange = publishBody.getExchange();
         final AMQShortString routingKey = publishBody.getRoutingKey();
 
-        return new MethodConverter_0_9.MessagePublishInfoImpl(exchange,
+        return new MessagePublishInfoImpl(exchange,
                                           publishBody.getImmediate(),
                                           publishBody.getMandatory(),
                                           routingKey);
@@ -94,50 +95,6 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
                                     info.isMandatory(),
                                     info.isImmediate()) ;
 
-    }
-
-    private static class MessagePublishInfoImpl implements MessagePublishInfo
-    {
-        private AMQShortString _exchange;
-        private final boolean _immediate;
-        private final boolean _mandatory;
-        private final AMQShortString _routingKey;
-
-        public MessagePublishInfoImpl(final AMQShortString exchange,
-                                      final boolean immediate,
-                                      final boolean mandatory,
-                                      final AMQShortString routingKey)
-        {
-            _exchange = exchange;
-            _immediate = immediate;
-            _mandatory = mandatory;
-            _routingKey = routingKey;
-        }
-
-        public AMQShortString getExchange()
-        {
-            return _exchange;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-            _exchange = exchange;
-        }
-
-        public boolean isImmediate()
-        {
-            return _immediate;
-        }
-
-        public boolean isMandatory()
-        {
-            return _mandatory;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingKey;
-        }
     }
 
     private static class ContentChunk_0_9 implements ContentChunk

@@ -18,35 +18,68 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.framing.abstraction;
 
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.AMQShortString;
 
-public class MockMessagePublishInfo implements MessagePublishInfo
+public class MessagePublishInfoImpl implements MessagePublishInfo
 {
+    private AMQShortString _exchange;
+    private boolean _immediate;
+    private boolean _mandatory;
+    private AMQShortString _routingKey;
+
+    public MessagePublishInfoImpl()
+    {
+    }
+
+    public MessagePublishInfoImpl(AMQShortString exchange, boolean immediate, boolean mandatory,
+                                  AMQShortString routingKey)
+    {
+        _exchange = exchange;
+        _immediate = immediate;
+        _mandatory = mandatory;
+        _routingKey = routingKey;
+    }
+
     public AMQShortString getExchange()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _exchange;
     }
 
     public void setExchange(AMQShortString exchange)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _exchange = exchange;
     }
 
     public boolean isImmediate()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return _immediate;
+    }
+
+    public void setImmediate(boolean immedate)
+    {
+        _immediate = immedate;
     }
 
     public boolean isMandatory()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return _mandatory;
+    }
+
+    public void setMandatory(boolean mandatory)
+    {
+        _mandatory = mandatory;        
     }
 
     public AMQShortString getRoutingKey()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _routingKey;
+    }
+
+    public void setRoutingKey(AMQShortString routingKey)
+    {
+        _routingKey = routingKey;
     }
 }

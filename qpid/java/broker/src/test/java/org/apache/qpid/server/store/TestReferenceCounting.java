@@ -24,8 +24,8 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.AMQMessageHandle;
@@ -53,35 +53,7 @@ public class TestReferenceCounting extends TestCase
     {
         ContentHeaderBody chb = createPersistentContentHeader();
 
-        MessagePublishInfo info = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return null;
-            }
-        };
-
+        MessagePublishInfo info = new MessagePublishInfoImpl();
 
         final long messageId = _store.getNewMessageId();
         AMQMessageHandle messageHandle = (new MessageHandleFactory()).createMessageHandle(messageId, _store, true);
@@ -112,34 +84,7 @@ public class TestReferenceCounting extends TestCase
     public void testMessageRemains() throws AMQException
     {
 
-        MessagePublishInfo info = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return null;
-            }
-        };
+        MessagePublishInfo info = new MessagePublishInfoImpl();
 
         final Long messageId = _store.getNewMessageId();
         final ContentHeaderBody chb = createPersistentContentHeader();

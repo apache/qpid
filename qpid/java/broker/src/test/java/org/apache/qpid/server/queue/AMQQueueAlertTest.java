@@ -40,6 +40,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.mina.common.ByteBuffer;
 
@@ -47,7 +48,6 @@ import javax.management.Notification;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Collections;
 import java.util.Set;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
@@ -275,34 +275,7 @@ public class AMQQueueAlertTest extends TestCase
     
     protected IncomingMessage message(final boolean immediate, long size) throws AMQException
     {
-        MessagePublishInfo publish = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public boolean isImmediate()
-            {
-                return immediate;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return null;
-            }
-        };
+        MessagePublishInfo publish = new MessagePublishInfoImpl(null,immediate,false,null);
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = size;   // in bytes

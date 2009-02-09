@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
@@ -152,70 +153,6 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             headers.setObject(parts[0], parts.length > 1 ? parts[1] : "");
         }
         return headers;
-    }
-
-
-    static final class MessagePublishInfoImpl implements MessagePublishInfo
-    {
-        private AMQShortString _exchange;
-        private boolean _immediate;
-        private boolean _mandatory;
-        private AMQShortString _routingKey;
-
-        public MessagePublishInfoImpl(AMQShortString routingKey)
-        {
-            _routingKey = routingKey;
-        }
-
-        public MessagePublishInfoImpl(AMQShortString exchange, boolean immediate, boolean mandatory, AMQShortString routingKey)
-        {
-            _exchange = exchange;
-            _immediate = immediate;
-            _mandatory = mandatory;
-            _routingKey = routingKey;
-        }
-
-        public AMQShortString getExchange()
-        {
-            return _exchange;
-        }
-
-        public boolean isImmediate()
-        {
-            return _immediate;
-
-        }
-
-        public boolean isMandatory()
-        {
-            return _mandatory;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingKey;
-        }
-
-
-        public void setExchange(AMQShortString exchange)
-        {
-            _exchange = exchange;
-        }
-
-        public void setImmediate(boolean immediate)
-        {
-            _immediate = immediate;
-        }
-
-        public void setMandatory(boolean mandatory)
-        {
-            _mandatory = mandatory;
-        }
-
-        public void setRoutingKey(AMQShortString routingKey)
-        {
-            _routingKey = routingKey;
-        }
     }
 
     static MessagePublishInfo getPublishRequest(final String id)

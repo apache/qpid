@@ -36,6 +36,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 
 import java.util.LinkedList;
 
@@ -72,7 +73,7 @@ public class DestWildExchangeTest extends TestCase
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
-        MessagePublishInfo info = new PublishInfo(new AMQShortString("a.b"));
+        MessagePublishInfo info = new MessagePublishInfoImpl(null, false, false, new AMQShortString("a.b"));
 
         IncomingMessage message = new IncomingMessage(0L, info, null, _protocolSession);
 
@@ -544,7 +545,7 @@ public class DestWildExchangeTest extends TestCase
 
     private IncomingMessage createMessage(String s) throws AMQException
     {
-        MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
+        MessagePublishInfo info = new MessagePublishInfoImpl(null, false, true, new AMQShortString(s));
 
         TransactionalContext trancontext = new NonTransactionalContext(_store, _context, null,
                                                                        new LinkedList<RequiredDeliveryException>()
@@ -555,41 +556,5 @@ public class DestWildExchangeTest extends TestCase
 
 
         return message;
-    }
-
-
-    class PublishInfo implements MessagePublishInfo
-    {
-        AMQShortString _routingkey;
-
-        PublishInfo(AMQShortString routingkey)
-        {
-            _routingkey = routingkey;
-        }
-
-        public AMQShortString getExchange()
-        {
-            return null;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-                        
-        }
-
-        public boolean isImmediate()
-        {
-            return false;
-        }
-
-        public boolean isMandatory()
-        {
-            return true;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingkey;
-        }
     }
 }

@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
