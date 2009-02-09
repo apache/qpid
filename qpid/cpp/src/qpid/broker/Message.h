@@ -45,6 +45,7 @@ class Exchange;
 class ExchangeRegistry;
 class MessageStore;
 class Queue;
+class ExpiryPolicy;
 
 class Message : public PersistableMessage {
 public:
@@ -73,8 +74,11 @@ public:
     const framing::FieldTable* getApplicationHeaders() const;
     bool isPersistent();
     bool requiresAccept();
-    void setTimestamp();
-    bool hasExpired() const;
+
+    void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
+    void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e);
+    bool hasExpired();
+    sys::AbsTime getExpiration() const { return expiration; }
 
     framing::FrameSet& getFrames() { return frames; } 
     const framing::FrameSet& getFrames() const { return frames; } 
@@ -171,6 +175,7 @@ public:
     ConnectionToken* publisher;
     mutable MessageAdapter* adapter;
     qpid::sys::AbsTime expiration;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
 
     static TransferAdapter TRANSFER;
 

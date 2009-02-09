@@ -26,6 +26,7 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/client/QueueOptions.h"
 #include <iostream>
@@ -491,7 +492,7 @@ void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTt
         } else {
             if (evenTtl) m->getProperties<DeliveryProperties>()->setTtl(evenTtl);
         }
-        m->setTimestamp();
+        m->setTimestamp(new broker::ExpiryPolicy);
         queue.deliver(m);
     }
 }

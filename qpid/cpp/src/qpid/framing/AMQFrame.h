@@ -92,6 +92,9 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     /** Must point to at least DECODE_SIZE_MIN bytes of data */
     static uint16_t decodeSize(char* data);
 
+    uint64_t getClusterId() const { return clusterId; }
+    void setClusterId(uint64_t id) { clusterId = id; }
+    
   private:
     void init();
 
@@ -103,6 +106,7 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     bool bos : 1;
     bool eos : 1;
     mutable uint32_t encodedSizeCache;
+    uint64_t clusterId;         // Used to identify frames in a clustered broekr.
 };
 
 std::ostream& operator<<(std::ostream&, const AMQFrame&);

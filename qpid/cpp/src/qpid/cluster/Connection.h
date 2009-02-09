@@ -119,7 +119,7 @@ class Connection :
     
     void shadowReady(uint64_t memberId, uint64_t connectionId);
 
-    void membership(const framing::FieldTable&, const framing::FieldTable&);
+    void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameId);
 
     void deliveryRecord(const std::string& queue,
                         const framing::SequenceNumber& position,
