@@ -122,10 +122,11 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, boolean isExclusive,
                              boolean isAutoDelete, AMQShortString queueName, boolean isDurable,AMQShortString[] bindingKeys)
     {
-        // If used with a fannout exchange, the routing key can be null
-        if ( !ExchangeDefaults.FANOUT_EXCHANGE_CLASS.equals(exchangeClass) && routingKey == null)
+        if ( (ExchangeDefaults.DIRECT_EXCHANGE_CLASS.equals(exchangeClass) || 
+              ExchangeDefaults.TOPIC_EXCHANGE_CLASS.equals(exchangeClass))  
+              && routingKey == null)
         {
-            throw new IllegalArgumentException("routingKey exchange must not be null");
+            throw new IllegalArgumentException("routing/binding key  must not be null");
         }
         if (exchangeName == null)
         {
@@ -472,10 +473,11 @@ public abstract class AMQDestination implements Destination, Referenceable
         }
         else
         {
-            throw new IllegalArgumentException("Unknown Exchange Class:" + exchangeClass);
+            return new AMQAnyDestination(exchangeName,exchangeClass,
+                                         routingKey,isExclusive, 
+                                         isAutoDelete,queueName, 
+                                         isDurable, new AMQShortString[0]);
         }
-
-
 
     }
 
@@ -495,13 +497,9 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return new AMQHeadersExchange(binding);
         }
-        else if (type.equals(ExchangeDefaults.FANOUT_EXCHANGE_CLASS))
-        {
-            return new AMQQueue(binding);
-        }
         else
         {
-            throw new IllegalArgumentException("Unknown Exchange Class:" + type + " in binding:" + binding);
+            return new AMQAnyDestination(binding);
         }
     }
 }
