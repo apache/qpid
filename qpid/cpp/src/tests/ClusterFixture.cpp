@@ -60,18 +60,6 @@ using qpid::cluster::Cluster;
 
 #include "ClusterFixture.h"
 
-
-/** Parse broker & cluster options */
-Broker::Options parseOpts(size_t argc, const char* argv[]) {
-    Broker::Options opts;
-    Plugin::addOptions(opts); // Pick up cluster options.
-    opts.parse(argc, argv, "", true); // Allow-unknown for --load-module
-    return opts;
-}
-
-
-
-
 ClusterFixture::ClusterFixture(size_t n, int localIndex_) : name(Uuid(true).str()), localIndex(localIndex_) {
     add(n);
 }
@@ -95,6 +83,16 @@ void ClusterFixture::add() {
     else {                      // Run in this process
         addLocal();
     }
+}
+
+namespace {
+/** Parse broker & cluster options */
+Broker::Options parseOpts(size_t argc, const char* argv[]) {
+    Broker::Options opts;
+    Plugin::addOptions(opts); // Pick up cluster options.
+    opts.parse(argc, argv, "", true); // Allow-unknown for --load-module
+    return opts;
+}
 }
 
 void ClusterFixture::addLocal() {
