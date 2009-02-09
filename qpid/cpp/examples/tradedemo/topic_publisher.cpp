@@ -90,7 +90,7 @@ class Publisher {
 
     virtual void publish_ticker(const std::string queue, unsigned short& curr_price);
     virtual void publish_market(const std::string queue, unsigned short& curr_price, int i);
-    ~Publisher() { };
+    virtual ~Publisher() { };
 };
 
 Publisher::Publisher(Session& session, int ttl_time, const unsigned long shares[6]) : 
