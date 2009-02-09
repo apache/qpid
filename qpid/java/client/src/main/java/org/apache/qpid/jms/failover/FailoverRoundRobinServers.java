@@ -50,7 +50,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
     private int _currentCycleRetries;
 
     /** Array of BrokerDetail used to make connections. */
-    private ConnectionURL _connectionDetails;
+    protected ConnectionURL _connectionDetails;
 
     public FailoverRoundRobinServers(ConnectionURL connectionDetails)
     {
