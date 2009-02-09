@@ -27,6 +27,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.subscription.Subscription;
@@ -44,7 +45,6 @@ import org.apache.qpid.server.util.NullApplicationRegistry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.Collections;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -103,34 +103,9 @@ public class AckTest extends TestCase
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Establish some way to determine the version for the test.
-            MessagePublishInfo publishBody = new MessagePublishInfo()
-            {
+            MessagePublishInfo publishBody = new MessagePublishInfoImpl(new AMQShortString("someExchange"), false,
+                                                                        false, new AMQShortString("rk"));
 
-                public AMQShortString getExchange()
-                {
-                    return new AMQShortString("someExchange");
-                }
-
-                public void setExchange(AMQShortString exchange)
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isImmediate()
-                {
-                    return false;
-                }
-
-                public boolean isMandatory()
-                {
-                    return false;
-                }
-
-                public AMQShortString getRoutingKey()
-                {
-                    return new AMQShortString("rk");
-                }
-            };
             IncomingMessage msg = new IncomingMessage(_messageStore.getNewMessageId(), publishBody, txnContext,_protocolSession);
             //IncomingMessage msg2 = null;
             if (persistent)

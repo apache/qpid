@@ -30,18 +30,15 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.exchange.DirectExchange;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionImpl;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -58,34 +55,7 @@ public class SimpleAMQQueueTest extends TestCase
     protected MockSubscription _subscription = new MockSubscription();
     protected FieldTable _arguments = null;
     
-    MessagePublishInfo info = new MessagePublishInfo()
-    {
-
-        public AMQShortString getExchange()
-        {
-            return null;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public boolean isImmediate()
-        {
-            return false;
-        }
-
-        public boolean isMandatory()
-        {
-            return false;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return null;
-        }
-    };
+    MessagePublishInfo info = new MessagePublishInfoImpl();
     
     @Override
     protected void setUp() throws Exception

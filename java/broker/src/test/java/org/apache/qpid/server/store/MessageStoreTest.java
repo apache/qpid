@@ -35,6 +35,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.queue.ExchangeBinding;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -340,7 +341,7 @@ public class MessageStoreTest extends TestCase
         headers.setString("Test", "MST");
         properties.setHeaders(headers);
 
-        MessagePublishInfo messageInfo = new TestMessagePublishInfo(directExchange, false, false, routingKey);
+        MessagePublishInfo messageInfo = new MessagePublishInfoImpl(directExchange.getName(), false, false, routingKey);
 
         IncomingMessage currentMessage = null;
 
@@ -598,47 +599,5 @@ public class MessageStoreTest extends TestCase
         assertNotNull("Queue(" + queueName + ") not correctly registered:", queue);
 
         assertEquals("Incorrect Message count on queue:" + queueName, messageCount, queue.getMessageCount());
-    }
-
-    private class TestMessagePublishInfo implements MessagePublishInfo
-    {
-
-        Exchange _exchange;
-        boolean _immediate;
-        boolean _mandatory;
-        AMQShortString _routingKey;
-
-        TestMessagePublishInfo(Exchange exchange, boolean immediate, boolean mandatory, AMQShortString routingKey)
-        {
-            _exchange = exchange;
-            _immediate = immediate;
-            _mandatory = mandatory;
-            _routingKey = routingKey;
-        }
-
-        public AMQShortString getExchange()
-        {
-            return _exchange.getName();
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-            //no-op
-        }
-
-        public boolean isImmediate()
-        {
-            return _immediate;
-        }
-
-        public boolean isMandatory()
-        {
-            return _mandatory;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingKey;
-        }
     }
 }
