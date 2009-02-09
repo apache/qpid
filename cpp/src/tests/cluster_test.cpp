@@ -64,13 +64,6 @@ using qpid::broker::Broker;
 using boost::shared_ptr;
 using qpid::cluster::Cluster;
 
-/** Parse broker & cluster options */
-Broker::Options parseOpts(size_t argc, const char* argv[]) {
-    Broker::Options opts;
-    Plugin::addOptions(opts); // Pick up cluster options.
-    opts.parse(argc, argv, "", true); // Allow-unknown for --load-module
-    return opts;
-}
 
 ostream& operator<<(ostream& o, const cpg_name* n) {
     return o << qpid::cluster::Cpg::str(*n);
