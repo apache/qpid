@@ -34,8 +34,6 @@ import java.io.UnsupportedEncodingException;
 
 import org.apache.qpid.QpidException;
 
-import org.apache.qpid.SecurityHelper;
-
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
