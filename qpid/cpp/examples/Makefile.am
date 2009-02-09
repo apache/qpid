@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-SUBDIRS = direct fanout pub-sub request-response failover qmf-console
+SUBDIRS = direct fanout pub-sub request-response failover qmf-console tradedemo 
 if HAVE_XML
   SUBDIRS += xml-exchange
   broker_args = "--no-module-dir --data-dir \"\" --auth no --load-module $(top_builddir)/src/.libs/xml.so"	
