@@ -88,7 +88,10 @@
 			</fileset>  
 		</copy>         
         <copy todir="${web-inf.folder}">
-            <fileset dir="${build}" includes="${module.libs}"/>
+            <fileset dir="${build}" includes="${module.libs}">
+            	<exclude name="lib/jetty*.jar"/>
+                <exclude name="lib/start*.jar"/>                       
+            </fileset>
         </copy>
         <copy todir="${web-inf.folder}${file.separator}lib">
             <fileset dir="${build}/lib">
