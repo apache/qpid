@@ -35,6 +35,7 @@ public interface BrokerDetails
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final String OPTIONS_CONNECT_DELAY = "connectdelay";
     public static final String OPTIONS_IDLE_TIMEOUT = "idle_timeout";
+    public static final String OPTIONS_SASL_MECHS = "sasl_mechs";
     public static final int DEFAULT_PORT = 5672;
 
     public static final String SOCKET = "socket";

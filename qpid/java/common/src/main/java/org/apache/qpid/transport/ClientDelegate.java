@@ -46,12 +46,21 @@ public class ClientDelegate extends ConnectionDelegate
     private String vhost;
     private String username;
     private String password;
-
-    public ClientDelegate(String vhost, String username, String password)
+    private String[] saslMechs;
+    private String protocol;
+    private String serverName;
+    
+    public ClientDelegate(String vhost, String username, String password,String saslMechs)
     {
         this.vhost = vhost;
         this.username = username;
         this.password = password;
+        this.saslMechs = saslMechs.split(" ");
+        
+        // Looks kinda of silly but the Sun SASL Kerberos client uses the 
+        // protocol + servername as the service key.
+        this.protocol = System.getProperty("qpid.sasl_protocol","AMQP");
+        this.serverName = System.getProperty("qpid.sasl_server_name","localhost");
     }
 
     public void init(Connection conn, ProtocolHeader hdr)
@@ -84,7 +93,7 @@ public class ClientDelegate extends ConnectionDelegate
                 new UsernamePasswordCallbackHandler();
             handler.initialise(username, password);
             SaslClient sc = Sasl.createSaslClient
-                (new String[] {"PLAIN"}, null, "AMQP", "localhost", null, handler);
+                (saslMechs, null, protocol, serverName, null, handler);
             conn.setSaslClient(sc);
 
             byte[] response = sc.hasInitialResponse() ?

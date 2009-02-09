@@ -161,14 +161,19 @@ public class Connection extends ConnectionInvoker
     {
         connect(host, port, vhost, username, password, false);
     }
-
+    
     public void connect(String host, int port, String vhost, String username, String password, boolean ssl)
+    {
+        connect(host, port, vhost, username, password, false,"PLAIN");
+    }
+
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs)
     {
         synchronized (lock)
         {
             state = OPENING;
 
-            delegate = new ClientDelegate(vhost, username, password);
+            delegate = new ClientDelegate(vhost, username, password,saslMechs);
 
             IoTransport.connect(host, port, ConnectionBinding.get(this), ssl);
             send(new ProtocolHeader(1, 0, 10));
