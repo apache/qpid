@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.jms;
 
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.jms.failover.FailoverExchangeMethod;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
@@ -48,7 +50,7 @@ public class FailoverPolicy
     private long _lastMethodTime;
     private long _lastFailTime;
 
-    public FailoverPolicy(ConnectionURL connectionDetails)
+    public FailoverPolicy(ConnectionURL connectionDetails, AMQConnection conn)
     {
         FailoverMethod method;
 
@@ -87,6 +89,10 @@ public class FailoverPolicy
                 if (failoverMethod.equals(FailoverMethod.ROUND_ROBIN))
                 {
                     method = new FailoverRoundRobinServers(connectionDetails);
+                }
+                else if (failoverMethod.equals(FailoverMethod.FAILOVER_EXCHANGE))
+                {
+                    method = new FailoverExchangeMethod(connectionDetails, conn);
                 }
                 else
                 {
