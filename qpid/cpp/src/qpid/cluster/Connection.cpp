@@ -127,10 +127,6 @@ bool Connection::checkUnsupported(const AMQBody& body) {
           case DTX_CLASS_ID: message = "DTX transactions are not currently supported by cluster."; break;
         }
     }
-    else if (body.type() == HEADER_BODY) {
-        const DeliveryProperties* dp = static_cast<const AMQHeaderBody&>(body).get<DeliveryProperties>();
-        if (dp && dp->getTtl()) message = "Message TTL is not currently supported by cluster.";
-    }
     if (!message.empty())
         connection.close(connection::CLOSE_CODE_FRAMING_ERROR, message);
     return !message.empty();
@@ -259,9 +255,9 @@ void Connection::shadowReady(uint64_t memberId, uint64_t connectionId) {
     self = shadow;
 }
 
-void Connection::membership(const FieldTable& joiners, const FieldTable& members) {
+void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t frameId) {
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members));
+    cluster.updateInDone(ClusterMap(joiners, members), frameId);
     self.second = 0;        // Mark this as completed update connection.
 }
 

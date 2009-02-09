@@ -49,6 +49,7 @@ public:
     bool isComplete() const;
 
     uint64_t getContentSize() const;
+
     void getContent(std::string&) const;
     std::string getContent() const;
 
@@ -73,6 +74,9 @@ public:
         return header ? header->get<T>() : 0;
     }
 
+    Frames::const_iterator begin() const { return parts.begin(); }
+    Frames::const_iterator end() const { return parts.end(); }
+    
     const SequenceNumber& getId() const { return id; }
 
     template <class P> void remove(P predicate) {

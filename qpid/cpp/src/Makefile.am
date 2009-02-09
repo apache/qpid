@@ -358,6 +358,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/Exchange.cpp \
+  qpid/broker/ExpiryPolicy.h \
+  qpid/broker/ExpiryPolicy.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/QueueCleaner.cpp \
   qpid/broker/QueueListeners.cpp \

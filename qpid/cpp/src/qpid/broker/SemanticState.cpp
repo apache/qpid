@@ -358,14 +358,13 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
     //TODO: the following should be hidden behind message (using MessageAdapter or similar)
 
-    // Do not replace the delivery-properties.exchange if it is is already set.
-    // This is used internally (by the cluster) to force the exchange name on a message.
-    // The client library ensures this is always empty for messages from normal clients.
     if (msg->isA<MessageTransferBody>()) {
-        if (!msg->hasProperties<DeliveryProperties>() ||
-            msg->getProperties<DeliveryProperties>()->getExchange().empty())
+        // Do not replace the delivery-properties.exchange if it is is already set.
+        // This is used internally (by the cluster) to force the exchange name on a message.
+        // The client library ensures this is always empty for messages from normal clients.
+        if (!msg->hasProperties<DeliveryProperties>() || msg->getProperties<DeliveryProperties>()->getExchange().empty())
             msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
-        msg->setTimestamp();
+        msg->setTimestamp(getSession().getBroker().getExpiryPolicy());
     }
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getBroker().getExchanges().get(exchangeName);
