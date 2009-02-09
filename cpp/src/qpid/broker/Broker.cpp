@@ -30,6 +30,7 @@
 #include "SecureConnectionFactory.h"
 #include "TopicExchange.h"
 #include "Link.h"
+#include "ExpiryPolicy.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
@@ -150,6 +151,7 @@ Broker::Broker(const Broker::Options& conf) :
     queueCleaner(queues, timer),
     queueEvents(poller),
     recovery(true),
+    expiryPolicy(new ExpiryPolicy),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (conf.enableMgmt) {

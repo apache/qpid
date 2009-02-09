@@ -63,6 +63,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/Event.h				\
   qpid/cluster/EventFrame.h			\
   qpid/cluster/EventFrame.cpp			\
+  qpid/cluster/ExpiryPolicy.h			\
+  qpid/cluster/ExpiryPolicy.cpp			\
   qpid/cluster/FailoverExchange.cpp		\
   qpid/cluster/FailoverExchange.h		\
   qpid/cluster/Multicaster.cpp			\

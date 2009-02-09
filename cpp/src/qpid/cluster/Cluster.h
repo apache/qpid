@@ -31,6 +31,7 @@
 #include "Quorum.h"
 #include "Decoder.h"
 #include "PollableQueue.h"
+#include "ExpiryPolicy.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/Monitor.h"
@@ -89,7 +90,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave();
 
     // Update completed - called in update thread
-    void updateInDone(const ClusterMap&);
+    void updateInDone(const ClusterMap&, uint64_t frameId);
 
     MemberId getId() const;
     broker::Broker& getBroker() const;
@@ -100,6 +101,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     size_t getReadMax() { return readMax; }
     size_t getWriteEstimate() { return writeEstimate; }
+
+    bool isLeader() const;       // Called in deliver thread.
     
   private:
     typedef sys::Monitor::ScopedLock Lock;
@@ -129,6 +132,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
+    void messageExpired(const MemberId&, uint64_t, Lock& l);
     void shutdown(const MemberId&, Lock&);
     void deliveredEvent(const Event&); 
     void deliveredFrame(const EventFrame&); 
@@ -185,7 +189,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     const size_t writeEstimate;
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
-    ClusterMap::Set myElders;
     qpid::management::ManagementAgent* mAgent;
 
     // Thread safe members
@@ -197,8 +200,11 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
 
-    // Called only from event delivery thread
+    // Used only in delivery thread
     Decoder decoder;
+    ClusterMap::Set elders;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
+    uint64_t frameId;
 
     // Used only during initialization
     bool initialized;

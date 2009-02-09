@@ -86,10 +86,12 @@ void send(client::AsyncSession& s, const AMQBody& body) {
 // TODO aconway 2008-09-24: optimization: update connections/sessions in parallel.
 
 UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, const Url& url,
-                       broker::Broker& broker, const ClusterMap& m, const Cluster::Connections& cons,
-                       const boost::function<void()>& ok,
-                       const boost::function<void(const std::exception&)>& fail)
-    : updaterId(updater), updateeId(updatee), updateeUrl(url), updaterBroker(broker), map(m), connections(cons), 
+                           broker::Broker& broker, const ClusterMap& m, uint64_t frameId_,
+                           const Cluster::Connections& cons,
+                           const boost::function<void()>& ok,
+                           const boost::function<void(const std::exception&)>& fail)
+    : updaterId(updater), updateeId(updatee), updateeUrl(url), updaterBroker(broker), map(m),
+      frameId(frameId_), connections(cons), 
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
       done(ok), failed(fail)
 {
@@ -120,6 +122,7 @@ void UpdateClient::update() {
 
     ClusterConnectionMembershipBody membership;
     map.toMethodBody(membership);
+    membership.setFrameId(frameId);
     AMQFrame frame(membership);
     client::ConnectionAccess::getImpl(connection)->handle(frame);
     connection.close();

@@ -63,9 +63,10 @@ class UpdateClient : public sys::Runnable {
     static const std::string UPDATE; // Name for special update queue and exchange.
     
     UpdateClient(const MemberId& updater, const MemberId& updatee, const Url&,
-               broker::Broker& donor, const ClusterMap& map, const std::vector<boost::intrusive_ptr<Connection> >& ,
-               const boost::function<void()>& done,
-               const boost::function<void(const std::exception&)>& fail);
+                 broker::Broker& donor, const ClusterMap& map, uint64_t sequence,
+                 const std::vector<boost::intrusive_ptr<Connection> >& ,
+                 const boost::function<void()>& done,
+                 const boost::function<void(const std::exception&)>& fail);
 
     ~UpdateClient();
     void update();
@@ -89,6 +90,7 @@ class UpdateClient : public sys::Runnable {
     Url updateeUrl;
     broker::Broker& updaterBroker;
     ClusterMap map;
+    uint64_t frameId;
     std::vector<boost::intrusive_ptr<Connection> > connections;
     client::Connection connection, shadowConnection;
     client::AsyncSession session, shadowSession;

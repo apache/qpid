@@ -43,6 +43,10 @@
     <control name="config-change" code="0x11" label="Raw cluster membership.">
       <field name="current" type="vbin16"/> <!-- packed member-id array -->
     </control>
+
+    <control name="message-expired" code="0x12">
+      <field name="id" type="uint64"/>
+    </control>
     
     <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
 
@@ -126,6 +130,7 @@
     <control name="membership" code="0x21" label="Cluster membership details.">
       <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
+      <field name="frame-id" type="uint64"/>> <!-- Frame id counter value -->
     </control>
 
     <!-- Set the position of a replicated queue. -->

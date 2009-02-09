@@ -36,6 +36,7 @@
 #include "Vhost.h"
 #include "System.h"
 #include "Timer.h"
+#include "ExpiryPolicy.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementBroker.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -64,6 +65,8 @@ namespace sys {
 struct Url;
 
 namespace broker {
+
+class ExpiryPolicy;
 
 static const  uint16_t DEFAULT_PORT=5672;
 
@@ -111,6 +114,8 @@ class Broker : public sys::Runnable, public Plugin::Target,
   private:
     typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
 
+    void declareStandardExchange(const std::string& name, const std::string& type);
+
     boost::shared_ptr<sys::Poller> poller;
     Options config;
     management::ManagementAgent::Singleton managementAgentSingleton;
@@ -132,14 +137,11 @@ class Broker : public sys::Runnable, public Plugin::Target,
     System::shared_ptr           systemObject;
     QueueCleaner queueCleaner;
     QueueEvents queueEvents;
-
-    void declareStandardExchange(const std::string& name, const std::string& type);
-
     std::vector<Url> knownBrokers;
     std::vector<Url> getKnownBrokersImpl();
     std::string federationTag;
-
     bool recovery;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
 
   public:
 
@@ -180,6 +182,9 @@ class Broker : public sys::Runnable, public Plugin::Target,
     Options& getOptions() { return config; }
     QueueEvents& getQueueEvents() { return queueEvents; }
 
+    void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
+    boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
+    
     SessionManager& getSessionManager() { return sessionManager; }
     const std::string& getFederationTag() const { return federationTag; }
 

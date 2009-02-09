@@ -21,6 +21,7 @@
 
 #include "Message.h"
 #include "ExchangeRegistry.h"
+#include "ExpiryPolicy.h"
 #include "qpid/StringUtils.h"
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/FieldTable.h"
@@ -316,24 +317,29 @@ void Message::addTraceId(const std::string& id)
     }
 }
 
-void Message::setTimestamp()
+void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e) 
 {
     DeliveryProperties* props = getProperties<DeliveryProperties>();    
-    //Spec states that timestamp should be set, evaluate the
-    //performance impact before re-enabling this:
-    //time_t now = ::time(0);
-    //props->setTimestamp(now);
     if (props->getTtl()) {
-        //set expiration (nb: ttl is in millisecs, time_t is in secs)
+        // AMQP requires setting the expiration property to be posix
+        // time_t in seconds. TTL is in milliseconds
         time_t now = ::time(0);
         props->setExpiration(now + (props->getTtl()/1000));
+        // Use higher resolution time for the internal expiry calculation.
         expiration = AbsTime(AbsTime::now(), Duration(props->getTtl() * TIME_MSEC));
+        setExpiryPolicy(e);
     }
 }
 
-bool Message::hasExpired() const
+void Message::setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) {
+    expiryPolicy = e;
+    if (expiryPolicy)
+        expiryPolicy->willExpire(*this);
+}
+
+bool Message::hasExpired()
 {
-    return expiration < FAR_FUTURE && expiration < AbsTime::now();
+    return expiryPolicy && expiryPolicy->hasExpired(*this);
 }
 
 boost::intrusive_ptr<Message>& Message::getReplacementMessage(const Queue* qfor) const
