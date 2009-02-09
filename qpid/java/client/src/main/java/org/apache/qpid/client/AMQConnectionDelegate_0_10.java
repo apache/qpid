@@ -154,16 +154,21 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                 this.setIdleTimeout(Long.getLong(ClientProperties.IDLE_TIMEOUT_PROP_NAME,0));
             }
             
+            String saslMechs = brokerDetail.getProperty("sasl_mechs")!= null?
+                               brokerDetail.getProperty("sasl_mechs"):
+                               System.getProperty("qpid.sasl_mechs","PLAIN");
+            
             _qpidConnection.connect(brokerDetail.getHost(), brokerDetail.getPort(), _conn.getVirtualHost(),
-                                    _conn.getUsername(), _conn.getPassword(), brokerDetail.useSSL());
+                                    _conn.getUsername(), _conn.getPassword(), brokerDetail.useSSL(),saslMechs);
             _conn._connected = true;
+            _conn._failoverPolicy.attainedConnection();
         }
         catch(ProtocolVersionException pe)
         {
             return new ProtocolVersion(pe.getMajor(), pe.getMinor());
         }
         catch (ConnectionException e)
-        {
+        {            
             throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot connect to broker", e);
         }
 
