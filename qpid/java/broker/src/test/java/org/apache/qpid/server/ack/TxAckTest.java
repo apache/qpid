@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQMessageHandle;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.MemoryMessageStore;
@@ -125,34 +126,7 @@ public class TxAckTest extends TestCase
             {
                 long deliveryTag = i + 1;
 
-                MessagePublishInfo info = new MessagePublishInfo()
-                {
-
-                    public AMQShortString getExchange()
-                    {
-                        return null;
-                    }
-
-                    public void setExchange(AMQShortString exchange)
-                    {
-                        //To change body of implemented methods use File | Settings | File Templates.
-                    }
-
-                    public boolean isImmediate()
-                    {
-                        return false;
-                    }
-
-                    public boolean isMandatory()
-                    {
-                        return false;
-                    }
-
-                    public AMQShortString getRoutingKey()
-                    {
-                        return null;
-                    }
-                };
+                MessagePublishInfo info = new MessagePublishInfoImpl();
 
                 TestMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
                 _map.add(deliveryTag, _queue.enqueue(new StoreContext(), message));

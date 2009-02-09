@@ -28,6 +28,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.subscription.Subscription;
@@ -50,7 +51,6 @@ import javax.management.JMException;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Collections;
 
 /**
  * Test class to test AMQQueueMBean attribtues and operations
@@ -258,34 +258,7 @@ public class AMQQueueMBeanTest extends TestCase
 
     private IncomingMessage message(final boolean immediate, boolean persistent) throws AMQException
     {
-        MessagePublishInfo publish = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public boolean isImmediate()
-            {
-                return immediate;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return null;
-            }
-        };
+        MessagePublishInfo publish = new MessagePublishInfoImpl(null,immediate,false,null);
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes

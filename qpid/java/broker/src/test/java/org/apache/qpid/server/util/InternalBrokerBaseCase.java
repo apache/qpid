@@ -25,6 +25,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.AMQChannel;
@@ -141,33 +142,8 @@ public class InternalBrokerBaseCase extends TestCase
 
     public void publishMessages(InternalTestProtocolSession session, AMQChannel channel, int messages) throws AMQException
     {
-        MessagePublishInfo info = new MessagePublishInfo()
-        {
-            public AMQShortString getExchange()
-            {
-                return ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-
-            }
-
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return QUEUE_NAME;
-            }
-        };
+        MessagePublishInfo info = new MessagePublishInfoImpl(ExchangeDefaults.DEFAULT_EXCHANGE_NAME, false, false,
+                                                             QUEUE_NAME);
 
         for (int count = 0; count < messages; count++)
         {

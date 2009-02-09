@@ -29,6 +29,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.AMQException;
@@ -1148,34 +1149,7 @@ public class DerbyMessageStore implements MessageStore
                 final AMQShortString routingKey = rs.getString(2) == null ? null : new AMQShortString(rs.getString(2));
                 final boolean mandatory = (rs.getShort(3) != (short)0);
                 final boolean immediate = (rs.getShort(4) != (short)0);
-                MessagePublishInfo info = new MessagePublishInfo()
-                                            {
-
-                                                public AMQShortString getExchange()
-                                                {
-                                                    return exchange;
-                                                }
-
-                                                public void setExchange(AMQShortString exchange)
-                                                {
-
-                                                }
-
-                                                public boolean isImmediate()
-                                                {
-                                                    return immediate;
-                                                }
-
-                                                public boolean isMandatory()
-                                                {
-                                                    return mandatory;
-                                                }
-
-                                                public AMQShortString getRoutingKey()
-                                                {
-                                                    return routingKey;
-                                                }
-                                            }   ;
+                MessagePublishInfo info = new MessagePublishInfoImpl(exchange,immediate,mandatory,routingKey);
 
                 Blob dataAsBlob = rs.getBlob(5);
 

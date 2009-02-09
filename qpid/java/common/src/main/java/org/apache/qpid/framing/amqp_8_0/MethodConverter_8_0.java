@@ -25,6 +25,7 @@ import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.framing.amqp_8_0.BasicPublishBodyImpl;
 import org.apache.qpid.framing.*;
 
@@ -103,49 +104,5 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
                                     info.isMandatory(),
                                     info.isImmediate()) ;
 
-    }
-
-    private static class MessagePublishInfoImpl implements MessagePublishInfo
-    {
-        private AMQShortString _exchange;
-        private final boolean _immediate;
-        private final boolean _mandatory;
-        private final AMQShortString _routingKey;
-
-        public MessagePublishInfoImpl(final AMQShortString exchange,
-                                      final boolean immediate,
-                                      final boolean mandatory,
-                                      final AMQShortString routingKey)
-        {
-            _exchange = exchange;
-            _immediate = immediate;
-            _mandatory = mandatory;
-            _routingKey = routingKey;
-        }
-
-        public AMQShortString getExchange()
-        {
-            return _exchange;
-        }
-
-        public void setExchange(AMQShortString exchange)
-        {
-            _exchange = exchange;
-        }
-
-        public boolean isImmediate()
-        {
-            return _immediate;
-        }
-
-        public boolean isMandatory()
-        {
-            return _mandatory;
-        }
-
-        public AMQShortString getRoutingKey()
-        {
-            return _routingKey;
-        }
     }
 }
