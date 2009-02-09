@@ -14,41 +14,55 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.
+ *  under the License.    
  *
- *
+ * 
  */
-package org.apache.qpid.server.security.access.plugins;
+package org.apache.qpid.server.security.access;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
+import org.apache.qpid.server.security.access.plugins.AllowAll;
 
-public class AllowAll extends BasicACLPlugin
+public class QueueDenier extends AllowAll
 {
-
+    
     public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
     {
         public boolean supportsTag(String name)
         {
-            return false;
+            return name.equals("queueDenier");
         }
 
         public ACLPlugin newInstance(Configuration config)
         {
-            return new AllowAll();
+            QueueDenier plugin = new QueueDenier();
+            plugin.setConfiguration(config);
+            return plugin;
         }
     };
+    
+    private String _queueName = "";
 
-    public String getPluginName()
+    
+    @Override
+    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
     {
-        return this.getClass().getSimpleName();
+        if (!(queue.getName().toString().equals(_queueName)))
+        {
+            return AuthzResult.ALLOWED;
+        } 
+        else 
+        {
+            return AuthzResult.DENIED;
+        }
     }
 
     @Override
-    protected AuthzResult getResult()
+    public void setConfiguration(Configuration config)
     {
-        // Always allow
-        return AuthzResult.ALLOWED;
+        _queueName = config.getString("queueDenier");
     }
 }
