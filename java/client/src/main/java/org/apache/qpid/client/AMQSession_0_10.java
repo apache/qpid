@@ -495,10 +495,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                     final AMQProtocolHandler protocolHandler, final boolean nowait)
             throws AMQException, FailoverException
     {
-        getQpidSession().exchangeDeclare(name.toString(), type.toString(), null, null);
-        // autoDelete --> false
-        // durable --> false
-        // passive -- false
+        getQpidSession().exchangeDeclare(name.toString(),
+                                        type.toString(),
+                                        null,
+                                        null,
+                                        name.toString().startsWith("amq.")? Option.PASSIVE:Option.NONE);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
