@@ -108,7 +108,7 @@ bool Cpg::isFlowControlEnabled() {
 
 bool Cpg::mcast(const iovec* iov, int iovLen) {
     if (isFlowControlEnabled()) {
-        QPID_LOG(warning, "CPG flow control enabled")
+        QPID_LOG(debug, "CPG flow control enabled")
         return false;
     }
     cpg_error_t result;
