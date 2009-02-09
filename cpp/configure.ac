@@ -380,6 +380,7 @@ AC_CONFIG_FILES([
   examples/failover/Makefile
   examples/xml-exchange/Makefile
   examples/qmf-console/Makefile
+  examples/tradedemo/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile
