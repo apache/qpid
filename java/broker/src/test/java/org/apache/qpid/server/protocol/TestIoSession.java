@@ -24,6 +24,7 @@ import org.apache.mina.common.*;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 
+import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 import java.util.Set;
@@ -37,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TestIoSession implements IoSession
 {
     private final ConcurrentMap attributes = new ConcurrentHashMap();
+    private String _address;
+    private int _port;
 
     public TestIoSession()
     {
@@ -139,7 +142,7 @@ public class TestIoSession implements IoSession
 
     public SocketAddress getRemoteAddress()
     {
-        return new InetSocketAddress("127.0.0.1", 1234);
+        return new InetSocketAddress(getAddress(), getPort());
     }
 
     public SocketAddress getLocalAddress()
@@ -280,6 +283,26 @@ public class TestIoSession implements IoSession
     public long getLastIdleTime(IdleStatus status)
     {
         return 0; 
+    }
+
+    public void setAddress(String string)
+    {
+        this._address = string;
+    }
+
+    public String getAddress()
+    {
+        return _address;
+    }
+
+    public void setPort(int _port)
+    {
+        this._port = _port;
+    }
+
+    public int getPort()
+    {
+        return _port;
     }
 
     /**
