@@ -21,28 +21,34 @@
 
 #include "ConnectionDecoder.h"
 #include "EventFrame.h"
+#include "ConnectionMap.h"
 
 namespace qpid {
 namespace cluster {
 
 using namespace framing;
 
-ConnectionDecoder::ConnectionDecoder(const Handler& h) : handler(h), readCredit(0) {}
+ConnectionDecoder::ConnectionDecoder(const Handler& h) : handler(h) {}
 
-void ConnectionDecoder::decode(const EventHeader& eh, const void* data) {
+void ConnectionDecoder::decode(const EventHeader& eh, const void* data, ConnectionMap& map) {
     assert(eh.getType() == DATA); // Only handle connection data events.
     const char* cp = static_cast<const char*>(data);
     Buffer buf(const_cast<char*>(cp), eh.getSize());
-    // Set read credit on the last frame in the event.
-    ++readCredit;               // One credit per event = connection read buffer.
-    if (decoder.decode(buf)) { // Decoded a frame
+    if (decoder.decode(buf)) {  // Decoded a frame
         AMQFrame frame(decoder.frame);
         while (decoder.decode(buf)) {
             handler(EventFrame(eh, frame));
             frame = decoder.frame;
         }
-        handler(EventFrame(eh, frame, readCredit));
-        readCredit = 0;         // Reset credit for next event.
+        handler(EventFrame(eh, frame, 1)); // Set read-credit on the last frame.
+    }
+    else {
+        // We must give 1 unit read credit per event.
+        // This event does not contain any complete frames so 
+        // we must give read credit directly.
+        ConnectionPtr connection = map.getLocal(eh.getConnectionId());
+        if (connection)
+            connection->giveReadCredit(1);
     }
 }
 

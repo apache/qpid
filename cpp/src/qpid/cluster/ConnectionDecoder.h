@@ -30,6 +30,8 @@ namespace cluster {
 
 class EventHeader;
 class EventFrame;
+class ConnectionMap;
+
 /**
  * Decodes delivered connection data Event's as EventFrame's for a
  * connection replica, local or shadow. Manages state for frame
@@ -47,12 +49,11 @@ class ConnectionDecoder
     /** Takes EventHeader + data rather than Event so that the caller can
      * pass a pointer to connection data or a CPG buffer directly without copy.
      */
-    void decode(const EventHeader& eh, const void* data);
+    void decode(const EventHeader& eh, const void* data, ConnectionMap& connections);
 
   private:
     Handler handler;
     framing::FrameDecoder decoder;
-    int readCredit;
 };
 
 }} // namespace qpid::cluster

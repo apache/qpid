@@ -60,6 +60,9 @@ class ConnectionMap {
      */ 
     ConnectionPtr get(const ConnectionId& id);
 
+    /** If ID is a local connection and in the map return it, else return 0 */
+    ConnectionPtr getLocal(const ConnectionId& id);
+        
     /** Get connections for sending an update. */
     Vector values() const;
 

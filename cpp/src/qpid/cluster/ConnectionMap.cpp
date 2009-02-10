@@ -62,6 +62,12 @@ ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
     return i->second;
 }
 
+ConnectionMap::ConnectionPtr ConnectionMap::getLocal(const ConnectionId& id) {
+    if (id.getMember() != cluster.getId()) return 0;
+    Map::const_iterator i = map.find(id);
+    return i == map.end() ? 0 : i->second;
+}
+
 ConnectionMap::Vector ConnectionMap::values() const {
     Vector result(map.size());
     std::transform(map.begin(), map.end(), result.begin(),
