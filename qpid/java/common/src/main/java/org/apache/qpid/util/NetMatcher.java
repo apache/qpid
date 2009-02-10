@@ -15,9 +15,10 @@
  * permissions and limitations under the License.                      *
  ***********************************************************************/
 
-package org.apache.james.util;
+package org.apache.qpid.util;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -62,7 +63,7 @@ public class NetMatcher
 
         try
         {
-            ip = org.apache.james.dnsserver.DNSServer.getByName(hostIP);
+            ip = InetAddress.getByName(hostIP);
         }
         catch (java.net.UnknownHostException uhe)
         {
@@ -130,7 +131,7 @@ class InetNetwork
 
     public boolean contains(final String name) throws java.net.UnknownHostException
     {
-        return network.equals(maskIP(org.apache.james.dnsserver.DNSServer.getByName(name), netmask));
+        return network.equals(maskIP(InetAddress.getByName(name), netmask));
     }
 
     public boolean contains(final InetAddress ip)
@@ -164,8 +165,8 @@ class InetNetwork
             else if (netspec.indexOf('.', iSlash) == -1) netspec = normalizeFromCIDR(netspec);
         }
 
-        return new InetNetwork(org.apache.james.dnsserver.DNSServer.getByName(netspec.substring(0, netspec.indexOf('/'))),
-                               org.apache.james.dnsserver.DNSServer.getByName(netspec.substring(netspec.indexOf('/') + 1)));
+        return new InetNetwork(InetAddress.getByName(netspec.substring(0, netspec.indexOf('/'))),
+                InetAddress.getByName(netspec.substring(netspec.indexOf('/') + 1)));
     }
 
     public static InetAddress maskIP(final byte[] ip, final byte[] mask)
