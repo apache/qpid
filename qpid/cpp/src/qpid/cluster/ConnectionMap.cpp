@@ -56,7 +56,8 @@ ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
         mgmtId << id;
         ConnectionPtr cp = new Connection(cluster, shadowOut, mgmtId.str(), id);
         std::pair<Map::iterator, bool> ib = map.insert(Map::value_type(id, cp)); 
-        assert(ib.second);      // FIXME aconway 2009-02-03: exception.
+        if (!ib.second)
+            throw InternalErrorException(QPID_MSG("Duplicate entry in cluster connection map: " << id));
         i = ib.first;
     }
     return i->second;
