@@ -103,7 +103,7 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
                       "Error delivering frames",
                       poller),
     connections(*this),
-    decoder(boost::bind(&PollableFrameQueue::push, &deliverFrameQueue, _1)),
+    decoder(boost::bind(&PollableFrameQueue::push, &deliverFrameQueue, _1), connections),
     expiryPolicy(new ExpiryPolicy(boost::bind(&Cluster::isLeader, this), mcast, myId, broker.getTimer())),
     frameId(0),
     initialized(false),

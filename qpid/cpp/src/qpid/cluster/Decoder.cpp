@@ -29,12 +29,12 @@ namespace cluster {
 
 using namespace framing;
 
-Decoder::Decoder(const Handler& h) : handler(h) {}
+Decoder::Decoder(const Handler& h, ConnectionMap& cm) : handler(h), connections(cm) {}
 
 void Decoder::decode(const EventHeader& eh, const void* data) {
     ConnectionId id = eh.getConnectionId();
     std::pair<Map::iterator, bool> ib = map.insert(id, new ConnectionDecoder(handler));
-    ptr_map_ptr(ib.first)->decode(eh, data);
+    ptr_map_ptr(ib.first)->decode(eh, data, connections);
 }
 
 void Decoder::erase(const ConnectionId& c) {

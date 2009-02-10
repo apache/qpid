@@ -30,6 +30,7 @@ namespace qpid {
 namespace cluster {
 
 class EventHeader;
+class ConnectionMap;
 
 /**
  * Holds a map of ConnectionDecoders. Decodes Events into EventFrames
@@ -42,7 +43,7 @@ class Decoder
   public:
     typedef boost::function<void(const EventFrame&)> Handler;
 
-    Decoder(const Handler& h);
+    Decoder(const Handler& h, ConnectionMap&);
 
     /** Takes EventHeader + data rather than Event so that the caller can
      * pass a pointer to connection data or a CPG buffer directly without copy.
@@ -56,7 +57,9 @@ class Decoder
     typedef boost::ptr_map<ConnectionId, ConnectionDecoder> Map;
     Handler handler;
     Map map;
+    ConnectionMap& connections;
 };
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_DECODER_H*/

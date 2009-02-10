@@ -62,14 +62,14 @@ NoOpConnectionOutputHandler Connection::discardHandler;
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& wrappedId, ConnectionId myId)
     : cluster(c), self(myId), catchUp(false), output(*this, out),
-      connection(&output, cluster.getBroker(), wrappedId), readCredit(0), expectProtocolHeader(false)
+      connection(&output, cluster.getBroker(), wrappedId), expectProtocolHeader(false)
 { init(); }
 
 // Local connections
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& wrappedId, MemberId myId, bool isCatchUp, bool isLink)
     : cluster(c), self(myId, this), catchUp(isCatchUp), output(*this, out),
-      connection(&output, cluster.getBroker(), wrappedId, isLink, catchUp ? ++catchUpId : 0), readCredit(0),
+      connection(&output, cluster.getBroker(), wrappedId, isLink, catchUp ? ++catchUpId : 0),
       expectProtocolHeader(isLink)
 { init(); }
 
