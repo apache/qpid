@@ -223,6 +223,7 @@ Receiver::Receiver(const string& q, Stats& s) : Client(q), mgr(session), count(0
     if (msgCount) {
         std::cout << "Warning: found " << msgCount << " msgs on " << queue << ". Purging..." << std::endl;
         session.queuePurge(arg::queue=queue);
+        session.sync();
     }
     SubscriptionSettings settings;
     if (opts.prefetch) {
@@ -245,10 +246,8 @@ void Receiver::received(Message& msg)
 {
     ++count;
     uint64_t sentAt = msg.getDeliveryProperties().getTimestamp();
-    //uint64_t sentAt = msg.getHeaders().getTimestamp("sent-at");// TODO: add support for uint64_t as a field table type
     uint64_t receivedAt = current_time();
 
-    //std::cerr << "Latency: " << (receivedAt - sentAt) << std::endl;
     stats.update(((double) (receivedAt - sentAt)) / TIME_MSEC);
 
     if (!opts.rate && count >= opts.count) {

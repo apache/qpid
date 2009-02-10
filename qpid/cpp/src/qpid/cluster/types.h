@@ -24,11 +24,12 @@
 
 #include "config.h"
 #include "qpid/Url.h"
+#include "qpid/sys/IntegerTypes.h"
 #include <boost/intrusive_ptr.hpp>
 #include <utility>
 #include <iosfwd>
 #include <string>
-#include <stdint.h>
+
 
 extern "C" {
 #if defined (HAVE_OPENAIS_CPG_H)

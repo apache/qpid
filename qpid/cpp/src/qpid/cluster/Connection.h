@@ -146,6 +146,8 @@ class Connection :
     // Encoded queue/exchange replication.
     void queue(const std::string& encoded);
     void exchange(const std::string& encoded);
+
+    void giveReadCredit(int credit) { output.giveReadCredit(credit); }
     
   private:
     void init();
@@ -171,7 +173,6 @@ class Connection :
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
-    int readCredit;
     bool expectProtocolHeader;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
