@@ -40,12 +40,14 @@ void ConnectionDecoder::decode(const EventHeader& eh, const void* data, Connecti
             handler(EventFrame(eh, frame));
             frame = decoder.frame;
         }
-        handler(EventFrame(eh, frame, 1)); // Set read-credit on the last frame.
+        // Set read-credit on the last frame ending in this event.
+        // Credit will be given when this frame is processed.
+        handler(EventFrame(eh, frame, 1)); 
     }
     else {
         // We must give 1 unit read credit per event.
-        // This event does not contain any complete frames so 
-        // we must give read credit directly.
+        // This event does not complete any frames so 
+        // we give read credit directly.
         ConnectionPtr connection = map.getLocal(eh.getConnectionId());
         if (connection)
             connection->giveReadCredit(1);

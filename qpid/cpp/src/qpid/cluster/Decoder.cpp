@@ -39,7 +39,7 @@ void Decoder::decode(const EventHeader& eh, const void* data) {
 
 void Decoder::erase(const ConnectionId& c) {
     Map::iterator i = map.find(c);
-    if (i != map.end())     // FIXME aconway 2009-02-03: 
+    if (i != map.end()) 
         map.erase(i);
 }
 
