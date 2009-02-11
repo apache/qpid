@@ -77,9 +77,13 @@ void Connection::init() {
     QPID_LOG(debug, cluster << " new connection: " << *this);
     if (isLocalClient()) {
         cluster.addLocalConnection(this);
-        if (cluster.getReadMax()) 
-        output.giveReadCredit(cluster.getReadMax());
+        giveReadCredit(cluster.getReadMax());
     }
+}
+
+void Connection::giveReadCredit(int credit) {
+    if (cluster.getReadMax() && credit) 
+        output.giveReadCredit(credit);
 }
 
 Connection::~Connection() {
@@ -141,8 +145,7 @@ void Connection::deliveredFrame(const EventFrame& f) {
     {
         connection.received(const_cast<AMQFrame&>(f.frame)); // Pass to broker connection.
     }
-    if  (cluster.getReadMax() && f.readCredit)
-        output.giveReadCredit(f.readCredit);
+    giveReadCredit(f.readCredit);
 }
 
 // A local connection is closed by the network layer.

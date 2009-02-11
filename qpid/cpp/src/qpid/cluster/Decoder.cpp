@@ -33,8 +33,12 @@ Decoder::Decoder(const Handler& h, ConnectionMap& cm) : handler(h), connections(
 
 void Decoder::decode(const EventHeader& eh, const void* data) {
     ConnectionId id = eh.getConnectionId();
-    std::pair<Map::iterator, bool> ib = map.insert(id, new ConnectionDecoder(handler));
-    ptr_map_ptr(ib.first)->decode(eh, data, connections);
+    Map::iterator i = map.find(id);
+    if (i == map.end())  {
+        std::pair<Map::iterator, bool> ib = map.insert(id, new ConnectionDecoder(handler));
+        i = ib.first;
+    }
+    ptr_map_ptr(i)->decode(eh, data, connections);
 }
 
 void Decoder::erase(const ConnectionId& c) {

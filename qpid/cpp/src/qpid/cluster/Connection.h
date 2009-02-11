@@ -147,7 +147,7 @@ class Connection :
     void queue(const std::string& encoded);
     void exchange(const std::string& encoded);
 
-    void giveReadCredit(int credit) { output.giveReadCredit(credit); }
+    void giveReadCredit(int credit);
     
   private:
     void init();
