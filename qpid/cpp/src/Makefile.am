@@ -358,7 +358,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/Exchange.cpp \
-  qpid/broker/ExpiryPolicy.h \
   qpid/broker/ExpiryPolicy.cpp \
   qpid/broker/Queue.cpp \
   qpid/broker/QueueCleaner.cpp \
@@ -518,6 +517,7 @@ nobase_include_HEADERS = \
   qpid/broker/DtxTimeout.h \
   qpid/broker/DtxWorkRecord.h \
   qpid/broker/ExchangeRegistry.h \
+  qpid/broker/ExpiryPolicy.h \
   qpid/broker/FanOutExchange.h \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.h \
