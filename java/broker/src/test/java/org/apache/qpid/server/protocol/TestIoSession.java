@@ -20,16 +20,26 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.mina.common.*;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import org.apache.mina.common.CloseFuture;
+import org.apache.mina.common.IdleStatus;
+import org.apache.mina.common.IoFilterChain;
+import org.apache.mina.common.IoHandler;
+import org.apache.mina.common.IoService;
+import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.common.IoSession;
+import org.apache.mina.common.IoSessionConfig;
+import org.apache.mina.common.ThreadModel;
+import org.apache.mina.common.TrafficMask;
+import org.apache.mina.common.TransportType;
+import org.apache.mina.common.WriteFuture;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.qpid.pool.ReadWriteThreadModel;
-
-import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.net.InetSocketAddress;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Test implementation of IoSession, which is required for some tests. Methods not being used are not implemented,
