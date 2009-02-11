@@ -286,6 +286,7 @@ public:
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
     virtual void startReading();
+    virtual void stopReading();
     virtual void requestCallback(RequestCallback);
 
     /**
@@ -533,6 +534,15 @@ void AsynchIO::startReading() {
     }
     return;
 }
+
+// stopReading was added to prevent a race condition with read-credit on Linux.
+// It may or may not be required on windows.
+// 
+// AsynchIOHandler::readbuff() calls stopReading() inside the same
+// critical section that protects startReading() in
+// AsynchIOHandler::giveReadCredit().
+// 
+void AsynchIO::stopReading() {}
 
 // Queue the specified callback for invocation from an I/O thread.
 void AsynchIO::requestCallback(RequestCallback callback) {

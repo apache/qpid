@@ -145,8 +145,10 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
             // Lock and retest credit to make sure we don't race with increasing credit
             ScopedLock<Mutex> l(creditLock);
             assert(readCredit.get() >= 0);
-            if (readCredit.get() == 0)
+            if (readCredit.get() == 0) {
+                aio->stopReading();
                 return false;
+            }
         }
     }
     return true;

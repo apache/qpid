@@ -267,6 +267,7 @@ public:
     virtual void queueWriteClose();
     virtual bool writeQueueEmpty();
     virtual void startReading();
+    virtual void stopReading();
     virtual void requestCallback(RequestCallback);
     virtual BufferBase* getQueuedBuffer();
 
@@ -389,6 +390,10 @@ void AsynchIO::startReading() {
     DispatchHandle::rewatchRead();
 }
 
+void AsynchIO::stopReading() {
+    DispatchHandle::unwatchRead();
+}
+
 void AsynchIO::requestCallback(RequestCallback callback) {
     // TODO creating a function object every time isn't all that
     // efficient - if this becomes heavily used do something better (what?)
@@ -439,8 +444,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                 readTotal += rc;
 
                 if (!readCallback(*this, buff)) {
-                    // We were told to flow control reading at this point
-                    h.unwatchRead();
+                    // We have been flow controlled.
                     break;
                 }
 
