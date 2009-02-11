@@ -95,7 +95,9 @@ public class Session extends SessionInvoker
 
     // outgoing command count
     private int commandsOut = 0;
-    private Method[] commands = new Method[64*1024];
+    private Method[] commands = new Method[Integer.getInteger("qpid.session.command_limit", 64*1024)];
+    private int commandBytes = 0;
+    private int byteLimit = Integer.getInteger("qpid.session.byte_limit", 1024*1024);
     private int maxComplete = commandsOut - 1;
     private boolean needSync = false;
 
@@ -432,7 +434,13 @@ public class Session extends SessionInvoker
             int old = maxComplete;
             for (int id = max(maxComplete, lower); le(id, upper); id++)
             {
-                commands[mod(id, commands.length)] = null;
+                int idx = mod(id, commands.length);
+                Method m = commands[idx];
+                if (m != null)
+                {
+                    commandBytes -= m.getBodySize();
+                }
+                commands[idx] = null;
             }
             if (le(lower, maxComplete + 1))
             {
@@ -462,7 +470,7 @@ public class Session extends SessionInvoker
 
     final private boolean isFull(int id)
     {
-        return id - maxComplete >= commands.length;
+        return id - maxComplete >= commands.length || commandBytes >= byteLimit;
     }
 
     public void invoke(Method m)
@@ -542,6 +550,7 @@ public class Session extends SessionInvoker
                 if (expiry > 0)
                 {
                     commands[mod(next, commands.length)] = m;
+                    commandBytes += m.getBodySize();
                 }
                 if (autoSync)
                 {
