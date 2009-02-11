@@ -18,9 +18,8 @@
 package org.apache.qpid.util;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 public class NetMatcher
