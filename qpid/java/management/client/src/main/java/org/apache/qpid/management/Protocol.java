@@ -44,4 +44,9 @@ public interface Protocol
     
     int CLASS = 1;
     int EVENT = 2;
+    
+    String DEFAULT_QMAN_HOSTNAME = "localhost";
+    int DEFAULT_QMAN_PORT_NUMBER = 8080;
+    
+    String DEFAULT_ENDPOINT_URI = "http://localhost:8080/qman/adapter";
 }

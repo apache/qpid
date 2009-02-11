@@ -43,6 +43,15 @@ import org.apache.qpid.management.wsdm.common.NoSuchAttributeFault;
 import org.apache.qpid.management.wsdm.common.QManFault;
 import org.apache.qpid.transport.util.Logger;
 
+/**
+ * Builder for capability class that will implements the interface 
+ * and the behaviour of the underlying JMX Entity.
+ * The product of this builder (capability class) will be used for create a new instance
+ * of the corresponding capability. It will be the "adapter" between WS-Resource and 
+ * JMX MBean.
+ * 
+ * @author Andrea Gazzarini
+ */
 public class MBeanCapabilityBuilder implements IArtifactBuilder{
 		
 	private final static String GET_PROPERTY_NAMES_METHOD_COMMON_PART = "public QName[] getPropertyNames() { return ";
@@ -51,8 +60,9 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 	private final static Logger LOGGER = Logger.get(MBeanCapabilityBuilder.class);
 	
 	/**
-	 * Handler interface definining operation needed to be peformed (by a concrete
-	 * implementor) when the "endAttributes" director callback happens.
+	 * Handler interface definining operation needed to be 
+	 * peformed (by a concrete implementor) when the "endAttributes" 
+	 * director callback happens.
 	 * 
 	 * @author Andrea Gazzarini
 	 */

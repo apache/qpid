@@ -31,7 +31,7 @@ public interface Messages
 	// MESSAGES
 	String EVENT_SEVERITY_ATTRIBUTE_DESCRIPTION = "Severity level for this event.";
 	String EVENT_TIMESTAMP_ATTRIBUTE_DESCRIPTION = "Current timestamp of this event.";
-	String ACTION_NOT_SUPPORTED="Action %S not supported by resource %s.";
+	String ACTION_NOT_SUPPORTED="Action %s not supported by resource %s.";
 	
 	// INFO
 	String QMAN_000001_STARTING_QMAN = "<QMAN-000001> : Starting Q-Man...";
@@ -63,7 +63,10 @@ public interface Messages
 	String QMAN_000028_TEST_MODULE_NOT_FOUND = "<QMAN-000028> : Qpid emulator not found. Test notifications are disabled.";
 	String QMAN_000029_DEFAULT_URI = "<QMAN-000029> : Default URI will be set to %s";
 	String QMAN_000030_RESOURCE_HAS_BEEN_CREATED =  "<QMAN-000030> : New resource instance has been created and registered. Resource id is %s";
-	String QMAN_000031_RESOURCE_HAS_BEEN_REMOVED = "<QMAN-200031> : WS-Resource %s has been removed";
+	String QMAN_000031_RESOURCE_HAS_BEEN_REMOVED = "<QMAN-000031> : WS-Resource %s has been removed";
+	String QMAN_000032_EVENTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000032> : Events lifecycle topic has been created. Its name is %s";
+	String QMAN_000033_OBJECTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000033> : Objects lifecycle topic has been created. Its name is %s";
+	
 		
 	 // DEBUG
 	String QMAN_200001_INCOMING_MESSAGE_HAS_BEEN_RECEIVED = "<QMAN-200001> : New incoming message has been received. Message content is %s";
@@ -156,6 +159,7 @@ public interface Messages
 	String QMAN_100033_WS_RESOURCE_ALREADY_SHUTDOWN = "<QMAN-100033> : Bad request has been received on this WS-Resource : Shutdown is not possible because the resource has already been shutdown.";
 	String QMAN_100034_WSDL_SCHEMA_SECTION_NOT_FOUND = "<QMAN-100034> : Unable to get via XPath the schema section in WSDL.";
 	String QMAN_100035_RESOURCE_CAPABILITY_INVOCATION_FAILURE = "<QMAN-100035> : Resource thrown a failure while invoking a capability operation.";
+	String QMAN_100036_TOPIC_DECLARATION_FAILURE = "<QMAN-100036> : WS-DM Adapter was unable to declare events and / or objects lifecycle topic(s). As conseguence of that, QMan won't be able to correctly emit lifecycle notifications.";
 	
 	// NEW
 	String QMAN_100035_GET_ATTRIBUTE_FAILURE = "<QMAN-100035> : Get Attribute invocation failure for attribute %s, resource %s.";

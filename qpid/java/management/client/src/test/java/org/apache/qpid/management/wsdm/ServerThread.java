@@ -30,23 +30,39 @@ import org.mortbay.jetty.nio.SelectChannelConnector;
 import org.mortbay.jetty.webapp.WebAppContext;
 import org.mortbay.start.Monitor;
 
+/**
+ * Web Server startup thread.
+ * It is used on adapter test case in order to start the embedded 
+ * web server as a separated thread.
+ * 
+ * @author Andrea Gazzarini
+ */
 public class ServerThread extends Thread
 {	
 	private final Listener _lifecycleListener;
-	private Server server;
+	private Server _server;
+
+	/**
+	 * Builds a new server thread with the given lifecycle listener.
+	 * 
+	 * @param listener the lifecycle listener.
+	 */
 	ServerThread(Listener listener)
 	{
 		this._lifecycleListener = listener;
 	}
 	
+	/**
+	 * Starts the server.
+	 */
 	@Override
 	public void run()
 	{
 		try 
 		{		
 			Monitor.monitor();        
-			server = new Server();
-    		server.setStopAtShutdown(true);
+			_server = new Server();
+    		_server.setStopAtShutdown(true);
             
             Connector connector=new SelectChannelConnector();
             connector.setPort(
@@ -54,11 +70,12 @@ public class ServerThread extends Thread
             				System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME)));
             connector.setHost(System.getProperty(Names.ADAPTER_HOST_PROPERTY_NAME));
             
-            server.setConnectors(new Connector[]{connector});
+            _server.setConnectors(new Connector[]{connector});
             
             WebAppContext webapp = new WebAppContext();
-//            webapp.setExtractWAR(false);
             webapp.setContextPath("/qman");
+            
+            // Additional web application descriptor containing test components.
             webapp.setDefaultsDescriptor("/org/apache/qpid/management/wsdm/web.xml");
 
             String webApplicationPath = System.getProperty("qman.war");
@@ -66,17 +83,22 @@ public class ServerThread extends Thread
             
             webapp.setWar(rootFolderPath.toURI().toURL().toExternalForm());
             webapp.addLifeCycleListener(_lifecycleListener);
-            server.setHandler(webapp);
-            server.start();
-            server.join();
+            _server.setHandler(webapp);
+            _server.start();
+            _server.join();
 		} catch(Exception exception)
 		{
 			throw new RuntimeException(exception);
 		}
 	}
 	
+	/**
+	 * Shutdown the server.
+	 * 
+	 * @throws Exception when a problem is encountered during shutdown.
+	 */
 	public void shutdown() throws Exception
 	{
-		server.stop();
+		_server.stop();
 	}
 }

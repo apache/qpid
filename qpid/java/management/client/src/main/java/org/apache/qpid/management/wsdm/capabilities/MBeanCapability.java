@@ -40,8 +40,8 @@ import org.apache.qpid.management.wsdm.common.QManFault;
 import org.apache.qpid.transport.util.Logger;
 
 /**
- * Abstract capability used for centralize common behaviour of the QMan
- * resource(s) related capabilities.
+ * Abstract capability used for centralize common 
+ * behaviour of the QMan resource(s) related capabilities.
  * 
  * @author Andrea Gazzarini
  */
@@ -83,7 +83,7 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * 			be found.
 	 * @throws QManFault in case of internal system failure.
 	 */
-	Object getAttribute(String attributeName) throws NoSuchAttributeFault,EntityInstanceNotFoundFault,QManFault 
+	Object getAttribute(String attributeName) throws NoSuchAttributeFault, EntityInstanceNotFoundFault, QManFault 
 	{
 		try 
 		{
@@ -128,7 +128,7 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 	 * @throws QManFault
 	 *             in case of internal system failure.
 	 */
-	void setAttribute(String attributeName, Object value) throws NoSuchAttributeFault,EntityInstanceNotFoundFault,QManFault 
+	void setAttribute(String attributeName, Object value) throws NoSuchAttributeFault, EntityInstanceNotFoundFault, QManFault 
 	{
 		try 
 		{

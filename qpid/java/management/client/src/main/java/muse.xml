@@ -40,13 +40,66 @@
 		</persistence>
 	</router>
 	<resource-type use-router-persistence="true">
-		<!--  Context path of this resource. -->
+		<context-path>consumer</context-path>
+		<wsdl>
+			<wsdl-file>wsdl/WS-BaseNotification-1_3.wsdl</wsdl-file>
+			<wsdl-port-type xmlns:wsntw="http://docs.oasis-open.org/wsn/bw-2">wsntw:NotificationConsumer</wsdl-port-type>
+		</wsdl>
+		<java-id-factory-class>org.apache.qpid.management.wsdm.common.QManResourceIdFactory</java-id-factory-class>
+		<java-resource-class>org.apache.muse.core.SimpleResource</java-resource-class>
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsn/bw-2/NotificationConsumer</capability-uri>
+			<java-capability-class>org.apache.muse.ws.notification.impl.SimpleNotificationConsumer</java-capability-class>
+		</capability>
+		<capability>
+			<capability-uri>http://amqp.apache.org/qpid/management/qman/consumer</capability-uri>
+			<java-capability-class>org.apache.qpid.management.wsdm.capabilities.ConsumerCapability</java-capability-class>
+		</capability>
+	</resource-type>
+	<resource-type>
+		<context-path>SubscriptionManager</context-path>
+		<wsdl>
+			<wsdl-file>wsdl/WS-BaseNotification-1_3.wsdl</wsdl-file>
+			<wsdl-port-type xmlns:wsntw="http://docs.oasis-open.org/wsn/bw-2">wsntw:SubscriptionManager</wsdl-port-type>
+		</wsdl>
+		<java-id-factory-class>org.apache.qpid.management.wsdm.common.QManResourceIdFactory</java-id-factory-class>
+		<java-resource-class>org.apache.muse.ws.resource.impl.SimpleWsResource</java-resource-class>
+		<capability>
+			<capability-uri>http://schemas.xmlsoap.org/ws/2004/09/mex/GetMetadata</capability-uri>
+			<java-capability-class>org.apache.muse.ws.metadata.impl.SimpleMetadataExchange</java-capability-class>
+		</capability>
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsrf/rpw-2/Get</capability-uri>
+			<java-capability-class>org.apache.muse.ws.resource.properties.get.impl.SimpleGetCapability</java-capability-class>
+		</capability>
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager</capability-uri>
+			<java-capability-class>org.apache.muse.ws.notification.impl.SimpleSubscriptionManager</java-capability-class>
+			<init-param>
+				<param-name>trace-notifications</param-name>
+				<param-value>true</param-value>
+			</init-param>
+		</capability>
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsrf/rlw-2/ImmediateResourceTermination</capability-uri>
+			<java-capability-class>org.apache.muse.ws.resource.lifetime.impl.SimpleImmediateTermination</java-capability-class>
+		</capability>
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsrf/rlw-2/ScheduledResourceTermination</capability-uri>
+			<java-capability-class>org.apache.muse.ws.resource.lifetime.impl.SimpleScheduledTermination</java-capability-class>
+		</capability>
+		<init-param>
+			<param-name>validate-wsrp-schema</param-name>
+			<param-value>false</param-value>
+		</init-param>
+	</resource-type>	
+	<resource-type use-router-persistence="true">
 		<context-path>adapter</context-path>
 		<wsdl>
 			<wsdl-file>wsdl/QManAdapter.wsdl</wsdl-file>
 			<wsdl-port-type xmlns:qman="http://amqp.apache.org/qpid/management/qman">qman:QManAdapterPortType</wsdl-port-type>
 		</wsdl>
-		<java-id-factory-class>org.apache.muse.core.routing.RandomResourceIdFactory</java-id-factory-class>
+		<java-id-factory-class>org.apache.qpid.management.wsdm.common.QManResourceIdFactory</java-id-factory-class>
 		<java-resource-class>org.apache.muse.ws.resource.impl.SimpleWsResource</java-resource-class>
 		<capability>
 			<capability-uri >http://amqp.apache.org/qpid/management/qman</capability-uri>
@@ -67,14 +120,15 @@
 		<capability>
 			<capability-uri>http://docs.oasis-open.org/wsrf/sgw-2/ServiceGroup</capability-uri>
 			<java-capability-class>org.apache.muse.ws.resource.sg.impl.SimpleServiceGroup</java-capability-class>
-		<!-- 
-			<persistence>
-				<java-persistence-class>org.apache.muse.ws.resource.sg.impl.ServiceGroupFilePersistence</java-persistence-class>
-				<persistence-location>service-group-entries</persistence-location>
-			</persistence>
-		-->
 		</capability>
-		
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsn/bw-2/NotificationProducer</capability-uri>
+			<java-capability-class>org.apache.muse.ws.notification.impl.SimpleNotificationProducer</java-capability-class>
+		</capability>
+		<init-param>
+			<param-name>validate-wsrp-schema</param-name>
+			<param-value>false</param-value>
+		</init-param>		
 	</resource-type>
 	<resource-type>
 		<context-path>QManWsResource</context-path>
@@ -116,7 +170,7 @@
 			<wsdl-file>/wsdl/WS-ServiceGroupEntry-1_2.wsdl</wsdl-file>
 			<wsdl-port-type>wsrf-sgw:ServiceGroupEntryPortType</wsdl-port-type>
 		</wsdl>
-		<java-id-factory-class>org.apache.muse.core.routing.RandomResourceIdFactory</java-id-factory-class>
+		<java-id-factory-class>org.apache.qpid.management.wsdm.common.QManResourceIdFactory</java-id-factory-class>
 		<java-resource-class>org.apache.muse.ws.resource.impl.SimpleWsResource</java-resource-class>
 		<capability>
 			<capability-uri>http://schemas.xmlsoap.org/ws/2004/09/mex/GetMetadata</capability-uri>

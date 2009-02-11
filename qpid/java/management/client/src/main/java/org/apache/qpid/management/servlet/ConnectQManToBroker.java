@@ -36,8 +36,9 @@ import org.apache.qpid.management.domain.services.QMan;
 import org.apache.qpid.transport.util.Logger;
 
 /**
- * When QMan is started and a configuration file is given (via system property) with 
- * initial broker connection data(s), this servlet simply sends connect command(s) to QMan in order
+ * When QMan is started and a configuration file is given 
+ * (via system property) with initial broker connection data(s), 
+ * this servlet simply sends connect command(s) to QMan in order
  * to estabilish the connection(s) to the requested broker(s).
  * 
  * @author Andrea Gazzarini
@@ -48,9 +49,10 @@ public class ConnectQManToBroker extends MiniServlet
     private final static Logger LOGGER = Logger.get(ConnectQManToBroker.class);
 			
 	/**
-	 * Send one or more initial "connect" command(s) to QMan in order to estabilish a connection with broker found on the 
-	 * configuration file..
-	 * Note that this is done only if that configuration file is given (via system property) and It is valid. 
+	 * Send one or more initial "connect" command(s) to QMan in order 
+	 * to estabilish a connection with broker found on the configuration file..
+	 * Note that this is done only if that configuration file is given (via system 
+	 * property) and it is valid. 
 	 */
 	public void init()
 	{
@@ -64,14 +66,16 @@ public class ConnectQManToBroker extends MiniServlet
             {
             	qman.createManagementClient(entry.getKey(), entry.getValue());
             }
-		} else {
+		} else 
+		{
 			LOGGER.info(Messages.QMAN_000022_NO_BROKER_CONFIGURED);
 		}
 	}
 	
 	/**
 	 * This is a startup module only so an override of the default servlet 
-	 * behaviour must be done in order to prevent incoming http requests processing.
+	 * behaviour must be done in order to prevent incoming http 
+	 * requests processing.
 	 * 
 	 * @param request the http request.
 	 * @param response the http response.

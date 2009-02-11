@@ -29,8 +29,12 @@ import org.apache.qpid.management.wsdm.muse.serializer.ByteArraySerializer;
 import org.w3c.dom.Element;
 
 /**
- * Custom implementation of Muse ReflectionProxyHandler that uses a base64 serializer
- * for byte arrays.
+ * Custom implementation of Muse ReflectionProxyHandler 
+ * that uses a base64 serializer for byte arrays.
+ * Note that this proxy handler is only needed for tests because it provides
+ * client side Base64 serializer capability.
+ * In a concrete scenario we don't mind what instrument the client is using in order to 
+ * propertly serialize byte arrays.
  * 
  * @author Andrea Gazzarini
  */
@@ -53,6 +57,7 @@ public class EnhancedReflectionProxyHandler extends ReflectionProxyHandler
 	     }
 	 }
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected Object deserialize(Element xml, Class theClass) throws SoapFault
 	{

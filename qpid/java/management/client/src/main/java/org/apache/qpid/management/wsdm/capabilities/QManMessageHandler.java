@@ -33,7 +33,7 @@ import org.apache.qpid.management.wsdm.muse.serializer.ByteArraySerializer;
 import org.w3c.dom.Element;
 
 /**
- * A custom implementation of Muse message handler to properly deal with 
+ * JMXConnectionListener_example custom implementation of Muse message handler to properly deal with 
  * byte arrays.
  * 
  * @author Andrea Gazzarini

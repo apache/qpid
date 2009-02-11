@@ -33,8 +33,8 @@ import org.apache.qpid.transport.util.Logger;
 
 /**
  * QPid Emulator Initializer.
- * This component is basically responsible to create and initialize an emulator module used
- * for simulate object instances creation.
+ * This component is basically responsible to create and initialize 
+ * an emulator module used for simulate object instances creation.
  * 
  * @author Andrea Gazzarini
  */
@@ -63,8 +63,9 @@ public class QEmuInitializer extends HttpServlet
 	}
 	
 	/**
-	 * This is a startup module only so an override of the default servlet 
-	 * behaviour must be done in order to prevent incoming http requests processing.
+	 * This is a startup module only so an override of the 
+	 * default servlet behaviour must be done in order to 
+	 * prevent incoming http requests processing.
 	 * 
 	 * @param request the http request.
 	 * @param response the http response.

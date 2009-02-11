@@ -33,8 +33,9 @@ import org.apache.qpid.management.jmx.EntityLifecycleNotification;
 /**
  * QEmu is basically an instance creator that is installed separately 
  * as part of QMan test cases & examples.
- * Reason for that is to emulate object creation (queues, exchanges, etc...) without having Qpid broker
- * connected and therefore controlling the total number of the instances that are created.
+ * Reason for that is to emulate object creation (queues, exchanges, etc...) 
+ * without having Qpid broker connected and therefore controlling the 
+ * total number of the instances that are created.
  * 
  * @author Andrea Gazzarini
  */
@@ -53,7 +54,10 @@ public class QEmu extends NotificationBroadcasterSupport implements QEmuMBean, M
 	public void unregister(ObjectName objectName) throws Exception 
 	{
 		_mxServer.unregisterMBean(objectName);
-		sendNotification(EntityLifecycleNotification.INSTANCE_REMOVED,objectName);
+		
+		sendNotification(
+				EntityLifecycleNotification.INSTANCE_REMOVED_NOTIFICATION_TYPE,
+				objectName);
 	}
 
 	/**
@@ -67,7 +71,9 @@ public class QEmu extends NotificationBroadcasterSupport implements QEmuMBean, M
 		QpidDomainObjectMBean queue = new QpidDomainObject();
 		_mxServer.registerMBean(queue, objectName);
 		
-		sendNotification(EntityLifecycleNotification.INSTANCE_ADDED,objectName);
+		sendNotification(
+				EntityLifecycleNotification.INSTANCE_ADDED_NOTIFICATION_TYPE,
+				objectName);
 	}
 
 	/**

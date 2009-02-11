@@ -64,7 +64,4 @@ public interface TestConstants
 	String YEARS = "years";
 	int SAMPLE_MIN_VALUE = 1;
 	int SAMPLE_MAX_VALUE = 120;	
-	
-	String DEFAULT_HOST = "localhost";
-	int DEFAULT_PORT = 8080;
 }

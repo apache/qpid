@@ -19,12 +19,21 @@
  *
  */
 package org.apache.qpid.management.wsdm;
+
 import org.mortbay.component.LifeCycle;
 import org.mortbay.component.LifeCycle.Listener;
 
 /**
  * Adapter class used to provide an empty (base) implementation of 
  * Lifecycle listener interface.
+ * 
+ * Adapter test case needs to be informed about the lifecycle of the 
+ * deployed QMan application. Only when its deployment is completed the test
+ * case can run successfully.
+ * 
+ * So, following the same logic of Swng event model, this is an adapter that provides
+ * empty implementation of the listener interface (see for example MouseAdapter 
+ * for mouse events listener) 
  * 
  * @author Andrea Gazzarini
  */
