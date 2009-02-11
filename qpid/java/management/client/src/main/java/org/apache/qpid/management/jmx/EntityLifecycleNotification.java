@@ -36,18 +36,19 @@ import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
  * <br> - An object instance has been created (Instrumentation / Configuration response); 
  * <br> - An event instance has been created (Instrumentation / Configuration response); 
  * <br> - An object instance has been removed (Instrumentation / Configuration response); 
- * <br> - An event instance has been removed (Instrumentation / Configuration response); 
+ * 
+ * @author Andrea Gazzarini
  */
 public class EntityLifecycleNotification extends Notification
 {
 	private static final long serialVersionUID = -7755773156742412161L;
 	
-	public static final String SCHEMA_INJECTED = "org.apache.qpid.management.lifecycle.entity.schema.injected";
-	public static final String SCHEMA_REQUESTED = "org.apache.qpid.management.lifecycle.entity.schema.requested";
-	public static final String MALFORMED_SCHEMA = "org.apache.qpid.management.lifecycle.error.schema";
+	public static final String SCHEMA_INJECTED_NOTIFICATION_TYPE = "org.apache.qpid.management.lifecycle.entity.schema.injected";
+	public static final String SCHEMA_REQUESTED_NOTIFICATION_TYPE = "org.apache.qpid.management.lifecycle.entity.schema.requested";
+	public static final String MALFORMED_SCHEMA_NOTIFICATION_TYPE = "org.apache.qpid.management.lifecycle.error.schema";
 	
-	public static final String INSTANCE_ADDED = "qman.lifecycle.entity.instance.created";
-	public static final String INSTANCE_REMOVED = "qman.lifecycle.entity.instance.removed";
+	public static final String INSTANCE_ADDED_NOTIFICATION_TYPE = "qman.lifecycle.entity.instance.created";
+	public static final String INSTANCE_REMOVED_NOTIFICATION_TYPE = "qman.lifecycle.entity.instance.removed";
 	
 	private String _packageName = Names.NOT_AVAILABLE;
 	private String _className = Names.NOT_AVAILABLE;
@@ -65,9 +66,18 @@ public class EntityLifecycleNotification extends Notification
 	 * @param classKind the class kind (i.e. class or event)
 	 * @param objectName the object name of the affected mbean.
 	 */
-	public EntityLifecycleNotification(String type,String packageName, String className, String classKind, ObjectName objectName) 
+	public EntityLifecycleNotification(
+			String type,
+			String packageName, 
+			String className, 
+			String classKind, 
+			ObjectName objectName) 
 	{
-		super(type,Names.APPLICATION_NAME,SequenceNumberGenerator.getNextSequenceNumber());
+		super(
+				type,
+				Names.APPLICATION_NAME,
+				SequenceNumberGenerator.getNextSequenceNumber());
+		
 		this._className = className;
 		this._packageName = packageName;
 		this._classKind = classKind;

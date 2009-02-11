@@ -10,6 +10,7 @@ import org.apache.muse.util.FileUtils;
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
+import org.apache.qpid.management.Protocol;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -67,9 +68,13 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
     {
         return new StringBuilder()
     		.append("http://")
-    		.append(System.getProperty(Names.ADAPTER_HOST_PROPERTY_NAME,"localhost"))
+    		.append(System.getProperty(
+    				Names.ADAPTER_HOST_PROPERTY_NAME,
+    				Protocol.DEFAULT_QMAN_HOSTNAME))
     		.append(":")
-    		.append(System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME,"8080"))
+    		.append(System.getProperty(
+    				Names.ADAPTER_PORT_PROPERTY_NAME,
+    				String.valueOf(Protocol.DEFAULT_QMAN_PORT_NUMBER)))
     		.append(_servletContext.getContextPath())
     		.append("/services/")
     		.toString();    	

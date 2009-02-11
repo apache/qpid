@@ -239,7 +239,7 @@ class QpidClass extends QpidEntity implements QpidClassMBean
                 _metadata = new MBeanInfo(_name,_name,attributesMetadata,null,operationsMetadata,null);
 
                 EntityLifecycleNotification notification = new EntityLifecycleNotification(
-                  		 EntityLifecycleNotification.SCHEMA_INJECTED,
+                  		 EntityLifecycleNotification.SCHEMA_INJECTED_NOTIFICATION_TYPE,
                   		 _parent.getName(), 
                   		 _name, 
                   		 Names.CLASS,
@@ -782,7 +782,7 @@ class QpidClass extends QpidEntity implements QpidClassMBean
             ObjectName objectName = JMX_SERVICE.unregisterObjectInstance(_parent.getOwnerId(),_parent.getName(),_name,toBeRemoved._objectId);
             
        	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
-    			 EntityLifecycleNotification.INSTANCE_REMOVED,
+    			 EntityLifecycleNotification.INSTANCE_REMOVED_NOTIFICATION_TYPE,
     			 _parent.getName(),
     			 _name,
     			 Names.CLASS,
@@ -822,7 +822,7 @@ class QpidClass extends QpidEntity implements QpidClassMBean
     	 ObjectName objectName = JMX_SERVICE.registerObjectInstance(instance,_parent.getOwnerId(),_parent.getName(),_name,objectId);
     	 
     	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
-    			 EntityLifecycleNotification.INSTANCE_ADDED,
+    			 EntityLifecycleNotification.INSTANCE_ADDED_NOTIFICATION_TYPE,
     			 packageName,
     			 className,
     			 Names.CLASS,

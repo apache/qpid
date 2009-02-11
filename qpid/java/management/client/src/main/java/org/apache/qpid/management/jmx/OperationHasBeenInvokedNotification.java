@@ -28,13 +28,15 @@ import org.apache.qpid.management.domain.services.SequenceNumberGenerator;
 
 /**
  * Q-Man JMX method invocation notification.
- * This kind of notification is sent to interested listener by Q-Man when a method has been invoked (Method invocation request)
+ * This kind of notification is sent to interested listener by Q-Man when 
+ * a method has been invoked (Method invocation request)
+ * 
+ * @author Andrea Gazzarini
  */
 public class OperationHasBeenInvokedNotification extends Notification
 {
 	private static final long serialVersionUID = -7755773156742412161L;
-	
-	public static final String OPERATION_INVOKED = "org.apache.qpid.management.operation.invoked";
+	public static final String NOTIFICATION_TYPE = "org.apache.qpid.management.operation.invoked";
 	
 	private final String _operationName;
 	private final Object [] _parameters;
@@ -51,15 +53,22 @@ public class OperationHasBeenInvokedNotification extends Notification
 	 * @param signature the operation signature.
 	 * @param exception the exception raised by the invocation.
 	 */
-	public OperationHasBeenInvokedNotification(String operationName, Object[] parameters, String [] signature, Exception exception) 
+	public OperationHasBeenInvokedNotification(
+			String operationName, 
+			Object[] parameters, 
+			String [] signature, 
+			Exception exception) 
 	{
-		super(OPERATION_INVOKED,Names.APPLICATION_NAME,SequenceNumberGenerator.getNextSequenceNumber());
+		super(
+				NOTIFICATION_TYPE,
+				Names.APPLICATION_NAME,
+				SequenceNumberGenerator.getNextSequenceNumber());
+		
 		this._operationName= operationName;
 		this._parameters = parameters;
 		this._signature = signature;		
 		this._result = null;
 		this._exception = exception;
-
 	}
 
 	/**
@@ -72,9 +81,17 @@ public class OperationHasBeenInvokedNotification extends Notification
 	 * @param objectName the target mbean object name.
 	 * @param result the invocation result.
 	 */
-	public OperationHasBeenInvokedNotification(String operationName, Object[] parameters, String [] signature,InvocationResult result) 
+	public OperationHasBeenInvokedNotification(
+			String operationName, 
+			Object[] parameters, 
+			String [] signature,
+			InvocationResult result) 
 	{
-		super(OPERATION_INVOKED,Names.APPLICATION_NAME,SequenceNumberGenerator.getNextSequenceNumber());
+		super(
+				NOTIFICATION_TYPE,
+				Names.APPLICATION_NAME,
+				SequenceNumberGenerator.getNextSequenceNumber());
+		
 		this._operationName= operationName;
 		this._parameters = parameters;
 		this._signature = signature;
@@ -83,7 +100,8 @@ public class OperationHasBeenInvokedNotification extends Notification
 	}
 	
 	/**
-	 * Returns the exception raised by this notification referred operation.
+	 * Returns the exception raised by this notification 
+	 * referred operation.
 	 * 
 	 * @return the exception raised by this notification referred operation.
 	 */
@@ -93,7 +111,8 @@ public class OperationHasBeenInvokedNotification extends Notification
 	}
 	
 	/**
-	 * Returns the exception raised by this notification referred operation.
+	 * Returns the exception raised by this notification 
+	 * referred operation.
 	 * 
 	 * @return the exception raised by this notification referred operation.
 	 */

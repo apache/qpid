@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -41,12 +42,15 @@ import org.apache.muse.core.routing.MessageHandler;
 import org.apache.muse.core.serializer.SerializerRegistry;
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.muse.ws.addressing.soap.SoapFault;
+import org.apache.muse.ws.notification.NotificationProducer;
+import org.apache.muse.ws.notification.WsnConstants;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.jmx.EntityLifecycleNotification;
 import org.apache.qpid.management.wsdm.common.ThreadSessionManager;
 import org.apache.qpid.management.wsdm.muse.engine.WSDMAdapterEnvironment;
 import org.apache.qpid.management.wsdm.muse.serializer.ByteArraySerializer;
+import org.apache.qpid.management.wsdm.notifications.LifeCycleEvent;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -55,6 +59,7 @@ import org.apache.qpid.transport.util.Logger;
  * 
  * @author Andrea Gazzarini
 */
+@SuppressWarnings("serial")
 public class QManAdapterCapability extends AbstractCapability
 {	
 	private final static Logger LOGGER = Logger.get(QManAdapterCapability.class);
@@ -64,10 +69,44 @@ public class QManAdapterCapability extends AbstractCapability
 	private URI _resourceURI;
 	
 	/**
+	 * NotificationFilter for "create" only events.
+	 */
+	private final NotificationFilter _filterForNewInstances = new NotificationFilter(){
+
+		/**
+		 * Returns true when the notification is related to a creation of a new instance. 
+		 * 
+		 * @return true when the notification is related to a creation of a new instance.
+		 */
+		public boolean isNotificationEnabled(Notification notification)
+		{
+			return EntityLifecycleNotification.INSTANCE_ADDED_NOTIFICATION_TYPE.equals(notification.getType());
+		}
+		
+	};
+
+	/**
+	 * NotificationFilter for "remove" only events.
+	 */
+	private final NotificationFilter _filterForRemovedInstances = new NotificationFilter(){
+
+		/**
+		 * Returns true when the notification is related to a deletion of an existing instance. 
+		 * 
+		 * @return true when the notification is related to a deletion of an existing instance.
+		 */
+		public boolean isNotificationEnabled(Notification notification)
+		{
+			return EntityLifecycleNotification.INSTANCE_REMOVED_NOTIFICATION_TYPE.equals(notification.getType());
+		}
+		
+	};
+	
+	/**
 	 * This listener handles "create" mbean events and therefore provides procedure to create and initialize
 	 * corresponding ws resources.
 	 */
-	private final NotificationListener listenerForNewInstances = new NotificationListener() 
+	private final NotificationListener _listenerForNewInstances = new NotificationListener() 
 	{
 		/**
 		 * Handles JMX "create" notification type.
@@ -145,7 +184,7 @@ public class QManAdapterCapability extends AbstractCapability
 	 * This listener handles "remove" mbean events and therefore provides procedure to shutdown and remove
 	 * corresponding ws resources.
 	 */
-	private final NotificationListener listenerForRemovedInstances = new NotificationListener() 
+	private final NotificationListener _listenerForRemovedInstances = new NotificationListener() 
 	{
 		/**
 		 * Handles JMX "remove" notification type.
@@ -185,90 +224,107 @@ public class QManAdapterCapability extends AbstractCapability
 		}
 	};	
 			
+	/**
+	 * Initializes this capability.
+	 * 
+	 * @throws SoapFault when the initialization fails..
+	 */
 	@Override
 	public void initialize() throws SoapFault 
 	{
 		super.initialize();
 		
-		// Workaround : it seems that is not possibile to declare a serializer for a byte array using muse descriptor...
-		// What is the stringified name of the class? byte[].getClass().getName() is [B but is not working (ClassNotFound).
-		// So, at the end, this is hard-coded here!
-		SerializerRegistry.getInstance().registerSerializer(byte[].class, new ByteArraySerializer());
-		WSDMAdapterEnvironment environment = (WSDMAdapterEnvironment) getEnvironment();
-		String resourceURI = environment.getDefaultURIPrefix()+Names.QMAN_RESOURCE_NAME;
-		try 
+		registerByteArraySerializer();
+		
+		createLifeCycleTopics();
+		
+		createQManResourceURI();
+
+		_mxServer = ManagementFactory.getPlatformMBeanServer();
+		_artifactsFactory = new WsArtifactsFactory(getEnvironment(),_mxServer);
+		
+		registerQManLifecycleListeners();	
+		
+		new Thread()
 		{
-			_resourceURI = URI.create(resourceURI);
-			
-			_mxServer = ManagementFactory.getPlatformMBeanServer();
-			_artifactsFactory = new WsArtifactsFactory(getEnvironment(),_mxServer);
-			
-			/**
-			 * NotificationFilter for "create" only events.
-			 */
-			NotificationFilter filterForNewInstances = new NotificationFilter(){
-
-				private static final long serialVersionUID = 1733325390964454595L;
-
-				public boolean isNotificationEnabled(Notification notification)
-				{
-					return EntityLifecycleNotification.INSTANCE_ADDED.equals(notification.getType());
-				}
-				
-			};
-
-			/**
-			 * NotificationFilter for "remove" only events.
-			 */
-			NotificationFilter filterForRemovedInstances = new NotificationFilter(){
-
-				private static final long serialVersionUID = 1733325390964454595L;
-
-				public boolean isNotificationEnabled(Notification notification)
-				{
-					return EntityLifecycleNotification.INSTANCE_REMOVED.equals(notification.getType());
-				}
-				
-			};
-			
-			_mxServer.addNotificationListener(
-					Names.QMAN_OBJECT_NAME, 
-					listenerForNewInstances, 
-					filterForNewInstances, 
-					null);
-			
-			_mxServer.addNotificationListener(
-					Names.QMAN_OBJECT_NAME, 
-					listenerForRemovedInstances, 
-					filterForRemovedInstances, 
-					null);
-
-			try {
-				_mxServer.addNotificationListener(
-						Names.QPID_EMULATOR_OBJECT_NAME, 
-						listenerForNewInstances, 
-						filterForNewInstances, null);
-
-				_mxServer.addNotificationListener(
-						Names.QPID_EMULATOR_OBJECT_NAME, 
-						listenerForRemovedInstances, 
-						filterForRemovedInstances, null);
-
-			} catch(IllegalArgumentException exception)
+			@Override
+			public void run()
 			{
-				LOGGER.info(exception,Messages.QMAN_000029_DEFAULT_URI,resourceURI);				
+				while (true)
+				{
+					try
+					{
+						final NotificationProducer publisher = (NotificationProducer) getResource().getCapability(WsnConstants.PRODUCER_URI);			
+						
+						publisher.publish(
+								Names.OBJECTS_LIFECYLE_TOPIC_NAME, 
+								LifeCycleEvent.newCreateEvent(
+										UUID.randomUUID().toString(), 
+										"org.apache.qpid.broker",
+										"connection"));
+					} catch (SoapFault e)
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					try
+					{
+						Thread.sleep(10000);
+					} catch (InterruptedException e)
+					{
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} 
 			}
-			catch (Exception exception) {
+		}.start();
+	}
+
+	/**
+	 * This adapter capability needs to be an event listener of QMan JMX core 
+	 * in order to detect relevant lifecycle events and therefore create WS artifacts & notification(s).
+	 * 
+	 * @throws SoapFault when it's not possible to register event listener : is QMan running?
+	 */
+	@SuppressWarnings("serial")
+	private void registerQManLifecycleListeners() throws SoapFault
+	{
+		try 
+		{			
+			_mxServer.addNotificationListener(
+					Names.QMAN_OBJECT_NAME, 
+					_listenerForNewInstances, 
+					_filterForNewInstances, 
+					null);
+			
+			_mxServer.addNotificationListener(
+					Names.QMAN_OBJECT_NAME, 
+					_listenerForRemovedInstances, 
+					_filterForRemovedInstances, 
+					null);
+
+			try 
+			{
+				_mxServer.addNotificationListener(
+						Names.QPID_EMULATOR_OBJECT_NAME, 
+						_listenerForNewInstances, 
+						_filterForNewInstances, null);
+
+				_mxServer.addNotificationListener(
+						Names.QPID_EMULATOR_OBJECT_NAME, 
+						_listenerForRemovedInstances, 
+						_filterForRemovedInstances, null);
+
+			} catch (Exception exception) 
+			{
 				LOGGER.info(Messages.QMAN_000028_TEST_MODULE_NOT_FOUND);
 			} 
-			
 		}  catch(InstanceNotFoundException exception) 
 		{
-			// throw new QManNotRunningFault
 			throw new SoapFault(exception);	
 		}
 	}
-			
+
 	/**
 	 * Connects QMan with a broker with the given connection data.
 	 * 
@@ -328,14 +384,91 @@ public class QManAdapterCapability extends AbstractCapability
         {
         	String name = method.getName();
         	
-        	QName requestName = new QName(Names.NAMESPACE_URI,name,Names.PREFIX);
-        	QName returnValueName = new QName(Names.NAMESPACE_URI,name+"Response",Names.PREFIX);
+        	QName requestName = new QName(
+        			Names.NAMESPACE_URI,
+        			name,
+        			Names.PREFIX);
+        	
+        	QName returnValueName = new QName(
+        			Names.NAMESPACE_URI,
+        			name+"Response",
+        			Names.PREFIX);
         	
         	String actionURI = Names.NAMESPACE_URI+"/"+name;
-            MessageHandler handler = new QManMessageHandler(actionURI, requestName, returnValueName);
-            handler.setMethod(method);
+            
+        	MessageHandler handler = new QManMessageHandler(
+            		actionURI, 
+            		requestName, 
+            		returnValueName);
+            
+        	handler.setMethod(method);
             handlers.add(handler);
         }
         return handlers;	
-    }  
+    }
+	
+	/**
+	 * Creates events & objects lifecycle topic that will be used to publish lifecycle event
+	 * messages..
+	 */
+	private void createLifeCycleTopics() 
+	{
+		try 
+		{
+			final NotificationProducer publisherCapability = (NotificationProducer) getResource()
+					.getCapability(WsnConstants.PRODUCER_URI);
+			
+			publisherCapability.addTopic(Names.EVENTS_LIFECYLE_TOPIC_NAME);
+			LOGGER.info(
+					Messages.QMAN_000032_EVENTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED, 
+					Names.OBJECTS_LIFECYLE_TOPIC_NAME);
+			
+			publisherCapability.addTopic(Names.OBJECTS_LIFECYLE_TOPIC_NAME);		
+			LOGGER.info(
+					Messages.QMAN_000033_OBJECTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED, 
+					Names.OBJECTS_LIFECYLE_TOPIC_NAME);
+		} catch(Exception exception) 
+		{
+			LOGGER.error(exception, Messages.QMAN_100036_TOPIC_DECLARATION_FAILURE);
+		}
+	}
+
+	/** 
+	 * Workaround : it seems that is not possibile to declare a serializer 
+	 * for a byte array using muse descriptor...
+	*	What is the stringified name of the class? 
+	*	byte[].getClass().getName() is [B but is not working (ClassNotFound).
+	* 	So, at the end, this is hard-coded here!
+	*/
+	private void registerByteArraySerializer()
+	{
+		SerializerRegistry.getInstance().registerSerializer(
+				byte[].class, 
+				new ByteArraySerializer());		
+	}
+	
+	/**
+	 * Creates the URI that will be later used to identify a QMan WS-Resource.
+	 * Note that the resources that will be created are identified also with their resource id.
+	 * Briefly we could say that this is the soap:address of the WS-Resource definition.
+	 * 
+	 * @throws SoapFault when the URI cannot be built (probably it is malformed).
+	 */
+	private void createQManResourceURI() throws SoapFault
+	{
+		WSDMAdapterEnvironment environment = (WSDMAdapterEnvironment) getEnvironment();
+		String resourceURI = environment.getDefaultURIPrefix()+Names.QMAN_RESOURCE_NAME;
+		try 
+		{
+			_resourceURI = URI.create(resourceURI);
+			
+		} catch(IllegalArgumentException exception)
+		{
+			LOGGER.info(
+					exception,
+					Messages.QMAN_100029_MALFORMED_RESOURCE_URI_FAILURE,
+					resourceURI);			
+			throw new SoapFault(exception);
+		}
+	}	
 }

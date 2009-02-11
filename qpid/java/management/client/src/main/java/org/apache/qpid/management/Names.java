@@ -96,17 +96,49 @@ public abstract class Names
     
     // WSDM Stuff
     public static String NAMESPACE_URI = "http://amqp.apache.org/qpid/management/qman";
+    public final static String PREFIX = "qman";
+
     public static String ADDRESSING_URI = "http://amqp.apache.org/qpid/management/qman/addressing";
     public static String ADDRESSING_PREFIX = "qman-wsa";
     
-    public static final QName RESOURCE_ID_QNAME = new QName(ADDRESSING_URI, "ResourceId", ADDRESSING_PREFIX);   
-	public final static String PREFIX = "qman";
+    public static final QName RESOURCE_ID_QNAME = new QName(
+    		ADDRESSING_URI, 
+    		"ResourceId", 
+    		ADDRESSING_PREFIX);   
+
+    public static final QName RES_ID_QNAME = new QName(
+    		NAMESPACE_URI, 
+    		"ResourceId", 
+    		PREFIX);   
+
+    public static final QName RESOURCE_QNAME = new QName(
+    		NAMESPACE_URI, 
+    		"Resource", 
+    		PREFIX);   
+    
+    public static final QName LIFECYCLE_EVENT_QNAME = new QName(
+    		NAMESPACE_URI, 
+    		"LifeCycleEvent", 
+    		PREFIX);   
+
+    public static final QName PACKAGE_NAME_QNAME = new QName(
+    		NAMESPACE_URI, 
+    		"PackageName", 
+    		PREFIX);   
+
+    public static final QName ENTITY_NAME_QNAME = new QName(
+    		NAMESPACE_URI, 
+    		"Name", 
+    		PREFIX);   
+
+    public static final String TIMEMILLIS_ATTRIBUTE_NAME="TimeMillis";
+
 	public final static String QMAN_RESOURCE_NAME = "QManWsResource";
 	
     public final static String VALIDATE_WSRP_PARAM = "validate-wsrp-schema";
 
     public static final String WEB_APP_CLASSES_FOLDER = "/WEB-INF/classes";
-    public static final String DEFAULT_ENDPOINT_URI = "http://localhost:8080/qman/adapter";
+    
     
 	public final static QName  QMAN_RESOURCE_PORT_TYPE_NAME = new QName(
 			Names.NAMESPACE_URI,
@@ -126,6 +158,16 @@ public abstract class Names
 	public final static QName QMAN_STATUS_ATTRIBUTE_NAME= new QName(
 			Names.NAMESPACE_URI,
 			"AttributeName",
+			Names.PREFIX);
+
+	public final static QName OBJECTS_LIFECYLE_TOPIC_NAME= new QName(
+			Names.NAMESPACE_URI,
+			"ObjectsLifeCycleTopic",
+			Names.PREFIX);
+
+	public final static QName EVENTS_LIFECYLE_TOPIC_NAME= new QName(
+			Names.NAMESPACE_URI,
+			"EventsLifeCycleTopic",
 			Names.PREFIX);
 	
 	public final static String NAME_ATTRIBUTE = "name";

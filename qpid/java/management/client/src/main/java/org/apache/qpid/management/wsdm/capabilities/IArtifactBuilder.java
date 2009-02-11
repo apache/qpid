@@ -28,16 +28,16 @@ import org.apache.muse.core.Environment;
 
 /**
  * Defines behaviour needed by WS-DM artifact builders.
- * Each concrete implementor must provide its own parser implementation of the given
- * JMX data.
+ * Each concrete implementor must provide its own parser 
+ * implementation of the given JMX data.
  * 
  * @author Andrea Gazzarini
  */
 public interface IArtifactBuilder 
 {	
 	/**
-	 * The build process begin and the given parameter is the object name of the 
-	 * corresponding JMX entity.
+	 * The build process begin and the given parameter is the
+	 * object name of the corresponding JMX entity.
 	 * 
 	 * @throws BuilderException when the initialization fails.
 	 */

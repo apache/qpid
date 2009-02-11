@@ -164,7 +164,7 @@ class QpidEvent extends QpidEntity implements QpidEventMBean
             _state = _schemaInjected;
             
             EntityLifecycleNotification notification = new EntityLifecycleNotification(
-              		 EntityLifecycleNotification.SCHEMA_INJECTED,
+              		 EntityLifecycleNotification.SCHEMA_INJECTED_NOTIFICATION_TYPE,
               		 _parent.getName(), 
               		 _name, 
               		 Names.EVENT,
@@ -482,7 +482,7 @@ class QpidEvent extends QpidEntity implements QpidEventMBean
 		ObjectName objectName = JMX_SERVICE.registerEventInstance(instance,brokerId,packageName,eventClassName);
 		
    	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
-			 EntityLifecycleNotification.INSTANCE_ADDED,
+			 EntityLifecycleNotification.INSTANCE_ADDED_NOTIFICATION_TYPE,
 			 packageName,
 			 eventClassName,
 			 Names.EVENT,
