@@ -210,6 +210,7 @@ size_t Connection::decode(const char* buffer, size_t size) {
                 remainingSize = size - pi.encodedSize();
             } else {
                 QPID_LOG(debug, "Not enough data for protocol header on outgoing clustered link");
+                giveReadCredit(1); // We're not going to mcast so give read credit now.
                 return 0;
             }
         }
