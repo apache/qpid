@@ -196,7 +196,8 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
     {
         if (destination == null)
         {
-            throw new IllegalArgumentException("Null destination not allowed");
+            getContentHeaderProperties().setReplyTo((String) null);
+            return; // We're done here
         }
 
         if (!(destination instanceof AMQDestination))
