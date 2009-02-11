@@ -49,7 +49,8 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _logger.info("Initialising NullApplicationRegistry");
         
         _configuration.addProperty("store.class", "org.apache.qpid.server.store.MemoryMessageStore");
-
+        _configuration.addProperty("housekeeping.expiredMessageCheckPeriod", "200");
+        
         Properties users = new Properties();
 
         users.put("guest", "guest");

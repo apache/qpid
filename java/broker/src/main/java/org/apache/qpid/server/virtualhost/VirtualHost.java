@@ -208,7 +208,7 @@ public class VirtualHost implements Accessable
 
                         try
                         {
-                            q.removeExpiredIfNoSubscribers();
+                            q.checkMessageStatus();
                         }
                         catch (AMQException e)
                         {

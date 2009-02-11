@@ -167,9 +167,6 @@ public class AMQQueueAlertTest extends TestCase
         // Ensure message sits on queue long enough to age.
         Thread.sleep(MAX_MESSAGE_AGE * 2);
 
-        sendMessages(1, MAX_MESSAGE_SIZE);
-        assertTrue(_queueMBean.getMessageCount() == 2);
-
         Notification lastNotification = _queueMBean.getLastNotification();
         assertNotNull(lastNotification);
 
