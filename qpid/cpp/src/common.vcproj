@@ -411,6 +411,9 @@
 				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.cpp">
 			</File>
 			<File
+				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.cpp">
+			</File>
+			<File
 				RelativePath="gen\qpid\framing\ClusterReadyBody.cpp">
 			</File>
 			<File
@@ -1109,6 +1112,9 @@
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.h">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterReadyBody.h">
