@@ -667,6 +667,9 @@
 				RelativePath="qpid\broker\ExchangeRegistry.cpp">
 			</File>
 			<File
+				RelativePath="qpid\broker\ExpiryPolicy.cpp">
+			</File>
+			<File
 				RelativePath="qpid\broker\FanOutExchange.cpp">
 			</File>
 			<File
@@ -1101,6 +1104,9 @@
 			</File>
 			<File
 				RelativePath="qpid\broker\ExchangeRegistry.h">
+			</File>
+			<File
+				RelativePath="qpid\broker\ExpiryPolicy.h">
 			</File>
 			<File
 				RelativePath="qpid\broker\FanOutExchange.h">
