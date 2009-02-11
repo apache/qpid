@@ -112,6 +112,19 @@ public abstract class Method extends Struct implements ProtocolEvent
         throw new UnsupportedOperationException();
     }
 
+    public int getBodySize()
+    {
+        ByteBuffer body = getBody();
+        if (body == null)
+        {
+            return 0;
+        }
+        else
+        {
+            return body.remaining();
+        }
+    }
+
     public abstract byte getEncodedTrack();
 
     public abstract <C> void dispatch(C context, MethodDelegate<C> delegate);
