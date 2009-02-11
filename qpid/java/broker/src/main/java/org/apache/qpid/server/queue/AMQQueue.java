@@ -149,9 +149,11 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     long clearQueue(StoreContext storeContext) throws AMQException;
 
-
-
-    void removeExpiredIfNoSubscribers() throws AMQException;
+    /**
+     * Checks the status of messages on the queue, purging expired ones, firing age related alerts etc.
+     * @throws AMQException
+     */
+    void checkMessageStatus() throws AMQException;
 
     Set<NotificationCheck> getNotificationChecks();
 
