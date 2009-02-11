@@ -153,7 +153,7 @@ public abstract class QpidEntity extends NotificationBroadcasterSupport
         }                
         
       	 EntityLifecycleNotification notification = new EntityLifecycleNotification(
-          		 EntityLifecycleNotification.SCHEMA_REQUESTED,
+          		 EntityLifecycleNotification.SCHEMA_REQUESTED_NOTIFICATION_TYPE,
           		 _parent.getName(), 
           		 _name, 
           		 Names.CLASS,

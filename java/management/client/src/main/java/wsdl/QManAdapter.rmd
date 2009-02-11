@@ -3,8 +3,15 @@
 	<MetadataDescriptor
 		xmlns:wsrf-sg="http://docs.oasis-open.org/wsrf/sg-2"
 		xmlns:wsrf-rp="http://docs.oasis-open.org/wsrf/rp-2"
+		xmlns:wsrl="http://docs.oasis-open.org/wsrf/rl-2" 	
+		xmlns:myns="http://ws.apache.org/muse/test/wsrf" 
+	    xmlns:wsnt="http://docs.oasis-open.org/wsn/b-2" 
+	    xmlns:wst="http://docs.oasis-open.org/wsn/t-1" 
+	    xmlns:muws1="http://docs.oasis-open.org/wsdm/muws1-2.xsd" 
+	    xmlns:muws2="http://docs.oasis-open.org/wsdm/muws2-2.xsd"
 		xmlns:qman="http://amqp.apache.org/qpid/management/qman"
-		name="ServiceGroupMetadata" interface="wsrf-sg:ServiceGroupRP"
+		name="WsDmAdapterMetadata"
+		interface="qman:QManAdapterPortType"
 		wsdlLocation="http://amqp.apache.org/qpid/management/qman QManAdapter.wsdl">
 		<Property name="wsrf-sg:MembershipContentRule" modifiability="read-only" mutability="mutable">
 			<StaticValues>
@@ -13,5 +20,33 @@
 		</Property>
 		<Property name="wsrf-sg:Entry" modifiability="read-only" mutability="mutable" />
 		<Property name="wsrf-rp:QueryExpressionDialect" modifiability="read-only" mutability="constant" />
+
+<!--
+		<Property name="wsrl:CurrentTime" modifiability="read-only" mutability="mutable" />
+		
+		<Property name="wsrl:TerminationTime" modifiability="read-only" mutability="mutable" />
+-->		
+		<Property name="wsnt:FixedTopicSet" modifiability="read-only" mutability="constant" />
+		
+		<Property name="wst:TopicSet" modifiability="read-only" mutability="mutable" />
+		
+		<Property name="wsnt:TopicExpression" modifiability="read-only" mutability="mutable" />
+		
+		<Property name="wsnt:TopicExpressionDialect" modifiability="read-only" mutability="mutable" />
+<!--		
+		<Property name="muws1:ResourceId" modifiability="read-only" mutability="constant" />
+		
+		<Property name="muws1:ManageabilityCapability" modifiability="read-only" mutability="constant" />
+		
+		<Property name="muws2:Caption" modifiability="read-only" mutability="mutable" />
+		
+		<Property name="muws2:Description" modifiability="read-only" mutability="mutable" />
+		
+		<Property name="muws2:Version" modifiability="read-only" mutability="constant" />
+		
+		<Property name="myns:ServerName" modifiability="read-only" mutability="constant"/>
+		
+		<Property name="myns:MessageInterval" modifiability="read-write" mutability="mutable"/>
+-->		
 	</MetadataDescriptor>
 </Definitions>

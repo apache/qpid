@@ -134,17 +134,7 @@ public class GetMultipleResourcePropertiesExample extends AbstractQManExample
 	 * Prints out a description of this example.
 	 */
 	void printOutExampleDescription()
-	{
-		/*
-		 * * This example shows how to get properties from a WS-Resource using one request.
- * First of all a request is send to WS-DM in order to get all registered WS-Resources.
- * If the returned list is not empty then a GetMetadataRequest is sent to the
- * first child.
- * The result metadata descriptor contains all properties names of the target WS-Resource.
- * Those names are then used for retrieving the corresponding values.
- * 
-		 */
-		
+	{	
 		System.out.println("                 "+getClass().getSimpleName()+" ");
 		System.out.println("-------------------------------------------------------------------");
 		System.out.println();

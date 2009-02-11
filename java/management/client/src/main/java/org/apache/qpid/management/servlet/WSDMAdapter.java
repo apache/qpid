@@ -100,7 +100,9 @@ public class WSDMAdapter extends HttpServlet
 			try {
 				XmlDebugger.debug(soapEnvelopeResposeAsString);
 			} catch(Exception exception) {
-				System.out.println("Unable to parse response.");
+				LOGGER.error(
+						exception,
+						Messages.QMAN_100019_REQ_OR_RES_MALFORMED);
 			}
 		}
 	}

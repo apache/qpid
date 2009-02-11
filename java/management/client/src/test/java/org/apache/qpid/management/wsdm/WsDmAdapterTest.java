@@ -49,7 +49,7 @@ import org.apache.muse.ws.addressing.soap.SoapFault;
 import org.apache.muse.ws.resource.remote.WsResourceClient;
 import org.apache.muse.ws.resource.sg.remote.ServiceGroupClient;
 import org.apache.qpid.management.Names;
-import org.apache.qpid.management.TestConstants;
+import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.wsdm.capabilities.Result;
 import org.apache.qpid.management.wsdm.muse.serializer.DateSerializer;
 import org.apache.qpid.management.wsdm.muse.serializer.InvocationResultSerializer;
@@ -126,11 +126,11 @@ public class WsDmAdapterTest extends TestCase {
 			
 			System.setProperty(
 					Names.ADAPTER_PORT_PROPERTY_NAME, 
-					String.valueOf(TestConstants.DEFAULT_PORT));
+					String.valueOf(Protocol.DEFAULT_QMAN_PORT_NUMBER));
 
 			System.setProperty(
 					Names.ADAPTER_HOST_PROPERTY_NAME, 
-					TestConstants.DEFAULT_HOST);
+					Protocol.DEFAULT_QMAN_HOSTNAME);
 			
 			server = new ServerThread(listener);
 			server.start();
@@ -787,12 +787,7 @@ public class WsDmAdapterTest extends TestCase {
 	 */
 	private ServiceGroupClient getServiceGroupClient()
 	{
-		URI address = URI.create(
-				"http://"+
-				TestConstants.DEFAULT_HOST+
-				":"+
-				TestConstants.DEFAULT_PORT+
-				"/qman/services/adapter");
+		URI address = URI.create(Protocol.DEFAULT_ENDPOINT_URI);
 		return new ServiceGroupClient(new EndpointReference(address));
 	}
 	

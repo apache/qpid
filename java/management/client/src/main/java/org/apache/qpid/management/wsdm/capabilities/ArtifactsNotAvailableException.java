@@ -41,7 +41,10 @@ public class ArtifactsNotAvailableException extends Exception
 	 * @param cause the exception cause.
 	 * @param objectName the object name of the corresponding JMX entity.
 	 */
-	public ArtifactsNotAvailableException(WsArtifacts artifacts,Throwable cause, ObjectName objectName) 
+	public ArtifactsNotAvailableException(
+			WsArtifacts artifacts,
+			Throwable cause, 
+			ObjectName objectName) 
 	{
 		super(cause);
 		this._artifacts = artifacts;
