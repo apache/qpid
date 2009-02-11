@@ -66,6 +66,7 @@ ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
 ConnectionMap::ConnectionPtr ConnectionMap::getLocal(const ConnectionId& id) {
     if (id.getMember() != cluster.getId()) return 0;
     Map::const_iterator i = map.find(id);
+    assert(i != map.end());     // FIXME aconway 2009-02-11: remove or exception.
     return i == map.end() ? 0 : i->second;
 }
 
