@@ -488,6 +488,39 @@ QPID_AUTO_TEST_CASE(testResubscribeWithLocalQueue) {
     BOOST_CHECK(!q.get(got));
 }
 
+QPID_AUTO_TEST_CASE(testReliableDispatch) {
+    ClientSessionFixture fix;
+    std::string queue("a-queue");
+    fix.session.queueDeclare(arg::queue=queue, arg::autoDelete=true);
+
+    ConnectionSettings settings;
+    settings.port = fix.broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
+
+    Connection c1;
+    c1.open(settings);
+    Session s1 = c1.newSession();
+    SubscriptionManager subs1(s1);
+    LocalQueue q1;
+    subs1.subscribe(q1, queue, FlowControl());//first subscriber has no credit
+
+    Connection c2;
+    c2.open(settings);
+    Session s2 = c2.newSession();
+    SubscriptionManager subs2(s2);
+    LocalQueue q2;
+    subs2.subscribe(q2, queue);//second subscriber has credit
+
+    fix.session.messageTransfer(arg::content=Message("my-message", queue));
+
+    //check that the second consumer gets the message
+    Message got;
+    BOOST_CHECK(q2.get(got, 1*TIME_SEC));
+    BOOST_CHECK_EQUAL("my-message", got.getData());
+
+    c1.close();
+    c2.close();
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 

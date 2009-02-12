@@ -82,6 +82,7 @@ class SemanticState : public sys::OutputTask,
 
         bool checkCredit(boost::intrusive_ptr<Message>& msg);
         void allocateCredit(boost::intrusive_ptr<Message>& msg);
+        bool haveCredit();
 
       public:
         typedef boost::shared_ptr<ConsumerImpl> shared_ptr;

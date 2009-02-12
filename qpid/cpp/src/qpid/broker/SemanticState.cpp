@@ -527,9 +527,19 @@ void SemanticState::ConsumerImpl::addMessageCredit(uint32_t value)
     }
 }
 
+bool SemanticState::ConsumerImpl::haveCredit()
+{
+    if (msgCredit) {
+        return true;
+    } else {
+        blocked = true;
+        return false;
+    }
+}
+
 void SemanticState::ConsumerImpl::flush()
 {
-    while(queue->dispatch(shared_from_this()))
+    while(haveCredit() && queue->dispatch(shared_from_this()))
         ;
     stop();
 }
@@ -587,7 +597,7 @@ bool SemanticState::ConsumerImpl::hasOutput() {
 
 bool SemanticState::ConsumerImpl::doOutput()
 {
-    return queue->dispatch(shared_from_this());
+    return haveCredit() && queue->dispatch(shared_from_this());
 }
 
 void SemanticState::ConsumerImpl::enableNotify()
