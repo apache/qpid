@@ -33,7 +33,7 @@ TESTS+=ais_check
 EXTRA_DIST+=ais_check start_cluster stop_cluster restart_cluster cluster_python_tests cluster_python_tests_failing.txt
 
 check_PROGRAMS+=cluster_test
-cluster_test_SOURCES=unit_test.cpp cluster_test.cpp ClusterFixture.cpp ClusterFixture.h
+cluster_test_SOURCES=unit_test.cpp cluster_test.cpp ClusterFixture.cpp ClusterFixture.h ForkedBroker.h ForkedBroker.cpp
 cluster_test_LDADD=$(lib_client) ../cluster.la -lboost_unit_test_framework 
 
 unit_test_LDADD+=../cluster.la
