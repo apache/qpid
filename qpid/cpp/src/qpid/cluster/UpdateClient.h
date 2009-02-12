@@ -66,7 +66,9 @@ class UpdateClient : public sys::Runnable {
                  broker::Broker& donor, const ClusterMap& map, uint64_t sequence,
                  const std::vector<boost::intrusive_ptr<Connection> >& ,
                  const boost::function<void()>& done,
-                 const boost::function<void(const std::exception&)>& fail);
+                 const boost::function<void(const std::exception&)>& fail,
+                 const client::ConnectionSettings& 
+    );
 
     ~UpdateClient();
     void update();

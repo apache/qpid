@@ -107,6 +107,18 @@ class Connection
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
 
     /**
+     * Opens a connection to a broker using a URL.
+     * If the URL contains multiple addresses, try each in turn
+     * till connection is successful.
+     * 
+     * @url address of the broker to connect to.
+     *
+     * @param settings used for any settings not provided by the URL.
+     * Settings provided by the url (e.g. host, port) are ignored.
+     */
+    void open(const Url& url, const ConnectionSettings& settings);
+
+    /**
      * Opens a connection to a broker.
      * 
      * @param the settings to use (host, port etc). @see ConnectionSettings.

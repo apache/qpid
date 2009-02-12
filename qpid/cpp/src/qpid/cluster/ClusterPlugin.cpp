@@ -18,6 +18,7 @@
 
 #include "Connection.h"
 #include "ConnectionCodec.h"
+#include "ClusterSettings.h"
 
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/ConnectionCodec.h"
@@ -35,6 +36,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SessionState.h"
+#include "qpid/client/ConnectionSettings.h"
 
 #include <boost/utility/in_place_factory.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -48,40 +50,31 @@ using management::IdAllocator;
 using management::ManagementAgent;
 using management::ManagementBroker;
 
-struct ClusterValues {
-    string name;
-    string url;
-    bool quorum;
-    size_t readMax, writeEstimate;
 
-    ClusterValues() : quorum(false), readMax(10), writeEstimate(64) {}
-  
-    Url getUrl(uint16_t port) const {
-        if (url.empty()) return Url::getIpAddressesUrl(port);
-        return Url(url);
-    }
-};
-
-/** Note separating options from values to work around boost version differences.
+/** Note separating options from settings to work around boost version differences.
  *  Old boost takes a reference to options objects, but new boost makes a copy.
  *  New boost allows a shared_ptr but that's not compatible with old boost.
  */
 struct ClusterOptions : public Options {
-    ClusterValues& values; 
+    ClusterSettings& settings; 
 
-    ClusterOptions(ClusterValues& v) : Options("Cluster Options"), values(v) {
+    ClusterOptions(ClusterSettings& v) : Options("Cluster Options"), settings(v) {
         addOptions()
-            ("cluster-name", optValue(values.name, "NAME"), "Name of cluster to join")
-            ("cluster-url", optValue(values.url,"URL"),
+            ("cluster-name", optValue(settings.name, "NAME"), "Name of cluster to join")
+            ("cluster-url", optValue(settings.url,"URL"),
              "URL of this broker, advertized to the cluster.\n"
              "Defaults to a URL listing all the local IP addresses\n")
+            ("cluster-username", optValue(settings.username, ""), "Username for connections between brokers")
+            ("cluster-password", optValue(settings.password, ""), "Password for connections between brokers")
+            ("cluster-mechanism", optValue(settings.mechanism, ""), "Authentication mechanism for connections between brokers")
 #if HAVE_LIBCMAN
-            ("cluster-cman", optValue(values.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
+            ("cluster-cman", optValue(settings.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
-            ("cluster-read-max", optValue(values.readMax,"N"),
+            ("cluster-read-max", optValue(settings.readMax,"N"),
              "Experimental: Limit per-client-connection queue of read buffers. 0=no limit.")
-            ("cluster-write-estimate", optValue(values.writeEstimate, "Kb"),
-             "Experimental: initial estimate for connection write rate per multicast cycle");
+            ("cluster-write-estimate", optValue(settings.writeEstimate, "Kb"),
+             "Experimental: initial estimate for connection write rate per multicast cycle")
+            ;
     }
 };
 
@@ -127,26 +120,20 @@ struct UpdateClientIdAllocator : management::IdAllocator
 
 struct ClusterPlugin : public Plugin {
 
-    ClusterValues values;
+    ClusterSettings settings;
     ClusterOptions options;
     Cluster* cluster;
     boost::scoped_ptr<ConnectionCodec::Factory> factory;
 
-    ClusterPlugin() : options(values), cluster(0) {}
+    ClusterPlugin() : options(settings), cluster(0) {}
 
     Options* getOptions() { return &options; }
 
     void earlyInitialize(Plugin::Target& target) {
-        if (values.name.empty()) return; // Only if --cluster-name option was specified.
+        if (settings.name.empty()) return; // Only if --cluster-name option was specified.
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
-        cluster = new Cluster(
-            values.name,
-            values.url.empty() ? Url() : Url(values.url),
-            *broker,
-            values.quorum,
-            values.readMax, values.writeEstimate*1024
-        );
+        cluster = new Cluster(settings, *broker);
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));

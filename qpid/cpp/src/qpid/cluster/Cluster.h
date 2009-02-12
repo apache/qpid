@@ -19,6 +19,7 @@
  *
  */
 
+#include "ClusterSettings.h"
 #include "ClusterMap.h"
 #include "ConnectionMap.h"
 #include "Cpg.h"
@@ -67,9 +68,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef std::vector<ConnectionPtr> Connections;
 
     /** Construct the cluster in plugin earlyInitialize */ 
-    Cluster(const std::string& name, const Url& url, broker::Broker&, bool useQuorum,
-            size_t readMax, size_t writeEstimate);
-
+    Cluster(const ClusterSettings&, broker::Broker&);
     virtual ~Cluster();
 
     /** Join the cluster in plugin initialize. Requires transport
@@ -178,6 +177,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void setClusterId(const framing::Uuid&);
 
     // Immutable members set on construction, never changed.
+    ClusterSettings settings;
     broker::Broker& broker;
     qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
     boost::shared_ptr<sys::Poller> poller;
