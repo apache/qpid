@@ -96,8 +96,8 @@ class BrokerURL(URL):
         self.port = 5671
       else:
         self.port = 5672
-    self.authName = self.user or "guest"
-    self.authPass = self.password or "guest"
+    self.authName = str(self.user) or "guest"
+    self.authPass = str(self.password) or "guest"
     self.authMech = "PLAIN"
 
   def name(self):
