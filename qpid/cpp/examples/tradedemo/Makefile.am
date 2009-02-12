@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-examplesdir=$(pkgdatadir)/examples/pub-sub
+examplesdir=$(pkgdatadir)/examples/tradedemo
 
 include $(top_srcdir)/examples/makedist.mk
 
@@ -37,15 +37,6 @@ examples_DATA=               \
 	topic_publisher.cpp  \
 	declare_queues.cpp  \
 	$(MAKEDIST)
-
-EXTRA_DIST=                  \
-	$(examples_DATA)     \
-	verify               \
-	verify.in            \
-	verify_cpp_python    \
-	verify_cpp_python.in \
-	verify_python_cpp    \
-	verify_python_cpp.in
 
 
 
