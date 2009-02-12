@@ -116,7 +116,7 @@ namespace qpid {
             void dequeued(const QueuedMessage& msg);
             void popAndDequeue();
             QueuedMessage getFront();
-            QueuedMessage& checkLvqReplace(QueuedMessage& msg) const;
+            QueuedMessage& checkLvqReplace(QueuedMessage& msg);
             void clearLVQIndex(const QueuedMessage& msg);
             
             inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)

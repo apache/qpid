@@ -587,10 +587,19 @@ QueuedMessage Queue::getFront()
     return msg;
 }
 
-QueuedMessage& Queue::checkLvqReplace(QueuedMessage& msg) const
+QueuedMessage& Queue::checkLvqReplace(QueuedMessage& msg)
 {
     boost::intrusive_ptr<Message> replacement = msg.payload->getReplacementMessage(this);
-    if (replacement.get()) msg.payload = replacement;
+    if (replacement.get()) {
+        const framing::FieldTable* ft = replacement->getApplicationHeaders();
+        if (ft) {
+            string key = ft->getAsString(qpidVQMatchProperty);
+            if (lvq.find(key) != lvq.end()){
+                lvq[key] = replacement; 
+            }        
+        }
+        msg.payload = replacement;
+    }
     return msg;
 }
 
