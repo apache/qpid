@@ -46,76 +46,18 @@
  */
 class ForkedBroker {
   public:
-    ForkedBroker(std::vector<const char*> argv) { init(argv); }
+    typedef std::vector<std::string> Args;
 
-    ForkedBroker(int argc, const char* const argv[]) {
-        std::vector<const char*> args(argv, argv+argc);
-        init(args);
-    }
+    ForkedBroker(const Args& argv);
+    ForkedBroker(int argc, const char* const argv[]);
+    ~ForkedBroker();
 
-    ~ForkedBroker() {
-        try { kill(); } catch(const std::exception& e) {
-            QPID_LOG(error, QPID_MSG("Killing forked broker: " << e.what()));
-        }
-    }
-
-    void kill(int sig=SIGINT) {
-        if (pid == 0) return;
-        int savePid = pid;      
-        pid = 0;                // Reset pid here in case of an exception.
-        using qpid::ErrnoException;
-        if (::kill(savePid, sig) < 0) 
-            throw ErrnoException("kill failed");
-        int status;
-        if (::waitpid(savePid, &status, 0) < 0) 
-            throw ErrnoException("wait for forked process failed");
-        if (WEXITSTATUS(status) != 0) 
-            throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
-    }
-
+    void kill(int sig=SIGINT);
     uint16_t getPort() { return port; }
     pid_t getPID() { return pid; }
 
   private:
-
-    template <class F> struct OnExit {
-        F fn;
-        OnExit(F f) : fn(f) {}
-        ~OnExit()  { fn(); }
-    };
-        
-    void init(const std::vector<const char*>& args) {
-        using qpid::ErrnoException;
-        port = 0;
-        int pipeFds[2];
-        if(::pipe(pipeFds) < 0) throw ErrnoException("Can't create pipe");
-        pid = ::fork();
-        if (pid < 0) throw ErrnoException("Fork failed");
-        if (pid) {              // parent
-            ::close(pipeFds[1]);
-            FILE* f = ::fdopen(pipeFds[0], "r");
-            if (!f) throw ErrnoException("fopen failed");
-            if (::fscanf(f, "%d", &port) != 1) {
-                if (ferror(f)) throw ErrnoException("Error reading port number from child.");
-                else throw qpid::Exception("EOF reading port number from child.");
-            }
-            ::close(pipeFds[0]);
-        }
-        else {                  // child
-            ::close(pipeFds[0]);
-            int fd = ::dup2(pipeFds[1], 1); // pipe stdout to the parent.
-            if (fd < 0) throw ErrnoException("dup2 failed");
-            const char* prog = "../qpidd";
-            std::vector<const char*> args2(args);
-            args2.push_back("--port=0");
-            args2.push_back("--mgmt-enable=no"); // TODO aconway 2008-07-16: why does mgmt cause problems?
-            if (!::getenv("QPID_TRACE") && !::getenv("QPID_LOG_ENABLE"))
-            args2.push_back("--log-enable=error+"); // Keep quiet except for errors.
-            args2.push_back(0);
-            execv(prog, const_cast<char* const*>(&args2[0]));
-            throw ErrnoException("execv failed");
-        }
-    }
+    void init(const Args& args);
 
     pid_t pid;
     int port;
