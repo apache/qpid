@@ -16,6 +16,7 @@
  *
  */
 
+#include "config.h"
 #include "Connection.h"
 #include "ConnectionCodec.h"
 #include "ClusterSettings.h"
@@ -67,7 +68,7 @@ struct ClusterOptions : public Options {
             ("cluster-username", optValue(settings.username, ""), "Username for connections between brokers")
             ("cluster-password", optValue(settings.password, ""), "Password for connections between brokers")
             ("cluster-mechanism", optValue(settings.mechanism, ""), "Authentication mechanism for connections between brokers")
-#if HAVE_LIBCMAN
+#if HAVE_LIBCMAN_H
             ("cluster-cman", optValue(settings.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
             ("cluster-read-max", optValue(settings.readMax,"N"),

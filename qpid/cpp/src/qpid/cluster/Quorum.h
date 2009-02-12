@@ -23,7 +23,7 @@
  */
 #include "config.h"
 
-#if HAVE_LIBCMAN
+#if HAVE_LIBCMAN_H
 #include "Quorum_cman.h"
 #else
 #include "Quorum_null.h"
