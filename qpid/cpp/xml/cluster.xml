@@ -124,6 +124,7 @@
     <control name="shadow-ready" code="0x20" label="End of shadow connection update.">
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
+      <field name="user-name" type="str8"/>
     </control>
 
     <!-- Complete a cluster state update. -->

@@ -67,13 +67,14 @@ ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_)
     add(n);
 }
 
+const ClusterFixture::Args ClusterFixture::DEFAULT_ARGS =
+    list_of<string>("--auth=no")("--no-data-dir");
+
 ClusterFixture::Args ClusterFixture::makeArgs(const std::string& prefix) {
     Args args = list_of<string>("qpidd " __FILE__)
         ("--no-module-dir")
         ("--load-module=../.libs/cluster.so")
         ("--cluster-name")(name) 
-        ("--auth=no")
-        ("--no-data-dir")
         ("--log-prefix")(prefix);
     args.insert(args.end(), userArgs.begin(), userArgs.end());
     return args;

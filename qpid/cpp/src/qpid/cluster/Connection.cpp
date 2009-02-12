@@ -253,10 +253,11 @@ void Connection::sessionState(
     QPID_LOG(debug, cluster << " received session state update for " << sessionState().getId());
 }
     
-void Connection::shadowReady(uint64_t memberId, uint64_t connectionId) {
+void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const string& username) {
     ConnectionId shadow = ConnectionId(memberId, connectionId);
     QPID_LOG(debug, cluster << " catch-up connection " << *this << " becomes shadow " << shadow);
     self = shadow;
+    connection.setUserId(username);
 }
 
 void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t frameId) {

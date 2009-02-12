@@ -17,6 +17,7 @@
  */
 
 #include "Cluster.h"
+#include "ClusterSettings.h"
 #include "Connection.h"
 #include "UpdateClient.h"
 #include "FailoverExchange.h"
@@ -82,16 +83,17 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
 };
 
-Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, bool quorum_, size_t readMax_, size_t writeEstimate_) :
+Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
+    settings(set), 
     broker(b),
     mgmtObject(0),
     poller(b.getPoller()),
     cpg(*this),
-    name(name_),
-    myUrl(url_),
+    name(settings.name),
+    myUrl(settings.url.empty() ? Url() : Url(settings.url)),
     myId(cpg.self()),
-    readMax(readMax_),
-    writeEstimate(writeEstimate_),
+    readMax(settings.readMax),
+    writeEstimate(settings.writeEstimate),
     mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),
     deliverEventQueue(boost::bind(&Cluster::deliveredEvent, this, _1),
@@ -121,7 +123,7 @@ Cluster::Cluster(const std::string& name_, const Url& url_, broker::Broker& b, b
     }
 
     failoverExchange.reset(new FailoverExchange(this));
-    if (quorum_) quorum.init();
+    if (settings.quorum) quorum.init();
     cpg.join(name);
     // pump the CPG dispatch manually till we get initialized. 
     while (!initialized)
@@ -425,10 +427,15 @@ void Cluster::updateStart(const MemberId& updatee, const Url& url, Lock&) {
     QPID_LOG(info, *this << " stall for update to " << updatee << " at " << url);
     deliverFrameQueue.stop();
     if (updateThread.id()) updateThread.join(); // Join the previous updatethread.
+    client::ConnectionSettings cs;
+    cs.username = settings.username;
+    cs.password = settings.password;
+    cs.mechanism = settings.mechanism;
     updateThread = Thread(
         new UpdateClient(myId, updatee, url, broker, map, frameId, connections.values(),
                          boost::bind(&Cluster::updateOutDone, this),
-                         boost::bind(&Cluster::updateOutError, this, _1)));
+                         boost::bind(&Cluster::updateOutError, this, _1),
+                         cs));
 }
 
 // Called in update thread.
