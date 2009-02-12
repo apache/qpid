@@ -68,6 +68,7 @@ namespace qpid {
 
             typedef std::deque<QueuedMessage> Messages;
             typedef std::map<string,boost::intrusive_ptr<Message> > LVQ;
+            enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
 
             const string name;
             const bool autodelete;
@@ -104,8 +105,9 @@ namespace qpid {
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             bool seek(QueuedMessage& msg, Consumer::shared_ptr position);
             bool getNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
-            bool consumeNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
+            ConsumeCode consumeNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
             bool browseNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
+            void notifyListener();
 
             void removeListener(Consumer::shared_ptr);
 
