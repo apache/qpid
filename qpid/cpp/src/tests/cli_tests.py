@@ -150,7 +150,7 @@ class CliTests(TestBase010):
         self.startQmf();
         qmf = self.qmf
 
-        command = cli_dir() + "/qpid-route dynamic add localhost:%d %s:%d amq.topic" %\
+        command = cli_dir() + "/qpid-route dynamic add guest/guest@localhost:%d %s:%d amq.topic" %\
             (testrunner.port, remote_host(), remote_port())
         ret = os.system(command)
         self.assertEqual(ret, 0)
