@@ -36,6 +36,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/assign.hpp>
 
 #include <string>
 #include <iostream>
@@ -55,29 +56,34 @@ using qpid::sys::TIME_SEC;
 using qpid::broker::Broker;
 using boost::shared_ptr;
 using qpid::cluster::Cluster;
-
+using boost::assign::list_of;
 
 
 #include "ClusterFixture.h"
 
-ClusterFixture::ClusterFixture(size_t n, int localIndex_) : name(Uuid(true).str()), localIndex(localIndex_) {
+ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_)
+    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_)
+{
     add(n);
+}
+
+ClusterFixture::Args ClusterFixture::makeArgs(const std::string& prefix) {
+    Args args = list_of<string>("qpidd " __FILE__)
+        ("--no-module-dir")
+        ("--load-module=../.libs/cluster.so")
+        ("--cluster-name")(name) 
+        ("--auth=no")
+        ("--no-data-dir")
+        ("--log-prefix")(prefix);
+    args.insert(args.end(), userArgs.begin(), userArgs.end());
+    return args;
 }
 
 void ClusterFixture::add() {
     if (size() != size_t(localIndex))  { // fork a broker process.
         std::ostringstream os; os << "fork" << size();
         std::string prefix = os.str();
-        const char* argv[] = {
-            "qpidd " __FILE__ ,
-            "--no-module-dir",
-            "--load-module=../.libs/cluster.so",
-            "--cluster-name", name.c_str(), 
-            "--auth=no", "--no-data-dir",
-            "--log-prefix", prefix.c_str(),
-        };
-        size_t argc = sizeof(argv)/sizeof(argv[0]);
-        forkedBrokers.push_back(shared_ptr<ForkedBroker>(new ForkedBroker(argc, argv)));
+        forkedBrokers.push_back(shared_ptr<ForkedBroker>(new ForkedBroker(makeArgs(prefix))));
         push_back(forkedBrokers.back()->getPort());
     }
     else {                      // Run in this process
@@ -96,21 +102,31 @@ Broker::Options parseOpts(size_t argc, const char* argv[]) {
 }
 
 void ClusterFixture::addLocal() {
-    assert(int(size()) == localIndex || localIndex == -1);
-    localIndex = size();
-    const char* argv[] = {
-        "qpidd " __FILE__ ,
-        "--load-module=../.libs/cluster.so",
-        "--cluster-name", name.c_str(), 
-        "--auth=no", "--no-data-dir"
-    };
-    size_t argc = sizeof(argv)/sizeof(argv[0]);
+    assert(int(size()) == localIndex);
     ostringstream os; os << "local" << localIndex;
+    string prefix = os.str();
+    Args args(makeArgs(prefix));
+    vector<const char*> argv(args.size());
+    transform(args.begin(), args.end(), argv.begin(), boost::bind(&string::c_str, _1));
     qpid::log::Logger::instance().setPrefix(os.str());
-    localBroker.reset(new BrokerFixture(parseOpts(argc, argv)));
+    localBroker.reset(new BrokerFixture(parseOpts(argv.size(), &argv[0])));
     push_back(localBroker->getPort());
     forkedBrokers.push_back(shared_ptr<ForkedBroker>());
 }
 
+bool ClusterFixture::hasLocal() const { return localIndex >= 0 && size_t(localIndex) < size(); }
+    
+/** Kill a forked broker with sig, or shutdown localBroker if n==0. */
+void ClusterFixture::kill(size_t n, int sig) {
+    if (n == size_t(localIndex))
+        localBroker->broker->shutdown();
+    else
+        forkedBrokers[n]->kill(sig);
+}
 
-
+/** Kill a broker and suppressing errors from closing connection c. */
+void ClusterFixture::killWithSilencer(size_t n, client::Connection& c, int sig) {
+    ScopedSuppressLogging sl;
+    kill(n,sig);
+    try { c.close(); } catch(...) {}
+}

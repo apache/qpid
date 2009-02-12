@@ -87,6 +87,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	MessageBuilderTest.cpp \
 	ConnectionOptions.h \
 	ForkedBroker.h \
+	ForkedBroker.cpp \
 	ManagementTest.cpp \
 	MessageReplayTracker.cpp \
 	ConsoleTest.cpp \
@@ -161,7 +162,7 @@ header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 header_test_LDADD=$(lib_client) 
 
 check_PROGRAMS+=failover_soak
-failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
+failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 failover_soak_LDADD=$(lib_client) 
 
 check_PROGRAMS+=declare_queues
