@@ -4,7 +4,6 @@ org.apache.qpid.client.ResetMessageListenerTest#*
 org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveC2Only
 org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveBoth
 org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
-org.apache.qpid.test.unit.ack.AcknowledgeTest#*
 // those tests need durable subscribe states to be persisted
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
 // those tests require broker recovery
