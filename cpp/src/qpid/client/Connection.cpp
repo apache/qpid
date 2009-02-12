@@ -54,6 +54,15 @@ void Connection::open(
     const std::string& vhost,
     uint16_t maxFrameSize)
 {
+    ConnectionSettings settings;
+    settings.username = uid;
+    settings.password = pwd;
+    settings.virtualhost = vhost;
+    settings.maxFrameSize = maxFrameSize;
+    open(url, settings);
+}
+
+void Connection::open(const Url& url, const ConnectionSettings& settings) {
     if (url.empty())
         throw Exception(QPID_MSG("Attempt to open URL with no addresses."));
     Url::const_iterator i = url.begin();
@@ -62,14 +71,10 @@ void Connection::open(
         i++;
         if (tcp) {
             try {
-                ConnectionSettings settings;
-                settings.host = tcp->host;
-                settings.port = tcp->port;
-                settings.username = uid;
-                settings.password = pwd;
-                settings.virtualhost = vhost;
-                settings.maxFrameSize = maxFrameSize;
-                open(settings);
+                ConnectionSettings cs(settings);
+                cs.host = tcp->host;
+                cs.port = tcp->port;
+                open(cs);
                 break;
             }
             catch (const Exception& /*e*/) {

@@ -44,6 +44,7 @@ cluster_la_SOURCES =				\
   qpid/cluster/ClusterMap.cpp			\
   qpid/cluster/ClusterMap.h			\
   qpid/cluster/ClusterPlugin.cpp		\
+  qpid/cluster/ClusterSettings.h		\
   qpid/cluster/Connection.cpp			\
   qpid/cluster/Connection.h			\
   qpid/cluster/ConnectionCodec.cpp		\

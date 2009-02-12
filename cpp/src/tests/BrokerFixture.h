@@ -88,6 +88,7 @@ struct  BrokerFixture : private boost::noncopyable {
 /** Connection that opens in its constructor */
 struct LocalConnection : public qpid::client::Connection {
     LocalConnection(uint16_t port) { open("localhost", port); }
+    LocalConnection(const qpid::client::ConnectionSettings& s) { open(s); }
 };
 
 /** A local client connection via a socket proxy. */
@@ -95,6 +96,11 @@ struct ProxyConnection : public qpid::client::Connection {
     SocketProxy proxy;
     ProxyConnection(int brokerPort) : proxy(brokerPort) {
         open("localhost", proxy.getPort());
+    }
+    ProxyConnection(const qpid::client::ConnectionSettings& s) : proxy(s.port) {
+        qpid::client::ConnectionSettings proxySettings(s);
+        proxySettings.port = proxy.getPort();
+        open(proxySettings);
     }
     ~ProxyConnection() { close(); }
 };
@@ -110,6 +116,8 @@ struct ClientT {
     qpid::client::LocalQueue lq;
     ClientT(uint16_t port, const std::string& name=std::string())
         : connection(port), session(connection.newSession(name)), subs(session) {}
+    ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name=std::string())
+        : connection(settings), session(connection.newSession(name)), subs(session) {}
 
     ~ClientT() { connection.close(); }
 };

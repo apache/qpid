@@ -23,6 +23,7 @@
 #include "ClusterFixture.h"
 
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/ConnectionAccess.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/FailoverListener.h"
@@ -41,6 +42,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <iterator>
 #include <vector>
 #include <set>
@@ -86,11 +88,11 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
 
 template <class C> set<uint16_t> makeSet(const C& c) {
     set<uint16_t> s;
-    std::copy(c.begin(), c.end(), std::inserter(s, s.begin()));
+    copy(c.begin(), c.end(), inserter(s, s.begin()));
     return s;
 }
 
-template <class T>  std::set<uint16_t> knownBrokerPorts(T& source, int n=-1) {
+template <class T>  set<uint16_t> knownBrokerPorts(T& source, int n=-1) {
     vector<Url> urls = source.getKnownBrokers();
     if (n >= 0 && unsigned(n) != urls.size()) {
         BOOST_MESSAGE("knownBrokerPorts waiting for " << n << ": " << urls);
@@ -129,13 +131,13 @@ int64_t getMsgSequence(const Message& m) {
     return m.getMessageProperties().getApplicationHeaders().getAsInt64("qpid.msg_sequence");
 }
 
-Message ttlMessage(const std::string& data, const std::string& key, uint64_t ttl) {
+Message ttlMessage(const string& data, const string& key, uint64_t ttl) {
     Message m(data, key);
     m.getDeliveryProperties().setTtl(ttl);
     return m;
 }
 
-vector<std::string> browse(Client& c, const std::string& q, int n) {
+vector<string> browse(Client& c, const string& q, int n) {
     SubscriptionSettings browseSettings(
         FlowControl::unlimited(),
         ACCEPT_MODE_NONE,
@@ -144,13 +146,51 @@ vector<std::string> browse(Client& c, const std::string& q, int n) {
     );
     LocalQueue lq;
     c.subs.subscribe(lq, q, browseSettings);
-    vector<std::string> result;
+    vector<string> result;
     for (int i = 0; i < n; ++i) {
         result.push_back(lq.get(TIMEOUT).getData());
     }
     c.subs.getSubscription(q).cancel();
     return result;
 }
+
+
+// FIXME aconway 2009-02-12: need to figure out how to test this properly.
+// Current problems:
+// - all brokers share the same data-dir (set ACL without data dir?)
+// - updater's user name not making it through to updatee for ACL checks.
+// 
+// QPID_AUTO_TEST_CASE(testAcl) {
+//     ofstream policyFile("cluster_test.acl");
+//     // FIXME aconway 2009-02-12: guest -> qpidd?
+//     policyFile << "acl allow guest@QPID all all" << endl
+//                << "acl allow foo@QPID create queue name=foo" << endl
+//                << "acl allow bar@QPID create queue name=bar" << endl
+//                << "acl deny all create queue" << endl
+//                << "acl allow all all" << endl;
+//     policyFile.close();
+//     ClusterFixture cluster(2,-1, list_of<string>
+//                            ("--data-dir=.") ("--auth=no")
+//                            ("--acl-file=cluster_test.acl")
+//                            ("--cluster-mechanism=PLAIN")
+//                            ("--load-module=../.libs/acl.so"));
+//     Client c0(cluster[0], "c0");
+//     Client c1(cluster[1], "c1");
+
+//     ConnectionSettings settings;
+//     settings.port = cluster[0];
+//     settings.username = "foo";
+//     Client foo(settings, "foo");
+
+//     foo.session.queueDeclare("foo");
+//     BOOST_CHECK_EQUAL(c0.session.queueQuery("foo").getQueue(), "foo");
+//     BOOST_CHECK_EQUAL(c1.session.queueQuery("foo").getQueue(), "foo");
+
+//     BOOST_CHECK_THROW(foo.session.queueDeclare("bar"), int);
+//     BOOST_CHECK_EQUAL(c0.session.queueQuery("bar").getQueue(), "");
+//     BOOST_CHECK_EQUAL(c1.session.queueQuery("bar").getQueue(), "");
+// }
+
 
 QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     // Note: this doesn't actually test for cluster race conditions around TTL,
@@ -162,10 +202,10 @@ QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     c0.session.queueDeclare("q");
     c0.session.messageTransfer(arg::content=ttlMessage("a", "q", 200));
     c0.session.messageTransfer(arg::content=Message("b", "q"));
-    BOOST_CHECK_EQUAL(browse(c1, "q", 2), list_of<std::string>("a")("b"));
+    BOOST_CHECK_EQUAL(browse(c1, "q", 2), list_of<string>("a")("b"));
     sys::usleep(300*1000); 
-    BOOST_CHECK_EQUAL(browse(c0, "q", 1), list_of<std::string>("b"));
-    BOOST_CHECK_EQUAL(browse(c1, "q", 1), list_of<std::string>("b"));
+    BOOST_CHECK_EQUAL(browse(c0, "q", 1), list_of<string>("b"));
+    BOOST_CHECK_EQUAL(browse(c1, "q", 1), list_of<string>("b"));
 }
 
 QPID_AUTO_TEST_CASE(testSequenceOptions) {
@@ -349,7 +389,7 @@ QPID_AUTO_TEST_CASE(testUpdateMessageBuilder) {
 
     // Send first 2 frames of message.
     MessageTransferBody transfer(
-        ProtocolVersion(), std::string(), // default exchange.
+        ProtocolVersion(), string(), // default exchange.
         framing::message::ACCEPT_MODE_NONE,
         framing::message::ACQUIRE_MODE_PRE_ACQUIRED);
     sender.send(transfer, true, false, true, true);

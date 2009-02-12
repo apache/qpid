@@ -117,7 +117,7 @@ class Connection :
                       const framing::SequenceNumber& received,
                       const framing::SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
     
-    void shadowReady(uint64_t memberId, uint64_t connectionId);
+    void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username);
 
     void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameId);
 

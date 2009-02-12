@@ -89,21 +89,22 @@ UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, con
                            broker::Broker& broker, const ClusterMap& m, uint64_t frameId_,
                            const Cluster::Connections& cons,
                            const boost::function<void()>& ok,
-                           const boost::function<void(const std::exception&)>& fail)
+                           const boost::function<void(const std::exception&)>& fail,
+                           const client::ConnectionSettings& cs
+)
     : updaterId(updater), updateeId(updatee), updateeUrl(url), updaterBroker(broker), map(m),
       frameId(frameId_), connections(cons), 
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
-      done(ok), failed(fail)
+      done(ok), failed(fail) 
 {
-    connection.open(url);
+    connection.open(url, cs);
     session = connection.newSession("update_shared");
 }
 
 UpdateClient::~UpdateClient() {}
 
 // Reserved exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
-static const char UPDATE_CHARS[] = "qpid.qpid-update";
-const std::string UpdateClient::UPDATE(UPDATE_CHARS, sizeof(UPDATE_CHARS)); 
+const std::string UpdateClient::UPDATE("qpid.qpid-update");
 
 void UpdateClient::update() {
     QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
@@ -232,7 +233,9 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
     bc.eachSessionHandler(boost::bind(&UpdateClient::updateSession, this, _1));
     ClusterConnectionProxy(shadowConnection).shadowReady(
         updateConnection->getId().getMember(),
-        reinterpret_cast<uint64_t>(updateConnection->getId().getPointer()));
+        reinterpret_cast<uint64_t>(updateConnection->getId().getPointer()),
+        updateConnection->getBrokerConnection().getUserId()
+    );
     shadowConnection.close();
     QPID_LOG(debug, updaterId << " updated connection " << *updateConnection);
 }

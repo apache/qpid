@@ -72,7 +72,7 @@ class ClusterFixture : public vector<uint16_t>  {
     /** @param localIndex can be -1 meaning don't automatically start a local broker.
      * A local broker can be started with addLocal().
      */
-    ClusterFixture(size_t n, int localIndex=0, const Args& args=Args());
+    ClusterFixture(size_t n, int localIndex=0, const Args& args=DEFAULT_ARGS);
     void add(size_t n) { for (size_t i=0; i < n; ++i) add(); }
     void add();                 // Add a broker.
     void setup();
@@ -86,6 +86,8 @@ class ClusterFixture : public vector<uint16_t>  {
     void killWithSilencer(size_t n, client::Connection& c, int sig=SIGINT);
 
   private:
+    static const Args DEFAULT_ARGS;
+    
     void addLocal();            // Add a local broker.
     Args makeArgs(const std::string& prefix);
     string name;
