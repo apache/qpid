@@ -521,6 +521,10 @@ QPID_AUTO_TEST_CASE(testReliableDispatch) {
     c2.close();
 }
 
+QPID_AUTO_TEST_CASE(testSessionCloseOnInvalidSession) {
+    Session session;
+    session.close();
+}
 
 QPID_AUTO_TEST_SUITE_END()
 
