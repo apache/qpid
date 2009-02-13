@@ -30,7 +30,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
@@ -389,7 +389,7 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            currentMessage.routingComplete(_virtualHost.getMessageStore(), new MessageHandleFactory());
+            currentMessage.routingComplete(_virtualHost.getMessageStore(), new MessageFactory());
         }
         catch (AMQException e)
         {

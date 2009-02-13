@@ -132,7 +132,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean expired() throws AMQException
     {
-        return getMessage().expired(getQueue());
+        return getMessage().expired();
     }
 
     public boolean isAcquired()

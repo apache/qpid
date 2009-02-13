@@ -20,18 +20,22 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
-public class MockAMQMessageHandle extends InMemoryMessageHandle
+public class MessageFactory
 {
-    public MockAMQMessageHandle(final Long messageId)
-    {
-        super(messageId);
-    }
 
-    @Override
-    public long getBodySize(StoreContext store)
+    public AMQMessage createMessage(Long messageId, MessageStore store, boolean persistent)
     {
-      return 0l;
+        if (persistent)
+        {
+            return new PersistentAMQMessage(messageId, store);
+        }
+        else
+        {
+            return new TransientAMQMessage(messageId);
+        }
     }
+    
 }

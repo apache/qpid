@@ -27,8 +27,8 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
 
+import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
@@ -93,7 +93,7 @@ public class DerbyMessageStore implements MessageStore
 
     private String _connectionURL;
 
-
+    MessageFactory _messageFactory;
 
     private static final String CREATE_DB_VERSION_TABLE = "CREATE TABLE "+DB_VERSION_TABLE_NAME+" ( version int not null )";
     private static final String INSERT_INTO_DB_VERSION = "INSERT INTO "+DB_VERSION_TABLE_NAME+" ( version ) VALUES ( ? )";
@@ -166,6 +166,8 @@ public class DerbyMessageStore implements MessageStore
         createOrOpenDatabase(databasePath);
 
         // this recovers durable queues and persistent messages
+
+        _messageFactory = new MessageFactory();
 
         recover();
 
@@ -1299,7 +1301,7 @@ public class DerbyMessageStore implements MessageStore
     private void deliverMessages(final StoreContext context, Map<AMQShortString, AMQQueue> queues)
         throws SQLException, AMQException
     {
-        Map<Long, AMQMessage> msgMap = new HashMap<Long,AMQMessage>();
+        Map<Long, AMQMessage> msgMap = new HashMap<Long, AMQMessage>();
         List<ProcessAction> actions = new ArrayList<ProcessAction>();
 
         Map<AMQShortString, Integer> queueRecoveries = new TreeMap<AMQShortString, Integer>();
@@ -1318,8 +1320,6 @@ public class DerbyMessageStore implements MessageStore
                 conn = newConnection();
             }
 
-
-            MessageHandleFactory messageHandleFactory = new MessageHandleFactory();
             long maxId = 1;
 
             TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null);
@@ -1355,7 +1355,11 @@ public class DerbyMessageStore implements MessageStore
                 }
                 else
                 {
-                    message = new AMQMessage(messageId, this, messageHandleFactory, txnContext);
+                    message = _messageFactory.createMessage(messageId, this, true);                    
+
+                    _logger.error("todo must do message recovery now.");
+                    //todo must do message recovery now.
+
                     msgMap.put(messageId,message);
                 }
 

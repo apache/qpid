@@ -54,25 +54,16 @@ public class PriorityQueueList implements QueueEntryList
 
     public QueueEntry add(AMQMessage message)
     {
-        try
+        int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
+        if(index >= _priorities)
         {
-            int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
-            if(index >= _priorities)
-            {
-                index = _priorities-1;
-            }
-            else if(index < 0)
-            {
-                index = 0;
-            }
-            return _priorityLists[index].add(message);
+            index = _priorities-1;
         }
-        catch (AMQException e)
+        else if(index < 0)
         {
-            // TODO - fix AMQ Exception
-            throw new RuntimeException(e);
+            index = 0;
         }
-
+        return _priorityLists[index].add(message);
     }
 
     public QueueEntry next(QueueEntry node)

@@ -20,13 +20,31 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.common.FixedSizeByteBufferAllocator;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 
 public class MockContentChunk implements ContentChunk
 {
+    public static final int DEFAULT_SIZE=0;
+
     private ByteBuffer _bytebuffer;
     private int _size;
+
+
+
+    public MockContentChunk()
+    {
+        this(0);
+    }
+
+    public MockContentChunk(int size)
+    {
+        FixedSizeByteBufferAllocator allocator = new FixedSizeByteBufferAllocator();
+        _bytebuffer = allocator.allocate(size, false);
+
+        _size = size;
+    }
 
     public MockContentChunk(ByteBuffer bytebuffer, int size)
     {

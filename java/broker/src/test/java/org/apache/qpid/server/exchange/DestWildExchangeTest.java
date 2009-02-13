@@ -497,7 +497,7 @@ public class DestWildExchangeTest extends TestCase
             throws AMQException
     {
         _exchange.route(message);
-        message.routingComplete(_store, new MessageHandleFactory());
+        message.routingComplete(_store, new MessageFactory());
         message.deliverToQueues();
     }
 

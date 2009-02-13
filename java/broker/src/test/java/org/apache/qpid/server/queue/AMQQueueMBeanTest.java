@@ -221,7 +221,7 @@ public class AMQQueueMBeanTest extends TestCase
         ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
         qs.add(_queue);
         msg.enqueue(qs);
-        msg.routingComplete(_messageStore, new MessageHandleFactory());
+        msg.routingComplete(_messageStore, new MessageFactory());
 
         msg.addContentBodyFrame(new ContentChunk()
         {
@@ -305,7 +305,7 @@ public class AMQQueueMBeanTest extends TestCase
             currentMessage.enqueue(qs);
 
             // route header
-            currentMessage.routingComplete(_messageStore, new MessageHandleFactory());
+            currentMessage.routingComplete(_messageStore, new MessageFactory());
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(

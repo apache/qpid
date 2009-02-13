@@ -20,30 +20,29 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.MessageStore;
+import junit.framework.TestCase;
 
-/**
- * Constructs a message handle based on the publish body, the content header and the queue to which the message
- * has been routed.
- *
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
- */
-public class MessageHandleFactory
+public class MessageFactoryTest extends TestCase
 {
+    private MessageFactory _factory;
 
-    public AMQMessageHandle createMessageHandle(Long messageId, MessageStore store, boolean persistent)
+    public void setUp()
     {
-        // just hardcoded for now
-        if (persistent)
-        {
-            return new WeakReferenceMessageHandle(messageId, store);
-        }
-        else
-        {
-            return new InMemoryMessageHandle(messageId);
-        }
+        _factory = new MessageFactory();
+    }
 
-//        return new AMQMessage(messageId, store, persistent);
+    public void testTransientMessageCreation()
+    {
+        AMQMessage message = _factory.createMessage(0L, null, false);
+
+        assertEquals("Transient Message creation does not return correct class.", TransientAMQMessage.class, message.getClass());
+    }
+
+    public void testPersistentMessageCreation()
+    {
+        AMQMessage message = _factory.createMessage(0L, null, true);
+
+        assertEquals("Transient Message creation does not return correct class.", PersistentAMQMessage.class, message.getClass());
     }
 
 }
