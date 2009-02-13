@@ -37,7 +37,6 @@ import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.UnauthorizedAccessException;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -108,8 +107,6 @@ public class AMQChannel
 
     private final List<RequiredDeliveryException> _returnMessages = new LinkedList<RequiredDeliveryException>();
 
-    private MessageFactory _messageHandleFactory = new MessageFactory();
-
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
     private boolean _closing; 
@@ -153,8 +150,7 @@ public class AMQChannel
     public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQException
     {
 
-        _currentMessage = new IncomingMessage(_messageStore.getNewMessageId(), info, _txnContext, _session);
-        _currentMessage.setMessageStore(_messageStore);
+        _currentMessage = new IncomingMessage(info, _txnContext, _session, _messageStore);
         _currentMessage.setExchange(e);
     }
 
@@ -178,7 +174,7 @@ public class AMQChannel
 
             routeCurrentMessage();
 
-            _currentMessage.routingComplete(_messageStore, _messageHandleFactory);
+            _currentMessage.routingComplete(_messageStore);
 
             deliverCurrentMessageIfComplete();
 

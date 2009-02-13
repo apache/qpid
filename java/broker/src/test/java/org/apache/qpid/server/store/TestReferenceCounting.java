@@ -56,7 +56,7 @@ public class TestReferenceCounting extends TestCase
 
         final long messageId = _store.getNewMessageId();
 
-        AMQMessage message = (new MessageFactory()).createMessage(messageId, _store, true);
+        AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
 
         message = message.takeReference();
@@ -86,7 +86,7 @@ public class TestReferenceCounting extends TestCase
 
         final Long messageId = _store.getNewMessageId();
         final ContentHeaderBody chb = createPersistentContentHeader();
-        AMQMessage message = (new MessageFactory()).createMessage(messageId, _store, true);
+        AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
         
         message = message.takeReference();

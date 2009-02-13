@@ -277,7 +277,7 @@ public class AMQQueueAlertTest extends TestCase
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = size;   // in bytes
-        IncomingMessage message = new IncomingMessage(_messageStore.getNewMessageId(), publish, _transactionalContext, _protocolSession);
+        IncomingMessage message = new IncomingMessage(publish, _transactionalContext, _protocolSession, _messageStore);
         message.setContentHeaderBody(contentHeaderBody);
 
         return message;
@@ -308,7 +308,7 @@ public class AMQQueueAlertTest extends TestCase
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
             messages[i].enqueue(qs);
-            messages[i].routingComplete(_messageStore, new MessageFactory());
+            messages[i].routingComplete(_messageStore);
 
         }
 

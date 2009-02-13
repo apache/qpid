@@ -20,31 +20,30 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.StoreContext;
+import junit.framework.TestCase;
 
-public class PersistentMessageTest extends TransientMessageTest
+public class MessageFactoryClassTest extends TestCase
 {
-    private MemoryMessageStore _messageStore;
+    private MessageFactory _factory;
 
     public void setUp()
     {
-        _messageStore = new MemoryMessageStore();
-        _messageStore.configure();
-        _storeContext = new StoreContext();
+        _factory = MessageFactory.getInstance();
     }
 
-    @Override
-    protected AMQMessage newMessage()
+    public void testTransientMessageCreation()
     {
-        return MessageFactory.getInstance().createMessage(_messageStore, true);
+        AMQMessage message = _factory.createMessage(null, false);
+
+        assertEquals("Transient Message creation does not return correct class.", TransientAMQMessage.class, message.getClass());
     }
 
-    @Override
-    public void testIsPersistent()
+    public void testPersistentMessageCreation()
     {
-        _message = newMessage();
-        assertTrue(_message.isPersistent());
+        AMQMessage message = _factory.createMessage(null, true);
+
+        assertEquals("Transient Message creation does not return correct class.", PersistentAMQMessage.class, message.getClass());
     }
+
 
 }

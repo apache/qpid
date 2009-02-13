@@ -20,13 +20,13 @@ package org.apache.qpid.server.queue;
  * 
  */
 
-import java.util.ArrayList;
-
+import junit.framework.AssertionFailedError;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ContentHeaderBody;
-import junit.framework.AssertionFailedError;
+import org.apache.qpid.framing.FieldTable;
+
+import java.util.ArrayList;
 
 public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {
@@ -44,38 +44,40 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     {
 
         // Enqueue messages in order
-        _queue.enqueue(null, createMessage(1L, (byte) 10));
-        _queue.enqueue(null, createMessage(2L, (byte) 4));
-        _queue.enqueue(null, createMessage(3L, (byte) 0));
-        
+        AMQMessage message = createMessage((byte) 10);
+        Long messagIDOffset = message.getMessageId() - 1;
+        _queue.enqueue(null, message);
+        _queue.enqueue(null, createMessage((byte) 4));
+        _queue.enqueue(null, createMessage((byte) 0));
+
         // Enqueue messages in reverse order
-        _queue.enqueue(null, createMessage(4L, (byte) 0));
-        _queue.enqueue(null, createMessage(5L, (byte) 4));
-        _queue.enqueue(null, createMessage(6L, (byte) 10));
-        
+        _queue.enqueue(null, createMessage((byte) 0));
+        _queue.enqueue(null, createMessage((byte) 4));
+        _queue.enqueue(null, createMessage((byte) 10));
+
         // Enqueue messages out of order
-        _queue.enqueue(null, createMessage(7L, (byte) 4));
-        _queue.enqueue(null, createMessage(8L, (byte) 10));
-        _queue.enqueue(null, createMessage(9L, (byte) 0));
-        
+        _queue.enqueue(null, createMessage((byte) 4));
+        _queue.enqueue(null, createMessage((byte) 10));
+        _queue.enqueue(null, createMessage((byte) 0));
+
         // Register subscriber
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
-        
+
         ArrayList<QueueEntry> msgs = _subscription.getMessages();
         try
         {
-            assertEquals(new Long(1L), msgs.get(0).getMessage().getMessageId());
-            assertEquals(new Long(6L), msgs.get(1).getMessage().getMessageId());
-            assertEquals(new Long(8L), msgs.get(2).getMessage().getMessageId());
+            assertEquals(new Long(1 + messagIDOffset), msgs.get(0).getMessage().getMessageId());
+            assertEquals(new Long(6 + messagIDOffset), msgs.get(1).getMessage().getMessageId());
+            assertEquals(new Long(8 + messagIDOffset), msgs.get(2).getMessage().getMessageId());
 
-            assertEquals(new Long(2L), msgs.get(3).getMessage().getMessageId());
-            assertEquals(new Long(5L), msgs.get(4).getMessage().getMessageId());
-            assertEquals(new Long(7L), msgs.get(5).getMessage().getMessageId());
+            assertEquals(new Long(2 + messagIDOffset), msgs.get(3).getMessage().getMessageId());
+            assertEquals(new Long(5 + messagIDOffset), msgs.get(4).getMessage().getMessageId());
+            assertEquals(new Long(7 + messagIDOffset), msgs.get(5).getMessage().getMessageId());
 
-            assertEquals(new Long(3L), msgs.get(6).getMessage().getMessageId());
-            assertEquals(new Long(4L), msgs.get(7).getMessage().getMessageId());
-            assertEquals(new Long(9L), msgs.get(8).getMessage().getMessageId());
+            assertEquals(new Long(3 + messagIDOffset), msgs.get(6).getMessage().getMessageId());
+            assertEquals(new Long(4 + messagIDOffset), msgs.get(7).getMessage().getMessageId());
+            assertEquals(new Long(9 + messagIDOffset), msgs.get(8).getMessage().getMessageId());
         }
         catch (AssertionFailedError afe)
         {
@@ -92,25 +94,12 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 
     }
 
-    protected AMQMessage createMessage(Long id, byte i) throws AMQException
+    protected AMQMessage createMessage(byte i) throws AMQException
     {
-        AMQMessage message = super.createMessage(id);
+        AMQMessage message = super.createMessage();
+                
+        ((BasicContentHeaderProperties)message.getContentHeaderBody().properties).setPriority(i);
 
-        ContentHeaderBody header = new ContentHeaderBody();
-        header.bodySize = MESSAGE_SIZE;
-
-        //The createMessage above is for a Transient Message so it is safe to have no context.
-        message.setPublishAndContentHeaderBody(null, info, header);
-
-        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
-        props.setPriority(i);
-        message.getContentHeaderBody().properties = props;
         return message;
     }
-    
-    protected AMQMessage createMessage(Long id) throws AMQException
-    {
-        return createMessage(id, (byte) 0);
-    }
-    
 }

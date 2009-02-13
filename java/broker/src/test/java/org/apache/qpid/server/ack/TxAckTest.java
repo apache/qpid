@@ -130,7 +130,7 @@ public class TxAckTest extends TestCase
 
                 MessagePublishInfo info = new MessagePublishInfoImpl();
 
-                AMQMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
+                AMQMessage message = new TestMessage(deliveryTag, info);
 
                 ContentHeaderBody header = new ContentHeaderBody();
                 header.bodySize = MESSAGE_SIZE;
@@ -197,11 +197,9 @@ public class TxAckTest extends TestCase
         }
     }
 
-    private static AMQMessage createMessage(final long messageId, final MessagePublishInfo publishBody)
+    private static AMQMessage createMessage(MessagePublishInfo publishBody)
     {
-        final AMQMessage amqMessage = (new MessageFactory()).createMessage(messageId,
-                                                                           null,
-                                                                           false);
+        final AMQMessage amqMessage = (MessageFactory.getInstance()).createMessage(null, false);
         try
         {
             // Safe to use null here as we just created a TransientMessage above
@@ -228,10 +226,10 @@ public class TxAckTest extends TestCase
         private final long _tag;
         private int _count;
 
-        TestMessage(long tag, long messageId, MessagePublishInfo publishBody, StoreContext storeContext)
+        TestMessage(long tag, MessagePublishInfo publishBody)
                 throws AMQException
         {
-            super(createMessage(messageId, publishBody));
+            super(createMessage( publishBody));
             _tag = tag;
         }
 

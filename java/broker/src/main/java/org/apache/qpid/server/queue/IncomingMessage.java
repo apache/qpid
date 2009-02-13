@@ -48,7 +48,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
     private AMQMessage _message;
-    private final Long _messageId;
     private final TransactionalContext _txnContext;
 
     private static final boolean MSG_AUTH = 
@@ -72,22 +71,23 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private long _expiration;
     
     private Exchange _exchange;
+    private static MessageFactory MESSAGE_FACTORY = MessageFactory.getInstance();
 
-    public IncomingMessage(final Long messageId,
-                           final MessagePublishInfo info,
+    public IncomingMessage(final MessagePublishInfo info,
                            final TransactionalContext txnContext,
-                           final AMQProtocolSession publisher)
+                           final AMQProtocolSession publisher,
+                           MessageStore messasgeStore)
     {
-        _messageId = messageId;
         _messagePublishInfo = info;
         _txnContext = txnContext;
         _publisher = publisher;
-
+        _messageStore = messasgeStore;
     }
 
     public void setContentHeaderBody(final ContentHeaderBody contentHeaderBody) throws AMQException
     {
         _contentHeaderBody = contentHeaderBody;
+        _message = MESSAGE_FACTORY.createMessage(_messageStore, isPersistent());
     }
 
     public void setExpiration()
@@ -121,13 +121,10 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
     }
 
-    public void routingComplete(final MessageStore store,
-                                final MessageFactory factory) throws AMQException
+    public void routingComplete(final MessageStore store) throws AMQException
     {
 
-        final boolean persistent = isPersistent();
-        _message = factory.createMessage(_messageId, store, persistent);
-        if (persistent)
+        if (isPersistent())
         {
             _txnContext.beginTranIfNecessary();
              // enqueuing the messages ensure that if required the destinations are recorded to a
@@ -138,7 +135,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
                 for (int i = 0; i < _destinationQueues.size(); i++)
                 {
                     store.enqueueMessage(_txnContext.getStoreContext(),
-                            _destinationQueues.get(i), _messageId);
+                            _destinationQueues.get(i), getMessageId());
                 }
             }
         }
@@ -152,7 +149,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
         // transient message data as quickly as possible
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Delivering message " + _messageId + " to " + _destinationQueues);
+            _logger.debug("Delivering message " + getMessageId() + " to " + _destinationQueues);
         }
 
         try
@@ -284,14 +281,13 @@ public class IncomingMessage implements Filterable<RuntimeException>
         return false;
     }
 
-    public void setMessageStore(final MessageStore messageStore)
-    {
-        _messageStore = messageStore;
-    }
-
+    /**
+     * The message ID will not be assigned until the ContentHeaderBody has arrived.
+     * @return
+     */
     public Long getMessageId()
     {
-        return _messageId;
+        return _message.getMessageId();
     }
 
     public void setExchange(final Exchange e)

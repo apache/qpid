@@ -347,18 +347,17 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            currentMessage = new IncomingMessage(_virtualHost.getMessageStore().getNewMessageId(),
-                                                 messageInfo,
+            currentMessage = new IncomingMessage(messageInfo,
                                                  new NonTransactionalContext(_virtualHost.getMessageStore(),
                                                                              new StoreContext(), null, null),
-                                                 new InternalTestProtocolSession());
+                                                 new InternalTestProtocolSession(),
+                                                 _virtualHost.getMessageStore());
         }
         catch (AMQException e)
         {
             fail(e.getMessage());
         }
 
-        currentMessage.setMessageStore(_virtualHost.getMessageStore());
         currentMessage.setExchange(directExchange);
 
         ContentHeaderBody headerBody = new ContentHeaderBody();
@@ -389,7 +388,7 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            currentMessage.routingComplete(_virtualHost.getMessageStore(), new MessageFactory());
+            currentMessage.routingComplete(_virtualHost.getMessageStore());
         }
         catch (AMQException e)
         {
