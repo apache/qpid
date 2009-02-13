@@ -54,7 +54,7 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
 
-        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getMessageStore()
+        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getTransactionLog()
         );
         session.addChannel(channel);
 

@@ -29,6 +29,8 @@ import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.routing.RoutingTable;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * A message store that does nothing. Designed to be used in tests that do not want to use any message store
  * functionality.
  */
-public class SkeletonMessageStore implements MessageStore
+public class SkeletonMessageStore implements TransactionLog , RoutingTable
 {
     private final AtomicLong _messageId = new AtomicLong(1);
 

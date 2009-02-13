@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -32,6 +31,7 @@ import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
@@ -61,9 +61,9 @@ public class AMQQueueAlertTest extends TestCase
     private AMQQueueMBean _queueMBean;
     private VirtualHost _virtualHost;
     private AMQMinaProtocolSession _protocolSession;
-    private MessageStore _messageStore = new MemoryMessageStore();
+    private TransactionLog _transactionLog = new MemoryMessageStore();
     private StoreContext _storeContext = new StoreContext();
-    private TransactionalContext _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
+    private TransactionalContext _transactionalContext = new NonTransactionalContext(_transactionLog, _storeContext,
                                                                                      null,
                                                                                      new LinkedList<RequiredDeliveryException>()
     );
@@ -186,7 +186,7 @@ public class AMQQueueAlertTest extends TestCase
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
         _protocolSession = new InternalTestProtocolSession();
-        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
+        AMQChannel channel = new AMQChannel(_protocolSession, 2, _transactionLog);
         _protocolSession.addChannel(channel);
 
         // Create queue
@@ -277,7 +277,7 @@ public class AMQQueueAlertTest extends TestCase
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = size;   // in bytes
-        IncomingMessage message = new IncomingMessage(publish, _transactionalContext, _protocolSession, _messageStore);
+        IncomingMessage message = new IncomingMessage(publish, _transactionalContext, _protocolSession, _transactionLog);
         message.setContentHeaderBody(contentHeaderBody);
 
         return message;
@@ -308,7 +308,7 @@ public class AMQQueueAlertTest extends TestCase
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
             messages[i].enqueue(qs);
-            messages[i].routingComplete(_messageStore);
+            messages[i].routingComplete(_transactionLog);
 
         }
 

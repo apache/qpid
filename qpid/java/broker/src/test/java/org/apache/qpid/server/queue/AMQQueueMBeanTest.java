@@ -31,6 +31,7 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
@@ -41,7 +42,6 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -60,7 +60,7 @@ public class AMQQueueMBeanTest extends TestCase
     private static long MESSAGE_SIZE = 1000;
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
-    private MessageStore _messageStore;
+    private TransactionLog _transactionLog;
     private StoreContext _storeContext = new StoreContext();
     private TransactionalContext _transactionalContext;
     private VirtualHost _virtualHost;
@@ -113,7 +113,7 @@ public class AMQQueueMBeanTest extends TestCase
     private void verifyBrokerState()
     {
 
-        TestableMemoryMessageStore store = new TestableMemoryMessageStore((MemoryMessageStore) _virtualHost.getMessageStore());
+        TestableMemoryMessageStore store = new TestableMemoryMessageStore((MemoryMessageStore) _virtualHost.getTransactionLog());
 
         // Unlike MessageReturnTest there is no need for a delay as there this thread does the clean up.
         assertNotNull("ContentBodyMap should not be null", store.getContentBodyMap());       
@@ -130,7 +130,7 @@ public class AMQQueueMBeanTest extends TestCase
 
 
         InternalTestProtocolSession protocolSession = new InternalTestProtocolSession();
-        AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore);
+        AMQChannel channel = new AMQChannel(protocolSession, 1, _transactionLog);
         protocolSession.addChannel(channel);
 
         Subscription subscription =
@@ -221,7 +221,7 @@ public class AMQQueueMBeanTest extends TestCase
         ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
         qs.add(_queue);
         msg.enqueue(qs);
-        msg.routingComplete(_messageStore);
+        msg.routingComplete(_transactionLog);
 
         long id = msg.getMessageId();
 
@@ -266,7 +266,7 @@ public class AMQQueueMBeanTest extends TestCase
         contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes
         contentHeaderBody.properties = new BasicContentHeaderProperties();
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) (persistent ? 2 : 1));
-        IncomingMessage msg = new IncomingMessage(publish, _transactionalContext,  _protocolSession, _messageStore);
+        IncomingMessage msg = new IncomingMessage(publish, _transactionalContext,  _protocolSession, _transactionLog);
         msg.setContentHeaderBody(contentHeaderBody);
         return msg;
 
@@ -278,9 +278,9 @@ public class AMQQueueMBeanTest extends TestCase
         super.setUp();
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = _virtualHost.getMessageStore();
+        _transactionLog = _virtualHost.getTransactionLog();
 
-        _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
+        _transactionalContext = new NonTransactionalContext(_transactionLog, _storeContext,
                                                             null,
                                                             new LinkedList<RequiredDeliveryException>()
         );
@@ -307,7 +307,7 @@ public class AMQQueueMBeanTest extends TestCase
             currentMessage.enqueue(qs);
 
             // route header
-            currentMessage.routingComplete(_messageStore);
+            currentMessage.routingComplete(_transactionLog);
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(

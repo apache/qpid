@@ -25,8 +25,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.routing.RoutingTable;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,9 +56,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this);
     }
 
-    public MessageStore getMessageStore()
+    public RoutingTable getRoutingTable()
     {
-        return _host.getMessageStore();
+        return _host.getRoutingTable();
     }
 
     public void registerExchange(Exchange exchange) throws AMQException
@@ -66,7 +66,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _exchangeMap.put(exchange.getName(), exchange);
         if (exchange.isDurable())
         {
-            getMessageStore().createExchange(exchange);
+            getRoutingTable().createExchange(exchange);
         }
     }
 
@@ -93,7 +93,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             if (e.isDurable())
             {
-                getMessageStore().removeExchange(e);
+                getRoutingTable().removeExchange(e);
             }
             e.close();
         }

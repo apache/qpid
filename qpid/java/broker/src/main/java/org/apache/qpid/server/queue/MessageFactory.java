@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -58,27 +58,27 @@ public class MessageFactory
     
     /**
      * Normal message creation path
-     * @param store
+     * @param transactionLog
      * @param persistent
      * @return
      */
-    public AMQMessage createMessage(MessageStore store, boolean persistent)
+    public AMQMessage createMessage(TransactionLog transactionLog, boolean persistent)
     {
         if (_state != State.OPEN)
         {
             _state = State.OPEN;
         }
 
-        return createNextMessage(_messageId.incrementAndGet(), store, persistent);
+        return createNextMessage(_messageId.incrementAndGet(), transactionLog, persistent);
     }
 
     /**
      * Used for message recovery only and so only creates persistent messages.
      * @param messageId the id that this message must have
-     * @param store 
+     * @param transactionLog
      * @return
      */
-    public AMQMessage createMessage(Long messageId, MessageStore store)
+    public AMQMessage createMessage(Long messageId, TransactionLog transactionLog)
     {
         if (_state != State.RECOVER)
         {
@@ -96,14 +96,14 @@ public class MessageFactory
             _messageId.set(messageId);
         }
 
-        return createNextMessage(messageId, store, true);
+        return createNextMessage(messageId, transactionLog, true);
     }
 
-    private AMQMessage createNextMessage(Long messageId, MessageStore store, boolean persistent)
+    private AMQMessage createNextMessage(Long messageId, TransactionLog transactionLog, boolean persistent)
     {
         if (persistent)
         {
-            return new PersistentAMQMessage(messageId, store);
+            return new PersistentAMQMessage(messageId, transactionLog);
         }
         else
         {

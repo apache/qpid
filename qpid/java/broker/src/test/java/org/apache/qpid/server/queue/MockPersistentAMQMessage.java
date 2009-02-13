@@ -21,13 +21,13 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 public class MockPersistentAMQMessage extends PersistentAMQMessage
 {
-    public MockPersistentAMQMessage(long messageId, MessageStore store)
+    public MockPersistentAMQMessage(long messageId, TransactionLog transactionLog)
             throws AMQException
     {
-       super(messageId, store);
+       super(messageId, transactionLog);
     }
 }

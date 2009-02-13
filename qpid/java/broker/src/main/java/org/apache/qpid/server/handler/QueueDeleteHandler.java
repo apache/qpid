@@ -30,10 +30,9 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.access.Permission;
+import org.apache.qpid.server.routing.RoutingTable;
 
 public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -62,7 +61,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        MessageStore store = virtualHost.getMessageStore();
+        RoutingTable routingTable = virtualHost.getRoutingTable();
 
         AMQQueue queue;
         if (body.getQueue() == null)
@@ -115,7 +114,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
                 if (queue.isDurable())
                 {
-                    store.removeQueue(queue);
+                    routingTable.removeQueue(queue);
                 }
 
                 MethodRegistry methodRegistry = session.getMethodRegistry();

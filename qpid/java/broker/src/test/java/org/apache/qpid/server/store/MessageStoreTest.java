@@ -30,7 +30,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
@@ -39,6 +38,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -151,7 +151,7 @@ public class MessageStoreTest extends TestCase
         //Load the Virtualhost with the required MessageStore
         reload(configuration);
 
-        MessageStore messageStore = _virtualHost.getMessageStore();
+        TransactionLog transactionLog = _virtualHost.getTransactionLog();
 
         createAllQueues();
         createAllTopicQueues();
@@ -190,9 +190,9 @@ public class MessageStoreTest extends TestCase
 
         assertEquals("Not all queues correctly registered", 8, _virtualHost.getQueueRegistry().getQueues().size());
 
-        if (!messageStore.isPersistent())
+        if (!transactionLog.isPersistent())
         {
-            _logger.warn("Unable to test Persistent capabilities of messages store(" + messageStore.getClass() + ") as it is not capable of peristence.");
+            _logger.warn("Unable to test Persistent capabilities of messages store(" + transactionLog.getClass() + ") as it is not capable of peristence.");
             return;
         }
 
@@ -348,10 +348,10 @@ public class MessageStoreTest extends TestCase
         try
         {
             currentMessage = new IncomingMessage(messageInfo,
-                                                 new NonTransactionalContext(_virtualHost.getMessageStore(),
+                                                 new NonTransactionalContext(_virtualHost.getTransactionLog(),
                                                                              new StoreContext(), null, null),
                                                  new InternalTestProtocolSession(),
-                                                 _virtualHost.getMessageStore());
+                                                 _virtualHost.getTransactionLog());
         }
         catch (AMQException e)
         {
@@ -388,7 +388,7 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            currentMessage.routingComplete(_virtualHost.getMessageStore());
+            currentMessage.routingComplete(_virtualHost.getTransactionLog());
         }
         catch (AMQException e)
         {
@@ -486,7 +486,7 @@ public class MessageStoreTest extends TestCase
 
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _virtualHost.getMessageStore().createQueue(queue, queueArguments);
+                _virtualHost.getRoutingTable().createQueue(queue, queueArguments);
             }
         }
         catch (AMQException e)

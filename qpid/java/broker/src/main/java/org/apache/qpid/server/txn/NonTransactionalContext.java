@@ -26,10 +26,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
 /** @author Apache Software Foundation */
@@ -45,20 +45,20 @@ public class NonTransactionalContext implements TransactionalContext
 
 
 
-    private final MessageStore _messageStore;
+    private final TransactionLog _transactionLog;
 
     private final StoreContext _storeContext;
 
     /** Whether we are in a transaction */
     private boolean _inTran;
 
-    public NonTransactionalContext(MessageStore messageStore, StoreContext storeContext, AMQChannel channel,
+    public NonTransactionalContext(TransactionLog transactionLog, StoreContext storeContext, AMQChannel channel,
                                    List<RequiredDeliveryException> returnMessages)
     {
         _channel = channel;
         _storeContext = storeContext;
         _returnMessages = returnMessages;
-        _messageStore = messageStore;
+        _transactionLog = transactionLog;
 
     }
 
@@ -72,7 +72,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         if (!_inTran)
         {
-            _messageStore.beginTran(_storeContext);
+            _transactionLog.beginTran(_storeContext);
             _inTran = true;
         }
     }
@@ -191,7 +191,7 @@ public class NonTransactionalContext implements TransactionalContext
         }
         if(_inTran)
         {
-            _messageStore.commitTran(_storeContext);
+            _transactionLog.commitTran(_storeContext);
             _inTran = false;
         }
     }
@@ -200,7 +200,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         if (persistent)
         {
-            _messageStore.commitTran(_storeContext);
+            _transactionLog.commitTran(_storeContext);
             _inTran = false;
         }
     }

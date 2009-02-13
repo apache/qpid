@@ -27,10 +27,10 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -46,17 +46,16 @@ public class DestWildExchangeTest extends TestCase
     TopicExchange _exchange;
 
     VirtualHost _vhost;
-    MessageStore _store;
+    TransactionLog _tranasctionLog;
     StoreContext _context;
 
     InternalTestProtocolSession _protocolSession;
-
 
     public void setUp() throws AMQException
     {
         _exchange = new TopicExchange();
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
-        _store = new MemoryMessageStore();
+        _tranasctionLog = new MemoryMessageStore();
         _context = new StoreContext();
         _protocolSession = new InternalTestProtocolSession();
     }
@@ -75,7 +74,7 @@ public class DestWildExchangeTest extends TestCase
 
         MessagePublishInfo info = new MessagePublishInfoImpl(null, false, false, new AMQShortString("a.b"));
 
-        IncomingMessage message = new IncomingMessage(info, null, _protocolSession, _store);
+        IncomingMessage message = new IncomingMessage(info, null, _protocolSession, _tranasctionLog);
 
         _exchange.route(message);            
 
@@ -497,7 +496,7 @@ public class DestWildExchangeTest extends TestCase
             throws AMQException
     {
         _exchange.route(message);
-        message.routingComplete(_store);
+        message.routingComplete(_tranasctionLog);
         message.deliverToQueues();
     }
 
@@ -547,11 +546,11 @@ public class DestWildExchangeTest extends TestCase
     {
         MessagePublishInfo info = new MessagePublishInfoImpl(null, false, true, new AMQShortString(s));
 
-        TransactionalContext trancontext = new NonTransactionalContext(_store, _context, null,
+        TransactionalContext trancontext = new NonTransactionalContext(_tranasctionLog, _context, null,
                                                                        new LinkedList<RequiredDeliveryException>()
         );
 
-        IncomingMessage message = new IncomingMessage(info, trancontext,_protocolSession, _store);
+        IncomingMessage message = new IncomingMessage(info, trancontext,_protocolSession, _tranasctionLog);
         message.setContentHeaderBody( new ContentHeaderBody());
 
 
