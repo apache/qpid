@@ -30,7 +30,10 @@ using namespace framing;
 SessionBase_0_10::SessionBase_0_10() {}
 SessionBase_0_10::~SessionBase_0_10() {}
 
-void SessionBase_0_10::close() { impl->close(); }
+void SessionBase_0_10::close() 
+{ 
+    if (impl) impl->close(); 
+}
 
 Execution& SessionBase_0_10::getExecution()
 {
