@@ -22,9 +22,9 @@ package org.apache.qpid.server.txn;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
@@ -283,13 +283,13 @@ public class TxnBufferTest extends TestCase
 
     class TxnTester extends NullOp
     {
-        private final MessageStore store;
+        private final TransactionLog store;
 
         private final StoreContext context = new StoreContext();
 
-        TxnTester(MessageStore store)
+        TxnTester(TransactionLog transactionLog)
         {
-            this.store = store;
+            this.store = transactionLog;
         }
 
         public void prepare() throws AMQException

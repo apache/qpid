@@ -31,18 +31,17 @@ import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.FailedDequeueException;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.MessageCleanupException;
-import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.MockProtocolSession;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
@@ -64,11 +63,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     protected final Set<TestQueue> queues = new HashSet<TestQueue>();
 
     /** Not used in this test, just there to stub out the routing calls */
-    private MessageStore _store = new MemoryMessageStore();
-
-    private StoreContext _storeContext = new StoreContext();
-
-    private MessageFactory _messageFactory = MessageFactory.getInstance();
+    private TransactionLog _transactionLog = new MemoryMessageStore();
 
     private int count;
 
@@ -107,7 +102,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     protected void route(Message m) throws AMQException
     {
         exchange.route(m.getIncomingMessage());
-        m.getIncomingMessage().routingComplete(_store);
+        m.getIncomingMessage().routingComplete(_transactionLog);
         if (m.getIncomingMessage().allContentReceived())
         {
             m.getIncomingMessage().deliverToQueues();
@@ -382,9 +377,9 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     static class Message
     {
 
-        private static MessageStore _messageStore = new SkeletonMessageStore();
+        private static TransactionLog _transactionLog = new SkeletonMessageStore();
 
-        private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, new StoreContext(),
+        private static TransactionalContext _txnContext = new NonTransactionalContext(_transactionLog, new StoreContext(),
                                                                                       null,
                                                                                       new LinkedList<RequiredDeliveryException>()
         );
@@ -395,7 +390,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
             MessagePublishInfo mpi = getPublishRequest(id);
 
-            IncomingMessage incomming = new IncomingMessage(mpi, _txnContext, new MockProtocolSession(_messageStore), _messageStore);
+            IncomingMessage incomming = new IncomingMessage(mpi, _txnContext, new MockProtocolSession(_transactionLog), _transactionLog);
 
             try
             {

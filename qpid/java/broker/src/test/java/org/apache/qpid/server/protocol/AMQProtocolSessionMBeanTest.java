@@ -28,11 +28,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 
 import javax.management.JMException;
@@ -45,7 +45,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(AMQProtocolSessionMBeanTest.class);
 
-    private MessageStore _messageStore = new SkeletonMessageStore();
+    private TransactionLog _transactionLog = new SkeletonMessageStore();
     private AMQMinaProtocolSession _protocolSession;
     private AMQChannel _channel;
     private AMQProtocolSessionMBean _mbean;
@@ -60,7 +60,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
                                                                    new AMQShortString("test"),
                                                                    true,
                                                                    _protocolSession.getVirtualHost(), null);
-        AMQChannel channel = new AMQChannel(_protocolSession,2, _messageStore);
+        AMQChannel channel = new AMQChannel(_protocolSession,2, _transactionLog);
         channel.setDefaultQueue(queue);
         _protocolSession.addChannel(channel);
         channelCount = _mbean.channels().size();
@@ -71,7 +71,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         assertTrue(_mbean.getMaximumNumberOfChannels() == 1000L);
 
         // check APIs
-        AMQChannel channel3 = new AMQChannel(_protocolSession, 3, _messageStore);
+        AMQChannel channel3 = new AMQChannel(_protocolSession, 3, _transactionLog);
         channel3.setLocalTransactional();
         _protocolSession.addChannel(channel3);
         _mbean.rollbackTransactions(2);
@@ -91,14 +91,14 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         }
 
         // check if closing of session works
-        _protocolSession.addChannel(new AMQChannel(_protocolSession, 5, _messageStore));
+        _protocolSession.addChannel(new AMQChannel(_protocolSession, 5, _transactionLog));
         _mbean.closeConnection();
         try
         {
             channelCount = _mbean.channels().size();
             assertTrue(channelCount == 0);
             // session is now closed so adding another channel should throw an exception
-            _protocolSession.addChannel(new AMQChannel(_protocolSession, 6, _messageStore));
+            _protocolSession.addChannel(new AMQChannel(_protocolSession, 6, _transactionLog));
             fail();
         }
         catch (AMQException ex)
@@ -117,7 +117,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
             new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
                 null);
         _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
-        _channel = new AMQChannel(_protocolSession, 1, _messageStore);
+        _channel = new AMQChannel(_protocolSession, 1, _transactionLog);
         _protocolSession.addChannel(_channel);
         _mbean = (AMQProtocolSessionMBean) _protocolSession.getManagedObject();
     }

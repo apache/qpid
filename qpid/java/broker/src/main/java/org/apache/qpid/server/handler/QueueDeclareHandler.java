@@ -30,20 +30,17 @@ import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.routing.RoutingTable;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
 {
@@ -73,7 +70,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        MessageStore store = virtualHost.getMessageStore();
+        RoutingTable routingTable = virtualHost.getRoutingTable();
 
 
         if (!body.getPassive())
@@ -120,7 +117,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     queue = createQueue(queueName, body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
-                        store.createQueue(queue, body.getArguments());
+                        routingTable.createQueue(queue, body.getArguments());
                     }
                     queueRegistry.registerQueue(queue);
                     if (autoRegister)

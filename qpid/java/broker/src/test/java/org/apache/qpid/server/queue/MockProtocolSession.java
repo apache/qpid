@@ -24,11 +24,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.transport.Sender;
 
 import javax.security.sasl.SaslServer;
@@ -41,13 +41,11 @@ import java.security.Principal;
  */
 public class MockProtocolSession implements AMQProtocolSession
 {
-    private MessageStore _messageStore;
 
     private Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
 
-    public MockProtocolSession(MessageStore messageStore)
+    public MockProtocolSession(TransactionLog transactionLog)
     {
-        _messageStore = messageStore;
     }
 
     public void dataBlockReceived(AMQDataBlock message) throws Exception

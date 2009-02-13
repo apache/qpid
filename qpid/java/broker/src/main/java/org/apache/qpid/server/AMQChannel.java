@@ -44,11 +44,11 @@ import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -91,7 +91,7 @@ public class AMQChannel
     /** Maps from consumer tag to subscription instance. Allows us to unsubscribe from a queue. */
     protected final Map<AMQShortString, Subscription> _tag2SubscriptionMap = new HashMap<AMQShortString, Subscription>();
 
-    private final MessageStore _messageStore;
+    private final TransactionLog _transactionLog;
 
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
@@ -109,9 +109,9 @@ public class AMQChannel
 
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
-    private boolean _closing; 
+    private boolean _closing;
 
-    public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
+    public AMQChannel(AMQProtocolSession session, int channelId, TransactionLog transactionLog)
             throws AMQException
     {
         //Set values from configuration
@@ -122,10 +122,10 @@ public class AMQChannel
         _storeContext = new StoreContext("Session: " + session.getClientIdentifier() + "; channel: " + channelId);
 
 
-        _messageStore = messageStore;
+        _transactionLog = transactionLog;
 
         // by default the session is non-transactional
-        _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
+        _txnContext = new NonTransactionalContext(_transactionLog, _storeContext, this, _returnMessages);
     }
 
     /** Sets this channel to be part of a local transaction */
@@ -150,7 +150,7 @@ public class AMQChannel
     public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQException
     {
 
-        _currentMessage = new IncomingMessage(info, _txnContext, _session, _messageStore);
+        _currentMessage = new IncomingMessage(info, _txnContext, _session, _transactionLog);
         _currentMessage.setExchange(e);
     }
 
@@ -174,7 +174,7 @@ public class AMQChannel
 
             routeCurrentMessage();
 
-            _currentMessage.routingComplete(_messageStore);
+            _currentMessage.routingComplete(_transactionLog);
 
             deliverCurrentMessageIfComplete();
 
@@ -474,7 +474,7 @@ public class AMQChannel
             {
 
                     deliveryContext =
-                            new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
+                            new NonTransactionalContext(_transactionLog, _storeContext, this, _returnMessages);
             }
             else
             {
@@ -534,7 +534,7 @@ public class AMQChannel
             {
 
                 deliveryContext =
-                            new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
+                            new NonTransactionalContext(_transactionLog, _storeContext, this, _returnMessages);
 
             }
             else
@@ -669,7 +669,7 @@ public class AMQChannel
         {
 
             deliveryContext =
-                        new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages);
+                        new NonTransactionalContext(_transactionLog, _storeContext, this, _returnMessages);
         }
         else
         {
@@ -870,9 +870,9 @@ public class AMQChannel
         return _returnMessages;
     }
 
-    public MessageStore getMessageStore()
+    public TransactionLog getTransactionLog()
     {
-        return _messageStore;
+        return _transactionLog;
     }
 
     private final ClientDeliveryMethod _clientDeliveryMethod = new ClientDeliveryMethod()

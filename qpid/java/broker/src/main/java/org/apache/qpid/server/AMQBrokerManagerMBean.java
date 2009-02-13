@@ -42,12 +42,8 @@ import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import org.apache.commons.configuration.Configuration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -59,8 +55,9 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.routing.RoutingTable;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -72,7 +69,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final QueueRegistry _queueRegistry;
     private final ExchangeRegistry _exchangeRegistry;
     private final ExchangeFactory _exchangeFactory;
-    private final MessageStore _messageStore;
+    private final TransactionLog _tranasctionLog;
+    private final RoutingTable _routingTable;
 
     private final VirtualHost.VirtualHostMBean _virtualHostMBean;
 
@@ -86,8 +84,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         _queueRegistry = virtualHost.getQueueRegistry();
         _exchangeRegistry = virtualHost.getExchangeRegistry();
-        _messageStore = virtualHost.getMessageStore();
+        _tranasctionLog = virtualHost.getTransactionLog();
         _exchangeFactory = virtualHost.getExchangeFactory();
+        _routingTable = virtualHost.getRoutingTable();
     }
 
     public String getObjectInstanceName()
@@ -180,7 +179,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                                                        null);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _messageStore.createQueue(queue);
+                _routingTable.createQueue(queue);
             }
 
             _queueRegistry.registerQueue(queue);
@@ -215,8 +214,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            _messageStore.removeQueue(queue);
-
+            _routingTable.removeQueue(queue);
         }
         catch (AMQException ex)
         {

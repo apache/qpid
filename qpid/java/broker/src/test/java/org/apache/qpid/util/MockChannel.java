@@ -21,18 +21,18 @@
 package org.apache.qpid.util;
 
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 
 public class MockChannel extends AMQChannel
 {
-    public MockChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
+    public MockChannel(AMQProtocolSession session, int channelId, TransactionLog transactionLog)
             throws AMQException
     {
-        super(session, channelId, messageStore);
+        super(session, channelId, transactionLog);
     }
 
     public Subscription getSubscription(AMQShortString subscription)

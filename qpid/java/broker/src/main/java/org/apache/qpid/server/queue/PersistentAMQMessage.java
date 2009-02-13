@@ -24,17 +24,17 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 public class PersistentAMQMessage extends TransientAMQMessage
 {
-    protected MessageStore _messageStore;
+    protected TransactionLog _transactionLog;
 
-    public PersistentAMQMessage(Long messageId, MessageStore store)
+    public PersistentAMQMessage(Long messageId, TransactionLog transactionLog)
     {
         super(messageId);
-        _messageStore = store;
+        _transactionLog = transactionLog;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class PersistentAMQMessage extends TransientAMQMessage
             throws AMQException
     {
         super.addContentBodyFrame(storeContext, contentChunk, isLastContentBody);
-        _messageStore.storeContentBodyChunk(storeContext, _messageId, _contentBodies.size() - 1,
+        _transactionLog.storeContentBodyChunk(storeContext, _messageId, _contentBodies.size() - 1,
                                             contentChunk, isLastContentBody);
     }
 
@@ -54,13 +54,13 @@ public class PersistentAMQMessage extends TransientAMQMessage
         super.setPublishAndContentHeaderBody(storeContext, messagePublishInfo, contentHeaderBody);
         MessageMetaData mmd = new MessageMetaData(messagePublishInfo, contentHeaderBody, _contentBodies == null ? 0 : _contentBodies.size(), _arrivalTime);
 
-        _messageStore.storeMessageMetaData(storeContext, _messageId, mmd);
+        _transactionLog.storeMessageMetaData(storeContext, _messageId, mmd);
     }
 
     @Override
     public void removeMessage(StoreContext storeContext) throws AMQException
     {
-        _messageStore.removeMessage(storeContext, _messageId);
+        _transactionLog.removeMessage(storeContext, _messageId);
     }
 
     @Override

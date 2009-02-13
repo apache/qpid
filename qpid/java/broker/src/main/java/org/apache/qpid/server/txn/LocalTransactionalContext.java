@@ -25,11 +25,11 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
 import java.util.List;
@@ -55,7 +55,6 @@ public class LocalTransactionalContext implements TransactionalContext
     /** Are there messages to deliver. NOT Has the message been delivered */
     private boolean _messageDelivered = false;
     private final AMQChannel _channel;
-
 
     private abstract class DeliveryAction
     {
@@ -125,9 +124,9 @@ public class LocalTransactionalContext implements TransactionalContext
         return _channel.getReturnMessages();
     }
 
-    public MessageStore getMessageStore()
+    public TransactionLog getTransactionLog()
     {
-        return _channel.getMessageStore();
+        return _channel.getTransactionLog();
     }
 
 
@@ -135,9 +134,9 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         _txnBuffer.rollback(getStoreContext());
         // Hack to deal with uncommitted non-transactional writes
-        if (getMessageStore().inTran(getStoreContext()))
+        if (getTransactionLog().inTran(getStoreContext()))
         {
-            getMessageStore().abortTran(getStoreContext());
+            getTransactionLog().abortTran(getStoreContext());
             _inTran = false;
         }
 
@@ -224,7 +223,7 @@ public class LocalTransactionalContext implements TransactionalContext
                 _log.debug("Starting transaction on message store: " + this);
             }
 
-            getMessageStore().beginTran(getStoreContext());
+            getTransactionLog().beginTran(getStoreContext());
             _inTran = true;
         }
     }
@@ -247,7 +246,7 @@ public class LocalTransactionalContext implements TransactionalContext
 
         if (_messageDelivered && _inTran)
         {
-            _txnBuffer.enlist(new StoreMessageOperation(getMessageStore()));
+            _txnBuffer.enlist(new StoreMessageOperation(getTransactionLog()));
         }
         // fixme fail commit here ... QPID-440
         try
@@ -257,7 +256,7 @@ public class LocalTransactionalContext implements TransactionalContext
         finally
         {
             _messageDelivered = false;
-            _inTran = getMessageStore().inTran(getStoreContext());
+            _inTran = getTransactionLog().inTran(getStoreContext());
         }
 
         try

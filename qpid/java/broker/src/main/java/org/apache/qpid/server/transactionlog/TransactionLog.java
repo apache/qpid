@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.transactionlog;
 
 import org.apache.commons.configuration.Configuration;
 
@@ -30,9 +30,11 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.store.StoreContext;
 
 /**
- * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages, queues
+ * TransactionLog defines the interface for performing transactions.
+ * This is used to preserve the state of messages, queues
  * and exchanges in a transactional manner.
  *
  * <p/>All message store, remove, enqueue and dequeue operations are carried out against a {@link StoreContext} which
@@ -52,7 +54,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  * <tr><td> Generate message identifiers.
  * </table>
  */
-public interface MessageStore
+public interface TransactionLog
 {
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
@@ -84,74 +86,7 @@ public interface MessageStore
      */
     void removeMessage(StoreContext storeContext, Long messageId) throws AMQException;
 
-    /**
-     * Makes the specified exchange persistent.
-     *
-     * @param exchange The exchange to persist.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void createExchange(Exchange exchange) throws AMQException;
 
-    /**
-     * Removes the specified persistent exchange.
-     *
-     * @param exchange The exchange to remove.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void removeExchange(Exchange exchange) throws AMQException;
-
-    /**
-     * Binds the specified queue to an exchange with a routing key.
-     *
-     * @param exchange   The exchange to bind to.
-     * @param routingKey The routing key to bind by.
-     * @param queue      The queue to bind.
-     * @param args       Additional parameters.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
-
-    /**
-     * Unbinds the specified from an exchange under a particular routing key.
-     *
-     * @param exchange   The exchange to unbind from.
-     * @param routingKey The routing key to unbind.
-     * @param queue      The queue to unbind.
-     * @param args       Additonal parameters.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
-
-    /**
-     * Makes the specified queue persistent.
-     *
-     * @param queue The queue to store.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void createQueue(AMQQueue queue) throws AMQException;
-
-    /**
-     * Makes the specified queue persistent.
-     *
-     * @param queue The queue to store.
-     *
-     * @param arguments The additional arguments to the binding
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException;
-
-    /**
-     * Removes the specified queue from the persistent store.
-     *
-     * @param queue The queue to remove.
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void removeQueue(final AMQQueue queue) throws AMQException;
 
     /**
      * Places a message onto a specified queue, in a given transactional context.
@@ -209,6 +144,7 @@ public interface MessageStore
      */
     boolean inTran(StoreContext context);
 
+
     /**
      * Stores a chunk of message data.
      *
@@ -261,7 +197,7 @@ public interface MessageStore
 
     /**
      * Is this store capable of persisting the data
-     * 
+     *
      * @return true if this store is capable of persisting data
      */
     boolean isPersistent();
