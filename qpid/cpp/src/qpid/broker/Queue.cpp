@@ -563,8 +563,10 @@ void Queue::push(boost::intrusive_ptr<Message>& msg){
                 listeners.populate(copy);
                 lvq[key] = msg; 
             }else {
+                boost::intrusive_ptr<Message> old = i->second->getReplacementMessage(this);
+                if (!old) old = i->second;
                 i->second->setReplacementMessage(msg,this);
-                dequeued(QueuedMessage(qm.queue, i->second, qm.position));
+                dequeued(QueuedMessage(qm.queue, old, qm.position));
             }		 
         }else {
             messages.push_back(qm);
