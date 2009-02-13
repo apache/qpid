@@ -56,7 +56,8 @@ public class SimpleAMQQueueTest extends TestCase
     protected FieldTable _arguments = null;
     
     MessagePublishInfo info = new MessagePublishInfoImpl();
-    
+    private static final long MESSAGE_SIZE = 100;
+
     @Override
     protected void setUp() throws Exception
     {
@@ -317,7 +318,7 @@ public class SimpleAMQQueueTest extends TestCase
         // Send persistent message
         qs.add(_queue);
         msg.enqueue(qs);
-        msg.routingComplete(_store, new MessageHandleFactory());
+        msg.routingComplete(_store, new MessageFactory());
         _store.storeMessageMetaData(null, new Long(1L), new MessageMetaData(info, contentHeaderBody, 1));
         
         // Check that it is enqueued
@@ -326,9 +327,14 @@ public class SimpleAMQQueueTest extends TestCase
         
         // Dequeue message
         MockQueueEntry entry = new MockQueueEntry();
-        AMQMessage amqmsg = new AMQMessage(1L, _store, new MessageHandleFactory(), txnContext);
+        AMQMessage message = new MessageFactory().createMessage(1L, _store, true);
         
-        entry.setMessage(amqmsg);
+        ContentHeaderBody header = new ContentHeaderBody();
+        header.bodySize = MESSAGE_SIZE;
+        // This is a persist message but we are not in a transaction so create a new context for the message
+        message.setPublishAndContentHeaderBody(new StoreContext(), info, header);
+        
+        entry.setMessage(message);
         _queue.dequeue(null, entry);
         
         // Check that it is dequeued
@@ -338,22 +344,19 @@ public class SimpleAMQQueueTest extends TestCase
 
 
     // FIXME: move this to somewhere useful
-    private static AMQMessageHandle createMessageHandle(final long messageId, final MessagePublishInfo publishBody)
+    private static AMQMessage createMessage(final long messageId, final MessagePublishInfo publishBody)
     {
-        final AMQMessageHandle amqMessageHandle = (new MessageHandleFactory()).createMessageHandle(messageId,
-                                                                                                   null,
-                                                                                                   false);
+        final AMQMessage amqMessage = (new MessageFactory()).createMessage(messageId, null, false);
         try
         {
-            amqMessageHandle.setPublishAndContentHeaderBody(new StoreContext(),
-                                                              publishBody,
-                                                              new ContentHeaderBody()
-            {
-                public int getSize()
-                {
-                    return 1;
-                }
-            });
+            //Safe to use a null StoreContext as we have created a TransientMessage (see false param above)
+            amqMessage.setPublishAndContentHeaderBody( null, publishBody, new ContentHeaderBody()
+                    {
+                        public int getSize()
+                        {
+                            return 1;
+                        }
+                    });
         }
         catch (AMQException e)
         {
@@ -361,18 +364,18 @@ public class SimpleAMQQueueTest extends TestCase
         }
 
 
-        return amqMessageHandle;
+        return amqMessage;
     }
 
-    public class TestMessage extends AMQMessage
+    public class TestMessage extends TransientAMQMessage
     {
         private final long _tag;
         private int _count;
 
-        TestMessage(long tag, long messageId, MessagePublishInfo publishBody, StoreContext storeContext)
+        TestMessage(long tag, long messageId, MessagePublishInfo publishBody)
                 throws AMQException
         {
-            super(createMessageHandle(messageId, publishBody), storeContext, publishBody);
+            super(createMessage(messageId, publishBody));
             _tag = tag;
         }
 
@@ -396,7 +399,8 @@ public class SimpleAMQQueueTest extends TestCase
     
     protected AMQMessage createMessage(Long id) throws AMQException
     {
-        AMQMessage messageA = new TestMessage(id, id, info, new StoreContext());
+
+        AMQMessage messageA = new TestMessage(id, id, info);
         return messageA;
     }
 }

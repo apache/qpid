@@ -20,363 +20,52 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.txn.TransactionalContext;
-
+import org.apache.qpid.AMQException;
 
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * A deliverable message.
- */
-public class AMQMessage
+public interface AMQMessage
 {
-    /** Used for debugging purposes. */
-    private static final Logger _log = Logger.getLogger(AMQMessage.class);
+    //Get Content relating to this message
 
-    private final AtomicInteger _referenceCount = new AtomicInteger(1);
+    Long getMessageId();
 
-    private final AMQMessageHandle _messageHandle;
+    Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel);
 
-    /** Holds the transactional context in which this message is being processed. */
-    private StoreContext _storeContext;
+    Iterator<ContentChunk> getContentBodyIterator();
 
-    /** Flag to indicate that this message requires 'immediate' delivery. */
+    ContentHeaderBody getContentHeaderBody();
 
-    private static final byte IMMEDIATE = 0x01;
+    ContentChunk getContentChunk(int index);
 
-    /**
-     * Flag to indicate whether this message has been delivered to a consumer. Used in implementing return functionality
-     * for messages published with the 'immediate' flag.
-     */
+    Object getPublisherClientInstance();
 
-    private static final byte DELIVERED_TO_CONSUMER = 0x02;
+    Object getPublisherIdentifier();
 
-    private byte _flags = 0;
+    MessagePublishInfo getMessagePublishInfo();
 
-    private long _expiration;
+    int getBodyCount();
 
-    private final long _size;
+    long getSize();
 
-    private AMQProtocolSession.ProtocolSessionIdentifier _sessionIdentifier;
-    private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
+    long getArrivalTime();
 
 
 
-    /**
-     * Used to iterate through all the body frames associated with this message. Will not keep all the data in memory
-     * therefore is memory-efficient.
-     */
-    private class BodyFrameIterator implements Iterator<AMQDataBlock>
-    {
-        private int _channel;
-
-        private int _index = -1;
-        private AMQProtocolSession _protocolSession;
-
-        private BodyFrameIterator(AMQProtocolSession protocolSession, int channel)
-        {
-            _channel = channel;
-            _protocolSession = protocolSession;
-        }
-
-        public boolean hasNext()
-        {
-            try
-            {
-                return _index < (_messageHandle.getBodyCount(getStoreContext()) - 1);
-            }
-            catch (AMQException e)
-            {
-                _log.error("Unable to get body count: " + e, e);
-
-                return false;
-            }
-        }
-
-        public AMQDataBlock next()
-        {
-            try
-            {
-
-                AMQBody cb =
-                        getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
-                                                                                                         ++_index));
-
-                return new AMQFrame(_channel, cb);
-            }
-            catch (AMQException e)
-            {
-                // have no choice but to throw a runtime exception
-                throw new RuntimeException("Error getting content body: " + e, e);
-            }
-
-        }
-
-        private ProtocolVersionMethodConverter getProtocolVersionMethodConverter()
-        {
-            return _protocolSession.getMethodRegistry().getProtocolVersionMethodConverter();
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public void clearStoreContext()
-    {
-        _storeContext = new StoreContext();
-    }
-
-    public StoreContext getStoreContext()
-    {
-        return _storeContext;
-    }
-
-    private class BodyContentIterator implements Iterator<ContentChunk>
-    {
-
-        private int _index = -1;
-
-        public boolean hasNext()
-        {
-            try
-            {
-                return _index < (_messageHandle.getBodyCount(getStoreContext()) - 1);
-            }
-            catch (AMQException e)
-            {
-                _log.error("Error getting body count: " + e, e);
-
-                return false;
-            }
-        }
-
-        public ContentChunk next()
-        {
-            try
-            {
-                return _messageHandle.getContentChunk(getStoreContext(), ++_index);
-            }
-            catch (AMQException e)
-            {
-                throw new RuntimeException("Error getting content body: " + e, e);
-            }
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-
-
-    /**
-     * Used when recovering, i.e. when the message store is creating references to messages. In that case, the normal
-     * enqueue/routingComplete is not done since the recovery process is responsible for routing the messages to
-     * queues.
-     *
-     * @param messageId
-     * @param store
-     * @param factory
-     *
-     * @throws AMQException
-     */
-    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext)
-            throws AMQException
-    {
-        _messageHandle = factory.createMessageHandle(messageId, store, true);
-        _storeContext = txnConext.getStoreContext();
-        _size = _messageHandle.getBodySize(txnConext.getStoreContext());
-    }
-
-        /**
-     * Used when recovering, i.e. when the message store is creating references to messages. In that case, the normal
-     * enqueue/routingComplete is not done since the recovery process is responsible for routing the messages to
-     * queues.
-     *
-     * @param messageHandle
-     *
-     * @throws AMQException
-     */
-    public AMQMessage(
-                AMQMessageHandle messageHandle,
-                StoreContext storeConext,
-                MessagePublishInfo info)
-            throws AMQException
-    {
-        _messageHandle = messageHandle;
-        _storeContext = storeConext;
-
-        if(info.isImmediate())
-        {
-            _flags |= IMMEDIATE;
-        }
-        _size = messageHandle.getBodySize(storeConext);
-
-    }
-
-
-    protected AMQMessage(AMQMessage msg) throws AMQException
-    {
-        _messageHandle = msg._messageHandle;
-        _storeContext = msg._storeContext;
-        _flags = msg._flags;
-        _size = msg._size;
-
-    }
-
-
-    public String debugIdentity()
-    {
-        return "(HC:" + System.identityHashCode(this) + " ID:" + getMessageId() + " Ref:" + _referenceCount.get() + ")";
-    }
-
-    public void setExpiration(final long expiration)
-    {
-
-        _expiration = expiration;
-
-    }
-
-    public boolean isReferenced()
-    {
-        return _referenceCount.get() > 0;
-    }
-
-    public Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel)
-    {
-        return new BodyFrameIterator(protocolSession, channel);
-    }
-
-    public Iterator<ContentChunk> getContentBodyIterator()
-    {
-        return new BodyContentIterator();
-    }
-
-    public ContentHeaderBody getContentHeaderBody() throws AMQException
-    {
-        return _messageHandle.getContentHeaderBody(getStoreContext());
-    }
-
-
-
-    public Long getMessageId()
-    {
-        return _messageHandle.getMessageId();
-    }
-
-    /**
-     * Creates a long-lived reference to this message, and increments the count of such references, as an atomic
-     * operation.
-     */
-    public AMQMessage takeReference()
-    {
-        incrementReference(); // _referenceCount.incrementAndGet();
-
-        return this;
-    }
-
-    public boolean incrementReference()
-    {
-        return incrementReference(1);
-    }
-
-    /* Threadsafe. Increment the reference count on the message. */
-    public boolean incrementReference(int count)
-    {
-        if(_referenceCount.addAndGet(count) <= 1)
-        {
-            _referenceCount.addAndGet(-count);
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-
-    }
-
-    /**
-     * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
-     * message store.
-     *
-     * @param storeContext
-     *
-     * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
-     *                                 failed
-     */
-    public void decrementReference(StoreContext storeContext) throws MessageCleanupException
-    {
-
-        int count = _referenceCount.decrementAndGet();
-
-        // note that the operation of decrementing the reference count and then removing the message does not
-        // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
-        // the message has been passed to all queues. i.e. we are
-        // not relying on the all the increments having taken place before the delivery manager decrements.
-        if (count == 0)
-        {
-            // set the reference count way below 0 so that we can detect that the message has been deleted
-            // this is to guard against the message being spontaneously recreated (from the mgmt console)
-            // by copying from other queues at the same time as it is being removed.
-            _referenceCount.set(Integer.MIN_VALUE/2);
-
-            try
-            {
-                // must check if the handle is null since there may be cases where we decide to throw away a message
-                // and the handle has not yet been constructed
-                if (_messageHandle != null)
-                {
-                    _messageHandle.removeMessage(storeContext);
-                }
-            }
-            catch (AMQException e)
-            {
-                // to maintain consistency, we revert the count
-                incrementReference();
-                throw new MessageCleanupException(getMessageId(), e);
-            }
-        }
-        else
-        {
-            if (count < 0)
-            {
-                throw new MessageCleanupException("Reference count for message id " + debugIdentity()
-                                                  + " has gone below 0.");
-            }
-        }
-    }
-
+    //Check the status of this message
 
     /**
      * Called selectors to determin if the message has already been sent
      *
      * @return _deliveredToConsumer
      */
-    public boolean getDeliveredToConsumer()
-    {
-        return (_flags & DELIVERED_TO_CONSUMER) != 0;
-    }
-
-    public boolean isPersistent() throws AMQException
-    {
-        return _messageHandle.isPersistent();
-    }
+    boolean getDeliveredToConsumer();
 
     /**
      * Called to enforce the 'immediate' flag.
@@ -384,89 +73,62 @@ public class AMQMessage
      * @returns  true if the message is marked for immediate delivery but has not been marked as delivered
      *                              to a consumer
      */
-    public boolean immediateAndNotDelivered() 
-    {
-
-        return (_flags & IMMEDIATE_AND_DELIVERED) == IMMEDIATE;
-
-    }
-
-    public MessagePublishInfo getMessagePublishInfo() throws AMQException
-    {
-        return _messageHandle.getMessagePublishInfo(getStoreContext());
-    }
-
-    public long getArrivalTime()
-    {
-        return _messageHandle.getArrivalTime();
-    }
+    boolean immediateAndNotDelivered();
 
     /**
      * Checks to see if the message has expired. If it has the message is dequeued.
      *
-     * @param queue The queue to check the expiration against. (Currently not used)
-     *
      * @return true if the message has expire
      *
-     * @throws AMQException
+     * @throws org.apache.qpid.AMQException
      */
-    public boolean expired(AMQQueue queue) throws AMQException
-    {
+    boolean expired() throws AMQException;
 
-        if (_expiration != 0L)
-        {
-            long now = System.currentTimeMillis();
+    /** Is this a persistent message
+     *
+     * @return true if the message is persistent
+     */
+    boolean isPersistent();
 
-            return (now > _expiration);
-        }
-
-        return false;
-    }
 
     /**
      * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
      * And for selector efficiency.
      */
-    public void setDeliveredToConsumer()
-    {
-        _flags |= DELIVERED_TO_CONSUMER;
-    }
+    void setDeliveredToConsumer();
+
+    void setExpiration(long expiration);
+
+    void setClientIdentifier(AMQProtocolSession.ProtocolSessionIdentifier sessionIdentifier);
+
+    /**
+     * This is called when all the content has been received.
+     * @param storeContext
+     *@param messagePublishInfo
+     * @param contentHeaderBody @throws org.apache.qpid.AMQException
+     */
+    void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo, ContentHeaderBody contentHeaderBody)
+            throws AMQException;
+
+    void addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk, boolean isLastContentBody)
+            throws AMQException;
 
 
+    void removeMessage(StoreContext storeContext) throws AMQException;
 
-    public AMQMessageHandle getMessageHandle()
-    {
-        return _messageHandle;
-    }
+    String toString();
 
-    public long getSize()
-    {
-        return _size;
+    String debugIdentity();
 
-    }
+    // Reference counting methods
 
-    public Object getPublisherClientInstance()
-    {
-        return _sessionIdentifier.getSessionInstance();
-    }
-                                                                                          
-    public Object getPublisherIdentifier()
-    {
-        return _sessionIdentifier.getSessionIdentifier();
-    }
+    void decrementReference(StoreContext storeContext) throws MessageCleanupException;
 
-    public void setClientIdentifier(final AMQProtocolSession.ProtocolSessionIdentifier sessionIdentifier)
-    {
-        _sessionIdentifier = sessionIdentifier;
-    }
+    boolean incrementReference(int queueCount);
 
+    boolean incrementReference();
 
-    public String toString()
-    {
-        // return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken : " +
-        // _taken + " by :" + _takenBySubcription;
+    AMQMessage takeReference();
 
-        return "Message[" + debugIdentity() + "]: " + getMessageId() + "; ref count: " + _referenceCount;
-    }
-
+    boolean isReferenced();
 }

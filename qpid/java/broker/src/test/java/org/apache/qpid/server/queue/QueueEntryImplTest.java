@@ -20,21 +20,30 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.AMQException;
+import junit.framework.TestCase;
 
-public class MockAMQMessage extends TransientAMQMessage
+public class QueueEntryImplTest extends TestCase
 {
-    public MockAMQMessage(long messageId)
-            throws AMQException
+
+    /**
+     * Test the Redelivered state of a QueueEntryImpl
+     */
+    public void testRedelivered()
     {
-       super(messageId);
+        QueueEntry entry = new QueueEntryImpl(null, null);
+
+        assertFalse("New message should not be redelivered", entry.isRedelivered());
+
+        entry.setRedelivered(true);
+
+        assertTrue("New message should not be redelivered", entry.isRedelivered());
+
+        //Check we can revert it.. not that we ever should.
+        entry.setRedelivered(false);
+
+        assertFalse("New message should not be redelivered", entry.isRedelivered());
+
     }
 
 
-    @Override
-    public long getSize()
-    {
-        return 0l;
-    }
 }

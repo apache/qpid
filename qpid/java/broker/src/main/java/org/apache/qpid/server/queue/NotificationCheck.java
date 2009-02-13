@@ -47,20 +47,13 @@ public enum NotificationCheck
             if(maximumMessageSize != 0)
             {
                 // Check for threshold message size
-                long messageSize;
-                try
-                {
-                    messageSize = (msg == null) ? 0 : msg.getContentHeaderBody().bodySize;
-                }
-                catch (AMQException e)
-                {
-                    messageSize = 0;
-                }
-
+                long messageSize = (msg == null) ? 0 : msg.getContentHeaderBody().bodySize;
 
                 if (messageSize >= maximumMessageSize)
                 {
-                    listener.notifyClients(this, queue, messageSize + "b : Maximum message size threshold ("+ maximumMessageSize +") breached. [Message ID=" + msg.getMessageId() + "]");
+                    listener.notifyClients(this, queue, messageSize + "b : Maximum message size threshold (" +
+                                                        maximumMessageSize + ") breached. [Message ID=" +
+                                                        (msg == null ? "null" : msg.getMessageId()) + "]");
                     return true;
                 }
             }
@@ -110,7 +103,7 @@ public enum NotificationCheck
                 }
             }
             return false;
-                    
+
         }
 
     }

@@ -27,29 +27,21 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.AMQException;
 import org.apache.commons.configuration.Configuration;
 
 import java.util.List;
 import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedList;
 
 public class MockAMQQueue implements AMQQueue
 {
     private boolean _deleted = false;
+    private int _queueCount;
     private AMQShortString _name;
 
     public MockAMQQueue(String name)
     {
        _name = new AMQShortString(name);
-    }
-
-    public MockAMQQueue()
-    {
-       
     }
 
     public AMQShortString getName()
@@ -134,7 +126,7 @@ public class MockAMQQueue implements AMQQueue
 
     public long getQueueDepth()
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return _queueCount;
     }
 
     public long getReceivedMessageCount()
@@ -159,6 +151,7 @@ public class MockAMQQueue implements AMQQueue
 
     public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
     {
+        _queueCount++;
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -169,7 +162,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _queueCount--;
     }
 
     public boolean resend(QueueEntry entry, Subscription subscription) throws AMQException

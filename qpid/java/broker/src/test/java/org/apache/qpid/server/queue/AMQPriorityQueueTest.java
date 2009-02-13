@@ -25,10 +25,12 @@ import java.util.ArrayList;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.ContentHeaderBody;
 import junit.framework.AssertionFailedError;
 
 public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {
+    private static final long MESSAGE_SIZE = 100L;
 
     @Override
     protected void setUp() throws Exception
@@ -92,11 +94,18 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 
     protected AMQMessage createMessage(Long id, byte i) throws AMQException
     {
-        AMQMessage msg = super.createMessage(id);
+        AMQMessage message = super.createMessage(id);
+
+        ContentHeaderBody header = new ContentHeaderBody();
+        header.bodySize = MESSAGE_SIZE;
+
+        //The createMessage above is for a Transient Message so it is safe to have no context.
+        message.setPublishAndContentHeaderBody(null, info, header);
+
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
         props.setPriority(i);
-        msg.getContentHeaderBody().properties = props;
-        return msg;
+        message.getContentHeaderBody().properties = props;
+        return message;
     }
     
     protected AMQMessage createMessage(Long id) throws AMQException

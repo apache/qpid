@@ -35,7 +35,6 @@ import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 public class IncomingMessage implements Filterable<RuntimeException>
 {
@@ -48,7 +47,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
-    private AMQMessageHandle _messageHandle;
+    private AMQMessage _message;
     private final Long _messageId;
     private final TransactionalContext _txnContext;
 
@@ -73,7 +72,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private long _expiration;
     
     private Exchange _exchange;
-
 
     public IncomingMessage(final Long messageId,
                            final MessagePublishInfo info,
@@ -124,11 +122,11 @@ public class IncomingMessage implements Filterable<RuntimeException>
     }
 
     public void routingComplete(final MessageStore store,
-                                final MessageHandleFactory factory) throws AMQException
+                                final MessageFactory factory) throws AMQException
     {
 
         final boolean persistent = isPersistent();
-        _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
+        _message = factory.createMessage(_messageId, store, persistent);
         if (persistent)
         {
             _txnContext.beginTranIfNecessary();
@@ -157,21 +155,16 @@ public class IncomingMessage implements Filterable<RuntimeException>
             _logger.debug("Delivering message " + _messageId + " to " + _destinationQueues);
         }
 
-        AMQMessage message = null;
-
         try
         {
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
-            _messageHandle.setPublishAndContentHeaderBody(_txnContext.getStoreContext(),
-                                                          _messagePublishInfo, getContentHeaderBody());
+            _message.setPublishAndContentHeaderBody(_txnContext.getStoreContext(), _messagePublishInfo, getContentHeaderBody());
 
-            
-            
-            message = new AMQMessage(_messageHandle,_txnContext.getStoreContext(), _messagePublishInfo);
 
-            message.setExpiration(_expiration);
-            message.setClientIdentifier(_publisher.getSessionIdentifier());
+
+            _message.setExpiration(_expiration);
+            _message.setClientIdentifier(_publisher.getSessionIdentifier());
 
             // we then allow the transactional context to do something with the message content
             // now that it has all been received, before we attempt delivery
@@ -182,7 +175,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
             
             if (MSG_AUTH && !_publisher.getAuthorizedID().getName().equals(userID == null? "" : userID.toString()))
             {
-                throw new UnauthorizedAccessException("Acccess Refused",message);
+                throw new UnauthorizedAccessException("Acccess Refused", _message);
             }
             
             if ((_destinationQueues == null) || _destinationQueues.size() == 0)
@@ -190,26 +183,26 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
                 if (isMandatory() || isImmediate())
                 {
-                    throw new NoRouteException("No Route for message", message);
+                    throw new NoRouteException("No Route for message", _message);
 
                 }
                 else
                 {
-                    _logger.warn("MESSAGE DISCARDED: No routes for message - " + message);
+                    _logger.warn("MESSAGE DISCARDED: No routes for message - " + _message);
                 }
             }
             else
             {
                 int offset;
                 final int queueCount = _destinationQueues.size();
-                message.incrementReference(queueCount);
+                _message.incrementReference(queueCount);
                 if(queueCount == 1)
                 {
                     offset = 0;
                 }
                 else
                 {
-                    offset = ((int)(message.getMessageId().longValue())) % queueCount;
+                    offset = ((int)(_message.getMessageId().longValue())) % queueCount;
                     if(offset < 0)
                     {
                         offset = -offset;
@@ -218,22 +211,21 @@ public class IncomingMessage implements Filterable<RuntimeException>
                 for (int i = offset; i < queueCount; i++)
                 {
                     // normal deliver so add this message at the end.
-                    _txnContext.deliver(_destinationQueues.get(i), message);
+                    _txnContext.deliver(_destinationQueues.get(i), _message);
                 }
                 for (int i = 0; i < offset; i++)
                 {
                     // normal deliver so add this message at the end.
-                    _txnContext.deliver(_destinationQueues.get(i), message);
+                    _txnContext.deliver(_destinationQueues.get(i), _message);
                 }
             }
 
-            message.clearStoreContext();
-            return message;
+            return _message;
         }
         finally
         {
             // Remove refence for routing process . Reference count should now == delivered queue count
-            if(message != null) message.decrementReference(_txnContext.getStoreContext());
+            if(_message != null) _message.decrementReference(_txnContext.getStoreContext());
         }
 
     }
@@ -244,7 +236,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
         _bodyLengthReceived += contentChunk.getSize();
 
-        _messageHandle.addContentBodyFrame(_txnContext.getStoreContext(), contentChunk, allContentReceived());
+        _message.addContentBodyFrame(_txnContext.getStoreContext(), contentChunk, allContentReceived());
 
     }
 

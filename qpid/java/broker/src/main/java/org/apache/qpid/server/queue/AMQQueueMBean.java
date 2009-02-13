@@ -353,29 +353,20 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             }
         }
 
-        try
+        // Create header attributes list
+        CommonContentHeaderProperties headerProperties =
+            (CommonContentHeaderProperties) msg.getContentHeaderBody().properties;
+        String mimeType = null, encoding = null;
+        if (headerProperties != null)
         {
-            // Create header attributes list
-            CommonContentHeaderProperties headerProperties =
-                (CommonContentHeaderProperties) msg.getContentHeaderBody().properties;
-            String mimeType = null, encoding = null;
-            if (headerProperties != null)
-            {
-                AMQShortString mimeTypeShortSting = headerProperties.getContentType();
-                mimeType = (mimeTypeShortSting == null) ? null : mimeTypeShortSting.toString();
-                encoding = (headerProperties.getEncoding() == null) ? "" : headerProperties.getEncoding().toString();
-            }
-
-            Object[] itemValues = { msgId, mimeType, encoding, msgContent.toArray(new Byte[0]) };
-
-            return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
+            AMQShortString mimeTypeShortSting = headerProperties.getContentType();
+            mimeType = (mimeTypeShortSting == null) ? null : mimeTypeShortSting.toString();
+            encoding = (headerProperties.getEncoding() == null) ? "" : headerProperties.getEncoding().toString();
         }
-        catch (AMQException e)
-        {
-            JMException jme = new JMException("Error creating header attributes list: " + e);
-            jme.initCause(e);
-            throw jme;
-        }
+
+        Object[] itemValues = { msgId, mimeType, encoding, msgContent.toArray(new Byte[0]) };
+
+        return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
     }
 
     /**
@@ -392,27 +383,18 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         List<QueueEntry> list = _queue.getMessagesOnTheQueue();
         TabularDataSupport _messageList = new TabularDataSupport(_messagelistDataType);
 
-        try
+        // Create the tabular list of message header contents
+        for (int i = beginIndex; (i <= endIndex) && (i <= list.size()); i++)
         {
-            // Create the tabular list of message header contents
-            for (int i = beginIndex; (i <= endIndex) && (i <= list.size()); i++)
-            {
-                QueueEntry queueEntry = list.get(i - 1);
-                AMQMessage msg = queueEntry.getMessage();
-                ContentHeaderBody headerBody = msg.getContentHeaderBody();
-                // Create header attributes list
-                String[] headerAttributes = getMessageHeaderProperties(headerBody);
-                Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize,
-                                        queueEntry.isRedelivered() };
-                CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
-                _messageList.put(messageData);
-            }
-        }
-        catch (AMQException e)
-        {
-            JMException jme = new JMException("Error creating message contents: " + e);
-            jme.initCause(e);
-            throw jme;
+            QueueEntry queueEntry = list.get(i - 1);
+            AMQMessage msg = queueEntry.getMessage();
+            ContentHeaderBody headerBody = msg.getContentHeaderBody();
+            // Create header attributes list
+            String[] headerAttributes = getMessageHeaderProperties(headerBody);
+            Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize,
+                                    queueEntry.isRedelivered() };
+            CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
+            _messageList.put(messageData);
         }
 
         return _messageList;

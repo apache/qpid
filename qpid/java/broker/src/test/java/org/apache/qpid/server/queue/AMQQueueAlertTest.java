@@ -136,6 +136,7 @@ public class AMQQueueAlertTest extends TestCase
         while (_queue.getQueueDepth() < MAX_QUEUE_DEPTH)
         {
             sendMessages(1, MAX_MESSAGE_SIZE);
+            System.err.println(_queue.getQueueDepth() + ":" + MAX_QUEUE_DEPTH);
         }
 
         Notification lastNotification = _queueMBean.getLastNotification();
@@ -307,7 +308,7 @@ public class AMQQueueAlertTest extends TestCase
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
             messages[i].enqueue(qs);
-            messages[i].routingComplete(_messageStore, new MessageHandleFactory());
+            messages[i].routingComplete(_messageStore, new MessageFactory());
 
         }
 
