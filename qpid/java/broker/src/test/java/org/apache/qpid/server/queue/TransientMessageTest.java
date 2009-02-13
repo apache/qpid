@@ -38,22 +38,21 @@ public class TransientMessageTest extends TestCase
     AMQMessage _message;
     StoreContext _storeContext = null;
 
-    protected AMQMessage newMessage(Long id)
+    protected AMQMessage newMessage()
     {
-        return new MessageFactory().createMessage(id, null, false);
+        return MessageFactory.getInstance().createMessage(null, false);
     }
 
     public void testMessageID()
     {
-        Long id = 1L;
-        _message = newMessage(id);
+        _message = newMessage();
 
-        assertEquals("Message not set value", id, _message.getMessageId());
+        assertTrue("Message ID is not set ", _message.getMessageId() > 0L);
     }
 
     public void testInvalidContentChunk()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         try
         {
@@ -100,7 +99,7 @@ public class TransientMessageTest extends TestCase
     public void testAddSingleContentChunk()
     {
 
-        _message = newMessage(1L);
+        _message = newMessage();
 
         ContentChunk cc = new MockContentChunk(100);
 
@@ -138,7 +137,7 @@ public class TransientMessageTest extends TestCase
     public void testAddMultipleContentChunk()
     {
 
-        _message = newMessage(1L);
+        _message = newMessage();
 
         ContentChunk cc = new MockContentChunk(100);
 
@@ -174,14 +173,14 @@ public class TransientMessageTest extends TestCase
 
     public void testInitialArrivalTime()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         assertEquals("Initial Arrival time should be 0L", 0L, _message.getArrivalTime());
     }
 
     public void testSetPublishAndContentHeaderBody_WithBody()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl();
         int bodySize = 100;
@@ -202,7 +201,7 @@ public class TransientMessageTest extends TestCase
 
     public void testSetPublishAndContentHeaderBody_Null()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl();
         int bodySize = 0;
@@ -244,7 +243,7 @@ public class TransientMessageTest extends TestCase
 
     public void testSetPublishAndContentHeaderBody_Empty()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl();
         int bodySize = 0;
@@ -283,14 +282,14 @@ public class TransientMessageTest extends TestCase
 
     public void testIsPersistent()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         assertFalse(_message.isPersistent());
     }
 
     public void testImmediateAndNotDelivered()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl(null, true, false, null);
         int bodySize = 0;
@@ -323,7 +322,7 @@ public class TransientMessageTest extends TestCase
 
     public void testNotImmediateAndNotDelivered()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl(null, false, false, null);
         int bodySize = 0;
@@ -356,7 +355,7 @@ public class TransientMessageTest extends TestCase
 
     public void testExpiry()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl(null, false, false, null);
         int bodySize = 0;
@@ -412,7 +411,7 @@ public class TransientMessageTest extends TestCase
 
         public void testNoExpiry()
     {
-        _message = newMessage(1L);
+        _message = newMessage();
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl(null, false, false, null);
         int bodySize = 0;

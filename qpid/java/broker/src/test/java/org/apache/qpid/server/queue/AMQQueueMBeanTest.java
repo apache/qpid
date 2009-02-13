@@ -216,12 +216,14 @@ public class AMQQueueMBeanTest extends TestCase
         }
 
         IncomingMessage msg = message(false, false);
-        long id = msg.getMessageId();
+
         _queue.clearQueue(_storeContext);
         ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
         qs.add(_queue);
         msg.enqueue(qs);
-        msg.routingComplete(_messageStore, new MessageFactory());
+        msg.routingComplete(_messageStore);
+
+        long id = msg.getMessageId();
 
         msg.addContentBodyFrame(new ContentChunk()
         {
@@ -264,7 +266,7 @@ public class AMQQueueMBeanTest extends TestCase
         contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes
         contentHeaderBody.properties = new BasicContentHeaderProperties();
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) (persistent ? 2 : 1));
-        IncomingMessage msg = new IncomingMessage(_messageStore.getNewMessageId(), publish, _transactionalContext,  _protocolSession);
+        IncomingMessage msg = new IncomingMessage(publish, _transactionalContext,  _protocolSession, _messageStore);
         msg.setContentHeaderBody(contentHeaderBody);
         return msg;
 
@@ -305,7 +307,7 @@ public class AMQQueueMBeanTest extends TestCase
             currentMessage.enqueue(qs);
 
             // route header
-            currentMessage.routingComplete(_messageStore, new MessageFactory());
+            currentMessage.routingComplete(_messageStore);
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(

@@ -210,13 +210,6 @@ public interface MessageStore
     boolean inTran(StoreContext context);
 
     /**
-     * Return a valid, currently unused message id.
-     *
-     * @return A fresh message id.
-     */
-    Long getNewMessageId();
-
-    /**
      * Stores a chunk of message data.
      *
      * @param context         The transactional context for the operation.
