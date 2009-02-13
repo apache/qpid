@@ -302,7 +302,7 @@ public class MessageStoreTool
         boolean warning = false;
         for (VirtualHost vhost : vhosts)
         {
-            if (vhost.getMessageStore() instanceof MemoryMessageStore)
+            if (vhost.getTransactionLog() instanceof MemoryMessageStore)
             {
                 _console.println("WARNING: Virtualhost '" + vhost.getName() + "' is using a MemoryMessageStore. "
                                  + "Changes will not persist.");

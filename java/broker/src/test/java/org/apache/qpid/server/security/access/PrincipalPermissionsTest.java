@@ -73,6 +73,7 @@ public class PrincipalPermissionsTest extends TestCase
         } 
         catch (Exception e)
         {
+            e.printStackTrace();
             fail(e.getMessage());
         }
     }

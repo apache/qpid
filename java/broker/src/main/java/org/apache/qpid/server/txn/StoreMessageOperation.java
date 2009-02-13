@@ -21,8 +21,8 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 /**
  * A transactional operation to store messages in an underlying persistent store. When this operation
@@ -31,11 +31,11 @@ import org.apache.qpid.server.store.StoreContext;
  */
 public class StoreMessageOperation implements TxnOp
 {
-    private final MessageStore _messsageStore;
+    private final TransactionLog _transactionLog;
 
-    public StoreMessageOperation(MessageStore messageStore)
+    public StoreMessageOperation(TransactionLog transactionLog)
     {
-        _messsageStore = messageStore;
+        _transactionLog = transactionLog;
     }
 
     public void prepare(StoreContext context) throws AMQException
@@ -48,11 +48,11 @@ public class StoreMessageOperation implements TxnOp
 
     public void commit(StoreContext context) throws AMQException
     {
-        _messsageStore.commitTran(context);
+        _transactionLog.commitTran(context);
     }
 
     public void rollback(StoreContext context) throws AMQException
     {
-        _messsageStore.abortTran(context);
+        _transactionLog.abortTran(context);
     }
 }

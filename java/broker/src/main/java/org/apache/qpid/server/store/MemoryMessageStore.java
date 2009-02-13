@@ -30,6 +30,8 @@ import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.routing.RoutingTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,8 +41,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A simple message store that stores the messages in a threadsafe structure in memory. */
-public class MemoryMessageStore implements MessageStore
+/** A simple message store that stores the messages in a threadsafe structure in memory.
+ *
+ * NOTE: Now that we have removed the MessageStore interface and are using a TransactionLog
+ *
+ * This class really should have no storage unless we want to do inMemory Recovery.
+ *
+ */
+public class MemoryMessageStore implements TransactionLog, RoutingTable
 {
     private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
 
@@ -64,10 +72,14 @@ public class MemoryMessageStore implements MessageStore
 
     public void configure(String base, Configuration config)
     {
-        int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
-        _log.info("Using capacity " + hashtableCapacity + " for hash tables");
-        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
-        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
+        //Only initialise when called with current 'store' configs i.e. don't reinit when used as a 'RoutingTable'
+        if (base.equals("store"))
+        {
+            int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
+            _log.info("Using capacity " + hashtableCapacity + " for hash tables");
+            _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
+            _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
+        }
     }
 
     public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception

@@ -27,10 +27,10 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
@@ -67,7 +67,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private ArrayList<AMQQueue> _destinationQueues;
 
     private AMQProtocolSession _publisher;
-    private MessageStore _messageStore;
+    private TransactionLog _messageStore;
     private long _expiration;
     
     private Exchange _exchange;
@@ -76,7 +76,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     public IncomingMessage(final MessagePublishInfo info,
                            final TransactionalContext txnContext,
                            final AMQProtocolSession publisher,
-                           MessageStore messasgeStore)
+                           TransactionLog messasgeStore)
     {
         _messagePublishInfo = info;
         _txnContext = txnContext;
@@ -121,7 +121,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
     }
 
-    public void routingComplete(final MessageStore store) throws AMQException
+    public void routingComplete(final TransactionLog transactionLog) throws AMQException
     {
 
         if (isPersistent())
@@ -134,7 +134,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
             {
                 for (int i = 0; i < _destinationQueues.size(); i++)
                 {
-                    store.enqueueMessage(_txnContext.getStoreContext(),
+                    transactionLog.enqueueMessage(_txnContext.getStoreContext(),
                             _destinationQueues.get(i), getMessageId());
                 }
             }

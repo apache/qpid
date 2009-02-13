@@ -27,14 +27,13 @@ import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,10 +48,9 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     private ExchangeFactory _exchangeFactory;
 
-    private MessageStore _messageStore;
+    private TransactionLog _transactionLog;
 
     private VirtualHost _vHost;
-
 
     public TestApplicationRegistry()
     {
@@ -73,11 +71,11 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
 
-        _messageStore = new TestableMemoryMessageStore();
+        _transactionLog = new TestableMemoryMessageStore();
 
         _virtualHostRegistry = new VirtualHostRegistry();
 
-        _vHost = new VirtualHost("test", _messageStore);
+        _vHost = new VirtualHost("test", _transactionLog);
 
         _virtualHostRegistry.registerVirtualHost(_vHost);
 
@@ -114,9 +112,9 @@ public class TestApplicationRegistry extends ApplicationRegistry
         _accessManager = newManager;
     }
 
-    public MessageStore getMessageStore()
+    public TransactionLog getTransactionLog()
     {
-        return _messageStore;
+        return _transactionLog;
     }
 
 }

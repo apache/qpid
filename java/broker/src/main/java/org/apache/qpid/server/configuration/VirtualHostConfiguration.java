@@ -38,8 +38,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.routing.RoutingTable;
 
 public class VirtualHostConfiguration
 {
@@ -101,8 +102,6 @@ public class VirtualHostConfiguration
         exchangeConfiguration.addConfiguration(configuration.subset("exchanges.exchange."+ exchangeNameString));
         exchangeConfiguration.addConfiguration(configuration.subset("exchanges"));
 
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        MessageStore messageStore = virtualHost.getMessageStore();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
 
@@ -159,7 +158,7 @@ public class VirtualHostConfiguration
         queueConfiguration.addConfiguration(configuration.subset("queues"));
 
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        MessageStore messageStore = virtualHost.getMessageStore();
+        RoutingTable routingTable = virtualHost.getRoutingTable();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
 
 
@@ -205,7 +204,7 @@ public class VirtualHostConfiguration
 
                 if (queue.isDurable())
                 {
-                    messageStore.createQueue(queue);
+                    routingTable.createQueue(queue);
                 }
 
                 queueRegistry.registerQueue(queue);

@@ -32,6 +32,8 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -62,7 +64,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 
-public class DerbyMessageStore implements MessageStore
+public class DerbyMessageStore implements TransactionLog, RoutingTable
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
@@ -142,37 +144,40 @@ public class DerbyMessageStore implements MessageStore
 
     public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
     {
-        stateTransition(State.INITIAL, State.CONFIGURING);
-
-        initialiseDriver();
-
-        _virtualHost = virtualHost;
-
-        _logger.info("Configuring Derby message store for virtual host " + virtualHost.getName());
-        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-
-        final String databasePath = config.getString(base + "." + ENVIRONMENT_PATH_PROPERTY, "derbyDB");
-
-        File environmentPath = new File(databasePath);
-        if (!environmentPath.exists())
+        //Only initialise when loaded with the old 'store' confing ignore the new 'RoutingTable' config
+        if (base.equals("store"))
         {
-            if (!environmentPath.mkdirs())
+            stateTransition(State.INITIAL, State.CONFIGURING);
+
+            initialiseDriver();
+
+            _virtualHost = virtualHost;
+
+            _logger.info("Configuring Derby message store for virtual host " + virtualHost.getName());
+            QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+            final String databasePath = config.getString(base + "." + ENVIRONMENT_PATH_PROPERTY, "derbyDB");
+
+            File environmentPath = new File(databasePath);
+            if (!environmentPath.exists())
             {
-                throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
-                    + "Ensure the path is correct and that the permissions are correct.");
+                if (!environmentPath.mkdirs())
+                {
+                    throw new IllegalArgumentException("Environment path " + environmentPath + " could not be read or created. "
+                                                       + "Ensure the path is correct and that the permissions are correct.");
+                }
             }
+
+            createOrOpenDatabase(databasePath);
+
+            // this recovers durable queues and persistent messages
+
+            _messageFactory = MessageFactory.getInstance();
+
+            recover();
+
+            stateTransition(State.RECOVERING, State.STARTED);
         }
-
-        createOrOpenDatabase(databasePath);
-
-        // this recovers durable queues and persistent messages
-
-        _messageFactory = MessageFactory.getInstance();
-
-        recover();
-
-        stateTransition(State.RECOVERING, State.STARTED);
-
     }
 
     private static synchronized void initialiseDriver() throws ClassNotFoundException

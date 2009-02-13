@@ -30,6 +30,8 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.routing.RoutingTable;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
@@ -45,10 +47,8 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
-import org.apache.qpid.server.security.access.plugins.SimpleXML;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.store.MessageStore;
 
 public class VirtualHost implements Accessable
 {
@@ -65,7 +65,9 @@ public class VirtualHost implements Accessable
 
     private ExchangeFactory _exchangeFactory;
 
-    private MessageStore _messageStore;
+    private TransactionLog _transactionLog;
+
+    private RoutingTable _routingTable;
 
     protected VirtualHostMBean _virtualHostMBean;
 
@@ -94,6 +96,11 @@ public class VirtualHost implements Accessable
     public IConnectionRegistry getConnectionRegistry()
     {
         return _connectionRegistry;
+    }
+
+    public RoutingTable getRoutingTable()
+    {
+        return _routingTable;
     }
 
     /**
@@ -128,12 +135,12 @@ public class VirtualHost implements Accessable
     /**
      * Used for testing only
      * @param name
-     * @param store
+     * @param transactionLog
      * @throws Exception
      */
-    public VirtualHost(String name, MessageStore store) throws Exception
+    public VirtualHost(String name, TransactionLog transactionLog) throws Exception
     {
-        this(name, new PropertiesConfiguration(), store);
+        this(name, new PropertiesConfiguration(), transactionLog);
     }
 
     /**
@@ -147,7 +154,7 @@ public class VirtualHost implements Accessable
         this(name, hostConfig, null);
     }
 
-    public VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
+    public VirtualHost(String name, Configuration hostConfig, TransactionLog transactionLog) throws Exception
     {
         if (name == null || name.length() == 0)
         {
@@ -166,18 +173,25 @@ public class VirtualHost implements Accessable
         _exchangeFactory.initialise(hostConfig);
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
-        if (store != null)
+        if (transactionLog != null)
         {
-            _messageStore = store;
+            _transactionLog = transactionLog;
+            if (_transactionLog instanceof RoutingTable)
+            {
+                _routingTable = (RoutingTable) _transactionLog;
+            }
         }
         else
         {
             if (hostConfig == null)
             {
-                throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
+                throw new IllegalAccessException("HostConfig and TransactionLog cannot be null");
             }
-            initialiseMessageStore(hostConfig);
+            initialiseTransactionLog(hostConfig);
+            initialiseRoutingTable(hostConfig);
         }
+
+
 
         _exchangeRegistry.initialise();
 
@@ -224,22 +238,51 @@ public class VirtualHost implements Accessable
                     period);
         }
     }
-    
-    private void initialiseMessageStore(Configuration config) throws Exception
-    {
-        String messageStoreClass = config.getString("store.class");
 
-        Class clazz = Class.forName(messageStoreClass);
+    //todo we need to move from store.class to transactionlog.class
+    private void initialiseTransactionLog(Configuration config) throws Exception
+    {
+        String transactionLogClass = config.getString("store.class");
+
+        Class clazz = Class.forName(transactionLogClass);
         Object o = clazz.newInstance();
 
-        if (!(o instanceof MessageStore))
+        if (!(o instanceof TransactionLog))
         {
-            throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
+            throw new ClassCastException("TransactionLog class must implement " + TransactionLog.class + ". Class " + clazz +
                                          " does not.");
         }
-        _messageStore = (MessageStore) o;
-        _messageStore.configure(this, "store", config);
+        _transactionLog = (TransactionLog) o;
+        _transactionLog.configure(this, "store", config);
     }
+
+    //todo we need to move from store.class to transactionlog.class
+    private void initialiseRoutingTable(Configuration config) throws Exception
+    {
+        String transactionLogClass = config.getString("routingtable.class");
+
+        if (transactionLogClass != null)
+        {
+            Class clazz = Class.forName(transactionLogClass);
+            Object o = clazz.newInstance();
+
+            if (!(o instanceof RoutingTable))
+            {
+                throw new ClassCastException("RoutingTable class must implement " + RoutingTable.class + ". Class " + clazz +
+                                             " does not.");
+            }
+            _routingTable = (RoutingTable) o;
+            _routingTable.configure(this, "routingtable", config);
+        }
+        else
+        {
+            if (_transactionLog instanceof RoutingTable)
+            {
+                _routingTable = (RoutingTable)_transactionLog;
+            }
+        }
+    }
+
 
 
     public <T> T getConfiguredObject(Class<T> instanceType, Configuration config)
@@ -284,9 +327,9 @@ public class VirtualHost implements Accessable
         throw new UnsupportedOperationException();
     }
 
-    public MessageStore getMessageStore()
+    public TransactionLog getTransactionLog()
     {
-        return _messageStore;
+        return _transactionLog;
     }
 
     public AuthenticationManager getAuthenticationManager()
@@ -320,10 +363,10 @@ public class VirtualHost implements Accessable
             _houseKeepingTimer.cancel();
         }        
 
-        //Close MessageStore
-        if (_messageStore != null)
+        //Close TransactionLog
+        if (_transactionLog != null)
         {
-            _messageStore.close();
+            _transactionLog.close();
         }
     }
 

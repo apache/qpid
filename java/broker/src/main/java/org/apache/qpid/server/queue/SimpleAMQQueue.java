@@ -6,11 +6,11 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
@@ -210,7 +210,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         exchange.registerQueue(routingKey, this, arguments);
         if (isDurable() && exchange.isDurable())
         {
-            _virtualHost.getMessageStore().bindQueue(exchange, routingKey, this, arguments);
+            _virtualHost.getRoutingTable().bindQueue(exchange, routingKey, this, arguments);
         }
 
         _bindings.addBinding(routingKey, arguments, exchange);
@@ -221,7 +221,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         exchange.deregisterQueue(routingKey, this, arguments);
         if (isDurable() && exchange.isDurable())
         {
-            _virtualHost.getMessageStore().unbindQueue(exchange, routingKey, this, arguments);
+            _virtualHost.getRoutingTable().unbindQueue(exchange, routingKey, this, arguments);
         }
 
         boolean removed = _bindings.remove(routingKey, arguments, exchange);
@@ -581,7 +581,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             AMQMessage msg = entry.getMessage();
             if (msg.isPersistent())
             {
-                _virtualHost.getMessageStore().dequeueMessage(storeContext, this, msg.getMessageId());
+                _virtualHost.getTransactionLog().dequeueMessage(storeContext, this, msg.getMessageId());
             }
             //entry.dispose(storeContext);
 
@@ -826,7 +826,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
 
         AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        MessageStore store = getVirtualHost().getMessageStore();
+        TransactionLog transactionLog = getVirtualHost().getTransactionLog();
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -847,16 +847,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         try
         {
-            store.beginTran(storeContext);
+            transactionLog.beginTran(storeContext);
 
-            // Move the messages in on the message store.
+            // Move the messages in on the transaction log.
             for (QueueEntry entry : entries)
             {
                 AMQMessage message = entry.getMessage();
 
                 if (message.isPersistent() && toQueue.isDurable())
                 {
-                    store.enqueueMessage(storeContext, toQueue, message.getMessageId());
+                    transactionLog.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
                 // dequeue does not decrement the refence count
                 entry.dequeue(storeContext);
@@ -865,18 +865,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Commit and flush the move transcations.
             try
             {
-                store.commitTran(storeContext);
+                transactionLog.commitTran(storeContext);
             }
             catch (AMQException e)
             {
-                throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
+                throw new RuntimeException("Failed to commit transaction whilst moving messages on transaction log.", e);
             }
         }
         catch (AMQException e)
         {
             try
             {
-                store.abortTran(storeContext);
+                transactionLog.abortTran(storeContext);
             }
             catch (AMQException rollbackEx)
             {
@@ -910,7 +910,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                                            final StoreContext storeContext)
     {
         AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        MessageStore store = getVirtualHost().getMessageStore();
+        TransactionLog transactionLog = getVirtualHost().getTransactionLog();
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -938,34 +938,34 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         try
         {
-            store.beginTran(storeContext);
+            transactionLog.beginTran(storeContext);
 
-            // Move the messages in on the message store.
+            // Move the messages in on the transaction log.
             for (QueueEntry entry : entries)
             {
                 AMQMessage message = entry.getMessage();
 
                 if (message.isReferenced() && message.isPersistent() && toQueue.isDurable())
                 {
-                    store.enqueueMessage(storeContext, toQueue, message.getMessageId());
+                    transactionLog.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
             }
 
             // Commit and flush the move transcations.
             try
             {
-                store.commitTran(storeContext);
+                transactionLog.commitTran(storeContext);
             }
             catch (AMQException e)
             {
-                throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
+                throw new RuntimeException("Failed to commit transaction whilst moving messages on transaction log.", e);
             }
         }
         catch (AMQException e)
         {
             try
             {
-                store.abortTran(storeContext);
+                transactionLog.abortTran(storeContext);
             }
             catch (AMQException rollbackEx)
             {
