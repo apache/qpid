@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
 public class SimpleFilterManager implements FilterManager<AMQException>

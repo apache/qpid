@@ -3,9 +3,6 @@ package org.apache.qpid.server.flow;
 import org.apache.qpid.server.queue.AMQMessage;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.Set;
-import java.util.HashSet;
 
 /*
 *

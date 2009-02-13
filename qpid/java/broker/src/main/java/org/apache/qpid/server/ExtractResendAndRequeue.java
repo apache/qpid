@@ -21,9 +21,7 @@
 package org.apache.qpid.server;
 
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
-import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;

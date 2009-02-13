@@ -2,8 +2,6 @@ package org.apache.qpid.server.flow;
 
 import org.apache.qpid.server.queue.AMQMessage;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one

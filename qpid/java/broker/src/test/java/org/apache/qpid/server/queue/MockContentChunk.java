@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,23 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.mina.common.ByteBuffer;
 
-/**
- * Separated out from the ExchangeRegistry interface to allow components
- * that use only this part to have a dependency with a reduced footprint.
- *
- */
-public interface MessageRouter
+public class MockContentChunk implements ContentChunk
 {
-    /**
-     * Routes content through exchanges, delivering it to 1 or more queues.
-     * @param message the message to be routed
-     *
-     * @throws org.apache.qpid.AMQException if something goes wrong delivering data
-     */
-    void routeContent(IncomingMessage message) throws AMQException;
+    private ByteBuffer _bytebuffer;
+    private int _size;
+
+    public MockContentChunk(ByteBuffer bytebuffer, int size)
+    {
+        _bytebuffer = bytebuffer;
+        _size = size;
+    }
+
+    public int getSize()
+    {
+        return _size;
+    }
+
+    public ByteBuffer getData()
+    {
+        return _bytebuffer;
+    }
+
+    public void reduceToFit()
+    {
+    }
 }
