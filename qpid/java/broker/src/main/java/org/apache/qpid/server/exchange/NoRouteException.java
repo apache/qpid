@@ -23,7 +23,6 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.IncomingMessage;
 
 /**
  * NoRouteException is a {@link RequiredDeliveryException} that represents the failure case where a manadatory message
