@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
@@ -54,7 +55,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
     private StoreContext _storeContext = new StoreContext();
 
-    private MessageHandleFactory _handleFactory = new MessageHandleFactory();
+    private MessageFactory _handleFactory = new MessageFactory();
 
     private int count;
 
@@ -370,7 +371,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     /**
      * Just add some extra utility methods to AMQMessage to aid testing.
      */
-    static class Message extends AMQMessage
+    static class Message extends PersistentAMQMessage
     {
         private class TestIncomingMessage extends IncomingMessage
         {
@@ -392,14 +393,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
             public ContentHeaderBody getContentHeaderBody()
             {
-                try
-                {
-                    return Message.this.getContentHeaderBody();
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                return Message.this.getContentHeaderBody();
             }
         }
 
@@ -407,10 +401,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private static MessageStore _messageStore = new SkeletonMessageStore();
 
-        private static StoreContext _storeContext = new StoreContext();
-
-
-        private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, _storeContext,
+        private static TransactionalContext _txnContext = new NonTransactionalContext(_messageStore, new StoreContext(),
                                                                                       null,
                                                                          new LinkedList<RequiredDeliveryException>()
         );
@@ -422,7 +413,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         Message(String id, FieldTable headers) throws AMQException
         {
-            this(_messageStore.getNewMessageId(),getPublishRequest(id), getContentHeader(headers), null);
+            this(_messageStore.getNewMessageId(),getPublishRequest(id), getContentHeader(headers));
         }
 
         public IncomingMessage getIncomingMessage()
@@ -432,42 +423,35 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private Message(long messageId,
                         MessagePublishInfo publish,
-                        ContentHeaderBody header,
-                        List<ContentBody> bodies) throws AMQException
+                        ContentHeaderBody header) throws AMQException
         {
-            super(createMessageHandle(messageId, publish, header), _txnContext.getStoreContext(), publish);
-
-
-            
-            _incoming = new TestIncomingMessage(getMessageId(),publish,_txnContext,new MockProtocolSession(_messageStore));
-            _incoming.setContentHeaderBody(header);
-
-
-        }
-
-        private static AMQMessageHandle createMessageHandle(final long messageId,
-                                                            final MessagePublishInfo publish,
-                                                            final ContentHeaderBody header)
-        {
-
-            final AMQMessageHandle amqMessageHandle = (new MessageHandleFactory()).createMessageHandle(messageId,
-                                                                                                       _messageStore,
-                                                                                                       true);
+            super(messageId, _messageStore);
 
             try
             {
-                amqMessageHandle.setPublishAndContentHeaderBody(new StoreContext(),publish,header);
+                setPublishAndContentHeaderBody(_txnContext.getStoreContext(), publish,header);
             }
             catch (AMQException e)
             {
-                
+
             }
-            return amqMessageHandle;
+
+            _incoming = new TestIncomingMessage(getMessageId(),publish,_txnContext,new MockProtocolSession(_messageStore));
+            _incoming.setContentHeaderBody(header);
         }
 
         private Message(AMQMessage msg) throws AMQException
         {
-            super(msg);
+            super(msg.getMessageId(), _messageStore);
+
+            this.setPublishAndContentHeaderBody(_txnContext.getStoreContext(), msg.getMessagePublishInfo(), msg.getContentHeaderBody());
+
+            Iterator<ContentChunk> iterator = msg.getContentBodyIterator();
+
+            while(iterator.hasNext())
+            {
+                this.addContentBodyFrame(_txnContext.getStoreContext(), iterator.next(),iterator.hasNext());
+            }
         }
 
 
@@ -500,15 +484,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         private Object getKey()
         {
-            try
-            {
-                return getMessagePublishInfo().getRoutingKey();
-            }
-            catch (AMQException e)
-            {
-                _log.error("Error getting routing key: " + e, e);
-                return null;
-            }
+            return getMessagePublishInfo().getRoutingKey();
         }
     }
 }

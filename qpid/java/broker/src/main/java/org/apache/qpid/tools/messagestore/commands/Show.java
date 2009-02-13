@@ -26,7 +26,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
@@ -349,32 +348,15 @@ public class Show extends AbstractCommand
 
             arrival.add("" + msg.getArrivalTime());
 
-            try
-            {
-                ispersitent.add(msg.isPersistent() ? "true" : "false");
-            }
-            catch (AMQException e)
-            {
-                ispersitent.add("n/a");
-            }
+            ispersitent.add(msg.isPersistent() ? "true" : "false");
 
             isredelivered.add(entry.isRedelivered() ? "true" : "false");
 
             isdelivered.add(msg.getDeliveredToConsumer() ? "true" : "false");
 
-//        msg.getMessageHandle();
-
             BasicContentHeaderProperties headers = null;
 
-            try
-            {
-                headers = ((BasicContentHeaderProperties) msg.getContentHeaderBody().properties);
-            }
-            catch (AMQException e)
-            {
-                //ignore
-//                commandError("Unable to read properties for message: " + e.getMessage(), null);
-            }
+            headers = ((BasicContentHeaderProperties) msg.getContentHeaderBody().properties);
 
             if (headers != null)
             {
@@ -414,15 +396,7 @@ public class Show extends AbstractCommand
                 AMQShortString useridSS = headers.getUserId();
                 userid.add(useridSS == null ? "null" : useridSS.toString());
 
-                MessagePublishInfo info = null;
-                try
-                {
-                    info = msg.getMessagePublishInfo();
-                }
-                catch (AMQException e)
-                {
-                    //ignore
-                }
+                MessagePublishInfo info = msg.getMessagePublishInfo();
 
                 if (info != null)
                 {

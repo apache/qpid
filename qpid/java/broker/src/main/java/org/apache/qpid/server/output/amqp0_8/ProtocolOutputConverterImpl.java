@@ -28,7 +28,6 @@ package org.apache.qpid.server.output.amqp0_8;
 
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQMessageHandle;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -36,8 +35,6 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.AMQException;
-
-import org.apache.mina.common.ByteBuffer;
 
 import java.util.Iterator;
 
@@ -79,11 +76,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());
 
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
-        final StoreContext storeContext = message.getStoreContext();
-
-
-        final int bodyCount = messageHandle.getBodyCount(storeContext);
+        final int bodyCount = message.getBodyCount();
 
         if(bodyCount == 0)
         {
@@ -100,7 +93,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
+            ContentChunk cb = message.getContentChunk(0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -112,7 +105,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext, i);
+                cb = message.getContentChunk(i);
                 writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
@@ -126,8 +119,6 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     public void writeGetOk(QueueEntry queueEntry, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
         final AMQMessage message = queueEntry.getMessage();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
-        final StoreContext storeContext = message.getStoreContext();
 
         AMQDataBlock deliver = createEncodedGetOkFrame(queueEntry, channelId, deliveryTag, queueSize);
 
@@ -135,7 +126,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());
 
-        final int bodyCount = messageHandle.getBodyCount(storeContext);
+        final int bodyCount = message.getBodyCount();
         if(bodyCount == 0)
         {
             SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
@@ -150,7 +141,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
+            ContentChunk cb = message.getContentChunk(0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -162,7 +153,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext, i);
+                cb = message.getContentChunk(i);
                 writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
@@ -179,7 +170,6 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final AMQMessage message = queueEntry.getMessage();
 
         final MessagePublishInfo pb = message.getMessagePublishInfo();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
 
         MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
         BasicDeliverBody deliverBody =
@@ -188,18 +178,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                       queueEntry.isRedelivered(),
                                                       pb.getExchange(),
                                                       pb.getRoutingKey());
-        AMQFrame deliverFrame = deliverBody.generateFrame(channelId);
-
-
-        return deliverFrame;
+        return deliverBody.generateFrame(channelId);
     }
 
     private AMQDataBlock createEncodedGetOkFrame(QueueEntry queueEntry, int channelId, long deliveryTag, int queueSize)
             throws AMQException
     {
         final AMQMessage message = queueEntry.getMessage();
-        final MessagePublishInfo pb = message.getMessagePublishInfo();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
+        final MessagePublishInfo pb = message.getMessagePublishInfo();        
 
         MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
         BasicGetOkBody getOkBody =
@@ -208,9 +194,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                     pb.getExchange(),
                                                     pb.getRoutingKey(),
                                                     queueSize);
-        AMQFrame getOkFrame = getOkBody.generateFrame(channelId);
-
-        return getOkFrame;
+        return getOkBody.generateFrame(channelId);
     }
 
     public byte getProtocolMinorVersion()
@@ -231,9 +215,8 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                      replyText,
                                                      message.getMessagePublishInfo().getExchange(),
                                                      message.getMessagePublishInfo().getRoutingKey());
-        AMQFrame returnFrame = basicReturnBody.generateFrame(channelId);
-
-        return returnFrame;
+        return basicReturnBody.generateFrame(channelId);
+        
     }
 
     public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText)

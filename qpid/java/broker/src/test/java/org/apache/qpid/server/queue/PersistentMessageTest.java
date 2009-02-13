@@ -21,8 +21,9 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.StoreContext;
 
-public class WeakMessageHandleTest extends InMemoryMessageHandleTest
+public class PersistentMessageTest extends TransientMessageTest
 {
     private MemoryMessageStore _messageStore;
 
@@ -30,19 +31,20 @@ public class WeakMessageHandleTest extends InMemoryMessageHandleTest
     {
         _messageStore = new MemoryMessageStore();
         _messageStore.configure();
+        _storeContext = new StoreContext();
     }
 
-    protected AMQMessageHandle newHandle(Long id)
+    @Override
+    protected AMQMessage newMessage(Long id)
     {
-        return new WeakReferenceMessageHandle(id, _messageStore);
+        return new MessageFactory().createMessage(id, _messageStore, true);
     }
 
     @Override
     public void testIsPersistent()
     {
-        _handle = newHandle(1L);        
-        assertTrue(_handle.isPersistent());
+        _message = newMessage(1L);
+        assertTrue(_message.isPersistent());
     }
-
 
 }

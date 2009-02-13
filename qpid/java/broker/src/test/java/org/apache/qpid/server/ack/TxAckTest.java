@@ -28,11 +28,11 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.AMQMessageHandle;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.TransientAMQMessage;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
@@ -113,6 +113,8 @@ public class TxAckTest extends TestCase
         private StoreContext _storeContext = new StoreContext();
 		private AMQQueue _queue;
 
+        private static final int MESSAGE_SIZE=100;
+
         Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws Exception
         {
             TransactionalContext txnContext = new NonTransactionalContext(new TestMemoryMessageStore(),
@@ -128,7 +130,12 @@ public class TxAckTest extends TestCase
 
                 MessagePublishInfo info = new MessagePublishInfoImpl();
 
-                TestMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
+                AMQMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
+
+                ContentHeaderBody header = new ContentHeaderBody();
+                header.bodySize = MESSAGE_SIZE;
+                message.setPublishAndContentHeaderBody(_storeContext, info, header);
+
                 _map.add(deliveryTag, _queue.enqueue(new StoreContext(), message));
             }
             _acked = acked;
@@ -190,16 +197,15 @@ public class TxAckTest extends TestCase
         }
     }
 
-    private static AMQMessageHandle createMessageHandle(final long messageId, final MessagePublishInfo publishBody)
+    private static AMQMessage createMessage(final long messageId, final MessagePublishInfo publishBody)
     {
-        final AMQMessageHandle amqMessageHandle = (new MessageHandleFactory()).createMessageHandle(messageId,
-                                                                                                   null,
-                                                                                                   false);
+        final AMQMessage amqMessage = (new MessageFactory()).createMessage(messageId,
+                                                                           null,
+                                                                           false);
         try
         {
-            amqMessageHandle.setPublishAndContentHeaderBody(new StoreContext(),
-                                                              publishBody,
-                                                              new ContentHeaderBody()
+            // Safe to use null here as we just created a TransientMessage above
+            amqMessage.setPublishAndContentHeaderBody(null, publishBody, new ContentHeaderBody()
             {
                 public int getSize()
                 {
@@ -213,11 +219,11 @@ public class TxAckTest extends TestCase
         }
 
 
-        return amqMessageHandle;
+        return amqMessage;
     }
 
 
-    private class TestMessage extends AMQMessage
+    private class TestMessage extends TransientAMQMessage
     {
         private final long _tag;
         private int _count;
@@ -225,7 +231,7 @@ public class TxAckTest extends TestCase
         TestMessage(long tag, long messageId, MessagePublishInfo publishBody, StoreContext storeContext)
                 throws AMQException
         {
-            super(createMessageHandle(messageId, publishBody), storeContext, publishBody);
+            super(createMessage(messageId, publishBody));
             _tag = tag;
         }
 

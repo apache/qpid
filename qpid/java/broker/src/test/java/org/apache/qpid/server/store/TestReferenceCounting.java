@@ -26,9 +26,8 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.AMQMessageHandle;
 
 /**
  * Tests that reference counting works correctly with AMQMessage and the message store
@@ -56,10 +55,9 @@ public class TestReferenceCounting extends TestCase
         MessagePublishInfo info = new MessagePublishInfoImpl();
 
         final long messageId = _store.getNewMessageId();
-        AMQMessageHandle messageHandle = (new MessageHandleFactory()).createMessageHandle(messageId, _store, true);
-        messageHandle.setPublishAndContentHeaderBody(_storeContext,info, chb);
-        AMQMessage message = new AMQMessage(messageHandle,
-                                             _storeContext,info);
+
+        AMQMessage message = (new MessageFactory()).createMessage(messageId, _store, true);
+        message.setPublishAndContentHeaderBody(_storeContext, info, chb);
 
         message = message.takeReference();
 
@@ -88,18 +86,10 @@ public class TestReferenceCounting extends TestCase
 
         final Long messageId = _store.getNewMessageId();
         final ContentHeaderBody chb = createPersistentContentHeader();
-        AMQMessageHandle messageHandle = (new MessageHandleFactory()).createMessageHandle(messageId, _store, true);
-        messageHandle.setPublishAndContentHeaderBody(_storeContext,info,chb);
-        AMQMessage message = new AMQMessage(messageHandle,
-                                             _storeContext,
-                                            info);
-        
+        AMQMessage message = (new MessageFactory()).createMessage(messageId, _store, true);
+        message.setPublishAndContentHeaderBody(_storeContext, info, chb);
         
         message = message.takeReference();
-        // we call routing complete to set up the handle
-     //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
-
-
 
         assertEquals(1, _store.getMessageMetaDataMap().size());
         message = message.takeReference();
