@@ -36,6 +36,8 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.utils.QpidTestCase;
 
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
 
 public class TimeToLiveTest extends QpidTestCase
 {
@@ -88,13 +90,29 @@ public class TimeToLiveTest extends QpidTestCase
         producer.send(nextMessage(String.valueOf(msg), false, producerSession, producer));
 
         consumer = clientSession.createConsumer(queue);
-        try
+
+        // Ensure we sleep the required amount of time.
+        ReentrantLock waitLock = new ReentrantLock();
+        Condition wait = waitLock.newCondition();
+        final long MILLIS = 1000000L;
+        long waitTime = TIME_TO_LIVE * MILLIS;
+        while (waitTime > 0)
         {
-            // Sleep to ensure TTL reached
-            Thread.sleep(TIME_TO_LIVE);
-        }
-        catch (InterruptedException e)
-        {
+            try
+            {
+                waitLock.lock();
+
+                waitTime = wait.awaitNanos(waitTime);
+            }
+            catch (InterruptedException e)
+            {
+                //Stop if we are interrupted
+                fail(e.getMessage());
+            }
+            finally
+            {
+                waitLock.unlock();
+            }
 
         }
 
