@@ -21,6 +21,7 @@
 #include "unit_test.h"
 #include "test_tools.h"
 #include "BrokerFixture.h"
+#include "qpid/client/QueueOptions.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
@@ -524,6 +525,27 @@ QPID_AUTO_TEST_CASE(testReliableDispatch) {
 QPID_AUTO_TEST_CASE(testSessionCloseOnInvalidSession) {
     Session session;
     session.close();
+}
+
+QPID_AUTO_TEST_CASE(testLVQVariedSize) {
+    ClientSessionFixture fix;
+    std::string queue("my-lvq");
+    QueueOptions args;
+    args.setOrdering(LVQ_NO_BROWSE);
+    fix.session.queueDeclare(arg::queue=queue, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
+
+    std::string key;
+    args.getLVQKey(key);
+
+    for (size_t i = 0; i < 10; i++) {
+        std::ostringstream data;
+        size_t size = 100 - ((i % 10) * 10);
+        data << std::string(size, 'x');
+    
+        Message m(data.str(), queue);
+        m.getHeaders().setString(key, "abc");
+        fix.session.messageTransfer(arg::content=m);    
+    }
 }
 
 QPID_AUTO_TEST_SUITE_END()
