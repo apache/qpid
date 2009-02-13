@@ -21,6 +21,9 @@
 package org.apache.qpid.server.management;
 
 import javax.management.JMException;
+
+import org.apache.commons.configuration.ConfigurationException;
+
 import java.rmi.RemoteException;
 import java.io.IOException;
 
@@ -38,7 +41,7 @@ import java.io.IOException;
  */
 public interface ManagedObjectRegistry
 {
-    void start() throws IOException;
+    void start() throws IOException, ConfigurationException;
 
     void registerObject(ManagedObject managedObject) throws JMException;
 

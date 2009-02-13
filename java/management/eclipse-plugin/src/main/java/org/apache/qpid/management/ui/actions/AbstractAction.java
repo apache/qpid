@@ -24,6 +24,11 @@ import static org.apache.qpid.management.ui.Constants.ERROR_SERVER_CONNECTION;
 
 import java.io.IOException;
 
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.Constants;
@@ -47,6 +52,10 @@ public class AbstractAction
     public static final String SERVER_UNAVAILABLE = "Unable to connect to the specified Qpid JMX server";
     public static final String INVALID_PERSPECTIVE = "Invalid Perspective";
     public static final String CHANGE_PERSPECTIVE = "Please use the Qpid Management Perspective";
+    
+    private static final String SSL_EMPTY_TRUSTANCHORS = "the trustAnchors parameter must be non-empty";
+    private static final String SSL_UNABLE_TO_FIND_CERTPATH = "sun.security.provider.certpath.SunCertPathBuilderException: " +
+    		                                    "unable to find valid certification path to requested target";
       
     /**
      * We will cache window object in order to
@@ -93,9 +102,59 @@ public class AbstractAction
         //determine the error message to display
         if (msg == null)
         {
-            if (ex instanceof IOException)
+            if (ex instanceof SSLException)
             {
-                //IOException, eg when trying to connect to a server/port with no JMX server running
+                if (ex instanceof SSLKeyException)
+                {
+                    msg = "SSL key was invalid, please check the certificate configuration.";
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+                else if (ex instanceof SSLPeerUnverifiedException)
+                {
+                    msg = "SSL peer identity could not be verified, please ensure valid certificate configuration.";
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+                else if (ex instanceof SSLHandshakeException)
+                {
+                    if (ex.getMessage().contains(SSL_UNABLE_TO_FIND_CERTPATH))
+                    {
+                        msg = "Unable to certify the provided SSL certificate using the current SSL trust store.";
+                    }
+                    else
+                    {
+                        //cause unknown, provide a trace too
+                        MBeanUtility.printStackTrace(ex);
+                        msg = "SSL handhshake error.";
+                    }
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+                else
+                {
+                    //general SSL Exception.
+                    if (ex.getMessage().contains(SSL_EMPTY_TRUSTANCHORS))
+                    {
+                        msg = "Unable to locate the specified SSL certificate trust store, please check the configuration.";
+                    }
+                    else
+                    {
+                        //cause unknown, print stack trace
+                        MBeanUtility.printStackTrace(ex);
+                        msg = "SSL connection error.";
+                    }
+                    //Display error dialogue and return
+                    displayErrorDialogue(msg, title);
+                    return;
+                }
+            }
+            else if (ex instanceof IOException)
+            {
+                //uncaught IOException, eg when trying to connect to a server/port with no JMX server running
                 msg = SERVER_UNAVAILABLE;
                 //Display error dialogue and return
                 displayErrorDialogue(msg, title);

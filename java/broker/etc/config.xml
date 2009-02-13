@@ -43,9 +43,15 @@
         <socketSendBuffer>32768</socketSendBuffer>
     </connector>
     <management>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <jmxport>8999</jmxport>
         <security-enabled>false</security-enabled>
+        <ssl>
+            <enabled>true</enabled>
+            <!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  -->
+            <keyStorePath>${prefix}/../test_resources/ssl/keystore.jks</keyStorePath>
+            <keyStorePassword>password</keyStorePassword>
+        </ssl>
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>
