@@ -75,7 +75,12 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     public ContentChunk getContentChunk(StoreContext context, int index) throws AMQException, IllegalArgumentException
     {
-        if (index > _contentBodies.size() - 1)
+        if(_contentBodies == null)
+        {
+            throw new RuntimeException("No ContentBody has been set");
+        }
+
+        if (index > _contentBodies.size() - 1 || index < 0)
         {
             throw new IllegalArgumentException("Index " + index + " out of valid range 0 to " +
                                                (_contentBodies.size() - 1));

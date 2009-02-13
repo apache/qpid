@@ -109,7 +109,12 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
     public ContentChunk getContentChunk(StoreContext context, int index) throws AMQException, IllegalArgumentException
     {
-        if (index > _contentBodies.size() - 1)
+        if(_contentBodies == null)
+        {
+            throw new RuntimeException("No ContentBody has been set");
+        }        
+
+        if (index > _contentBodies.size() - 1 || index < 0)
         {
             throw new IllegalArgumentException("Index " + index + " out of valid range 0 to " +
                                                (_contentBodies.size() - 1));
@@ -197,8 +202,7 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
 
         final long arrivalTime = System.currentTimeMillis();
 
-
-        MessageMetaData mmd = new MessageMetaData(publishBody, contentHeaderBody, _contentBodies.size(), arrivalTime);
+        MessageMetaData mmd = new MessageMetaData(publishBody, contentHeaderBody, _contentBodies == null ? 0 : _contentBodies.size(), arrivalTime);
 
         _messageStore.storeMessageMetaData(storeContext, _messageId, mmd);
 
