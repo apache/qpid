@@ -22,6 +22,7 @@
 
     <property name="module.depends" value="client common"/>
     <property name="module.test.depends" value="client common"/>
+<property name="module.test.excludes" value="**/WsDmAdapterTest.java"/>
 	
 	<import file="../../module.xml"/>
 
