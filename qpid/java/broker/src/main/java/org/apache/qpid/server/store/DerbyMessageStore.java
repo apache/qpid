@@ -167,7 +167,7 @@ public class DerbyMessageStore implements MessageStore
 
         // this recovers durable queues and persistent messages
 
-        _messageFactory = new MessageFactory();
+        _messageFactory = MessageFactory.getInstance();
 
         recover();
 
@@ -1355,7 +1355,7 @@ public class DerbyMessageStore implements MessageStore
                 }
                 else
                 {
-                    message = _messageFactory.createMessage(messageId, this, true);                    
+                    message = _messageFactory.createMessage(messageId, this);
 
                     _logger.error("todo must do message recovery now.");
                     //todo must do message recovery now.

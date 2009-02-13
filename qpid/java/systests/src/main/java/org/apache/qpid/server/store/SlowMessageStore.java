@@ -251,14 +251,6 @@ public class SlowMessageStore implements MessageStore
         return b;
     }
 
-    public Long getNewMessageId()
-    {
-        doPreDelay("getNewMessageId");
-        Long l = _realStore.getNewMessageId();
-        doPostDelay("getNewMessageId");
-        return l;
-    }
-
     public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
     {
         doPreDelay("storeContentBodyChunk");

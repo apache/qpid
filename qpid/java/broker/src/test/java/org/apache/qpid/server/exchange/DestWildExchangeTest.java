@@ -75,7 +75,7 @@ public class DestWildExchangeTest extends TestCase
 
         MessagePublishInfo info = new MessagePublishInfoImpl(null, false, false, new AMQShortString("a.b"));
 
-        IncomingMessage message = new IncomingMessage(0L, info, null, _protocolSession);
+        IncomingMessage message = new IncomingMessage(info, null, _protocolSession, _store);
 
         _exchange.route(message);            
 
@@ -497,7 +497,7 @@ public class DestWildExchangeTest extends TestCase
             throws AMQException
     {
         _exchange.route(message);
-        message.routingComplete(_store, new MessageFactory());
+        message.routingComplete(_store);
         message.deliverToQueues();
     }
 
@@ -551,7 +551,7 @@ public class DestWildExchangeTest extends TestCase
                                                                        new LinkedList<RequiredDeliveryException>()
         );
 
-        IncomingMessage message = new IncomingMessage(0L, info, trancontext,_protocolSession);
+        IncomingMessage message = new IncomingMessage(info, trancontext,_protocolSession, _store);
         message.setContentHeaderBody( new ContentHeaderBody());
 
 

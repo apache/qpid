@@ -98,7 +98,7 @@ public class AckTest extends TestCase
                                                                       new LinkedList<RequiredDeliveryException>()
         );
         _queue.registerSubscription(_subscription,false);
-        MessageFactory factory = new MessageFactory();
+        MessageFactory factory = MessageFactory.getInstance();
         for (int i = 1; i <= count; i++)
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -106,7 +106,7 @@ public class AckTest extends TestCase
             MessagePublishInfo publishBody = new MessagePublishInfoImpl(new AMQShortString("someExchange"), false,
                                                                         false, new AMQShortString("rk"));
 
-            IncomingMessage msg = new IncomingMessage(_messageStore.getNewMessageId(), publishBody, txnContext,_protocolSession);
+            IncomingMessage msg = new IncomingMessage(publishBody, txnContext,_protocolSession, _messageStore);
             //IncomingMessage msg2 = null;
             if (persistent)
             {
@@ -127,7 +127,7 @@ public class AckTest extends TestCase
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
             msg.enqueue(qs);
-            msg.routingComplete(_messageStore, factory);
+            msg.routingComplete(_messageStore);
             if(msg.allContentReceived())
             {
                 msg.deliverToQueues();
