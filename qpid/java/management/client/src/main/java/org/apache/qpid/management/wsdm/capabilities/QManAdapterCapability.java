@@ -25,7 +25,11 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -46,6 +50,7 @@ import org.apache.muse.ws.notification.NotificationProducer;
 import org.apache.muse.ws.notification.WsnConstants;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
+import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.jmx.EntityLifecycleNotification;
 import org.apache.qpid.management.wsdm.common.ThreadSessionManager;
 import org.apache.qpid.management.wsdm.muse.engine.WSDMAdapterEnvironment;
@@ -67,6 +72,40 @@ public class QManAdapterCapability extends AbstractCapability
 	private MBeanServer _mxServer;
 	private WsArtifactsFactory _artifactsFactory; 
 	private URI _resourceURI;
+	private NotificationProducer _publisherCapability;
+	private ThreadPoolExecutor _workManager;
+	private Map<String, QName> _lifeCycleTopics = new HashMap<String, QName>();
+	
+	/**
+	 * Runnable wrapper used for sending asynchronous 
+	 * notifications.
+	 * 
+	 * @author Andrea Gazzarini
+	 */
+	private final class AsynchNotificationTask implements Runnable 
+	{
+		private final QName topicName;
+		private final LifeCycleEvent event;
+		
+		AsynchNotificationTask(QName tName, LifeCycleEvent evt)
+		{
+			topicName = tName;
+			event = evt;
+		}
+		
+		public void run()
+		{
+			try
+			{
+				_publisherCapability.publish(topicName,event);
+			} catch (SoapFault exception)
+			{
+				LOGGER.error(
+						exception,
+						Messages.QMAN_100038_UNABLE_TO_SEND_WS_NOTIFICATION);
+			}			
+		}
+	};
 	
 	/**
 	 * NotificationFilter for "create" only events.
@@ -99,7 +138,6 @@ public class QManAdapterCapability extends AbstractCapability
 		{
 			return EntityLifecycleNotification.INSTANCE_REMOVED_NOTIFICATION_TYPE.equals(notification.getType());
 		}
-		
 	};
 	
 	/**
@@ -148,6 +186,16 @@ public class QManAdapterCapability extends AbstractCapability
 				LOGGER.info(
 						Messages.QMAN_000030_RESOURCE_HAS_BEEN_CREATED,
 						eventSourceName);
+				
+				AsynchNotificationTask asynchNotificationTask = new AsynchNotificationTask(
+						getTopicName(lifecycleNotification.getClassKind()),
+						LifeCycleEvent.newCreateEvent(
+								eventSourceName.getKeyProperty(Names.OBJECT_ID), 
+								lifecycleNotification.getPackageName(),
+								lifecycleNotification.getClassName()));
+				
+				_workManager.execute(asynchNotificationTask);
+				
 			} catch (ArtifactsNotAvailableException exception) 
 			{
 				LOGGER.error(
@@ -213,6 +261,16 @@ public class QManAdapterCapability extends AbstractCapability
 				LOGGER.info(
 						Messages.QMAN_000031_RESOURCE_HAS_BEEN_REMOVED, 
 						eventSourceName);
+
+				AsynchNotificationTask asynchNotificationTask = new AsynchNotificationTask(
+						getTopicName(lifecycleNotification.getClassKind()),
+						LifeCycleEvent.newRemoveEvent(
+								eventSourceName.getKeyProperty(Names.OBJECT_ID), 
+								lifecycleNotification.getPackageName(),
+								lifecycleNotification.getClassName()));
+				
+				_workManager.execute(asynchNotificationTask);
+
 			}
 			catch(Exception exception) 
 			{
@@ -238,91 +296,14 @@ public class QManAdapterCapability extends AbstractCapability
 		
 		createLifeCycleTopics();
 		
+		initializeWorkManager();
+		
 		createQManResourceURI();
 
 		_mxServer = ManagementFactory.getPlatformMBeanServer();
 		_artifactsFactory = new WsArtifactsFactory(getEnvironment(),_mxServer);
 		
 		registerQManLifecycleListeners();	
-		
-		new Thread()
-		{
-			@Override
-			public void run()
-			{
-				while (true)
-				{
-					try
-					{
-						final NotificationProducer publisher = (NotificationProducer) getResource().getCapability(WsnConstants.PRODUCER_URI);			
-						
-						publisher.publish(
-								Names.OBJECTS_LIFECYLE_TOPIC_NAME, 
-								LifeCycleEvent.newCreateEvent(
-										UUID.randomUUID().toString(), 
-										"org.apache.qpid.broker",
-										"connection"));
-					} catch (SoapFault e)
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					try
-					{
-						Thread.sleep(10000);
-					} catch (InterruptedException e)
-					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				} 
-			}
-		}.start();
-	}
-
-	/**
-	 * This adapter capability needs to be an event listener of QMan JMX core 
-	 * in order to detect relevant lifecycle events and therefore create WS artifacts & notification(s).
-	 * 
-	 * @throws SoapFault when it's not possible to register event listener : is QMan running?
-	 */
-	@SuppressWarnings("serial")
-	private void registerQManLifecycleListeners() throws SoapFault
-	{
-		try 
-		{			
-			_mxServer.addNotificationListener(
-					Names.QMAN_OBJECT_NAME, 
-					_listenerForNewInstances, 
-					_filterForNewInstances, 
-					null);
-			
-			_mxServer.addNotificationListener(
-					Names.QMAN_OBJECT_NAME, 
-					_listenerForRemovedInstances, 
-					_filterForRemovedInstances, 
-					null);
-
-			try 
-			{
-				_mxServer.addNotificationListener(
-						Names.QPID_EMULATOR_OBJECT_NAME, 
-						_listenerForNewInstances, 
-						_filterForNewInstances, null);
-
-				_mxServer.addNotificationListener(
-						Names.QPID_EMULATOR_OBJECT_NAME, 
-						_listenerForRemovedInstances, 
-						_filterForRemovedInstances, null);
-
-			} catch (Exception exception) 
-			{
-				LOGGER.info(Messages.QMAN_000028_TEST_MODULE_NOT_FOUND);
-			} 
-		}  catch(InstanceNotFoundException exception) 
-		{
-			throw new SoapFault(exception);	
-		}
 	}
 
 	/**
@@ -369,7 +350,7 @@ public class QManAdapterCapability extends AbstractCapability
 			throw new SoapFault(exception);
 		}
 	}
-
+		
 	/**
 	 * Creates the message handlers for the given capability.
 	 * 
@@ -406,33 +387,68 @@ public class QManAdapterCapability extends AbstractCapability
         }
         return handlers;	
     }
+
+	/**
+	 * Returns the publisher capability associated with the owner resource.
+	 * 
+	 * @return the publisher capability associated with the owner resource.
+	 */
+	NotificationProducer getPublisherCapability()
+	{
+		return (NotificationProducer) getResource().getCapability(WsnConstants.PRODUCER_URI);
+	}
 	
 	/**
 	 * Creates events & objects lifecycle topic that will be used to publish lifecycle event
 	 * messages..
 	 */
-	private void createLifeCycleTopics() 
+	void createLifeCycleTopics() 
 	{
 		try 
 		{
-			final NotificationProducer publisherCapability = (NotificationProducer) getResource()
-					.getCapability(WsnConstants.PRODUCER_URI);
+			_publisherCapability = getPublisherCapability();
 			
-			publisherCapability.addTopic(Names.EVENTS_LIFECYLE_TOPIC_NAME);
+			_publisherCapability.addTopic(Names.EVENTS_LIFECYLE_TOPIC_NAME);
+			_lifeCycleTopics.put(Names.EVENT,Names.EVENTS_LIFECYLE_TOPIC_NAME);
+
 			LOGGER.info(
 					Messages.QMAN_000032_EVENTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED, 
 					Names.OBJECTS_LIFECYLE_TOPIC_NAME);
 			
-			publisherCapability.addTopic(Names.OBJECTS_LIFECYLE_TOPIC_NAME);		
+			_publisherCapability.addTopic(Names.OBJECTS_LIFECYLE_TOPIC_NAME);		
+			_lifeCycleTopics.put(Names.CLASS,Names.OBJECTS_LIFECYLE_TOPIC_NAME);
+
 			LOGGER.info(
 					Messages.QMAN_000033_OBJECTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED, 
+					Names.OBJECTS_LIFECYLE_TOPIC_NAME);
+			
+			_publisherCapability.addTopic(Names.UNKNOWN_OBJECT_TYPE_LIFECYLE_TOPIC_NAME);					
+			LOGGER.info(
+					Messages.QMAN_000034_UNCLASSIFIED_LIFECYCLE_TOPIC_HAS_BEEN_CREATED, 
 					Names.OBJECTS_LIFECYLE_TOPIC_NAME);
 		} catch(Exception exception) 
 		{
 			LOGGER.error(exception, Messages.QMAN_100036_TOPIC_DECLARATION_FAILURE);
 		}
 	}
-
+	
+	/**
+	 * Starting from an object type (i.e. event or class) returns the name of the
+	 * corresponding topic where the lifecycle message must be published.
+	 * Note that if the given object type is unknown then the "Unclassified Object Types" topic 
+	 * will be returned (and therefore the message will be published there).
+	 * 
+	 * @param objectType the type of the object.
+	 * @return the name of the topic associated with the given object type.
+	 */
+	QName getTopicName(String objectType) 
+	{
+		QName topicName = _lifeCycleTopics.get(objectType);
+		return (topicName != null) 
+			? topicName 
+			: Names.UNKNOWN_OBJECT_TYPE_LIFECYLE_TOPIC_NAME;
+	}
+	
 	/** 
 	 * Workaround : it seems that is not possibile to declare a serializer 
 	 * for a byte array using muse descriptor...
@@ -469,6 +485,65 @@ public class QManAdapterCapability extends AbstractCapability
 					Messages.QMAN_100029_MALFORMED_RESOURCE_URI_FAILURE,
 					resourceURI);			
 			throw new SoapFault(exception);
+		}
+	}	
+	
+	/**
+	 * Initializes the work manager used for asynchronous notifications.
+	 */
+	private void initializeWorkManager()
+	{
+		Configuration configuration = Configuration.getInstance();
+		_workManager = new ThreadPoolExecutor(
+				configuration.getWorkerManagerPoolSize(),
+				configuration.getWorkerManagerMaxPoolSize(),
+				configuration.getWorkerManagerKeepAliveTime(),
+				TimeUnit.MILLISECONDS,
+				new ArrayBlockingQueue<Runnable>(30));
+	}
+
+	/**
+	 * This adapter capability needs to be an event listener of QMan JMX core 
+	 * in order to detect relevant lifecycle events and therefore create WS artifacts & notification(s).
+	 * 
+	 * @throws SoapFault when it's not possible to register event listener : is QMan running?
+	 */
+	@SuppressWarnings("serial")
+	private void registerQManLifecycleListeners() throws SoapFault
+	{
+		try 
+		{			
+			_mxServer.addNotificationListener(
+					Names.QMAN_OBJECT_NAME, 
+					_listenerForNewInstances, 
+					_filterForNewInstances, 
+					null);
+			
+			_mxServer.addNotificationListener(
+					Names.QMAN_OBJECT_NAME, 
+					_listenerForRemovedInstances, 
+					_filterForRemovedInstances, 
+					null);
+
+			try 
+			{
+				_mxServer.addNotificationListener(
+						Names.QPID_EMULATOR_OBJECT_NAME, 
+						_listenerForNewInstances, 
+						_filterForNewInstances, null);
+
+				_mxServer.addNotificationListener(
+						Names.QPID_EMULATOR_OBJECT_NAME, 
+						_listenerForRemovedInstances, 
+						_filterForRemovedInstances, null);
+
+			} catch (Exception exception) 
+			{
+				LOGGER.info(Messages.QMAN_000028_TEST_MODULE_NOT_FOUND);
+			} 
+		}  catch(InstanceNotFoundException exception) 
+		{
+			throw new SoapFault(exception);	
 		}
 	}	
 }

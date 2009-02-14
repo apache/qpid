@@ -170,6 +170,12 @@ public abstract class Names
 			"EventsLifeCycleTopic",
 			Names.PREFIX);
 	
+	public final static QName UNKNOWN_OBJECT_TYPE_LIFECYLE_TOPIC_NAME= new QName(
+			Names.NAMESPACE_URI,
+			"UnclassifiedLifeCycleTopic",
+			Names.PREFIX);
+	
+	
 	public final static String NAME_ATTRIBUTE = "name";
 	public final static String MODIFIABILITY = "modifiability";
 	public final static String READ_WRITE = "read-write";

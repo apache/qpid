@@ -26,9 +26,8 @@ import org.apache.qpid.management.Messages;
 import org.apache.qpid.transport.util.Logger;
 
 /**
- * Parser used for building access mode mappings.
- * For each access-mode-mappings/mapping element found in the configuration file, a new access mode mapping 
- * is built and injected into the bridge configuration.
+ * Parser used for building broker connection data settings.
+ * The corresponding section on the configuration file is :
  * 
         <broker>
             <host>192.168.148.131</host>

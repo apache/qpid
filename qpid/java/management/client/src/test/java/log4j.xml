@@ -12,7 +12,12 @@
 		</layout>
 	</appender>
 	<category name="org.apache.qpid.management">
-		<priority value="ERROR" />
+		<priority value="INFO" />
+		<appender-ref ref="CONSOLE" />
+	</category>	
+
+	<category name="org.mortbay">
+		<priority value="INFO" />
 		<appender-ref ref="CONSOLE" />
 	</category>	
 

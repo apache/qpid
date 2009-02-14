@@ -18,13 +18,14 @@
  - under the License.
  -
  -->
+<configuration>
+
 <!-- 
-Default configuration for QMan is empty; 
+Default configuration for QMan has no broker settings; 
 that is, there's no broker configured at startup.
 If  you want to connect with a running broker when QMan starts up, 
 you can do that uncommenting and editing the template reported below.
 -->
-<configuration>
 <!-- 	<brokers>
 		<broker>
 			<host>localhost</host>
@@ -48,4 +49,20 @@ you can do that uncommenting and editing the template reported below.
 		</broker>
   </brokers>
   --> 
+  <!-- Internal worked manager configuration-->
+	<work-manager>
+		<!-- The size of the worker thread pool -->
+		<pool-capacity>5</pool-capacity>
+
+		<!-- Maximum size of the worker thread pool -->
+	  	<max-pool-capacity>15</max-pool-capacity>
+
+		<!-- 
+			when the current number of threads is greater than
+     		the pool-capacity, this is the maximum time that excess threads
+     		can be in an idle state (without any task assigned) before terminating.
+     		The value is expressed is milliseconds.
+		-->
+	  	<keep-alive-time>5000</keep-alive-time>
+  </work-manager>
 </configuration>
