@@ -25,13 +25,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
-import org.apache.qpid.management.domain.handler.impl.InvocationResult;
 import org.apache.qpid.management.domain.model.AccessMode;
 import org.apache.qpid.management.domain.model.type.Type;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -49,6 +46,11 @@ public final class Configuration
     private final static Logger LOGGER = Logger.get(Configuration.class);
     private static Configuration INSTANCE = new Configuration();
     
+    // Work Manager default settings
+    private int _poolSize = 5;
+    private int _maxPoolSize = 15;
+    private long _keepAliveTime = 5000;
+    
     Map<Integer, Type> _typeMappings = new HashMap<Integer,Type>();
     Map<Integer,AccessMode> _accessModes = new HashMap<Integer, AccessMode>();
     Map<Type,String> _validators = new HashMap<Type, String>();
@@ -64,8 +66,7 @@ public final class Configuration
     private Header _headerForCommandMessages;
     private DeliveryProperties _deliveryProperties = new DeliveryProperties();
     private MessageProperties _messageProperties = new MessageProperties();
-    public BlockingQueue<InvocationResult> _resultExchangeChannel = new SynchronousQueue<InvocationResult>();
-    
+        
     // Private constructor.
     private Configuration()
     {
@@ -355,4 +356,68 @@ public final class Configuration
         LOGGER.debug(Messages.QMAN_200004_MANAGEMENT_QUEUE_NAME,_managementQueueName);
         LOGGER.debug(Messages.QMAN_200005_METHOD_REPLY_QUEUE_NAME,_methodReplyQueueName);        
     }
+
+    /**
+     * Returns the worker manager thread pool size.
+     * 
+     * @return the worker manager thread pool size.
+     */
+	public int getWorkerManagerPoolSize()
+	{
+		return _poolSize;
+	}
+
+	/**
+	 * Sets the size of the worker manager thread pool.
+	 * 
+	 * @param poolSize the size of the worker manager thread pool.
+	 */
+	void setWorkerManagerPoolSize(int poolSize)
+	{
+		this._poolSize = poolSize;
+	}
+
+	/**
+	 * Returns the maximum size of the worker manager 
+	 * thread pool size.
+	 * 
+	 * @return the max size of the worker manager thread pool.
+	 */
+	public int getWorkerManagerMaxPoolSize()
+	{
+		return _maxPoolSize;
+	}
+
+	/**
+	 * Sets the maximum size of the worker manager 
+	 * thread pool size.
+	 * 
+	 * @param maxPoolSize the max size of the worker manager thread pool.
+	 */	
+	void setWorkerManagerMaxPoolSize(int maxPoolSize)
+	{
+		this._maxPoolSize = maxPoolSize;
+	}
+
+	/**
+	 * Returns the max amount of time that an excess thread
+	 * can be idle before purging from the pool.
+	 * 
+	 * @return the max keep alive time.
+	 */
+	public long getWorkerManagerKeepAliveTime()
+	{
+		return _keepAliveTime;
+	}
+
+	/**
+	 * Sets the max amount of time that an excess thread
+	 * can be idle before purging from the pool.
+	 * 
+	 * @param keepAliveTime the max keep alive time.
+	 */
+	void setWorkerManagerKeepAliveTime(long keepAliveTime)
+	{
+		this._keepAliveTime = keepAliveTime;
+	}
 }

@@ -77,6 +77,7 @@ public class Configurator extends DefaultHandler
     };
     
     IParser _brokerConfigurationParser = new BrokerConnectionDataParser();
+    IParser _workerManagerConfigurationParser = new WorkerManagerConfigurationParser();
     IParser _currentParser = DEFAULT_PARSER;
 
     /**
@@ -97,11 +98,17 @@ public class Configurator extends DefaultHandler
     @Override
     public void startElement (String uri, String localName, String name, Attributes attributes) throws SAXException
     {
-        switch(Tag.get(name)) {
-            case BROKERS: 
+        switch(Tag.get(name)) 
+        {
+            case BROKERS : 
             {
                 _currentParser = _brokerConfigurationParser;
                 break;
+            }
+            case WORK_MANAGER : 
+            {
+            	_currentParser = _workerManagerConfigurationParser;
+            	break;
             }
         }
     }
