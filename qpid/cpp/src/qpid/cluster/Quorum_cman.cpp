@@ -35,13 +35,10 @@ void Quorum::init() {
     enable = true;
     cman = cman_init(0);
     if (cman == 0) throw ErrnoException("Can't connect to cman service");
-    // TODO aconway 2008-11-13: configurable max wait.
-    for (int retry = 0;  !cman_is_quorate(cman) && retry < 30; retry++) {
-        QPID_LOG(info, "Waiting for cluster quorum: " << sys::strError(errno));
-        sys::sleep(1);
+    if (!cman_is_quorate(cman)) {
+        QPID_LOG(notice, "Waiting for cluster quorum.");
+        while(!cman_is_quorate(cman)) sys::sleep(5);
     }
-    if (!cman_is_quorate(cman))
-        throw ErrnoException("Timed out waiting for cluster quorum.");
 }
 
 bool Quorum::isQuorate() { return enable ? cman_is_quorate(cman) : true; }
