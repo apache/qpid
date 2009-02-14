@@ -18,6 +18,7 @@
 
 #include "Cpg.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Time.h"
 #include "qpid/sys/posix/PrivatePosix.h"
 #include "qpid/log/Statement.h"
 
@@ -74,7 +75,13 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     ::memset(&callbacks, sizeof(callbacks), 0);
     callbacks.cpg_deliver_fn = &globalDeliver;
     callbacks.cpg_confchg_fn = &globalConfigChange;
-    check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
+    cpg_error_t err = cpg_initialize(&handle, &callbacks);
+    if (err == CPG_ERR_TRY_AGAIN) {
+        QPID_LOG(notice, "Waiting for CPG initialization.");
+        while (CPG_ERR_TRY_AGAIN == (err = cpg_initialize(&handle, &callbacks)))
+            sys::sleep(5);
+    }
+    check(err, "Failed to initialize CPG.");
     check(cpg_context_set(handle, this), "Cannot set CPG context");
     // Note: CPG is currently unix-specific. If CPG is ported to
     // windows then this needs to be refactored into
