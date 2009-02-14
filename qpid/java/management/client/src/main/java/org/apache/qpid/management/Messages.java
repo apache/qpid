@@ -64,9 +64,12 @@ public interface Messages
 	String QMAN_000029_DEFAULT_URI = "<QMAN-000029> : Default URI will be set to %s";
 	String QMAN_000030_RESOURCE_HAS_BEEN_CREATED =  "<QMAN-000030> : New resource instance has been created and registered. Resource id is %s";
 	String QMAN_000031_RESOURCE_HAS_BEEN_REMOVED = "<QMAN-000031> : WS-Resource %s has been removed";
-	String QMAN_000032_EVENTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000032> : Events lifecycle topic has been created. Its name is %s";
-	String QMAN_000033_OBJECTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000033> : Objects lifecycle topic has been created. Its name is %s";
-	
+	String QMAN_000032_EVENTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000032> : Events lifecycle topic has been created with name %s";
+	String QMAN_000033_OBJECTS_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000033> : Objects lifecycle topic has been created with name %s";
+	String QMAN_000034_UNCLASSIFIED_LIFECYCLE_TOPIC_HAS_BEEN_CREATED = "<QMAN-000034> : Unclassified object types lifecycle topic has been created with name %s";
+	String QMAN_000035_WORK_MANAGER_POOL_SIZE = "<QMAN-000035> : Work Manager thread pool size : %s";
+	String QMAN_000036_WORK_MANAGER_MAX_POOL_SIZE = "<QMAN-000036> : Work Manager thread pool max size : %s";
+	String QMAN_000037_WORK_MANAGER_KEEP_ALIVE_TIME = "<QMAN-000035> : Work Manager keep alive time : %s";
 		
 	 // DEBUG
 	String QMAN_200001_INCOMING_MESSAGE_HAS_BEEN_RECEIVED = "<QMAN-200001> : New incoming message has been received. Message content is %s";
@@ -165,4 +168,8 @@ public interface Messages
 	String QMAN_100035_GET_ATTRIBUTE_FAILURE = "<QMAN-100035> : Get Attribute invocation failure for attribute %s, resource %s.";
 	String QMAN_100036_SET_ATTRIBUTE_FAILURE = "<QMAN-100036> : Set Attribute invocation failure for attribute %s, resource %s.";
 	String QMAN_100037_INVOKE_OPERATION_FAILURE = "<QMAN-100037> : Operation Invocation failure for operation.";	
+	String QMAN_100038_UNABLE_TO_SEND_WS_NOTIFICATION = "<QMAN-100038> : Unable to send notification.";	
+	String QMAN_100039_UNABLE_TO_CONFIGURE_PROPERLY_WORKER_MANAGER = "<QMAN-100039> : Unable to properly configure WorkManager. A malformed property (NaN) was given as input parameter.";	
+	
+	
 }
