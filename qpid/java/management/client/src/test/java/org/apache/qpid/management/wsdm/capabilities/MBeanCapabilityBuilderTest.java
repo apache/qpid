@@ -21,7 +21,10 @@
 package org.apache.qpid.management.wsdm.capabilities;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javassist.CtClass;
@@ -33,6 +36,7 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import javax.xml.namespace.QName;
 
 import junit.framework.TestCase;
 
@@ -50,6 +54,25 @@ import org.apache.qpid.management.wsdm.common.QManFault;
 public class MBeanCapabilityBuilderTest extends TestCase
 {
 	
+	/**
+	 * Management interface for an mbean that has no properties and no 
+	 * methods.
+	 * 
+	 * @author Andrea Gazzarini
+	 */
+	public interface NoPropertiesNoMethodsMBean 
+	{
+	}
+
+	/**
+	 * Implementation of the managenent interface described above.
+	 * 
+	 * @author Andrea Gazzarini
+	 */
+	public class NoPropertiesNoMethods implements NoPropertiesNoMethodsMBean 
+	{
+	}
+
 	private MBeanCapabilityBuilder _builder;
 	private ObjectName _objectName;
 	
@@ -123,6 +146,40 @@ public class MBeanCapabilityBuilderTest extends TestCase
 		
 		String result = _builder.generateSetter(type, name,name);
 		assertEquals(expected,result);
+	}
+	
+	/**
+	 * Tests buils of a capability that has no properties and methods
+	 * 
+	 * <br>precondition : the incoming entity definition is empty (no properties and no methods)
+	 * <br>postcondition : the capability class is built successfully and has no props and methods.
+	 * 								The getPropertyNames returns an empty QName array.
+	 */
+	public void testOK_WithNoPropertiesNoMethods() throws Exception {
+
+		ObjectName name = new ObjectName("Test:Name=NoPropertiesNoMethods");
+		
+		MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+		server.registerMBean(new NoPropertiesNoMethods(), name);
+		
+		_builder.begin(name);
+		_builder.endAttributes();
+		_builder.endOperations();
+		Class<MBeanCapability> capabilityClass = _builder.getCapabilityClass();
+		
+		Field[] fields = capabilityClass.getDeclaredFields();
+		Method [] methods = capabilityClass.getDeclaredMethods();
+		
+		assertEquals(Arrays.toString(fields),0,fields.length);
+		assertEquals(Arrays.toString(methods),1,methods.length);
+		
+		Method getPropertyNames = methods[0];
+		assertEquals("getPropertyNames",getPropertyNames.getName());
+		
+		
+		MBeanCapability capability = capabilityClass.newInstance();
+		QName [] properties = (QName[]) getPropertyNames.invoke(capability);
+		assertEquals(0,properties.length);
 	}
 	
 	/**
