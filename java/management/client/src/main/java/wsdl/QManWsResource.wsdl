@@ -54,9 +54,7 @@
 			<xsd:element name="QManWsResourceProperties">
 				<xsd:complexType>
 					<xsd:sequence>
-						<xsd:element ref="wsrf-rl:CurrentTime" />
-						<xsd:element ref="wsrf-rl:TerminationTime" />
-						<xsd:element ref="wsrf-rp:QueryExpressionDialect" minOccurs="0" maxOccurs="unbounded"/>
+						<xsd:element ref="wsrf-rp:QueryExpressionDialect" minOccurs="0" maxOccurs="unbounded" />
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>
@@ -118,17 +116,14 @@
 	<wsdl:message name="ResourceUnavailableFault">
 		<wsdl:part name="ResourceUnavailableFault" element="wsrf-r:ResourceUnavailableFault" />
 	</wsdl:message>
-	<wsdl:message name="SetTerminationTimeRequest">
-		<wsdl:part name="SetTerminationTimeRequest" element="wsrf-rl:SetTerminationTime" />
+	<wsdl:message name="UnableToPutResourcePropertyDocumentFault">
+		<wsdl:part name="UnableToPutResourcePropertyDocumentFault" element="wsrf-rp:UnableToPutResourcePropertyDocumentFault" />
 	</wsdl:message>
-	<wsdl:message name="SetTerminationTimeResponse">
-		<wsdl:part name="SetTerminationTimeResponse" element="wsrf-rl:SetTerminationTimeResponse" />
+	<wsdl:message name="PutResourcePropertyDocumentRequest">
+		<wsdl:part name="PutResourcePropertyDocumentRequest" element="wsrf-rp:PutResourcePropertyDocument"/>
 	</wsdl:message>
-	<wsdl:message name="UnableToSetTerminationTimeFault">
-		<wsdl:part name="UnableToSetTerminationTimeFault" element="wsrf-rl:UnableToSetTerminationTimeFault" />
-	</wsdl:message>
-	<wsdl:message name="TerminationTimeChangeRejectedFault">
-		<wsdl:part name="TerminationTimeChangeRejectedFault" element="wsrf-rl:TerminationTimeChangeRejectedFault" />
+	<wsdl:message name="PutResourcePropertyDocumentResponse">
+		<wsdl:part name="PutResourcePropertyDocumentResponse" element="wsrf-rp:PutResourcePropertyDocumentResponse"/>
 	</wsdl:message>
 	<wsdl:message name="GetResourcePropertyDocumentRequest">
 		<wsdl:part name="GetResourcePropertyDocumentRequest" element="wsrf-rp:GetResourcePropertyDocument"/>
@@ -196,33 +191,6 @@
 				name="GetMetadataResponseMsg" 
 				message="qman:GetMetadataResponseMsg"/>
 		</wsdl:operation>
-		<wsdl:operation name="Destroy">
-			<wsdl:input 
-				wsa:Action="http://docs.oasis-open.org/wsrf/rlw-2/ImmediateResourceTermination/DestroyRequest" 
-			    name="DestroyRequest" 
-			    message="qman:DestroyRequest" />
-			<wsdl:output 
-				wsa:Action="http://docs.oasis-open.org/wsrf/rlw-2/ImmediateResourceTermination/DestroyResponse" 
-				name="DestroyResponse" 
-				message="qman:DestroyResponse" />
-			<wsdl:fault name="ResourceNotDestroyedFault" message="qman:ResourceNotDestroyedFault" />
-			<wsdl:fault name="ResourceUnknownFault" message="qman:ResourceUnknownFault" />
-			<wsdl:fault name="ResourceUnavailableFault" message="qman:ResourceUnavailableFault"/>
-		</wsdl:operation>
-		<wsdl:operation name="SetTerminationTime">
-			<wsdl:input 
-				wsa:Action="http://docs.oasis-open.org/wsrf/rlw-2/ScheduledResourceTermination/SetTerminationTimeRequest" 
-			    name="SetTerminationTimeRequest" 
-			    message="qman:SetTerminationTimeRequest" />
-			<wsdl:output 
-				wsa:Action="http://docs.oasis-open.org/wsrf/rlw-2/ScheduledResourceTermination/SetTerminationTimeResponse" 
-			    name="SetTerminationTimeResponse" 
-			    message="qman:SetTerminationTimeResponse" />
-			<wsdl:fault name="UnableToSetTerminationTimeFault" message="qman:UnableToSetTerminationTimeFault" />
-			<wsdl:fault name="ResourceUnknownFault" message="qman:ResourceUnknownFault" />
-			<wsdl:fault name="ResourceUnavailableFault" message="qman:ResourceUnavailableFault"/>
-			<wsdl:fault name="TerminationTimeChangeRejectedFault" message="qman:TerminationTimeChangeRejectedFault" />
-		</wsdl:operation>
 		<wsdl:operation name="GetResourcePropertyDocument">
 			<wsdl:input 
 				wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/GetResourcePropertyDocument/GetResourcePropertyDocumentRequest" 
@@ -234,6 +202,19 @@
 				message="qman:GetResourcePropertyDocumentResponse"/>
 			<wsdl:fault name="ResourceUnknownFault" message="qman:ResourceUnknownFault"/>
 			<wsdl:fault name="ResourceUnavailableFault" message="qman:ResourceUnavailableFault"/>
+		</wsdl:operation>
+			<wsdl:operation name="PutResourcePropertyDocument">
+			<wsdl:input 
+				wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/PutResourcePropertyDocument/PutResourcePropertyDocumentRequest" 
+			    name="PutResourcePropertyDocumentRequest" 
+			    message="qman:PutResourcePropertyDocumentRequest"/>
+			<wsdl:output 
+				wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/PutResourcePropertyDocument/PutResourcePropertyDocumentResponse" 
+				name="PutResourcePropertyDocumentResponse" 
+				message="qman:PutResourcePropertyDocumentResponse"/>
+			<wsdl:fault name="ResourceUnknownFault" message="qman:ResourceUnknownFault"/>
+			<wsdl:fault name="ResourceUnavailableFault" message="qman:ResourceUnavailableFault"/>
+			<wsdl:fault name="UnableToPutResourcePropertyDocumentFault" message="qman:UnableToPutResourcePropertyDocumentFault"/>
 		</wsdl:operation>
 		<wsdl:operation name="GetResourceProperty">
 			<wsdl:input 
@@ -308,23 +289,18 @@
 					encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
 			</wsdl:output>
 		</wsdl:operation>
-        <wsdl:operation name="Destroy">
-        	<wsdl-soap:operation soapAction="Destroy"/>
-        	<wsdl:input name="DestroyRequest">
+        <wsdl:operation name="PutResourcePropertyDocument">
+        	<wsdl-soap:operation soapAction="PutResourcePropertyDocument"/>
+        	<wsdl:input name="PutResourcePropertyDocumentRequest">
         		<wsdl-soap:body 
         			use="literal"
 					encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
         	</wsdl:input>
-        	<wsdl:output name="DestroyResponse">
+        		<wsdl:output name="PutResourcePropertyDocumentResponse">
         		<wsdl-soap:body 
-        			use="literal"
+        			use="literal" 
 					encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
         	</wsdl:output>
-        	<wsdl:fault name="ResourceNotDestroyedFault">
-        		<wsdl-soap:fault 
-        			use="literal" 
-        			name="ResourceNotDestroyedFault"/>
-        	</wsdl:fault>
         	<wsdl:fault name="ResourceUnknownFault">
         		<wsdl-soap:fault 
         			use="literal" 
@@ -335,37 +311,10 @@
         			use="literal" 
         			name="ResourceUnavailableFault"/>
         	</wsdl:fault>
-        </wsdl:operation>
-        <wsdl:operation name="SetTerminationTime">
-        	<wsdl-soap:operation soapAction="SetTerminationTime"/>
-        	<wsdl:input name="SetTerminationTimeRequest">
-        		<wsdl-soap:body 
-        			use="literal"
-					encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
-        	</wsdl:input><wsdl:output name="SetTerminationTimeResponse">
-        		<wsdl-soap:body 
-        			use="literal" 
-					encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
-        	</wsdl:output>
-        	<wsdl:fault name="UnableToSetTerminationTimeFault">
+        	<wsdl:fault name="UnableToPutResourcePropertyDocumentFault">
         		<wsdl-soap:fault 
         			use="literal" 
-        			name="UnableToSetTerminationTimeFault"/>
-        	</wsdl:fault>
-        	<wsdl:fault name="ResourceUnknownFault">
-        		<wsdl-soap:fault 
-        			use="literal" 
-        			name="ResourceUnknownFault"/>
-        	</wsdl:fault>
-        	<wsdl:fault name="ResourceUnavailableFault">
-        		<wsdl-soap:fault 
-        			use="literal" 
-        			name="ResourceUnavailableFault"/>
-        	</wsdl:fault>
-        	<wsdl:fault name="TerminationTimeChangeRejectedFault">
-        		<wsdl-soap:fault 
-        			use="literal" 
-        			name="TerminationTimeChangeRejectedFault"/>
+        			name="UnableToPutResourcePropertyDocumentFault"/>
         	</wsdl:fault>
         </wsdl:operation>
         <wsdl:operation name="GetResourcePropertyDocument">
@@ -522,16 +471,6 @@
         			use="literal" 
         			name="SetResourcePropertyRequestFailedFault"/>
         	</wsdl:fault>
-        </wsdl:operation>
-        <wsdl:operation name="GetMetadata">
-        	<wsdl-soap:operation
-        		soapAction="http://ws.apache.org/muse/test/wsrf/GetMetadata" />
-        	<wsdl:input name="GetMetadataMsg">
-        		<wsdl-soap:body use="literal" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
-        	</wsdl:input>
-        	<wsdl:output name="GetMetadataResponseMsg">
-        		<wsdl-soap:body use="literal" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
-        	</wsdl:output>
         </wsdl:operation>
 	</wsdl:binding>
 	<wsdl:service name="QManWsResourceService">

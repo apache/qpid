@@ -61,32 +61,13 @@
 			<xsd:element name="WsDmAdapterResourceProperties">
 				<xsd:complexType>
 					<xsd:sequence>
-
-<!-- 
-						<xsd:element ref="wsrf-rl:CurrentTime" />
-						<xsd:element ref="wsrf-rl:TerminationTime" />
--->	
 						<xsd:element ref="wsrf-sg:Entry"/>
 						<xsd:element ref="wsrf-sg:MembershipContentRule"/>
-						<xsd:element
-							ref="wsrf-rp:QueryExpressionDialect" minOccurs="0"
-							maxOccurs="unbounded" />
-						
+						<xsd:element ref="wsrf-rp:QueryExpressionDialect" minOccurs="0" maxOccurs="unbounded" />
 						<xsd:element ref="wsnt:FixedTopicSet" />
 						<xsd:element ref="wst:TopicSet" minOccurs="0" />
 						<xsd:element ref="wsnt:TopicExpression" minOccurs="0" maxOccurs="unbounded" />
 						<xsd:element ref="wsnt:TopicExpressionDialect" minOccurs="0" maxOccurs="unbounded" />
-<!-- 
-						<xsd:element ref="muws1:ResourceId" />
-						<xsd:element ref="muws1:ManageabilityCapability"
-							minOccurs="0" maxOccurs="unbounded" />
-						<xsd:element ref="muws2:Caption" minOccurs="0"
-							maxOccurs="unbounded" />
-						<xsd:element ref="muws2:Description"
-							minOccurs="0" maxOccurs="unbounded" />
-						<xsd:element ref="muws2:Version" minOccurs="0" />
-						<xsd:element ref="muws2:OperationalStatus" />
--->						
 					</xsd:sequence>
 				</xsd:complexType>
 			</xsd:element>

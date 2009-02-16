@@ -46,6 +46,7 @@ import junit.framework.TestSuite;
 import org.apache.muse.core.proxy.ProxyHandler;
 import org.apache.muse.core.proxy.ReflectionProxyHandler;
 import org.apache.muse.core.serializer.SerializerRegistry;
+import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.muse.ws.addressing.soap.SoapFault;
 import org.apache.muse.ws.resource.remote.WsResourceClient;
@@ -366,27 +367,75 @@ public class WsDmAdapterTest extends TestCase {
 			
 		}
 	}
+
+	/**
+	 * Tests the WS-RP PutResourcePropertyDocument interface of the WS-DM adapter.
+	 * 
+	 * <br>precondition : a ws resource exists and is registered. 
+	 * <br>postcondition : A read / write property is correctly set according to WSRP interface.
+	 */
+	public void testGetAndPutResourcePropertyDocumentOK() throws Exception
+	{	
+		String expectedMgmtPubIntervalValue = "4321";
+		String propertyName = "MgmtPubInterval";
+		
+		Element propertiesDocument = _resourceClient.getResourcePropertyDocument();
+		Element [] properties = XmlUtils.getAllElements(propertiesDocument);
+		
+		for (Element element : properties)
+		{
+			if (propertyName.equals(element.getLocalName())) {
+				element.setTextContent(expectedMgmtPubIntervalValue);
+			} else {
+				propertiesDocument.removeChild(element);
+			}
+		}
+		
+		_resourceClient.putResourcePropertyDocument(propertiesDocument);
+		
+		Element newProperties = _resourceClient.getResourcePropertyDocument();
+		
+		Element mgmtPubInterval = XmlUtils.getElement(
+				newProperties, new QName(
+						Names.NAMESPACE_URI,
+						propertyName,
+						Names.PREFIX));
+
+		assertEquals(expectedMgmtPubIntervalValue,mgmtPubInterval.getTextContent());		
+	}
 	
-//	public void testGetAndPutResourcePropertyDocumentOK() throws Exception
-//	{	
-//		Element properties = _resourceClient.getResourcePropertyDocument();
-//		
-//		Element mgmtPubInterval = XmlUtils.getElement(properties, new QName(Names.NAMESPACE_URI,"MgmtPubInterval",Names.PREFIX));
-//		mgmtPubInterval.setTextContent(String.valueOf(Long.MAX_VALUE));
-//		
-//		Element durable = XmlUtils.getElement(properties, new QName(Names.NAMESPACE_URI,"Durable",Names.PREFIX));
-//		durable.setTextContent(String.valueOf(Boolean.FALSE));
-//		
-//		Element consumerCount = XmlUtils.getElement(properties, new QName(Names.NAMESPACE_URI,"ConsumerCount",Names.PREFIX));
-//		consumerCount.setTextContent(String.valueOf(13));		
-//		
-//		fail("PutResourcePropertyDocument not yet implemented!");
-////		_resourceClient.putResourcePropertyDocument(properties);
-////		
-////		Element newProperties = _resourceClient.getResourcePropertyDocument();
-////		
-////		assertEquals(properties,newProperties);
-//	}
+	/**
+	 * Tests the WS-RP PutResourcePropertyDocument interface of the WS-DM adapter.
+	 * Specifically it tries to update the value of a read-only property.
+	 * 
+	 * <br>precondition : a ws resource exists, it is registered and has at least one read-only property. 
+	 * <br>postcondition : An exception is thrown indicating the failure.
+	 */
+	public void testGetAndPutResourcePropertyDocumentKO_WithReadOnlyProperty() throws Exception
+	{	
+		String propertyName = "Name";
+		
+		Element propertiesDocument = _resourceClient.getResourcePropertyDocument();
+		Element [] properties = XmlUtils.getAllElements(propertiesDocument);
+		
+		for (Element element : properties)
+		{
+			if (propertyName.equals(element.getLocalName())) {
+				element.setTextContent("ThisIsTheNewValueOfNameProperty");
+			} else {
+				propertiesDocument.removeChild(element);
+			}
+		}
+
+		try 
+		{
+			_resourceClient.putResourcePropertyDocument(propertiesDocument);
+			fail("It's not possible to update the value of a read-only property.");
+		} catch (SoapFault expected) 
+		{
+			
+		}
+	}	
 	
 	/**
 	 * Test the WS-RP GetResourceProperties interface of the WS-DM adapter.
