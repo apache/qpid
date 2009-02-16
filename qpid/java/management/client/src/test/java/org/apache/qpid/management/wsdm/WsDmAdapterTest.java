@@ -141,6 +141,7 @@ public class WsDmAdapterTest extends TestCase {
 			
 			synchronized(_serverMonitor) {
 				_serverMonitor.wait();
+				Thread.sleep(2000);
 			}
 		}
 		
@@ -841,7 +842,6 @@ public class WsDmAdapterTest extends TestCase {
 	{
 		URI address = URI.create(
 				Protocol.DEFAULT_ENDPOINT_URI.replaceFirst("8080",System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME)));
-		System.out.println(address);
 		return new ServiceGroupClient(new EndpointReference(address));
 	}
 	
