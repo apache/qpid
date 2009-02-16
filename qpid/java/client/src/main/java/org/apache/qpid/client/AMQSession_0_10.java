@@ -196,10 +196,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
         long prefetch = getAMQConnection().getMaxPrefetch();
 
-        if (unackedCount >= prefetch/2)
+        if (unackedCount >= prefetch/2 || _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE)
         {
             flushAcknowledgments();
-        }
+        }       
     }
 
     void flushAcknowledgments()
