@@ -144,14 +144,6 @@
 			<java-capability-class>org.apache.qpid.management.wsdm.capabilities.QManMetadataExchangeCapability</java-capability-class>
 		</capability>
 		<capability>
-			<capability-uri>http://docs.oasis-open.org/wsrf/rlw-2/ImmediateResourceTermination</capability-uri>
-			<java-capability-class>org.apache.muse.ws.resource.lifetime.impl.SimpleImmediateTermination</java-capability-class>
-		</capability>
-		<capability>
-			<capability-uri>http://docs.oasis-open.org/wsrf/rlw-2/ScheduledResourceTermination</capability-uri>
-			<java-capability-class>org.apache.muse.ws.resource.lifetime.impl.SimpleScheduledTermination</java-capability-class>
-		</capability>
-		<capability>
 			<capability-uri>http://docs.oasis-open.org/wsrf/rpw-2/Get</capability-uri>
 			<java-capability-class>org.apache.muse.ws.resource.properties.get.impl.SimpleGetCapability</java-capability-class>
 		</capability>
@@ -161,6 +153,10 @@
 		</capability>
 		<capability>
 			<capability-uri>http://docs.oasis-open.org/wsrf/rpw-2/Set</capability-uri>
+			<java-capability-class>org.apache.muse.ws.resource.properties.set.impl.SimpleSetCapability</java-capability-class>
+		</capability>
+		<capability>
+			<capability-uri>http://docs.oasis-open.org/wsrf/rpw-2/Put</capability-uri>
 			<java-capability-class>org.apache.muse.ws.resource.properties.set.impl.SimpleSetCapability</java-capability-class>
 		</capability>
 	</resource-type>

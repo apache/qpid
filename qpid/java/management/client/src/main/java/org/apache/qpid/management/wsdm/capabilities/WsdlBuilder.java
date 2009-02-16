@@ -96,7 +96,7 @@ class WsdlBuilder implements IArtifactBuilder {
 			propertyRef.setAttribute(
 					"ref", 
 					Names.PREFIX+":"+attributeMetadata.getName());
-			
+			propertyRef.setAttribute("minOccurs", "0");		
 			wsrpProperties.appendChild(propertyRef);
 			
 		} catch(Exception exception)
@@ -197,6 +197,7 @@ class WsdlBuilder implements IArtifactBuilder {
 			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
 			propertyDeclaration.setAttribute("name",attributeName);
 			propertyDeclaration.setAttribute("type", serializer.getXmlType(Class.forName(type)));
+				
 			return propertyDeclaration;
 		}			
 	}
