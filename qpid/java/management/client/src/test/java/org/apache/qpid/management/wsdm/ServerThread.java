@@ -37,11 +37,13 @@ import org.mortbay.start.Monitor;
  * 
  * @author Andrea Gazzarini
  */
-public class ServerThread extends Thread
+class ServerThread extends Thread
 {	
 	private final Listener _lifecycleListener;
 	private Server _server;
 
+	private SelectChannelConnector _connector;
+	
 	/**
 	 * Builds a new server thread with the given lifecycle listener.
 	 * 
@@ -63,14 +65,13 @@ public class ServerThread extends Thread
 			Monitor.monitor();        
 			_server = new Server();
     		_server.setStopAtShutdown(true);
+    		
+            _connector=new SelectChannelConnector();
+            _connector.setPort(Integer.parseInt(System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME)));
+            _connector.setHost(System.getProperty(Names.ADAPTER_HOST_PROPERTY_NAME));
             
-            Connector connector=new SelectChannelConnector();
-            connector.setPort(
-            		Integer.parseInt(
-            				System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME)));
-            connector.setHost(System.getProperty(Names.ADAPTER_HOST_PROPERTY_NAME));
             
-            _server.setConnectors(new Connector[]{connector});
+            _server.setConnectors(new Connector[]{_connector});
             
             WebAppContext webapp = new WebAppContext();
             webapp.setContextPath("/qman");
@@ -85,7 +86,9 @@ public class ServerThread extends Thread
             webapp.addLifeCycleListener(_lifecycleListener);
             _server.setHandler(webapp);
             _server.start();
+            System.setProperty(Names.ADAPTER_PORT_PROPERTY_NAME,String.valueOf( _connector.getLocalPort()));            
             _server.join();
+            
 		} catch(Exception exception)
 		{
 			throw new RuntimeException(exception);
@@ -97,8 +100,19 @@ public class ServerThread extends Thread
 	 * 
 	 * @throws Exception when a problem is encountered during shutdown.
 	 */
-	public void shutdown() throws Exception
+	void shutdown() throws Exception
 	{
 		_server.stop();
 	}
+	
+	/**
+	 * Returns the port number where the server is running.
+	 * 
+	 * @return the port number where the server is running.
+	 */
+	int getPort()
+	{
+		return _connector.getLocalPort();
+	}
+	
 }
