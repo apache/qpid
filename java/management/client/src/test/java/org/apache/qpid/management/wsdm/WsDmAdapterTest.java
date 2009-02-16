@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.management.wsdm;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
@@ -76,6 +78,8 @@ public class WsDmAdapterTest extends TestCase {
 	private Map<String, ProxyHandler> _invocationHandlers = createInvocationHandlers();
 	final Long retCodeOk = new Long(0);
 
+	private static ServerThread _server;
+	
 	/**
 	 * Test case wide set up.
 	 * Provides Server startup & shutdown global procedure.
@@ -97,7 +101,6 @@ public class WsDmAdapterTest extends TestCase {
 			}
 		};
 		
-		private ServerThread server;
 		
 		/**
 		 * Builds a new test setup with for the given test.
@@ -125,15 +128,15 @@ public class WsDmAdapterTest extends TestCase {
 			SerializerRegistry.getInstance().registerSerializer(Result.class, new InvocationResultSerializer());
 			
 			System.setProperty(
-					Names.ADAPTER_PORT_PROPERTY_NAME, 
-					String.valueOf(Protocol.DEFAULT_QMAN_PORT_NUMBER));
-
-			System.setProperty(
 					Names.ADAPTER_HOST_PROPERTY_NAME, 
 					Protocol.DEFAULT_QMAN_HOSTNAME);
+
+			System.setProperty(
+					Names.ADAPTER_PORT_PROPERTY_NAME, 
+					String.valueOf(getFreePort()));
 			
-			server = new ServerThread(listener);
-			server.start();
+			_server = new ServerThread(listener);
+			_server.start();
 			
 			synchronized(_serverMonitor) {
 				_serverMonitor.wait();
@@ -143,7 +146,7 @@ public class WsDmAdapterTest extends TestCase {
 		@Override
 		protected void tearDown() throws Exception
 		{
-			server.shutdown();
+			_server.shutdown();
 		}
 	};
 	
@@ -212,7 +215,7 @@ public class WsDmAdapterTest extends TestCase {
 	 * <br>precondition : a ws resource exists and is registered. 
 	 * <br>postcondition : property values coming from WS-DM resource are the same of the JMX interface.
 	 */
-	public void testGeResourcePropertiesOK() throws Exception
+	public void testGetResourcePropertiesOK() throws Exception
 	{
 		MBeanAttributeInfo [] attributesMetadata = _mbeanInfo.getAttributes();
 		for (MBeanAttributeInfo attributeMetadata : attributesMetadata)
@@ -787,7 +790,9 @@ public class WsDmAdapterTest extends TestCase {
 	 */
 	private ServiceGroupClient getServiceGroupClient()
 	{
-		URI address = URI.create(Protocol.DEFAULT_ENDPOINT_URI);
+		URI address = URI.create(
+				Protocol.DEFAULT_ENDPOINT_URI.replaceFirst("8080",System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME)));
+		System.out.println(address);
 		return new ServiceGroupClient(new EndpointReference(address));
 	}
 	
@@ -1016,6 +1021,18 @@ public class WsDmAdapterTest extends TestCase {
 			Object result = Array.get(resultArray, index);
 			
 			assertEquals(expected,result);
+		}
+	}
+	
+	public static int getFreePort() throws IOException {
+		ServerSocket server = null;
+		try 
+		{
+			server = new ServerSocket(0);
+			return server.getLocalPort();
+		} finally 
+		{
+			server.close();			
 		}
 	}
 }
