@@ -41,6 +41,7 @@ SubscriptionManager::SubscriptionManager(const Session& s)
 Subscription SubscriptionManager::subscribe(
     MessageListener& listener, const std::string& q, const SubscriptionSettings& ss, const std::string& n)
 {
+    sys::Mutex::ScopedLock l(lock);
     std::string name=n.empty() ? q:n;
     boost::intrusive_ptr<SubscriptionImpl> si = new SubscriptionImpl(*this, q, ss, name, &listener);
     dispatcher.listen(si);
@@ -52,6 +53,7 @@ Subscription SubscriptionManager::subscribe(
 Subscription SubscriptionManager::subscribe(
     LocalQueue& lq, const std::string& q, const SubscriptionSettings& ss, const std::string& n)
 {
+    sys::Mutex::ScopedLock l(lock);
     std::string name=n.empty() ? q:n;
     boost::intrusive_ptr<SubscriptionImpl> si = new SubscriptionImpl(*this, q, ss, name, 0);
     lq.queue=si->divert();
@@ -74,13 +76,14 @@ Subscription SubscriptionManager::subscribe(
 
 void SubscriptionManager::cancel(const std::string& dest)
 {
+    sys::Mutex::ScopedLock l(lock);
     std::map<std::string, Subscription>::iterator i = subscriptions.find(dest);
     if (i != subscriptions.end()) {
         sync(session).messageCancel(dest);
         dispatcher.cancel(dest);
         Subscription s = i->second;
-        if (s.isValid()) subscriptions[dest].impl->cancelDiversion();
-        subscriptions.erase(dest);
+        if (s.isValid()) s.impl->cancelDiversion();
+        subscriptions.erase(i);
     }
 }
 
@@ -131,6 +134,7 @@ Message SubscriptionManager::get(const std::string& queue, sys::Duration timeout
 Session SubscriptionManager::getSession() const { return session; }
 
 Subscription SubscriptionManager::getSubscription(const std::string& name) const {
+    sys::Mutex::ScopedLock l(lock);
     std::map<std::string, Subscription>::const_iterator i = subscriptions.find(name);
     if (i == subscriptions.end())
         throw Exception(QPID_MSG("Subscription not found: " << name));
