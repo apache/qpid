@@ -35,7 +35,7 @@ public class QManFault extends BaseFault
 	private static final long serialVersionUID = 5977379710882983474L;
 	private final static QName SERVICE = new QName(
 			Names.NAMESPACE_URI,
-			"Service",
+			"QMan",
 			Names.PREFIX);
 	
 	private final static QName EXCEPTION_QNAME = new QName(

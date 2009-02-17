@@ -32,7 +32,7 @@ import org.apache.muse.ws.addressing.EndpointReference;
  */
 public abstract class AbstractQManExample
 {
-	private final static String LINE_SEPARATOR = System.getProperty("line.separator","\n");
+	final static String LINE_SEPARATOR = System.getProperty("line.separator","\n");
 	protected final static String PREFIX = "qman";
 
 	/**
@@ -104,7 +104,7 @@ public abstract class AbstractQManExample
 		}
 	}		
 	
-	private void waitForUserInput(String message) throws IOException {
+	protected void waitForUserInput(String message) throws IOException {
 		System.out.println(message);
 		System.in.read();
 	}
@@ -118,7 +118,7 @@ public abstract class AbstractQManExample
 	 * @param port the port where QMan is running.
 	 * @throws Exception when the example fails (not at application level).
 	 */
-	abstract void executeExample(String host, int port) throws Exception;
+	void executeExample(String host, int port) throws Exception{};
 	
 	/**
 	 * Returns the endpoint reference of the adapter service.
