@@ -218,9 +218,7 @@ class SubscriptionManager : public sys::Runnable
     static const uint32_t UNLIMITED=0xFFFFFFFF;
 
     /** Set the flow control for a subscription. */
-    void setFlowControl(const std::string& name, const FlowControl& flow) {
-        getSubscription(name).setFlowControl(flow);
-    }
+    void setFlowControl(const std::string& name, const FlowControl& flow);
 
     /** Set the flow control for a subscription.
      *@param name: name of the subscription.
@@ -228,9 +226,7 @@ class SubscriptionManager : public sys::Runnable
      *@param bytes: byte credit.
      *@param window: if true use window-based flow control.
      */
-    void setFlowControl(const std::string& name, uint32_t messages,  uint32_t bytes, bool window=true) {
-        setFlowControl(name, messages, bytes, window);
-    }
+    void setFlowControl(const std::string& name, uint32_t messages,  uint32_t bytes, bool window=true);
 
     /** Set the default settings for subscribe() calls that don't
      * include a SubscriptionSettings parameter.
