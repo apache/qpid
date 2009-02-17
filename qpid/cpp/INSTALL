@@ -102,7 +102,7 @@ On Fedora 10 or later
  # yum install corosync-devel cmanlib-devel
 
 For SASL and SSL, include
- # yum install cyrussasl-devel
+ # yum install cyrus-sasl-devel
 
 
 Follow the manual installation instruction below for any packages not
