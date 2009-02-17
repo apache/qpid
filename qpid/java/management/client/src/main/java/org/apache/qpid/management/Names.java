@@ -170,11 +170,31 @@ public abstract class Names
 			"EventsLifeCycleTopic",
 			Names.PREFIX);
 	
+	public final static QName HOST_QNAME = new QName(
+			Names.NAMESPACE_URI,
+			"host",
+			Names.PREFIX);
+
+	public final static QName PORT_QNAME = new QName(
+			Names.NAMESPACE_URI,
+			"port",
+			Names.PREFIX);
+
+	public final static QName USERNAME_QNAME= new QName(
+			Names.NAMESPACE_URI,
+			"username",
+			Names.PREFIX);
+
+	public final static QName VIRTUAL_HOST_QNAME= new QName(
+			Names.NAMESPACE_URI,
+			"virtualHost",
+			Names.PREFIX);
+
 	public final static QName UNKNOWN_OBJECT_TYPE_LIFECYLE_TOPIC_NAME= new QName(
 			Names.NAMESPACE_URI,
 			"UnclassifiedLifeCycleTopic",
 			Names.PREFIX);
-	
+
 	
 	public final static String NAME_ATTRIBUTE = "name";
 	public final static String MODIFIABILITY = "modifiability";
@@ -191,4 +211,6 @@ public abstract class Names
 	
 	public final static String ADAPTER_HOST_PROPERTY_NAME = "qman.host";		
 	public final static String ADAPTER_PORT_PROPERTY_NAME = "qman.port";	
+	
+	
 }
