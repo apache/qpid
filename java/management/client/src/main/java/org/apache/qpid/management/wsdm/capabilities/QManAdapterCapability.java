@@ -53,6 +53,7 @@ import org.apache.qpid.management.Names;
 import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.jmx.EntityLifecycleNotification;
 import org.apache.qpid.management.wsdm.common.ThreadSessionManager;
+import org.apache.qpid.management.wsdm.common.UnableToConnectWithBrokerFault;
 import org.apache.qpid.management.wsdm.muse.engine.WSDMAdapterEnvironment;
 import org.apache.qpid.management.wsdm.muse.serializer.ByteArraySerializer;
 import org.apache.qpid.management.wsdm.notifications.LifeCycleEvent;
@@ -347,7 +348,14 @@ public class QManAdapterCapability extends AbstractCapability
 							long.class.getName()});
 		} catch(Exception exception)
 		{			
-			throw new SoapFault(exception);
+			LOGGER.error(Messages.QMAN_100017_UNABLE_TO_CONNECT,host,port);
+			throw new UnableToConnectWithBrokerFault(
+					getResource().getEndpointReference(),
+					host,
+					port,
+					username,
+					virtualHost,
+					exception.getMessage());
 		}
 	}
 		
