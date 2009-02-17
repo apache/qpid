@@ -548,6 +548,22 @@ QPID_AUTO_TEST_CASE(testLVQVariedSize) {
     }
 }
 
+QPID_AUTO_TEST_CASE(testSessionManagerSetFlowControl) {
+    ClientSessionFixture fix;
+    std::string name("dummy");
+    LocalQueue queue;
+    SubscriptionSettings settings;
+    settings.flowControl = FlowControl();
+    fix.session.queueDeclare(arg::queue=name, arg::exclusive=true, arg::autoDelete=true);
+    fix.subs.subscribe(queue, name, settings);
+    fix.session.messageTransfer(arg::content=Message("my-message", name));
+    fix.subs.setFlowControl(name, 1, FlowControl::UNLIMITED, false);
+    fix.session.messageFlush(name);
+    Message got;
+    BOOST_CHECK(queue.get(got, 0));
+    BOOST_CHECK_EQUAL("my-message", got.getData());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 
