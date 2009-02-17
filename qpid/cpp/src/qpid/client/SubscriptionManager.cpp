@@ -141,6 +141,14 @@ void SubscriptionManager::registerFailoverHandler (boost::function<void ()> fh) 
     dispatcher.registerFailoverHandler(fh);
 }
 
+void SubscriptionManager::setFlowControl(const std::string& name, const FlowControl& flow) {
+    getSubscription(name).setFlowControl(flow);
+}
+
+void SubscriptionManager::setFlowControl(const std::string& name, uint32_t messages,  uint32_t bytes, bool window) {
+    setFlowControl(name, FlowControl(messages, bytes, window));
+}
+
 }} // namespace qpid::client
 
 #endif
