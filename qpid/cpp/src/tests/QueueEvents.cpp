@@ -27,6 +27,7 @@
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/client/QueueOptions.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/sys/Dispatcher.h"
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
