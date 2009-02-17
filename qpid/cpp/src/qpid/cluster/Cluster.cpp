@@ -193,10 +193,6 @@ void Cluster::leave(Lock&) {
     if (state != LEFT) {
         state = LEFT;
         QPID_LOG(notice, *this << " leaving cluster " << name);
-        try { cpg.leave(); }
-        catch (const std::exception& e) {
-            QPID_LOG(critical, *this << " error leaving process group: " << e.what());
-        }
         connections.clear();
         try { broker.shutdown(); }
         catch (const std::exception& e) {
@@ -371,7 +367,6 @@ void Cluster::tryMakeOffer(const MemberId& id, Lock& ) {
 // callbacks will be invoked.
 // 
 void Cluster::brokerShutdown()  {
-    QPID_LOG(notice, *this << " shutting down ");
     if (state != LEFT) {
         try { cpg.shutdown(); }
         catch (const std::exception& e) {
