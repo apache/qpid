@@ -95,14 +95,6 @@ namespace client {
  */
 class SubscriptionManager : public sys::Runnable
 {
-    typedef sys::Mutex::ScopedLock Lock;
-    typedef sys::Mutex::ScopedUnlock Unlock;
-
-    qpid::client::Dispatcher dispatcher;
-    qpid::client::AsyncSession session;
-    bool autoStop;
-    SubscriptionSettings defaultSettings;
-    
   public:
     /** Create a new SubscriptionManager associated with a session */
     SubscriptionManager(const Session& session);
@@ -271,6 +263,11 @@ class SubscriptionManager : public sys::Runnable
     Session getSession() const;
 
   private:
+    mutable sys::Mutex lock;
+    qpid::client::Dispatcher dispatcher;
+    qpid::client::AsyncSession session;
+    bool autoStop;
+    SubscriptionSettings defaultSettings;
     std::map<std::string, Subscription> subscriptions;
 };
 
