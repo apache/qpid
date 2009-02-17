@@ -139,7 +139,6 @@ posix_plat_hdr = \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Fork.h \
-  qpid/sys/posix/PollableCondition.h \
   qpid/sys/posix/IntegerTypes.h \
   qpid/sys/posix/Time.h
 
