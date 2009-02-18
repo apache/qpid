@@ -29,8 +29,8 @@ if HAVE_LIBCPG
 
 
 # ais_check checks pre-requisites for cluster tests and runs them if ok.
-TESTS+=ais_check
-EXTRA_DIST+=ais_check start_cluster stop_cluster restart_cluster cluster_python_tests cluster_python_tests_failing.txt
+TESTS+=ais_check federated_cluster_test
+EXTRA_DIST+=ais_check start_cluster stop_cluster restart_cluster cluster_python_tests cluster_python_tests_failing.txt federated_cluster_test
 
 check_PROGRAMS+=cluster_test
 cluster_test_SOURCES=unit_test.cpp cluster_test.cpp ClusterFixture.cpp ClusterFixture.h ForkedBroker.h ForkedBroker.cpp
