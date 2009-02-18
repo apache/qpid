@@ -259,6 +259,7 @@ struct Setup : public Client {
         queueInit("pub_done");
         queueInit("sub_ready");
         queueInit("sub_done");
+        if (opts.iterations > 1) queueInit("sub_iteration");
         if (opts.mode==SHARED) {
             framing::FieldTable settings;//queue policy settings
             settings.setInt("qpid.max_count", opts.queueMaxCount);
@@ -397,6 +398,9 @@ struct Controller : public Client {
             for (size_t j = 0; j < opts.iterations; ++j) {
                 AbsTime start=now();
                 send(opts.totalPubs, "pub_start", "start"); // Start publishers
+                if (j) {
+                    send(opts.totalPubs, "sub_iteration", "next"); // Start subscribers on next iteration
+                }
 
                 Stats pubRates;
                 Stats subRates;
@@ -585,10 +589,19 @@ struct SubscribeThread : public Client {
                 if (opts.commitAsync) session.txCommit();
                 else sync(session).txCommit();
             }
+
+            LocalQueue iterationControl;
+            if (opts.iterations > 1) {
+                subs.subscribe(iterationControl, "sub_iteration", SubscriptionSettings(FlowControl::messageCredit(0)));
+            }
             
             for (size_t j = 0; j < opts.iterations; ++j) {
                 if (j > 0) {
-                    //need to allocate some more credit
+                    //need to wait here until all subs are done
+                    session.messageFlow("sub_iteration", 0, 1); 
+                    iterationControl.pop();
+
+                    //need to allocate some more credit for subscription
                     session.messageFlow(queue, 0, opts.subQuota); 
                 }
                 Message msg;
