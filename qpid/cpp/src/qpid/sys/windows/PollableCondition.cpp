@@ -76,6 +76,8 @@ void PollableConditionPrivate::poke()
     if (!armed)
         return;
 
+    // addFd will queue a completion for the IOCP; when it's handled, a
+    // poller thread will call back to dispatch() below.
     PollerHandle ph(*this);
     poller->addFd(ph, Poller::INPUT);
 }
