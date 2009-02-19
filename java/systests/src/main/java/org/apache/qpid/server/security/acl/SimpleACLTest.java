@@ -61,12 +61,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
-
-        // This is a bit evil it should be updated with QPID-1103
-        config.getConfiguration().setProperty("management.enabled", "false");
-
         ApplicationRegistry.initialise(config, 1);
-
         TransportConnection.createVMBroker(1);
     }
 

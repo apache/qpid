@@ -29,6 +29,8 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.SecurityConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.MockPluginManager;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -43,7 +45,7 @@ public class ACLManagerTest extends TestCase
 
     private ACLManager _authzManager;
     private AMQProtocolSession _session;
-    private XMLConfiguration _conf;
+    private SecurityConfiguration _conf;
     private PluginManager _pluginManager;
 
     @Override
@@ -52,10 +54,10 @@ public class ACLManagerTest extends TestCase
         File tmpFile = File.createTempFile(getClass().getName(), "testconfig");
         tmpFile.deleteOnExit();
         BufferedWriter out = new BufferedWriter(new FileWriter(tmpFile));
-        out.write("<broker><security><queueDenier>notyet</queueDenier><exchangeDenier>yes</exchangeDenier></security></broker>");
+        out.write("<security><queueDenier>notyet</queueDenier><exchangeDenier>yes</exchangeDenier></security>");
         out.close();
         
-        _conf = new XMLConfiguration(tmpFile);
+        _conf = new SecurityConfiguration(new XMLConfiguration(tmpFile));
         
         // Create ACLManager
         
@@ -88,10 +90,9 @@ public class ACLManagerTest extends TestCase
     public void testConfigurePlugins()
     {
         Configuration hostConfig = new PropertiesConfiguration();
-        hostConfig.setProperty("security.queueDenier", "thisoneneither");
-        _authzManager.configureHostPlugins(hostConfig);
+        hostConfig.setProperty("queueDenier", "thisoneneither");
+        _authzManager.configureHostPlugins(new SecurityConfiguration(hostConfig));
         AMQQueue queue = new MockAMQQueue("thisoneneither");
         assertFalse(_authzManager.authoriseDelete(_session, queue));
     }
-
 }

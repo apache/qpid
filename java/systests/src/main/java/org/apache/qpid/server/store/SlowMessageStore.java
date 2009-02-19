@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
@@ -49,38 +50,38 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";
 
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
-        _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
-        Configuration delays = config.subset(base + "." + DELAYS);
+        _logger.warn("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
+        Configuration delays = config.getStoreConfiguration().subset(DELAYS);
 
         configureDelays(delays);
 
-        String transactionLogClass = config.getString(base + ".store.class");
+        String transactionLogClass = config.getTransactionLogClass();
 
         if (delays.containsKey(DEFAULT_DELAY))
         {
             _defaultDelay = delays.getLong(DEFAULT_DELAY);
+            _logger.warn("Delay is:" + _defaultDelay);
         }
 
         if (transactionLogClass != null)
         {
             Class clazz = Class.forName(transactionLogClass);
-
-            Object o = clazz.newInstance();
-
-            if (!(o instanceof TransactionLog))
+            if (clazz != this.getClass())
             {
-                throw new ClassCastException("TransactionLog class must implement " + TransactionLog.class + ". Class " + clazz +
-                                             " does not.");
+
+                Object o = clazz.newInstance();
+
+                if (!(o instanceof TransactionLog))
+                {
+                    throw new ClassCastException("TransactionLog class must implement " + TransactionLog.class + ". Class " + clazz +
+                    " does not.");
+                }
+                _realTransactionLog = (TransactionLog) o;
             }
-            _realTransactionLog = (TransactionLog) o;
-            _realTransactionLog.configure(virtualHost, base , config);
         }
-        else
-        {
-            _realTransactionLog.configure(virtualHost, base , config);
-        }
+        _realTransactionLog.configure(virtualHost, base , config);
     }
 
     private void configureDelays(Configuration config)

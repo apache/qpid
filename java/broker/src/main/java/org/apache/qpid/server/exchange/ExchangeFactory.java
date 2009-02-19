@@ -26,6 +26,7 @@ import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
 
 public interface ExchangeFactory
@@ -34,7 +35,7 @@ public interface ExchangeFactory
                             int ticket)
             throws AMQException;
 
-    void initialise(Configuration hostConfig);
+    void initialise(VirtualHostConfiguration hostConfig);
 
     Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
 }

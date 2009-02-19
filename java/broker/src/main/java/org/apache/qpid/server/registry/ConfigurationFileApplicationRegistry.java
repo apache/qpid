@@ -21,71 +21,25 @@
 package org.apache.qpid.server.registry;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.management.ManagementConfiguration;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.AMQException;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
-        super(config(configurationURL));
-    }
-
-    // Our configuration class needs to make the interpolate method
-    // public so it can be called below from the config method.
-    private static class MyConfiguration extends CompositeConfiguration
-    {
-        public String interpolate(String obj)
-        {
-            return super.interpolate(obj);
-        }
-    }
-
-    private static final Configuration config(File url) throws ConfigurationException
-    {
-        // We have to override the interpolate methods so that
-        // interpolation takes place accross the entirety of the
-        // composite configuration. Without doing this each
-        // configuration object only interpolates variables defined
-        // inside itself.
-        final MyConfiguration conf = new MyConfiguration();
-        conf.addConfiguration(new SystemConfiguration()
-        {
-            protected String interpolate(String o)
-            {
-                return conf.interpolate(o);
-            }
-        });
-        conf.addConfiguration(new XMLConfiguration(url)
-        {
-            protected String interpolate(String o)
-            {
-                return conf.interpolate(o);
-            }
-        });
-        return conf;
+        super(new ServerConfiguration(configurationURL));
     }
 
     public void initialise() throws Exception
@@ -94,9 +48,9 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _virtualHostRegistry = new VirtualHostRegistry();
 
-        _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
+        _pluginManager = new PluginManager(_configuration.getPluginDirectory());
 
-        _accessManager = new ACLManager(_configuration, _pluginManager);
+        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
         
         _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
 
@@ -111,18 +65,17 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     }
 
     private void initialiseVirtualHosts() throws Exception
-    {
-        for (String name : getVirtualHostNames())
+    {        
+        for (String name : _configuration.getVirtualHosts())
         {
-
-            _virtualHostRegistry.registerVirtualHost(new VirtualHost(name, getConfiguration().subset("virtualhosts.virtualhost." + name)));
+            _virtualHostRegistry.registerVirtualHost(new VirtualHost(_configuration.getVirtualHostConfig(name)));
         }
+        getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
     }
 
     private void initialiseManagedObjectRegistry() throws AMQException
     {
-        ManagementConfiguration config = getConfiguredObject(ManagementConfiguration.class);
-        if (config.enabled)
+        if (_configuration.getManagementEnabled())
         {
             _managedObjectRegistry = new JMXManagedObjectRegistry();
         }
@@ -131,10 +84,4 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
             _managedObjectRegistry = new NoopManagedObjectRegistry();
         }
     }
-
-    public Collection<String> getVirtualHostNames()
-    {
-        return getConfiguration().getList("virtualhosts.virtualhost.name");
-    }
-
 }

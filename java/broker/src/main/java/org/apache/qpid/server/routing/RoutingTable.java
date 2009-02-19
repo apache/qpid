@@ -23,6 +23,7 @@ package org.apache.qpid.server.routing;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -41,7 +42,7 @@ public interface RoutingTable
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception;
+    void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
