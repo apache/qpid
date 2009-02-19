@@ -894,7 +894,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\qpid\sys\windows\PollableCondition.cpp"
+				RelativePath="qpid\sys\windows\PollableCondition.cpp"
 				>
 			</File>
 			<File

@@ -41,6 +41,7 @@ windows_dist = \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/Mutex.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/Socket.cpp \
