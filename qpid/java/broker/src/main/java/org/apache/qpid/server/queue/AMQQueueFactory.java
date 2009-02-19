@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.AMQException;
 
 
 public class AMQQueueFactory
@@ -33,25 +32,10 @@ public class AMQQueueFactory
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
 
     public static AMQQueue createAMQQueueImpl(AMQShortString name,
-            boolean durable,
-            AMQShortString owner,
-            boolean autoDelete,
-            VirtualHost virtualHost, final FieldTable arguments) 
-
-    throws AMQException
-    {
-
-        return createAMQQueueImpl(name, durable, owner, autoDelete, 
-                virtualHost, arguments, 
-                VirtualHostConfiguration.getDefaultQueueConfiguration(virtualHost));
-    }
-    
-    public static AMQQueue createAMQQueueImpl(AMQShortString name,
                                               boolean durable,
                                               AMQShortString owner,
                                               boolean autoDelete,
-                                              VirtualHost virtualHost, final FieldTable arguments, 
-                                              Configuration queueConfiguration)
+                                              VirtualHost virtualHost, final FieldTable arguments)
             throws AMQException
     {
 
@@ -66,13 +50,41 @@ public class AMQQueueFactory
         {
             q = new SimpleAMQQueue(name, durable, owner, autoDelete, virtualHost);
         }
-        if (q != null && queueConfiguration != null)
-        {
-            q.configure(queueConfiguration);
-        }
 
         //Register the new queue
         virtualHost.getQueueRegistry().registerQueue(q);
+        return q;
+    }
+
+    public static AMQQueue createAMQQueueImpl(QueueConfiguration config, VirtualHost host) throws AMQException
+    {
+        AMQShortString queueName = new AMQShortString(config.getName());
+
+        boolean durable = config.getDurable();
+        boolean autodelete = config.getAutoDelete();
+        AMQShortString owner = (config.getOwner() != null) ? new AMQShortString(config.getOwner()) : null;
+        FieldTable arguments = null;
+        boolean priority = config.getPriority();
+        int priorities = config.getPriorities();
+        if(priority || priorities > 0)
+        {
+            if(arguments == null)
+            {
+                arguments = new FieldTable();
+            }
+            if (priorities < 0)
+            {
+                priorities = 10;
+            }
+            arguments.put(new AMQShortString("x-qpid-priorities"), priorities);
+        }
+
+        AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);
+        q.setMaximumMessageAge(config.getMaximumMessageAge());
+        q.setMaximumQueueDepth(config.getMaximumQueueDepth());
+        q.setMaximumMessageSize(config.getMaximumMessageSize());
+        q.setMaximumMessageCount(config.getMaximumMessageCount());
+        q.setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
         return q;
     }
 }

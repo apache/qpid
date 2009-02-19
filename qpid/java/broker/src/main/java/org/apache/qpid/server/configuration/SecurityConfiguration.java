@@ -18,33 +18,24 @@
  *
  * 
  */
-package org.apache.qpid.server.security.auth.database;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.ServerConfiguration;
+package org.apache.qpid.server.configuration;
 
-import java.util.Map;
-import java.util.Properties;
-import java.util.HashMap;
+import org.apache.commons.configuration.Configuration;
 
-public class PropertiesPrincipalDatabaseManager implements PrincipalDatabaseManager
+public class SecurityConfiguration
 {
 
-    Map<String, PrincipalDatabase> _databases = new HashMap<String, PrincipalDatabase>();
+    private Configuration _conf;
 
-    public PropertiesPrincipalDatabaseManager(String name, Properties users)
+    public SecurityConfiguration(Configuration configuration)
     {
-        _databases.put(name, new PropertiesPrincipalDatabase(users));
+        _conf = configuration;
     }
 
-    public Map<String, PrincipalDatabase> getDatabases()
+    public Configuration getConfiguration()
     {
-        return _databases;
+        return _conf;
     }
 
-    @Override
-    public void initialiseManagement(ServerConfiguration _configuration) throws ConfigurationException
-    {
-        //todo
-    }
 }

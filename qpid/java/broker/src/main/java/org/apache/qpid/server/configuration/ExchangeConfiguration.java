@@ -18,13 +18,41 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.management;
+package org.apache.qpid.server.configuration;
 
-import org.apache.qpid.configuration.Configured;
+import org.apache.commons.configuration.Configuration;
 
-public class ManagementConfiguration
+
+public class ExchangeConfiguration
 {
-    @Configured(path = "management.enabled",
-                defaultValue = "true")
-    public boolean enabled;
+
+    private Configuration _config;
+    private String _name;
+
+    public ExchangeConfiguration(String exchName, Configuration subset)
+    {
+        _name = exchName;
+        _config = subset;
+    }
+
+    public String getName()
+    {
+        return _name;
+    }
+
+    public String getType()
+    {
+        return _config.getString("type","direct");
+    }
+
+    public boolean getDurable()
+    {
+        return _config.getBoolean("durable", false);
+    }
+
+    public boolean getAutoDelete()
+    {
+        return _config.getBoolean("autodelete",false);
+    }
+
 }
