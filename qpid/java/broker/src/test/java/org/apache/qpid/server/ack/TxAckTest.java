@@ -21,12 +21,15 @@
 package org.apache.qpid.server.ack;
 
 import junit.framework.TestCase;
+
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -121,8 +124,13 @@ public class TxAckTest extends TestCase
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>()
             );
-            _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false, new VirtualHost("test", new MemoryMessageStore()),
-			                                   null);
+
+            PropertiesConfiguration env = new PropertiesConfiguration();
+            env.setProperty("name", "test");
+            VirtualHost virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
+            
+            _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false,
+                    virtualHost, null);
 
             for (int i = 0; i < messageCount; i++)
             {

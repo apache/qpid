@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -142,7 +143,7 @@ public class DerbyMessageStore implements TransactionLog, RoutingTable
     private State _state = State.INITIAL;
 
 
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         //Only initialise when loaded with the old 'store' confing ignore the new 'RoutingTable' config
         if (base.equals("store"))
@@ -156,7 +157,7 @@ public class DerbyMessageStore implements TransactionLog, RoutingTable
             _logger.info("Configuring Derby message store for virtual host " + virtualHost.getName());
             QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
-            final String databasePath = config.getString(base + "." + ENVIRONMENT_PATH_PROPERTY, "derbyDB");
+            final String databasePath = config.getStoreConfiguration().getString(base + "." + ENVIRONMENT_PATH_PROPERTY, "derbyDB");
 
             File environmentPath = new File(databasePath);
             if (!environmentPath.exists())

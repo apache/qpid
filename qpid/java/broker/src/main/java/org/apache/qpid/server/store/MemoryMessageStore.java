@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -70,19 +71,19 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
-    public void configure(String base, Configuration config)
+    public void configure(String base, VirtualHostConfiguration config)
     {
         //Only initialise when called with current 'store' configs i.e. don't reinit when used as a 'RoutingTable'
         if (base.equals("store"))
         {
-            int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
+            int hashtableCapacity = config.getStoreConfiguration().getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
             _log.info("Using capacity " + hashtableCapacity + " for hash tables");
             _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
             _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
         }
     }
 
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         configure(base, config);
     }

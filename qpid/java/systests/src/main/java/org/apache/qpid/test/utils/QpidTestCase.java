@@ -290,7 +290,7 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public void startBroker(int port, ConfigurationFileApplicationRegistry config) throws Exception
+    public void startBroker(int port, ApplicationRegistry config) throws Exception
     {
         ApplicationRegistry.initialise(config, port);
         startBroker(port);

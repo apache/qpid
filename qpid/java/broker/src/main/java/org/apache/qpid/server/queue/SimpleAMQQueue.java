@@ -1,34 +1,34 @@
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionList;
-import org.apache.qpid.server.output.ProtocolOutputConverter;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.transactionlog.TransactionLog;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.pool.ReadWriteRunnable;
-import org.apache.qpid.pool.ReferenceCountingExecutorService;
-import org.apache.qpid.configuration.Configured;
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-
-import javax.management.JMException;
-import java.util.List;
-import java.util.Set;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.management.JMException;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.pool.ReadWriteRunnable;
+import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionList;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /*
 *
@@ -91,24 +91,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final AtomicLong _totalMessagesReceived = new AtomicLong();
 
     /** max allowed size(KB) of a single message */
-    @Configured(path = "maximumMessageSize", defaultValue = "0")
-    public long _maximumMessageSize;
+    public long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
 
     /** max allowed number of messages on a queue. */
-    @Configured(path = "maximumMessageCount", defaultValue = "0")
-    public long _maximumMessageCount;
+    public long _maximumMessageCount = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageCount();
 
     /** max queue depth for the queue */
-    @Configured(path = "maximumQueueDepth", defaultValue = "0")
-    public long _maximumQueueDepth;
+    public long _maximumQueueDepth = ApplicationRegistry.getInstance().getConfiguration().getMaximumQueueDepth();
 
     /** maximum message age before alerts occur */
-    @Configured(path = "maximumMessageAge", defaultValue = "0")
-    public long _maximumMessageAge;
+    public long _maximumMessageAge = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageAge();
 
-    /** the minimum interval between sending out consequetive alerts of the same type */
-    @Configured(path = "minimumAlertRepeatGap", defaultValue = "0")
-    public long _minimumAlertRepeatGap;
+    /** the minimum interval between sending out consecutive alerts of the same type */
+    public long _minimumAlertRepeatGap = ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap();
 
     private static final int MAX_ASYNC_DELIVERIES = 10;
 
@@ -167,7 +162,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
-    private void resetNotifications()
+    public void resetNotifications()
     {
         // This ensure that the notification checks for the configured alerts are created.
         setMaximumMessageAge(_maximumMessageAge);
@@ -1589,11 +1584,5 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             ids.add(it.getNode().getMessage().getMessageId());
         }
         return ids;
-    }
-
-    public void configure(Configuration queueConfiguration)
-    {
-        Configurator.configure(this, queueConfiguration);
-        resetNotifications();
     }
 }
