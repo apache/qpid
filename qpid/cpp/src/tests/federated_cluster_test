@@ -54,6 +54,7 @@ start_brokers() {
 }
 
 setup() {
+    export PYTHONPATH=$PYTHON_DIR
     #create exchange on both cluster and single broker
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add exchange direct test-exchange
     $PYTHON_DIR/commands/qpid-config -a "localhost:$NODE_1" add exchange direct test-exchange
