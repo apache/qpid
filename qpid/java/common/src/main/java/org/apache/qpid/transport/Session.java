@@ -384,7 +384,15 @@ public class Session extends SessionInvoker
         {
             copy = processed.copy();
         }
-        sessionCompleted(copy, options);
+
+        synchronized (commands)
+        {
+            if (state == DETACHED)
+            {
+                return;
+            }
+            sessionCompleted(copy, options);
+        }
     }
 
     void knownComplete(RangeSet kc)
@@ -484,6 +492,11 @@ public class Session extends SessionInvoker
 
             synchronized (commands)
             {
+                if (state == DETACHED && m.isUnreliable())
+                {
+                    return;
+                }
+
                 if (state != OPEN && state != CLOSED)
                 {
                     Waiter w = new Waiter(commands, timeout);
