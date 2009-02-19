@@ -1230,6 +1230,7 @@ class ManagedConnection(Thread):
 class Broker:
   """ This object represents a connection (or potential connection) to a QMF broker. """
   SYNC_TIME = 60
+  nextSeq = 1
 
   def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False):
     self.session  = session
@@ -1242,7 +1243,8 @@ class Broker:
     self.error = None
     self.brokerId = None
     self.connected = False
-    self.amqpSessionId = "%s.%d" % (os.uname()[1], os.getpid())
+    self.amqpSessionId = "%s.%d.%d" % (os.uname()[1], os.getpid(), Broker.nextSeq)
+    Broker.nextSeq += 1
     if self.session.manageConnections:
       self.thread = ManagedConnection(self)
       self.thread.start()
