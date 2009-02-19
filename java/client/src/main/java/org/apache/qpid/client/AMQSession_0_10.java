@@ -88,20 +88,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     // a ref on the qpid connection
     protected org.apache.qpid.transport.Connection _qpidConnection;
 
-    private TimerTask flushTask = new TimerTask()
-    {
-        public void run()
-        {
-            try
-            {
-                flushAcknowledgments();
-            }
-            catch (Throwable t)
-            {
-                _logger.error("error flushing acks", t);
-            }
-        }
-    };
+    private long maxAckDelay = Long.getLong("qpid.session.max_ack_delay", 1000);
+    private TimerTask flushTask = null;
     private RangeSet unacked = new RangeSet();
     private int unackedCount = 0;
 
@@ -138,7 +126,25 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         {
             _qpidSession.txSelect();
         }
-        timer.schedule(flushTask, new Date(), Long.getLong("qpid.session.max_ack_delay", 1000));
+
+        if (maxAckDelay > 0)
+        {
+            flushTask = new TimerTask()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        flushAcknowledgments();
+                    }
+                    catch (Throwable t)
+                    {
+                        _logger.error("error flushing acks", t);
+                    }
+                }
+            };
+            timer.schedule(flushTask, new Date(), maxAckDelay);
+        }
     }
 
     /**
@@ -222,7 +228,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
         long prefetch = getAMQConnection().getMaxPrefetch();
 
-        if (unackedCount >= prefetch/2)
+        if (unackedCount >= prefetch/2 || maxAckDelay <= 0)
         {
             flushAcknowledgments();
         }
@@ -296,7 +302,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
-        flushTask.cancel();
+        if (flushTask != null)
+        {
+            flushTask.cancel();
+        }
         flushAcknowledgments();
         getQpidSession().sync();
         getQpidSession().close();
