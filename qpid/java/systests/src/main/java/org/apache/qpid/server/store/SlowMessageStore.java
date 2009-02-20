@@ -158,13 +158,6 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
         doPostDelay("close");
     }
 
-    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
-    {
-        doPreDelay("removeMessage");
-        _realTransactionLog.removeMessage(storeContext, messageId);
-        doPostDelay("removeMessage");
-    }
-
     public void createExchange(Exchange exchange) throws AMQException
     {
         doPreDelay("createExchange");

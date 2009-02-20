@@ -263,6 +263,12 @@ public class ServerConfiguration
         return _config.getBoolean("management.enabled", true);
     }
 
+    public void setManagementEnabled(boolean enabled)
+    {
+        _config.setProperty("management.enabled", enabled);
+    }
+
+
     public int getHeartBeatDelay()
     {
         return _config.getInt("heartbeat.delay", 5);

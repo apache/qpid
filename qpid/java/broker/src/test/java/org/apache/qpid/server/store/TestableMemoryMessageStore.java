@@ -27,6 +27,7 @@ import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -72,7 +73,7 @@ public class TestableMemoryMessageStore implements TestTransactionLog, Transacti
         return _mms._messageEnqueueMap.get(messageId);
     }
 
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         _mms.configure(virtualHost,base,config);
     }
@@ -115,11 +116,6 @@ public class TestableMemoryMessageStore implements TestTransactionLog, Transacti
     public void removeQueue(AMQQueue queue) throws AMQException
     {
         _mms.removeQueue(queue);
-    }
-
-    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
-    {
-        _mms.removeMessage(storeContext, messageId);
     }
 
     public void enqueueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException

@@ -108,7 +108,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         }
     }
 
-    public void removeMessage(StoreContext context, Long messageId) throws AMQException
+    private void removeMessage(StoreContext context, Long messageId) throws AMQException
     {
         checkNotClosed();
         if (_log.isDebugEnabled())

@@ -160,6 +160,11 @@ public class NonTransactionalContext implements TransactionalContext
             QueueEntry queueEntry;
             queueEntry = unacknowledgedMessageMap.get(deliveryTag);
 
+            if (debug)
+            {
+                _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag);
+            }
+
             if (queueEntry == null)
             {
                 _log.info("Single ack on delivery tag " + deliveryTag + " not known for channel:" +
@@ -185,11 +190,6 @@ public class NonTransactionalContext implements TransactionalContext
             unacknowledgedMessageMap.remove(deliveryTag);
 
 
-            if (debug)
-            {
-                _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
-                           queueEntry.getMessage().getMessageId());
-            }
         }
         if(_inTran)
         {
