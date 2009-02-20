@@ -1357,7 +1357,7 @@ public class DerbyMessageStore implements TransactionLog, RoutingTable
 
                 if(message != null)
                 {
-                    message.incrementReference();
+                    message.incrementReference(1);
                 }
                 else
                 {

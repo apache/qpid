@@ -42,19 +42,19 @@ public class MessageFactory
         _messageId = new AtomicLong(0L);
     }
 
-    public void start()
+    public void recoveryComplete()
     {
         _state = State.OPEN;
     }
 
     /**
-     * Only used by test as test suite is run in a single VM we need to beable to re-enable recovery mode.
-     */    
-    protected void enableRecover()
+     * Only to be used by tests as this will cause violate the principal that message IDs should not be reused.
+     */
+    public void reset()
     {
         _state = State.RECOVER;
+        _messageId = new AtomicLong(0L);
     }
-
     
     /**
      * Normal message creation path

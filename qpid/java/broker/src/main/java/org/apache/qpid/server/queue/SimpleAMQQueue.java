@@ -918,7 +918,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 {
                     if (!entry.isDeleted())
                     {
-                        return entry.getMessage().incrementReference();
+                        return entry.getMessage().incrementReference(1);
                     }
                 }
 
@@ -1418,7 +1418,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    @Override
+    
     public void checkMessageStatus() throws AMQException
     {
 
