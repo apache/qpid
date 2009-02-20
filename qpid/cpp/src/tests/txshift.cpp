@@ -155,6 +155,7 @@ struct Worker : FailoverManager::Command, Runnable
         SubscriptionManager subs(session);
         transfer.subscribeToControl(subs);
         subs.run();
+        session.txCommit();//commit accept of control messages
     }
 };
 
