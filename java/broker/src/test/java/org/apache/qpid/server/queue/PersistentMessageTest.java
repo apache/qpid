@@ -28,11 +28,13 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -55,7 +57,9 @@ public class PersistentMessageTest extends TransientMessageTest
         _messageStore = new TestableMemoryMessageStore();
 
         _storeContext = new StoreContext();
-        VirtualHost vhost = new VirtualHost(PersistentMessageTest.class.getName(), _messageStore);
+        VirtualHost vhost = new VirtualHost(new VirtualHostConfiguration(PersistentMessageTest.class.getName(),
+                                                                         new PropertiesConfiguration()),
+                                            _messageStore);
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_q1name, false, _owner, false, vhost, null);
         // Create IncomingMessage and nondurable queue
         _messageDeliveryContext = new NonTransactionalContext(_messageStore, new StoreContext(), null, _returnMessages);

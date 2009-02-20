@@ -78,18 +78,6 @@ public interface TransactionLog
     void close() throws Exception;
 
     /**
-     * Removes the specified message from the store in the given transactional store context.
-     *
-     * @param storeContext The transactional context to remove the message in.
-     * @param messageId    Identifies the message to remove.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void removeMessage(StoreContext storeContext, Long messageId) throws AMQException;
-
-
-
-    /**
      * Places a message onto a specified queue, in a given transactional context.
      *
      * @param context   The transactional context for the operation.
