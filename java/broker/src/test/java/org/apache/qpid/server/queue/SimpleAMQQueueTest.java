@@ -296,7 +296,7 @@ public class SimpleAMQQueueTest extends TestCase
     public void testGetLastFiveMessageIds() throws Exception
     {
         AMQMessage message = createMessage();
-        Long messageIdOffset = message.getMessageId() -1 ;
+        Long messageIdOffset = message.getMessageId() - 1;
         for (int i = 0; i < 10; i++)
         {
             // Put message on queue
@@ -335,7 +335,6 @@ public class SimpleAMQQueueTest extends TestCase
         msg.enqueue(qs);
         msg.routingComplete(_store);
 
-
         _store.storeMessageMetaData(null, messageId, new MessageMetaData(info, contentHeaderBody, 1));
 
         // Check that it is enqueued
@@ -343,14 +342,13 @@ public class SimpleAMQQueueTest extends TestCase
         assertNotNull(data);
 
         // Dequeue message
-        MockQueueEntry entry = new MockQueueEntry();
 
         ContentHeaderBody header = new ContentHeaderBody();
         header.bodySize = MESSAGE_SIZE;
         AMQMessage message = new MockPersistentAMQMessage(msg.getMessageId(), _store);
         message.setPublishAndContentHeaderBody(new StoreContext(), info, header);
 
-        entry.setMessage(message);
+        MockQueueEntry entry = new MockQueueEntry(message);
         _queue.dequeue(null, entry);
 
         // Check that it is dequeued
@@ -408,9 +406,9 @@ public class SimpleAMQQueueTest extends TestCase
             _tag = getMessageId();
         }
 
-        public boolean incrementReference()
+        public boolean incrementReference(int count)
         {
-            _count++;
+            _count+=count;
             return true;
         }
 

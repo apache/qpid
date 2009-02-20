@@ -238,6 +238,13 @@ public class VirtualHost implements Accessable
                                          " does not.");
         }
         _transactionLog = (TransactionLog) o;
+
+        //Assign RoutingTable as old MessageStores converted to TransactionLog may require the _routingTable.
+        if (_transactionLog instanceof RoutingTable)
+        {
+            _routingTable = (RoutingTable)_transactionLog;
+        }
+
         _transactionLog.configure(this, "store", config);
     }
 
@@ -261,9 +268,9 @@ public class VirtualHost implements Accessable
         }
         else
         {
-            if (_transactionLog instanceof RoutingTable)
+            if (_routingTable == null)
             {
-                _routingTable = (RoutingTable)_transactionLog;
+                throw new RuntimeException("No Routing Table configured unable to startup.");
             }
         }
     }

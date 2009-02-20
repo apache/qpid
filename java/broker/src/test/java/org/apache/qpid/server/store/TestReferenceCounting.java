@@ -59,7 +59,7 @@ public class TestReferenceCounting extends TestCase
         AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
 
-        message = message.takeReference();
+        message.incrementReference(1);
 
         // we call routing complete to set up the handle
  //       message.routingComplete(_store, _storeContext, new MessageHandleFactory());
@@ -89,10 +89,10 @@ public class TestReferenceCounting extends TestCase
         AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
         
-        message = message.takeReference();
+        message.incrementReference(1);
 
         assertEquals(1, _store.getMessageMetaDataMap().size());
-        message = message.takeReference();
+        message.incrementReference(1);
         message.decrementReference(_storeContext);
         assertEquals(1, _store.getMessageMetaDataMap().size());
     }
