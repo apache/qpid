@@ -20,32 +20,12 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.queue.MessageMetaData;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.server.queue.AMQQueue;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 import java.util.List;
 
-/**
- * Adds some extra methods to the memory message store for testing purposes.
- */
-public class TestMemoryMessageStore extends MemoryMessageStore
+public interface TestTransactionLog
 {
-    public TestMemoryMessageStore()
-    {
-        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>();
-        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>();
-    }
-
-    public ConcurrentMap<Long, MessageMetaData> getMessageMetaDataMap()
-    {
-        return _metaDataMap;
-    }
-
-    public ConcurrentMap<Long, List<ContentChunk>> getContentBodyMap()
-    {
-        return _contentBodyMap;
-    }
+    public List<AMQQueue> getMessageReferenceMap(Long messageID);
 }

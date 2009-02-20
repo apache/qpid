@@ -144,7 +144,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             StoreContext storeContext = getChannel().getStoreContext();
             try
-            { // if we do not need to wait for client acknowledgements
+            {
+                // if we do not need to wait for client acknowledgements
                 // we can decrement the reference count immediately.
 
                 // By doing this _before_ the send we ensure that it
@@ -153,7 +154,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
                 // The send may of course still fail, in which case, as
                 // the message is unacked, it will be lost.
-                entry.dequeue(storeContext);
+                entry.dequeueAndDelete(storeContext);
 
 
                 synchronized (getChannel())
@@ -163,7 +164,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                     sendToClient(entry, deliveryTag);
 
                 }
-                entry.dispose(storeContext);
             }
             finally
             {
@@ -316,7 +316,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             _autoClose = false;
         }
 
-
+        _logger.info(debugIdentity()+" Created subscription:");
     }
 
 

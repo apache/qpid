@@ -172,11 +172,6 @@ public class TransientAMQMessage implements AMQMessage
         _expiration = expiration;
     }
 
-    public boolean isReferenced()
-    {
-        return _referenceCount.get() > 0;
-    }
-
     public Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel)
     {
         return new BodyFrameIterator(protocolSession, channel);
@@ -195,76 +190,6 @@ public class TransientAMQMessage implements AMQMessage
     public Long getMessageId()
     {
         return _messageId;
-    }
-
-    /* Threadsafe. Increment the reference count on the message. */
-    public boolean incrementReference(int count)
-    {
-        if (_referenceCount.addAndGet(count) <= 1)
-        {
-            int newcount = _referenceCount.addAndGet(-count);
-            _log.debug("Message(" + _messageId + ") Incremented Ref count by (" + count + ") to :" + newcount);
-            return false;
-        }
-        else
-        {
-            _log.debug("Message(" + _messageId + ") Incremented Ref count by (" + count + ") but count was <=1("
-                       + _referenceCount.get() + ")");
-            return true;
-        }
-
-    }
-
-    /**
-     * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
-     * message store.
-     *
-     * @param storeContext
-     *
-     * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
-     *                                 failed
-     */
-    public void decrementReference(StoreContext storeContext) throws MessageCleanupException
-    {
-
-        int count = _referenceCount.decrementAndGet();
-
-        _log.debug("Message(" + _messageId + ") Decremented Ref count to :" + count);
-
-        // note that the operation of decrementing the reference count and then removing the message does not
-        // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
-        // the message has been passed to all queues. i.e. we are
-        // not relying on the all the increments having taken place before the delivery manager decrements.
-        if (count == 0)
-        {
-            // set the reference count way below 0 so that we can detect that the message has been deleted
-            // this is to guard against the message being spontaneously recreated (from the mgmt console)
-            // by copying from other queues at the same time as it is being removed.
-            _referenceCount.set(Integer.MIN_VALUE / 2);
-
-            try
-            {
-                _log.debug("Reference Count hit 0, removing message");
-                // must check if the handle is null since there may be cases where we decide to throw away a message
-                // and the handle has not yet been constructed
-                // no need to perform persistent check anymore as TransientAMQM.removeMessage() is a no-op
-                removeMessage(storeContext);
-            }
-            catch (AMQException e)
-            {
-                // to maintain consistency, we revert the count
-                incrementReference(1);
-                throw new MessageCleanupException(getMessageId(), e);
-            }
-        }
-        else
-        {
-            if (count < 0)
-            {
-                throw new MessageCleanupException("Reference count for message id " + debugIdentity()
-                                                  + " has gone below 0.");
-            }
-        }
     }
 
     /**
@@ -433,11 +358,6 @@ public class TransientAMQMessage implements AMQMessage
     public long getArrivalTime()
     {
         return _arrivalTime;
-    }
-
-    public void removeMessage(StoreContext storeContext) throws AMQException
-    {
-        //no-op
     }
 
     public String toString()

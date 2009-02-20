@@ -282,13 +282,12 @@ public class QueueEntryImpl implements QueueEntry
             }
 
             getQueue().dequeue(storeContext, this);
-            if(_stateChangeListeners != null)
+
+            if (_stateChangeListeners != null)
             {
-                notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
+                notifyStateChange(state.getState(), QueueEntry.State.DEQUEUED);
             }
-
         }
-
     }
 
     private void notifyStateChange(final State oldState, final State newState)
@@ -299,29 +298,15 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void dispose(final StoreContext storeContext) throws MessageCleanupException
+    public void dequeueAndDelete(StoreContext storeContext) throws FailedDequeueException
     {
-        _log.info("QEI Disposing of message:" + getMessage().getMessageId() + ": state=" + _state);
-        if(delete())
-        {
-            _log.info("QEI delete message:" + getMessage().getMessageId());
-            getMessage().decrementReference(storeContext);
-        }
-        else
-        {
-            _log.info("QEI delete state wrong:" + getMessage().getMessageId());
-        }
-    }
-
-    public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
-    {
-        //if the queue is null then the message is waiting to be acked, but has been removed.
+        //if the queue is null (i.e. queue.delete()'d) then the message is waiting to be acked, but has already be delete()'d;
         if (getQueue() != null)
         {
             dequeue(storeContext);
         }
 
-        dispose(storeContext);
+        delete();
     }
 
     public boolean isQueueDeleted()

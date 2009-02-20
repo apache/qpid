@@ -49,7 +49,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
         public abstract State getState();
     }
 
-
     public final class AvailableState extends EntryState
     {
 
@@ -59,7 +58,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
         }
     }
 
-
     public final class DequeuedState extends EntryState
     {
 
@@ -68,7 +66,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
             return State.DEQUEUED;
         }
     }
-
 
     public final class DeletedState extends EntryState
     {
@@ -88,7 +85,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
         }
     }
 
-
     public final class NonSubscriptionAcquiredState extends EntryState
     {
         public State getState()
@@ -106,7 +102,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
             _subscription = subscription;
         }
 
-
         public State getState()
         {
             return State.ACQUIRED;
@@ -118,15 +113,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
         }
     }
 
-
     final static EntryState AVAILABLE_STATE = new AvailableState();
     final static EntryState DELETED_STATE = new DeletedState();
     final static EntryState DEQUEUED_STATE = new DequeuedState();
     final static EntryState EXPIRED_STATE = new ExpiredState();
     final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
-
-
-
 
     AMQQueue getQueue();
 
@@ -141,9 +132,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
     boolean isAcquired();
 
     boolean acquire();
+
     boolean acquire(Subscription sub);
 
     boolean delete();
+
     boolean isDeleted();
 
     boolean acquiredBySubscription();
@@ -170,12 +163,21 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     void dequeue(final StoreContext storeContext) throws FailedDequeueException;
 
-    void dispose(final StoreContext storeContext) throws MessageCleanupException;
-
-    void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException;
+    /**
+     * Message has been ack so dequeueAndDelete it.
+     * If the message is persistent and this is the last QueueEntry that uses it then the data will be removed
+     * from the transaciton log
+     *
+     * @param storeContext the transactional Context in which to perform the deletion
+     *
+     * @throws FailedDequeueException
+     * @throws MessageCleanupException
+     */
+    void dequeueAndDelete(StoreContext storeContext) throws FailedDequeueException;
 
     boolean isQueueDeleted();
 
     void addStateChangeListener(StateChangeListener listener);
+
     boolean removeStateChangeListener(StateChangeListener listener);
 }

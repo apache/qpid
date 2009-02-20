@@ -36,10 +36,12 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.TestTransactionLog;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -319,7 +321,7 @@ public class SimpleAMQQueueTest extends TestCase
     {
         // Create IncomingMessage and nondurable queue
         NonTransactionalContext txnContext = new NonTransactionalContext(_store, null, null, null);
-        IncomingMessage msg = new IncomingMessage(info, txnContext, null, _store);
+        IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_store), _store);
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.properties = new BasicContentHeaderProperties();
@@ -338,21 +340,22 @@ public class SimpleAMQQueueTest extends TestCase
         _store.storeMessageMetaData(null, messageId, new MessageMetaData(info, contentHeaderBody, 1));
 
         // Check that it is enqueued
-        AMQQueue data = _store.getMessages().get(messageId);
+        List<AMQQueue> data = _store.getMessageReferenceMap(messageId);
         assertNotNull(data);
 
         // Dequeue message
-
         ContentHeaderBody header = new ContentHeaderBody();
         header.bodySize = MESSAGE_SIZE;
         AMQMessage message = new MockPersistentAMQMessage(msg.getMessageId(), _store);
         message.setPublishAndContentHeaderBody(new StoreContext(), info, header);
 
-        MockQueueEntry entry = new MockQueueEntry(message);
-        _queue.dequeue(null, entry);
+        MockQueueEntry entry = new MockQueueEntry(message, _queue);
+        entry.getQueueEntryList().add(message);
+        entry.acquire();
+        entry.dequeue(null);
 
         // Check that it is dequeued
-        data = _store.getMessages().get(messageId);
+        data = _store.getMessageReferenceMap(messageId);
         assertNull(data);
     }
 
@@ -381,7 +384,7 @@ public class SimpleAMQQueueTest extends TestCase
 
     public AMQMessage createMessage() throws AMQException
     {
-        AMQMessage message = new TestMessage(info);
+        AMQMessage message = new TestMessage(info, _store);
 
         ContentHeaderBody header = new ContentHeaderBody();
         header.bodySize = MESSAGE_SIZE;
@@ -397,29 +400,21 @@ public class SimpleAMQQueueTest extends TestCase
     public class TestMessage extends TransientAMQMessage
     {
         private final long _tag;
-        private int _count;
+        private TestTransactionLog _transactionLog;
 
-        TestMessage(MessagePublishInfo publishBody)
+        TestMessage(MessagePublishInfo publishBody, TestTransactionLog transactionLog)
                 throws AMQException
         {
             super(SimpleAMQQueueTest.createMessage(publishBody));
             _tag = getMessageId();
+            _transactionLog = transactionLog;
         }
 
-        public boolean incrementReference(int count)
-        {
-            _count+=count;
-            return true;
-        }
-
-        public void decrementReference(StoreContext context)
-        {
-            _count--;
-        }
 
         void assertCountEquals(int expected)
         {
-            assertEquals("Wrong count for message with tag " + _tag, expected, _count);
+            assertEquals("Wrong count for message with tag " + _tag, expected,
+                         _transactionLog.getMessageReferenceMap(_messageId).size());
         }
     }
 

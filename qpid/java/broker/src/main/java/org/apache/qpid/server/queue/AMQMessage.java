@@ -114,17 +114,8 @@ public interface AMQMessage
             throws AMQException;
 
 
-    void removeMessage(StoreContext storeContext) throws AMQException;
 
     String toString();
 
     String debugIdentity();
-
-    // Reference counting methods
-
-    void decrementReference(StoreContext storeContext) throws MessageCleanupException;
-
-    boolean incrementReference(int queueCount);
-
-    boolean isReferenced();
 }
