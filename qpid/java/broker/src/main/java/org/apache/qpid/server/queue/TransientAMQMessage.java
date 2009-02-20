@@ -32,19 +32,17 @@ import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * A deliverable message.
- */
+/** A deliverable message. */
 public class TransientAMQMessage implements AMQMessage
 {
     /** Used for debugging purposes. */
-    private static final Logger _log = Logger.getLogger(AMQMessage.class);
+    protected static final Logger _log = Logger.getLogger(AMQMessage.class);
 
     private final AtomicInteger _referenceCount = new AtomicInteger(1);
 
@@ -57,8 +55,6 @@ public class TransientAMQMessage implements AMQMessage
     protected long _arrivalTime;
 
     protected final Long _messageId;
-
-
 
     /** Flag to indicate that this message requires 'immediate' delivery. */
 
@@ -143,23 +139,23 @@ public class TransientAMQMessage implements AMQMessage
     /**
      * Used by SimpleAMQQueueTest, TxAckTest.TestMessage, AbstractHeaderExchangeTestBase.Message
      * These all need refactoring to some sort of MockAMQMessageFactory.
-     */ 
+     */
     @Deprecated
     protected TransientAMQMessage(AMQMessage message) throws AMQException
     {
         _messageId = message.getMessageId();
-        _flags = ((TransientAMQMessage)message)._flags;
+        _flags = ((TransientAMQMessage) message)._flags;
         _contentHeaderBody = message.getContentHeaderBody();
         _messagePublishInfo = message.getMessagePublishInfo();
     }
 
-
     /**
      * Normal message creation via the MessageFactory uses this constructor
      * Package scope limited as MessageFactory should be used
-     * @see MessageFactory
      *
      * @param messageId
+     *
+     * @see MessageFactory
      */
     TransientAMQMessage(Long messageId)
     {
@@ -191,7 +187,6 @@ public class TransientAMQMessage implements AMQMessage
         return new BodyContentIterator();
     }
 
-
     public ContentHeaderBody getContentHeaderBody()
     {
         return _contentHeaderBody;
@@ -202,32 +197,19 @@ public class TransientAMQMessage implements AMQMessage
         return _messageId;
     }
 
-    /**
-     * Creates a long-lived reference to this message, and increments the count of such references, as an atomic
-     * operation.
-     */
-    public AMQMessage takeReference()
-    {
-        incrementReference(); // _referenceCount.incrementAndGet();
-
-        return this;
-    }
-
-    public boolean incrementReference()
-    {
-        return incrementReference(1);
-    }
-
     /* Threadsafe. Increment the reference count on the message. */
     public boolean incrementReference(int count)
     {
-        if(_referenceCount.addAndGet(count) <= 1)
+        if (_referenceCount.addAndGet(count) <= 1)
         {
-            _referenceCount.addAndGet(-count);
+            int newcount = _referenceCount.addAndGet(-count);
+            _log.debug("Message(" + _messageId + ") Incremented Ref count by (" + count + ") to :" + newcount);
             return false;
         }
         else
         {
+            _log.debug("Message(" + _messageId + ") Incremented Ref count by (" + count + ") but count was <=1("
+                       + _referenceCount.get() + ")");
             return true;
         }
 
@@ -247,6 +229,8 @@ public class TransientAMQMessage implements AMQMessage
 
         int count = _referenceCount.decrementAndGet();
 
+        _log.debug("Message(" + _messageId + ") Decremented Ref count to :" + count);
+
         // note that the operation of decrementing the reference count and then removing the message does not
         // have to be atomic since the ref count starts at 1 and the exchange itself decrements that after
         // the message has been passed to all queues. i.e. we are
@@ -256,10 +240,11 @@ public class TransientAMQMessage implements AMQMessage
             // set the reference count way below 0 so that we can detect that the message has been deleted
             // this is to guard against the message being spontaneously recreated (from the mgmt console)
             // by copying from other queues at the same time as it is being removed.
-            _referenceCount.set(Integer.MIN_VALUE/2);
+            _referenceCount.set(Integer.MIN_VALUE / 2);
 
             try
             {
+                _log.debug("Reference Count hit 0, removing message");
                 // must check if the handle is null since there may be cases where we decide to throw away a message
                 // and the handle has not yet been constructed
                 // no need to perform persistent check anymore as TransientAMQM.removeMessage() is a no-op
@@ -268,7 +253,7 @@ public class TransientAMQMessage implements AMQMessage
             catch (AMQException e)
             {
                 // to maintain consistency, we revert the count
-                incrementReference();
+                incrementReference(1);
                 throw new MessageCleanupException(getMessageId(), e);
             }
         }
@@ -281,7 +266,6 @@ public class TransientAMQMessage implements AMQMessage
             }
         }
     }
-
 
     /**
      * Called selectors to determin if the message has already been sent
@@ -296,10 +280,10 @@ public class TransientAMQMessage implements AMQMessage
     /**
      * Called to enforce the 'immediate' flag.
      *
-     * @returns  true if the message is marked for immediate delivery but has not been marked as delivered
-     *                              to a consumer
+     * @returns true if the message is marked for immediate delivery but has not been marked as delivered
+     * to a consumer
      */
-    public boolean immediateAndNotDelivered() 
+    public boolean immediateAndNotDelivered()
     {
 
         return (_flags & IMMEDIATE_AND_DELIVERED) == IMMEDIATE;
@@ -335,7 +319,6 @@ public class TransientAMQMessage implements AMQMessage
         _flags |= DELIVERED_TO_CONSUMER;
     }
 
-
     public long getSize()
     {
         return _contentHeaderBody.bodySize;
@@ -345,7 +328,7 @@ public class TransientAMQMessage implements AMQMessage
     {
         return _sessionIdentifier.getSessionInstance();
     }
-                                                                                          
+
     public Object getPublisherIdentifier()
     {
         return _sessionIdentifier.getSessionIdentifier();
@@ -356,7 +339,7 @@ public class TransientAMQMessage implements AMQMessage
         _sessionIdentifier = sessionIdentifier;
     }
 
-    /** From AMQMessageHandle **/
+    /** From AMQMessageHandle * */
 
     public int getBodyCount()
     {
@@ -365,7 +348,7 @@ public class TransientAMQMessage implements AMQMessage
 
     public ContentChunk getContentChunk(int index)
     {
-        if(_contentBodies == null)
+        if (_contentBodies == null)
         {
             throw new RuntimeException("No ContentBody has been set");
         }
@@ -381,9 +364,9 @@ public class TransientAMQMessage implements AMQMessage
     public void addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk, boolean isLastContentBody)
             throws AMQException
     {
-        if(_contentBodies == null)
+        if (_contentBodies == null)
         {
-            if(isLastContentBody)
+            if (isLastContentBody)
             {
                 _contentBodies = Collections.singletonList(contentChunk);
             }
@@ -411,9 +394,10 @@ public class TransientAMQMessage implements AMQMessage
 
     /**
      * This is called when all the content has been received.
+     *
      * @param storeContext
-     *@param messagePublishInfo
-     * @param contentHeaderBody @throws AMQException
+     * @param messagePublishInfo
+     * @param contentHeaderBody  @throws AMQException
      */
     public void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo,
                                                ContentHeaderBody contentHeaderBody)
@@ -425,7 +409,7 @@ public class TransientAMQMessage implements AMQMessage
             throw new NullPointerException("HeaderBody cannot be null");
         }
 
-        if( messagePublishInfo == null)
+        if (messagePublishInfo == null)
         {
             throw new NullPointerException("PublishInfo cannot be null");
         }
@@ -433,15 +417,14 @@ public class TransientAMQMessage implements AMQMessage
         _messagePublishInfo = messagePublishInfo;
         _contentHeaderBody = contentHeaderBody;
 
-
-        if( contentHeaderBody.bodySize == 0)
+        if (contentHeaderBody.bodySize == 0)
         {
             _contentBodies = Collections.EMPTY_LIST;
-        }       
+        }
 
         _arrivalTime = System.currentTimeMillis();
 
-        if(messagePublishInfo.isImmediate())
+        if (messagePublishInfo.isImmediate())
         {
             _flags |= IMMEDIATE;
         }
@@ -456,7 +439,6 @@ public class TransientAMQMessage implements AMQMessage
     {
         //no-op
     }
-
 
     public String toString()
     {

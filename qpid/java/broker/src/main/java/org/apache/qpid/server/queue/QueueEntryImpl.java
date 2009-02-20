@@ -301,9 +301,15 @@ public class QueueEntryImpl implements QueueEntry
 
     public void dispose(final StoreContext storeContext) throws MessageCleanupException
     {
+        _log.info("QEI Disposing of message:" + getMessage().getMessageId() + ": state=" + _state);
         if(delete())
         {
+            _log.info("QEI delete message:" + getMessage().getMessageId());
             getMessage().decrementReference(storeContext);
+        }
+        else
+        {
+            _log.info("QEI delete state wrong:" + getMessage().getMessageId());
         }
     }
 

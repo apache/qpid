@@ -20,193 +20,22 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.subscription.Subscription;
-
-public class MockQueueEntry implements QueueEntry
+public class MockQueueEntry extends QueueEntryImpl
 {
+    static SimpleQueueEntryList _defaultList = new SimpleQueueEntryList(new MockAMQQueue("MockQueueEntry_DefaultQueue"));
 
-    private AMQMessage _message;
-    private boolean _redelivered;
-
-    public boolean acquire()
+    public MockQueueEntry()
     {
-        return false;
+        super(_defaultList);
     }
 
-    public boolean acquire(Subscription sub)
+    public MockQueueEntry(SimpleQueueEntryList queueEntryList, AMQMessage message)
     {
-        return false;
+        super(queueEntryList, message);
     }
 
-    public boolean acquiredBySubscription()
+    public MockQueueEntry(AMQMessage message)
     {
-        return false;
-    }
-
-    public void addStateChangeListener(StateChangeListener listener)
-    {
-
-    }
-
-    public String debugIdentity()
-    {
-        return null;
-    }
-
-    public boolean delete()
-    {
-        return false;
-    }
-
-    public void dequeue(StoreContext storeContext) throws FailedDequeueException
-    {
-
-    }
-
-    public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
-    {
-
-    }
-
-    public void dispose(StoreContext storeContext) throws MessageCleanupException
-    {
-
-    }
-
-    public boolean expired() throws AMQException
-    {
-        return false;
-    }
-
-    public Subscription getDeliveredSubscription()
-    {
-        return null;
-    }
-
-    public boolean getDeliveredToConsumer()
-    {
-        return false;
-    }
-
-    public AMQMessage getMessage()
-    {
-        return _message;
-    }
-
-    public AMQQueue getQueue()
-    {
-        return null;
-    }
-
-    public long getSize()
-    {
-        return 0;
-    }
-
-    public boolean immediateAndNotDelivered()
-    {
-        return false;
-    }
-
-    public boolean isAcquired()
-    {
-        return false;
-    }
-
-    public boolean isDeleted()
-    {
-        return false;
-    }
-
-    
-    public boolean isQueueDeleted()
-    {
-
-        return false;
-    }
-
-    
-    public boolean isRejectedBy(Subscription subscription)
-    {
-
-        return false;
-    }
-
-    
-    public void reject()
-    {
-
-
-    }
-
-    
-    public void reject(Subscription subscription)
-    {
-
-
-    }
-
-    
-    public void release()
-    {
-
-
-    }
-
-    
-    public boolean removeStateChangeListener(StateChangeListener listener)
-    {
-
-        return false;
-    }
-
-    
-    public void requeue(StoreContext storeContext) throws AMQException
-    {
-
-
-    }
-
-    
-    public void setDeliveredToSubscription()
-    {
-
-
-    }
-
-    
-    public void setRedelivered(boolean redelivered)
-    {
-         _redelivered = redelivered;
-    }
-
-    
-    public int compareTo(QueueEntry o)
-    {
-
-        return 0;
-    }
-
-    public void setMessage(AMQMessage msg)
-    {
-        _message = msg;
-    }
-
-    public ContentHeaderBody getContentHeaderBody() throws AMQException
-    {
-        return _message.getContentHeaderBody();
-    }
-
-    public boolean isPersistent() throws AMQException
-    {
-        return _message.isPersistent();
-    }
-
-    public boolean isRedelivered()
-    {
-        return _redelivered;
+        super(_defaultList, message);
     }
 }

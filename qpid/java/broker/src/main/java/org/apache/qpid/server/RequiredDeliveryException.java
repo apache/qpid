@@ -61,7 +61,8 @@ public abstract class RequiredDeliveryException extends AMQException
         // and so will have the ref decremented as routing fails.
         // we need to keep this message around so we can return it in the
         // handler. So increment here.
-        _amqMessage = payload.takeReference();
+        payload.incrementReference(1);
+        _amqMessage = payload;
 
     }
 

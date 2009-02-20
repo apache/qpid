@@ -594,6 +594,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     protected void sendToClient(final QueueEntry entry, final long deliveryTag)
             throws AMQException
     {
+        _logger.info("Sending Message(" + entry + ") DTag:" + deliveryTag + " to subscription:" + debugIdentity());
         _deliveryMethod.deliverToClient(this,entry,deliveryTag);
     }
 

@@ -130,7 +130,7 @@ public class TxAck implements TxnOp
         //in memory (persistent changes will be rolled back by store)
         for (QueueEntry msg : _unacked.values())
         {
-            msg.getMessage().takeReference();
+            msg.getMessage().incrementReference(1);
         }
     }
 

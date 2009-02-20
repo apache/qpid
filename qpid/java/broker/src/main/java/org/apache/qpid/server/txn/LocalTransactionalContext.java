@@ -92,7 +92,7 @@ public class LocalTransactionalContext implements TransactionalContext
         public void process() throws AMQException
         {
 
-            _message.incrementReference();
+            _message.incrementReference(1);
             try
             {
                 QueueEntry entry = _queue.enqueue(getStoreContext(),_message);

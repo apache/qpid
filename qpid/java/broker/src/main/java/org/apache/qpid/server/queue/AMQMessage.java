@@ -126,9 +126,5 @@ public interface AMQMessage
 
     boolean incrementReference(int queueCount);
 
-    boolean incrementReference();
-
-    AMQMessage takeReference();
-
     boolean isReferenced();
 }

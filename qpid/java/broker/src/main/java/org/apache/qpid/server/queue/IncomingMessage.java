@@ -78,6 +78,10 @@ public class IncomingMessage implements Filterable<RuntimeException>
                            final AMQProtocolSession publisher,
                            TransactionLog messasgeStore)
     {
+        if (publisher == null)
+        {
+            throw new NullPointerException("Message Publisher cannot be null");
+        }
         _messagePublishInfo = info;
         _txnContext = txnContext;
         _publisher = publisher;
