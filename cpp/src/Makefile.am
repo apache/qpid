@@ -41,6 +41,7 @@ windows_dist = \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/Mutex.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/Socket.cpp \
@@ -139,7 +140,6 @@ posix_plat_hdr = \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Fork.h \
-  qpid/sys/posix/PollableCondition.h \
   qpid/sys/posix/IntegerTypes.h \
   qpid/sys/posix/Time.h
 
