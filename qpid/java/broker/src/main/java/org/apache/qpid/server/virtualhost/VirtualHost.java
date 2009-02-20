@@ -160,7 +160,11 @@ public class VirtualHost implements Accessable
         _connectionRegistry = new ConnectionRegistry(this);
 
         _houseKeepingTimer = new Timer("Queue-housekeeping-"+_name, true);
-        
+
+        _queueRegistry = new DefaultQueueRegistry(this);
+        _exchangeFactory = new DefaultExchangeFactory(this);
+        _exchangeRegistry = new DefaultExchangeRegistry(this);
+
         if (transactionLog != null)
         {
             _transactionLog = transactionLog;
@@ -175,10 +179,7 @@ public class VirtualHost implements Accessable
             initialiseRoutingTable(hostConfig);
         }
 
-        _queueRegistry = new DefaultQueueRegistry(this);
-        _exchangeFactory = new DefaultExchangeFactory(this);
         _exchangeFactory.initialise(hostConfig);
-        _exchangeRegistry = new DefaultExchangeRegistry(this);
         _exchangeRegistry.initialise();
 
         initialiseModel(hostConfig);
