@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -37,9 +38,10 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.TransientAMQMessage;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.TestTransactionLog;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 
@@ -81,20 +83,6 @@ public class TxAckTest extends TestCase
     	combined.stop();
     }
 
-    public void testPrepare() throws AMQException
-    {
-        individual.prepare();
-        multiple.prepare();
-        combined.prepare();
-    }
-
-    public void testUndoPrepare() throws AMQException
-    {
-        individual.undoPrepare();
-        multiple.undoPrepare();
-        combined.undoPrepare();
-    }
-
     public void testCommit() throws AMQException
     {
         individual.commit();
@@ -115,12 +103,13 @@ public class TxAckTest extends TestCase
         private final List<Long> _unacked;
         private StoreContext _storeContext = new StoreContext();
 		private AMQQueue _queue;
+        private TransactionLog _transactionLog = new TestableMemoryMessageStore();
 
         private static final int MESSAGE_SIZE=100;
 
         Scenario(int messageCount, List<Long> acked, List<Long> unacked) throws Exception
         {
-            TransactionalContext txnContext = new NonTransactionalContext(new TestMemoryMessageStore(),
+            TransactionalContext txnContext = new NonTransactionalContext(_transactionLog,
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>()
             );
@@ -138,11 +127,14 @@ public class TxAckTest extends TestCase
 
                 MessagePublishInfo info = new MessagePublishInfoImpl();
 
-                AMQMessage message = new TestMessage(deliveryTag, info);
+                AMQMessage message = new TestMessage(deliveryTag, info, (TestTransactionLog) _transactionLog);
 
                 ContentHeaderBody header = new ContentHeaderBody();
                 header.bodySize = MESSAGE_SIZE;
                 message.setPublishAndContentHeaderBody(_storeContext, info, header);
+
+
+
 
                 _map.add(deliveryTag, _queue.enqueue(new StoreContext(), message));
             }
@@ -163,25 +155,6 @@ public class TxAckTest extends TestCase
                 assertTrue("Message not found for tag " + tag, u != null);
                 ((TestMessage) u.getMessage()).assertCountEquals(expected);
             }
-        }
-
-        void prepare() throws AMQException
-        {
-            _op.consolidate();
-            _op.prepare(_storeContext);
-
-            assertCount(_acked, -1);
-            assertCount(_unacked, 0);
-
-        }
-
-        void undoPrepare()
-        {
-            _op.consolidate();
-            _op.undoPrepare();
-
-            assertCount(_acked, 1);
-            assertCount(_unacked, 0);
         }
 
         void commit()
@@ -232,30 +205,22 @@ public class TxAckTest extends TestCase
     private class TestMessage extends TransientAMQMessage
     {
         private final long _tag;
-        private int _count;
+        private TestTransactionLog _transactionLog;
 
-        TestMessage(long tag, MessagePublishInfo publishBody)
+        public TestMessage(long tag, MessagePublishInfo publishBody, TestTransactionLog transactionLog)
                 throws AMQException
         {
             super(createMessage( publishBody));
             _tag = tag;
+            _transactionLog = transactionLog;
         }
 
-
-        public boolean incrementReference(int count)
-        {
-            _count+=count;
-            return true;
-        }
-
-        public void decrementReference(StoreContext context)
-        {
-            _count--;
-        }
 
         void assertCountEquals(int expected)
         {
-            assertEquals("Wrong count for message with tag " + _tag, expected, _count);
+            List<AMQQueue> list = _transactionLog.getMessageReferenceMap(_messageId);
+            int actual = (list == null ? 0 : list.size());
+            assertEquals("Wrong count for message with tag " + _tag, expected, actual);
         }
     }
 }

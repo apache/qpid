@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.ack;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -116,22 +115,20 @@ public class TxAck implements TxnOp
         //make persistent changes, i.e. dequeue and decrementReference
         for (QueueEntry msg : _unacked.values())
         {
-            //Message has been ack so discard it. This will dequeue and decrement the reference.
-            msg.discard(storeContext);
-
+            //Message has been ack so dequeueAndDelete it.
+            // If the message is persistent and this is the last QueueEntry that uses it then the data will be removed
+            // from the transaciton log
+            msg.dequeueAndDelete(storeContext);
         }
     }
 
     public void undoPrepare()
     {
-        //decrementReference is annoyingly untransactional (due to
-        //in memory counter) so if we failed in prepare for full
-        //txn, this op will have to compensate by fixing the count
-        //in memory (persistent changes will be rolled back by store)
-        for (QueueEntry msg : _unacked.values())
-        {
-            msg.getMessage().incrementReference(1);
-        }
+        //As this is transaction the above dequeueAndDelete will only request the message be dequeue from the
+        // transactionLog. Only when the transaction succesfully completes will it perform any
+        // update of the internal transactionLog reference counting and any resulting message data deletion.
+        // The success or failure of the data deletion is not important to this transaction only that the ack has been
+        // successfully recorded.
     }
 
     public void commit(StoreContext storeContext)

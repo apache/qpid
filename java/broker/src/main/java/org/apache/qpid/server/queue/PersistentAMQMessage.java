@@ -58,13 +58,6 @@ public class PersistentAMQMessage extends TransientAMQMessage
     }
 
     @Override
-    public void removeMessage(StoreContext storeContext) throws AMQException
-    {
-        _log.info("PAMQM : removing message:" + _messageId);
-        _transactionLog.removeMessage(storeContext, _messageId);
-    }
-
-    @Override
     public boolean isPersistent()
     {
         return true;

@@ -156,8 +156,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
             _logger.debug("Delivering message " + getMessageId() + " to " + _destinationQueues);
         }
 
-        try
-        {
+
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
             _message.setPublishAndContentHeaderBody(_txnContext.getStoreContext(), _messagePublishInfo, getContentHeaderBody());
@@ -196,7 +195,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
             {
                 int offset;
                 final int queueCount = _destinationQueues.size();
-                _message.incrementReference(queueCount);
                 if(queueCount == 1)
                 {
                     offset = 0;
@@ -222,12 +220,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
             }
 
             return _message;
-        }
-        finally
-        {
-            // Remove refence for routing process . Reference count should now == delivered queue count
-            if(_message != null) _message.decrementReference(_txnContext.getStoreContext());
-        }
+      
+
 
     }
 

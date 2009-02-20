@@ -324,7 +324,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
+                public void dequeueAndDelete(StoreContext storeContext) throws FailedDequeueException
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
