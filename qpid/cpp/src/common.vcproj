@@ -1,25 +1,4 @@
 <?xml version="1.0" encoding="Windows-1252"?>
-<!--
-
- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
-
--->
-
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
@@ -27,7 +6,7 @@
 	ProjectGUID="{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}"
 	RootNamespace="common"
 	Keyword="Win32Proj"
-	SignManifests="true"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -46,7 +25,6 @@
 			IntermediateDirectory="Static_Debug\common\I386"
 			ConfigurationType="4"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -73,7 +51,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -116,84 +94,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="."
-			IntermediateDirectory="Static_Release\common\I386"
-			ConfigurationType="4"
-			CharacterSet="0"
-
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				AdditionalOptions=""
-				AdditionalIncludeDirectories=""
-				TypeLibraryName="$(InputName).tlb"
-				HeaderFileName="$(InputName).h"
-				InterfaceIdentifierFileName="$(InputName)_i.c"
-				ProxyFileName="$(InputName)_p.c"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
-				RuntimeTypeInfo="true"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800;4355"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\qpidcommons.lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="."
 			IntermediateDirectory="Static_Debug\common\AMD64"
 			ConfigurationType="4"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -220,7 +125,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -263,12 +168,11 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|x64"
+			Name="Release|Win32"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Release\common\AMD64"
+			IntermediateDirectory="Static_Release\common\I386"
 			ConfigurationType="4"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -295,7 +199,78 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				RuntimeLibrary="0"
+				RuntimeTypeInfo="true"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="false"
+				DisableSpecificWarnings="4244;4800;4355"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile=".\qpidcommons.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="."
+			IntermediateDirectory="Static_Release\common\AMD64"
+			ConfigurationType="4"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				AdditionalOptions=""
+				AdditionalIncludeDirectories=""
+				TypeLibraryName="$(InputName).tlb"
+				HeaderFileName="$(InputName).h"
+				InterfaceIdentifierFileName="$(InputName)_i.c"
+				ProxyFileName="$(InputName)_p.c"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -340,1534 +315,2048 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;cxx;cc;C;c">
+			Filter="cpp;cxx;cc;C;c"
+			>
 			<File
-				RelativePath="gen\qpid\framing\AllInvoker.cpp">
+				RelativePath="qpid\framing\AccumulatedAck.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_AllProxy.cpp">
+				RelativePath="qpid\Address.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_ClientProxy.cpp">
+				RelativePath="qpid\sys\AggregateOutput.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_ServerProxy.cpp">
+				RelativePath="gen\qpid\framing\AllInvoker.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClientInvoker.cpp">
+				RelativePath="qpid\framing\AMQBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConfigChangeBody.cpp">
+				RelativePath="qpid\framing\AMQContentBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionAccumulatedAckBody.cpp">
+				RelativePath="qpid\framing\AMQFrame.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionConsumerStateBody.cpp">
+				RelativePath="qpid\framing\AMQHeaderBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionDeliverCloseBody.cpp">
+				RelativePath="qpid\framing\AMQHeartbeatBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionDeliverDoOutputBody.cpp">
+				RelativePath="qpid\framing\AMQMethodBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionDeliveryRecordBody.cpp">
+				RelativePath="gen\qpid\framing\AMQP_AllProxy.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.cpp">
+				RelativePath="gen\qpid\framing\AMQP_ClientProxy.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.cpp">
+				RelativePath="qpid\framing\AMQP_HighestVersion.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionQueueBody.cpp">
+				RelativePath="gen\qpid\framing\AMQP_ServerProxy.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionQueuePositionBody.cpp">
+				RelativePath="qpid\framing\Array.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionSessionStateBody.cpp">
+				RelativePath="qpid\assert.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionShadowReadyBody.cpp">
+				RelativePath="qpid\assert.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxAcceptBody.cpp">
+				RelativePath="qpid\sys\windows\AsynchIO.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxDequeueBody.cpp">
+				RelativePath="qpid\sys\AsynchIOHandler.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxEndBody.cpp">
+				RelativePath="qpid\framing\BodyHandler.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxEnqueueBody.cpp">
+				RelativePath="qpid\framing\Buffer.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxPublishBody.cpp">
+				RelativePath="gen\qpid\framing\ClientInvoker.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConfigChangeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionAccumulatedAckBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterReadyBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionConsumerStateBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterShutdownBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverCloseBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterUpdateOfferBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverDoOutputBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterUpdateRequestBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliveryRecordBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionCloseBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionCloseOkBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionHeartbeatBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionQueueBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionOpenBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionQueuePositionBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionOpenOkBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionSessionStateBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionRedirectBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionShadowReadyBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionSecureBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxAcceptBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionSecureOkBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxDequeueBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionStartBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEndBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionStartOkBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEnqueueBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionTuneBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxPublishBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionTuneOkBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DeliveryProperties.cpp">
+				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxCommitBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterReadyBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxEndBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterShutdownBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxForgetBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterUpdateOfferBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxGetTimeoutBody.cpp">
+				RelativePath="gen\qpid\framing\ClusterUpdateRequestBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxGetTimeoutResult.cpp">
+				RelativePath="gen\qpid\framing\ConnectionCloseBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxPrepareBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionCloseOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxRecoverBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionHeartbeatBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxRecoverResult.cpp">
+				RelativePath="gen\qpid\framing\ConnectionOpenBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxRollbackBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionOpenOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxSelectBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionRedirectBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxSetTimeoutBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionSecureBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxStartBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionSecureOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeBindBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionStartBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeBoundBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionStartOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeBoundResult.cpp">
+				RelativePath="gen\qpid\framing\ConnectionTuneBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeDeclareBody.cpp">
+				RelativePath="gen\qpid\framing\ConnectionTuneOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeDeleteBody.cpp">
+				RelativePath="qpid\DataDir.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeQueryBody.cpp">
+				RelativePath="gen\qpid\framing\DeliveryProperties.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeQueryResult.cpp">
+				RelativePath="qpid\sys\Dispatcher.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeUnbindBody.cpp">
+				RelativePath="gen\qpid\framing\DtxCommitBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExecutionExceptionBody.cpp">
+				RelativePath="gen\qpid\framing\DtxEndBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExecutionResultBody.cpp">
+				RelativePath="gen\qpid\framing\DtxForgetBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExecutionSyncBody.cpp">
+				RelativePath="gen\qpid\framing\DtxGetTimeoutBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileAckBody.cpp">
+				RelativePath="gen\qpid\framing\DtxGetTimeoutResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileCancelBody.cpp">
+				RelativePath="gen\qpid\framing\DtxPrepareBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileConsumeBody.cpp">
+				RelativePath="gen\qpid\framing\DtxRecoverBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileConsumeOkBody.cpp">
+				RelativePath="gen\qpid\framing\DtxRecoverResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileDeliverBody.cpp">
+				RelativePath="gen\qpid\framing\DtxRollbackBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileOpenBody.cpp">
+				RelativePath="gen\qpid\framing\DtxSelectBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileOpenOkBody.cpp">
+				RelativePath="gen\qpid\framing\DtxSetTimeoutBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileProperties.cpp">
+				RelativePath="gen\qpid\framing\DtxStartBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FilePublishBody.cpp">
+				RelativePath="qpid\framing\Endian.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileQosBody.cpp">
+				RelativePath="qpid\Exception.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileQosOkBody.cpp">
+				RelativePath="gen\qpid\framing\ExchangeBindBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileRejectBody.cpp">
+				RelativePath="gen\qpid\framing\ExchangeBoundBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileReturnBody.cpp">
+				RelativePath="gen\qpid\framing\ExchangeBoundResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileStageBody.cpp">
+				RelativePath="gen\qpid\framing\ExchangeDeclareBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FragmentProperties.cpp">
+				RelativePath="gen\qpid\framing\ExchangeDeleteBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\Header.cpp">
+				RelativePath="gen\qpid\framing\ExchangeQueryBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageAcceptBody.cpp">
+				RelativePath="gen\qpid\framing\ExchangeQueryResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageAcquireBody.cpp">
+				RelativePath="gen\qpid\framing\ExchangeUnbindBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageAcquireResult.cpp">
+				RelativePath="gen\qpid\framing\ExecutionExceptionBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageCancelBody.cpp">
+				RelativePath="gen\qpid\framing\ExecutionResultBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageFlowBody.cpp">
+				RelativePath="gen\qpid\framing\ExecutionSyncBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageFlushBody.cpp">
+				RelativePath="qpid\framing\FieldTable.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageProperties.cpp">
+				RelativePath="qpid\framing\FieldValue.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageRejectBody.cpp">
+				RelativePath="gen\qpid\framing\FileAckBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageReleaseBody.cpp">
+				RelativePath="gen\qpid\framing\FileCancelBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageResumeBody.cpp">
+				RelativePath="gen\qpid\framing\FileConsumeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageResumeResult.cpp">
+				RelativePath="gen\qpid\framing\FileConsumeOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageSetFlowModeBody.cpp">
+				RelativePath="gen\qpid\framing\FileDeliverBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageStopBody.cpp">
+				RelativePath="gen\qpid\framing\FileOpenBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageSubscribeBody.cpp">
+				RelativePath="gen\qpid\framing\FileOpenOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageTransferBody.cpp">
+				RelativePath="gen\qpid\framing\FileProperties.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MethodBodyDefaultVisitor.cpp">
+				RelativePath="gen\qpid\framing\FilePublishBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MethodBodyFactory.cpp">
+				RelativePath="gen\qpid\framing\FileQosBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueDeclareBody.cpp">
+				RelativePath="gen\qpid\framing\FileQosOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueDeleteBody.cpp">
+				RelativePath="gen\qpid\framing\FileRejectBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueuePurgeBody.cpp">
+				RelativePath="gen\qpid\framing\FileReturnBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueQueryBody.cpp">
+				RelativePath="gen\qpid\framing\FileStageBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueQueryResult.cpp">
+				RelativePath="qpid\sys\windows\FileSysDir.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\reply_exceptions.cpp">
+				RelativePath="gen\qpid\framing\FragmentProperties.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ReplyTo.cpp">
+				RelativePath="qpid\framing\FrameDecoder.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ServerInvoker.cpp">
+				RelativePath="qpid\framing\FrameSet.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionAttachBody.cpp">
+				RelativePath="gen\qpid\framing\Header.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionAttachedBody.cpp">
+				RelativePath="qpid\sys\windows\IocpPoller.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionCommandPointBody.cpp">
+				RelativePath="qpid\sys\windows\IOHandle.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionCompletedBody.cpp">
+				RelativePath="qpid\sys\LatencyMetric.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionConfirmedBody.cpp">
+				RelativePath="qpid\sys\windows\LockFile.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionDetachBody.cpp">
+				RelativePath="qpid\log\Logger.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionDetachedBody.cpp">
+				RelativePath="qpid\management\Manageable.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionExpectedBody.cpp">
+				RelativePath="qpid\management\ManagementObject.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionFlushBody.cpp">
+				RelativePath="gen\qpid\framing\MessageAcceptBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionGapBody.cpp">
+				RelativePath="gen\qpid\framing\MessageAcquireBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionKnownCompletedBody.cpp">
+				RelativePath="gen\qpid\framing\MessageAcquireResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionRequestTimeoutBody.cpp">
+				RelativePath="gen\qpid\framing\MessageCancelBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionTimeoutBody.cpp">
+				RelativePath="gen\qpid\framing\MessageFlowBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamCancelBody.cpp">
+				RelativePath="gen\qpid\framing\MessageFlushBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamConsumeBody.cpp">
+				RelativePath="gen\qpid\framing\MessageProperties.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamConsumeOkBody.cpp">
+				RelativePath="gen\qpid\framing\MessageRejectBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamDeliverBody.cpp">
+				RelativePath="gen\qpid\framing\MessageReleaseBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamProperties.cpp">
+				RelativePath="gen\qpid\framing\MessageResumeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamPublishBody.cpp">
+				RelativePath="gen\qpid\framing\MessageResumeResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamQosBody.cpp">
+				RelativePath="gen\qpid\framing\MessageSetFlowModeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamQosOkBody.cpp">
+				RelativePath="gen\qpid\framing\MessageStopBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamReturnBody.cpp">
+				RelativePath="gen\qpid\framing\MessageSubscribeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TxCommitBody.cpp">
+				RelativePath="gen\qpid\framing\MessageTransferBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TxRollbackBody.cpp">
+				RelativePath="gen\qpid\framing\MethodBodyDefaultVisitor.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TxSelectBody.cpp">
+				RelativePath="gen\qpid\framing\MethodBodyFactory.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TypeCode.cpp">
+				RelativePath="qpid\Modules.cpp"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\XaResult.cpp">
+				RelativePath="qpid\Options.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\Xid.cpp">
+				RelativePath="qpid\log\Options.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Address.cpp">
+				RelativePath="qpid\log\OstreamOutput.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\amqp_0_10\SessionHandler.cpp">
+				RelativePath="qpid\Plugin.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\amqp_0_10\SessionHandler.h">
+				RelativePath="qpid\pointer_to_other.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\assert.cpp">
+				RelativePath="qpid\sys\windows\PollableCondition.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\assert.h">
+				RelativePath="qpid\framing\ProtocolInitiation.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\DataDir.cpp">
+				RelativePath="qpid\framing\ProtocolVersion.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Exception.cpp">
+				RelativePath="qpid\framing\Proxy.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AccumulatedAck.cpp">
+				RelativePath="gen\qpid\framing\QueueDeclareBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQBody.cpp">
+				RelativePath="gen\qpid\framing\QueueDeleteBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQContentBody.cpp">
+				RelativePath="gen\qpid\framing\QueuePurgeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQFrame.cpp">
+				RelativePath="gen\qpid\framing\QueueQueryBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQHeaderBody.cpp">
+				RelativePath="gen\qpid\framing\QueueQueryResult.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQHeartbeatBody.cpp">
+				RelativePath="qpid\RefCountedBuffer.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQMethodBody.cpp">
+				RelativePath="qpid\RefCountedBuffer.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQP_HighestVersion.h">
+				RelativePath="gen\qpid\framing\reply_exceptions.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Array.cpp">
+				RelativePath="gen\qpid\framing\ReplyTo.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\BodyHandler.cpp">
+				RelativePath="qpid\sys\Runnable.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Buffer.cpp">
+				RelativePath="qpid\log\Selector.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Endian.cpp">
+				RelativePath="qpid\framing\SendContent.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FieldTable.cpp">
+				RelativePath="qpid\framing\SequenceNumber.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FieldValue.cpp">
+				RelativePath="qpid\framing\SequenceNumberSet.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FrameDecoder.cpp">
+				RelativePath="qpid\framing\SequenceSet.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FrameSet.cpp">
+				RelativePath="qpid\Serializer.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\ProtocolInitiation.cpp">
+				RelativePath="gen\qpid\framing\ServerInvoker.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\ProtocolVersion.cpp">
+				RelativePath="gen\qpid\framing\SessionAttachBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Proxy.cpp">
+				RelativePath="gen\qpid\framing\SessionAttachedBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SendContent.cpp">
+				RelativePath="gen\qpid\framing\SessionCommandPointBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SequenceNumber.cpp">
+				RelativePath="gen\qpid\framing\SessionCompletedBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SequenceNumberSet.cpp">
+				RelativePath="gen\qpid\framing\SessionConfirmedBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SequenceSet.cpp">
+				RelativePath="gen\qpid\framing\SessionDetachBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\TransferContent.cpp">
+				RelativePath="gen\qpid\framing\SessionDetachedBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Uuid.cpp">
+				RelativePath="gen\qpid\framing\SessionExpectedBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Logger.cpp">
+				RelativePath="gen\qpid\framing\SessionFlushBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Options.cpp">
+				RelativePath="gen\qpid\framing\SessionGapBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\OstreamOutput.cpp">
+				RelativePath="qpid\amqp_0_10\SessionHandler.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Selector.cpp">
+				RelativePath="qpid\amqp_0_10\SessionHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Statement.cpp">
+				RelativePath="qpid\SessionId.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\windows\SinkOptions.cpp">
+				RelativePath="gen\qpid\framing\SessionKnownCompletedBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\management\Manageable.cpp">
+				RelativePath="gen\qpid\framing\SessionRequestTimeoutBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\management\ManagementObject.cpp">
+				RelativePath="qpid\SessionState.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Modules.cpp">
+				RelativePath="qpid\SessionState.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Options.cpp">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
+				RelativePath="gen\qpid\framing\SessionTimeoutBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Plugin.cpp">
+				RelativePath="qpid\sys\windows\Shlib.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="qpid\pointer_to_other.h">
+				RelativePath="qpid\sys\Shlib.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\RefCountedBuffer.cpp">
+				RelativePath="qpid\log\windows\SinkOptions.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\RefCountedBuffer.h">
+				RelativePath="qpid\sys\windows\Socket.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Serializer.h">
+				RelativePath="qpid\log\Statement.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\SessionId.cpp">
+				RelativePath="gen\qpid\framing\StreamCancelBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\SessionState.cpp">
+				RelativePath="gen\qpid\framing\StreamConsumeBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\SessionState.h">
+				RelativePath="gen\qpid\framing\StreamConsumeOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\StringUtils.cpp">
+				RelativePath="gen\qpid\framing\StreamDeliverBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AggregateOutput.cpp">
+				RelativePath="gen\qpid\framing\StreamProperties.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AsynchIOHandler.cpp">
+				RelativePath="gen\qpid\framing\StreamPublishBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Dispatcher.cpp">
+				RelativePath="gen\qpid\framing\StreamQosBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\LatencyMetric.cpp">
+				RelativePath="gen\qpid\framing\StreamQosOkBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Runnable.cpp">
+				RelativePath="gen\qpid\framing\StreamReturnBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Shlib.cpp">
+				RelativePath="qpid\sys\windows\StrError.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Timer.cpp">
+				RelativePath="qpid\StringUtils.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\AsynchIO.cpp">
+				RelativePath="qpid\sys\windows\SystemInfo.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\FileSysDir.cpp">
+				RelativePath="qpid\sys\windows\Thread.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\IocpPoller.cpp">
+				RelativePath="qpid\sys\windows\Time.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\IOHandle.cpp">
+				RelativePath="qpid\sys\Timer.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\LockFile.cpp">
+				RelativePath="qpid\framing\TransferContent.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Shlib.cpp">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
+				RelativePath="gen\qpid\framing\TxCommitBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Socket.cpp">
+				RelativePath="gen\qpid\framing\TxRollbackBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\StrError.cpp">
+				RelativePath="gen\qpid\framing\TxSelectBody.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\SystemInfo.cpp">
+				RelativePath="gen\qpid\framing\TypeCode.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Thread.cpp">
+				RelativePath="qpid\Url.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Time.cpp">
+				RelativePath="qpid\sys\windows\uuid.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)2.obj"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\uuid.cpp">
-					<FileConfiguration
-						Name="Debug|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|x64">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|x64">
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\$(InputName)2.obj"/>
-					</FileConfiguration>
+				RelativePath="qpid\framing\Uuid.cpp"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Url.cpp">
+				RelativePath="gen\qpid\framing\XaResult.cpp"
+				>
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\Xid.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
-			Filter="h;hpp;hxx;hh">
+			Filter="h;hpp;hxx;hh"
+			>
 			<File
-				RelativePath="gen\qpid\framing\all_method_bodies.h">
+				RelativePath="qpid\framing\AccumulatedAck.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AllInvoker.h">
+				RelativePath="qpid\Address.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_AllOperations.h">
+				RelativePath="qpid\sys\AggregateOutput.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_AllProxy.h">
+				RelativePath="gen\qpid\framing\all_method_bodies.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_ClientOperations.h">
+				RelativePath="gen\qpid\framing\AllInvoker.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_ClientProxy.h">
+				RelativePath="qpid\framing\AMQBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_ServerOperations.h">
+				RelativePath="qpid\framing\AMQCommandControlBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\AMQP_ServerProxy.h">
+				RelativePath="qpid\framing\AMQContentBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\amqp_structs.h">
+				RelativePath="qpid\framing\AMQDataBlock.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClientInvoker.h">
+				RelativePath="qpid\framing\AMQFrame.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConfigChangeBody.h">
+				RelativePath="qpid\framing\AMQHeaderBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionAccumulatedAckBody.h">
+				RelativePath="qpid\framing\AMQHeartbeatBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionConsumerStateBody.h">
+				RelativePath="qpid\framing\AMQMethodBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionDeliverCloseBody.h">
+				RelativePath="gen\qpid\framing\AMQP_AllOperations.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionDeliverDoOutputBody.h">
+				RelativePath="gen\qpid\framing\AMQP_AllProxy.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionDeliveryRecordBody.h">
+				RelativePath="gen\qpid\framing\AMQP_ClientOperations.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.h">
+				RelativePath="gen\qpid\framing\AMQP_ClientProxy.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.h">
+				RelativePath="qpid\framing\amqp_framing.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionQueueBody.h">
+				RelativePath="qpid\framing\AMQP_HighestVersion.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionQueuePositionBody.h">
+				RelativePath="gen\qpid\framing\AMQP_ServerOperations.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionSessionStateBody.h">
+				RelativePath="gen\qpid\framing\AMQP_ServerProxy.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionShadowReadyBody.h">
+				RelativePath="gen\qpid\framing\amqp_structs.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxAcceptBody.h">
+				RelativePath="qpid\framing\amqp_types.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxDequeueBody.h">
+				RelativePath="qpid\framing\amqp_types_full.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxEndBody.h">
+				RelativePath="qpid\amqp_0_10\apply.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxEnqueueBody.h">
+				RelativePath="qpid\framing\Array.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxPublishBody.h">
+				RelativePath="qpid\assert.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.h">
+				RelativePath="qpid\sys\AsynchIO.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.h">
+				RelativePath="qpid\sys\AsynchIOHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterReadyBody.h">
+				RelativePath="qpid\sys\windows\AsynchIoResult.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterShutdownBody.h">
+				RelativePath="qpid\sys\AtomicCount.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterUpdateOfferBody.h">
+				RelativePath="qpid\sys\AtomicValue.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ClusterUpdateRequestBody.h">
+				RelativePath="qpid\sys\BlockingQueue.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionCloseBody.h">
+				RelativePath="qpid\framing\BodyFactory.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionCloseOkBody.h">
+				RelativePath="qpid\framing\BodyHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionHeartbeatBody.h">
+				RelativePath="qpid\framing\Buffer.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionOpenBody.h">
+				RelativePath="qpid\framing\ChannelHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionOpenOkBody.h">
+				RelativePath="qpid\sys\windows\check.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionRedirectBody.h">
+				RelativePath="gen\qpid\framing\ClientInvoker.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionSecureBody.h">
+				RelativePath="gen\qpid\framing\ClusterConfigChangeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionSecureOkBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionAccumulatedAckBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionStartBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionConsumerStateBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionStartOkBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverCloseBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionTuneBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliverDoOutputBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ConnectionTuneOkBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionDeliveryRecordBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\constants.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DeliveryProperties.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxCommitBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionQueueBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxEndBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionQueuePositionBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxForgetBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionSessionStateBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxGetTimeoutBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionShadowReadyBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxGetTimeoutResult.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxAcceptBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxPrepareBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxDequeueBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxRecoverBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEndBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxRecoverResult.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxEnqueueBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxRollbackBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxPublishBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxSelectBody.h">
+				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxSetTimeoutBody.h">
+				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\DtxStartBody.h">
+				RelativePath="gen\qpid\framing\ClusterReadyBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\enum.h">
+				RelativePath="gen\qpid\framing\ClusterShutdownBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeBindBody.h">
+				RelativePath="gen\qpid\framing\ClusterUpdateOfferBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeBoundBody.h">
+				RelativePath="gen\qpid\framing\ClusterUpdateRequestBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeBoundResult.h">
+				RelativePath="qpid\sys\Codec.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeDeclareBody.h">
+				RelativePath="qpid\sys\windows\Condition.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeDeleteBody.h">
+				RelativePath="qpid\sys\Condition.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeQueryBody.h">
+				RelativePath="gen\qpid\framing\ConnectionCloseBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeQueryResult.h">
+				RelativePath="gen\qpid\framing\ConnectionCloseOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExchangeUnbindBody.h">
+				RelativePath="qpid\sys\ConnectionCodec.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExecutionExceptionBody.h">
+				RelativePath="gen\qpid\framing\ConnectionHeartbeatBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExecutionResultBody.h">
+				RelativePath="qpid\sys\ConnectionInputHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ExecutionSyncBody.h">
+				RelativePath="qpid\sys\ConnectionInputHandlerFactory.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileAckBody.h">
+				RelativePath="gen\qpid\framing\ConnectionOpenBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileCancelBody.h">
+				RelativePath="gen\qpid\framing\ConnectionOpenOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileConsumeBody.h">
+				RelativePath="qpid\sys\ConnectionOutputHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileConsumeOkBody.h">
+				RelativePath="qpid\sys\ConnectionOutputHandlerPtr.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileDeliverBody.h">
+				RelativePath="gen\qpid\framing\ConnectionRedirectBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileOpenBody.h">
+				RelativePath="gen\qpid\framing\ConnectionSecureBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileOpenOkBody.h">
+				RelativePath="gen\qpid\framing\ConnectionSecureOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileProperties.h">
+				RelativePath="gen\qpid\framing\ConnectionStartBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FilePublishBody.h">
+				RelativePath="gen\qpid\framing\ConnectionStartOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileQosBody.h">
+				RelativePath="gen\qpid\framing\ConnectionTuneBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileQosOkBody.h">
+				RelativePath="gen\qpid\framing\ConnectionTuneOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileRejectBody.h">
+				RelativePath="gen\qpid\framing\constants.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileReturnBody.h">
+				RelativePath="qpid\sys\CopyOnWriteArray.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FileStageBody.h">
+				RelativePath="qpid\DataDir.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\FragmentProperties.h">
+				RelativePath="qpid\sys\DeletionManager.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\frame_body_lists.h">
+				RelativePath="gen\qpid\framing\DeliveryProperties.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\Header.h">
+				RelativePath="qpid\sys\Dispatcher.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageAcceptBody.h">
+				RelativePath="gen\qpid\framing\DtxCommitBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageAcquireBody.h">
+				RelativePath="gen\qpid\framing\DtxEndBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageAcquireResult.h">
+				RelativePath="gen\qpid\framing\DtxForgetBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageCancelBody.h">
+				RelativePath="gen\qpid\framing\DtxGetTimeoutBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageFlowBody.h">
+				RelativePath="gen\qpid\framing\DtxGetTimeoutResult.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageFlushBody.h">
+				RelativePath="gen\qpid\framing\DtxPrepareBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageProperties.h">
+				RelativePath="gen\qpid\framing\DtxRecoverBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageRejectBody.h">
+				RelativePath="gen\qpid\framing\DtxRecoverResult.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageReleaseBody.h">
+				RelativePath="gen\qpid\framing\DtxRollbackBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageResumeBody.h">
+				RelativePath="gen\qpid\framing\DtxSelectBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageResumeResult.h">
+				RelativePath="gen\qpid\framing\DtxSetTimeoutBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageSetFlowModeBody.h">
+				RelativePath="gen\qpid\framing\DtxStartBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageStopBody.h">
+				RelativePath="qpid\framing\Endian.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageSubscribeBody.h">
+				RelativePath="gen\qpid\framing\enum.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MessageTransferBody.h">
+				RelativePath="qpid\amqp_0_10\Exception.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MethodBodyConstVisitor.h">
+				RelativePath="qpid\Exception.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\MethodBodyDefaultVisitor.h">
+				RelativePath="qpid\sys\ExceptionHolder.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueDeclareBody.h">
+				RelativePath="gen\qpid\framing\ExchangeBindBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueDeleteBody.h">
+				RelativePath="gen\qpid\framing\ExchangeBoundBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueuePurgeBody.h">
+				RelativePath="gen\qpid\framing\ExchangeBoundResult.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueQueryBody.h">
+				RelativePath="gen\qpid\framing\ExchangeDeclareBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\QueueQueryResult.h">
+				RelativePath="gen\qpid\framing\ExchangeDeleteBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\reply_exceptions.h">
+				RelativePath="gen\qpid\framing\ExchangeQueryBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ReplyTo.h">
+				RelativePath="gen\qpid\framing\ExchangeQueryResult.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\ServerInvoker.h">
+				RelativePath="gen\qpid\framing\ExchangeUnbindBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionAttachBody.h">
+				RelativePath="gen\qpid\framing\ExecutionExceptionBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionAttachedBody.h">
+				RelativePath="gen\qpid\framing\ExecutionResultBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionCommandPointBody.h">
+				RelativePath="gen\qpid\framing\ExecutionSyncBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionCompletedBody.h">
+				RelativePath="qpid\framing\FieldTable.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionConfirmedBody.h">
+				RelativePath="qpid\framing\FieldValue.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionDetachBody.h">
+				RelativePath="gen\qpid\framing\FileAckBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionDetachedBody.h">
+				RelativePath="gen\qpid\framing\FileCancelBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionExpectedBody.h">
+				RelativePath="gen\qpid\framing\FileConsumeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionFlushBody.h">
+				RelativePath="gen\qpid\framing\FileConsumeOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionGapBody.h">
+				RelativePath="gen\qpid\framing\FileDeliverBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionKnownCompletedBody.h">
+				RelativePath="gen\qpid\framing\FileOpenBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionRequestTimeoutBody.h">
+				RelativePath="gen\qpid\framing\FileOpenOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\SessionTimeoutBody.h">
+				RelativePath="gen\qpid\framing\FileProperties.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamCancelBody.h">
+				RelativePath="gen\qpid\framing\FilePublishBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamConsumeBody.h">
+				RelativePath="gen\qpid\framing\FileQosBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamConsumeOkBody.h">
+				RelativePath="gen\qpid\framing\FileQosOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamDeliverBody.h">
+				RelativePath="gen\qpid\framing\FileRejectBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamProperties.h">
+				RelativePath="gen\qpid\framing\FileReturnBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamPublishBody.h">
+				RelativePath="gen\qpid\framing\FileStageBody.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamQosBody.h">
+				RelativePath="qpid\sys\FileSysDir.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamQosOkBody.h">
+				RelativePath="gen\qpid\framing\FragmentProperties.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\StreamReturnBody.h">
+				RelativePath="gen\qpid\framing\frame_body_lists.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TxCommitBody.h">
+				RelativePath="qpid\framing\frame_functors.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TxRollbackBody.h">
+				RelativePath="qpid\framing\FrameDecoder.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TxSelectBody.h">
+				RelativePath="qpid\framing\FrameDefaultVisitor.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\TypeCode.h">
+				RelativePath="qpid\framing\FrameHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\XaResult.h">
+				RelativePath="qpid\framing\FrameSet.h"
+				>
 			</File>
 			<File
-				RelativePath="gen\qpid\framing\Xid.h">
+				RelativePath="qpid\framing\Handler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Address.h">
+				RelativePath="gen\qpid\framing\Header.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\amqp_0_10\apply.h">
+				RelativePath="qpid\framing\HeaderProperties.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\amqp_0_10\Exception.h">
+				RelativePath="qpid\framing\variant.h qpid\log\Helpers.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\amqp_0_10\SessionHandler.h">
+				RelativePath="qpid\framing\InitiationHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\assert.h">
+				RelativePath="qpid\InlineAllocator.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\DataDir.h">
+				RelativePath="qpid\InlineVector.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Exception.h">
+				RelativePath="qpid\framing\InputHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AccumulatedAck.h">
+				RelativePath="qpid\sys\windows\IntegerTypes.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQBody.h">
+				RelativePath="qpid\sys\IntegerTypes.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQCommandControlBody.h">
+				RelativePath="qpid\framing\Invoker.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQContentBody.h">
+				RelativePath="qpid\sys\IOHandle.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQDataBlock.h">
+				RelativePath="qpid\sys\windows\IoHandlePrivate.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQFrame.h">
+				RelativePath="qpid\sys\LatencyMetric.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQHeaderBody.h">
+				RelativePath="qpid\sys\LockFile.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQHeartbeatBody.h">
+				RelativePath="qpid\sys\LockPtr.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQMethodBody.h">
+				RelativePath="qpid\log\Logger.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\amqp_framing.h">
+				RelativePath="qpid\management\Manageable.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\AMQP_HighestVersion.h">
+				RelativePath="qpid\management\ManagementObject.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\amqp_types.h">
+				RelativePath="qpid\memory.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\amqp_types_full.h">
+				RelativePath="gen\qpid\framing\MessageAcceptBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Array.h">
+				RelativePath="gen\qpid\framing\MessageAcquireBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\BodyFactory.h">
+				RelativePath="gen\qpid\framing\MessageAcquireResult.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\BodyHandler.h">
+				RelativePath="gen\qpid\framing\MessageCancelBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Buffer.h">
+				RelativePath="gen\qpid\framing\MessageFlowBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\ChannelHandler.h">
+				RelativePath="gen\qpid\framing\MessageFlushBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Endian.h">
+				RelativePath="gen\qpid\framing\MessageProperties.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FieldTable.h">
+				RelativePath="gen\qpid\framing\MessageRejectBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FieldValue.h">
+				RelativePath="gen\qpid\framing\MessageReleaseBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\frame_functors.h">
+				RelativePath="gen\qpid\framing\MessageResumeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FrameDecoder.h">
+				RelativePath="gen\qpid\framing\MessageResumeResult.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FrameDefaultVisitor.h">
+				RelativePath="gen\qpid\framing\MessageSetFlowModeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FrameHandler.h">
+				RelativePath="gen\qpid\framing\MessageStopBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\FrameSet.h">
+				RelativePath="gen\qpid\framing\MessageSubscribeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Handler.h">
+				RelativePath="gen\qpid\framing\MessageTransferBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\HeaderProperties.h">
+				RelativePath="gen\qpid\framing\MethodBodyConstVisitor.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\InitiationHandler.h">
+				RelativePath="gen\qpid\framing\MethodBodyDefaultVisitor.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\InputHandler.h">
+				RelativePath="qpid\framing\MethodBodyFactory.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Invoker.h">
+				RelativePath="qpid\framing\MethodContent.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\MethodBodyFactory.h">
+				RelativePath="qpid\framing\ModelMethod.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\MethodContent.h">
+				RelativePath="qpid\Modules.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\ModelMethod.h">
+				RelativePath="qpid\sys\Monitor.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\OutputHandler.h">
+				RelativePath="qpid\Msg.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\ProtocolInitiation.h">
+				RelativePath="qpid\sys\windows\Mutex.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\ProtocolVersion.h">
+				RelativePath="qpid\sys\Mutex.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Proxy.h">
+				RelativePath="qpid\Options.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SendContent.h">
+				RelativePath="qpid\log\Options.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SequenceNumber.h">
+				RelativePath="qpid\log\OstreamOutput.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SequenceNumberSet.h">
+				RelativePath="qpid\sys\OutputControl.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\SequenceSet.h">
+				RelativePath="qpid\framing\OutputHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\StructHelper.h">
+				RelativePath="qpid\sys\OutputTask.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\TransferContent.h">
+				RelativePath="qpid\Plugin.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\TypeFilter.h">
+				RelativePath="qpid\pointer_to_other.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Uuid.h">
+				RelativePath="qpid\sys\PollableCondition.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\variant.h qpid\log\Helpers.h">
+				RelativePath="qpid\sys\PollableQueue.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\framing\Visitor.h">
+				RelativePath="qpid\sys\Poller.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\InlineAllocator.h">
+				RelativePath="qpid\sys\ProtocolFactory.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\InlineVector.h">
+				RelativePath="qpid\framing\ProtocolInitiation.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Logger.h">
+				RelativePath="qpid\framing\ProtocolVersion.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Options.h">
+				RelativePath="qpid\framing\Proxy.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\OstreamOutput.h">
+				RelativePath="qpid\ptr_map.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Selector.h">
+				RelativePath="gen\qpid\framing\QueueDeclareBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\SinkOptions.h">
+				RelativePath="gen\qpid\framing\QueueDeleteBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\Statement.h">
+				RelativePath="gen\qpid\framing\QueuePurgeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\log\windows\SinkOptions.h">
+				RelativePath="gen\qpid\framing\QueueQueryBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\management\Manageable.h">
+				RelativePath="gen\qpid\framing\QueueQueryResult.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\management\ManagementObject.h">
+				RelativePath="qpid\RangeSet.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\memory.h">
+				RelativePath="qpid\RefCounted.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Modules.h">
+				RelativePath="qpid\RefCountedBuffer.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Msg.h">
+				RelativePath="gen\qpid\framing\reply_exceptions.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Options.h">
+				RelativePath="gen\qpid\framing\ReplyTo.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Plugin.h">
+				RelativePath="qpid\sys\Runnable.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\pointer_to_other.h">
+				RelativePath="qpid\sys\ScopedIncrement.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\ptr_map.h">
+				RelativePath="qpid\sys\SecurityLayer.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\RangeSet.h">
+				RelativePath="qpid\log\Selector.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\RefCounted.h">
+				RelativePath="qpid\sys\Semaphore.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\RefCountedBuffer.h">
+				RelativePath="qpid\framing\SendContent.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Serializer.h">
+				RelativePath="qpid\framing\SequenceNumber.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\SessionId.h">
+				RelativePath="qpid\framing\SequenceNumberSet.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\SessionState.h">
+				RelativePath="qpid\framing\SequenceSet.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\shared_ptr.h">
+				RelativePath="qpid\Serializer.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\SharedObject.h">
+				RelativePath="gen\qpid\framing\ServerInvoker.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\StringUtils.h">
+				RelativePath="gen\qpid\framing\SessionAttachBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AggregateOutput.h">
+				RelativePath="gen\qpid\framing\SessionAttachedBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AsynchIO.h">
+				RelativePath="gen\qpid\framing\SessionCommandPointBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AsynchIOHandler.h">
+				RelativePath="gen\qpid\framing\SessionCompletedBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AtomicCount.h">
+				RelativePath="gen\qpid\framing\SessionConfirmedBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\AtomicValue.h">
+				RelativePath="gen\qpid\framing\SessionDetachBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\BlockingQueue.h">
+				RelativePath="gen\qpid\framing\SessionDetachedBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Codec.h">
+				RelativePath="gen\qpid\framing\SessionExpectedBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Condition.h">
+				RelativePath="gen\qpid\framing\SessionFlushBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ConnectionCodec.h">
+				RelativePath="gen\qpid\framing\SessionGapBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ConnectionInputHandler.h">
+				RelativePath="qpid\amqp_0_10\SessionHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ConnectionInputHandlerFactory.h">
+				RelativePath="qpid\SessionId.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ConnectionOutputHandler.h">
+				RelativePath="gen\qpid\framing\SessionKnownCompletedBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ConnectionOutputHandlerPtr.h">
+				RelativePath="gen\qpid\framing\SessionRequestTimeoutBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\CopyOnWriteArray.h">
+				RelativePath="qpid\SessionState.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\DeletionManager.h">
+				RelativePath="gen\qpid\framing\SessionTimeoutBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Dispatcher.h">
+				RelativePath="qpid\shared_ptr.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ExceptionHolder.h">
+				RelativePath="qpid\SharedObject.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\FileSysDir.h">
+				RelativePath="qpid\sys\Shlib.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\IntegerTypes.h">
+				RelativePath="qpid\sys\ShutdownHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\IOHandle.h">
+				RelativePath="qpid\log\windows\SinkOptions.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\LatencyMetric.h">
+				RelativePath="qpid\log\SinkOptions.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\LockFile.h">
+				RelativePath="qpid\sys\Socket.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\LockPtr.h">
+				RelativePath="qpid\log\Statement.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Monitor.h">
+				RelativePath="qpid\sys\StateMonitor.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Mutex.h">
+				RelativePath="gen\qpid\framing\StreamCancelBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\OutputControl.h">
+				RelativePath="gen\qpid\framing\StreamConsumeBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\OutputTask.h">
+				RelativePath="gen\qpid\framing\StreamConsumeOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\PollableCondition.h">
+				RelativePath="gen\qpid\framing\StreamDeliverBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\PollableQueue.h">
+				RelativePath="gen\qpid\framing\StreamProperties.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Poller.h">
+				RelativePath="gen\qpid\framing\StreamPublishBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ProtocolFactory.h">
+				RelativePath="gen\qpid\framing\StreamQosBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Runnable.h">
+				RelativePath="gen\qpid\framing\StreamQosOkBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ScopedIncrement.h">
+				RelativePath="gen\qpid\framing\StreamReturnBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\SecurityLayer.h">
+				RelativePath="qpid\sys\StrError.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Semaphore.h">
+				RelativePath="qpid\StringUtils.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Shlib.h">
+				RelativePath="qpid\framing\StructHelper.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\ShutdownHandler.h">
+				RelativePath="qpid\sys\SystemInfo.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Socket.h">
+				RelativePath="qpid\sys\Thread.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\StateMonitor.h">
+				RelativePath="qpid\sys\windows\Time.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\StrError.h">
+				RelativePath="qpid\sys\Time.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\SystemInfo.h">
+				RelativePath="qpid\sys\TimeoutHandler.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Thread.h">
+				RelativePath="qpid\sys\Timer.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Time.h">
+				RelativePath="qpid\framing\TransferContent.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\TimeoutHandler.h">
+				RelativePath="gen\qpid\framing\TxCommitBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Timer.h">
+				RelativePath="gen\qpid\framing\TxRollbackBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\uuid.h">
+				RelativePath="gen\qpid\framing\TxSelectBody.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\Waitable.h">
+				RelativePath="gen\qpid\framing\TypeCode.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\AsynchIoResult.h">
+				RelativePath="qpid\framing\TypeFilter.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\check.h">
+				RelativePath="qpid\Url.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Condition.h">
+				RelativePath="qpid\framing\Uuid.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\IntegerTypes.h">
+				RelativePath="qpid\sys\windows\uuid.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\IoHandlePrivate.h">
+				RelativePath="qpid\sys\uuid.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Mutex.h">
+				RelativePath="qpid\Version.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\Time.h">
+				RelativePath="qpid\framing\Visitor.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\sys\windows\uuid.h">
+				RelativePath="qpid\sys\Waitable.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Url.h">
+				RelativePath="gen\qpid\framing\XaResult.h"
+				>
 			</File>
 			<File
-				RelativePath="qpid\Version.h">
+				RelativePath="gen\qpid\framing\Xid.h"
+				>
 			</File>
 		</Filter>
 	</Files>
