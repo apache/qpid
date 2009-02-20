@@ -81,9 +81,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     boolean isDeleted();
 
-
     int delete() throws AMQException;
-
 
     QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
 
@@ -91,14 +89,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
 
-
-
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 
-    
-
     void addQueueDeleteTask(final Task task);
-
 
     List<QueueEntry> getMessagesOnTheQueue();
 

@@ -38,4 +38,9 @@ public class MockQueueEntry extends QueueEntryImpl
     {
         super(_defaultList, message);
     }
+
+    public MockQueueEntry(AMQMessage message, SimpleAMQQueue queue)
+    {
+        super(new SimpleQueueEntryList(queue) ,message);
+    }
 }

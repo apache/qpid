@@ -82,13 +82,13 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
                 }
                 else
                 {
-                    queueEntry.discard(_storeContext);
+                    queueEntry.dequeueAndDelete(_storeContext);
                     _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + queueEntry);
                 }
             }
             else
             {
-                queueEntry.discard(_storeContext);
+                queueEntry.dequeueAndDelete(_storeContext);
                 _log.warn("Message.queue is null and no DeadLetter Queue so dropping message:" + queueEntry);
             }
         }

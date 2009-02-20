@@ -123,18 +123,18 @@ public class NonTransactionalContext implements TransactionalContext
                           unacknowledgedMessageMap.size());
                 unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
                 {
-                    public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
+                    public boolean callback(final long deliveryTag, QueueEntry queueEntry) throws AMQException
                     {
                         if (debug)
                         {
-                            _log.debug("Discarding message: " + message.getMessage().getMessageId());
+                            _log.debug("Discarding message: " + queueEntry.getMessage().getMessageId());
                         }
-                        if(message.getMessage().isPersistent())
+                        if(queueEntry.getMessage().isPersistent())
                         {
                             beginTranIfNecessary();
                         }
-                        //Message has been ack so discard it. This will dequeue and decrement the reference.
-                        message.discard(_storeContext);
+                        //Message has been ack so dequeueAndDelete it.
+                        queueEntry.dequeueAndDelete(_storeContext);
 
                         return false;
                     }
@@ -157,10 +157,10 @@ public class NonTransactionalContext implements TransactionalContext
         }
         else
         {
-            QueueEntry msg;
-            msg = unacknowledgedMessageMap.get(deliveryTag);
+            QueueEntry queueEntry;
+            queueEntry = unacknowledgedMessageMap.get(deliveryTag);
 
-            if (msg == null)
+            if (queueEntry == null)
             {
                 _log.info("Single ack on delivery tag " + deliveryTag + " not known for channel:" +
                           _channel.getChannelId());
@@ -170,15 +170,17 @@ public class NonTransactionalContext implements TransactionalContext
 
             if (debug)
             {
-                _log.debug("Discarding message: " + msg.getMessage().getMessageId());
+                _log.debug("Discarding message: " + queueEntry.getMessage().getMessageId());
             }
-            if(msg.getMessage().isPersistent())
+            if(queueEntry.getMessage().isPersistent())
             {
                 beginTranIfNecessary();
             }
 
-            //Message has been ack so discard it. This will dequeue and decrement the reference.
-            msg.discard(_storeContext);
+            //Message has been ack so dequeueAndDelete it.
+            // If the message is persistent and this is the last QueueEntry that uses it then the data will be removed
+            // from the transaciton log
+            queueEntry.dequeueAndDelete(_storeContext);
 
             unacknowledgedMessageMap.remove(deliveryTag);
 
@@ -186,7 +188,7 @@ public class NonTransactionalContext implements TransactionalContext
             if (debug)
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
-                           msg.getMessage().getMessageId());
+                           queueEntry.getMessage().getMessageId());
             }
         }
         if(_inTran)

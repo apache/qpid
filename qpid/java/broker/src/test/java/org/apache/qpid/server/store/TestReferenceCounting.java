@@ -34,7 +34,7 @@ import org.apache.qpid.server.queue.AMQMessage;
  */
 public class TestReferenceCounting extends TestCase
 {
-    private TestMemoryMessageStore _store;
+    private TestableMemoryMessageStore _store;
 
     private StoreContext _storeContext = new StoreContext();
 
@@ -42,7 +42,7 @@ public class TestReferenceCounting extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _store = new TestMemoryMessageStore();
+        _store = new TestableMemoryMessageStore();
     }
 
     /**
@@ -54,19 +54,9 @@ public class TestReferenceCounting extends TestCase
 
         MessagePublishInfo info = new MessagePublishInfoImpl();
 
-        final long messageId = _store.getNewMessageId();
-
         AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
 
-        message.incrementReference(1);
-
-        // we call routing complete to set up the handle
- //       message.routingComplete(_store, _storeContext, new MessageHandleFactory());
-
-
-        assertEquals(1, _store.getMessageMetaDataMap().size());
-        message.decrementReference(_storeContext);
         assertEquals(1, _store.getMessageMetaDataMap().size());
     }
 
@@ -84,16 +74,10 @@ public class TestReferenceCounting extends TestCase
 
         MessagePublishInfo info = new MessagePublishInfoImpl();
 
-        final Long messageId = _store.getNewMessageId();
         final ContentHeaderBody chb = createPersistentContentHeader();
         AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
         
-        message.incrementReference(1);
-
-        assertEquals(1, _store.getMessageMetaDataMap().size());
-        message.incrementReference(1);
-        message.decrementReference(_storeContext);
         assertEquals(1, _store.getMessageMetaDataMap().size());
     }
 

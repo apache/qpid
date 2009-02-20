@@ -408,8 +408,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         if (entry.immediateAndNotDelivered())
         {
-            dequeue(storeContext, entry);
-            entry.dispose(storeContext);
+            //We acquire the message here to ensure that the dequeueAndDelete will correctly remove the content
+            // from the transactionLog. This saves us from having to have a custom dequeueAndDelete that checks
+            // for the AVAILABLE state of an entry rather than the ACQUIRED state that it currently uses. 
+            entry.acquire();
+            entry.dequeueAndDelete(storeContext);
         }
         else if (!(entry.isAcquired() || entry.isDeleted()))
         {
@@ -562,6 +565,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
+    /**
+     * Only call from queue Entry
+     * @param storeContext
+     * @param entry
+     * @throws FailedDequeueException
+     */
     public void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException
     {
         decrementQueueCount();
@@ -578,7 +587,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 _virtualHost.getTransactionLog().dequeueMessage(storeContext, this, msg.getMessageId());
             }
-            //entry.dispose(storeContext);
 
         }
         catch (MessageCleanupException e)
@@ -814,11 +822,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
+
     public void moveMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
                                            String queueName,
                                            StoreContext storeContext)
     {
+        // The move is a two step process. First the messages are moved in the _transactionLog.
+        // That is persistent messages are moved queues on disk for recovery and the QueueEntries removed from the
+        // existing queue.
+        // This is done as Queue.enqueue() does not write the data to the transactionLog. In normal message delivery
+        // this is done as the message is recieved.
+        // So The final step is to enqueue the messages on the new queue.
 
         AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
         TransactionLog transactionLog = getVirtualHost().getTransactionLog();
@@ -844,7 +859,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             transactionLog.beginTran(storeContext);
 
-            // Move the messages in on the transaction log.
+            // Move the messages in the transaction log.
             for (QueueEntry entry : entries)
             {
                 AMQMessage message = entry.getMessage();
@@ -853,7 +868,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 {
                     transactionLog.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
-                // dequeue does not decrement the refence count
+                // dequeue will remove the messages from the queue
                 entry.dequeue(storeContext);
             }
 
@@ -882,10 +897,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         try
         {
+            // Add messages to new queue
             for (QueueEntry entry : entries)
             {
                 toQueue.enqueue(storeContext, entry.getMessage());
-
             }
         }
         catch (MessageCleanupException e)
@@ -918,7 +933,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 {
                     if (!entry.isDeleted())
                     {
-                        return entry.getMessage().incrementReference(1);
+                        return true;
                     }
                 }
 
@@ -940,7 +955,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 AMQMessage message = entry.getMessage();
 
-                if (message.isReferenced() && message.isPersistent() && toQueue.isDurable())
+                if (!entry.isDeleted() && message.isPersistent() && toQueue.isDurable())
                 {
                     transactionLog.enqueueMessage(storeContext, toQueue, message.getMessageId());
                 }
@@ -973,7 +988,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             for (QueueEntry entry : entries)
             {
-                if (entry.getMessage().isReferenced())
+                if (!entry.isDeleted())
                 {
                     toQueue.enqueue(storeContext, entry.getMessage());
                 }
@@ -1008,7 +1023,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     && !node.isDeleted()
                     && node.acquire())
                 {
-                    node.discard(storeContext);
+                    node.dequeueAndDelete(storeContext);
                 }
 
             }
@@ -1032,7 +1047,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = queueListIterator.getNode();
             if (!node.isDeleted() && node.acquire())
             {
-                node.discard(storeContext);
+                node.dequeueAndDelete(storeContext);
                 noDeletes = false;
             }
 
@@ -1050,7 +1065,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = queueListIterator.getNode();
             if (!node.isDeleted() && node.acquire())
             {
-                node.discard(storeContext);
+                node.dequeueAndDelete(storeContext);
                 count++;
             }
 
@@ -1315,8 +1330,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 if (node.acquire())
                 {
+                    // creating a new final store context per message seems wasteful.
                     final StoreContext reapingStoreContext = new StoreContext();
-                    node.discard(reapingStoreContext);
+                    node.dequeueAndDelete(reapingStoreContext);
                 }
             }
             QueueEntry newNode = _entries.next(node);
@@ -1431,7 +1447,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = queueListIterator.getNode();
             if (!node.isDeleted() && node.expired() && node.acquire())
             {
-                node.discard(storeContext);
+                node.dequeueAndDelete(storeContext);
             } 
             else 
             {

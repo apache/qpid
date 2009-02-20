@@ -56,14 +56,10 @@ public abstract class RequiredDeliveryException extends AMQException
 
     public void setMessage(final AMQMessage payload)
     {
-
-        // Increment the reference as this message is in the routing phase
-        // and so will have the ref decremented as routing fails.
         // we need to keep this message around so we can return it in the
-        // handler. So increment here.
-        payload.incrementReference(1);
+        // handler.
+        // Messages are all kept in memory now. Only queues can push messages out of memory.
         _amqMessage = payload;
-
     }
 
     public AMQMessage getAMQMessage()

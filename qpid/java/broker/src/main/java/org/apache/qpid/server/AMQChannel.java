@@ -499,7 +499,7 @@ public class AMQChannel
             }
             else
             {
-                unacked.discard(_storeContext);
+                unacked.dequeueAndDelete(_storeContext);
             }
         }
 
@@ -555,7 +555,7 @@ public class AMQChannel
                 _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.getMessage().debugIdentity()
                           + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
 
-                unacked.discard(_storeContext);
+                unacked.dequeueAndDelete(_storeContext);
             }
         }
         else
@@ -712,7 +712,7 @@ public class AMQChannel
                     {
                         try
                         {
-                            message.discard(_storeContext);
+                            message.dequeueAndDelete(_storeContext);
                             message.setQueueDeleted(true);
 
                         }
@@ -831,9 +831,7 @@ public class AMQChannel
             {
                 AMQMessage message = bouncedMessage.getAMQMessage();
                 _session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
-                                                                 new AMQShortString(bouncedMessage.getMessage()));
-
-                message.decrementReference(_storeContext);
+                                                                 new AMQShortString(bouncedMessage.getMessage()));                
             }
 
             _returnMessages.clear();
