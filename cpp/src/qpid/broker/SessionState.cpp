@@ -210,6 +210,7 @@ struct ScheduledCreditTask : public TimerTask {
     {}
 
     void fire() {
+        QPID_LOG(critical, "ScheduledCreditTask fired"); // FIXME aconway 2009-02-23: REMOVE
         // This is the best we can currently do to avoid a destruction/fire race
         if (!isCancelled()) {
             if ( !sessionState.processSendCredit(0) ) {
