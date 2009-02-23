@@ -21,8 +21,8 @@
 
 # Test reliability of the replication feature in the face of link
 # failures:
-MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python
+srcdir=`dirname $0`
+PYTHON_DIR=${srcdir}/../../../python
 
 trap stop_brokers EXIT
 
@@ -48,7 +48,7 @@ start_brokers() {
     BROKER_A=`cat fed.port.tmp`
 
     #...and start cluster
-    ./start_cluster 2 || fail "Could not start cluster"
+    $srcdir/start_cluster 2 || fail "Could not start cluster"
     NODE_1=$(head -1 cluster.ports)
     NODE_2=$(tail -1 cluster.ports)
 }

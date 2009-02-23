@@ -32,12 +32,17 @@
 #include <sstream>
 #include <vector>
 
+#include <boost/assign.hpp>
+
 #include <ForkedBroker.h>
 
 
 
 
+
 using namespace std;
+using boost::assign::list_of;
+
 
 
 typedef vector<ForkedBroker *> brokerVector;
@@ -275,24 +280,22 @@ startNewBroker ( brokerVector & brokers,
     module << moduleDir << "/cluster.so";
     path << srcRoot << "/qpidd";
     prefix << "soak-" << brokerId++;
-  
-    const char * const argv[] = 
-    {
-        "qpidd",
-        "-p0",
-        "--load-module=cluster.so",
-        "--cluster-name",
-        clusterName.c_str(),
-        "--auth=no", 
-        "--no-data-dir",
-        "--no-module-dir",
-        "--mgmt-enable=no",
-        "--log-prefix", prefix.str().c_str(),
-        0
-    };
 
-    size_t argc = sizeof(argv)/sizeof(argv[0]);
-    brokers.push_back ( new ForkedBroker ( argc, argv ) );
+    std::vector<std::string> argv = 
+        list_of<string> ("qpidd")
+                        ("--no-module-dir")
+                        ("--load-module=cluster.so")
+                        ("--cluster-name")
+                        (clusterName)
+                        ("--auth=no")
+                        ("--no-data-dir")
+                        ("--mgmt-enable=no")
+                        ("--log-prefix")
+                        (prefix.str())
+                        ("--log-to-file")
+                        ("/tmp/qpidd.log");
+
+    brokers.push_back ( new ForkedBroker ( argv ) );
 }
 
 
