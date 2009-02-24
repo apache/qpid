@@ -212,11 +212,15 @@ struct ScheduledCreditTask : public TimerTask {
     void fire() {
         // This is the best we can currently do to avoid a destruction/fire race
         if (!isCancelled()) {
-            if ( !sessionState.processSendCredit(0) ) {
-                QPID_LOG(warning, sessionState.getId() << ": Reschedule sending credit");
-                reset();
-                timer.add(this);
-            }
+            sessionState.getConnection().requestIOProcessing(boost::bind(&ScheduledCreditTask::sendCredit, this));
+        }
+    }
+    
+    void sendCredit() {
+        if ( !sessionState.processSendCredit(0) ) {
+            QPID_LOG(warning, sessionState.getId() << ": Reschedule sending credit");
+            reset();
+            timer.add(this);
         }
     }
 };
