@@ -20,6 +20,7 @@
 """ Console API for Qpid Management Framework """
 
 import os
+import platform
 import qpid
 import struct
 import socket
@@ -1243,7 +1244,7 @@ class Broker:
     self.error = None
     self.brokerId = None
     self.connected = False
-    self.amqpSessionId = "%s.%d.%d" % (os.uname()[1], os.getpid(), Broker.nextSeq)
+    self.amqpSessionId = "%s.%d.%d" % (platform.uname()[1], os.getpid(), Broker.nextSeq)
     Broker.nextSeq += 1
     if self.session.manageConnections:
       self.thread = ManagedConnection(self)
