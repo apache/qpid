@@ -34,6 +34,8 @@
 
 #include <boost/assign.hpp>
 
+#include "qpid/framing/Uuid.h"
+
 #include <ForkedBroker.h>
 
 
@@ -42,6 +44,7 @@
 
 using namespace std;
 using boost::assign::list_of;
+using namespace qpid::framing;
 
 
 
@@ -240,10 +243,9 @@ mrand ( int minDesiredVal, int maxDesiredVal ) {
 
 
 void
-makeClusterName ( string & s, int & num ) {
-    num = mrand(1000);
+makeClusterName ( string & s ) {
     stringstream ss;
-    ss << "soakTestCluster_" << num;
+    ss << "soakTestCluster_" << Uuid(true).str();
     s = ss.str();
 }
 
@@ -492,12 +494,11 @@ main ( int argc, char const ** argv )
 
     allMyChildren.verbosity = verbosity;
 
-    int clusterNum;
     string clusterName;
 
     srand ( getpid() );
 
-    makeClusterName ( clusterName, clusterNum );
+    makeClusterName ( clusterName );
 
     brokerVector brokers;
 
