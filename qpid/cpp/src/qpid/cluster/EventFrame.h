@@ -57,7 +57,8 @@ struct EventFrame
     ConnectionId connectionId;
     framing::AMQFrame frame;   
     uint64_t sequence;
-    int readCredit;             // last frame in an event, give credit when processed.
+    int readCredit; ///< last frame in an event, give credit when processed.
+    EventType type;
 };
 
 std::ostream& operator<<(std::ostream& o, const EventFrame& e);

@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_MCASTFRAMEHANDLER_H
+#define QPID_CLUSTER_MCASTFRAMEHANDLER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,22 +21,26 @@
  * under the License.
  *
  */
-#include "EventFrame.h"
-#include "Connection.h"
+
+#include "types.h"
+#include "Multicaster.h"
+#include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
 namespace cluster {
 
-EventFrame::EventFrame() : sequence(0) {}
-
-EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
-    : connectionId(e.getConnectionId()), frame(f), sequence(e.getSequence()), readCredit(rc), type(e.getType())
+/**
+ * A frame handler that multicasts frames as CONTROL events.
+ */
+class McastFrameHandler : public framing::FrameHandler
 {
-    QPID_LATENCY_INIT(frame);
-}
-
-std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    return o << e.connectionId << "/" << e.sequence << " " << e.frame << " rc=" << e.readCredit << " type=" << e.type;
-}
-
+  public:
+    McastFrameHandler(Multicaster& m, const ConnectionId& cid) : mcast(m), connection(cid) {}
+    void handle(framing::AMQFrame& frame) { mcast.mcastControl(frame, connection); }
+  private:
+    Multicaster& mcast;
+    ConnectionId connection;
+};
 }} // namespace qpid::cluster
+
+#endif  /*!QPID_CLUSTER_MCASTFRAMEHANDLER_H*/

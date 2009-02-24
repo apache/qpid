@@ -22,7 +22,7 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 srcdir=`dirname $0`
-PYTHON_DIR=${srcdir}/../../../python
+PYTHON_DIR=$srcdir/../../../python
 
 trap stop_brokers EXIT
 
@@ -37,7 +37,7 @@ stop_brokers() {
         unset BROKER_A
     fi      
     if [[ $NODE_1 ]] ; then
-        ./stop_cluster
+        $srcdir/stop_cluster
         unset NODE_1
     fi
 }

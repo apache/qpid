@@ -78,6 +78,8 @@ struct ConnectionId : public std::pair<MemberId, Connection*>  {
 
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
 
+std::ostream& operator << (std::ostream&, EventType);
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_TYPES_H*/
