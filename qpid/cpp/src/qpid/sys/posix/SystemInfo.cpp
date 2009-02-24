@@ -27,6 +27,9 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 #ifndef HOST_NAME_MAX
 #  define HOST_NAME_MAX 256
@@ -104,6 +107,27 @@ uint32_t SystemInfo::getParentProcessId()
     return (uint32_t) ::getppid();
 }
 
+string SystemInfo::getProcessName()
+{
+    uint32_t pid = getProcessId();
+    string value;
 
+    stringstream pathStream;
+    pathStream << "/proc/" << pid << "/status";
+    ifstream input(pathStream.str().c_str());
+    if (input.good()) {
+        while (!input.eof()) {
+            string key;
+            input >> key;
+            if (key == "Name:") {
+                input >> value;
+                break;
+            }
+        }
+        input.close();
+    }
+
+    return value;
+}
 
 }} // namespace qpid::sys
