@@ -168,7 +168,10 @@ module Qpid
       # analog in Ruby
       PROPERTIES = {"product"  => "qpid python client",
         "version"  => "development",
-        "platform" => Config::CONFIG["build_os"]}
+        "platform" => Config::CONFIG["build_os"],
+        "qpid.client_process" => File.basename($0),
+        "qpid.client_pid" => Process.pid,
+        "qpid.client_ppid" => Process.ppid}
 
 
       def initialize(connection, args)

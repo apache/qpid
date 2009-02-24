@@ -125,6 +125,8 @@ class Connection : public sys::ConnectionInputHandler,
     management::ManagementAgent* agent;
     Timer& timer;
     boost::intrusive_ptr<TimerTask> heartbeatTimer;
+  public:
+    qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
 };
 
 }}

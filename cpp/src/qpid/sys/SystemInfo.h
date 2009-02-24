@@ -73,6 +73,11 @@ namespace SystemInfo {
      */
     uint32_t getParentProcessId();
 
+    /**
+     * Get the name of the current process (i.e. the name of the executable)
+     */
+    std::string getProcessName();
+
 
 }}} // namespace qpid::sys::SystemInfo
 
