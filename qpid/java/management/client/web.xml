@@ -8,11 +8,7 @@
 		Java Management Extensions (JMX) and / or WS-DM.
 	</description>
 	<display-name>QManEE</display-name>
-	 <context-param>
-        <param-name>tapestry.app-package</param-name>
-        <param-value>org.apache.qpid.management.web.console</param-value>
-    </context-param>
- 	<listener>
+    <listener>
 		<description>
 			Provides lifecycle management for QMan module.
 		</description>
