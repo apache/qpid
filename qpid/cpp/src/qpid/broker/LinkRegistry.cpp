@@ -19,19 +19,24 @@
  *
  */
 #include "LinkRegistry.h"
+#include "Connection.h"
 #include "qpid/log/Statement.h"
 #include <iostream>
+#include <boost/format.hpp>
 
 using namespace qpid::broker;
 using namespace qpid::sys;
 using std::pair;
 using std::stringstream;
 using boost::intrusive_ptr;
+using boost::format;
+using boost::str;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 #define LINK_MAINT_INTERVAL 2
 
-LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0), passive(false), passiveChanged(false)
+LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0), passive(false), passiveChanged(false), 
+                                               realm(broker->getOptions().realm)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this)));
 }
@@ -241,6 +246,7 @@ void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
     {
         l->second->established();
         l->second->setConnection(c);
+        c->setUserId(str(format("%1%@%2%") % l->second->getUsername() % realm));
     }
 }
 
