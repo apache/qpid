@@ -155,6 +155,25 @@ void SystemInfo::getSystemId (std::string &osName,
         machine = "unknown";
         break;
     }
+
+uint32_t SystemInfo::getProcessId()
+{
+    // TODO: Provide Windows implementation
+    return 0;
+}
+
+uint32_t SystemInfo::getParentProcessId()
+{
+    // TODO: Provide Windows implementation
+    return 0;
+}
+
+std::string SystemInfo::getProcessName()
+{
+    // TODO: Provide Windows implementation
+    return std::string();
+}
+
 }
 
 }} // namespace qpid::sys

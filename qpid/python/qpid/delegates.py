@@ -21,6 +21,7 @@ import os, connection, session
 from util import notify
 from datatypes import RangedSet
 from logging import getLogger
+import sys
 
 log = getLogger("qpid.io.ctl")
 
@@ -141,7 +142,10 @@ class Client(Delegate):
 
   PROPERTIES = {"product": "qpid python client",
                 "version": "development",
-                "platform": os.name}
+                "platform": os.name,
+                "qpid.client_process": os.path.basename(sys.argv[0]),
+                "qpid.client_pid": os.getpid(),
+                "qpid.client_ppid": os.getppid()}
 
   def __init__(self, connection, username="guest", password="guest",
                mechanism="PLAIN", heartbeat=None):
