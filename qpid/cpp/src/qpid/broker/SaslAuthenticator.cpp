@@ -141,21 +141,31 @@ NullAuthenticator::~NullAuthenticator() {}
 void NullAuthenticator::getMechanisms(Array& mechanisms)
 {
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
+    mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));//useful for testing
 }
 
 void NullAuthenticator::start(const string& mechanism, const string& response)
 {
     if (mechanism == "PLAIN") { // Old behavior
-        if (response.size() > 0 && response[0] == (char) 0) {
-            string temp = response.substr(1);
-            string::size_type i = temp.find((char)0);
-            string uid = temp.substr(0, i);
-            string pwd = temp.substr(i + 1);
-            i = uid.find_last_of(realm);
-            if (i == string::npos || i != (uid.size() - 1)) {
-                uid = str(format("%1%@%2%") % uid % realm);
+        if (response.size() > 0) {
+            string uid;
+            string::size_type i = response.find((char)0);
+            if (i == 0 && response.size() > 1) {
+                //no authorization id; use authentication id
+                i = response.find((char)0, 1);
+                if (i != string::npos) uid = response.substr(1, i-1);
+            } else if (i != string::npos) {
+                //authorization id is first null delimited field
+                uid = response.substr(0, i);
+            }//else not a valid SASL PLAIN response, throw error?            
+            if (!uid.empty()) {
+                //append realm if it has not already been added
+                i = uid.find(realm);
+                if (i == string::npos || realm.size() + i < uid.size()) {
+                    uid = str(format("%1%@%2%") % uid % realm);
+                }
+                connection.setUserId(uid);
             }
-            connection.setUserId(uid);
         }
     } else {
         connection.setUserId("anonymous");
