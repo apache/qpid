@@ -1,9 +1,11 @@
 backport-util-concurrent=lib/backport-util-concurrent-2.2.jar
 
+commons-beanutils-core=lib/commons-beanutils-core-1.8.0.jar
 commons-cli=lib/commons-cli-1.0.jar
 commons-codec=lib/commons-codec-1.3.jar
 commons-collections=lib/commons-collections-3.2.jar
-commons-configuration=lib/commons-configuration-1.2.jar
+commons-configuration=lib/commons-configuration-1.6.jar
+commons-digester=lib/commons-digester-1.8.1.jar
 commons-lang=lib/commons-lang-2.2.jar
 commons-logging=lib/commons-logging-1.0.4.jar
 commons-pool=lib/commons-pool-1.4.jar
@@ -71,8 +73,9 @@ geronimo-servlet=lib/geronimo-servlet_2.5_spec-1.2.jar
 felix.libs=${osgi-core} ${felix-framework}
 
 common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
-    ${mina-filter-ssl} ${commons-codec} ${commons-lang} ${commons-collections} \
-    ${commons-configuration}
+    ${mina-filter-ssl} ${commons-beanutils-core} ${commons-codec} \ 
+    ${commons-lang} ${commons-collections} ${commons-configuration} \
+    ${commons-digester}
 client.libs=${common.libs}  ${geronimo-jms}
 tools.libs=${client.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
