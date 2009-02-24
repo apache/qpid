@@ -25,12 +25,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.commons.configuration.CombinedConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConfigurationFactory;
+import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.configuration.ConfigurationFactory.DigesterConfigurationFactory;
+import org.apache.commons.configuration.tree.ExpressionEngine;
 
 public class ServerConfiguration
 {
@@ -45,24 +51,57 @@ public class ServerConfiguration
     private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     private static final int DEFAULT_JMXPORT = 8999;
 
-    private long _housekeepingExpiredMessageCheckPeriod = DEFAULT_HOUSEKEEPING_PERIOD;
     private static int _jmxPort = DEFAULT_JMXPORT;
 
     private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
     private SecurityConfiguration _securityConfiguration = null;
+
+    // Map of environment variables to config items
+    private static final Map<String, String> envVarMap = new HashMap<String, String>();
+    
+    {
+        envVarMap.put("QPID_PORT", "connector.port");
+        envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
+        envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
+        envVarMap.put("QPID_NIO", "connector.qpidnio");
+        envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
+        envVarMap.put("QPID_JMXPORT", "management.jmxport");
+        envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
+        envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
+        envVarMap.put("QPID_AUTOREGISTER", "auto_register");
+        envVarMap.put("QPID_MANAGEMENTENABLED", "management.enabled");
+        envVarMap.put("QPID_HEARTBEATDELAY", "heartbeat.delay");
+        envVarMap.put("QPID_HEARTBEATTIMEOUTFACTOR", "heartbeat.timeoutFactor");
+        envVarMap.put("QPID_MAXIMUMMESSAGEAGE", "maximumMessageAge");
+        envVarMap.put("QPID_MAXIMUMMESSAGECOUNT", "maximumMessageCount");
+        envVarMap.put("QPID_MAXIMUMQUEUEDEPTH", "maximumQueueDepth");
+        envVarMap.put("QPID_MAXIMUMMESSAGESIZE", "maximumMessageSize");
+        envVarMap.put("QPID_MINIMUMALERTREPEATGAP", "minimumAlertRepeatGap");
+        envVarMap.put("QPID_SOCKETRECEIVEBUFFER", "connector.socketReceiveBuffer");
+        envVarMap.put("QPID_SOCKETWRITEBUFFER", "connector.socketWriteBuffer");
+        envVarMap.put("QPID_TCPNODELAY", "connector.tcpNoDelay");
+        envVarMap.put("QPID_ENABLEPOOLEDALLOCATOR", "advanced.enablePooledAllocator");
+    }
     
     public ServerConfiguration(File configurationURL) throws ConfigurationException
     {
-        this(config(configurationURL));
+        this(parseConfig(configurationURL));
     }
 
     public ServerConfiguration(Configuration conf) throws ConfigurationException
     {
         _config = conf;
+        
+        substituteEnvironmentVariables();
+        
         _jmxPort = _config.getInt("management.jmxport", 8999);
-
         _securityConfiguration = new SecurityConfiguration(conf.subset("security"));
 
+        setupVirtualHosts(conf);
+    }
+
+    private void setupVirtualHosts(Configuration conf) throws ConfigurationException
+    {
         List vhosts = conf.getList("virtualhosts");
         Iterator i = vhosts.iterator();
         while (i.hasNext())
@@ -85,17 +124,32 @@ public class ServerConfiguration
         }
     }
 
-    public static String[] objListToStringArray(List objList)
+    private void substituteEnvironmentVariables()
     {
-        String[] networkStrings = new String[objList.size()];
-        int i = 0;
-        for (Object network : objList)
+        for (Entry<String, String> var : envVarMap.entrySet())
         {
-            networkStrings[i++] = (String) network;
+            String val = System.getenv(var.getKey());
+            if (val != null)
+            {
+                _config.setProperty(var.getValue(), val); 
+            }
         }
-        return networkStrings;
     }
 
+    private final static Configuration parseConfig(File file) throws ConfigurationException
+    {      
+        ConfigurationFactory factory = new ConfigurationFactory();
+        factory.setConfigurationFileName(file.getAbsolutePath());
+        Configuration conf = factory.getConfiguration();
+        Iterator keys = conf.getKeys();
+        if (!keys.hasNext())
+        {
+            keys = null;
+            conf = flatConfig(file);
+        }
+        return conf;
+    }
+    
     // Our configuration class needs to make the interpolate method
     // public so it can be called below from the config method.
     private static class MyConfiguration extends CompositeConfiguration
@@ -105,8 +159,8 @@ public class ServerConfiguration
             return super.interpolate(obj);
         }
     }
-
-    private final static Configuration config(File url) throws ConfigurationException
+    
+    private final static Configuration flatConfig(File file) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
         // interpolation takes place accross the entirety of the
@@ -121,7 +175,7 @@ public class ServerConfiguration
                 return conf.interpolate(o);
             }
         });
-        conf.addConfiguration(new XMLConfiguration(url)
+        conf.addConfiguration(new XMLConfiguration(file)
         {
             protected String interpolate(String o)
             {
@@ -399,13 +453,13 @@ public class ServerConfiguration
         return _config.getString("virtualhosts.default");
     }
 
-    public void setHousekeepingExpiredMessageCheckPeriod(long _housekeepingExpiredMessageCheckPeriod)
+    public void setHousekeepingExpiredMessageCheckPeriod(long value)
     {
-        this._housekeepingExpiredMessageCheckPeriod = _housekeepingExpiredMessageCheckPeriod;
+        _config.setProperty("housekeeping.expiredMessageCheckPeriod", value);
     }
 
     public long getHousekeepingExpiredMessageCheckPeriod()
     {
-        return _housekeepingExpiredMessageCheckPeriod;
+        return _config.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
     }
 }
