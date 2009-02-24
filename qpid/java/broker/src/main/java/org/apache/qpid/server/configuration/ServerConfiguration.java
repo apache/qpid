@@ -27,16 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.configuration.CombinedConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationFactory;
-import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.commons.configuration.ConfigurationFactory.DigesterConfigurationFactory;
-import org.apache.commons.configuration.tree.ExpressionEngine;
 
 public class ServerConfiguration
 {

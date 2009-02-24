@@ -73,9 +73,8 @@ geronimo-servlet=lib/geronimo-servlet_2.5_spec-1.2.jar
 felix.libs=${osgi-core} ${felix-framework}
 
 common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
-    ${mina-filter-ssl} ${commons-beanutils-core} ${commons-codec} \ 
-    ${commons-lang} ${commons-collections} ${commons-configuration} \
-    ${commons-digester}
+    ${mina-filter-ssl} ${commons-beanutils-core} ${commons-digester} ${commons-codec} ${commons-lang} ${commons-collections} \
+    ${commons-configuration}
 client.libs=${common.libs}  ${geronimo-jms}
 tools.libs=${client.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
