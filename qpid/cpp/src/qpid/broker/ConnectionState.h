@@ -48,8 +48,9 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         heartbeatmax(120),
         stagingThreshold(broker.getStagingThreshold()),
         federationLink(true),
-        clientSupportsThrottling(false)
-        {}
+        clientSupportsThrottling(false),
+        clusterOrderOut(0)
+    {}
 
     virtual ~ConnectionState () {}
 
@@ -75,7 +76,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     const string& getFederationPeerTag() const { return federationPeerTag; }
     std::vector<Url>& getKnownHosts() { return knownHosts; }
     
-    void setClientThrottling() { clientSupportsThrottling = true; }
+    void setClientThrottling(bool set=true) { clientSupportsThrottling = set; }
     bool getClientThrottling() const { return clientSupportsThrottling; }
 
     Broker& getBroker() { return broker; }
@@ -86,10 +87,19 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     //contained output tasks
     sys::AggregateOutput outputTasks;
 
-    sys::ConnectionOutputHandlerPtr& getOutput() { return out; }
+    sys::ConnectionOutputHandler& getOutput() { return out; }
     framing::ProtocolVersion getVersion() const { return version; }
-
     void setOutputHandler(qpid::sys::ConnectionOutputHandler* o) { out.set(o); }
+
+    /**
+     * If the broker is part of a cluster, this is a handler provided
+     * by cluster code. It ensures consistent ordering of commands
+     * that are sent based on criteria that are not predictably
+     * ordered cluster-wide, e.g. a timer firing.
+     */
+    framing::FrameHandler* getClusterOrderOutput() { return clusterOrderOut; }
+    void setClusterOrderOutput(framing::FrameHandler& fh) { clusterOrderOut = &fh; }
+
 
   protected:
     framing::ProtocolVersion version;
@@ -103,6 +113,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     string federationPeerTag;
     std::vector<Url> knownHosts;
     bool clientSupportsThrottling;
+    framing::FrameHandler* clusterOrderOut;
 };
 
 }}

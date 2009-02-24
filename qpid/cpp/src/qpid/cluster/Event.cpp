@@ -74,12 +74,15 @@ Event Event::decodeCopy(const MemberId& m, framing::Buffer& buf) {
     return e;
 }
 
-Event Event::control(const framing::AMQBody& body, const ConnectionId& cid) {
-    framing::AMQFrame f(body);
+Event Event::control(const framing::AMQFrame& f, const ConnectionId& cid) {
     Event e(CONTROL, cid, f.encodedSize());
     Buffer buf(e);
     f.encode(buf);
     return e;
+}
+
+Event Event::control(const framing::AMQBody& body, const ConnectionId& cid) {
+    return control(framing::AMQFrame(body), cid);
 }
 
 iovec Event::toIovec() {
@@ -110,10 +113,13 @@ Event::operator Buffer() const  {
 
 static const char* EVENT_TYPE_NAMES[] = { "data", "control" };
 
+std::ostream& operator << (std::ostream& o, EventType t) {
+    return o << EVENT_TYPE_NAMES[t];
+}
+
 std::ostream& operator << (std::ostream& o, const EventHeader& e) {
     o << "[event " << e.getConnectionId()  << "/" << e.getSequence()
-      << " " << EVENT_TYPE_NAMES[e.getType()]
-      << " " << e.getSize() << " bytes]";
+      << " " << e.getType() << " " << e.getSize() << " bytes]";
     return o;
 }
 

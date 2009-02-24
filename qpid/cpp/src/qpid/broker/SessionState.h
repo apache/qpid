@@ -125,6 +125,15 @@ class SessionState : public qpid::SessionState,
 
     void sendAcceptAndCompletion();
 
+    /**
+     * If commands are sent based on the local time (e.g. in timers), they don't have
+     * a well-defined ordering across cluster nodes.
+     * This proxy is for sending such commands. In a clustered broker it will take steps
+     * to synchronize command order across the cluster. In a stand-alone broker
+     * it is just a synonym for getProxy()
+     */  
+    framing::AMQP_ClientProxy& getClusterOrderProxy();
+    
     Broker& broker;
     SessionHandler* handler;
     sys::AbsTime expiry;        // Used by SessionManager.
@@ -138,7 +147,7 @@ class SessionState : public qpid::SessionState,
 
     // State used for producer flow control (rate limited)
     qpid::sys::Mutex rateLock;
-    RateFlowcontrol* rateFlowcontrol;
+    boost::scoped_ptr<RateFlowcontrol> rateFlowcontrol;
     boost::intrusive_ptr<TimerTask> flowControlTimer;
 
     friend class SessionManager;

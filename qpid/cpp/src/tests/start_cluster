@@ -32,7 +32,7 @@ test -f cluster.ports && { echo "cluster.ports file already exists" ; exit 1; }
 rm -f cluster*.log
 SIZE=${1:-1}; shift
 CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.
-OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $*"
+OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $@"
 
 for (( i=0; i<SIZE; ++i )); do
     PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS`  || exit 1

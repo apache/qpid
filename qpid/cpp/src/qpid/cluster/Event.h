@@ -34,6 +34,7 @@ namespace qpid {
 
 namespace framing {
 class AMQBody;
+class AMQFrame;
 class Buffer;
 }
 
@@ -83,8 +84,11 @@ class Event : public EventHeader {
     /** Create an event copied from delivered data. */
     static Event decodeCopy(const MemberId& m, framing::Buffer&);
 
-    /** Create an event containing a control */
+    /** Create a control event. */
     static Event control(const framing::AMQBody&, const ConnectionId&);
+
+    /** Create a control event. */
+    static Event control(const framing::AMQFrame&, const ConnectionId&);
     
     // Data excluding header.
     char* getData() { return store + HEADER_SIZE; }
@@ -105,6 +109,7 @@ class Event : public EventHeader {
 };
 
 std::ostream& operator << (std::ostream&, const EventHeader&);
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_EVENT_H*/
