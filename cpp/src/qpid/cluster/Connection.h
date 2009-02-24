@@ -27,6 +27,7 @@
 #include "OutputInterceptor.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "EventFrame.h"
+#include "McastFrameHandler.h"
 
 #include "qpid/broker/Connection.h"
 #include "qpid/amqp_0_10/Connection.h"
@@ -150,6 +151,10 @@ class Connection :
     void giveReadCredit(int credit);
     
   private:
+    struct NullFrameHandler : public framing::FrameHandler {
+        void handle(framing::AMQFrame&) {}
+    };
+    
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();
@@ -174,6 +179,8 @@ class Connection :
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     bool expectProtocolHeader;
+    McastFrameHandler mcastFrameHandler;
+    NullFrameHandler nullFrameHandler;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
     

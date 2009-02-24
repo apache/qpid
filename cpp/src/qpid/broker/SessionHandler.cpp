@@ -34,7 +34,8 @@ using namespace qpid::sys;
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c), 
-      proxy(out)
+      proxy(out),
+      clusterOrderProxy(c.getClusterOrderOutput() ? new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
 {}
 
 SessionHandler::~SessionHandler() {}
