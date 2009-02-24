@@ -166,13 +166,13 @@ void Bridge::destroy()
     listener(this);
 }
 
-void Bridge::setPersistenceId(uint64_t id) const
+void Bridge::setPersistenceId(uint64_t pId) const
 {
     if (mgmtObject != 0 && persistenceId == 0) {
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
-        agent->addObject (mgmtObject, id);
+        agent->addObject (mgmtObject, pId);
     }
-    persistenceId = id;
+    persistenceId = pId;
 }
 
 const string& Bridge::getName() const
