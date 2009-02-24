@@ -29,6 +29,7 @@ import re
 import socket
 import struct
 import os
+import platform
 import locale
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
@@ -202,7 +203,7 @@ class ManagementData:
     self.lastUnit       = None
     self.methodSeq      = 1
     self.methodsPending = {}
-    self.sessionId      = "%s.%d" % (os.uname()[1], os.getpid())
+    self.sessionId      = "%s.%d" % (platform.uname()[1], os.getpid())
 
     self.broker = Broker (host)
     self.conn   = Connection (connect (self.broker.host, self.broker.port),
