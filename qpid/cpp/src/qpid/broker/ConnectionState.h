@@ -100,6 +100,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     framing::FrameHandler* getClusterOrderOutput() { return clusterOrderOut; }
     void setClusterOrderOutput(framing::FrameHandler& fh) { clusterOrderOut = &fh; }
 
+    virtual void requestIOProcessing (boost::function0<void>) = 0;
 
   protected:
     framing::ProtocolVersion version;

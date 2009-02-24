@@ -80,7 +80,8 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 
 void Connection::requestIOProcessing(boost::function0<void> callback)
 {
-    ioCallback = callback;
+    ScopedLock<Mutex> l(ioCallbackLock);
+    ioCallbacks.push(callback);
     out.activateOutput();
 }
 
@@ -221,10 +222,13 @@ bool Connection::hasOutput() { return outputTasks.hasOutput(); }
 
 bool Connection::doOutput() {    
     try{
-        if (ioCallback)
-            ioCallback(); // Lend the IO thread for management processing
-        ioCallback = 0;
-
+        {
+        ScopedLock<Mutex> l(ioCallbackLock);
+        while (!ioCallbacks.empty()) {
+            ioCallbacks.front()(); // Lend the IO thread for management processing
+            ioCallbacks.pop();
+        }
+        }
         if (mgmtClosing)
             close(connection::CLOSE_CODE_CONNECTION_FORCED, "Closed by Management Request");
         else

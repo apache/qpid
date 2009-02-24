@@ -25,6 +25,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <queue>
 
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -47,6 +48,7 @@
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/TimeoutHandler.h"
+#include "qpid/sys/Mutex.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/bind.hpp>
@@ -119,7 +121,8 @@ class Connection : public sys::ConnectionInputHandler,
     const bool isLink;
     bool mgmtClosing;
     const std::string mgmtId;
-    boost::function0<void> ioCallback;
+    sys::Mutex ioCallbackLock;
+    std::queue<boost::function0<void> > ioCallbacks;
     qmf::org::apache::qpid::broker::Connection* mgmtObject;
     LinkRegistry& links;
     management::ManagementAgent* agent;
