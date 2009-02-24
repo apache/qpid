@@ -29,6 +29,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <tlhelp32.h>
 
 #ifndef HOST_NAME_MAX
 #  define HOST_NAME_MAX 256
@@ -155,25 +156,43 @@ void SystemInfo::getSystemId (std::string &osName,
         machine = "unknown";
         break;
     }
+}
 
 uint32_t SystemInfo::getProcessId()
 {
-    // TODO: Provide Windows implementation
-    return 0;
+    return static_cast<uint32_t>(::GetCurrentProcessId());
 }
 
 uint32_t SystemInfo::getParentProcessId()
 {
-    // TODO: Provide Windows implementation
-    return 0;
+    // Only want info for the current process, so ask for something specific.
+    // The module info won't be used here but it keeps the snapshot limited to
+    // the current process so a search through all processes is not needed.
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+    if (snap == INVALID_HANDLE_VALUE)
+        return 0;
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(entry);
+    if (!Process32First(snap, &entry))
+        entry.th32ParentProcessID = 0;
+    CloseHandle(snap);
+    return static_cast<uint32_t>(entry.th32ParentProcessID);
 }
 
 std::string SystemInfo::getProcessName()
 {
-    // TODO: Provide Windows implementation
-    return std::string();
-}
-
+    // Only want info for the current process, so ask for something specific.
+    // The module info won't be used here but it keeps the snapshot limited to
+    // the current process so a search through all processes is not needed.
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+    if (snap == INVALID_HANDLE_VALUE)
+        return 0;
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(entry);
+    if (!Process32First(snap, &entry))
+        entry.szExeFile[0] = '\0';
+    CloseHandle(snap);
+    return std::string(entry.szExeFile);
 }
 
 }} // namespace qpid::sys
