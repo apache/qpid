@@ -22,8 +22,8 @@
 # Check AIS requirements and run tests if found.
 id -ng | grep '\<ais\>' >/dev/null || \
     NOGROUP="The ais group is not your primary group."
-ps -u root | grep aisexec >/dev/null || \
-    NOAISEXEC="The aisexec daemon is not running as root"
+ps -u root | grep 'aisexec\|corosync' >/dev/null || \
+    NOAISEXEC="The aisexec/corosync daemon is not running as root"
 
 if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
     cat <<EOF
@@ -52,5 +52,5 @@ report_frequency=10000
 verbosity=1
 
 
-exec `dirname $0`/failover_soak $src_root $module_dir $host ./declare_queues ./replaying_sender ./resuming_receiver $n_messages $report_frequency $verbosity
+exec ./failover_soak $src_root $module_dir $host ./declare_queues ./replaying_sender ./resuming_receiver $n_messages $report_frequency $verbosity
 
