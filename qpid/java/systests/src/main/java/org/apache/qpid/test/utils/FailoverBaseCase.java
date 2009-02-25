@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.test.utils;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-
 import javax.jms.Connection;
 
 public class FailoverBaseCase extends QpidTestCase
@@ -33,7 +30,7 @@ public class FailoverBaseCase extends QpidTestCase
 
     private boolean failedOver = false;
 
-    private int getFailingPort()
+    protected int getFailingPort()
     {
         if (_broker.equals(VM))
         {
@@ -88,6 +85,18 @@ public class FailoverBaseCase extends QpidTestCase
         catch (Exception e)
         {
             throw new RuntimeException(e);
+        }
+    }
+    
+    protected void setFailingPort(int p)
+    {
+        if (_broker.equals(VM))
+        {
+            FAILING_VM_PORT = p;
+        }
+        else
+        {
+            FAILING_PORT = p;
         }
     }
 }
