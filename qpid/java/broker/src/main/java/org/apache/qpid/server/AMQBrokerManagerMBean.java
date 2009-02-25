@@ -77,7 +77,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     @MBeanConstructor("Creates the Broker Manager MBean")
     public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
-        super(ManagedBroker.class, ManagedBroker.TYPE);
+        super(ManagedBroker.class, ManagedBroker.TYPE, ManagedBroker.VERSION);
 
         _virtualHostMBean = virtualHostMBean;
         VirtualHost virtualHost = virtualHostMBean.getVirtualHost();
