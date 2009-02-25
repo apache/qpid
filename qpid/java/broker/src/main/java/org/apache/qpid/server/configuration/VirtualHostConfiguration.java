@@ -70,9 +70,19 @@ public class VirtualHostConfiguration
         }
     }
 
+    /**
+     * All future usages should use the constructor that takes the ServerConfiguration.
+     *
+     * This can be removed after QPID-1696 has been resolved.
+     *
+     * @param name
+     * @param mungedConf
+     * @throws ConfigurationException
+     */
+    @Deprecated
     public VirtualHostConfiguration(String name, Configuration mungedConf) throws ConfigurationException
     {
-        this(name,mungedConf,  new ServerConfiguration(new PropertiesConfiguration()));
+        this(name,mungedConf,  ApplicationRegistry.getInstance().getConfiguration());
     }
 
     public String getName()
@@ -82,7 +92,7 @@ public class VirtualHostConfiguration
 
     public long getHousekeepingExpiredMessageCheckPeriod()
     {
-        return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingExpiredMessageCheckPeriod());
+        return _config.getLong("housekeeping.expiredMessageCheckPeriod", _serverConfiguration.getHousekeepingExpiredMessageCheckPeriod());
     }
 
     public String getAuthenticationDatabase()
