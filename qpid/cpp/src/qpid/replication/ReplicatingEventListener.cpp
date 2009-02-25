@@ -131,6 +131,7 @@ void ReplicatingEventListener::initialize(Plugin::Target& target)
 {
       Broker* broker = dynamic_cast<broker::Broker*>(&target);
       if (broker && !options.queue.empty()) {
+          broker->addFinalizer(boost::bind(&ReplicatingEventListener::shutdown, this)); 
           if (options.createQueue) {
               queue = broker->getQueues().declare(options.queue).first;
           } else {
@@ -147,6 +148,7 @@ void ReplicatingEventListener::initialize(Plugin::Target& target)
 }
 
 void ReplicatingEventListener::earlyInitialize(Target&) {}
+void ReplicatingEventListener::shutdown() { queue.reset(); }
 
 ReplicatingEventListener::PluginOptions::PluginOptions() : Options("Queue Replication Options"), 
                                                            name("replicator"), 
