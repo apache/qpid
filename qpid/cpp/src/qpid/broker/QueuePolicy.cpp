@@ -197,11 +197,12 @@ void RingQueuePolicy::enqueued(const QueuedMessage& m)
 void RingQueuePolicy::dequeued(const QueuedMessage& m)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
-    QueuePolicy::dequeued(m);
     //find and remove m from queue
-    for (Messages::iterator i = queue.begin(); i != queue.end() && m.position <= i->position; i++) {
-        if (i->position == m.position) {
+    for (Messages::iterator i = queue.begin(); i != queue.end(); i++) {
+        if (i->payload == m.payload) {
             queue.erase(i);
+            //now update count and size
+            QueuePolicy::dequeued(m);
             break;
         }
     }
@@ -210,9 +211,11 @@ void RingQueuePolicy::dequeued(const QueuedMessage& m)
 bool RingQueuePolicy::isEnqueued(const QueuedMessage& m)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
-    //for non-strict ring policy, a message can be dequeued before acked; need to detect this
-    for (Messages::iterator i = queue.begin(); i != queue.end() && m.position <= i->position; i++) {
-        if (i->position == m.position) {
+    //for non-strict ring policy, a message can be replaced (and
+    //therefore dequeued) before it is accepted or released by
+    //subscriber; need to detect this
+    for (Messages::const_iterator i = queue.begin(); i != queue.end(); i++) {
+        if (i->payload == m.payload) {
             return true;
         }
     }
@@ -236,13 +239,10 @@ bool RingQueuePolicy::checkLimit(const QueuedMessage& m)
         oldest = queue.front();
     }
     if (oldest.queue->acquire(oldest) || !strict) {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        if (oldest.position == queue.front().position) {
-            queue.pop_front();
-            QPID_LOG(debug, "Ring policy triggered in queue " 
-                     << (m.queue ? m.queue->getName() : std::string("unknown queue"))
-                     << ": removed message " << oldest.position << " to make way for " << m.position);
-        }
+        oldest.queue->dequeue(0, oldest);
+        QPID_LOG(debug, "Ring policy triggered in queue " 
+                 << (m.queue ? m.queue->getName() : std::string("unknown queue"))
+                 << ": removed message " << oldest.position << " to make way for " << m.position);
         return true;
     } else {
         QPID_LOG(debug, "Ring policy could not be triggered in queue " 

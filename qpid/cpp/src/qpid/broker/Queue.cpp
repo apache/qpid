@@ -676,9 +676,9 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg)
 // return true if store exists, 
 bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 {
-    if (policy.get() && !policy->isEnqueued(msg)) return false;
     {
         Mutex::ScopedLock locker(messageLock);
+        if (policy.get() && !policy->isEnqueued(msg)) return false;
         if (!ctxt) { 
             dequeued(msg);
         }
