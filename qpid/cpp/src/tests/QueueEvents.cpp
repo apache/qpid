@@ -38,7 +38,7 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 using qpid::framing::SequenceNumber;
 
-struct DummyListener
+struct EventChecker
 {
     typedef std::deque<QueueEvents::Event> Events;
 
@@ -71,9 +71,9 @@ QPID_AUTO_TEST_CASE(testBasicEventProcessing)
     sys::Dispatcher dispatcher(poller);
     Thread dispatchThread(dispatcher);
     QueueEvents events(poller);
-    DummyListener listener;
+    EventChecker listener;
     listener.poller = poller;
-    events.registerListener("dummy", boost::bind(&DummyListener::handle, &listener, _1));
+    events.registerListener("dummy", boost::bind(&EventChecker::handle, &listener, _1));
     //signal occurence of some events:
     Queue queue("queue1");
     SequenceNumber id;
