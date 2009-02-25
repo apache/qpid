@@ -85,6 +85,8 @@ public class AMQQueueFactory
         q.setMaximumMessageSize(config.getMaximumMessageSize());
         q.setMaximumMessageCount(config.getMaximumMessageCount());
         q.setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
+        q.setMemoryUsageMaximum(config.getMemoryUsageMaximum());
+        q.setMemoryUsageMinimum(config.getMemoryUsageMinimum());
         return q;
     }
 }

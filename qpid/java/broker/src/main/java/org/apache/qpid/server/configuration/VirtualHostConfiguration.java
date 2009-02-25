@@ -37,10 +37,12 @@ public class VirtualHostConfiguration
     private String _name;
     private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
     private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private ServerConfiguration _serverConfiguration;
 
-
-    public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
+    public VirtualHostConfiguration(String name, Configuration config,
+                                    ServerConfiguration serverConfiguration) throws ConfigurationException
     {
+        _serverConfiguration = serverConfiguration;
         _config = config;
         _name = name;
 
@@ -52,7 +54,7 @@ public class VirtualHostConfiguration
             CompositeConfiguration mungedConf = new CompositeConfiguration();
             mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
             mungedConf.addConfiguration(_config.subset("queues"));
-            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf));
+            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
         }
 
         i = _config.getList("exchanges.exchange.name").iterator();
@@ -65,6 +67,11 @@ public class VirtualHostConfiguration
             String exchName = (String) i.next();
             _exchanges.put(exchName, new ExchangeConfiguration(exchName, mungedConf));
         }
+    }
+
+    public VirtualHostConfiguration(String name, Configuration mungedConf) throws ConfigurationException
+    {
+        this(name,mungedConf, null);
     }
 
     public String getName()
@@ -125,6 +132,27 @@ public class VirtualHostConfiguration
     public QueueConfiguration getQueueConfiguration(String queueName)
     {
         return _queues.get(queueName);
+    }
+
+    public long getMemoryUsageMaximum()
+    {
+        return _config.getLong("queues.maximumMemoryUsage", 0);
+    }
+
+    public long getMemoryUsageMinimum()
+    {
+        return _config.getLong("queues.minimumMemoryUsage", 0);
+    }
+
+    public ServerConfiguration getServerConfiguration()
+    {
+        return _serverConfiguration;
+    }
+
+    public static final String FLOW_TO_DISK_PATH = "flowToDiskPath";
+    public String getFlowToDiskLocation()
+    {
+        return _config.getString(FLOW_TO_DISK_PATH, getServerConfiguration().getQpidWork());
     }
 
 }

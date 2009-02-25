@@ -68,6 +68,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     boolean isEmpty();
 
+    boolean isFlowed();
+
     int getMessageCount();
 
     int getUndeliveredMessageCount();
@@ -111,7 +113,15 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext);
 
+    long getMemoryUsageMaximum();
 
+    void setMemoryUsageMaximum(long maximumMemoryUsage);
+
+    long getMemoryUsageMinimum();
+
+    void setMemoryUsageMinimum(long minimumMemoryUsage);
+
+    long getMemoryUsageCurrent();
 
     long getMaximumMessageSize();
 

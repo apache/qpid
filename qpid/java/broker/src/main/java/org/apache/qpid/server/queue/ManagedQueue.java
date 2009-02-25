@@ -183,6 +183,63 @@ public interface ManagedQueue
     @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(KB) for Queue Depth")
     void setMaximumQueueDepth(Long value) throws IOException;
 
+                                             //TODO change descriptions
+    /**
+     * View the limit on the memory that this queue will utilise.
+     *
+     * Used by Flow to Disk.
+     *
+     * @return The maximum memory(B) that the queue will occuy.
+     */
+    public Long getMemoryUsageMaximum();
+
+    /**
+     * Place a limit on the memory that this queue will utilise.
+     *
+     * Used by Flow to Disk
+     *
+     * @param maximumMemoryUsage The new maximum memory(B) to be used by this queue
+     */
+    @MBeanAttribute(name="MemoryUsageMaximum", description="The maximum memory(B) that the queue will occupy.")
+    public void setMemoryUsageMaximum(Long maximumMemoryUsage);
+
+    /**
+     * View the minimum amount of memory that has been defined for this queue.
+     *
+     * Used by Flow to Disk
+     *
+     * @return The minimum amount of queue data(B) that the queue will attempt to keep in memory
+     */
+    public Long getMemoryUsageMinimum();
+
+    /**
+     * Set the minimum amount of memory that has been defined for this queue.
+     *
+     * Used by Flow to Disk
+     *
+     * @param minimumMemoryUsage The new minimum memory(B) level to be used by this queue
+     */
+    @MBeanAttribute(name="MemoryUsageMinimum", description="The minimum memory(B) that the queue will occupy.")
+    public void setMemoryUsageMinimum(Long minimumMemoryUsage);
+
+    /**
+     * View the amount of memory(B) that this queue is using.
+     *
+     * @return The current memory(B) usage of this queue.
+     */
+    @MBeanAttribute(name="MemoryUsageCurrent", description="The current amount of memory(B) used by this queue.")
+    public Long getMemoryUsageCurrent();
+
+    /**
+     * When a queue exceeds its MemoryUsageMaximum value then the Queue will start flowing to disk.
+     *
+     * This boolean is used to show that change in state.
+     *
+     * @return true if the Queue is currently flowing to disk
+     */
+    @MBeanAttribute(name="isFlowed", description="true if the queue is currently flowing to disk.")
+    public boolean isFlowed();
+
 
 
     //********** Operations *****************//
