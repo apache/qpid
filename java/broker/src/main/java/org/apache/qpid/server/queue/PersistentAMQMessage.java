@@ -52,7 +52,8 @@ public class PersistentAMQMessage extends TransientAMQMessage
             throws AMQException
     {
         super.setPublishAndContentHeaderBody(storeContext, messagePublishInfo, contentHeaderBody);
-        MessageMetaData mmd = new MessageMetaData(messagePublishInfo, contentHeaderBody, _contentBodies == null ? 0 : _contentBodies.size(), _arrivalTime);
+        MessageMetaData mmd = new MessageMetaData(messagePublishInfo, contentHeaderBody,
+                                                  _contentBodies == null ? 0 : _contentBodies.size(), _arrivalTime);
 
         _transactionLog.storeMessageMetaData(storeContext, _messageId, mmd);
     }
@@ -63,13 +64,7 @@ public class PersistentAMQMessage extends TransientAMQMessage
         return true;
     }
 
-    public void recoverFromMessageMetaData(MessageMetaData mmd)
-    {
-        _arrivalTime = mmd.getArrivalTime();
-        _contentHeaderBody = mmd.getContentHeaderBody();
-        _messagePublishInfo = mmd.getMessagePublishInfo();
-    }
-
+    @Override
     public void recoverContentBodyFrame(ContentChunk contentChunk, boolean isLastContentBody) throws AMQException
     {
         super.addContentBodyFrame(null, contentChunk, isLastContentBody);

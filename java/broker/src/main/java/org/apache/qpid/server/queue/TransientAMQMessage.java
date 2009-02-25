@@ -339,26 +339,47 @@ public class TransientAMQMessage implements AMQMessage
             throw new NullPointerException("PublishInfo cannot be null");
         }
 
-        _messagePublishInfo = messagePublishInfo;
-        _contentHeaderBody = contentHeaderBody;
-
-        if (contentHeaderBody.bodySize == 0)
-        {
-            _contentBodies = Collections.EMPTY_LIST;
-        }
-
         _arrivalTime = System.currentTimeMillis();
 
-        if (messagePublishInfo.isImmediate())
-        {
-            _flags |= IMMEDIATE;
-        }
+
+        _contentHeaderBody = contentHeaderBody;
+        _messagePublishInfo = messagePublishInfo;
+
+        updateHeaderAndFlags();
     }
 
     public long getArrivalTime()
     {
         return _arrivalTime;
     }
+
+    public void recoverFromMessageMetaData(MessageMetaData mmd)
+    {
+        _arrivalTime = mmd.getArrivalTime();
+        _contentHeaderBody = mmd.getContentHeaderBody();
+        _messagePublishInfo = mmd.getMessagePublishInfo();
+
+        updateHeaderAndFlags();
+    }
+
+    private void updateHeaderAndFlags()
+    {
+        if (_contentHeaderBody.bodySize == 0)
+        {
+            _contentBodies = Collections.EMPTY_LIST;
+        }
+
+        if (_messagePublishInfo.isImmediate())
+        {
+            _flags |= IMMEDIATE;
+        }
+    }
+
+    public void recoverContentBodyFrame(ContentChunk contentChunk, boolean isLastContentBody) throws AMQException
+    {
+        addContentBodyFrame(null, contentChunk, isLastContentBody);
+    }
+
 
     public String toString()
     {

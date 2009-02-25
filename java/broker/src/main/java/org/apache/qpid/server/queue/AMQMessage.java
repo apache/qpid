@@ -113,6 +113,9 @@ public interface AMQMessage
     void addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk, boolean isLastContentBody)
             throws AMQException;
 
+    void recoverFromMessageMetaData(MessageMetaData mmd);
+
+    void recoverContentBodyFrame(ContentChunk contentChunk, boolean isLastContentBody) throws AMQException;
 
 
     String toString();
