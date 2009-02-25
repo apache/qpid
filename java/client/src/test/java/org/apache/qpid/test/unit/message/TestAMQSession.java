@@ -44,7 +44,9 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     }
 
-    public void sendQueueBind(AMQShortString queueName, AMQShortString routingKey, FieldTable arguments, AMQShortString exchangeName, AMQDestination destination) throws AMQException, FailoverException
+    public void sendQueueBind(AMQShortString queueName, AMQShortString routingKey, FieldTable arguments,
+                              AMQShortString exchangeName, AMQDestination destination,
+                              boolean nowait) throws AMQException, FailoverException
     {
 
     }
@@ -129,7 +131,8 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     }
 
-    public void sendQueueDeclare(AMQDestination amqd, AMQProtocolHandler protocolHandler) throws AMQException, FailoverException
+    public void sendQueueDeclare(AMQDestination amqd, AMQProtocolHandler protocolHandler,
+                                 boolean nowait) throws AMQException, FailoverException
     {
 
     }
