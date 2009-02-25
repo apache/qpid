@@ -261,9 +261,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                 _logger.debug("filterMessage - trying to acquire message");
             }
             messageOk = acquireMessage(message);
-            _logger.debug("filterMessage - *************************************");
             _logger.debug("filterMessage - message acquire status : " + messageOk);
-            _logger.debug("filterMessage - *************************************");
         }
         return messageOk;
     }
@@ -416,6 +414,14 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
         {
           _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+        }
+        
+        if (_acknowledgeMode == org.apache.qpid.jms.Session.AUTO_ACKNOWLEDGE  &&
+             !_session.isInRecovery() &&   
+             _session.getAMQConnection().getSyncAck())
+        {
+            ((AMQSession_0_10) getSession()).flushAcknowledgments();
+            ((AMQSession_0_10) getSession()).getQpidSession().sync();
         }
     }
 
