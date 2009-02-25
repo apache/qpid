@@ -80,7 +80,7 @@ ManagementBroker::RemoteAgent::~RemoteAgent ()
 }
 
 ManagementBroker::ManagementBroker () :
-    threadPoolSize(1), interval(10), broker(0)
+    threadPoolSize(1), interval(10), broker(0), startTime(uint64_t(Duration(now())))
 {
     nextObjectId   = 1;
     brokerBank     = 1;
@@ -345,6 +345,9 @@ void ManagementBroker::periodicProcessing (void)
     uint32_t            contentSize;
     string              routingKey;
     list<pair<ObjectId, ManagementObject*> > deleteList;
+
+    uint64_t uptime = uint64_t(Duration(now())) - startTime;
+    static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
 
     moveNewObjectsLH();
 
