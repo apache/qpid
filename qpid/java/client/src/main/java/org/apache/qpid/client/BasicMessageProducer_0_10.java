@@ -151,9 +151,13 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 ((AMQSession_0_10) getSession()).getQpidSession();
 
             // if true, we need to sync the delivery of this message
-            boolean sync = (deliveryMode == DeliveryMode.PERSISTENT &&
-                            getSession().getAMQConnection().getSyncPersistence());
+            boolean sync = false;
 
+            sync = ( (publishMode == PublishMode.SYNC_PUBLISH_ALL) ||
+                     (publishMode == PublishMode.SYNC_PUBLISH_PERSISTENT && 
+                         deliveryMode == DeliveryMode.PERSISTENT)
+                   );  
+            
             org.apache.mina.common.ByteBuffer data = message.getData();
             ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
             
