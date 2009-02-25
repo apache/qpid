@@ -462,6 +462,42 @@ class MessageTests(TestBase010):
             self.assertDataEquals(session, q.get(timeout = 1), "abcdefgh")
             self.assertEmpty(q)
 
+    def test_window_flush_ack_flow(self):
+        """
+        Test basic window based flow control with unit = bytes
+        """
+        #declare an exclusive queue
+        ssn = self.session
+        ssn.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        #create consumer
+        ssn.message_subscribe(queue = "q", destination = "c",
+                              accept_mode=ssn.accept_mode.explicit)
+        ssn.message_set_flow_mode(flow_mode = ssn.flow_mode.window, destination = "c")
+
+        #send message A
+        ssn.message_transfer(message=Message(ssn.delivery_properties(routing_key="q"), "A"))
+
+        for unit in ssn.credit_unit.values():
+            ssn.message_flow("c", unit, 0xFFFFFFFFL)
+
+        q = ssn.incoming("c")
+        msgA = q.get(timeout=10)
+
+        ssn.message_flush(destination="c")
+
+        # XXX
+        ssn.receiver._completed.add(msgA.id)
+        ssn.channel.session_completed(ssn.receiver._completed)
+        ssn.message_accept(RangedSet(msgA.id))
+
+        for unit in ssn.credit_unit.values():
+            ssn.message_flow("c", unit, 0xFFFFFFFFL)
+
+        #send message B
+        ssn.message_transfer(message=Message(ssn.delivery_properties(routing_key="q"), "B"))
+
+        msgB = q.get(timeout=10)
+
     def test_subscribe_not_acquired(self):
         """
         Test the not-acquired modes works as expected for a simple case

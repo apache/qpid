@@ -516,14 +516,16 @@ void SemanticState::ConsumerImpl::setCreditMode()
 void SemanticState::ConsumerImpl::addByteCredit(uint32_t value)
 {
     if (byteCredit != 0xFFFFFFFF) {
-        byteCredit += value;
+        if (value == 0xFFFFFFFF) byteCredit = value;
+        else byteCredit += value;
     }
 }
 
 void SemanticState::ConsumerImpl::addMessageCredit(uint32_t value)
 {
     if (msgCredit != 0xFFFFFFFF) {
-        msgCredit += value;
+        if (value == 0xFFFFFFFF) msgCredit = value;
+        else msgCredit += value;
     }
 }
 
