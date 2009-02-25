@@ -106,6 +106,14 @@ public class MessageListenerTest extends QpidTestCase implements MessageListener
         }
     }
 
+    public void testSynchronousRecieveNoWait() throws Exception
+    {
+        for (int msg = 0; msg < MSG_COUNT; msg++)
+        {
+            assertTrue(_consumer.receiveNoWait() != null);
+        }
+    }
+
     public void testAsynchronousRecieve() throws Exception
     {
         _consumer.setMessageListener(this);

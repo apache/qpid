@@ -441,7 +441,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
              o = _synchronousQueue.take();
          }
          return o;
-     }
+    }
+
+    abstract Message receiveBrowse() throws JMSException;
 
     public Message receiveNoWait() throws JMSException
     {
@@ -1037,23 +1039,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _synchronousQueue.clear();
     }
 
-    public void start()
-    {
-        // do nothing as this is a 0_10 feature
-    }
-
-
-    public void stop()
-    {
-        // do nothing as this is a 0_10 feature
-    }
-
-    public boolean isStrated()
-    {
-        // do nothing as this is a 0_10 feature
-        return false;
-    }
-
     public AMQShortString getQueuename()
     {
         return _queuename;
@@ -1070,10 +1055,13 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     }
 
     /** to be called when a failover has occured */
-    public void failedOver()
+    public void failedOverPre()
     {
         clearReceiveQueue();
         // TGM FIXME: think this should just be removed
         // clearUnackedMessages();
     }
+
+    public void failedOverPost() {}
+
 }

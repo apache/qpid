@@ -27,3 +27,4 @@ org.apache.qpid.server.security.acl.SimpleACLTest#*
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
+org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait

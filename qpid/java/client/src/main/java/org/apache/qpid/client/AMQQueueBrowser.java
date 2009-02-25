@@ -97,7 +97,7 @@ public class AMQQueueBrowser implements QueueBrowser
         return new Enumeration()
         {
 
-            Message _nextMessage = consumer == null ? null : consumer.receive(1000);
+            Message _nextMessage = consumer == null ? null : consumer.receiveBrowse();
 
             public boolean hasMoreElements()
             {
@@ -111,7 +111,7 @@ public class AMQQueueBrowser implements QueueBrowser
                 try
                 {
                     _logger.info("QB:nextElement about to receive");
-                    _nextMessage = consumer.receive(1000);
+                    _nextMessage = consumer.receiveBrowse();
                     _logger.info("QB:nextElement received:" + _nextMessage);
                 }
                 catch (JMSException e)

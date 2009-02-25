@@ -74,6 +74,8 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     public void opened(Session ssn) {}
 
+    public void resumed(Session ssn) {}
+
     public void message(final Session ssn, MessageTransfer xfr)
     {
         if (queue)
@@ -277,6 +279,7 @@ public class ConnectionTest extends TestCase implements SessionListener
     class TestSessionListener implements SessionListener
     {
         public void opened(Session s) {}
+        public void resumed(Session s) {}
         public void exception(Session s, SessionException e) {}
         public void message(Session s, MessageTransfer xfr)
         {
