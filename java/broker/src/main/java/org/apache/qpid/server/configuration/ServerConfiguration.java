@@ -113,7 +113,7 @@ public class ServerConfiguration
                     CompositeConfiguration mungedConf = new CompositeConfiguration();
                     mungedConf.addConfiguration(conf.subset("virtualhosts.virtualhost."+name));
                     mungedConf.addConfiguration(vhostConfiguration.subset("virtualhost." + name));
-                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, mungedConf);
+                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, mungedConf, this);
                     _virtualHosts.put(vhostConfig.getName(), vhostConfig);
                 }
             }
@@ -179,6 +179,11 @@ public class ServerConfiguration
             }
         });
         return conf;
+    }
+
+    public String getQpidWork()
+    {
+        return System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir"));
     }
 
     public void setJMXManagementPort(int mport)

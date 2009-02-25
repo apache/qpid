@@ -120,5 +120,33 @@ public class VirtualHostConfigurationTest extends TestCase
         assertEquals(3, bTest.getMaximumMessageAge());
         
     }
+
+    public void testQueueMemoryValues() throws Exception
+    {
+        // Set up queue with 5 priorities
+        configXml.addProperty("virtualhost.test.queues.exchange", "amq.topic");
+        configXml.addProperty("virtualhost.test.queues.maximumMemoryUsage", "11");
+        configXml.addProperty("virtualhost.test.queues.minimumMemoryUsage", "22");
+
+        configXml.addProperty("virtualhost.test.queues(-1).queue(1).name(1)", "atest");
+        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).exchange", "amq.direct");
+        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).maximumMemoryUsage", "44");
+        configXml.addProperty("virtualhost.test.queues.queue.atest(-1).minimumMemoryUsage", "55");
+
+        configXml.addProperty("virtualhost.test.queues(-1).queue(-1).name(-1)", "btest");
+
+        VirtualHost vhost = new VirtualHost(new VirtualHostConfiguration("test", configXml.subset("virtualhost.test")));
+
+        // Check specifically configured values
+        AMQQueue aTest = vhost.getQueueRegistry().getQueue(new AMQShortString("atest"));
+        assertEquals(44, aTest.getMemoryUsageMaximum());
+        assertEquals(55, aTest.getMemoryUsageMinimum());
+
+        // Check default values
+        AMQQueue bTest = vhost.getQueueRegistry().getQueue(new AMQShortString("btest"));
+        assertEquals(11, bTest.getMemoryUsageMaximum());
+        assertEquals(22, bTest.getMemoryUsageMinimum());
+    }
+
     
 }

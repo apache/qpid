@@ -233,6 +233,36 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _queue.setMaximumQueueDepth(value);
     }
 
+    public Long getMemoryUsageMaximum()
+    {
+        return _queue.getMemoryUsageMaximum();
+    }
+
+    public void setMemoryUsageMaximum(Long maximumMemoryUsage)
+    {
+        _queue.setMemoryUsageMaximum(maximumMemoryUsage);
+    }
+
+    public Long getMemoryUsageMinimum()
+    {
+        return _queue.getMemoryUsageMinimum();
+    }
+
+    public void setMemoryUsageMinimum(Long minimumMemoryUsage)
+    {
+        _queue.setMemoryUsageMinimum(minimumMemoryUsage);
+    }
+
+    public Long getMemoryUsageCurrent()
+    {
+        return _queue.getMemoryUsageCurrent();
+    }
+
+    public boolean isFlowed()
+    {
+       return _queue.isFlowed();
+    }
+
     /**
      * returns the size of messages(KB) in the queue.
      */
