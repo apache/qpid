@@ -94,7 +94,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	QueueEvents.cpp \
 	ProxyTest.cpp \
 	RetryList.cpp \
-	RateFlowcontrolTest.cpp
+	RateFlowcontrolTest.cpp \
+	FrameDecoder.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
