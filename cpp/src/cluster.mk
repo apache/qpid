@@ -70,7 +70,7 @@ cluster_la_SOURCES =				\
   qpid/cluster/FailoverExchange.h		\
   qpid/cluster/Multicaster.cpp			\
   qpid/cluster/Multicaster.h			\
-  qpid/cluster/MulticastFrameHandler.h		\
+  qpid/cluster/McastFrameHandler.h		\
   qpid/cluster/NoOpConnectionOutputHandler.h	\
   qpid/cluster/OutputInterceptor.cpp		\
   qpid/cluster/OutputInterceptor.h		\
