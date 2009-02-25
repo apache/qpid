@@ -21,8 +21,10 @@
 package org.apache.qpid.server.configuration;
 
 import java.util.List;
+import java.io.File;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class QueueConfiguration
 {
@@ -31,11 +33,18 @@ public class QueueConfiguration
     
     private Configuration _config;
     private String _name;
+    private VirtualHostConfiguration _virtualHostConfiguration;
 
-    public QueueConfiguration(String name, Configuration config)
+    public QueueConfiguration(String name, Configuration config, VirtualHostConfiguration virtualHostConfiguration)
     {
+        _virtualHostConfiguration = virtualHostConfiguration;
         _config = config;
         _name = name;
+    }
+
+    public VirtualHostConfiguration getVirtualHostConfiguration()
+    {
+        return _virtualHostConfiguration;
     }
 
     public boolean getDurable()
@@ -103,4 +112,13 @@ public class QueueConfiguration
         return _config.getLong("minimumAlertRepeatGap", 0);
     }
 
+    public long getMemoryUsageMaximum()
+    {
+        return _config.getLong("maximumMemoryUsage", 0);
+    }
+
+    public long getMemoryUsageMinimum()
+    {
+        return _config.getLong("minimumMemoryUsage", 0);
+    }
 }

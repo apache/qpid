@@ -19,7 +19,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
-import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -77,6 +76,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private final AtomicLong _atomicQueueSize = new AtomicLong(0L);
 
+    private final AtomicLong _atomicQueueInMemory = new AtomicLong(0L);
+
     private final AtomicInteger _activeSubscriberCount = new AtomicInteger();
 
     protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
@@ -105,6 +106,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     /** the minimum interval between sending out consecutive alerts of the same type */
     public long _minimumAlertRepeatGap = ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap();
 
+    /** The maximum amount of memory that is allocated to this queue. Beyond this the queue will flow to disk. */
+    private long _memoryUsageMaximum = 0;
+
+    /** The minimum amount of memory that is allocated to this queue. If the queueDepth hits this level then more flowed data can be read in. */
+    private long _memoryUsageMinimum = 0;
+
     private static final int MAX_ASYNC_DELIVERIES = 10;
 
     private final Set<NotificationCheck> _notificationChecks = EnumSet.noneOf(NotificationCheck.class);
@@ -113,6 +120,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private AtomicReference _asynchronousRunner = new AtomicReference(null);
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
+    /** Control to determin if this queue is flowed or not. */
+    protected AtomicBoolean _flowed = new AtomicBoolean(false);
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -159,7 +168,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
         resetNotifications();
+        resetFlowToDisk();
+    }
 
+    public void resetFlowToDisk()
+    {
+        setMemoryUsageMaximum(_memoryUsageMaximum);
+        setMemoryUsageMinimum(_memoryUsageMinimum);
     }
 
     public void resetNotifications()
@@ -186,6 +201,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public boolean isAutoDelete()
     {
         return _autoDelete;
+    }
+
+    public boolean isFlowed()
+    {
+        return _flowed.get();
     }
 
     public AMQShortString getOwner()
@@ -468,6 +488,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private void incrementQueueSize(final AMQMessage message)
     {
         getAtomicQueueSize().addAndGet(message.getSize());
+        getAtomicQueueInMemory().addAndGet(message.getSize());
     }
 
     private void incrementQueueCount()
@@ -607,6 +628,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private void decrementQueueSize(final QueueEntry entry)
     {
         getAtomicQueueSize().addAndGet(-entry.getMessage().getSize());
+        getAtomicQueueInMemory().addAndGet(-entry.getMessage().getSize());
     }
 
     void decrementQueueCount()
@@ -656,6 +678,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public boolean isEmpty()
     {
         return getMessageCount() == 0;
+    }
+
+    public long getMemoryUsageCurrent()
+    {
+        return getAtomicQueueInMemory().get();
     }
 
     public int getMessageCount()
@@ -750,6 +777,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _atomicQueueSize;
     }
+
+    public AtomicLong getAtomicQueueInMemory()
+    {
+        return _atomicQueueInMemory;
+    }    
+
 
     private boolean isExclusiveSubscriber()
     {
@@ -1455,6 +1488,51 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
         }
 
+    }
+
+
+    public long getMemoryUsageMaximum()
+    {
+        return _memoryUsageMaximum;
+    }
+
+    public void setMemoryUsageMaximum(long maximumMemoryUsage)
+    {
+        _memoryUsageMaximum = maximumMemoryUsage;
+
+        // Don't attempt to start the inhaler/purger unless we have a minimum value specified.
+        if (_memoryUsageMaximum > 0)
+        {
+            // If we've increased the max memory above what we have in memory then we can inhale more
+            if (_memoryUsageMaximum > _atomicQueueInMemory.get())
+            {
+                //TODO start inhaler
+            }
+            else // if we have now have to much memory in use we need to purge.
+            {
+                //TODO start purger
+            }
+        }
+    }
+
+    public long getMemoryUsageMinimum()
+    {
+        return _memoryUsageMinimum;
+    }
+
+    public void setMemoryUsageMinimum(long minimumMemoryUsage)
+    {
+        _memoryUsageMinimum = minimumMemoryUsage;
+
+        // Don't attempt to start the inhaler unless we have a minimum value specified.
+        if (_memoryUsageMinimum > 0)
+        {
+            // If we've increased the minimum memory above what we have in memory then we need to inhale more
+            if (_memoryUsageMinimum >= _atomicQueueInMemory.get())
+            {
+                //TODO start inhaler
+            }
+        }
     }
 
     public long getMinimumAlertRepeatGap()
