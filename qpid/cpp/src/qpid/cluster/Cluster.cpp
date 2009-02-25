@@ -163,7 +163,6 @@ void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
 void Cluster::erase(const ConnectionId& id) {
     // Called only by Connection::deliverClose in deliver thread, no need to lock.
     connections.erase(id);
-    decoder.erase(id);
 }
 
 std::vector<string> Cluster::getIds() const {
@@ -231,8 +230,13 @@ void Cluster::deliveredEvent(const Event& e) {
     Buffer buf(const_cast<char*>(e.getData()), e.getSize());
     if (e.getType() == CONTROL) {
         AMQFrame frame;
-        while (frame.decode(buf)) 
+        while (frame.decode(buf)) {
+            // Check for deliver close here so we can erase the
+            // connection decoder safely in this thread.
+            if (frame.getMethod()->isA<ClusterConnectionDeliverCloseBody>())
+                decoder.erase(e.getConnectionId());
             deliverFrameQueue.push(EventFrame(e, frame));
+    }
     }
     else if (e.getType() == DATA)
         decoder.decode(e, e.getData());
