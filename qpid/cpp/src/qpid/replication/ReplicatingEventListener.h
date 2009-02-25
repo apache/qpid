@@ -62,6 +62,7 @@ class ReplicatingEventListener : public Plugin
 
     void deliverDequeueMessage(const qpid::broker::QueuedMessage& enqueued);
     void deliverEnqueueMessage(const qpid::broker::QueuedMessage& enqueued);
+    void shutdown();
 
     boost::intrusive_ptr<qpid::broker::Message> createMessage(const qpid::framing::FieldTable& headers);
     boost::intrusive_ptr<qpid::broker::Message> cloneMessage(qpid::broker::Queue& queue, 
