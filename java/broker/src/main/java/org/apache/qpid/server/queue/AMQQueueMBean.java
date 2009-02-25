@@ -100,7 +100,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
     {
-        super(ManagedQueue.class, ManagedQueue.TYPE);
+        super(ManagedQueue.class, ManagedQueue.TYPE, ManagedQueue.VERSION);
         _queue = queue;
         _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
     }
