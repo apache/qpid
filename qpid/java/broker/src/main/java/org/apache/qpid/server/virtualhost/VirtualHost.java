@@ -84,7 +84,9 @@ public class VirtualHost implements Accessable
     private ACLManager _accessManager;
 
     private final Timer _houseKeepingTimer;
-     
+    
+    private VirtualHostConfiguration _configuration;
+
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -104,6 +106,11 @@ public class VirtualHost implements Accessable
     public RoutingTable getRoutingTable()
     {
         return _routingTable;
+    }
+
+    public VirtualHostConfiguration getConfiguration()
+    {
+        return _configuration ;
     }
 
     /**
@@ -137,7 +144,6 @@ public class VirtualHost implements Accessable
 
     /**
      * Normal Constructor
-     * @param name
      * @param hostConfig
      * @throws Exception
      */
@@ -148,6 +154,7 @@ public class VirtualHost implements Accessable
 
     public VirtualHost(VirtualHostConfiguration hostConfig, TransactionLog transactionLog) throws Exception
     {
+        _configuration = hostConfig;
         _name = hostConfig.getName();
         
         if (_name == null || _name.length() == 0)

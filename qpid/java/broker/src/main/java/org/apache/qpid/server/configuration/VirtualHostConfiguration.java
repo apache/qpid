@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
@@ -71,7 +72,7 @@ public class VirtualHostConfiguration
 
     public VirtualHostConfiguration(String name, Configuration mungedConf) throws ConfigurationException
     {
-        this(name,mungedConf, null);
+        this(name,mungedConf,  new ServerConfiguration(new PropertiesConfiguration()));
     }
 
     public String getName()
