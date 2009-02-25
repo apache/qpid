@@ -196,12 +196,13 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollerDispatch dispatcher;
     PollableEventQueue deliverEventQueue;
     PollableFrameQueue deliverFrameQueue;
-    ConnectionMap connections;
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
 
-    // Used only in delivery thread
+    // Used only in deliverdEvent thread
     Decoder decoder;
+
+    // Used only in deliveredFrame thread
     ClusterMap::Set elders;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     uint64_t frameId;
@@ -223,6 +224,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         UPDATER, ///< Offer accepted, sending a state update.
         LEFT     ///< Final state, left the cluster.
     } state;
+
+    ConnectionMap connections;
     ClusterMap map;
     size_t lastSize;
     bool lastBroker;
