@@ -847,6 +847,9 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
 
+            if (object->getConfigChanged() || object->getInstChanged())
+                object->setUpdateTime();
+
             encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);
             object->writeStatistics(outBuffer, true);
@@ -867,6 +870,9 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
         if (object->getClassName () == className) {
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
+
+            if (object->getConfigChanged() || object->getInstChanged())
+                object->setUpdateTime();
 
             encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);
