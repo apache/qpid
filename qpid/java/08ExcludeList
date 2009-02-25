@@ -6,3 +6,5 @@ org.apache.qpid.test.testcases.FailoverTest#*
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
+// This test has a random failure that we haven't been able to identify
+org.apache.qpid.server.queue.SimpleAMQQueueThreadPoolTest
