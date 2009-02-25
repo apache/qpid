@@ -251,7 +251,6 @@ public class AMQChannel
         }
         catch (NoRouteException e)
         {
-            //_currentMessage.takeReference();
             _returnMessages.add(e);
         }
     }
