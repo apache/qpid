@@ -696,6 +696,8 @@ public class QpidBench
 
         public void opened(org.apache.qpid.transport.Session ssn) {}
 
+        public void resumed(org.apache.qpid.transport.Session ssn) {}
+
         public void exception(org.apache.qpid.transport.Session ssn,
                               SessionException exc)
         {

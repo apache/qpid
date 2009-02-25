@@ -53,12 +53,14 @@ public class Session extends SessionInvoker
 
     private static final Logger log = Logger.get(Session.class);
 
-    enum State { NEW, DETACHED, OPEN, CLOSING, CLOSED }
+    enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
 
     class DefaultSessionListener implements SessionListener
     {
 
         public void opened(Session ssn) {}
+
+        public void resumed(Session ssn) {}
 
         public void message(Session ssn, MessageTransfer xfr)
         {
@@ -106,6 +108,8 @@ public class Session extends SessionInvoker
     // transfer flow control
     private volatile boolean flowControl = false;
     private Semaphore credit = new Semaphore(0);
+
+    private Thread resumer = null;
 
     Session(Connection connection, Binary name, long expiry)
     {
@@ -234,15 +238,21 @@ public class Session extends SessionInvoker
             for (int i = maxComplete + 1; lt(i, commandsOut); i++)
             {
                 Method m = commands[mod(i, commands.length)];
-                if (m != null)
+                if (m == null)
                 {
-                    sessionCommandPoint(m.getId(), 0);
-                    send(m);
+                    m = new ExecutionSync();
+                    m.setId(i);
                 }
+                sessionCommandPoint(m.getId(), 0);
+                send(m);
             }
 
             sessionCommandPoint(commandsOut, 0);
             sessionFlush(COMPLETED);
+            resumer = Thread.currentThread();
+            state = RESUMING;
+            listener.resumed(this);
+            resumer = null;
         }
     }
 
@@ -387,7 +397,7 @@ public class Session extends SessionInvoker
 
         synchronized (commands)
         {
-            if (state == DETACHED)
+            if (state == DETACHED || state == CLOSING)
             {
                 return;
             }
@@ -499,16 +509,28 @@ public class Session extends SessionInvoker
 
                 if (state != OPEN && state != CLOSED)
                 {
-                    Waiter w = new Waiter(commands, timeout);
-                    while (w.hasTime() && (state != OPEN && state != CLOSED))
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
                     {
-                        w.await();
+                        Waiter w = new Waiter(commands, timeout);
+                        while (w.hasTime() && (state != OPEN && state != CLOSED))
+                        {
+                            w.await();
+                        }
                     }
                 }
 
                 switch (state)
                 {
                 case OPEN:
+                    break;
+                case RESUMING:
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
+                    {
+                        throw new SessionException
+                            ("timed out waiting for resume to finish");
+                    }
                     break;
                 case CLOSED:
                     throw new SessionClosedException();
@@ -527,7 +549,7 @@ public class Session extends SessionInvoker
                     Waiter w = new Waiter(commands, timeout);
                     while (w.hasTime() && isFull(next))
                     {
-                        if (state == OPEN)
+                        if (state == OPEN || state == RESUMING)
                         {
                             try
                             {
@@ -560,7 +582,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if (expiry > 0)
+                if (expiry > 0 && !m.isUnreliable())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();

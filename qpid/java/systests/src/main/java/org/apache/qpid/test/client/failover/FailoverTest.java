@@ -230,12 +230,6 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 
         causeFailure(DEFAULT_FAILOVER_TIME);
 
-        if (!CLUSTERED)
-        {
-            msg = consumer.receive(500);
-            assertNull("Should not have received message from new broker!", msg);
-        }
-
         // Check that you produce and consume the rest of messages.
         _logger.debug("==================");
         _logger.debug("Sending " + (totalMessages-toProduce) + " messages");

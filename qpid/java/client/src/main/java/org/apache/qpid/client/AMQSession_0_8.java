@@ -106,7 +106,8 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     }
 
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-            final AMQShortString exchangeName, final AMQDestination dest) throws AMQException, FailoverException
+                              final AMQShortString exchangeName, final AMQDestination dest,
+                              final boolean nowait) throws AMQException, FailoverException
     {
         getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createQueueBindBody
                                         (getTicket(),queueName,exchangeName,routingKey,false,arguments).
@@ -306,7 +307,8 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
     }
 
-    public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler) throws AMQException, FailoverException
+    public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
+                                 final boolean nowait) throws AMQException, FailoverException
     {
         QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),amqd.getAMQQueueName(),false,amqd.isDurable(),amqd.isExclusive(),amqd.isAutoDelete(),false,null);
 

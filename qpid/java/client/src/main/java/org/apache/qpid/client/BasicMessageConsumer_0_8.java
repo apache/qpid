@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
+import javax.jms.Message;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.QpidException;
@@ -38,9 +39,9 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
     protected BasicMessageConsumer_0_8(int channelId, AMQConnection connection, AMQDestination destination,
-            String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
-            AMQProtocolHandler protocolHandler, FieldTable arguments, int prefetchHigh, int prefetchLow,
-            boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose) throws JMSException
+                                       String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
+                                       AMQProtocolHandler protocolHandler, FieldTable arguments, int prefetchHigh, int prefetchLow,
+                                       boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose) throws JMSException
     {
         super(channelId, connection, destination,messageSelector,noLocal,messageFactory,session,
               protocolHandler, arguments, prefetchHigh, prefetchLow, exclusive,
@@ -73,13 +74,18 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         }
     }
 
-     public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, UnprocessedMessage_0_8 messageFrame)throws Exception
-     {
+    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, UnprocessedMessage_0_8 messageFrame)throws Exception
+    {
 
         return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
-            messageFrame.isRedelivered(), messageFrame.getExchange(),
-            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
+                                             messageFrame.isRedelivered(), messageFrame.getExchange(),
+                                             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
 
+    }
+
+    Message receiveBrowse() throws JMSException
+    {
+        return receive(1000);
     }
 
 }
