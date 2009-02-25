@@ -104,12 +104,12 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
                       boost::bind(&Cluster::leave, this),
                       "Error delivering frames",
                       poller),
-    connections(*this),
     decoder(boost::bind(&PollableFrameQueue::push, &deliverFrameQueue, _1), connections),
     expiryPolicy(new ExpiryPolicy(boost::bind(&Cluster::isLeader, this), mcast, myId, broker.getTimer())),
     frameId(0),
     initialized(false),
     state(INIT),
+    connections(*this),
     lastSize(0),
     lastBroker(false),
     sequence(0)
@@ -161,7 +161,7 @@ void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
 }
 
 void Cluster::erase(const ConnectionId& id) {
-    // Called only by Connection::deliverClose in deliver thread, no need to lock.
+    // Called only by Connection::deliverClose in deliver thread with lock held.
     connections.erase(id);
 }
 
