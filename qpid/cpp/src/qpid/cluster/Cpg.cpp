@@ -107,17 +107,16 @@ void Cpg::leave() {
     check(cpg_leave(handle, &group), cantLeaveMsg(group));
 }
 
-bool Cpg::isFlowControlEnabled() {
-    cpg_flow_control_state_t flowState;
-    check(cpg_flow_control_state_get(handle, &flowState), "Cannot get CPG flow control status.");
-    return flowState == CPG_FLOW_CONTROL_ENABLED;
-}
+
+
 
 bool Cpg::mcast(const iovec* iov, int iovLen) {
-    if (isFlowControlEnabled()) {
-        QPID_LOG(debug, "CPG flow control enabled")
+    // Check for flow control
+    cpg_flow_control_state_t flowState;
+    check(cpg_flow_control_state_get(handle, &flowState), "Cannot get CPG flow control status.");
+    if (flowState == CPG_FLOW_CONTROL_ENABLED)
         return false;
-    }
+
     cpg_error_t result;
     do {
         result = cpg_mcast_joined(handle, CPG_TYPE_AGREED, const_cast<iovec*>(iov), iovLen);
