@@ -301,7 +301,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     {
         ExchangeDeclareBody body = getMethodRegistry().createExchangeDeclareBody(getTicket(),name,type,
                                                                                  name.toString().startsWith("amq."),
-                                                                                 false,false,false,nowait,null);
+                                                                                 false,false,false,false,null);
         AMQFrame exchangeDeclare = body.generateFrame(_channelId);
 
         protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
