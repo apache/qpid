@@ -23,20 +23,22 @@ package org.apache.qpid.management.wsdm.capabilities;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.ObjectName;
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
+import javax.xml.transform.TransformerException;
 
 import org.apache.muse.core.Environment;
+import org.apache.muse.core.serializer.SerializerRegistry;
 import org.apache.muse.util.ReflectUtils;
 import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.wsdl.WsdlUtils;
 import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
+import org.apache.qpid.management.wsdm.muse.engine.WSDMAdapterEnvironment;
 import org.apache.qpid.management.wsdm.muse.serializer.ObjectSerializer;
 import org.apache.qpid.qman.debug.WsdlDebugger;
 import org.apache.qpid.transport.util.Logger;
@@ -49,126 +51,61 @@ import org.w3c.dom.Element;
  * 
  * @author Andrea Gazzarini
  */
-class WsdlBuilder implements IArtifactBuilder {
+class WsdlBuilder implements IArtifactBuilder,Constants {
 
 	private final static Logger LOGGER = Logger.get(WsdlBuilder.class);
 	
-	private Environment _environment;
+	private WSDMAdapterEnvironment _environment;
 	private Document _document;
 	private Element schema;
-	
-	private ObjectSerializer serializer = new ObjectSerializer();
-
+	private Element _wsrpProperties;
+	private ObjectSerializer _serializer;
 	private ObjectName _objectName;
-	
-	private boolean mapTypeHasBeenDeclared;
-	private boolean uuidTypeHasBeenDeclared;
 	private Map<String, String> arrayTypesAlreadyDeclared = new HashMap<String, String>();
 	
+	private Element _arrayComplexType;
+	private Element _nestedArrayType;
+	
+	/**
+	 * For each attibute the corresponding xml type definition must be inserted on the QMan
+	 * schema related section.
+	 * After that, a reference to that definition must be declared on the wsrp element .
+	 * 
+	 * @param attributeMetadata the attribute metadata.
+	 * @throws BuilderException only if this builder wasn't able to get a reference (via XPath) 
+	 * 				to QMan schema section.
+	 */
 	public void onAttribute(MBeanAttributeInfo attributeMetadata) throws BuilderException  
 	{
 		try 
 		{
-	/*
-			<xs:element name='accountAttributes'>
-	        <xs:complexType>
-	         <xs:sequence>
-	          <xs:element maxOccurs='unbounded' minOccurs='0' name='entry'>
-	           <xs:complexType>
-	            <xs:sequence>
-	             <xs:element minOccurs='0' name='key' type='xs:string'/>
-	             <xs:element minOccurs='0' name='value' type='xs:anyType'/>
-	            </xs:sequence>
-	           </xs:complexType>
-	          </xs:element>
-	         </xs:sequence>
-	        </xs:complexType>
-	       </xs:element>
-*/			
-			schema.appendChild(defineSchemaFor(attributeMetadata.getType(), attributeMetadata.getName()));				
-			Element wsrpProperties = (Element) XPathAPI.selectSingleNode(
-					_document, 
-					"/wsdl:definitions/wsdl:types/xsd:schema[" +
-					"@targetNamespace='http://amqp.apache.org/qpid/management/qman']" +
-					"/xsd:element[@name='QManWsResourceProperties']/xsd:complexType/xsd:sequence");
+			String attributeName = attributeMetadata.getName();
+			schema.appendChild(defineSchemaFor(attributeMetadata.getType(), attributeName));				
 
 			Element propertyRef= XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+			propertyRef.setAttribute(MIN_OCCURS, "0");		
 			propertyRef.setAttribute(
-					"ref", 
-					Names.PREFIX+":"+attributeMetadata.getName());
-			propertyRef.setAttribute("minOccurs", "0");		
-			wsrpProperties.appendChild(propertyRef);
-			
+					REF_ATTRIBUTE, 
+					Names.PREFIX+":"+attributeName);
+
+			_wsrpProperties.appendChild(propertyRef);
 		} catch(Exception exception)
 		{
 			throw new BuilderException(exception);
 		}
 	}
 	
-	private final static QName XSD_ELEMENT_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"element","xsd");
-	private final static QName XSD_COMPLEX_TYPE_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"complexType","xsd");
-	private final static QName XSD_SEQUENCE_QNAME = new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI,"sequence","xsd");
-	
 	@SuppressWarnings("unchecked")
 	private Element defineSchemaFor(String type, String attributeName) throws Exception
 	{
-		if (type.equals("java.util.Map")) 
+		Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+		String xmlType = null;
+		if (type.equals(Map.class.getName())) 
 		{
-			if (!mapTypeHasBeenDeclared)
-			{				
-					Element complexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
-					complexType.setAttribute("name","map");
-						Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
-	
-						Element entry = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-						entry.setAttribute("name", "entry");
-						entry.setAttribute("minOccurs", "0");
-						entry.setAttribute("maxOccurs", "unbounded");
-	
-						Element complexType2 = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
-						Element sequence2 = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
-	
-							Element key = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-							key.setAttribute("name", "key");
-							key.setAttribute("type", "xsd:string");
-	
-							Element value = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-							value.setAttribute("name", "value");
-							value.setAttribute("type", "xsd:anyType");
-			
-							sequence2.appendChild(key);
-							sequence2.appendChild(value);
-							complexType2.appendChild(sequence2);
-							entry.appendChild(complexType2);
-							sequence.appendChild(entry);
-							complexType.appendChild(sequence);
-							schema.appendChild(complexType);			
-							mapTypeHasBeenDeclared = true;
-			} 
-			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-			propertyDeclaration.setAttribute("name",attributeName);
-			propertyDeclaration.setAttribute("type", "qman:map");
-			return propertyDeclaration;
-			
-		} else if ("java.util.UUID".equals(type)) 
-		{
-			if (!uuidTypeHasBeenDeclared)
-			{
-					Element complexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
-					complexType.setAttribute("name", "uuid");
-						Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
-							Element uuid = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-							uuid.setAttribute("name", "uuid");
-							uuid.setAttribute("type", "xsd:string");						
-				sequence.appendChild(uuid);
-				complexType.appendChild(sequence);
-				schema.appendChild(complexType);
-				uuidTypeHasBeenDeclared = true;
-			}
-			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-			propertyDeclaration.setAttribute("name",attributeName);
-			propertyDeclaration.setAttribute("type", "qman:uuid");
-			return propertyDeclaration;
+			xmlType="qman:map";
+		} else if (UUID.class.getName().equals(type)) 
+		{			
+			xmlType = "qman:uuid";
 		} else if (type.startsWith("["))
 		{
 			Class arrayClass =  Class.forName(type);
@@ -177,143 +114,40 @@ class WsdlBuilder implements IArtifactBuilder {
 			arrayType = Character.toUpperCase(arrayType.charAt(0))+arrayType.substring(1);
 			if (!arrayTypesAlreadyDeclared.containsKey(type))
 			{
-					Element complexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
-					complexType.setAttribute("name", "arrayOf"+arrayType);
-						Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
-							Element entry = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-							entry.setAttribute("name", "entry");
-							entry.setAttribute("type", serializer.getXmlType(clazz));						
-				sequence.appendChild(entry);
-				complexType.appendChild(sequence);
-				schema.appendChild(complexType);
+				_arrayComplexType.setAttribute(NAME_ATTRIBUTE, "arrayOf"+arrayType);
+				_nestedArrayType.setAttribute(TYPE_ATTRIBUTE, _serializer.getXmlType(clazz));
+				schema.appendChild(_arrayComplexType);
 				arrayTypesAlreadyDeclared.put(type, arrayType);
 			}
-			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-			propertyDeclaration.setAttribute("name",attributeName);
-			propertyDeclaration.setAttribute("type", "qman:arrayOf"+arrayTypesAlreadyDeclared.get(type));
-			return propertyDeclaration;
+			xmlType = "qman:arrayOf"+arrayTypesAlreadyDeclared.get(type);
 		}
-		else {			
-			Element propertyDeclaration = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
-			propertyDeclaration.setAttribute("name",attributeName);
-			propertyDeclaration.setAttribute("type", serializer.getXmlType(Class.forName(type)));
-				
-			return propertyDeclaration;
+		else 
+		{			
+			xmlType = _serializer.getXmlType(Class.forName(type));
 		}			
+		propertyDeclaration.setAttribute(NAME_ATTRIBUTE,attributeName);
+		propertyDeclaration.setAttribute(TYPE_ATTRIBUTE, xmlType);
+		return propertyDeclaration;
 	}
-	
+
+	/**
+	 * Initializes this builder.
+	 * 
+	 * @param objectName the name of the current JMX entity.
+	 * @throws BuilderException when it's not possible to proceed with the initialization.
+	 */
 	public void begin(ObjectName objectName) throws BuilderException
 	{
 		this._objectName = objectName;
-		try 
-		{
-			Attr location = (Attr) XPathAPI.selectSingleNode(
-					_document, 
-					"/wsdl:definitions/wsdl:service/wsdl:port/wsdl-soap:address/@location");
-					
-			StringBuilder builder = new StringBuilder("http://")
-				.append(InetAddress.getLocalHost().getHostName())
-				.append(':')
-				.append(System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME,"8080"))
-				.append('/')
-				.append("qman")
-				.append('/')
-				.append("services/QManWsResource");
-			location.setValue(builder.toString());
-		} catch(Exception exception)
-		{
-			LOGGER.error(
-					exception,
-					Messages.QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE);
-			throw new BuilderException(exception);
-		}
+		this._serializer = (ObjectSerializer) SerializerRegistry.getInstance().getSerializer(Object.class);
 		
-		try 
-		{
-			schema = (Element) XPathAPI.selectSingleNode(
-					_document.getDocumentElement(),
-				"/wsdl:definitions/wsdl:types/xsd:schema[@targetNamespace='http://amqp.apache.org/qpid/management/qman']");
-		} catch(Exception exception)
-		{
-			LOGGER.error(
-					exception,
-					Messages.QMAN_100034_WSDL_SCHEMA_SECTION_NOT_FOUND);
-			throw new BuilderException(exception);
-		}
-/*
-		<xs:complexType name='InvocationResult'>
-			<xs:sequence>
-				<xs:element name='statusCode' type="xsd:long" />
-				<xs:element name='statusText' type="xsd:string" />
-				<xs:element name='outputParameters'>
-		        	<xs:complexType>
-		         		<xs:sequence>
-		         		
-		          			<xs:element maxOccurs='unbounded' minOccurs='0' name='entry'>
-		          			
-		           				<xs:complexType>
-		            				<xs:sequence>
-		             					<xs:element minOccurs='0' name="name' type='xs:string'/>
-		             					<xs:element minOccurs='0' name="value" type='xs:anyType'/>
-		            				</xs:sequence>
-		           				</xs:complexType>
-		          			</xs:element>
-		         		</xs:sequence>
-		        	</xs:complexType>
-		       </xs:element>
-		</xs:sequence>
-	</xs:complexType>
-*/
-		Element complexTypeResult = _document.createElement("xsd:complexType");
-		complexTypeResult.setAttribute("name", "result");
-		Element sequence = _document.createElement("xsd:sequence");
-		complexTypeResult.appendChild(sequence);
+		createWsrpPropertiesElement();
 		
-		Element statusCode = _document.createElement("xsd:element");
-		statusCode.setAttribute("name", "statusCode");
-		statusCode.setAttribute("type", "xsd:long");
-
-		Element statusText = _document.createElement("xsd:element");
-		statusText.setAttribute("name", "statusText");
-		statusText.setAttribute("type", "xsd:string");
+		createReusableArrayComplextType();
 		
-		sequence.appendChild(statusCode);
-		sequence.appendChild(statusText);
+		replaceDummyServiceLocationOnWsdl();
 		
-		Element outputParams = _document.createElement("xsd:complexType");
-		outputParams.setAttribute("name", "outputParameters");
-		sequence.appendChild(outputParams);		
-		
-		Element complexTypeOutput = _document.createElement("xsd:complexType");
-		Element outputSequence = _document.createElement("xsd:sequence");
-		
-		outputParams.appendChild(complexTypeOutput);
-		complexTypeOutput.appendChild(outputSequence);
-		
-		Element entry = _document.createElement("xsd:element");
-		entry.setAttribute("maxOccurs", "unbounded");
-		entry.setAttribute("minOccurs", "0");
-		entry.setAttribute("name", "entry");
-		
-		outputSequence.appendChild(entry);
-		
-		Element entryComplexType = _document.createElement("xsd:complexType");
-		Element entrySequence = _document.createElement("xsd:sequence");
-		entryComplexType.appendChild(entrySequence);
-		entry.appendChild(entryComplexType);
-		
-		Element name = _document.createElement("xsd:name");
-		name.setAttribute("name", "key");
-		name.setAttribute("type", "xsd:string");
-		
-		Element value = _document.createElement("xsd:element");
-		value.setAttribute("name", "value");
-		value.setAttribute("type", "xsd:anyType");
-		
-		entrySequence.appendChild(name);
-		entrySequence.appendChild(value);		
-		
-		schema.appendChild(complexTypeResult);
+		createSchemaElement();
 	}
 	
 	public void onOperation(MBeanOperationInfo operationMetadata) throws BuilderException
@@ -350,9 +184,9 @@ class WsdlBuilder implements IArtifactBuilder {
 				<xs:sequence />
 			</xs:complexType>
 		 */
+		
 		try 
 		{
-			// <xs:element name='purgeRequest' type='qman:purgeRequest' />
 			// <xsd:element xmlns="" name="purgeRequest" type="qman:purgeRequest"/>
 			
 			Element methodRequestElement= _document.createElement("xsd:element");		
@@ -361,13 +195,13 @@ class WsdlBuilder implements IArtifactBuilder {
 			methodRequestElement.setAttribute("type", "qman:"+methodNameRequest);
 			
 			// <xs:element name='purgeResponse' type='qman:purgeResponse' />
-			Element methodResponseElement= _document.createElement("xsd:element");		
+//			Element methodResponseElement= _document.createElement("xsd:element");		
 			String methodNameResponse= operationMetadata.getName()+"Response";
-			methodResponseElement.setAttribute("name", methodNameResponse);
-			methodResponseElement.setAttribute("type", "qman:"+methodNameResponse);
+//			methodResponseElement.setAttribute("name", methodNameResponse);
+//			methodResponseElement.setAttribute("type", "qman:result");//+methodNameResponse);
 			
 			schema.appendChild(methodRequestElement);
-			schema.appendChild(methodResponseElement);
+//			schema.appendChild(methodResponseElement);
 	
 			/*
 				<xs:complexType name='purgeRequest'>
@@ -390,19 +224,6 @@ class WsdlBuilder implements IArtifactBuilder {
 						
 			methodNameRequestComplexType.appendChild(methodNameRequestComplexTypeSequence);
 			schema.appendChild(methodNameRequestComplexType);
-			
-			Element methodNameResponseComplexType =  _document.createElement("xsd:complexType");
-			methodNameResponseComplexType.setAttribute("name", methodNameResponse);
-			
-			Element methodNameResponseSequence = _document.createElement("xsd:sequence");
-			methodNameResponseComplexType.appendChild(methodNameResponseSequence);
-			
-			Element result = _document.createElement("xsd:element");
-			result.setAttribute("name", "result");
-			result.setAttribute("type", "qman:result");
-			methodNameResponseSequence.appendChild(result);
-			
-			schema.appendChild(methodNameResponseComplexType);
 			
 			/*
 		<message name="purgeResponseMessage">
@@ -428,7 +249,7 @@ class WsdlBuilder implements IArtifactBuilder {
 			Element responseMessage = _document.createElement("wsdl:message");
 			responseMessage.setAttribute("name", responseMessageName);
 			Element responsePart = _document.createElement("wsdl:part");
-			responsePart.setAttribute("element", "qman:"+methodNameResponse);
+			responsePart.setAttribute("element", "qman:result");//+methodNameResponse);
 			responsePart.setAttribute("name", methodNameResponse);
 			responseMessage.appendChild(responsePart);
 			
@@ -506,29 +327,134 @@ class WsdlBuilder implements IArtifactBuilder {
 		}
 	}
 
+	/**
+	 * Director callback : all attributes have been notified.
+	 * Nothing to do here.
+	 */
 	public void endAttributes() 
 	{
 		// N.A.
 	}
 
+	/**
+	 * Director callback : all operations have been notified.
+	 * Nothing to do here.
+	 */
 	public void endOperations() 
 	{
-
+		// N.A.
 	}
 
+	/**
+	 * Returns the WSDL built by this builder.
+	 * 
+	 * @return the WSDL built by this builder.
+	 */
 	public Document getWsdl() 
 	{
 		WsdlDebugger.debug(_objectName,_document);
 		return _document;
 	}
 
+	/**
+	 * Injects the application context environment 
+	 * on this builder.
+	 * 
+	 * @param environment the application context environment.
+	 */
 	public void setEnvironment(Environment environment) 
 	{
-		this._environment = environment;
+		this._environment = (WSDMAdapterEnvironment)environment;
 	}
 	
+	/**
+	 * Injects the path of the wsdl document.
+	 * 
+	 * @param wsdlPath the path of the wsdl document.
+	 */
 	public void setWsdlPath(String wsdlPath)
 	{
 		_document = WsdlUtils.createWSDL(_environment, wsdlPath, true);
 	}
+	
+	/**
+	 * Create a reference to the WSRP properties element. 
+	 * 
+	 * @throws BuilderException in case of XPath evaluation problem. 
+	 */
+	private void createWsrpPropertiesElement() throws BuilderException 
+	{
+		try
+		{
+			_wsrpProperties = (Element) XPathAPI.selectSingleNode(
+					_document, 
+					WSRP_PROPERTIES_XPATH);
+		} catch (TransformerException exception)
+		{
+			LOGGER.error(Messages.QMAN_100040_UNABLE_TO_LOCATE_WSRP_PROPERTIES);
+			throw new BuilderException(exception);
+		}		
+	}
+
+	/**
+	 * Creates a template element that will be used for array 
+	 * type schema declaration(s). 
+	 */
+	private void createReusableArrayComplextType()
+	{
+		_arrayComplexType = XmlUtils.createElement(_document, XSD_COMPLEX_TYPE_QNAME);
+		Element sequence = XmlUtils.createElement(_document, XSD_SEQUENCE_QNAME);
+		_nestedArrayType = XmlUtils.createElement(_document, XSD_ELEMENT_QNAME);
+		_nestedArrayType.setAttribute(NAME_ATTRIBUTE, "entry");
+		sequence.appendChild(_nestedArrayType);
+		_arrayComplexType.appendChild(sequence);
+	}
+	
+	private void createSchemaElement() throws BuilderException
+	{
+		try 
+		{
+			schema = (Element) XPathAPI.selectSingleNode(
+					_document.getDocumentElement(),
+					QMAN_SCHEMA_XPATH);
+		} catch(Exception exception)
+		{
+			LOGGER.error(
+					exception,
+					Messages.QMAN_100034_WSDL_SCHEMA_SECTION_NOT_FOUND);
+			throw new BuilderException(exception);
+		}		
+	}
+	
+	/**
+	 * The template WSDL contains a dummy URL as service location that 
+	 * needs to be replaced with the real service address.
+	 * 
+	 * @throws BuilderException when replacement fails (XPath problem).
+	 */
+	private void replaceDummyServiceLocationOnWsdl() throws BuilderException
+	{
+		try 
+		{
+			Attr location = (Attr) XPathAPI.selectSingleNode(
+					_document, 
+					SERVICE_LOCATION_XPATH);
+			
+			StringBuilder builder = new StringBuilder("http://")
+				.append(InetAddress.getLocalHost().getHostName())
+				.append(':')
+				.append(System.getProperty(Names.ADAPTER_PORT_PROPERTY_NAME,"8080"))
+				.append('/')
+				.append(_environment.getContextPath())
+				.append('/')
+				.append("services/QManWsResource");
+			location.setValue(builder.toString());
+		} catch(Exception exception)
+		{
+			LOGGER.error(
+					exception,
+					Messages.QMAN_100026_SOAP_ADDRESS_REPLACEMENT_FAILURE);
+			throw new BuilderException(exception);
+		}
+	}	
 }
