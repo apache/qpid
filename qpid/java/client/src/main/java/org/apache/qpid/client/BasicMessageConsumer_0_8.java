@@ -85,7 +85,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
     Message receiveBrowse() throws JMSException
     {
-        return receive(1000);
+        return receive();
     }
 
 }
