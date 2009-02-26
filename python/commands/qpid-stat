@@ -26,11 +26,14 @@ import locale
 import socket
 import re
 from qmf.console import Session, Console
-from qpid.disp import Display
+from qpid.disp import Display, Header, Sorter
 
 _host = "localhost"
 _top = False
 _types = ""
+_limit = 50
+_increasing = False
+_sortcol = None
 pattern = re.compile("^\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+$")
 
 def Usage ():
@@ -48,22 +51,14 @@ def Usage ():
     print "     -b   Show Brokers"
     print "     -c   Show Connections"
 #    print "     -s   Show Sessions"
-#    print "     -e   Show Exchanges"
-#    print "     -q   Show Queues"
+    print "     -e   Show Exchanges"
+    print "     -q   Show Queues"
+    print
+    print "     -S [--sort-by] COLNAME  Sort by column name"
+    print "     -I [--increasing]       Sort by increasing value (default = decreasing)"
+    print "     -L [--limit] NUM        Limit output to NUM rows (default = 50)"
     print
     sys.exit (1)
-
-def num(value):
-    if value < 2000:
-        return str(value)
-    value /= 1000
-    if value < 2000:
-        return str(value) + "k"
-    value /= 1000
-    if value < 2000:
-        return str(value) + "m"
-    value /= 1000
-    return str(value) + "g"
 
 class IpAddr:
     def __init__(self, text):
@@ -93,7 +88,6 @@ class IpAddr:
 class Broker(object):
     def __init__(self, qmf, broker):
         self.broker = broker
-        list = qmf.getObjects(_class="connection", _package="org.apache.qpid.broker", _broker=broker)
         bobj = qmf.getObjects(_class="broker", _package="org.apache.qpid.broker", _broker=broker)[0]
         self.currentTime = bobj.getTimestamps()[0]
         try:
@@ -104,17 +98,23 @@ class Broker(object):
         self.sessions = {}
         self.exchanges = {}
         self.queues = {}
+        package = "org.apache.qpid.broker"
+
+        list = qmf.getObjects(_class="connection", _package=package, _broker=broker)
         for conn in list:
             if pattern.match(conn.address):
                 self.connections[conn.getObjectId()] = conn
-        list = qmf.getObjects(_class="session", _package="org.apache.qpid.broker", _broker=broker)
+
+        list = qmf.getObjects(_class="session", _package=package, _broker=broker)
         for sess in list:
             if sess.connectionRef in self.connections:
                 self.sessions[sess.getObjectId()] = sess
-        list = qmf.getObjects(_class="exchange", _package="org.apache.qpid.broker", _broker=broker)
+
+        list = qmf.getObjects(_class="exchange", _package=package, _broker=broker)
         for exchange in list:
             self.exchanges[exchange.getObjectId()] = exchange
-        list = qmf.getObjects(_class="queue", _package="org.apache.qpid.broker", _broker=broker)
+
+        list = qmf.getObjects(_class="queue", _package=package, _broker=broker)
         for queue in list:
             self.queues[queue.getObjectId()] = queue
 
@@ -209,34 +209,45 @@ class BrokerManager(Console):
 
     def displayBroker(self, subs):
         disp = Display(prefix="  ")
-        heads = ('Broker', 'cluster', 'uptime', 'conn', 'sess', 'exch', 'queue')
+        heads = []
+        heads.append(Header('broker'))
+        heads.append(Header('cluster'))
+        heads.append(Header('uptime', Header.DURATION))
+        heads.append(Header('conn', Header.KMG))
+        heads.append(Header('sess', Header.KMG))
+        heads.append(Header('exch', Header.KMG))
+        heads.append(Header('queue', Header.KMG))
         rows = []
         for broker in self.brokers:
             if self.cluster:
                 ctext = "%s(%s)" % (self.cluster.clusterName, self.cluster.status)
             else:
                 ctext = "<standalone>"
-            utext = ""
-            if broker.getUptime() > 0:
-                utext = disp.duration(broker.getUptime())
-            row = (broker.getName(), ctext, utext,
-                   str(len(broker.connections)), str(len(broker.sessions)),
-                   str(len(broker.exchanges)), str(len(broker.queues)))
+            row = (broker.getName(), ctext, broker.getUptime(),
+                   len(broker.connections), len(broker.sessions),
+                   len(broker.exchanges), len(broker.queues))
             rows.append(row)
-        disp.table("Brokers", heads, rows)
+        title = "Brokers"
+        if _sortcol:
+            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+            dispRows = sorter.getSorted()
+        else:
+            dispRows = rows
+        disp.formattedTable(title, heads, dispRows)
 
     def displayConn(self, subs):
         disp = Display(prefix="  ")
         heads = []
         if self.cluster:
-            heads.append('broker')
-        heads.append('client addr')
-        heads.append('client(pid)')
-        heads.append('auth')
-        heads.append('connected')
-        heads.append('idle')
-        heads.append('msgIn')
-        heads.append('msgOut')
+            heads.append(Header('broker'))
+        heads.append(Header('client-addr'))
+        heads.append(Header('cproc'))
+        heads.append(Header('cpid'))
+        heads.append(Header('auth'))
+        heads.append(Header('connected', Header.DURATION))
+        heads.append(Header('idle', Header.DURATION))
+        heads.append(Header('msgIn', Header.KMG))
+        heads.append(Header('msgOut', Header.KMG))
         rows = []
         for broker in self.brokers:
             for oid in broker.connections:
@@ -245,27 +256,24 @@ class BrokerManager(Console):
                 if self.cluster:
                     row.append(broker.getName())
                 row.append(conn.address)
-                procpid = ""
-                if conn.remoteProcessName:
-                    procpid += conn.remoteProcessName
-                if conn.remotePid:
-                    procpid += "(%d)" % conn.remotePid
-                row.append(procpid)
+                row.append(conn.remoteProcessName)
+                row.append(conn.remotePid)
                 row.append(conn.authIdentity)
-                row.append(disp.duration(broker.getCurrentTime() - conn.getTimestamps()[1]))
+                row.append(broker.getCurrentTime() - conn.getTimestamps()[1])
                 idle = broker.getCurrentTime() - conn.getTimestamps()[0]
-                if idle < 10000000000:
-                    itext = ""
-                else:
-                    itext = disp.duration(idle)
-                row.append(itext)
-                row.append(num(conn.framesFromClient))
-                row.append(num(conn.framesToClient))
+                row.append(broker.getCurrentTime() - conn.getTimestamps()[0])
+                row.append(conn.framesFromClient)
+                row.append(conn.framesToClient)
                 rows.append(row)
         title = "Connections"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
-        disp.table(title, heads, rows)
+        if _sortcol:
+            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+            dispRows = sorter.getSorted()
+        else:
+            dispRows = rows
+        disp.formattedTable(title, heads, dispRows)
 
     def displaySession(self, subs):
         disp = Display(prefix="  ")
@@ -274,17 +282,17 @@ class BrokerManager(Console):
         disp = Display(prefix="  ")
         heads = []
         if self.cluster:
-            heads.append('broker')
-        heads.append("exchange")
-        heads.append("type")
-        heads.append("dur")
-        heads.append("bind")
-        heads.append("msgIn")
-        heads.append("msgOut")
-        heads.append("msgDrop")
-        heads.append("byteIn")
-        heads.append("byteOut")
-        heads.append("byteDrop")
+            heads.append(Header('broker'))
+        heads.append(Header("exchange"))
+        heads.append(Header("type"))
+        heads.append(Header("dur", Header.Y))
+        heads.append(Header("bind", Header.KMG))
+        heads.append(Header("msgIn", Header.KMG))
+        heads.append(Header("msgOut", Header.KMG))
+        heads.append(Header("msgDrop", Header.KMG))
+        heads.append(Header("byteIn", Header.KMG))
+        heads.append(Header("byteOut", Header.KMG))
+        heads.append(Header("byteDrop", Header.KMG))
         rows = []
         for broker in self.brokers:
             for oid in broker.exchanges:
@@ -292,31 +300,80 @@ class BrokerManager(Console):
                 row = []
                 if self.cluster:
                     row.append(broker.getName())
-                if ex.durable:
-                    dur = "Y"
-                else:
-                    dur = ""
                 row.append(ex.name)
                 row.append(ex.type)
-                row.append(dur)
-                row.append(num(ex.bindingCount))
-                row.append(num(ex.msgReceives))
-                row.append(num(ex.msgRoutes))
-                row.append(num(ex.msgDrops))
-                row.append(num(ex.byteReceives))
-                row.append(num(ex.byteRoutes))
-                row.append(num(ex.byteDrops))
+                row.append(ex.durable)
+                row.append(ex.bindingCount)
+                row.append(ex.msgReceives)
+                row.append(ex.msgRoutes)
+                row.append(ex.msgDrops)
+                row.append(ex.byteReceives)
+                row.append(ex.byteRoutes)
+                row.append(ex.byteDrops)
                 rows.append(row)
         title = "Exchanges"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
-        disp.table(title, heads, rows)
+        if _sortcol:
+            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+            dispRows = sorter.getSorted()
+        else:
+            dispRows = rows
+        disp.formattedTable(title, heads, dispRows)
+
+    def displayQueue(self, subs):
+        disp = Display(prefix="  ")
+        heads = []
+        if self.cluster:
+            heads.append(Header('broker'))
+        heads.append(Header("queue"))
+        heads.append(Header("dur", Header.Y))
+        heads.append(Header("autoDel", Header.Y))
+        heads.append(Header("excl", Header.Y))
+        heads.append(Header("msg", Header.KMG))
+        heads.append(Header("msgIn", Header.KMG))
+        heads.append(Header("msgOut", Header.KMG))
+        heads.append(Header("bytes", Header.KMG))
+        heads.append(Header("bytesIn", Header.KMG))
+        heads.append(Header("bytesOut", Header.KMG))
+        heads.append(Header("cons", Header.KMG))
+        heads.append(Header("bind", Header.KMG))
+        rows = []
+        for broker in self.brokers:
+            for oid in broker.queues:
+                q = broker.queues[oid]
+                row = []
+                if self.cluster:
+                    row.append(broker.getName())
+                row.append(q.name)
+                row.append(q.durable)
+                row.append(q.autoDelete)
+                row.append(q.exclusive)
+                row.append(q.msgDepth)
+                row.append(q.msgTotalEnqueues)
+                row.append(q.msgTotalDequeues)
+                row.append(q.byteDepth)
+                row.append(q.byteTotalEnqueues)
+                row.append(q.byteTotalDequeues)
+                row.append(q.consumerCount)
+                row.append(q.bindingCount)
+                rows.append(row)
+        title = "Queues"
+        if self.cluster:
+            title += " for cluster '%s'" % self.cluster.clusterName
+        if _sortcol:
+            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+            dispRows = sorter.getSorted()
+        else:
+            dispRows = rows
+        disp.formattedTable(title, heads, dispRows)
 
     def displayMain(self, main, subs):
         if   main == 'b': self.displayBroker(subs)
         elif main == 'c': self.displayConn(subs)
         elif main == 's': self.displaySession(subs)
         elif main == 'e': self.displayExchange(subs)
+        elif main == 'q': self.displayQueue(subs)
 
     def display(self):
         self._getCluster()
@@ -339,8 +396,8 @@ class BrokerManager(Console):
 ##
 
 try:
-    longOpts = ("top", "numeric")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "bc", longOpts)
+    longOpts = ("top", "numeric", "sort-by=", "limit=", "increasing")
+    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "bceqS:L:I", longOpts)
 except:
     Usage()
 
@@ -355,6 +412,12 @@ for opt in optlist:
         _top = True
     elif opt[0] == "-n" or opt[0] == "--numeric":
         _numeric = True
+    elif opt[0] == "-S" or opt[0] == "--sort-by":
+        _sortcol = opt[1]
+    elif opt[0] == "-I" or opt[0] == "--increasing":
+        _increasing = True
+    elif opt[0] == "-L" or opt[0] == "--limit":
+        _limit = int(opt[1])
     elif len(opt[0]) == 2:
         char = opt[0][1]
         if "bcseq".find(char) != -1:
@@ -380,6 +443,7 @@ except KeyboardInterrupt:
     print
 except Exception,e:
     print "Failed:", e.args
+    #raise  # TODO: Remove before flight
     sys.exit(1)
 
 bm.Disconnect()
