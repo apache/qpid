@@ -135,7 +135,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 {
                     try
                     {
-                        flushAcknowledgments();
+                        flushAcknowledgments(true);
                     }
                     catch (Throwable t)
                     {
@@ -236,18 +236,28 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     void flushAcknowledgments()
     {
+        flushAcknowledgments(false);
+    }
+    
+    void flushAcknowledgments(boolean setSyncBit)
+    {
         synchronized (unacked)
         {
             if (unackedCount > 0)
             {
                 messageAcknowledge
-                    (unacked, _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
+                    (unacked, _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE,setSyncBit);
                 clearUnacked();
             }
         }
     }
 
     void messageAcknowledge(RangeSet ranges, boolean accept)
+    {
+        messageAcknowledge(ranges,accept,false);
+    }
+    
+    void messageAcknowledge(RangeSet ranges, boolean accept,boolean setSyncBit)
     {
         Session ssn = getQpidSession();
         for (Range range : ranges)
@@ -257,7 +267,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         ssn.flushProcessed(accept ? BATCH : NONE);
         if (accept)
         {
-            ssn.messageAccept(ranges, UNRELIABLE);
+            ssn.messageAccept(ranges, UNRELIABLE,setSyncBit? SYNC : NONE);
         }
     }
 
