@@ -504,7 +504,11 @@ public class Session extends SessionInvoker
             {
                 if (state == DETACHED && m.isUnreliable())
                 {
-                    return;
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
+                    {
+                        return;
+                    }
                 }
 
                 if (state != OPEN && state != CLOSED)
