@@ -130,16 +130,26 @@ public class NavigationView extends ViewPart
             {
                 public void treeExpanded(TreeExpansionEvent event)
                 {
-                    _treeViewer.setExpandedState(event.getElement(), true);
-                    // Following will cause the selection event to be sent, so commented
-                    // _treeViewer.setSelection(new StructuredSelection(event.getElement()));
-                    _treeViewer.refresh();
+                    getSite().getShell().getDisplay().asyncExec(
+                            new Runnable()
+                            {
+                                public void run()
+                                {
+                                     _treeViewer.refresh();
+                                }
+                            });
                 }
 
                 public void treeCollapsed(TreeExpansionEvent event)
                 {
-                    _treeViewer.setExpandedState(event.getElement(), false);
-                    _treeViewer.refresh();
+                    getSite().getShell().getDisplay().asyncExec(
+                            new Runnable()
+                            {
+                                public void run()
+                                {
+                                     _treeViewer.refresh();
+                                }
+                            });
                 }
             });
 
