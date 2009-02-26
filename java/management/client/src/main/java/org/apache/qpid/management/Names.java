@@ -45,7 +45,7 @@ public abstract class Names
     public static String CLASS = "class";
     public static String EVENT = "event";
     public static String OBJECT_ID="objectId";    
-    public static String BROKER_ID = "brokerID";
+    public static String BROKER_ID = "brokerId";
     public static String DOMAIN_NAME = "Q-MAN";
         
     public static String ARG_COUNT_PARAM_NAME = "argCount";
@@ -86,7 +86,7 @@ public abstract class Names
 	    			new StringBuilder()
 	    				.append(DOMAIN_NAME)
 	    				.append(':')
-	    				.append("Type=Service")
+	    				.append("Name=QMan,Type=Service")
 	    				.toString());
 	    } catch(Exception exception)
 	    {

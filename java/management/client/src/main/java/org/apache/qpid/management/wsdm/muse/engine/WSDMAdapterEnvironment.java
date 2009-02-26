@@ -64,6 +64,11 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
         return _realDirectory;
     }
     
+    /**
+     * Returns the default endpoint reference URI.
+     * 
+     * @return the default endpoint reference URI.
+     */
     public String getDefaultURIPrefix()
     {
         return new StringBuilder()
@@ -78,5 +83,15 @@ public class WSDMAdapterEnvironment  extends AbstractEnvironment
     		.append(_servletContext.getContextPath())
     		.append("/services/")
     		.toString();    	
+    }
+    
+    /**
+     * Returns the context path name of QMan application.
+     * 
+     * @return the context path name of QMan application.
+     */
+    public String getContextPath()
+    {
+    	return _servletContext.getContextPath();
     }
 }

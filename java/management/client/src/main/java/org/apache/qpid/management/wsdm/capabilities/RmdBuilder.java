@@ -128,7 +128,8 @@ class RmdBuilder implements IArtifactBuilder
 	 */
 	public Element[] getResourceMetadataDescriptor() 
 	{
-		Element [] properties = _metadataDescriptor.toArray(new Element[0]);
+		Element [] properties = _metadataDescriptor.toArray(
+				new Element[_metadataDescriptor.size()]);
 		return properties;
 	}
 }
