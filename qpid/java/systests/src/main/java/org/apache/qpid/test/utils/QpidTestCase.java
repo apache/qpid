@@ -229,11 +229,13 @@ public class QpidTestCase extends TestCase
         private LineNumberReader in;
         private String ready;
         private CountDownLatch latch;
+        private boolean seenReady;
 
         public Piper(InputStream in, String ready)
         {
             this.in = new LineNumberReader(new InputStreamReader(in));
             this.ready = ready;
+            this.seenReady = false;
             if (this.ready != null && !this.ready.equals(""))
             {
                 this.latch = new CountDownLatch(1);
@@ -257,7 +259,8 @@ public class QpidTestCase extends TestCase
             }
             else
             {
-                return latch.await(timeout, unit);
+                latch.await(timeout, unit);
+                return seenReady;
             }
         }
 
@@ -271,6 +274,7 @@ public class QpidTestCase extends TestCase
                     System.out.println(line);
                     if (latch != null && line.contains(ready))
                     {
+                        seenReady = true;
                         latch.countDown();
                     }
                 }
