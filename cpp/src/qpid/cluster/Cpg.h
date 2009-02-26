@@ -114,8 +114,6 @@ class Cpg : public sys::IOHandle {
 
     int getFd();
     
-    bool isFlowControlEnabled();
-    
   private:
     static std::string errorStr(cpg_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
