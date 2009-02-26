@@ -30,6 +30,7 @@ import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.AttributeData;
+import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 import org.eclipse.jface.viewers.ISelection;
@@ -359,6 +360,13 @@ public class MBeanView extends ViewPart
     
     private void createNotificationsTab(TabFolder tabFolder)
     {
+        NotificationInfoModel[] items = MBeanUtility.getNotificationInfo(_mbean);
+        if (items == null || items.length == 0)
+        {
+            //the mbean has no notifications to subscribe for, do not create the tab.
+            return;
+        }
+        
         NotificationsTabControl controller = new NotificationsTabControl(tabFolder);
         
         TabItem tab = new TabItem(tabFolder, SWT.NONE);
