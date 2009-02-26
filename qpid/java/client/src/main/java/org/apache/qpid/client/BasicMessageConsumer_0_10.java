@@ -383,7 +383,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                                                       Option.UNRELIABLE);
         }
         Object o = super.getMessageFromQueue(l);
-        if (o == null)
+        if (o == null && _0_10session.isStarted())
         {
             _0_10session.getQpidSession().messageFlush
                 (getConsumerTagString(), Option.UNRELIABLE);
