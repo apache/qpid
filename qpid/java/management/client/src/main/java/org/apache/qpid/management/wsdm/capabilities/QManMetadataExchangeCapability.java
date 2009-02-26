@@ -21,6 +21,10 @@
 package org.apache.qpid.management.wsdm.capabilities;
 
 import org.apache.muse.util.xml.XmlUtils;
+import org.apache.muse.ws.metadata.WsxConstants;
+import org.apache.muse.ws.resource.WsResource;
+import org.apache.muse.ws.resource.metadata.MetadataDescriptor;
+import org.apache.muse.ws.resource.metadata.WsrmdConstants;
 import org.apache.muse.ws.resource.metadata.ext.WsrfMetadataExchange;
 import org.apache.muse.ws.wsdl.WsdlUtils;
 import org.apache.qpid.management.wsdm.muse.resources.QManWsResource;
@@ -60,4 +64,36 @@ public class QManMetadataExchangeCapability extends WsrfMetadataExchange
         
         return wsdl;
 	}
+	
+	/**
+	 * Returns the resource metadata descriptor associated with the owenr 
+	 * resource of thi capability.
+	 * 
+	 * @return the resource metadata descriptor. 
+	 */
+	protected Element getResourceMetadataDescriptor()
+	{
+        WsResource resource = (WsResource)getResource();
+        MetadataDescriptor metadataDescriptor = resource.getPropertyCollection().getMetadata();
+        return metadataDescriptor.toXML();		
+	}
+	
+    public Element[] getMetadata(String dialect)
+    {  
+    	if (dialect == null)
+    	{
+    		return new Element[]{
+    				getResourceMetadataDescriptor(),
+    				getWSDL()};
+    	} else {
+    		if (WsrmdConstants.NAMESPACE_URI.equals(dialect))
+    		{
+    			return new Element[]{getResourceMetadataDescriptor()};
+    		} else if (WsxConstants.WSDL_DIALECT.equals(dialect))
+    		{
+    			return new Element[]{getWSDL()};
+    		}
+    	}
+    	return super.getMetadata(dialect);
+    }
 }

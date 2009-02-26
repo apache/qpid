@@ -26,6 +26,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -45,6 +48,7 @@ import org.apache.qpid.management.Names;
 import org.apache.qpid.management.configuration.BrokerAlreadyConnectedException;
 import org.apache.qpid.management.configuration.BrokerConnectionData;
 import org.apache.qpid.management.configuration.BrokerConnectionException;
+import org.apache.qpid.management.configuration.Configuration;
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.JmxService;
 import org.apache.qpid.transport.util.Logger;
@@ -58,6 +62,7 @@ public class QMan extends NotificationBroadcasterSupport implements DynamicMBean
     private final List<ManagementClient> managementClients = new ArrayList<ManagementClient>();
     
     private Configurator _configurator = new Configurator();
+    private ThreadPoolExecutor _workManager;
     
     /**
      * Starts QMan.
@@ -73,6 +78,8 @@ public class QMan extends NotificationBroadcasterSupport implements DynamicMBean
         	 registerQManService();
         	 
             _configurator.configure();            
+            
+            configureWorkManager();
             
             LOGGER.info(Messages.QMAN_000019_QMAN_STARTED);
        } catch(Exception exception) {
@@ -141,6 +148,36 @@ public class QMan extends NotificationBroadcasterSupport implements DynamicMBean
         {
         }
         LOGGER.info(Messages.QMAN_000021_SHUT_DOWN);                    	
+    }
+    
+	/**
+     * Creates a management client using the given data.
+     * 
+     * @param brokerId the broker identifier.
+     * @param data the broker connection data.
+     */
+    public void createManagementClient(UUID brokerId, BrokerConnectionData data)
+    {
+        try 
+        {
+            ManagementClient client = new ManagementClient(brokerId,data);
+            client.estabilishFirstConnectionWithBroker();
+            managementClients.add(client);
+            
+            LOGGER.info(Messages.QMAN_000004_MANAGEMENT_CLIENT_CONNECTED,brokerId);
+        } catch(StartupFailureException exception) {
+            LOGGER.error(exception, Messages.QMAN_100017_UNABLE_TO_CONNECT,brokerId,data);
+        }
+    }    
+    
+    /**
+     * Returns the list of management clients currently handled by QMan.
+     * 
+     * @return the list of management clients currently handled by QMan.
+     */
+    public List<ManagementClient> getManagementClients()
+    {
+    	return managementClients;
     }
     
     /**
@@ -330,13 +367,20 @@ public class QMan extends NotificationBroadcasterSupport implements DynamicMBean
 
 	/**
 	 * Simply dispatches the incoming notification to registered listeners.
+	 * Consider that the notification is sent asynchronously so the QMan current thread is not 
+	 * waiting for completion of receiver task.
 	 * 
 	 * @param notification the incoming notification.
 	 * @param handback the context associated to this notification.
 	 */
-	public void handleNotification(Notification notification, Object handback) 
+	public void handleNotification(final Notification notification, Object handback) 
 	{
-		sendNotification(notification);
+		_workManager.execute(new Runnable(){
+			public void run()
+			{
+				sendNotification(notification);
+			}
+		});
 	}	
 	
     /**
@@ -352,33 +396,17 @@ public class QMan extends NotificationBroadcasterSupport implements DynamicMBean
     	LOGGER.info(Messages.QMAN_000023_QMAN_REGISTERED_AS_MBEAN);
 	}
     
-	/**
-     * Creates a management client using the given data.
-     * 
-     * @param brokerId the broker identifier.
-     * @param data the broker connection data.
-     */
-    public void createManagementClient(UUID brokerId, BrokerConnectionData data)
-    {
-        try 
-        {
-            ManagementClient client = new ManagementClient(brokerId,data);
-            client.estabilishFirstConnectionWithBroker();
-            managementClients.add(client);
-            
-            LOGGER.info(Messages.QMAN_000004_MANAGEMENT_CLIENT_CONNECTED,brokerId);
-        } catch(StartupFailureException exception) {
-            LOGGER.error(exception, Messages.QMAN_100017_UNABLE_TO_CONNECT,brokerId,data);
-        }
-    }    
-    
     /**
-     * Returns the list of management clients currently handled by QMan.
-     * 
-     * @return the list of management clients currently handled by QMan.
+     * Configures work manager component. 
      */
-    public List<ManagementClient> getManagementClients()
-    {
-    	return managementClients;
-    }
+	private void configureWorkManager()
+	{
+		Configuration configuration = Configuration.getInstance();
+		_workManager = new ThreadPoolExecutor(
+				configuration.getWorkerManagerPoolSize(),
+				configuration.getWorkerManagerMaxPoolSize(),
+				configuration.getWorkerManagerKeepAliveTime(),
+				TimeUnit.MILLISECONDS,
+				new ArrayBlockingQueue<Runnable>(30));
+	}
 }

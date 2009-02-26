@@ -29,6 +29,8 @@ import org.apache.muse.ws.notification.WsnConstants;
 
 /**
  * WS-Notifications consumer capability.
+ * At the moment QMan is not a consumer of itself so this capability is here only
+ * for test purposes.
  * 
  * @author Andrea Gazzarini
  */
