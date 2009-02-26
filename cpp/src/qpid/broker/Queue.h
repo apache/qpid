@@ -85,6 +85,7 @@ namespace qpid {
             std::vector<std::string> traceExclude;
             QueueListeners listeners;
             Messages messages;
+            Messages pendingDequeues;//used to avoid dequeuing during recovery
             LVQ lvq;
             mutable qpid::sys::Mutex consumerLock;
             mutable qpid::sys::Mutex messageLock;
@@ -101,7 +102,7 @@ namespace qpid {
             int eventMode;
             QueueEvents* eventMgr;
 
-            void push(boost::intrusive_ptr<Message>& msg);
+            void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             bool seek(QueuedMessage& msg, Consumer::shared_ptr position);
             bool getNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
@@ -290,6 +291,11 @@ namespace qpid {
             void setPosition(framing::SequenceNumber pos);
             int getEventMode();
             void setQueueEventManager(QueueEvents&);
+
+            /**
+             * Notify queue that recovery has completed.
+             */
+            void recoveryComplete();
         };
     }
 }
