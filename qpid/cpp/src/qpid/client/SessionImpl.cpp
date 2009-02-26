@@ -512,6 +512,7 @@ void SessionImpl::detach(const std::string& _name)
     if (id.getName() != _name) throw InternalErrorException("Incorrect session name");
     setState(DETACHED);
     QPID_LOG(info, "Session detached by peer: " << id);
+    proxy.detached(_name, DETACH_CODE_NORMAL);
 }
 
 void SessionImpl::detached(const std::string& _name, uint8_t _code) {
