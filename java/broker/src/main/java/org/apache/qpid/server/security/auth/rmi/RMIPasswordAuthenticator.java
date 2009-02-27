@@ -20,23 +20,14 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
 
 import javax.management.remote.JMXAuthenticator;
 import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
-import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
 
-import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 public class RMIPasswordAuthenticator implements JMXAuthenticator
 {
@@ -48,7 +39,6 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
     		            "Please ensure you are using an up to date management console to connect.";
     
-    public static final String DEFAULT_ENCODING = "utf-8";
     private PrincipalDatabase _db = null;
 
     public RMIPasswordAuthenticator()
@@ -91,55 +81,25 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
         
+        // Verify that a PD has been set.
+        if (_db == null)
+        {
+            throw new SecurityException(UNABLE_TO_LOOKUP);
+        }
+        
         boolean authenticated = false;
 
         // Perform authentication
         try
         {
-            PasswordCallback pwCallback = new PasswordCallback("prompt",false);
-            UsernamePrincipal uname = new UsernamePrincipal(username);
-            
-            if (_db instanceof Base64MD5PasswordFilePrincipalDatabase)
-            {
-                //retrieve the stored password for the given user
-                _db.setPassword(uname, pwCallback);
-                
-                //compare the MD5Hash of the given password with the stored value
-                if (Arrays.equals(getMD5Hash(password), pwCallback.getPassword()))
-                {                  
-                    authenticated = true;
-                }
-            }
-            else if (_db instanceof PlainPasswordFilePrincipalDatabase)
-            {
-                //retrieve the users stored password and compare with given value
-                _db.setPassword(uname, pwCallback);
-                
-                if (password.equals(new String(pwCallback.getPassword())))
-                {
-                    authenticated = true;
-                }
-            }
-            else
-            {
-                throw new SecurityException(UNABLE_TO_LOOKUP);
+            if (_db.verifyPassword(username, password.toCharArray()))
+            {            
+                authenticated = true;
             }
         }
         catch (AccountNotFoundException e)
         {
             throw new SecurityException(INVALID_CREDENTIALS);
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new SecurityException(UNABLE_TO_LOOKUP);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new SecurityException(UNABLE_TO_LOOKUP);
-        }
-        catch (IOException e)
-        {
-            throw new SecurityException(UNABLE_TO_LOOKUP);
         }
 
         if (authenticated)
@@ -155,28 +115,5 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(INVALID_CREDENTIALS);
         }
     }
-    
-    public static char[] getMD5Hash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
-    {
-        byte[] data = text.getBytes(DEFAULT_ENCODING);
 
-        MessageDigest md = MessageDigest.getInstance("MD5");
-
-        for (byte b : data)
-        {
-            md.update(b);
-        }
-
-        byte[] digest = md.digest();
-
-        char[] hash = new char[digest.length ];
-
-        int index = 0;
-        for (byte b : digest)
-        {            
-            hash[index++] = (char) b;
-        }
-
-        return hash;
-    }
 }

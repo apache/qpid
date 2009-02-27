@@ -22,8 +22,10 @@ package org.apache.qpid.server.security.auth.database;
 
 import junit.framework.TestCase;
 
+import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 import java.io.BufferedReader;
@@ -33,7 +35,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -41,12 +45,38 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 {
 
     private static final String TEST_COMMENT = "# Test Comment";
-    private String USERNAME = "testUser";
-    private String _username = this.getClass().getName()+"username";
-    private char[] _password = "password".toCharArray();
-    private Principal _principal = new UsernamePrincipal(_username);
+
+    private static final String USERNAME = "testUser";
+    private static final String PASSWORD = "guest";
+    private static final String PASSWORD_B64MD5HASHED = "CE4DQ6BIb/BVMN9scFyLtA==";
+    private static char[] PASSWORD_MD5_CHARS;
+    private static final String PRINCIPAL_USERNAME = "testUserPrincipal";
+    private static final Principal PRINCIPAL = new UsernamePrincipal(PRINCIPAL_USERNAME);
     private Base64MD5PasswordFilePrincipalDatabase _database;
     private File _pwdFile;
+    
+    static
+    {
+        try
+        {
+            Base64 b64 = new Base64();
+            byte[] md5passBytes = PASSWORD_B64MD5HASHED.getBytes(Base64MD5PasswordFilePrincipalDatabase.DEFAULT_ENCODING);
+            byte[] decoded = b64.decode(md5passBytes);
+
+            PASSWORD_MD5_CHARS = new char[decoded.length];
+
+            int index = 0;
+            for (byte c : decoded)
+            {
+                PASSWORD_MD5_CHARS[index++] = (char) c;
+            }
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            fail("Unable to perform B64 decode to get the md5 char[] password");
+        }
+    }
+    
 
     public void setUp() throws Exception
     {
@@ -111,7 +141,56 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
         loadPasswordFile(testFile);
 
-        final String CREATED_PASSWORD = "createdPassword";
+
+        Principal principal = new Principal()
+        {
+            public String getName()
+            {
+                return USERNAME;
+            }
+        };
+
+        assertTrue("New user not created.", _database.createPrincipal(principal, PASSWORD.toCharArray()));
+        
+        PasswordCallback callback = new PasswordCallback("prompt",false);
+        try
+        {
+            _database.setPassword(principal, callback);
+        }
+        catch (AccountNotFoundException e)
+        {
+            fail("user account did not exist");
+        }
+        assertTrue("Password returned was incorrect.", Arrays.equals(PASSWORD_MD5_CHARS, callback.getPassword()));
+
+        loadPasswordFile(testFile);
+
+        try
+        {
+            _database.setPassword(principal, callback);
+        }
+        catch (AccountNotFoundException e)
+        {
+            fail("user account did not exist");
+        }
+        assertTrue("Password returned was incorrect.", Arrays.equals(PASSWORD_MD5_CHARS, callback.getPassword()));
+        
+        assertNotNull("Created User was not saved", _database.getUser(USERNAME));
+
+        assertFalse("Duplicate user created.", _database.createPrincipal(principal, PASSWORD.toCharArray()));
+
+        testFile.delete();
+    }
+    
+    public void testCreatePrincipalIsSavedToFile()
+    {
+
+        File testFile = createPasswordFile(1, 0);
+
+        loadPasswordFile(testFile);
+        
+        final String CREATED_PASSWORD = "guest";
+        final String CREATED_B64MD5HASHED_PASSWORD = "CE4DQ6BIb/BVMN9scFyLtA==";
         final String CREATED_USERNAME = "createdUser";
 
         Principal principal = new Principal()
@@ -122,16 +201,37 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
             }
         };
 
-        assertTrue("New user not created.", _database.createPrincipal(principal, CREATED_PASSWORD.toCharArray()));
+        _database.createPrincipal(principal, CREATED_PASSWORD.toCharArray());
 
-        loadPasswordFile(testFile);
+        try
+        {
+            BufferedReader reader = new BufferedReader(new FileReader(testFile));
 
-        assertNotNull("Created User was not saved", _database.getUser(CREATED_USERNAME));
+            assertTrue("File has no content", reader.ready());
 
-        assertFalse("Duplicate user created.", _database.createPrincipal(principal, CREATED_PASSWORD.toCharArray()));
+            assertEquals("Comment line has been corrupted.", TEST_COMMENT, reader.readLine());
 
+            assertTrue("File is missing user data.", reader.ready());
+
+            String userLine = reader.readLine();
+
+            String[] result = Pattern.compile(":").split(userLine);
+
+            assertEquals("User line not complete '" + userLine + "'", 2, result.length);
+
+            assertEquals("Username not correct,", CREATED_USERNAME, result[0]);
+            assertEquals("Password not correct,", CREATED_B64MD5HASHED_PASSWORD, result[1]);
+
+            assertFalse("File has more content", reader.ready());
+
+        }
+        catch (IOException e)
+        {
+            fail("Unable to valdate file contents due to:" + e.getMessage());
+        }
         testFile.delete();
     }
+    
 
     public void testDeletePrincipal()
     {
@@ -228,8 +328,8 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
         assertNotNull(testUser);
 
-        String NEW_PASSWORD = "NewPassword";
-        String NEW_PASSWORD_HASH = "TmV3UGFzc3dvcmQ=";
+        String NEW_PASSWORD = "guest";
+        String NEW_PASSWORD_HASH = "CE4DQ6BIb/BVMN9scFyLtA==";
         try
         {
             _database.updatePassword(testUser, NEW_PASSWORD.toCharArray());
@@ -268,7 +368,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         testFile.delete();
     }
 
-    public void testSetPasswordWithMissingFile()
+    public void testSetPasswordFileWithMissingFile()
     {
         try
         {
@@ -285,7 +385,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
     }
 
-    public void testSetPasswordWithReadOnlyFile()
+    public void testSetPasswordFileWithReadOnlyFile()
     {
 
         File testFile = createPasswordFile(0, 0);
@@ -310,28 +410,38 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
     
     public void testCreateUserPrincipal() throws IOException
     {
-        _database.createPrincipal(_principal, _password);
-        Principal newPrincipal = _database.getUser(_username);
+        _database.createPrincipal(PRINCIPAL, PASSWORD.toCharArray());
+        Principal newPrincipal = _database.getUser(PRINCIPAL_USERNAME);
         assertNotNull(newPrincipal);
-        assertEquals(_principal.getName(), newPrincipal.getName());
+        assertEquals(PRINCIPAL.getName(), newPrincipal.getName());
     }
     
     public void testVerifyPassword() throws IOException, AccountNotFoundException
     {
         testCreateUserPrincipal();
         //assertFalse(_pwdDB.verifyPassword(_username, null));
-        assertFalse(_database.verifyPassword(_username, new char[]{}));
-        assertFalse(_database.verifyPassword(_username, "massword".toCharArray()));
-        assertTrue(_database.verifyPassword(_username, _password));
+        assertFalse(_database.verifyPassword(PRINCIPAL_USERNAME, new char[]{}));
+        assertFalse(_database.verifyPassword(PRINCIPAL_USERNAME, (PASSWORD+"z").toCharArray()));
+        assertTrue(_database.verifyPassword(PRINCIPAL_USERNAME, PASSWORD.toCharArray()));
+        
+        try
+        {
+            _database.verifyPassword("made.up.username", PASSWORD.toCharArray());
+            fail("Should not have been able to verify this non-existant users password.");
+        }
+        catch (AccountNotFoundException e)
+        {
+            // pass
+        }
     }
     
     public void testUpdatePassword() throws IOException, AccountNotFoundException 
     {
         testCreateUserPrincipal();
         char[] newPwd = "newpassword".toCharArray();
-        _database.updatePassword(_principal, newPwd);
-        assertFalse(_database.verifyPassword(_username, _password));
-        assertTrue(_database.verifyPassword(_username, newPwd));
+        _database.updatePassword(PRINCIPAL, newPwd);
+        assertFalse(_database.verifyPassword(PRINCIPAL_USERNAME, PASSWORD.toCharArray()));
+        assertTrue(_database.verifyPassword(PRINCIPAL_USERNAME, newPwd));
     }
-    
+
 }
