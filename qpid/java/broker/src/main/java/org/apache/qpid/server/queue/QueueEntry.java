@@ -157,6 +157,8 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     boolean isAcquired();
 
+    boolean isAvailable();
+
     boolean acquire();
 
     boolean acquire(Subscription sub);
@@ -219,9 +221,9 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     boolean removeStateChangeListener(StateChangeListener listener);
 
-    void flow() throws UnableToFlowMessageException;
+    void unload() throws UnableToFlowMessageException;
 
-    void recover();
+    void load();
 
     boolean isFlowed();
 

@@ -22,5 +22,5 @@ package org.apache.qpid.server.queue;
 
 interface QueueEntryListFactory
 {
-    public QueueEntryList createQueueEntryList(AMQQueue queue);
+    public FlowableQueueEntryList createQueueEntryList(AMQQueue queue);
 }
