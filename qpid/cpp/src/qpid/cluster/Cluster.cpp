@@ -234,9 +234,9 @@ void Cluster::deliveredEvent(const Event& e) {
             // Check for deliver close here so we can erase the
             // connection decoder safely in this thread.
             if (frame.getMethod()->isA<ClusterConnectionDeliverCloseBody>())
-                decoder.erase(e.getConnectionId());
+                    decoder.erase(e.getConnectionId());
             deliverFrameQueue.push(EventFrame(e, frame));
-    }
+        }
     }
     else if (e.getType() == DATA)
         decoder.decode(e, e.getData());
@@ -345,7 +345,7 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
             broker.getLinks().setPassive(true);
         }
     }
-    else if (state >= READY && memberChange) {
+    else if (state >= CATCHUP && memberChange) {
         memberUpdate(l);
         elders = ClusterMap::intersection(elders, map.getAlive());
         if (elders.empty()) {
@@ -357,7 +357,7 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
 
 bool Cluster::isLeader() const { return elders.empty(); }
 
-void Cluster::tryMakeOffer(const MemberId& id, Lock& ) {
+void Cluster::makeOffer(const MemberId& id, Lock& ) {
     if (state == READY && map.isJoiner(id)) {
         state = OFFER;
         QPID_LOG(info, *this << " send update-offer to " << id);
@@ -382,7 +382,7 @@ void Cluster::brokerShutdown()  {
 
 void Cluster::updateRequest(const MemberId& id, const std::string& url, Lock& l) {
     map.updateRequest(id, url);
-    tryMakeOffer(id, l);
+    makeOffer(id, l);
 }
 
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
@@ -406,7 +406,7 @@ void Cluster::updateOffer(const MemberId& updater, uint64_t updateeInt, const Uu
         else {                  // Another offer was first.
             setReady(l);
             QPID_LOG(info, *this << " cancelled update offer to " << updatee);
-            tryMakeOffer(map.firstJoiner(), l); // Maybe make another offer.
+            makeOffer(map.firstJoiner(), l); // Maybe make another offer.
         }
     }
     else if (updatee == myId && url) {
@@ -446,7 +446,6 @@ void Cluster::updateInDone(const ClusterMap& m, uint64_t fid) {
 }
 
 void Cluster::checkUpdateIn(Lock& ) {
-    if (state == LEFT) return;
     if (state == UPDATEE && updatedMap) {
         map = *updatedMap;
         mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), myId);
@@ -467,7 +466,7 @@ void Cluster::updateOutDone(Lock& l) {
     state = READY;
     mcast.release();
     deliverFrameQueue.start();
-    tryMakeOffer(map.firstJoiner(), l); // Try another offer
+    makeOffer(map.firstJoiner(), l); // Try another offer
 }
 
 void Cluster::updateOutError(const std::exception& e)  {
@@ -522,7 +521,7 @@ void Cluster::memberUpdate(Lock& l) {
     size_t size = urls.size();
     failoverExchange->setUrls(urls);
 
-    if (size == 1 && lastSize > 1 && state >= READY) { 
+    if (size == 1 && lastSize > 1 && state >= CATCHUP) { 
         QPID_LOG(info, *this << " last broker standing, update queue policies");
         lastBroker = true;
         broker.getQueues().updateQueueClusterState(true);
