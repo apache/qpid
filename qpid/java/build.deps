@@ -92,7 +92,6 @@ integrationtests.libs=${systests.libs}
 client-example.libs=${client.libs}
 testkit.libs=${client.libs}
 
-
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
 ecl-core-jface=lib/org.eclipse.jface_3.4.1.M20080827-2000.jar
 ecl-core-jface-databinding=lib/org.eclipse.jface.databinding_1.2.1.M20080827-0800a.jar
@@ -114,6 +113,7 @@ ecl-swt=lib/org.eclipse.swt_3.4.1.v3449c.jar
 ecl-ui=lib/org.eclipse.ui_3.4.1.M20080910-0800.jar
 ecl-ui-forms=lib/org.eclipse.ui.forms_3.3.101.v20080708_34x.jar
 ecl-ui-workbench=lib/org.eclipse.ui.workbench_3.4.1.M20080827-0800a.jar
+apache-commons-codec=lib/org.apache.commons.codec_1.3.0.v20080530-1600.jar
 
 ecl-swt-win32-win32-x86=lib/org.eclipse.swt.win32.win32.x86_3.4.1.v3449c.jar
 ecl-equinox-launcher-win32-win32-x86=lib/org.eclipse.equinox.launcher.win32.win32.x86_1.0.101.R34x_v20080731/**
@@ -133,7 +133,7 @@ management-eclipse-plugin.core-libs=${ibm-icu} ${ecl-core-jface} ${ecl-core-jfac
     ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-databinding} ${ecl-core-expressions} \
     ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-core-runtime-compat-registry} ${ecl-equinox-app} \
     ${ecl-equinox-common} ${ecl-equinox-launcher} ${ecl-equinox-prefs} ${ecl-equinox-registry} \
-    ${ecl-help} ${ecl-osgi} ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench}
+    ${ecl-help} ${ecl-osgi} ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench} ${apache-commons-codec}
     
 management-eclipse-plugin.platform-libs=${ecl-equinox-launcher-win32-win32-x86} \
     ${ecl-equinox-launcher-linux-gtk-x86} ${ecl-equinox-launcher-macosx-carbon} \
