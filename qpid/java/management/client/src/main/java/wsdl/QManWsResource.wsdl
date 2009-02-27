@@ -115,8 +115,6 @@
 
 			<xsd:complexType name="result">
 				<xsd:sequence>
-					<xsd:element name="statusCode" type="xsd:long" />
-					<xsd:element name="statusText" type="xsd:string" />
 					<xsd:element name="outputParameters" type="qman:map"/>
 				</xsd:sequence>
 			</xsd:complexType>
