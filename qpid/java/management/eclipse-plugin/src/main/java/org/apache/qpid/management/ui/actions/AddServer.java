@@ -103,6 +103,8 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
      */
     private void createAddServerPopup()
     {
+        final Shell appShell = _window.getShell();
+
         Display display = Display.getCurrent();
         final Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE);
         shell.setText(ACTION_ADDSERVER);
@@ -112,9 +114,11 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         createWidgets(shell);
         shell.pack();
         
-        //get current size dialog, and screen size
-        int displayWidth = display.getBounds().width;
-        int displayHeight = display.getBounds().height;        
+        //get current size dialog, and application window size and location
+        int appWidth = appShell.getBounds().width;
+        int appHeight = appShell.getBounds().height;
+        int appLocX = appShell.getBounds().x;
+        int appLocY = appShell.getBounds().y;
         int currentShellWidth = shell.getSize().x;
         int currentShellHeight = shell.getSize().y;
         
@@ -125,8 +129,8 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         int newShellWidth =  currentShellWidth > minShellWidth ? currentShellWidth : minShellWidth;
         int newShellHeight = currentShellHeight > minShellHeight ? currentShellHeight : minShellHeight;
         
-        //set the final size and centre the dialog
-        shell.setBounds((displayWidth - newShellWidth)/2 , (displayHeight - newShellHeight)/2, newShellWidth, newShellHeight);
+        //set the final size and centre the dialog within the app window
+        shell.setBounds((appWidth - newShellWidth)/2  + appLocX, (appHeight - newShellHeight)/2 + appLocY, newShellWidth, newShellHeight);
         
         shell.open();
         _window.getShell().setEnabled(false);
@@ -228,7 +232,7 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
                     if (event.character == SWT.ESC)
                     {
                       //Escape key acts as cancel on all widgets
-                        shell.close();
+                        shell.dispose();
                     }
                 }
             });
@@ -314,7 +318,7 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
                     if (event.character == SWT.ESC)
                     {
                         //Escape key acts as cancel on all widgets
-                        shell.close();
+                        shell.dispose();
                     }
                 }
             });
