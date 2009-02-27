@@ -854,9 +854,9 @@ public class Session extends SessionInvoker
             {
                 throw new SessionException("close() timed out");
             }
-
-            connection.removeSession(this);
         }
+
+        connection.removeSession(this);
     }
 
     public void exception(Throwable t)

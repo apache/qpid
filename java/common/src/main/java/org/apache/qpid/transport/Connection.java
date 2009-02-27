@@ -74,7 +74,7 @@ public class Connection extends ConnectionInvoker
     final private Map<Integer,Session> channels = new HashMap<Integer,Session>();
 
     private State state = NEW;
-    private Object lock = new Object();
+    final private Object lock = new Object();
     private long timeout = 60000;
     private ConnectionListener listener = new DefaultConnectionListener();
     private ConnectionException error = null;
