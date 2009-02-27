@@ -53,6 +53,7 @@ class Listener : public MessageListener,
     bool gaps;
     uint  reportFrequency;
     int  verbosity;
+    bool done;
 };
 
 
@@ -62,7 +63,8 @@ Listener::Listener(int freq, int verbosity)
     lastSn(0), 
     gaps(false), 
     reportFrequency(freq),
-    verbosity(verbosity)
+    verbosity(verbosity),
+    done(false)
 {}
 
 
@@ -116,9 +118,11 @@ void Listener::execute(AsyncSession& session, bool isRetry)
     if (isRetry) {
         // std::cout << "Resuming from " << count << std::endl;
     }
-    SubscriptionManager subs(session);
-    subscription = subs.subscribe(*this, "message_queue");
-    subs.run();
+    if (!done) {
+        SubscriptionManager subs(session);
+        subscription = subs.subscribe(*this, "message_queue");
+        subs.run();
+    }
 }
 
 void Listener::editUrlList(std::vector<Url>& urls)
