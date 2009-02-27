@@ -54,8 +54,7 @@ public class GetMultipleResourcePropertiesTestCase extends BaseWsDmAdapterTestCa
 		try 
 		{
 			_resourceClient.getEndpointReference().removeParameter(Names.RESOURCE_ID_QNAME);
-			_resourceClient.getEndpointReference().addParameter(Names.RESOURCE_ID_QNAME,"lablabalbal");
-			_resourceClient.setTrace(true);
+			_resourceClient.getEndpointReference().addParameter(Names.RESOURCE_ID_QNAME,"lablabalbal");			
 			
 			_resourceClient.getMultipleResourceProperties(new QName[]{});
 		} catch(SoapFault expected)

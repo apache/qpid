@@ -131,6 +131,7 @@ public class WsDmAdapterTest
 		suite.addTestSuite(GetResourcePropertyDocumentTestCase.class);
 		suite.addTestSuite(SetResourcePropertiesTestCase.class);		
 		suite.addTestSuite(GetMultipleResourcePropertiesTestCase.class);	
+		suite.addTestSuite(GetResourcePropertiesTestCase.class);			
 		return new WsDmAdapterTestSetup(suite);
 	}
 	
