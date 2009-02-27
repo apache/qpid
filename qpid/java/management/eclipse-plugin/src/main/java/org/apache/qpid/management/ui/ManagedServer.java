@@ -20,20 +20,16 @@
  */
 package org.apache.qpid.management.ui;
 
-import static org.apache.qpid.management.ui.Constants.DEFAULT_PROTOCOL;
 /**
  * Class representing a server being managed eg. MBeanServer
- * @author Bhupendra Bhardwaj
  */
 public class ManagedServer extends ManagedObject
 {
     private String _host;
     private int _port;
-    private String _url;
     private String _domain;
     private String _user;
     private String _password;
-    private String _protocol = DEFAULT_PROTOCOL;
 
     public ManagedServer(String host, int port, String domain)
     {
@@ -46,7 +42,6 @@ public class ManagedServer extends ManagedObject
         _host = host;
         _port = port;
         _domain = domain;
-        _url = getRMIURL(host, port);
         _user = user;
         _password = password;
     }
@@ -65,17 +60,7 @@ public class ManagedServer extends ManagedObject
     {
         return _port;
     }
-
-    public String getUrl()
-    {
-        return _url;
-    }
     
-    public String getProtocol()
-    {
-        return _protocol;
-    }
-
     public String getPassword()
     {
         return _password;
@@ -96,8 +81,4 @@ public class ManagedServer extends ManagedObject
         _user = user;
     }
     
-    private String getRMIURL(String host, int port)
-    {
-        return "service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi";
-    }
 }
