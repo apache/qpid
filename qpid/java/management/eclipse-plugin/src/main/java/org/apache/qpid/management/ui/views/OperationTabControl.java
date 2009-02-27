@@ -521,7 +521,7 @@ public class OperationTabControl extends TabControl
     private void populateResults(Object result)
     {
         Display display = Display.getCurrent();
-        int width = 600;
+        int width = 610;
         int height = 400;
         Shell shell = ViewUtility.createPopupShell(RESULT, width, height);
         shell.setImage(ApplicationRegistry.getImage(CONSOLE_IMAGE));
