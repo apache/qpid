@@ -72,6 +72,7 @@ void Listener::received(Message & message)
 {
     if (message.getData() == "That's all, folks!") 
     {
+        done = true;
         if(verbosity > 0 )
         {
             std::cout << "Shutting down listener for " 
