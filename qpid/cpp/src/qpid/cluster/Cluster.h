@@ -119,7 +119,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     std::vector<Url> getUrls(Lock&) const;
 
     // Make an offer if we can - called in deliver thread.
-    void tryMakeOffer(const MemberId&, Lock&);
+    void makeOffer(const MemberId&, Lock&);
 
     // Called in main thread in ~Broker.
     void brokerShutdown();
@@ -133,6 +133,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void shutdown(const MemberId&, Lock&);
+
+    // Handlers for pollable queues.
     void deliveredEvent(const Event&); 
     void deliveredFrame(const EventFrame&); 
 
