@@ -448,7 +448,7 @@ public class ViewUtility
 
     public static int popupConfirmationMessage(String title, String message)
     {
-        return showBox(title, message,SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
+        return showBox(title, message,SWT.ICON_QUESTION | SWT.YES | SWT.NO);
     }
 
     
