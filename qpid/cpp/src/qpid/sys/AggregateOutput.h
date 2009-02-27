@@ -24,6 +24,7 @@
 #include "Mutex.h"
 #include "OutputControl.h"
 #include "OutputTask.h"
+#include "qpid/CommonImportExport.h"
 
 #include <algorithm>
 #include <vector>
@@ -42,15 +43,15 @@ namespace sys {
     public:
         AggregateOutput(OutputControl& c) : next(0), control(c) {};
         //this may be called on any thread
-        void activateOutput();
-        void giveReadCredit(int32_t);
+        QPID_COMMON_EXTERN void activateOutput();
+        QPID_COMMON_EXTERN void giveReadCredit(int32_t);
         
         //all the following will be called on the same thread
-        bool doOutput();
-        bool hasOutput();
-        void addOutputTask(OutputTask* t);
-        void removeOutputTask(OutputTask* t);
-        void removeAll();
+        QPID_COMMON_EXTERN bool doOutput();
+        QPID_COMMON_EXTERN bool hasOutput();
+        QPID_COMMON_EXTERN void addOutputTask(OutputTask* t);
+        QPID_COMMON_EXTERN void removeOutputTask(OutputTask* t);
+        QPID_COMMON_EXTERN void removeAll();
 
         /** Apply f to each OutputTask* in the tasks list */
         template <class F> void eachOutput(F f) {

@@ -24,7 +24,7 @@
 
 #include "IOHandle.h"
 #include "qpid/sys/IntegerTypes.h"
-
+#include "qpid/CommonImportExport.h"
 #include <string>
 
 struct sockaddr;
@@ -38,7 +38,7 @@ class Socket : public IOHandle
 {
 public:
     /** Create a socket wrapper for descriptor. */
-    Socket();
+    QPID_COMMON_EXTERN Socket();
 
     /** Create an initialized TCP socket */
     void createTcp() const;
@@ -49,21 +49,21 @@ public:
     /** Set socket non blocking */
     void setNonblocking() const;
 
-    void connect(const std::string& host, uint16_t port) const;
+    QPID_COMMON_EXTERN void connect(const std::string& host, uint16_t port) const;
 
-    void close() const;
+    QPID_COMMON_EXTERN void close() const;
 
     /** Bind to a port and start listening.
      *@param port 0 means choose an available port.
      *@param backlog maximum number of pending connections.
      *@return The bound port.
      */
-    int listen(uint16_t port = 0, int backlog = 10) const;
+    QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
     
     /** Returns the "socket name" ie the address bound to 
      * the near end of the socket
      */
-    std::string getSockname() const;
+    QPID_COMMON_EXTERN std::string getSockname() const;
 
     /** Returns the "peer name" ie the address bound to 
      * the remote end of the socket
@@ -74,14 +74,14 @@ public:
      * Returns an address (host and port) for the remote end of the
      * socket
      */
-    std::string getPeerAddress() const;
+    QPID_COMMON_EXTERN std::string getPeerAddress() const;
     /** 
      * Returns an address (host and port) for the local end of the
      * socket
      */
     std::string getLocalAddress() const;
 
-    uint16_t getLocalPort() const;
+    QPID_COMMON_EXTERN uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;
 
     /**
@@ -99,7 +99,7 @@ public:
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
-    void setTcpNoDelay(bool nodelay) const;
+    QPID_COMMON_EXTERN void setTcpNoDelay(bool nodelay) const;
 
 private:
     Socket(IOHandlePrivate*);

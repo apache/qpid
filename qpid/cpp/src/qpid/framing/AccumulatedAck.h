@@ -27,6 +27,7 @@
 #include <ostream>
 #include "SequenceNumber.h"
 #include "SequenceNumberSet.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
     namespace framing {
@@ -67,8 +68,8 @@ namespace qpid {
             void update(const SequenceNumber cumulative, const SequenceNumberSet& range);
             void operator()(SequenceNumber first, SequenceNumber last) { update(first, last); }
         };
-        std::ostream& operator<<(std::ostream&, const Range&);
-        std::ostream& operator<<(std::ostream&, const AccumulatedAck&);
+        QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const Range&);
+        QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const AccumulatedAck&);
     }
 }
 

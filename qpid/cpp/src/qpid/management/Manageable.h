@@ -23,6 +23,7 @@
 #include "ManagementObject.h"
 #include "Args.h"
 #include <string>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid { 
 namespace management {
@@ -36,7 +37,7 @@ class Manageable
     //  status_t is a type used to pass completion status from the method handler.
     //
     typedef uint32_t status_t;
-    static std::string StatusText(status_t status, std::string text = std::string());
+    QPID_COMMON_EXTERN static std::string StatusText(status_t status, std::string text = std::string());
 
     static const status_t STATUS_OK                      = 0;
     static const status_t STATUS_UNKNOWN_OBJECT          = 1;
@@ -61,7 +62,7 @@ class Manageable
     //  on this object.  The input and output arguments are specific to the
     //  method being called and must be down-cast to the appropriate sub class
     //  before use.
-    virtual status_t ManagementMethod(uint32_t methodId, Args& args, std::string& text);
+    QPID_COMMON_EXTERN virtual status_t ManagementMethod(uint32_t methodId, Args& args, std::string& text);
 };
 
 inline Manageable::~Manageable(void) {}

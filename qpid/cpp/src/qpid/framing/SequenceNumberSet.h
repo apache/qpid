@@ -27,6 +27,7 @@
 #include "SequenceNumber.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/InlineVector.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -41,7 +42,7 @@ public:
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
     uint32_t encodedSize() const;   
-    SequenceNumberSet condense() const;
+    QPID_COMMON_EXTERN SequenceNumberSet condense() const;
     void addRange(const SequenceNumber& start, const SequenceNumber& end);
 
     template <class T>

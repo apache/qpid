@@ -22,6 +22,7 @@
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/CommonImportExport.h"
 
 #ifndef _SendContent_
 #define _SendContent_
@@ -44,8 +45,8 @@ class SendContent
     void sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size, bool first, bool last) const;
     void setFlags(AMQFrame& f, bool first, bool last) const;
 public:
-    SendContent(FrameHandler& _handler, uint16_t _maxFrameSize, uint frameCount);
-    void operator()(const AMQFrame& f);
+    QPID_COMMON_EXTERN SendContent(FrameHandler& _handler, uint16_t _maxFrameSize, uint frameCount);
+    QPID_COMMON_EXTERN void operator()(const AMQFrame& f);
 };
 
 }

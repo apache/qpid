@@ -25,6 +25,7 @@
 #include "amqp_types.h"
 #include "Buffer.h"
 #include "FieldTable.h"
+#include "qpid/CommonImportExport.h"
 
 #include "assert.h"
 
@@ -87,8 +88,8 @@ class FieldValue {
     bool empty() const { return data.get() == 0; } 
     void encode(Buffer& buffer);
     void decode(Buffer& buffer);
-    bool operator==(const FieldValue&) const;
-    bool operator!=(const FieldValue& v) const { return !(*this == v); }
+    QPID_COMMON_EXTERN bool operator==(const FieldValue&) const;
+    QPID_COMMON_EXTERN bool operator!=(const FieldValue& v) const { return !(*this == v); }
     
     void print(std::ostream& out) const;
     
@@ -249,12 +250,12 @@ class Str8Value : public FieldValue {
 
 class Str16Value : public FieldValue {
   public:
-    Str16Value(const std::string& v);
+    QPID_COMMON_EXTERN Str16Value(const std::string& v);
 };
 
 class Struct32Value : public FieldValue {
   public:
-    Struct32Value(const std::string& v);
+    QPID_COMMON_EXTERN Struct32Value(const std::string& v);
 };
 
 class FloatValue : public FieldValue

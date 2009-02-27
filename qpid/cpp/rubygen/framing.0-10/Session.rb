@@ -55,9 +55,9 @@ module SyncAsync
 
   def decl_ctor_opeq()
     genl
-    genl "#{@classname}();"
-    genl "#{@classname}(const #{@version_base}& other);"
-    genl "#{@classname}& operator=(const #{@version_base}& other);"
+    genl "QPID_CLIENT_EXTERN #{@classname}();"
+    genl "QPID_CLIENT_EXTERN #{@classname}(const #{@version_base}& other);"
+    genl "QPID_CLIENT_EXTERN #{@classname}& operator=(const #{@version_base}& other);"
   end
 
   def defn_ctor_opeq(inline="")
@@ -138,6 +138,7 @@ class SessionNoKeywordGen < CppGen
   def generate()
     h_file(@file) {
       include "qpid/client/#{@version_base}.h"
+      include "qpid/client/ClientImportExport.h"
       namespace(@namespace) { 
         doxygen_comment {
           genl "AMQP #{@amqp.version} #{sync_adjective} session API."
@@ -151,7 +152,7 @@ class SessionNoKeywordGen < CppGen
             genl
             doxygen(m)
             args=m.sig_c_default.join(", ") 
-            genl "#{m.return_type(@async)} #{m.session_function}(#{args});" 
+            genl "QPID_CLIENT_EXTERN #{m.return_type(@async)} #{m.session_function}(#{args});" 
           }
         }
       }}
@@ -229,6 +230,7 @@ class SessionGen < CppGen
     h_file(@fqclass.file) {
       include @fqbase.file
       include "qpid/client/arg"
+      include "qpid/client/ClientImportExport"
       namespace("qpid::client") {
         # Doxygen comment.
         doxygen_comment {

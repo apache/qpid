@@ -27,7 +27,7 @@
 #include "qpid/framing/enum.h"
 #include "qpid/sys/StrError.h"
 #include "qpid/Msg.h"
-
+#include "qpid/CommonImportExport.h"
 #include <memory>
 #include <string>
 #include <errno.h>
@@ -41,11 +41,11 @@ namespace qpid
 class Exception : public std::exception
 {
   public:
-    explicit Exception(const std::string& message=std::string()) throw();
-    virtual ~Exception() throw();
-    virtual const char* what() const throw(); // prefix: message
-    virtual std::string getMessage() const; // Unprefixed message
-    virtual std::string getPrefix() const;  // Prefix
+    QPID_COMMON_EXTERN explicit Exception(const std::string& message=std::string()) throw();
+    QPID_COMMON_EXTERN virtual ~Exception() throw();
+    QPID_COMMON_EXTERN virtual const char* what() const throw(); // prefix: message
+    QPID_COMMON_EXTERN virtual std::string getMessage() const; // Unprefixed message
+    QPID_COMMON_EXTERN virtual std::string getPrefix() const;  // Prefix
 
   private:
     std::string message;
@@ -77,8 +77,8 @@ struct ConnectionException : public Exception {
 };
 
 struct ClosedException : public Exception {
-    ClosedException(const std::string& msg=std::string());
-    std::string getPrefix() const;
+    QPID_COMMON_EXTERN ClosedException(const std::string& msg=std::string());
+    QPID_COMMON_EXTERN std::string getPrefix() const;
 };
 
 /**
