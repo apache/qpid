@@ -195,15 +195,15 @@ public class ViewUtility
         layoutData.widthHint = 80;
         firstRecordButton.setLayoutData(layoutData);
 
-        final Button nextRecordButton = toolkit.createButton(dataHolder, NEXT, SWT.PUSH);
+        final Button previousRecordButton = toolkit.createButton(dataHolder, PREV, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_END);
         layoutData.widthHint = 80;
-        nextRecordButton.setLayoutData(layoutData);
+        previousRecordButton.setLayoutData(layoutData);
 
-        final Button previousRecordButton = toolkit.createButton(dataHolder, PREV, SWT.PUSH);
+        final Button nextRecordButton = toolkit.createButton(dataHolder, NEXT, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_BEGINNING);
         layoutData.widthHint = 80;
-        previousRecordButton.setLayoutData(layoutData);
+        nextRecordButton.setLayoutData(layoutData);
 
         final Button lastRecordButton = toolkit.createButton(dataHolder, LAST, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_BEGINNING);
