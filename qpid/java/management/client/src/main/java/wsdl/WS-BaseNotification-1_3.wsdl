@@ -424,23 +424,22 @@ This document and the information contained herein is provided on an "AS IS" bas
 			<wsdl:fault name="InvalidResourcePropertyQNameFault" message="wsrf-rpw:InvalidResourcePropertyQNameFault" />
     	</wsdl:operation>
                   
-    </wsdl:portType> 
+<!--     </wsdl:portType> 
 
-<!-- ====== PausableSubscriptionManager PortType Definition ======= -->
    <wsdl:portType name="PausableSubscriptionManager">
-
+-->
       <!-- === PausableSubscriptionManager specific operations === -->
       <wsdl:operation name="PauseSubscription">
-         <wsdl:input  message="wsntw:PauseSubscriptionRequest"/>
-         <wsdl:output message="wsntw:PauseSubscriptionResponse"/>
+         <wsdl:input  message="wsntw:PauseSubscriptionRequest" wsa:Action="http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/PauseSubscriptionRequest"/>
+         <wsdl:output message="wsntw:PauseSubscriptionResponse" wsa:Action="http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/PauseSubscriptionResponse"/>
          <wsdl:fault  name="ResourceUnknownFault" 
                       message="wsrf-rw:ResourceUnknownFault" />
          <wsdl:fault  name="PauseFailedFault"
                       message="wsntw:PauseFailedFault" />        
       </wsdl:operation>
       <wsdl:operation name="ResumeSubscription">
-         <wsdl:input  message="wsntw:ResumeSubscriptionRequest"/>
-         <wsdl:output message="wsntw:ResumeSubscriptionResponse"/>
+         <wsdl:input  message="wsntw:ResumeSubscriptionRequest" wsa:Action="http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/ResumeSubscriptionRequest"/>
+         <wsdl:output message="wsntw:ResumeSubscriptionResponse" wsa:Action="http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager/ResumeSubscriptionResponse"/>
          <wsdl:fault  name="ResourceUnknownFault" 
                       message="wsrf-rw:ResourceUnknownFault" />
          <wsdl:fault  name="ResumeFailedFault"
