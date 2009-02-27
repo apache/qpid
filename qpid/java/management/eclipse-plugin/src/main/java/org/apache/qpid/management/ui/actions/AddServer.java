@@ -48,7 +48,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
 {
     private static final String[] _domains ={"org.apache.qpid"};
     
-    private String _transport = DEFAULT_PROTOCOL;
     private String _host;
     private String _port;
     private String _domain;
@@ -73,7 +72,7 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         {
             if (_addServer)
             {
-                getNavigationView().addNewServer(_transport, _host, Integer.parseInt(_port), _domain, _user, _password);
+                getNavigationView().addNewServer(_host, Integer.parseInt(_port), _domain, _user, _password);
             }
         }
         catch(InfoRequiredException ex)
