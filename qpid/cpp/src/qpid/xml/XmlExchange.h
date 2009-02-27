@@ -46,9 +46,10 @@ class XmlExchange : public virtual Exchange {
         typedef qpid::sys::CopyOnWriteArray<XmlBinding::shared_ptr> vector;
 
         boost::shared_ptr<XQQuery> xquery;
+        bool parse_message_content;
 
         XmlBinding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent, Query query):
-            Binding(key, queue, parent), xquery(query) {}
+            Binding(key, queue, parent), xquery(query), parse_message_content(true) {}
     };
 
         
@@ -58,7 +59,7 @@ class XmlExchange : public virtual Exchange {
     XQilla xqilla;
     qpid::sys::RWlock lock;
 
-    bool matches(Query& query, Deliverable& msg, const qpid::framing::FieldTable* args);
+    bool matches(Query& query, Deliverable& msg, const qpid::framing::FieldTable* args, bool parse_message_content);
 
   public:
     static const std::string typeName;
