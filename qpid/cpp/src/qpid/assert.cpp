@@ -35,7 +35,7 @@ void assert_fail(char const * expr, char const * function, char const * file, lo
 #ifdef NDEBUG
     throw framing::InternalErrorException(msg.str());
 #else
-    std::cerr << msg << std::endl;
+    std::cerr << msg.str() << std::endl;
     abort();
 #endif
 }

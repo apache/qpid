@@ -77,6 +77,7 @@ class ConnectionMap {
   private:
     typedef std::map<ConnectionId, ConnectionPtr> Map;
 
+    mutable sys::Mutex lock;
     Cluster& cluster;
     NoOpConnectionOutputHandler shadowOut;
     Map map;

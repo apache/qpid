@@ -22,30 +22,29 @@
 #include "Cluster.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include "qpid/assert.h"
 
 namespace qpid {
 namespace cluster {
 
 using framing::InternalErrorException;
+typedef sys::Mutex::ScopedLock Lock;
 
 void ConnectionMap::insert(ConnectionPtr p) {
+    Lock l(lock);
     std::pair<Map::iterator, bool> ib = map.insert(Map::value_type(p->getId(), p));
-    if (!ib.second) {
-        assert(0);
-        throw InternalErrorException(QPID_MSG("Duplicate connection replica: " << p->getId()));
-    }
+    QPID_ASSERT(ib.second);
 }
 
 void ConnectionMap::erase(const ConnectionId& id) {
+    Lock l(lock);
     Map::iterator i = map.find(id);
-    if (i == map.end()) {
-        assert(0);
-        QPID_LOG(warning, "Erase non-existent connection replica: " << id);
-    }
+    QPID_ASSERT(i != map.end());
     map.erase(i);
 }
 
 ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
+    Lock l(lock);
     Map::const_iterator i = map.find(id);
     if (i == map.end()) {
         // Deleted local connection.
@@ -56,21 +55,21 @@ ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
         mgmtId << id;
         ConnectionPtr cp = new Connection(cluster, shadowOut, mgmtId.str(), id);
         std::pair<Map::iterator, bool> ib = map.insert(Map::value_type(id, cp)); 
-        if (!ib.second)
-            throw InternalErrorException(QPID_MSG("Duplicate entry in cluster connection map: " << id));
+        QPID_ASSERT(ib.second);
         i = ib.first;
     }
     return i->second;
 }
 
 ConnectionMap::ConnectionPtr ConnectionMap::getLocal(const ConnectionId& id) {
+    Lock l(lock);
     if (id.getMember() != cluster.getId()) return 0;
     Map::const_iterator i = map.find(id);
-    assert(i != map.end());     // FIXME aconway 2009-02-11: remove or exception.
     return i == map.end() ? 0 : i->second;
 }
 
 ConnectionMap::Vector ConnectionMap::values() const {
+    Lock l(lock);
     Vector result(map.size());
     std::transform(map.begin(), map.end(), result.begin(),
                    boost::bind(&Map::value_type::second, _1));
@@ -78,6 +77,7 @@ ConnectionMap::Vector ConnectionMap::values() const {
 }
 
 void ConnectionMap::update(MemberId myId, const ClusterMap& cluster) {
+    Lock l(lock);
     for (Map::iterator i = map.begin(); i != map.end(); ) {
         MemberId member = i->first.getMember();
         if (member != myId && !cluster.isMember(member)) { 
@@ -90,6 +90,7 @@ void ConnectionMap::update(MemberId myId, const ClusterMap& cluster) {
 }
 
 void ConnectionMap::clear() {
+    Lock l(lock);
     map.clear();
 }
 
