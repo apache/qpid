@@ -44,8 +44,6 @@ public class TransientAMQMessage implements AMQMessage
     /** Used for debugging purposes. */
     protected static final Logger _log = Logger.getLogger(AMQMessage.class);
 
-    private final AtomicInteger _referenceCount = new AtomicInteger(1);
-
     protected ContentHeaderBody _contentHeaderBody;
 
     protected MessagePublishInfo _messagePublishInfo;
@@ -164,7 +162,7 @@ public class TransientAMQMessage implements AMQMessage
 
     public String debugIdentity()
     {
-        return "(HC:" + System.identityHashCode(this) + " ID:" + getMessageId() + " Ref:" + _referenceCount.get() + ")";
+        return "(HC:" + System.identityHashCode(this) + " ID:" + getMessageId() +")";
     }
 
     public void setExpiration(final long expiration)
@@ -386,7 +384,7 @@ public class TransientAMQMessage implements AMQMessage
         // return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken : " +
         // _taken + " by :" + _takenBySubcription;
 
-        return "Message[" + debugIdentity() + "]: " + getMessageId() + "; ref count: " + _referenceCount;
+        return "Message[" + debugIdentity() + "]: " + getMessageId() ;
     }
 
 }
