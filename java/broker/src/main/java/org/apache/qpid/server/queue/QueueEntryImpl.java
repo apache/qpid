@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 
@@ -78,6 +79,17 @@ public class QueueEntryImpl implements QueueEntry
 
     volatile QueueEntryImpl _next;
 
+    private long _messageSize;
+    private QueueBackingStore _backingStore;
+    private AtomicBoolean _flowed;
+    private Long _messageId;
+
+    private byte _flags = 0;
+
+    private long _expiration;
+
+    private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
+
 
     QueueEntryImpl(SimpleQueueEntryList queueEntryList)
     {
@@ -88,8 +100,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public QueueEntryImpl(SimpleQueueEntryList queueEntryList, AMQMessage message, final long entryId)
     {
-        _queueEntryList = queueEntryList;
-        _message = message;
+        this(queueEntryList,message);
 
         _entryIdUpdater.set(this, entryId);
     }
@@ -98,6 +109,19 @@ public class QueueEntryImpl implements QueueEntry
     {
         _queueEntryList = queueEntryList;
         _message = message;
+        if (message != null)
+        {
+            _messageId = message.getMessageId();
+            _messageSize = message.getSize();
+            
+            if(message.isImmediate())
+            {
+                _flags |= IMMEDIATE;
+            }
+            _expiration = message.getExpiration();
+        }
+        _backingStore = queueEntryList.getBackingStore();
+        _flowed = new AtomicBoolean(false);
     }
 
     protected void setEntryId(long entryId)
@@ -122,17 +146,34 @@ public class QueueEntryImpl implements QueueEntry
 
     public long getSize()
     {
-        return getMessage().getSize();
+        return _messageSize;
     }
 
     public boolean getDeliveredToConsumer()
     {
-        return getMessage().getDeliveredToConsumer();
+        return (_flags & DELIVERED_TO_CONSUMER) != 0;
+    }
+
+    public void setDeliveredToConsumer()
+    {
+        _flags |= DELIVERED_TO_CONSUMER;
     }
 
     public boolean expired() throws AMQException
     {
-        return getMessage().expired();
+        if (_expiration != 0L)
+        {
+            long now = System.currentTimeMillis();
+
+            return (now > _expiration);
+        }
+
+        return false;
+    }
+
+    public void setExpiration(final long expiration)
+    {
+        _expiration = expiration;
     }
 
     public boolean isAcquired()
@@ -169,7 +210,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public void setDeliveredToSubscription()
     {
-        getMessage().setDeliveredToConsumer();
+        _flags |= DELIVERED_TO_CONSUMER;
     }
 
     public void release()
@@ -185,7 +226,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean immediateAndNotDelivered() 
     {
-        return _message.immediateAndNotDelivered();
+        return (_flags & IMMEDIATE_AND_DELIVERED) == IMMEDIATE;
     }
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException
@@ -206,8 +247,8 @@ public class QueueEntryImpl implements QueueEntry
     public void setRedelivered(boolean redelivered)
     {
         _redelivered = redelivered;
-        // todo - here we could mark this message as redelivered so we don't have to mark
-        // all messages on recover as redelivered.       
+        // todo - here we could record this message as redelivered on this queue in the transactionLog
+        // so we don't have to mark all messages on recover as redelivered.
     }
 
     public Subscription getDeliveredSubscription()
@@ -281,6 +322,8 @@ public class QueueEntryImpl implements QueueEntry
                 s.restoreCredit(this);
             }
 
+            _queueEntryList.dequeued(this);
+
             getQueue().dequeue(storeContext, this);
 
             if (_stateChangeListeners != null)
@@ -337,6 +380,34 @@ public class QueueEntryImpl implements QueueEntry
         return false;
     }
 
+    public void flow() throws UnableToFlowMessageException
+    {
+        if (_message != null && _backingStore != null)
+        {
+            if(_log.isDebugEnabled())
+            {
+                _log.debug("Flowing message:" + _message.debugIdentity());
+            }
+            _backingStore.flow(_message);
+            _message = null;
+            _flowed.getAndSet(true);            
+        }
+    }
+
+    public void recover()
+    {
+        if (_messageId != null && _backingStore != null)
+        {
+            _message = _backingStore.recover(_messageId);
+            _flowed.getAndSet(false);
+        }
+    }
+
+    public boolean isFlowed()
+    {
+        return _flowed.get();
+    }
+
 
     public int compareTo(final QueueEntry o)
     {
@@ -382,7 +453,11 @@ public class QueueEntryImpl implements QueueEntry
 
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
-            _queueEntryList.advanceHead();            
+            _queueEntryList.advanceHead();
+            if (_backingStore != null)
+            {
+                _backingStore.delete(_messageId);
+            }
             return true;
         }
         else
@@ -395,4 +470,6 @@ public class QueueEntryImpl implements QueueEntry
     {
         return _queueEntryList;
     }
+
+
 }

@@ -48,6 +48,8 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.QueueBackingStore;
+import org.apache.qpid.server.queue.FileQueueBackingStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.server.security.access.ACLManager;
@@ -86,6 +88,7 @@ public class VirtualHost implements Accessable
     private final Timer _houseKeepingTimer;
     
     private VirtualHostConfiguration _configuration;
+    private QueueBackingStore _queueBackingStore;
 
     public void setAccessableName(String name)
     {
@@ -111,6 +114,11 @@ public class VirtualHost implements Accessable
     public VirtualHostConfiguration getConfiguration()
     {
         return _configuration ;
+    }
+
+    public QueueBackingStore getQueueBackingStore()
+    {
+        return _queueBackingStore;
     }
 
     /**
@@ -185,6 +193,9 @@ public class VirtualHost implements Accessable
             initialiseTransactionLog(hostConfig);
             initialiseRoutingTable(hostConfig);
         }
+
+        _queueBackingStore = new FileQueueBackingStore();
+        _queueBackingStore.configure(this,hostConfig);
 
         _exchangeFactory.initialise(hostConfig);
         _exchangeRegistry.initialise();

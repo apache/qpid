@@ -21,17 +21,17 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.CommonContentHeaderProperties;
-import org.apache.qpid.AMQException;
 
-public class PriorityQueueList implements QueueEntryList
+public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implements  QueueEntryList
 {
     private final AMQQueue _queue;
     private final QueueEntryList[] _priorityLists;
     private final int _priorities;
     private final int _priorityOffset;
 
-    public PriorityQueueList(AMQQueue queue, int priorities)
+    public PriorityQueueEntryList(AMQQueue queue, int priorities)
     {
+        super(queue);
         _queue = queue;
         _priorityLists = new QueueEntryList[priorities];
         _priorities = priorities;
@@ -53,7 +53,7 @@ public class PriorityQueueList implements QueueEntryList
     }
 
     public QueueEntry add(AMQMessage message)
-    {
+    {        
         int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
         if(index >= _priorities)
         {
@@ -154,7 +154,29 @@ public class PriorityQueueList implements QueueEntryList
 
         public QueueEntryList createQueueEntryList(AMQQueue queue)
         {
-            return new PriorityQueueList(queue, _priorities);
+            return new PriorityQueueEntryList(queue, _priorities);
         }
+    }
+
+    @Override
+    public int size()
+    {
+        int size=0;
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            size += queueEntryList.size();
+        }
+
+        return size;
+    }
+
+
+    @Override
+    protected void flowingToDisk(QueueEntryImpl queueEntry)
+    {
+        //TODO this disables FTD for priority queues
+        // As the incomming message isn't always the one to purge.
+        // More logic is required up in the add() method here to determine if the
+        // incomming message is at the 'front' or not.
     }
 }

@@ -352,7 +352,7 @@ public class Show extends AbstractCommand
 
             isredelivered.add(entry.isRedelivered() ? "true" : "false");
 
-            isdelivered.add(msg.getDeliveredToConsumer() ? "true" : "false");
+            isdelivered.add(entry.getDeliveredToConsumer() ? "true" : "false");
 
             BasicContentHeaderProperties headers = null;
 
