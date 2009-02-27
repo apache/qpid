@@ -446,6 +446,21 @@ public class NavigationView extends ViewPart
             }
         }
     }
+    
+    //check if the MBeanInfo can be retrieved.
+    private boolean haveAccessPermission(ManagedBean mbean)
+    {
+        try
+        {                
+            MBeanUtility.getMBeanInfo(mbean);     
+        }
+        catch(Exception ex)
+        {
+            return false;
+        }
+        
+        return true;
+    }
 
     /**
      * Queries the Qpid Server and populates the given domain node with all MBeans undser that domain.
@@ -469,7 +484,11 @@ public class NavigationView extends ViewPart
             // manually by selecting from MBeanView
             if (!(mbean.isConnection() || mbean.isExchange() || mbean.isQueue()))
             {
-                addManagedBean(domain, mbean);
+                //if we cant get the MBeanInfo then we cant display the mbean, so dont add it to the tree
+                if (haveAccessPermission(mbean))
+                {
+                    addManagedBean(domain, mbean);
+                }
             }
         }
         // To make it work with the broker without virtual host implementation.
