@@ -20,6 +20,7 @@ package org.apache.qpid.server.queue;
  * 
  */
 
+import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
@@ -29,6 +30,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -58,7 +60,7 @@ public class SimpleAMQQueueTest extends TestCase
     protected FieldTable _arguments = null;
 
     MessagePublishInfo info = new MessagePublishInfoImpl();
-    private static final long MESSAGE_SIZE = 100;
+    private static long MESSAGE_SIZE = 100;
 
     @Override
     protected void setUp() throws Exception
@@ -68,7 +70,7 @@ public class SimpleAMQQueueTest extends TestCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry) ApplicationRegistry.getInstance(1);
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), env), _transactionLog);
+        _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getSimpleName(), env), _transactionLog);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, _virtualHost, _arguments);
@@ -362,56 +364,69 @@ public class SimpleAMQQueueTest extends TestCase
         // Create IncomingMessage and nondurable queue
         NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
 
+        MESSAGE_SIZE = 1;
+        long MEMORY_MAX = 500;
+        int MESSAGE_COUNT = (int) MEMORY_MAX * 2;
         //Set the Memory Usage to be very low
-        _queue.setMemoryUsageMaximum(10);
+        _queue.setMemoryUsageMaximum(MEMORY_MAX);        
 
-        for (int msgCount = 0; msgCount < 10; msgCount++)
+        for (int msgCount = 0; msgCount < MESSAGE_COUNT / 2; msgCount++)
         {
             sendMessage(txnContext);
         }
 
         //Check that we can hold 10 messages without flowing
-        assertEquals(10, _queue.getMessageCount());
-        assertEquals(10, _queue.getMemoryUsageCurrent());
+        assertEquals(MESSAGE_COUNT / 2, _queue.getMessageCount());
+        assertEquals(MEMORY_MAX, _queue.getMemoryUsageCurrent());
         assertTrue("Queue is flowed.", !_queue.isFlowed());
 
         // Send anothe and ensure we are flowed
         sendMessage(txnContext);
-        assertEquals(11, _queue.getMessageCount());
-        assertEquals(10, _queue.getMemoryUsageCurrent());
+        assertEquals(MESSAGE_COUNT / 2 + 1, _queue.getMessageCount());
+        assertEquals(MESSAGE_COUNT / 2, _queue.getMemoryUsageCurrent());
         assertTrue("Queue is not flowed.", _queue.isFlowed());
 
-        //send another 9 so there are 20msgs in total on the queue
-        for (int msgCount = 0; msgCount < 9; msgCount++)
+        //send another 99 so there are 200msgs in total on the queue
+        for (int msgCount = 0; msgCount < (MESSAGE_COUNT / 2) - 1; msgCount++)
         {
             sendMessage(txnContext);
+
+            long usage = _queue.getMemoryUsageCurrent();
+            assertTrue("Queue has gone over quota:" + usage,
+                       usage <= _queue.getMemoryUsageMaximum());
+
+            assertTrue("Queue has a negative quota:" + usage,usage  > 0);
+
         }
-        assertEquals(20, _queue.getMessageCount());
-        assertEquals(10, _queue.getMemoryUsageCurrent());
+        assertEquals(MESSAGE_COUNT, _queue.getMessageCount());
+        assertEquals(MEMORY_MAX, _queue.getMemoryUsageCurrent());
         assertTrue("Queue is not flowed.", _queue.isFlowed());
 
         _queue.registerSubscription(_subscription, false);
 
-        Thread.sleep(200);
+        int slept = 0;
+        while (_subscription.getQueueEntries().size() != MESSAGE_COUNT && slept < 10)
+        {
+            Thread.sleep(500);
+            slept++;
+        }
 
         //Ensure the messages are retreived
-        assertEquals("Not all messages were received.", 20, _subscription.getMessages().size());
+        assertEquals("Not all messages were received, slept:"+slept/2+"s", MESSAGE_COUNT, _subscription.getQueueEntries().size());
 
-        //Ensure we got the content
-        for (int index = 0; index < 10; index++)
+        //Check the queue is still within it's limits.
+        assertTrue("Queue has gone over quota:" + _queue.getMemoryUsageCurrent(),
+                   _queue.getMemoryUsageCurrent() <= _queue.getMemoryUsageMaximum());
+
+        assertTrue("Queue has a negative quota:" + _queue.getMemoryUsageCurrent(), _queue.getMemoryUsageCurrent() > 0);
+
+        for (int index = 0; index < MESSAGE_COUNT; index++)
         {
-            QueueEntry entry = _subscription.getMessages().get(index);            
-            assertNotNull("Message:" + index + " was null.", entry.getMessage());
-            assertTrue(!entry.isFlowed());
+            // Ensure that we have received the messages and it wasn't flushed to disk before we received it.
+            AMQMessage message = _subscription.getMessages().get(index);
+            assertNotNull("Message:" + message.debugIdentity() + " was null.", message);
         }
 
-        //ensure we were received 10 flowed messages
-        for (int index = 10; index < 20; index++)
-        {
-            QueueEntry entry = _subscription.getMessages().get(index);
-            assertNull("Message:" + index + " was not null.", entry.getMessage());
-            assertTrue(entry.isFlowed());
-        }
     }
 
     private void sendMessage(TransactionalContext txnContext) throws AMQException
@@ -419,7 +434,8 @@ public class SimpleAMQQueueTest extends TestCase
         IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_transactionLog), _transactionLog);
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
-        contentHeaderBody.bodySize = 1;
+        contentHeaderBody.classId = BasicConsumeBodyImpl.CLASS_ID;
+        contentHeaderBody.bodySize = MESSAGE_SIZE;
         contentHeaderBody.properties = new BasicContentHeaderProperties();
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) 2);
         msg.setContentHeaderBody(contentHeaderBody);

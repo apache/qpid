@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
-public interface FlowableQueueEntryList
+import java.util.concurrent.atomic.AtomicLong;
+
+public interface FlowableQueueEntryList extends QueueEntryList
 {
     void setFlowed(boolean flowed);
 
@@ -38,5 +40,19 @@ public interface FlowableQueueEntryList
 
     void setMemoryUsageMinimum(long minimumMemoryUsage);
 
-    long getMemoryUsageMinimum();    
+    long getMemoryUsageMinimum();
+
+    /**
+     * Immediately unload Entry
+     * @param queueEntry the entry to unload
+     */
+    public void unloadEntry(QueueEntry queueEntry);
+
+    /**
+     * Immediately load Entry
+     * @param queueEntry the entry to load
+     */
+    public void loadEntry(QueueEntry queueEntry);
+
+    void stop();
 }

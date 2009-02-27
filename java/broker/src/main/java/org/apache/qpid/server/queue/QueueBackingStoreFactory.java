@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 
-public interface QueueBackingStore
+public interface QueueBackingStoreFactory
 {
-    AMQMessage load(Long messageId);
+    void configure(VirtualHost virtualHost, VirtualHostConfiguration config) throws ConfigurationException;
 
-    void unload(AMQMessage message) throws UnableToFlowMessageException;
-
-    void delete(Long messageId);
+    public QueueBackingStore createBacking(AMQQueue queue);
 }

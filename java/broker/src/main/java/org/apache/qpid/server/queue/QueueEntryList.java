@@ -20,7 +20,7 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryList extends FlowableQueueEntryList
+public interface QueueEntryList
 {
     AMQQueue getQueue();
 

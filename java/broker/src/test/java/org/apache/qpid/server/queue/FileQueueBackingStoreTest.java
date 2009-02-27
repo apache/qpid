@@ -21,9 +21,9 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -42,22 +42,26 @@ import java.io.File;
 
 public class FileQueueBackingStoreTest extends TestCase
 {
-    FileQueueBackingStore _backing;
+    QueueBackingStore _backing;
     private TransactionLog _transactionLog;
     VirtualHost _vhost;
-        VirtualHostConfiguration _vhostConfig;
+    VirtualHostConfiguration _vhostConfig;
+    FileQueueBackingStoreFactory _factory;
+    AMQQueue _queue;
 
     public void setUp() throws Exception
     {
-        _backing = new FileQueueBackingStore();
+        _factory = new FileQueueBackingStoreFactory();
         PropertiesConfiguration config = new PropertiesConfiguration();
         config.addProperty("store.class", MemoryMessageStore.class.getName());
         _vhostConfig = new VirtualHostConfiguration(this.getName() + "-Vhost", config);
         _vhost = new VirtualHost(_vhostConfig);
         _transactionLog = _vhost.getTransactionLog();
 
-        _backing.configure(_vhost, _vhost.getConfiguration());
+        _factory.configure(_vhost, _vhost.getConfiguration());
 
+        _queue = new SimpleAMQQueue(new AMQShortString(this.getName()), false, null, false, _vhost);
+        _backing = _factory.createBacking(_queue);
     }
 
     private void resetBacking(Configuration configuration) throws Exception
@@ -67,9 +71,11 @@ public class FileQueueBackingStoreTest extends TestCase
         _vhost = new VirtualHost(_vhostConfig);
         _transactionLog = _vhost.getTransactionLog();
 
-        _backing = new FileQueueBackingStore();
+        _factory = new FileQueueBackingStoreFactory();
 
-        _backing.configure(_vhost, _vhost.getConfiguration());
+        _factory.configure(_vhost, _vhost.getConfiguration());
+
+        _backing = _factory.createBacking(_queue);
     }
 
     public void testInvalidSetupRootExistsIsFile() throws Exception
@@ -171,18 +177,18 @@ public class FileQueueBackingStoreTest extends TestCase
                                                 chb);
         if (chb.bodySize > 0)
         {
-            ContentChunk chunk = new MockContentChunk((int) chb.bodySize/2);
+            ContentChunk chunk = new MockContentChunk((int) chb.bodySize / 2);
 
             original.addContentBodyFrame(null, chunk, false);
 
-            chunk = new MockContentChunk((int) chb.bodySize/2);
+            chunk = new MockContentChunk((int) chb.bodySize / 2);
 
-            original.addContentBodyFrame(null, chunk, true);            
+            original.addContentBodyFrame(null, chunk, true);
         }
 
-        _backing.flow(original);
+        _backing.unload(original);
 
-        AMQMessage fromDisk = _backing.recover(original.getMessageId());
+        AMQMessage fromDisk = _backing.load(original.getMessageId());
 
         assertEquals("Message IDs do not match", original.getMessageId(), fromDisk.getMessageId());
         assertEquals("Message arrival times do not match", original.getArrivalTime(), fromDisk.getArrivalTime());

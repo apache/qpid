@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 * under the License.
 *
 */
-public class SimpleQueueEntryList extends FlowableBaseQueueEntryList implements QueueEntryList
+public class SimpleQueueEntryList extends FlowableBaseQueueEntryList
 {
 
     private final QueueEntryImpl _head;
@@ -172,7 +172,7 @@ public class SimpleQueueEntryList extends FlowableBaseQueueEntryList implements 
     static class Factory implements QueueEntryListFactory
     {
 
-        public QueueEntryList createQueueEntryList(AMQQueue queue)
+        public FlowableQueueEntryList createQueueEntryList(AMQQueue queue)
         {
             return new SimpleQueueEntryList(queue);
         }
