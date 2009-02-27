@@ -44,7 +44,6 @@ import org.apache.qpid.management.wsdm.capabilities.Result;
  */
 public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCase
 {
-	private final Long _retCodeOk = new Long(0);
 	private Map<String, ProxyHandler> _invocationHandlers = createInvocationHandlers();
 
 	/**
@@ -66,10 +65,8 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 				_invocationHandlers.get("echoWithByteArray"), 
 				new Object[]{expectedByteResult});
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
 		Method getOutputParameters = result.getClass().getMethod("getOutputParameters");
 		
-		assertEquals(_retCodeOk,getStatusCode.invoke(result));
 		Map<String,Object> out = (Map<String, Object>) getOutputParameters.invoke(result);
 		
 		assertEquals("Output parameters must be 1.",1,out.size());
@@ -91,11 +88,7 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 				_invocationHandlers.get("voidWithoutArguments"), 
 				null);
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
-		assertEquals(
-				"Something was wrong...expected return code is "+_retCodeOk,
-				_retCodeOk,
-				getStatusCode.invoke(result));
+		assertNotNull(result);
 	}
 
 	/**
@@ -137,10 +130,8 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 				_invocationHandlers.get("echoWithUUID"), 
 				new Object[]{expectedUuid});
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
 		Method getOutputParameters = result.getClass().getMethod("getOutputParameters");
 		
-		assertEquals(_retCodeOk,getStatusCode.invoke(result));
 		Map<String,Object> out = (Map<String, Object>) getOutputParameters.invoke(result);
 		
 		assertEquals("Output parameters must be 1.",1,out.size());
@@ -176,10 +167,8 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 				_invocationHandlers.get("echoWithMap"), 
 				new Object[]{expectedMap});
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
 		Method getOutputParameters = result.getClass().getMethod("getOutputParameters");
 		
-		assertEquals(_retCodeOk,getStatusCode.invoke(result));
 		Map<String,Object> out = (Map<String, Object>) ((Map<String, Object>) getOutputParameters.invoke(result)).get("map");
 		
 		assertEquals("Output parameters must be 10.",10,out.size());
@@ -245,9 +234,7 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 					expectedUriResult,
 					expectedDateResult});
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
 		Method getOutputParameters = result.getClass().getMethod("getOutputParameters");
-		assertEquals(_retCodeOk,getStatusCode.invoke(result));
 		Map<String,Object> out = (Map<String, Object>) getOutputParameters.invoke(result);
 		
 		assertEquals("Output parameters must be 9.",9,out.size());
@@ -315,9 +302,7 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 					expectedUriResult,
 					expectedDateResult});
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
 		Method getOutputParameters = result.getClass().getMethod("getOutputParameters");
-		assertEquals(_retCodeOk,getStatusCode.invoke(result));
 		Map<String,Object> out = (Map<String, Object>) getOutputParameters.invoke(result);
 		
 		assertEquals("Output parameters must be 9.",9,out.size());
@@ -372,9 +357,7 @@ public class OperationInvocationInterfaceTestCase extends BaseWsDmAdapterTestCas
 					expectedIntegerResult,
 					expectedShortResult});
 
-		Method getStatusCode = result.getClass().getMethod("getStatusCode");
 		Method getOutputParameters = result.getClass().getMethod("getOutputParameters");
-		assertEquals(_retCodeOk,getStatusCode.invoke(result));
 		Map<String,Object> out = (Map<String, Object>) getOutputParameters.invoke(result);
 		
 		assertEquals("Output parameters must be 6.",6,out.size());

@@ -21,15 +21,12 @@
 package org.apache.qpid.management.wsdm;
 
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Array;
 import java.net.URI;
 import java.util.UUID;
 
-import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import javax.xml.namespace.QName;
 
 import junit.framework.TestCase;
 
@@ -112,46 +109,7 @@ public abstract class BaseWsDmAdapterTestCase extends TestCase implements TestCo
       			0,
       			members.length);
 	}
-	
-	/**
-	 * Test the WS-RP GetResourceProperty interface of the WS-DM adapter.
-	 * 
-	 * <br>precondition : a ws resource exists and is registered. 
-	 * <br>postcondition : property values coming from WS-DM resource are the same of the JMX interface.
-	 */
-	public void testGetResourcePropertiesOK() throws Exception
-	{
-		MBeanAttributeInfo [] attributesMetadata = _mbeanInfo.getAttributes();
-		for (MBeanAttributeInfo attributeMetadata : attributesMetadata)
-		{
-			String name = attributeMetadata.getName();
-			Object propertyValues = _resourceClient.getPropertyAsObject(
-					new QName(
-							Names.NAMESPACE_URI,
-							name,
-							Names.PREFIX),
-					Class.forName(attributeMetadata.getType()));
-			
-			int length = Array.getLength(propertyValues);
-			if (length != 0)
-			{
-				Object propertyValue = Array.get(propertyValues, 0);
 				
-				assertEquals(
-						"Comparison failed for property "+name,
-						_managementServer.getAttribute(_resourceObjectName,name),
-						propertyValue);
-			} else {
-				assertNull(
-						String.format(
-								"\"%s\" property value shouldn't be null. Its value is %s",
-								name,
-								_managementServer.getAttribute(_resourceObjectName,name)),
-								_managementServer.getAttribute(_resourceObjectName,name));
-			}
-		}
-	}
-			
 	/**
 	 * Creates a service group client reference.
 	 * 
