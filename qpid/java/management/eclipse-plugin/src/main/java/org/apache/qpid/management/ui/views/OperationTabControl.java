@@ -33,8 +33,6 @@ import static org.apache.qpid.management.ui.Constants.*;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.ParameterData;
@@ -69,8 +67,6 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 /**
  * Control class for the MBean operations tab. It creates the required widgets
  * for the selected MBean.
- * @author Bhupendra Bhardwaj
- * @author Robert Gemmell
  */
 public class OperationTabControl extends TabControl
 {
@@ -605,23 +601,37 @@ public class OperationTabControl extends TabControl
                         return;
                     }
                     
-                    // customized for passwords
-                    if (PASSWORD.equalsIgnoreCase(param.getName()))
+                    //Custom handling for the PASSWORD field
+                    if (param.getName().equalsIgnoreCase(PASSWORD))
                     {
+                        //Convert the String value to a character array if that is what is required.
                         if (param.getType().equals("[C"))
                         {
-                            try
+                            // Retreive the mBean type and version.
+                            // If we have a version 1 UserManagement class mbean then it expects the password
+                            // to be sent as the hashed version.
+                            if (_mbean.getType().equals("UserManagement") && _mbean.getVersion() == 1)
                             {
-                                param.setValue(ViewUtility.getHash((String)param.getValue()));
+                                try
+                                {
+                                    param.setValue(ViewUtility.getHash((String) param.getValue()));
+                                }
+                                catch (Exception hashException)
+                                {
+                                    ViewUtility.popupErrorMessage(_form.getText(),
+                                            "Unable to calculate hash for Password:"
+                                            + hashException.getMessage());
+                                    return;
+                                }
                             }
-                            catch (Exception ex)
+                            else
                             {
-                                MBeanUtility.handleException(_mbean, ex);
-                                return;
+                                param.setValue(((String) param.getValue()).toCharArray());
                             }
                         }
                     }
                     // end of customization
+
                 }
             }
             
