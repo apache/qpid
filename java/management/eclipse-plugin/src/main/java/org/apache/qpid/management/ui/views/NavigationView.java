@@ -211,11 +211,11 @@ public class NavigationView extends ViewPart
     }
 
     /**
-     * Creates Qpid Server connection using JMX RMI protocol
+     * Creates Qpid Server connection
      * @param server
      * @throws Exception
      */
-    private void createRMIServerConnection(ManagedServer server) throws Exception
+    private void createJMXServerConnection(ManagedServer server) throws Exception
     {
         // Currently Qpid Management Console only supports JMX MBeanServer
         ServerRegistry serverRegistry = new JMXServerRegistry(server);
@@ -230,42 +230,32 @@ public class NavigationView extends ViewPart
      * @param domain
      * @throws Exception
      */
-    public void addNewServer(String transportProtocol, String host, int port, String domain, String user, String pwd)
+    public void addNewServer(String host, int port, String domain, String user, String pwd)
         throws Exception
     {
-        String serverAddress = host + ":" + port;
-        String url = null;
         ManagedServer managedServer = new ManagedServer(host, port, domain, user, pwd);
 
-        if ("RMI".equals(transportProtocol))
+        String server = managedServer.getName();
+        List<TreeObject> list = _serversRootNode.getChildren();
+        for (TreeObject node : list)
         {
-            url = managedServer.getUrl();
-            List<TreeObject> list = _serversRootNode.getChildren();
-            for (TreeObject node : list)
+            ManagedServer nodeServer = (ManagedServer)node.getManagedObject();
+            if (server.equals(nodeServer.getName()))
             {
-                ManagedServer nodeServer = (ManagedServer)node.getManagedObject();
-                if (url.equals(nodeServer.getUrl()))
-                {
-                    // Server is already in the list of added servers, so now connect it.
-                    // Set the server node as selected and then connect it.
-                    _treeViewer.setSelection(new StructuredSelection(node));
-                    reconnect(user, pwd);
+                // Server is already in the list of added servers, so now connect it.
+                // Set the server node as selected and then connect it.
+                _treeViewer.setSelection(new StructuredSelection(node));
+                reconnect(user, pwd);
 
-                    return;
-                }
+                return;
             }
+        }
 
-            // The server is not in the list of already added servers, so now connect and add it.
-            managedServer.setName(serverAddress);
-            createRMIServerConnection(managedServer);
-        }
-        else
-        {
-            throw new InfoRequiredException(transportProtocol + " transport is not supported");
-        }
+        // The server is not in the list of already added servers, so now connect and add it.
+        createJMXServerConnection(managedServer);
 
         // Server connection is successful. Now add the server in the tree
-        TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
+        TreeObject serverNode = new TreeObject(server, NODE_TYPE_SERVER);
         serverNode.setManagedObject(managedServer);
         _serversRootNode.addChild(serverNode);
 
@@ -289,7 +279,7 @@ public class NavigationView extends ViewPart
         _treeViewer.refresh();
 
         // save server address in file
-        addServerInConfigFile(serverAddress);
+        addServerInConfigFile(server);
     }
 
     /**
@@ -784,7 +774,7 @@ public class NavigationView extends ViewPart
 
         managedServer.setUser(user);
         managedServer.setPassword(password);
-        createRMIServerConnection(managedServer);
+        createJMXServerConnection(managedServer);
 
         // put the server in the managed server map
         _managedServerMap.put(managedServer, selectedNode);

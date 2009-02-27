@@ -81,8 +81,6 @@ public class Constants
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
     public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
-    public static final String[] CONNECTION_PROTOCOLS ={"RMI"};
-    public static final String DEFAULT_PROTOCOL = CONNECTION_PROTOCOLS[0];
     
     public final static String ACTION_ADDSERVER = "New Connection";
     public final static String ACTION_RECONNECT = "Reconnect";
