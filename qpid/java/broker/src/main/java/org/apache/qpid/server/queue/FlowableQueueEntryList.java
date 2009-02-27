@@ -20,23 +20,23 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
-
-public class MockAMQMessage extends TransientAMQMessage
+public interface FlowableQueueEntryList
 {
-    public MockAMQMessage(long messageId)
-            throws AMQException
-    {
-       super(messageId);
-        _messagePublishInfo = new MessagePublishInfoImpl(null,false,false,null);
-    }
+    void setFlowed(boolean flowed);
 
+    boolean isFlowed();
 
-    @Override
-    public long getSize()
-    {
-        return 0l;
-    }
+    int size();
+
+    long dataSize();
+
+    long memoryUsed();
+
+    void setMemoryUsageMaximum(long maximumMemoryUsage);
+
+    long getMemoryUsageMaximum();
+
+    void setMemoryUsageMinimum(long minimumMemoryUsage);
+
+    long getMemoryUsageMinimum();    
 }

@@ -60,30 +60,6 @@ public interface AMQMessage
 
     //Check the status of this message
 
-    /**
-     * Called selectors to determin if the message has already been sent
-     *
-     * @return _deliveredToConsumer
-     */
-    boolean getDeliveredToConsumer();
-
-    /**
-     * Called to enforce the 'immediate' flag.
-     *
-     * @returns  true if the message is marked for immediate delivery but has not been marked as delivered
-     *                              to a consumer
-     */
-    boolean immediateAndNotDelivered();
-
-    /**
-     * Checks to see if the message has expired. If it has the message is dequeued.
-     *
-     * @return true if the message has expire
-     *
-     * @throws org.apache.qpid.AMQException
-     */
-    boolean expired() throws AMQException;
-
     /** Is this a persistent message
      *
      * @return true if the message is persistent
@@ -91,13 +67,8 @@ public interface AMQMessage
     boolean isPersistent();
 
 
-    /**
-     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
-     * And for selector efficiency.
-     */
-    void setDeliveredToConsumer();
+    boolean isImmediate();
 
-    void setExpiration(long expiration);
 
     void setClientIdentifier(AMQProtocolSession.ProtocolSessionIdentifier sessionIdentifier);
 
@@ -121,4 +92,8 @@ public interface AMQMessage
     String toString();
 
     String debugIdentity();
+
+    void setExpiration(long expiration);
+
+    long getExpiration();
 }

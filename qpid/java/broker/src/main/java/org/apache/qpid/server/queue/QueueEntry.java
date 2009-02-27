@@ -119,15 +119,41 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
     final static EntryState EXPIRED_STATE = new ExpiredState();
     final static EntryState NON_SUBSCRIPTION_ACQUIRED_STATE = new NonSubscriptionAcquiredState();
 
+    /** Flag to indicate that this message requires 'immediate' delivery. */
+
+    final static byte IMMEDIATE = 0x01;
+
+    /**
+     * Flag to indicate whether this message has been delivered to a consumer. Used in implementing return functionality
+     * for messages published with the 'immediate' flag.
+     */
+
+    final static byte DELIVERED_TO_CONSUMER = 0x02;
+
+
     AMQQueue getQueue();
 
     AMQMessage getMessage();
 
     long getSize();
 
+    /**
+      * Called selectors to determin if the message has already been sent
+      *
+      * @return _deliveredToConsumer
+      */
     boolean getDeliveredToConsumer();
 
+    /**
+     * Checks to see if the message has expired. If it has the message is dequeued.
+     *
+     * @return true if the message has expire
+     *
+     * @throws org.apache.qpid.AMQException
+     */
     boolean expired() throws AMQException;
+
+    public void setExpiration(final long expiration);
 
     boolean isAcquired();
 
@@ -143,10 +169,22 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     void setDeliveredToSubscription();
 
+    /**
+     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
+     * And for selector efficiency.
+     */
+    public void setDeliveredToConsumer();    
+
     void release();
 
     String debugIdentity();
 
+     /**
+      * Called to enforce the 'immediate' flag.
+      *
+      * @returns true if the message is marked for immediate delivery but has not been marked as delivered
+      * to a consumer
+      */
     boolean immediateAndNotDelivered();
 
     void setRedelivered(boolean b);
@@ -180,4 +218,11 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
     void addStateChangeListener(StateChangeListener listener);
 
     boolean removeStateChangeListener(StateChangeListener listener);
+
+    void flow() throws UnableToFlowMessageException;
+
+    void recover();
+
+    boolean isFlowed();
+
 }

@@ -21,8 +21,6 @@ package org.apache.qpid.server.queue;
  */
 
 import junit.framework.TestCase;
-
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -35,13 +33,13 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.store.TestTransactionLog;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +49,7 @@ public class SimpleAMQQueueTest extends TestCase
 
     protected SimpleAMQQueue _queue;
     protected VirtualHost _virtualHost;
-    protected TestableMemoryMessageStore _store = new TestableMemoryMessageStore();
+    protected TestableMemoryMessageStore _transactionLog = new TestableMemoryMessageStore();
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
     protected AMQShortString _routingKey = new AMQShortString("routing key");
@@ -70,7 +68,7 @@ public class SimpleAMQQueueTest extends TestCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry) ApplicationRegistry.getInstance(1);
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), env), _store);
+        _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), env), _transactionLog);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, _virtualHost, _arguments);
@@ -320,8 +318,8 @@ public class SimpleAMQQueueTest extends TestCase
     public void testEnqueueDequeueOfPersistentMessageToNonDurableQueue() throws AMQException
     {
         // Create IncomingMessage and nondurable queue
-        NonTransactionalContext txnContext = new NonTransactionalContext(_store, null, null, null);
-        IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_store), _store);
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+        IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_transactionLog), _transactionLog);
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.properties = new BasicContentHeaderProperties();
@@ -335,18 +333,18 @@ public class SimpleAMQQueueTest extends TestCase
         // Send persistent message
         qs.add(_queue);
         msg.enqueue(qs);
-        msg.routingComplete(_store);
+        msg.routingComplete(_transactionLog);
 
-        _store.storeMessageMetaData(null, messageId, new MessageMetaData(info, contentHeaderBody, 1));
+        _transactionLog.storeMessageMetaData(null, messageId, new MessageMetaData(info, contentHeaderBody, 1));
 
         // Check that it is enqueued
-        List<AMQQueue> data = _store.getMessageReferenceMap(messageId);
+        List<AMQQueue> data = _transactionLog.getMessageReferenceMap(messageId);
         assertNotNull(data);
 
         // Dequeue message
         ContentHeaderBody header = new ContentHeaderBody();
         header.bodySize = MESSAGE_SIZE;
-        AMQMessage message = new MockPersistentAMQMessage(msg.getMessageId(), _store);
+        AMQMessage message = new MockPersistentAMQMessage(msg.getMessageId(), _transactionLog);
         message.setPublishAndContentHeaderBody(new StoreContext(), info, header);
 
         MockQueueEntry entry = new MockQueueEntry(message, _queue);
@@ -355,8 +353,95 @@ public class SimpleAMQQueueTest extends TestCase
         entry.dequeue(null);
 
         // Check that it is dequeued
-        data = _store.getMessageReferenceMap(messageId);
+        data = _transactionLog.getMessageReferenceMap(messageId);
         assertNull(data);
+    }
+
+    public void testMessagesFlowToDisk() throws AMQException, InterruptedException
+    {
+        // Create IncomingMessage and nondurable queue
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+
+        //Set the Memory Usage to be very low
+        _queue.setMemoryUsageMaximum(10);
+
+        for (int msgCount = 0; msgCount < 10; msgCount++)
+        {
+            sendMessage(txnContext);
+        }
+
+        //Check that we can hold 10 messages without flowing
+        assertEquals(10, _queue.getMessageCount());
+        assertEquals(10, _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is flowed.", !_queue.isFlowed());
+
+        // Send anothe and ensure we are flowed
+        sendMessage(txnContext);
+        assertEquals(11, _queue.getMessageCount());
+        assertEquals(10, _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is not flowed.", _queue.isFlowed());
+
+        //send another 9 so there are 20msgs in total on the queue
+        for (int msgCount = 0; msgCount < 9; msgCount++)
+        {
+            sendMessage(txnContext);
+        }
+        assertEquals(20, _queue.getMessageCount());
+        assertEquals(10, _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is not flowed.", _queue.isFlowed());
+
+        _queue.registerSubscription(_subscription, false);
+
+        Thread.sleep(200);
+
+        //Ensure the messages are retreived
+        assertEquals("Not all messages were received.", 20, _subscription.getMessages().size());
+
+        //Ensure we got the content
+        for (int index = 0; index < 10; index++)
+        {
+            QueueEntry entry = _subscription.getMessages().get(index);            
+            assertNotNull("Message:" + index + " was null.", entry.getMessage());
+            assertTrue(!entry.isFlowed());
+        }
+
+        //ensure we were received 10 flowed messages
+        for (int index = 10; index < 20; index++)
+        {
+            QueueEntry entry = _subscription.getMessages().get(index);
+            assertNull("Message:" + index + " was not null.", entry.getMessage());
+            assertTrue(entry.isFlowed());
+        }
+    }
+
+    private void sendMessage(TransactionalContext txnContext) throws AMQException
+    {
+        IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_transactionLog), _transactionLog);
+
+        ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
+        contentHeaderBody.bodySize = 1;
+        contentHeaderBody.properties = new BasicContentHeaderProperties();
+        ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) 2);
+        msg.setContentHeaderBody(contentHeaderBody);
+
+        long messageId = msg.getMessageId();
+
+        ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
+
+        // Send persistent 10 messages
+
+        qs.add(_queue);
+        msg.enqueue(qs);
+
+        msg.routingComplete(_transactionLog);
+
+        msg.addContentBodyFrame(new MockContentChunk(1));
+
+        msg.deliverToQueues();
+
+        //Check message was correctly enqueued
+        List<AMQQueue> data = _transactionLog.getMessageReferenceMap(messageId);
+        assertNotNull(data);
     }
 
     // FIXME: move this to somewhere useful
@@ -384,7 +469,7 @@ public class SimpleAMQQueueTest extends TestCase
 
     public AMQMessage createMessage() throws AMQException
     {
-        AMQMessage message = new TestMessage(info, _store);
+        AMQMessage message = new TestMessage(info, _transactionLog);
 
         ContentHeaderBody header = new ContentHeaderBody();
         header.bodySize = MESSAGE_SIZE;
@@ -409,7 +494,6 @@ public class SimpleAMQQueueTest extends TestCase
             _tag = getMessageId();
             _transactionLog = transactionLog;
         }
-
 
         void assertCountEquals(int expected)
         {
