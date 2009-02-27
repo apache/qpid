@@ -725,7 +725,14 @@ public class OperationTabControl extends TabControl
         {
             boolean success = Boolean.parseBoolean(result.toString());
             String message = success ? OPERATION_SUCCESSFUL : OPERATION_UNSUCCESSFUL;
-            ViewUtility.popupInfoMessage(title, message);
+            if(success)
+            {
+                ViewUtility.popupInfoMessage(title, message);
+            }
+            else
+            {
+                ViewUtility.popupErrorMessage(title, message);
+            }
         }
         else if (_opData.getParameters() != null && !_opData.getParameters().isEmpty())
         {
