@@ -67,11 +67,11 @@ public class ConsumerAndProducerExample extends AbstractQManExample
 	void executeExample(String host, int port) throws Exception
 	{ 
 		// This is QMan... 
-		URI producerURI = URI.create("http://"+host+":"+port+"/qman/services/consumer");
+		URI producerURI = URI.create("http://"+host+":"+port+"/qman/services/adapter");
 		
 		// ...and this is QMan too! Note that it has an hidden consumer capability that is used in 
 		// order to run successfully this example...
-		URI consumerURI = producerURI;
+		URI consumerURI = URI.create("http://"+host+":"+port+"/qman/services/consumer");
 		
 		EndpointReference producerEPR = new EndpointReference(producerURI);		
 		EndpointReference consumerEPR = new EndpointReference(consumerURI);
