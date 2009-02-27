@@ -25,8 +25,11 @@ import javax.xml.namespace.QName;
 import org.apache.muse.core.proxy.ProxyHandler;
 import org.apache.muse.core.proxy.ReflectionProxyHandler;
 import org.apache.muse.util.xml.XmlUtils;
+import org.apache.muse.ws.addressing.soap.SoapFault;
 import org.apache.muse.ws.metadata.WsxConstants;
+import org.apache.muse.ws.resource.WsrfConstants;
 import org.apache.muse.ws.resource.metadata.WsrmdConstants;
+import org.apache.qpid.management.Names;
 import org.w3c.dom.Element;
 
 /**
@@ -124,6 +127,29 @@ public class MetadataExchangeInterfaceTestCase extends BaseWsDmAdapterTestCase
 		assertEquals(0,metadata.length);
 	}	
 
+	/**
+	 * Test the MetadataExchange interface with an unknown metadata dialect.
+	 * 
+	 * <br>precondition : the GetMetadata request contains an unknown dialect. 
+	 * <br>postcondition : the returned metadata section is empty.
+	 */
+	@SuppressWarnings("unchecked")
+	public void testGetMetadataKO_WithoutUnknownResourceFault() throws Exception
+	{
+		try 
+		{
+			_resourceClient.getEndpointReference().removeParameter(Names.RESOURCE_ID_QNAME);
+			_resourceClient.getEndpointReference().addParameter(Names.RESOURCE_ID_QNAME,"lablabalbal");
+	
+			_resourceClient.invoke(getProxyHandler(), new Object[]{""});
+		} catch(SoapFault expected)
+		{
+			assertEquals(
+					WsrfConstants.RESOURCE_UNKNOWN_QNAME.getLocalPart(),
+					expected.getDetail().getLocalName());
+		}
+	}		
+	
 	/**
 	 * Returns a proxy handler used for working with metadata exchange
 	 * interface.
