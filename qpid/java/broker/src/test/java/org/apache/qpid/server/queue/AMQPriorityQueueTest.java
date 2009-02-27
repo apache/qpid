@@ -23,7 +23,6 @@ package org.apache.qpid.server.queue;
 import junit.framework.AssertionFailedError;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 
 import java.util.ArrayList;
@@ -64,7 +63,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
 
-        ArrayList<QueueEntry> msgs = _subscription.getMessages();
+        ArrayList<QueueEntry> msgs = _subscription.getQueueEntries();
         try
         {
             assertEquals(new Long(1 + messagIDOffset), msgs.get(0).getMessage().getMessageId());

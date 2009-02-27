@@ -46,7 +46,10 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
 
             assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 
-            assertEquals("References not increased", initialCount + 1, ReferenceCountingExecutorService.getInstance().getReferenceCount());
+            //This is +2 because:
+            // 1 - asyncDelivery Thread
+            // 2 - queueInhalerThread
+            assertEquals("References not increased", initialCount + 2, ReferenceCountingExecutorService.getInstance().getReferenceCount());
             
             queue.stop();
 

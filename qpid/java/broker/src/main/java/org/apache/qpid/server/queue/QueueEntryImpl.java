@@ -181,6 +181,11 @@ public class QueueEntryImpl implements QueueEntry
         return _state.getState() == State.ACQUIRED;
     }
 
+    public boolean isAvailable()
+    {
+        return _state.getState() == State.AVAILABLE;
+    }
+
     public boolean acquire()
     {
         return acquire(NON_SUBSCRIPTION_ACQUIRED_STATE);
@@ -220,7 +225,15 @@ public class QueueEntryImpl implements QueueEntry
 
     public String debugIdentity()
     {
-        return getMessage().debugIdentity();
+        String entry="[State:"+_state.getState().name()+"]";
+        if (_message == null)
+        {
+            return entry+"(Message Unloaded ID:" + _messageId +")";
+        }
+        else
+        {
+            return entry+_message.debugIdentity();
+        }
     }
 
 
@@ -380,25 +393,29 @@ public class QueueEntryImpl implements QueueEntry
         return false;
     }
 
-    public void flow() throws UnableToFlowMessageException
+    public void unload() throws UnableToFlowMessageException
     {
         if (_message != null && _backingStore != null)
         {
             if(_log.isDebugEnabled())
             {
-                _log.debug("Flowing message:" + _message.debugIdentity());
+                _log.debug("Unloading:" + debugIdentity());
             }
-            _backingStore.flow(_message);
+            _backingStore.unload(_message);
             _message = null;
-            _flowed.getAndSet(true);            
+            _flowed.getAndSet(true);
         }
     }
 
-    public void recover()
+    public void load()
     {
         if (_messageId != null && _backingStore != null)
         {
-            _message = _backingStore.recover(_messageId);
+            _message = _backingStore.load(_messageId);
+            if(_log.isDebugEnabled())
+            {
+                _log.debug("Loading:" + debugIdentity());
+            }
             _flowed.getAndSet(false);
         }
     }
@@ -470,6 +487,5 @@ public class QueueEntryImpl implements QueueEntry
     {
         return _queueEntryList;
     }
-
 
 }

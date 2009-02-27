@@ -22,19 +22,12 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQProtocolVersionException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.util.FileUtils;
-import org.apache.qpid.AMQException;
-import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,219 +36,142 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FileQueueBackingStore implements QueueBackingStore
 {
     private static final Logger _log = Logger.getLogger(FileQueueBackingStore.class);
 
-    private AtomicBoolean _closed = new AtomicBoolean(false);
     private String _flowToDiskLocation;
-    private static final String QUEUE_BACKING_DIR = "queueBacking";
 
-    public void configure(VirtualHost virtualHost, VirtualHostConfiguration config) throws ConfigurationException
+    public FileQueueBackingStore(String location)
     {
-        setFlowToDisk(virtualHost.getName(), config.getFlowToDiskLocation());
-    }
-
-    private void setFlowToDisk(String vHostName, String location) throws ConfigurationException
-    {
-        if (vHostName == null)
-        {
-            throw new ConfigurationException("Unable to setup to Flow to Disk as Virtualhost name was not specified");
-        }
-
-        if (location == null)
-        {
-            throw new ConfigurationException("Unable to setup to Flow to Disk as location was not specified.");
-        }
-
         _flowToDiskLocation = location;
-
-        _flowToDiskLocation += File.separator + QUEUE_BACKING_DIR + File.separator + vHostName;
-
-        File root = new File(location);
-        if (!root.exists())
-        {
-            throw new ConfigurationException("Specified Flow to Disk root does not exist:" + root.getAbsolutePath());
-        }
-        else
-        {
-
-            if (root.isFile())
-            {
-                throw new ConfigurationException("Unable to create Temporary Flow to Disk store as specified root is a file:"+
-                           root.getAbsolutePath());
-            }
-
-            if(!root.canWrite())
-            {
-                throw new ConfigurationException("Unable to create Temporary Flow to Disk store. Unable to write to specified root:"+
-                           root.getAbsolutePath());
-            }
-
-        }
-
-
-        File store = new File(_flowToDiskLocation);
-        if (store.exists())
-        {
-            if (!FileUtils.delete(store, true))
-            {
-                throw new ConfigurationException("Unable to create Temporary Flow to Disk store as directory already exsits:"
-                           + store.getAbsolutePath());
-            }
-
-            if (store.isFile())
-            {
-                throw new ConfigurationException("Unable to create Temporary Flow to Disk store as specified location is a file:"+
-                           store.getAbsolutePath());
-            }
-
-        }
-        else
-        {
-            if (!store.getParentFile().getParentFile().canWrite())
-            {
-                throw new ConfigurationException("Unable to create Temporary Flow to Disk store. Unable to write to parent location:"+
-                           store.getParentFile().getParentFile().getAbsolutePath());
-            }
-        }
-
-
-        _log.info("Creating Flow to Disk Store : " + store.getAbsolutePath());
-        store.deleteOnExit();
-        if (!store.mkdirs())
-        {
-            throw new ConfigurationException("Unable to create Temporary Flow to Disk store:" + store.getAbsolutePath());
-        }
     }
 
+    public AMQMessage load(Long messageId)
+    {
+        _log.info("Loading Message (ID:" + messageId + ")");
 
-    public AMQMessage recover(Long messageId)
-     {
-         MessageMetaData mmd;
-         List<ContentChunk> contentBodies = new LinkedList<ContentChunk>();
+        MessageMetaData mmd;
 
-         File handle = getFileHandle(messageId);
-         handle.deleteOnExit();
+        File handle = getFileHandle(messageId);
+        handle.deleteOnExit();
 
-         ObjectInputStream input = null;
+        ObjectInputStream input = null;
 
-         Exception error = null;
-         try
-         {
-             input = new ObjectInputStream(new FileInputStream(handle));
+        Exception error = null;
+        try
+        {
+            input = new ObjectInputStream(new FileInputStream(handle));
 
-             long arrivaltime = input.readLong();
+            long arrivaltime = input.readLong();
 
-             final AMQShortString exchange = new AMQShortString(input.readUTF());
-             final AMQShortString routingKey = new AMQShortString(input.readUTF());
-             final boolean mandatory = input.readBoolean();
-             final boolean immediate = input.readBoolean();
+            final AMQShortString exchange = new AMQShortString(input.readUTF());
+            final AMQShortString routingKey = new AMQShortString(input.readUTF());
+            final boolean mandatory = input.readBoolean();
+            final boolean immediate = input.readBoolean();
 
-             int bodySize = input.readInt();
-             byte[] underlying = new byte[bodySize];
+            int bodySize = input.readInt();
+            byte[] underlying = new byte[bodySize];
 
-             input.readFully(underlying, 0, bodySize);
+            input.readFully(underlying, 0, bodySize);
 
-             ByteBuffer buf = ByteBuffer.wrap(underlying);
+            ByteBuffer buf = ByteBuffer.wrap(underlying);
 
-             ContentHeaderBody chb = ContentHeaderBody.createFromBuffer(buf, bodySize);
+            ContentHeaderBody chb = ContentHeaderBody.createFromBuffer(buf, bodySize);
 
-             int chunkCount = input.readInt();
+            int chunkCount = input.readInt();
 
-             // There are WAY to many annonymous MPIs in the code this should be made concrete.
-             MessagePublishInfo info = new MessagePublishInfo()
-             {
+            // There are WAY to many annonymous MPIs in the code this should be made concrete.
+            MessagePublishInfo info = new MessagePublishInfo()
+            {
 
-                 public AMQShortString getExchange()
-                 {
-                     return exchange;
-                 }
+                public AMQShortString getExchange()
+                {
+                    return exchange;
+                }
 
-                 public void setExchange(AMQShortString exchange)
-                 {
+                public void setExchange(AMQShortString exchange)
+                {
 
-                 }
+                }
 
-                 public boolean isImmediate()
-                 {
-                     return immediate;
-                 }
+                public boolean isImmediate()
+                {
+                    return immediate;
+                }
 
-                 public boolean isMandatory()
-                 {
-                     return mandatory;
-                 }
+                public boolean isMandatory()
+                {
+                    return mandatory;
+                }
 
-                 public AMQShortString getRoutingKey()
-                 {
-                     return routingKey;
-                 }
-             };
+                public AMQShortString getRoutingKey()
+                {
+                    return routingKey;
+                }
+            };
 
-             mmd = new MessageMetaData(info, chb, chunkCount);
-             mmd.setArrivalTime(arrivaltime);
+            mmd = new MessageMetaData(info, chb, chunkCount);
+            mmd.setArrivalTime(arrivaltime);
 
-             AMQMessage message;
-             if (((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2)
-             {
-                 message = new PersistentAMQMessage(messageId, null);
-             }
-             else
-             {
-                 message = new TransientAMQMessage(messageId);
-             }
+            AMQMessage message;
+            if (((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2)
+            {
+                message = new PersistentAMQMessage(messageId, null);
+            }
+            else
+            {
+                message = new TransientAMQMessage(messageId);
+            }
 
-             message.recoverFromMessageMetaData(mmd);
+            message.recoverFromMessageMetaData(mmd);
 
-             for (int chunk = 0; chunk < chunkCount; chunk++)
-             {
-                 int length = input.readInt();
+            for (int chunk = 0; chunk < chunkCount; chunk++)
+            {
+                int length = input.readInt();
 
-                 byte[] data = new byte[length];
+                byte[] data = new byte[length];
 
-                 input.readFully(data, 0, length);
+                input.readFully(data, 0, length);
 
-                 // There are WAY to many annonymous CCs in the code this should be made concrete.
-                 try
-                 {
-                     message.recoverContentBodyFrame(new RecoverDataBuffer(length, data), (chunk + 1 == chunkCount));
-                 }
-                 catch (AMQException e)
-                 {
-                     //ignore as this will not occur.
-                     // It is thrown by the _transactionLog method in recover on PersistentAMQMessage
-                     // but we have created the message with a null log and will never call that method.
-                 }
-             }
+                try
+                {
+                    message.recoverContentBodyFrame(new RecoverDataBuffer(length, data), (chunk + 1 == chunkCount));
+                }
+                catch (AMQException e)
+                {
+                    //ignore as this will not occur.
+                    // It is thrown by the _transactionLog method in load on PersistentAMQMessage
+                    // but we have created the message with a null log and will never call that method.
+                }
+            }
 
-             return message;
-         }
-         catch (Exception e)
-         {
-             error = e;
-         }
-         finally
-         {
-             try
-             {
-                 input.close();
-             }
-             catch (IOException e)
-             {
-                 _log.info("Unable to close input on message("+messageId+") recovery due to:"+e.getMessage());
-             }
-         }
+            return message;
+        }
+        catch (Exception e)
+        {
+            error = e;
+        }
+        finally
+        {
+            try
+            {
+                input.close();
+                // We can purge the message here then reflow it if required but I believe it to be cleaner to leave it
+                // on disk until it has been deleted from the queue at that point we can be sure we won't need the data
+                //handle.delete();
+            }
+            catch (IOException e)
+            {
+                _log.info("Unable to close input on message(" + messageId + ") recovery due to:" + e.getMessage());
+            }
+        }
 
         throw new UnableToRecoverMessageException(error);
     }
 
-
-    public void flow(AMQMessage message) throws UnableToFlowMessageException
+    public void unload(AMQMessage message) throws UnableToFlowMessageException
     {
         long messageId = message.getMessageId();
 
@@ -264,8 +180,16 @@ public class FileQueueBackingStore implements QueueBackingStore
         //If we have written the data once then we don't need to do it again.
         if (handle.exists())
         {
-            _log.debug("Message(" + messageId + ") already flowed to disk.");
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Message(ID:" + messageId + ") already unloaded.");
+            }
             return;
+        }
+
+        if (_log.isInfoEnabled())
+        {
+            _log.info("Unloading Message (ID:" + messageId + ")");
         }
 
         handle.deleteOnExit();
@@ -334,7 +258,7 @@ public class FileQueueBackingStore implements QueueBackingStore
 
         if (error != null)
         {
-            _log.error("Unable to flow message(" + messageId + ") to disk, restoring state.");
+            _log.error("Unable to unload message(" + messageId + ") to disk, restoring state.");
             handle.delete();
             throw new UnableToFlowMessageException(messageId, error);
         }
@@ -358,7 +282,7 @@ public class FileQueueBackingStore implements QueueBackingStore
         // grab the 8 LSB to give us 256 bins
         long bin = messageId & 0xFFL;
 
-        String bin_path =_flowToDiskLocation + File.separator + bin;
+        String bin_path = _flowToDiskLocation + File.separator + bin;
         File bin_dir = new File(bin_path);
 
         if (!bin_dir.exists())
@@ -379,7 +303,10 @@ public class FileQueueBackingStore implements QueueBackingStore
 
         if (handle.exists())
         {
-            _log.debug("Message(" + messageId + ") delete flowToDisk.");
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Message(" + messageId + ") delete flowToDisk.");
+            }
             if (!handle.delete())
             {
                 throw new RuntimeException("Unable to delete flowToDisk data");

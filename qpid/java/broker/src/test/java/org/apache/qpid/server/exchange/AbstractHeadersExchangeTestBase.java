@@ -240,6 +240,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public boolean isAvailable()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public boolean acquire()
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
@@ -346,12 +351,12 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void flow() throws UnableToFlowMessageException
+                public void unload() throws UnableToFlowMessageException
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void recover()
+                public void load()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }

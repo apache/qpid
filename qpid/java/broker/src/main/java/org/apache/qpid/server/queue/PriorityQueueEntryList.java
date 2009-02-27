@@ -22,10 +22,10 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.CommonContentHeaderProperties;
 
-public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implements  QueueEntryList
+public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implements QueueEntryList
 {
     private final AMQQueue _queue;
-    private final QueueEntryList[] _priorityLists;
+    private final FlowableQueueEntryList[] _priorityLists;
     private final int _priorities;
     private final int _priorityOffset;
 
@@ -33,7 +33,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     {
         super(queue);
         _queue = queue;
-        _priorityLists = new QueueEntryList[priorities];
+        _priorityLists = new FlowableQueueEntryList[priorities];
         _priorities = priorities;
         _priorityOffset = 5-((priorities + 1)/2);
         for(int i = 0; i < priorities; i++)
@@ -53,7 +53,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     }
 
     public QueueEntry add(AMQMessage message)
-    {        
+    {
         int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
         if(index >= _priorities)
         {
@@ -152,7 +152,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
             _priorities = priorities;
         }
 
-        public QueueEntryList createQueueEntryList(AMQQueue queue)
+        public FlowableQueueEntryList createQueueEntryList(AMQQueue queue)
         {
             return new PriorityQueueEntryList(queue, _priorities);
         }
@@ -162,7 +162,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     public int size()
     {
         int size=0;
-        for (QueueEntryList queueEntryList : _priorityLists)
+        for (FlowableQueueEntryList queueEntryList : _priorityLists)
         {
             size += queueEntryList.size();
         }
@@ -174,9 +174,6 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     @Override
     protected void flowingToDisk(QueueEntryImpl queueEntry)
     {
-        //TODO this disables FTD for priority queues
-        // As the incomming message isn't always the one to purge.
-        // More logic is required up in the add() method here to determine if the
-        // incomming message is at the 'front' or not.
+        //This class doesn't maintain it's own sizes it delegates to the sub FlowableQueueEntryLists
     }
 }
