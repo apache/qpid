@@ -35,7 +35,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -46,11 +45,9 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 public class AddServer extends AbstractAction implements IWorkbenchWindowActionDelegate 
 {
-    private static final String[] _domains ={"org.apache.qpid"};
-    
     private String _host;
     private String _port;
-    private String _domain;
+    private String _domain = DEFAULT_DOMAIN;
     private String _user;
     private String _password;
     
@@ -90,7 +87,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         _addServer = false;
         _host = null;
         _port = null;
-        _domain = null;
         _user = null;
         _password = null;
     }
@@ -123,7 +119,7 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         
         //default sizes for the dialog
         int minShellWidth = 425;
-        int minShellHeight= 290;        
+        int minShellHeight= 265;        
         //ensure this is large enough, increase it if its not
         int newShellWidth =  currentShellWidth > minShellWidth ? currentShellWidth : minShellWidth;
         int newShellHeight = currentShellHeight > minShellHeight ? currentShellHeight : minShellHeight;
@@ -191,17 +187,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         textPort.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         // Verify if the value entered is numeric
         textPort.addVerifyListener(new NumberVerifyListener());
-        
-        
-        Label domain = new Label(composite, SWT.NONE);
-        domain.setText("Domain");
-        domain.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
-        
-        final Combo comboDomain = new Combo(composite, SWT.DROP_DOWN | SWT.READ_ONLY);
-        comboDomain.setItems(_domains);
-        comboDomain.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        comboDomain.select(0);
-        
         
         Label user = new Label(composite, SWT.NONE);
         user.setText(USERNAME);
@@ -286,7 +271,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
                     return;
                 }
                 
-                _domain = comboDomain.getText();
                 _addServer = true;
                 shell.dispose();                                     
             }
