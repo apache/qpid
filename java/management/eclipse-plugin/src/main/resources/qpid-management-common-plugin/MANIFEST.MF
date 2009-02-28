@@ -8,4 +8,4 @@ Export-Package: org.apache.qpid.management.common,
  org.apache.qpid.management.common.sasl
 Bundle-Vendor:
 Bundle-Localization: plugin
-Require-Bundle: jmxremote.sasl
+Require-Bundle: jmxremote.sasl;resolution:=optional

@@ -10,7 +10,6 @@ Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.ui.forms,
- jmxremote.sasl;resolution:=optional,
  qpid-management-common,
  org.apache.commons.codec;bundle-version="1.3.0"
 Eclipse-LazyStart: true
