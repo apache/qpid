@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="broker"
-	ProjectGUID="{09613D48-FECA-1BAD-9D20-8C374564ADCF}"
+	ProjectGUID="{09613D48-FECA-1BAD-9D20-8C378F43FDD9}"
 	RootNamespace="broker"
 	Keyword="Win32Proj"
 	SignManifests="true"
@@ -42,9 +42,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Static_Debug"
+			OutputDirectory="."
 			IntermediateDirectory="Static_Debug\broker\I386"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -72,11 +72,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\.,.,gen"
+                                PreprocessorDefinitions="QPID_BROKER_STATIC;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -90,21 +90,14 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\.,.,gen"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommonsd.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\qpidbrokersd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -124,9 +117,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Static_Release"
+			OutputDirectory="."
 			IntermediateDirectory="Static_Release\broker\I386"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -154,8 +147,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\.,.,gen"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -175,17 +168,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommons.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\qpidbrokers.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -205,9 +189,9 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="Static_Debug"
+			OutputDirectory="."
 			IntermediateDirectory="Static_Debug\broker\AMD64"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -235,8 +219,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\.,.,gen"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -259,16 +243,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommonsd.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="17"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\qpidbrokersd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -288,9 +264,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="Static_Release"
+			OutputDirectory="."
 			IntermediateDirectory="Static_Release\broker\AMD64"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="0"
 
 			>
@@ -318,8 +294,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\.,.,gen"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -339,18 +315,8 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommons.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="17"
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\qpidbrokers.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -909,12 +875,6 @@
 			<File
 				RelativePath="qpid\sys\TCPIOPlugin.cpp">
 			</File>
-			<File
-				RelativePath="qpidd.cpp">
-			</File>
-			<File
-				RelativePath="windows\QpiddBroker.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -1305,9 +1265,6 @@
 			</File>
 			<File
 				RelativePath="qpid\management\ManagementObject.h">
-			</File>
-			<File
-				RelativePath="qpidd.h">
 			</File>
 		</Filter>
 	</Files>
