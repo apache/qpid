@@ -35,6 +35,7 @@ import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.access.plugins.DenyAll;
 import org.apache.qpid.server.security.access.plugins.SimpleXML;
+import org.apache.qpid.server.security.access.plugins.network.FirewallPlugin;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
 import org.osgi.util.tracker.ServiceTracker;
@@ -165,6 +166,7 @@ public class PluginManager
             _securityPlugins.put(SimpleXML.class.getName(), SimpleXML.FACTORY);
             _securityPlugins.put(AllowAll.class.getName(), AllowAll.FACTORY);
             _securityPlugins.put(DenyAll.class.getName(), DenyAll.FACTORY);
+            _securityPlugins.put(FirewallPlugin.class.getName(), FirewallPlugin.FACTORY);
         }
         return _securityPlugins;
     }

@@ -23,12 +23,18 @@ package org.apache.qpid.server.security.access.plugins.network;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.plugins.AbstractACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.NetMatcher;
@@ -36,6 +42,21 @@ import org.apache.qpid.util.NetMatcher;
 public class FirewallPlugin extends AbstractACLPlugin
 {
 
+    public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
+    {
+        public boolean supportsTag(String name)
+        {
+            return name.startsWith("firewall");
+        }
+
+        public ACLPlugin newInstance(Configuration config) throws ConfigurationException
+        {
+            FirewallPlugin plugin = new FirewallPlugin();
+            plugin.setConfiguration(config);
+            return plugin;
+        }
+    };
+    
     public class FirewallRule
     {
 
@@ -149,7 +170,7 @@ public class FirewallPlugin extends AbstractACLPlugin
     }
 
     @Override
-    public void setConfiguration(Configuration config)
+    public void setConfiguration(Configuration config) throws ConfigurationException
     {
         // Get default action
         String defaultAction = config.getString("[@default-action]");
@@ -165,15 +186,21 @@ public class FirewallPlugin extends AbstractACLPlugin
         {
             _default = AuthzResult.DENIED;
         }
+        CompositeConfiguration finalConfig = new CompositeConfiguration(config);
+        
+        List subFiles = config.getList("firewall.xml[@fileName]");
+        for (Object subFile : subFiles)
+        {
+            finalConfig.addConfiguration(new XMLConfiguration((String) subFile));
+        }
 
-        int numRules = config.getList("rule[@access]").size(); // all rules must
-        // have an access
-        // attribute
+        // all rules must have an access attribute
+        int numRules = finalConfig.getList("rule[@access]").size(); 
         _rules = new FirewallRule[numRules];
         for (int i = 0; i < numRules; i++)
         {
-            FirewallRule rule = new FirewallRule(config.getString("rule(" + i + ")[@access]"), config.getList("rule("
-                    + i + ")[@network]"), config.getList("rule(" + i + ")[@hostname]"));
+            FirewallRule rule = new FirewallRule(finalConfig.getString("rule(" + i + ")[@access]"), finalConfig.getList("rule("
+                    + i + ")[@network]"), finalConfig.getList("rule(" + i + ")[@hostname]"));
             _rules[i] = rule;
         }
     }
