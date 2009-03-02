@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "qpid/RefCountedBuffer.h"
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/sys/LatencyMetric.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
@@ -59,8 +60,8 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     uint64_t getSequence() const { return sequence; }
     void setSequence(uint64_t n) { sequence = n; }
 
-    bool isCluster() const { return connectionId.getPointer() == 0; }
-    bool isConnection() const { return connectionId.getPointer() != 0; }
+    bool isCluster() const { return connectionId.getNumber() == 0; }
+    bool isConnection() const { return connectionId.getNumber() != 0; }
 
   protected:
     static const size_t HEADER_SIZE;
@@ -97,6 +98,8 @@ class Event : public EventHeader {
     // Store including header
     char* getStore() { return store; }
     const char* getStore() const { return store; }
+
+    framing::AMQFrame getFrame() const;        
     
     operator framing::Buffer() const;
 

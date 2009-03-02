@@ -125,6 +125,7 @@
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
       <field name="user-name" type="str8"/>
+      <field name="fragment" type="str32"/>
     </control>
 
     <!-- Complete a cluster state update. -->

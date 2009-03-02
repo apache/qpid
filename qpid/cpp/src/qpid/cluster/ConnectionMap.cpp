@@ -38,9 +38,9 @@ void ConnectionMap::insert(ConnectionPtr p) {
 
 void ConnectionMap::erase(const ConnectionId& id) {
     Lock l(lock);
-    Map::iterator i = map.find(id);
-    QPID_ASSERT(i != map.end());
-    map.erase(i);
+    size_t erased = map.erase(id);
+    assert(erased);
+    (void)erased;               // Avoid unused variable warnings.
 }
 
 ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
@@ -61,13 +61,6 @@ ConnectionMap::ConnectionPtr ConnectionMap::get(const ConnectionId& id) {
     return i->second;
 }
 
-ConnectionMap::ConnectionPtr ConnectionMap::getLocal(const ConnectionId& id) {
-    Lock l(lock);
-    if (id.getMember() != cluster.getId()) return 0;
-    Map::const_iterator i = map.find(id);
-    return i == map.end() ? 0 : i->second;
-}
-
 ConnectionMap::Vector ConnectionMap::values() const {
     Lock l(lock);
     Vector result(map.size());
@@ -76,22 +69,16 @@ ConnectionMap::Vector ConnectionMap::values() const {
     return result;
 }
 
-void ConnectionMap::update(MemberId myId, const ClusterMap& cluster) {
-    Lock l(lock);
-    for (Map::iterator i = map.begin(); i != map.end(); ) {
-        MemberId member = i->first.getMember();
-        if (member != myId && !cluster.isMember(member)) { 
-            i->second->left();
-            map.erase(i++);
-        } else {
-            i++;
-        }
-    }
-}
-
 void ConnectionMap::clear() {
     Lock l(lock);
     map.clear();
 }
+
+void ConnectionMap::decode(const EventHeader& eh, const void* data) {
+    ConnectionPtr connection = get(eh.getConnectionId());
+    if (connection)
+        connection->decode(eh, data);
+}
+
 
 }} // namespace qpid::cluster

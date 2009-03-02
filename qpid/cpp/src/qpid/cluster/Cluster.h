@@ -30,7 +30,6 @@
 #include "NoOpConnectionOutputHandler.h"
 #include "PollerDispatch.h"
 #include "Quorum.h"
-#include "Decoder.h"
 #include "PollableQueue.h"
 #include "ExpiryPolicy.h"
 
@@ -102,7 +101,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     size_t getWriteEstimate() { return writeEstimate; }
 
     bool isLeader() const;       // Called in deliver thread.
-    
+
+    // Called by Connection in deliver event thread with decoded connection data frames.
+    void connectionFrame(const EventFrame&); 
+
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
@@ -125,7 +127,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void brokerShutdown();
 
     // Cluster controls implement XML methods from cluster.xml.
-    // Called in deliver thread.
+    // Called in deliveredEvent thread.
     // 
     void updateRequest(const MemberId&, const std::string&, Lock&);
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
@@ -134,12 +136,20 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void shutdown(const MemberId&, Lock&);
 
+    // Used by cluster controls.
+    void stall(Lock&);
+    void unstall(Lock&);
+
     // Handlers for pollable queues.
     void deliveredEvent(const Event&); 
     void deliveredFrame(const EventFrame&); 
 
     // Helper, called in deliver thread.
     void updateStart(const MemberId& updatee, const Url& url, Lock&);
+
+    // Called in event deliver thread to check for update status.
+    bool isUpdateComplete(const EventFrame&);
+    bool isUpdateComplete();
 
     void setReady(Lock&);
 
@@ -186,7 +196,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Cpg cpg;
     const std::string name;
     Url myUrl;
-    const MemberId myId;
+    const MemberId self;
     const size_t readMax;
     const size_t writeEstimate;
     framing::Uuid clusterId;
@@ -200,9 +210,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollableFrameQueue deliverFrameQueue;
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
-
-    // Used only in deliverdEvent thread
-    Decoder decoder;
 
     // Used only in deliveredFrame thread
     ClusterMap::Set elders;

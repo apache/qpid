@@ -53,10 +53,6 @@ cluster_la_SOURCES =				\
   qpid/cluster/ConnectionMap.cpp		\
   qpid/cluster/Cpg.cpp				\
   qpid/cluster/Cpg.h				\
-  qpid/cluster/Decoder.cpp			\
-  qpid/cluster/Decoder.h			\
-  qpid/cluster/ConnectionDecoder.cpp		\
-  qpid/cluster/ConnectionDecoder.h		\
   qpid/cluster/Dispatchable.h			\
   qpid/cluster/UpdateClient.cpp			\
   qpid/cluster/UpdateClient.h			\
