@@ -98,6 +98,7 @@ class UpdateClient : public sys::Runnable {
     client::AsyncSession session, shadowSession;
     boost::function<void()> done;
     boost::function<void(const std::exception& e)> failed;
+    client::ConnectionSettings connectionSettings;
 };
 
 }} // namespace qpid::cluster

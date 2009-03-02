@@ -60,18 +60,13 @@ class ConnectionMap {
      */ 
     ConnectionPtr get(const ConnectionId& id);
 
-    /** If ID is a local connection and in the map return it, else return 0 */
-    ConnectionPtr getLocal(const ConnectionId& id);
-        
     /** Get connections for sending an update. */
     Vector values() const;
 
-    /** Remove connections who's members are no longer in the cluster. Deliver thread. */
-    void update(MemberId myId, const ClusterMap& cluster); 
+    /** Decode a connection data event. */
+    void decode(const EventHeader& eh, const void* data);
 
-    
     void clear();
-
     size_t size() const;
 
   private:
