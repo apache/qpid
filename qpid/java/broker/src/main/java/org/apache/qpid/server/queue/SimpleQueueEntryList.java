@@ -1,9 +1,6 @@
 package org.apache.qpid.server.queue;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /*
 *
@@ -172,7 +169,7 @@ public class SimpleQueueEntryList extends FlowableBaseQueueEntryList
     static class Factory implements QueueEntryListFactory
     {
 
-        public FlowableQueueEntryList createQueueEntryList(AMQQueue queue)
+        public QueueEntryList createQueueEntryList(AMQQueue queue)
         {
             return new SimpleQueueEntryList(queue);
         }

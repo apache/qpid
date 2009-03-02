@@ -24,18 +24,20 @@ import junit.framework.AssertionFailedError;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.txn.NonTransactionalContext;
 
 import java.util.ArrayList;
 
 public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {
-    private static final long MESSAGE_SIZE = 100L;
+    private static final int PRIORITIES = 3;
 
     @Override
     protected void setUp() throws Exception
-    {
+    {        
         _arguments = new FieldTable();
-        _arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, 3);
+        _arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, PRIORITIES);
         super.setUp();
     }
 
@@ -84,7 +86,6 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
             int index = 1;
             for (QueueEntry qe : msgs)
             {
-                System.err.println(index + ":" + qe.getMessage().getMessageId());
                 index++;
             }
 
@@ -96,16 +97,91 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     protected AMQMessage createMessage(byte i) throws AMQException
     {
         AMQMessage message = super.createMessage();
-                
-        ((BasicContentHeaderProperties)message.getContentHeaderBody().properties).setPriority(i);
+
+        ((BasicContentHeaderProperties) message.getContentHeaderBody().properties).setPriority(i);
 
         return message;
     }
 
-    @Override
-    public void testMessagesFlowToDisk() throws AMQException, InterruptedException
+
+    public void testMessagesFlowToDiskWithPriority() throws AMQException, InterruptedException
     {
-        //Disable this test pending completion of QPID-1637
+        int PRIORITIES = 1;
+        FieldTable arguments = new FieldTable();
+        arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, PRIORITIES);
+
+        // Create IncomingMessage and nondurable queue
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+
+        //Create a priorityQueue
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testMessagesFlowToDiskWithPriority"), false, _owner, false, _virtualHost, arguments);
+
+        MESSAGE_SIZE = 1;
+        long MEMORY_MAX = PRIORITIES * 2;
+        int MESSAGE_COUNT = (int) MEMORY_MAX * 2;
+        //Set the Memory Usage to be very low
+        _queue.setMemoryUsageMaximum(MEMORY_MAX);
+
+        for (int msgCount = 0; msgCount < MESSAGE_COUNT / 2; msgCount++)
+        {
+            sendMessage(txnContext, (msgCount % 10));
+        }
+
+        //Check that we can hold 10 messages without flowing
+        assertEquals(MESSAGE_COUNT / 2, _queue.getMessageCount());
+        assertEquals(MEMORY_MAX, _queue.getMemoryUsageMaximum());        
+        assertEquals(_queue.getMemoryUsageMaximum(), _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is flowed.", !_queue.isFlowed());
+
+        // Send another and ensure we are flowed
+        sendMessage(txnContext);
+        
+        assertTrue("Queue is not flowed.", _queue.isFlowed());
+        assertEquals(MESSAGE_COUNT / 2 + 1, _queue.getMessageCount());
+        assertEquals(MESSAGE_COUNT / 2, _queue.getMemoryUsageCurrent());
+
+
+        //send another 99 so there are 200msgs in total on the queue
+        for (int msgCount = 0; msgCount < (MESSAGE_COUNT / 2) - 1; msgCount++)
+        {
+            sendMessage(txnContext);
+
+            long usage = _queue.getMemoryUsageCurrent();
+            assertTrue("Queue has gone over quota:" + usage,
+                       usage <= _queue.getMemoryUsageMaximum());
+
+            assertTrue("Queue has a negative quota:" + usage, usage > 0);
+
+        }
+        assertEquals(MESSAGE_COUNT, _queue.getMessageCount());
+        assertEquals(MEMORY_MAX, _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is not flowed.", _queue.isFlowed());
+
+        _queue.registerSubscription(_subscription, false);
+
+        int slept = 0;
+        while (_subscription.getQueueEntries().size() != MESSAGE_COUNT && slept < 10)
+        {
+            Thread.sleep(500);
+            slept++;
+        }
+
+        //Ensure the messages are retreived
+        assertEquals("Not all messages were received, slept:" + slept / 2 + "s", MESSAGE_COUNT, _subscription.getQueueEntries().size());
+
+        //Check the queue is still within it's limits.
+        assertTrue("Queue has gone over quota:" + _queue.getMemoryUsageCurrent(),
+                   _queue.getMemoryUsageCurrent() <= _queue.getMemoryUsageMaximum());
+
+        assertTrue("Queue has a negative quota:" + _queue.getMemoryUsageCurrent(), _queue.getMemoryUsageCurrent() >= 0);
+
+        for (int index = 0; index < MESSAGE_COUNT; index++)
+        {
+            // Ensure that we have received the messages and it wasn't flushed to disk before we received it.
+            AMQMessage message = _subscription.getMessages().get(index);
+            assertNotNull("Message:" + message.debugIdentity() + " was null.", message);
+        }
+
     }
 
 }

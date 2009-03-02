@@ -20,7 +20,6 @@ package org.apache.qpid.server.queue;
  * 
  */
 
-import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
@@ -60,7 +59,7 @@ public class SimpleAMQQueueTest extends TestCase
     protected FieldTable _arguments = null;
 
     MessagePublishInfo info = new MessagePublishInfoImpl();
-    private static long MESSAGE_SIZE = 100;
+    protected static long MESSAGE_SIZE = 100;
 
     @Override
     protected void setUp() throws Exception
@@ -368,7 +367,7 @@ public class SimpleAMQQueueTest extends TestCase
         long MEMORY_MAX = 500;
         int MESSAGE_COUNT = (int) MEMORY_MAX * 2;
         //Set the Memory Usage to be very low
-        _queue.setMemoryUsageMaximum(MEMORY_MAX);        
+        _queue.setMemoryUsageMaximum(MEMORY_MAX);
 
         for (int msgCount = 0; msgCount < MESSAGE_COUNT / 2; msgCount++)
         {
@@ -395,7 +394,7 @@ public class SimpleAMQQueueTest extends TestCase
             assertTrue("Queue has gone over quota:" + usage,
                        usage <= _queue.getMemoryUsageMaximum());
 
-            assertTrue("Queue has a negative quota:" + usage,usage  > 0);
+            assertTrue("Queue has a negative quota:" + usage, usage > 0);
 
         }
         assertEquals(MESSAGE_COUNT, _queue.getMessageCount());
@@ -412,13 +411,14 @@ public class SimpleAMQQueueTest extends TestCase
         }
 
         //Ensure the messages are retreived
-        assertEquals("Not all messages were received, slept:"+slept/2+"s", MESSAGE_COUNT, _subscription.getQueueEntries().size());
+        assertEquals("Not all messages were received, slept:" + slept / 2 + "s", MESSAGE_COUNT, _subscription.getQueueEntries().size());
 
         //Check the queue is still within it's limits.
-        assertTrue("Queue has gone over quota:" + _queue.getMemoryUsageCurrent(),
-                   _queue.getMemoryUsageCurrent() <= _queue.getMemoryUsageMaximum());
+        long current = _queue.getMemoryUsageCurrent();
+        assertTrue("Queue has gone over quota:" + current+"/"+_queue.getMemoryUsageMaximum() ,
+                   current <= _queue.getMemoryUsageMaximum());
 
-        assertTrue("Queue has a negative quota:" + _queue.getMemoryUsageCurrent(), _queue.getMemoryUsageCurrent() > 0);
+        assertTrue("Queue has a negative quota:" + _queue.getMemoryUsageCurrent(), _queue.getMemoryUsageCurrent() >= 0);
 
         for (int index = 0; index < MESSAGE_COUNT; index++)
         {
@@ -426,10 +426,52 @@ public class SimpleAMQQueueTest extends TestCase
             AMQMessage message = _subscription.getMessages().get(index);
             assertNotNull("Message:" + message.debugIdentity() + " was null.", message);
         }
+    }
+
+      public void testMessagesFlowToDiskPurger() throws AMQException, InterruptedException
+    {
+        // Create IncomingMessage and nondurable queue
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+
+        MESSAGE_SIZE = 1;
+        long MEMORY_MAX = 10;
+        int MESSAGE_COUNT = (int) MEMORY_MAX;
+        //Set the Memory Usage to be very low
+        _queue.setMemoryUsageMaximum(MEMORY_MAX);
+
+        for (int msgCount = 0; msgCount < MESSAGE_COUNT; msgCount++)
+        {
+            sendMessage(txnContext);
+        }
+
+        //Check that we can hold all messages without flowing
+        assertEquals(MESSAGE_COUNT, _queue.getMessageCount());
+        assertEquals(MEMORY_MAX, _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is flowed.", !_queue.isFlowed());
+
+        // Send anothe and ensure we are flowed
+        sendMessage(txnContext);
+        assertEquals(MESSAGE_COUNT + 1, _queue.getMessageCount());
+        assertEquals(MESSAGE_COUNT , _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is not flowed.", _queue.isFlowed());
+
+        _queue.setMemoryUsageMaximum(0L);
+
+        //Give the purger time to work
+        Thread.sleep(200);
+
+        assertEquals(MESSAGE_COUNT + 1, _queue.getMessageCount());
+        assertEquals(0L , _queue.getMemoryUsageCurrent());
+        assertTrue("Queue is not flowed.", _queue.isFlowed());
 
     }
 
-    private void sendMessage(TransactionalContext txnContext) throws AMQException
+    protected void sendMessage(TransactionalContext txnContext) throws AMQException
+    {
+        sendMessage(txnContext, 5);
+    }
+
+    protected void sendMessage(TransactionalContext txnContext, int priority) throws AMQException
     {
         IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_transactionLog), _transactionLog);
 
@@ -438,6 +480,7 @@ public class SimpleAMQQueueTest extends TestCase
         contentHeaderBody.bodySize = MESSAGE_SIZE;
         contentHeaderBody.properties = new BasicContentHeaderProperties();
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) 2);
+        ((BasicContentHeaderProperties) contentHeaderBody.properties).setPriority((byte) priority);
         msg.setContentHeaderBody(contentHeaderBody);
 
         long messageId = msg.getMessageId();

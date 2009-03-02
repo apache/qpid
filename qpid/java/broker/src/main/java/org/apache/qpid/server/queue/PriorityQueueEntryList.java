@@ -25,7 +25,7 @@ import org.apache.qpid.framing.CommonContentHeaderProperties;
 public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implements QueueEntryList
 {
     private final AMQQueue _queue;
-    private final FlowableQueueEntryList[] _priorityLists;
+    private final QueueEntryList[] _priorityLists;
     private final int _priorities;
     private final int _priorityOffset;
 
@@ -33,13 +33,15 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     {
         super(queue);
         _queue = queue;
-        _priorityLists = new FlowableQueueEntryList[priorities];
+        _priorityLists = new QueueEntryList[priorities];
         _priorities = priorities;
-        _priorityOffset = 5-((priorities + 1)/2);
-        for(int i = 0; i < priorities; i++)
+        _priorityOffset = 5 - ((priorities + 1) / 2);
+        for (int i = 0; i < priorities; i++)
         {
             _priorityLists[i] = new SimpleQueueEntryList(queue);
         }
+
+        showUsage("Created:" + _queue.getName());
     }
 
     public int getPriorities()
@@ -54,33 +56,149 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
 
     public QueueEntry add(AMQMessage message)
     {
-        int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
-        if(index >= _priorities)
+        int index = ((CommonContentHeaderProperties) ((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
+        if (index >= _priorities)
         {
-            index = _priorities-1;
+            index = _priorities - 1;
         }
-        else if(index < 0)
+        else if (index < 0)
         {
             index = 0;
         }
+
+        long requriedSize = message.getSize();
+        // Check and see if list would flow on adding message
+        if (!_disabled && !isFlowed() && _priorityLists[index].memoryUsed() + requriedSize > _priorityLists[index].getMemoryUsageMaximum())
+        {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Message(" + message.debugIdentity() + ") Add of size ("
+                              + requriedSize + ") will cause flow. Searching for space");
+            }
+
+            long reclaimed = 0;
+
+            //work down the priorities looking for memory
+            int scavangeIndex = _priorities - 1;
+
+            //First: Don't take all the memory. So look for a queue that has more than 50% free
+
+            long currentMax;
+
+            while (scavangeIndex >= 0 && reclaimed <= requriedSize)
+            {
+                currentMax = _priorityLists[scavangeIndex].getMemoryUsageMaximum();
+                long used = _priorityLists[scavangeIndex].memoryUsed();
+
+                if (used < currentMax / 2)
+                {
+                    long newMax = currentMax / 2;
+
+                    _priorityLists[scavangeIndex].setMemoryUsageMaximum(newMax);
+
+                    reclaimed += currentMax - newMax;
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug("Reclaiming(1) :" + (currentMax - newMax) + "(" + reclaimed + "/" + requriedSize + ") from queue:" + scavangeIndex);
+                    }
+                    break;
+                }
+                else
+                {
+                    scavangeIndex--;
+                }
+            }
+
+            //Second: Just take the memory we need
+            if (scavangeIndex == -1)
+            {
+                scavangeIndex = _priorities - 1;
+                while (scavangeIndex >= 0 && reclaimed <= requriedSize)
+                {
+                    currentMax = _priorityLists[scavangeIndex].getMemoryUsageMaximum();
+                    long used = _priorityLists[scavangeIndex].memoryUsed();
+
+                    if (used < currentMax)
+                    {
+                        long newMax = currentMax - used;
+
+                        // if there are no messages at this priority just take it all
+                        if (newMax == currentMax)
+                        {
+                            newMax = 0;
+                        }
+
+                        _priorityLists[scavangeIndex].setMemoryUsageMaximum(newMax);
+
+                        reclaimed += currentMax - newMax;
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug("Reclaiming(2) :" + (currentMax - newMax) + "(" + reclaimed + "/" + requriedSize + ") from queue:" + scavangeIndex);
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        scavangeIndex--;
+                    }
+                }
+            }
+
+            //Increment Maximum
+            if (reclaimed > 0)
+            {
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug("Increasing queue(" + index + ") maximum by " + reclaimed
+                               + " to " + (_priorityLists[index].getMemoryUsageMaximum() + reclaimed));
+                }
+                _priorityLists[index].setMemoryUsageMaximum(_priorityLists[index].getMemoryUsageMaximum() + reclaimed);
+            }
+            else
+            {
+                _log.debug("No space found.");
+            }
+
+            showUsage();
+        }
+
         return _priorityLists[index].add(message);
+    }
+
+    @Override
+    protected void showUsage(String prefix)
+    {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug(prefix);
+            for (int index = 0; index < _priorities; index++)
+            {
+                QueueEntryList queueEntryList = _priorityLists[index];
+                _log.debug("Queue (" + _queue + ":" + _queue.getName() + ")[" + index + "] usage:" + queueEntryList.memoryUsed()
+                           + "/" + queueEntryList.getMemoryUsageMaximum()
+                           + "/" + queueEntryList.dataSize());
+            }
+        }
     }
 
     public QueueEntry next(QueueEntry node)
     {
-        QueueEntryImpl nodeImpl = (QueueEntryImpl)node;
+        QueueEntryImpl nodeImpl = (QueueEntryImpl) node;
         QueueEntry next = nodeImpl.getNext();
 
-        if(next == null)
+        if (next == null)
         {
             QueueEntryList nodeEntryList = nodeImpl.getQueueEntryList();
             int index;
-            for(index = _priorityLists.length-1; _priorityLists[index] != nodeEntryList; index--);
+            for (index = _priorityLists.length - 1; _priorityLists[index] != nodeEntryList; index--)
+            {
+                ;
+            }
 
-            while(next == null && index != 0)
+            while (next == null && index != 0)
             {
                 index--;
-                next = ((QueueEntryImpl)_priorityLists[index].getHead()).getNext();
+                next = ((QueueEntryImpl) _priorityLists[index].getHead()).getNext();
             }
 
         }
@@ -89,24 +207,23 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
 
     private final class PriorityQueueEntryListIterator implements QueueEntryIterator
     {
-        private final QueueEntryIterator[] _iterators = new QueueEntryIterator[ _priorityLists.length ];
+        private final QueueEntryIterator[] _iterators = new QueueEntryIterator[_priorityLists.length];
         private QueueEntry _lastNode;
 
         PriorityQueueEntryListIterator()
         {
-            for(int i = 0; i < _priorityLists.length; i++)
+            for (int i = 0; i < _priorityLists.length; i++)
             {
                 _iterators[i] = _priorityLists[i].iterator();
             }
             _lastNode = _iterators[_iterators.length - 1].getNode();
         }
 
-
         public boolean atTail()
         {
-            for(int i = 0; i < _iterators.length; i++)
+            for (int i = 0; i < _iterators.length; i++)
             {
-                if(!_iterators[i].atTail())
+                if (!_iterators[i].atTail())
                 {
                     return false;
                 }
@@ -121,9 +238,9 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
 
         public boolean advance()
         {
-            for(int i = _iterators.length-1; i >= 0; i--)
+            for (int i = _iterators.length - 1; i >= 0; i--)
             {
-                if(_iterators[i].advance())
+                if (_iterators[i].advance())
                 {
                     _lastNode = _iterators[i].getNode();
                     return true;
@@ -140,7 +257,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
 
     public QueueEntry getHead()
     {
-        return _priorityLists[_priorities-1].getHead();
+        return _priorityLists[_priorities - 1].getHead();
     }
 
     static class Factory implements QueueEntryListFactory
@@ -152,17 +269,31 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
             _priorities = priorities;
         }
 
-        public FlowableQueueEntryList createQueueEntryList(AMQQueue queue)
+        public QueueEntryList createQueueEntryList(AMQQueue queue)
         {
             return new PriorityQueueEntryList(queue, _priorities);
         }
     }
 
     @Override
+    public boolean isFlowed()
+    {
+        boolean flowed = false;
+        boolean full = true;
+        showUsage();
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            full = full && queueEntryList.getMemoryUsageMaximum() == queueEntryList.memoryUsed();
+            flowed = flowed || (queueEntryList.isFlowed());
+        }
+        return flowed && full;
+    }
+
+    @Override
     public int size()
     {
-        int size=0;
-        for (FlowableQueueEntryList queueEntryList : _priorityLists)
+        int size = 0;
+        for (QueueEntryList queueEntryList : _priorityLists)
         {
             size += queueEntryList.size();
         }
@@ -170,10 +301,96 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
         return size;
     }
 
+    @Override
+    public long dataSize()
+    {
+        int dataSize = 0;
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            dataSize += queueEntryList.dataSize();
+        }
+
+        return dataSize;
+    }
 
     @Override
-    protected void flowingToDisk(QueueEntryImpl queueEntry)
+    public long memoryUsed()
     {
-        //This class doesn't maintain it's own sizes it delegates to the sub FlowableQueueEntryLists
+        int memoryUsed = 0;
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            memoryUsed += queueEntryList.memoryUsed();
+        }
+
+        return memoryUsed;
+    }
+
+    @Override
+    public void setMemoryUsageMaximum(long maximumMemoryUsage)
+    {
+        _memoryUsageMaximum = maximumMemoryUsage;
+
+        if (maximumMemoryUsage >= 0)
+        {
+            _disabled = false;
+        }
+
+        long share = maximumMemoryUsage / _priorities;
+
+        //Apply a share of the maximum To each prioirty quue
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            queueEntryList.setMemoryUsageMaximum(share);
+        }
+
+        if (maximumMemoryUsage < 0)
+        {
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Disabling Flow to Disk for queue:" + _queue.getName());
+            }
+            _disabled = true;
+            return;
+        }
+
+        //ensure we use the full allocation of memory
+        long remainder = maximumMemoryUsage - (share * _priorities);
+        if (remainder > 0)
+        {
+            _priorityLists[_priorities - 1].setMemoryUsageMaximum(share + remainder);
+        }
+    }
+
+    @Override
+    public long getMemoryUsageMaximum()
+    {
+        return _memoryUsageMaximum;
+    }
+
+    @Override
+    public void setMemoryUsageMinimum(long minimumMemoryUsage)
+    {
+        _memoryUsageMinimum = minimumMemoryUsage;
+
+        //Apply a share of the minimum To each prioirty quue
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            queueEntryList.setMemoryUsageMaximum(minimumMemoryUsage / _priorities);
+        }
+    }
+
+    @Override
+    public long getMemoryUsageMinimum()
+    {
+        return _memoryUsageMinimum;
+    }
+
+    @Override
+    public void stop()
+    {
+        for (QueueEntryList queueEntryList : _priorityLists)
+        {
+            queueEntryList.stop();
+        }
     }
 }
