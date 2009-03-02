@@ -304,11 +304,6 @@ public class ServerConfiguration implements SignalHandler
         return _config.getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
     }
 
-    public boolean getManagementSecurityEnabled()
-    {
-        return _config.getBoolean("management.security-enabled", false);
-    }
-
     public boolean getProtectIOEnabled()
     {
         return _config.getBoolean("broker.connector.protectio.enabled", false);
