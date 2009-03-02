@@ -221,6 +221,7 @@ bool SslConnector::closeInternal() {
     bool ret = !closed;
     if (!closed) {
         closed = true;
+        aio->queueForDeletion();
         poller->shutdown();
     }
     if (!joined && receiver.id() != Thread::current().id()) {
@@ -386,7 +387,6 @@ void SslConnector::run(){
 	
         aio->start(poller);
         d.run();
-        aio->queueForDeletion();
         socket.close();
     } catch (const std::exception& e) {
         QPID_LOG(error, e.what());

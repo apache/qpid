@@ -86,8 +86,9 @@ public:
     //   with the handle and the INTERRUPTED event type
     // if it returns false then the handle is not being monitored by the poller
     // - This can either be because it has just received an event which has been
-    //   reported and has not been reenabled since. Or because it was removed
-    //   from the monitoring set
+    //   reported and has not been reenabled since.
+    // - Because it was removed from the monitoring set
+    // - Or because it is already being interrupted 
     bool interrupt(PollerHandle& handle);
     
     // Poller run loop
