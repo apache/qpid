@@ -276,6 +276,8 @@ public class NavigationView extends ViewPart
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
 
+        expandInitialMBeanView(serverNode);
+        
         _treeViewer.refresh();
 
         // save server address in file
@@ -756,7 +758,30 @@ public class NavigationView extends ViewPart
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
 
+        expandInitialMBeanView(selectedNode);
+        
         _treeViewer.refresh();
+    }
+    
+    private void expandInitialMBeanView(TreeObject serverNode)
+    {
+        if (serverNode.getChildren().size() == 0 )
+        {
+            return;
+        }
+        else
+        {
+            _treeViewer.setExpandedState(serverNode , true);
+        }
+        
+        List<TreeObject> children = serverNode.getChildren();
+        for (TreeObject child : children)
+        {
+            if (child.getChildren().size() > 0)
+            {
+                _treeViewer.setExpandedState(child, true);
+            }
+        }
     }
 
     /**
