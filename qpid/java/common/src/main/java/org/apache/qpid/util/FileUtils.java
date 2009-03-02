@@ -250,12 +250,17 @@ public class FileUtils
          {
              if (recursive)
              {
-                 for (File subFile : file.listFiles())
+                 try{
+                     for (File subFile : file.listFiles())
+                     {
+                         success = delete(subFile, true) & success ;
+                     }
+                 }catch (NullPointerException npe)
                  {
-                     success = delete(subFile, true) & success ;
+                     success = false;
                  }
 
-                 return file.delete();
+                 return success && file.delete();
              }
 
              return false;
