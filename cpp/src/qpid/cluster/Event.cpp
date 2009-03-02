@@ -23,6 +23,7 @@
 #include "Cpg.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/assert.h"
 #include <ostream>
 #include <iterator>
 #include <algorithm>
@@ -31,6 +32,7 @@ namespace qpid {
 namespace cluster {
 
 using framing::Buffer;
+using framing::AMQFrame;
 
 const size_t EventHeader::HEADER_SIZE =
     sizeof(uint8_t) +  // type
@@ -57,7 +59,7 @@ void EventHeader::decode(const MemberId& m, framing::Buffer& buf) {
     type = (EventType)buf.getOctet();
     if(type != DATA && type != CONTROL)
         throw Exception("Invalid multicast event type");
-    connectionId = ConnectionId(m, reinterpret_cast<Connection*>(buf.getLongLong()));
+    connectionId = ConnectionId(m, buf.getLongLong());
     size = buf.getLong();
 #ifdef QPID_LATENCY_METRIC
     latency_metric_timestamp = buf.getLongLong();
@@ -93,7 +95,7 @@ iovec Event::toIovec() {
 
 void EventHeader::encode(Buffer& b) const {
     b.putOctet(type);
-    b.putLongLong(reinterpret_cast<uint64_t>(connectionId.getPointer()));
+    b.putLongLong(connectionId.getNumber());
     b.putLong(size);
 #ifdef QPID_LATENCY_METRIC
     b.putLongLong(latency_metric_timestamp);
@@ -109,6 +111,14 @@ void Event::encodeHeader () {
 
 Event::operator Buffer() const  {
     return Buffer(const_cast<char*>(getData()), getSize());
+}
+
+AMQFrame Event::getFrame() const {
+    assert(type == CONTROL);
+    Buffer buf(*this);
+    AMQFrame frame;
+    QPID_ASSERT(frame.decode(buf));
+    return frame;
 }
 
 static const char* EVENT_TYPE_NAMES[] = { "data", "control" };

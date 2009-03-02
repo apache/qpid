@@ -95,7 +95,7 @@ UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, con
     : updaterId(updater), updateeId(updatee), updateeUrl(url), updaterBroker(broker), map(m),
       frameId(frameId_), connections(cons), 
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
-      done(ok), failed(fail) 
+      done(ok), failed(fail), connectionSettings(cs)
 {
     connection.open(url, cs);
     session = connection.newSession("update_shared");
@@ -228,13 +228,15 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
     shadowConnection = catchUpConnection();
 
     broker::Connection& bc = updateConnection->getBrokerConnection();
-    // FIXME aconway 2008-10-20: What authentication info to use on reconnect?
-    shadowConnection.open(updateeUrl, bc.getUserId(), ""/*password*/, "/"/*vhost*/, bc.getFrameMax());
+    connectionSettings.maxFrameSize = bc.getFrameMax();
+    shadowConnection.open(updateeUrl, connectionSettings);
     bc.eachSessionHandler(boost::bind(&UpdateClient::updateSession, this, _1));
+    std::pair<const char*, size_t> fragment = updateConnection->getDecoder().getFragment();
     ClusterConnectionProxy(shadowConnection).shadowReady(
         updateConnection->getId().getMember(),
-        reinterpret_cast<uint64_t>(updateConnection->getId().getPointer()),
-        updateConnection->getBrokerConnection().getUserId()
+        updateConnection->getId().getNumber(),
+        bc.getUserId(),
+        string(fragment.first, fragment.second)
     );
     shadowConnection.close();
     QPID_LOG(debug, updaterId << " updated connection " << *updateConnection);
@@ -285,9 +287,6 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     if (inProgress) {
         inProgress->getFrames().map(simpl->out);
     }
-
-    // FIXME aconway 2008-09-23: update session replay list.
-
     QPID_LOG(debug, updaterId << " updated session " << sh.getSession()->getId());
 }
 

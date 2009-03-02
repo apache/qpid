@@ -65,7 +65,7 @@ QPID_AUTO_TEST_CASE(testByteFragments) {
     }
     Buffer buf(&encoded[encoded.size()-1], 1);
     BOOST_CHECK(decoder.decode(buf));
-    BOOST_CHECK_EQUAL(data, getData(decoder.frame));
+    BOOST_CHECK_EQUAL(data, getData(decoder.getFrame()));
 }
 
 

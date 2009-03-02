@@ -42,8 +42,8 @@ struct EventFrame
 
     EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc=0);
 
-    bool isCluster() const { return !connectionId.getPointer(); }
-    bool isConnection() const { return connectionId.getPointer(); }
+    bool isCluster() const { return connectionId.getNumber() == 0; }
+    bool isConnection() const { return connectionId.getNumber() != 0; }
     bool isLastInEvent() const { return readCredit; }
 
 
