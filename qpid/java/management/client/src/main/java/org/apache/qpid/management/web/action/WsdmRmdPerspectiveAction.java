@@ -35,6 +35,8 @@ import org.apache.muse.core.proxy.ProxyHandler;
 import org.apache.muse.core.proxy.ReflectionProxyHandler;
 import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.addressing.EndpointReference;
+import org.apache.muse.ws.metadata.WsxConstants;
+import org.apache.muse.ws.resource.metadata.WsrmdConstants;
 import org.apache.muse.ws.resource.remote.WsResourceClient;
 import org.apache.qpid.management.Names;
 import org.w3c.dom.Element;
@@ -42,7 +44,7 @@ import org.w3c.dom.Element;
 public class WsdmRmdPerspectiveAction extends HttpServlet
 {
 	private static final long serialVersionUID = -2411413147821629363L;
-	private static final Object [] DIALECT = new Object[]{"http://docs.oasis-open.org/wsrf/rmd-1"};
+	private static final Object [] RMD_DIALECT = new Object[]{WsrmdConstants.NAMESPACE_URI};
 	
 	private ProxyHandler proxyHandler;
 	
@@ -52,10 +54,14 @@ public class WsdmRmdPerspectiveAction extends HttpServlet
 	public void init() throws ServletException
 	{
 		proxyHandler  = new ReflectionProxyHandler();
-		proxyHandler.setAction("http://schemas.xmlsoap.org/ws/2004/09/mex/GetMetadata");
-		proxyHandler.setRequestName(new QName("http://schemas.xmlsoap.org/ws/2004/09/mex", "GetMetadata", Names.PREFIX));
-		proxyHandler.setRequestParameterNames(new QName[]{new QName("http://schemas.xmlsoap.org/ws/2004/09/mex", "Dialect", Names.PREFIX)});
-		proxyHandler.setResponseName(new QName("http://schemas.xmlsoap.org/ws/2004/09/mex", "Metadata", Names.PREFIX));
+		proxyHandler.setAction(WsxConstants.GET_METADATA_URI);
+		proxyHandler.setRequestName(WsxConstants.GET_METADATA_QNAME);
+		proxyHandler.setRequestParameterNames(new QName[]{
+				new QName(
+						WsxConstants.NAMESPACE_URI, 
+						WsxConstants.DIALECT, 
+						WsxConstants.PREFIX)});
+		proxyHandler.setResponseName(WsxConstants.METADATA_QNAME);
 		proxyHandler.setReturnType(Element[].class);
 	}
 	
@@ -65,29 +71,49 @@ public class WsdmRmdPerspectiveAction extends HttpServlet
 	{
 		try 
 		{
-//			String resourceId = request.getParameter("resourceId");
-//			ObjectName objectName = new ObjectName(resourceId);
-//			
-//			String wsresourceid = objectName.getKeyProperty(Names.OBJECT_ID);
-//			EndpointReference resourceEndpointReference = new EndpointReference(getURI(request));
-//			resourceEndpointReference.addParameter(
-//					Names.RESOURCE_ID_QNAME, 
-//					wsresourceid);
-//			
-//			WsResourceClient resourceClient = new WsResourceClient(resourceEndpointReference);
-//			Element rmd = ((Element[])resourceClient.invoke(proxyHandler,DIALECT))[0];
-//						        		
-//        	String output = XmlUtils.toString(rmd);
-//        	
-//			String [] keyProperties = objectName.getKeyPropertyListString().split(",");
-//			
-//			request.setAttribute("resourceId", objectName);
-//			request.setAttribute("nameAttributes",keyProperties);
-//			request.setAttribute("rmd",output);
-			RequestDispatcher dispatcher = request.getRequestDispatcher("/tbd.jsp");
+			String resourceId = request.getParameter("resourceId");
+			ObjectName objectName = new ObjectName(resourceId);
+
+			String wsresourceid = objectName.getKeyProperty(Names.OBJECT_ID);
+			EndpointReference resourceEndpointReference = new EndpointReference(getURI(request));
+			
+			resourceEndpointReference.addParameter(
+					Names.RESOURCE_ID_QNAME, 
+					wsresourceid);
+			
+			WsResourceClient resourceClient = new WsResourceClient(resourceEndpointReference);
+			Element rmd = ((Element[])resourceClient.invoke(proxyHandler,RMD_DIALECT))[0];
+						
+//        	NodeList nodelist = wsdl.getChildNodes();
+//        	Element definitions = null;
+//        	for (int i = 0; i < nodelist.getLength(); i++)
+//        	{
+//        		Node node = nodelist.item(i);
+//        		switch (node.getNodeType())
+//        		{
+//        			case Node.ELEMENT_NODE:
+//        			{
+//        				Element element = (Element) node;
+//        				if (element.getNodeName().indexOf("definitions") != -1)
+//        				{
+//        					definitions = element;
+//        					break;
+//        				}
+//        			}
+//        		}
+//        	}
+        		
+        	String output = XmlUtils.toString(rmd);
+        	
+			String [] keyProperties = objectName.getKeyPropertyListString().split(",");
+			
+			request.setAttribute("resourceId", resourceId);
+			request.setAttribute("nameAttributes",keyProperties);
+			request.setAttribute("rmd",output);
+			RequestDispatcher dispatcher = request.getRequestDispatcher("/wsdm_rmd_perspective.jsp");
 			dispatcher.forward(request,response); 
 		} catch(Exception exception)
-		{
+		{			
 			request.setAttribute("errorMessage","Unable to detect the exact cause Please look at the reported stack trace below.");
 			request.setAttribute("exception",exception);
 			RequestDispatcher dispatcher = request.getRequestDispatcher("/error_page.jsp");
