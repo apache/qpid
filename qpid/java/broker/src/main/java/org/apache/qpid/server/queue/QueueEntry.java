@@ -221,7 +221,7 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     boolean removeStateChangeListener(StateChangeListener listener);
 
-    void unload() throws UnableToFlowMessageException;
+    void unload();
 
     void load();
 

@@ -48,8 +48,9 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
 
             //This is +2 because:
             // 1 - asyncDelivery Thread
-            // 2 - queueInhalerThread
-            assertEquals("References not increased", initialCount + 2, ReferenceCountingExecutorService.getInstance().getReferenceCount());
+            // 2 - queue InhalerThread
+            // 3 - queue PurgerThread
+            assertEquals("References not increased", initialCount + 3, ReferenceCountingExecutorService.getInstance().getReferenceCount());
             
             queue.stop();
 

@@ -79,7 +79,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private volatile Subscription _exclusiveSubscriber;
 
-    protected final FlowableQueueEntryList _entries;
+    protected final QueueEntryList _entries;
 
     private final AMQQueueMBean _managedObject;
     private final Executor _asyncDelivery;
@@ -468,8 +468,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         if (entry.isFlowed())
         {
-            _logger.debug("Synchronously loading flowed entry:" + entry.debugIdentity());
-            _entries.loadEntry(entry);
+            entry.load();
         }
 
         sub.send(entry);
@@ -477,7 +476,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         // We have delivered this message so we can unload it.
         if (_entries.isFlowed() && entry.isAcquired() && entry.getDeliveredToConsumer())
         {
-            _entries.unloadEntry(entry);
+            entry.unload();
         }
 
     }
