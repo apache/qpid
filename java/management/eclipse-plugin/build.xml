@@ -70,6 +70,19 @@
             <property file="build-release-linux-gtk-x86.properties"/>
             <property file="build-release-common.properties"/>
         </ant>
+
+        <!-- linux gtk x86_64 -->
+        <ant antfile="build-release.xml">
+            <property file="build-release-linux-gtk-x86_64.properties"/>
+            <property file="build-release-common.properties"/>
+        </ant>
+
+        <!-- solaris gtk sparc -->
+        <ant antfile="build-release.xml">
+            <property file="build-release-solaris-gtk-sparc.properties"/>
+            <property file="build-release-common.properties"/>
+        </ant>
+
         <!-- mac os x -->
         <ant antfile="build-release-macosx.xml">
             <property file="build-release-macosx.properties"/>
