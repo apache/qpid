@@ -54,17 +54,20 @@ class PollerHandlePrivate {
         INACTIVE,
         HUNGUP,
         MONITORED_HUNGUP,
+        INTERRUPTED,
         DELETED
     };
 
     int fd;
     ::__uint32_t events;
+    PollerHandle* pollerHandle;
     FDStat stat;
     Mutex lock;
 
-    PollerHandlePrivate(int f) :
+    PollerHandlePrivate(int f, PollerHandle* p) :
       fd(f),
       events(0),
+      pollerHandle(p),
       stat(ABSENT) {
     }
 
@@ -101,6 +104,14 @@ class PollerHandlePrivate {
         stat = HUNGUP;
     }
 
+    bool isInterrupted() const {
+        return stat == INTERRUPTED;
+    }
+
+    void setInterrupted() {
+        stat = INTERRUPTED;
+    }
+
     bool isDeleted() const {
         return stat == DELETED;
     }
@@ -111,7 +122,7 @@ class PollerHandlePrivate {
 };
 
 PollerHandle::PollerHandle(const IOHandle& h) :
-    impl(new PollerHandlePrivate(toFd(h.impl)))
+    impl(new PollerHandlePrivate(toFd(h.impl), this))
 {}
 
 PollerHandle::~PollerHandle() {
@@ -119,6 +130,10 @@ PollerHandle::~PollerHandle() {
     ScopedLock<Mutex> l(impl->lock);
     if (impl->isDeleted()) {
     	return;
+    }
+    if (impl->isInterrupted()) {
+        impl->setDeleted();
+        return;
     }
     if (impl->isActive()) {
         impl->setDeleted();
@@ -243,23 +258,21 @@ class PollerPrivate {
         ::close(epollFd);
     }
     
-    void interrupt(bool all=false) {
+    void interrupt() {
 	    ::epoll_event epe;
-	    if (all) {
-	        // Not EPOLLONESHOT, so we eventually get all threads
-		    epe.events = ::EPOLLIN;
-		    epe.data.u64 = 0; // Keep valgrind happy
-	    } else {
-	    	// Use EPOLLONESHOT so we only wake a single thread
-		    epe.events = ::EPOLLIN | ::EPOLLONESHOT;
-		    epe.data.u64 = 0; // Keep valgrind happy
-		    epe.data.ptr = &static_cast<PollerHandle&>(interruptHandle);	    
-	    }
+    	// Use EPOLLONESHOT so we only wake a single thread
+	    epe.events = ::EPOLLIN | ::EPOLLONESHOT;
+	    epe.data.u64 = 0; // Keep valgrind happy
+	    epe.data.ptr = &static_cast<PollerHandle&>(interruptHandle);
 	    QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, alwaysReadableFd, &epe));	
     }
     
     void interruptAll() {
-    	interrupt(true);
+        ::epoll_event epe;
+        // Not EPOLLONESHOT, so we eventually get all threads
+        epe.events = ::EPOLLIN;
+        epe.data.u64 = 0; // Keep valgrind happy
+        QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, alwaysReadableFd, &epe));  
     }
 };
 
@@ -281,7 +294,7 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
         epe.events = eh.events | PollerPrivate::directionToEpollEvent(dir);
     }
     epe.data.u64 = 0; // Keep valgrind happy
-    epe.data.ptr = &handle;
+    epe.data.ptr = &eh;
 
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, eh.fd, &epe));
 
@@ -312,7 +325,7 @@ void Poller::modFd(PollerHandle& handle, Direction dir) {
     ::epoll_event epe;
     epe.events = PollerPrivate::directionToEpollEvent(dir) | ::EPOLLONESHOT;
     epe.data.u64 = 0; // Keep valgrind happy
-    epe.data.ptr = &handle;
+    epe.data.ptr = &eh;
 
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
 
@@ -329,7 +342,7 @@ void Poller::rearmFd(PollerHandle& handle) {
     ::epoll_event epe;
     epe.events = eh.events;
     epe.data.u64 = 0; // Keep valgrind happy
-    epe.data.ptr = &handle;
+    epe.data.ptr = &eh;
 
     QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
 
@@ -355,15 +368,14 @@ bool Poller::interrupt(PollerHandle& handle) {
 	{
 	    PollerHandlePrivate& eh = *handle.impl;
 	    ScopedLock<Mutex> l(eh.lock);
-	    if (eh.isInactive()) {
+	    if (!eh.isActive()) {
 	    	return false;
 	    }
 	    ::epoll_event epe;
 	    epe.events = 0;
 	    epe.data.u64 = 0; // Keep valgrind happy
-	    epe.data.ptr = &eh;
 	    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
-	    eh.setInactive();
+	    eh.setInterrupted();
 	}
 
 	PollerPrivate::InterruptHandle& ih = impl->interruptHandle;
@@ -422,37 +434,54 @@ Poller::Event Poller::wait(Duration timeout) {
 #else
         int rc = ::epoll_pwait(impl->epollFd, &epe, 1, timeoutMs, &impl->sigMask);
 #endif
-        // Check for shutdown
-        if (impl->isShutdown) {
-            PollerHandleDeletionManager.markAllUnusedInThisThread();
-            return Event(0, SHUTDOWN);
-        }
 
         if (rc ==-1 && errno != EINTR) {
             QPID_POSIX_CHECK(rc);
         } else if (rc > 0) {
             assert(rc == 1);
-            PollerHandle* handle = static_cast<PollerHandle*>(epe.data.ptr);
+            void* dataPtr = epe.data.ptr;
 
-            PollerHandlePrivate& eh = *handle->impl;
+            // Check if this is an interrupt
+            PollerPrivate::InterruptHandle& interruptHandle = impl->interruptHandle;
+            if (dataPtr == &interruptHandle) {
+                PollerHandle* wrappedHandle = 0;
+                {
+                ScopedLock<Mutex> l(interruptHandle.impl->lock);
+                if (interruptHandle.impl->isActive()) {
+                    wrappedHandle = interruptHandle.getHandle();
+                    // If there is an interrupt queued behind this one we need to arm it
+                    // We do it this way so that another thread can pick it up
+                    if (interruptHandle.queuedHandles()) {
+                        impl->interrupt();
+                        interruptHandle.impl->setActive();
+                    } else {
+                        interruptHandle.impl->setInactive();
+                    }
+                }
+                }
+                if (wrappedHandle) {
+                    ScopedLock<Mutex> l(wrappedHandle->impl->lock);
+                    if (!wrappedHandle->impl->isDeleted()) {
+                        wrappedHandle->impl->setInactive();
+                        return Event(wrappedHandle, INTERRUPTED);
+                    }
+                    PollerHandleDeletionManager.markForDeletion(wrappedHandle->impl);
+                }
+                continue;
+            }
+
+            // Check for shutdown
+            if (impl->isShutdown) {
+                PollerHandleDeletionManager.markAllUnusedInThisThread();
+                return Event(0, SHUTDOWN);
+            }
+
+            PollerHandlePrivate& eh = *static_cast<PollerHandlePrivate*>(dataPtr);
             ScopedLock<Mutex> l(eh.lock);
             
             // the handle could have gone inactive since we left the epoll_wait
             if (eh.isActive()) {
-
-                // Check if this is an interrupt
-                if (handle == &impl->interruptHandle) {
-                	PollerHandle* wrappedHandle = impl->interruptHandle.getHandle();
-                	// If there is an interrupt queued behind this one we need to arm it
-                	// We do it this way so that another thread can pick it up
-                	if (impl->interruptHandle.queuedHandles()) {
-                		impl->interrupt();
-                		eh.setActive();
-                	} else {
-                		eh.setInactive();
-                	}
-                	return Event(wrappedHandle, INTERRUPTED);
-                }
+                PollerHandle* handle = eh.pollerHandle;
 
                 // If the connection has been hungup we could still be readable
                 // (just not writable), allow us to readable until we get here again

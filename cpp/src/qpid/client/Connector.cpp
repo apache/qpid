@@ -220,6 +220,7 @@ bool TCPConnector::closeInternal() {
     bool ret = !closed;
     if (!closed) {
         closed = true;
+        aio->queueForDeletion();
         poller->shutdown();
     }
     if (!joined && receiver.id() != Thread::current().id()) {
@@ -384,14 +385,13 @@ void TCPConnector::run() {
     assert(protect);
     try {
         Dispatcher d(poller);
-	
+
         for (int i = 0; i < 32; i++) {
             aio->queueReadBuffer(new Buff(maxFrameSize));
         }
-	
+
         aio->start(poller);
         d.run();
-        aio->queueForDeletion();
         socket.close();
     } catch (const std::exception& e) {
         QPID_LOG(error, QPID_MSG("FAIL " << identifier << ": " << e.what()));
