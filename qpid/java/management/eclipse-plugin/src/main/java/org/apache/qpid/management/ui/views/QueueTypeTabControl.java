@@ -271,11 +271,49 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         for (AttributeData data : list)
         {
             ManagedBean mbean = _queueDepthMap.get(data);
-            String value = data.getValue().toString();
-            items[i++] = mbean.getName() + " (" + value + " KB)";
+            items[i++] = mbean.getName() + " (" + getQueueDepthString(mbean, data) + ")";
         }
         getListWidget().setItems(items);
     }
+    
+    private String getQueueDepthString(ManagedBean mbean, AttributeData data)
+    {
+        if (mbean.getVersion() == 1)  //mbean returns KB
+        {
+            Long value = (Long)data.getValue();
+            
+            Double mb = 1024.0;
+            
+            if(value > mb) //MB
+            {
+                return String.format("%.3f", (Double)(value / mb)) + " MB";
+            }
+            else //KB
+            {
+                return data.getValue().toString() + " KB";
+            }
+        }
+        else //mbean returns Bytes
+        {
+            Long value = (Long)data.getValue();
+            
+            double mb = 1024.0 * 1024.0;
+            double kb = 1024.0;
+            
+            if(value >= mb) //MB
+            {
+                return String.format("%.3f", (Double)(value / mb)) + " MB";
+            }
+            else if (value >= kb) //KB
+            {
+                return String.format("%.3f", (Double)(value / kb)) + " KB";
+            }
+            else //Bytes
+            {
+                return data.getValue().toString() + " Bytes";
+            }
+        }
+    }    
     
     private void sortQueuesByConsumerCount()
     {
