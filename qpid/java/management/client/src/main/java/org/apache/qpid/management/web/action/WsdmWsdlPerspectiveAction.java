@@ -35,6 +35,7 @@ import org.apache.muse.core.proxy.ProxyHandler;
 import org.apache.muse.core.proxy.ReflectionProxyHandler;
 import org.apache.muse.util.xml.XmlUtils;
 import org.apache.muse.ws.addressing.EndpointReference;
+import org.apache.muse.ws.metadata.WsxConstants;
 import org.apache.muse.ws.resource.remote.WsResourceClient;
 import org.apache.qpid.management.Names;
 import org.w3c.dom.Element;
@@ -44,7 +45,7 @@ import org.w3c.dom.NodeList;
 public class WsdmWsdlPerspectiveAction extends HttpServlet
 {
 	private static final long serialVersionUID = -2411413147821629363L;
-	private static final Object [] WSDL_DIALECT = new Object[]{"http://schemas.xmlsoap.org/wsdl/"};
+	private static final Object [] WSDL_DIALECT = new Object[]{WsxConstants.WSDL_DIALECT};
 	
 	private ProxyHandler proxyHandler;
 	
@@ -54,10 +55,14 @@ public class WsdmWsdlPerspectiveAction extends HttpServlet
 	public void init() throws ServletException
 	{
 		proxyHandler  = new ReflectionProxyHandler();
-		proxyHandler.setAction("http://schemas.xmlsoap.org/ws/2004/09/mex/GetMetadata");
-		proxyHandler.setRequestName(new QName("http://schemas.xmlsoap.org/ws/2004/09/mex", "GetMetadata", Names.PREFIX));
-		proxyHandler.setRequestParameterNames(new QName[]{new QName("http://schemas.xmlsoap.org/ws/2004/09/mex", "Dialect", Names.PREFIX)});
-		proxyHandler.setResponseName(new QName("http://schemas.xmlsoap.org/ws/2004/09/mex", "Metadata", Names.PREFIX));
+		proxyHandler.setAction(WsxConstants.GET_METADATA_URI);
+		proxyHandler.setRequestName(WsxConstants.GET_METADATA_QNAME);
+		proxyHandler.setRequestParameterNames(new QName[]{
+				new QName(
+						WsxConstants.NAMESPACE_URI, 
+						WsxConstants.DIALECT, 
+						WsxConstants.PREFIX)});
+		proxyHandler.setResponseName(WsxConstants.METADATA_QNAME);
 		proxyHandler.setReturnType(Element[].class);
 	}
 	
@@ -72,6 +77,7 @@ public class WsdmWsdlPerspectiveAction extends HttpServlet
 
 			String wsresourceid = objectName.getKeyProperty(Names.OBJECT_ID);
 			EndpointReference resourceEndpointReference = new EndpointReference(getURI(request));
+			
 			resourceEndpointReference.addParameter(
 					Names.RESOURCE_ID_QNAME, 
 					wsresourceid);

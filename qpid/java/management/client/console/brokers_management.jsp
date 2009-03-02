@@ -97,7 +97,7 @@
 	                        					Virtual Host : 
 	                        				</td>
 	                        				<td>
-	                        					<input type="text" name="port"/>
+	                        					<input type="text" name="virtualHost"/>
 	                        				</td>
 	                        				<td style="font-size: x-small;">
 	                        					The virtual host name.
