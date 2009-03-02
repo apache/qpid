@@ -24,7 +24,7 @@ SPEC_CACHE_SCRIPT = sc.rb
 
 .PHONY: spec_cache all clean distclean
 
-all : $(SASL_MODULE) spec_cache
+all : build
 
 $(SASL_MODULE) : $(SASL_DIR)/sasl.c
 	cd $(SASL_DIR);	ruby extconf.rb
@@ -35,6 +35,8 @@ spec_cache :
 	echo "Qpid::Spec010::load()" >> $(SPEC_CACHE_SCRIPT)
 	ruby -I $(RUBY_LIB) -I $(SASL_DIR) $(SPEC_CACHE_SCRIPT)
 	rm $(SPEC_CACHE_SCRIPT)
+
+build: $(SASL_MODULE) spec_cache
 
 clean:
 	cd $(SASL_DIR); make clean
