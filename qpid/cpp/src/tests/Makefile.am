@@ -201,7 +201,6 @@ PollerTest_LDADD=$(lib_common)
 check_PROGRAMS+=DispatcherTest
 DispatcherTest_SOURCES=DispatcherTest.cpp
 DispatcherTest_LDADD=$(lib_common)
-DispatcherTest_CXXFLAGS=$(AM_CXXFLAGS) -Wno-missing-field-initializers
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 
