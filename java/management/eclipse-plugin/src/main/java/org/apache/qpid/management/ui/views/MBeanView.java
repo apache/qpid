@@ -136,8 +136,7 @@ public class MBeanView extends ViewPart
     {
         try
         {
-            if (_selectedNode == null || NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
-                NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
+            if (_selectedNode == null || NODE_TYPE_SERVER.equals(_selectedNode.getType()))
             {
                 return;
             }
@@ -177,8 +176,7 @@ public class MBeanView extends ViewPart
      */
     private void setServer()
     {
-        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
-            NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
+        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()))
         {
             _server = (ManagedServer)_selectedNode.getManagedObject();
             _virtualHostName = null;
