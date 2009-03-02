@@ -114,7 +114,7 @@ public class QueueConfiguration
 
     public long getMemoryUsageMaximum()
     {
-        return _config.getLong("maximumMemoryUsage", 0);
+        return _config.getLong("maximumMemoryUsage", -1);
     }
 
     public long getMemoryUsageMinimum()

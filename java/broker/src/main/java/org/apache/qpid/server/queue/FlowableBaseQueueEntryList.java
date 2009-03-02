@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,25 +31,29 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** This is an abstract base class to handle */
-public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryList
+public abstract class FlowableBaseQueueEntryList implements QueueEntryList
 {
-    private static final Logger _log = Logger.getLogger(FlowableBaseQueueEntryList.class);
+    protected static final Logger _log = Logger.getLogger(FlowableBaseQueueEntryList.class);
 
     private final AtomicInteger _atomicQueueCount = new AtomicInteger(0);
     private final AtomicLong _atomicQueueSize = new AtomicLong(0L);
-    private final AtomicLong _atomicQueueInMemory = new AtomicLong(0L);
+    protected final AtomicLong _atomicQueueInMemory = new AtomicLong(0L);
     /** The maximum amount of memory that is allocated to this queue. Beyond this the queue will flow to disk. */
 
-    private long _memoryUsageMaximum = 0;
+    protected long _memoryUsageMaximum = -1L;
 
     /** The minimum amount of memory that is allocated to this queue. If the queueDepth hits this level then more flowed data can be read in. */
-    private long _memoryUsageMinimum = 0;
+    protected long _memoryUsageMinimum = 0;
     private volatile AtomicBoolean _flowed;
     private QueueBackingStore _backingStore;
     protected AMQQueue _queue;
     private Executor _inhaler;
+    private Executor _purger;
     private AtomicBoolean _stopped;
     private AtomicReference<MessageInhaler> _asynchronousInhaler = new AtomicReference(null);
+    protected boolean _disabled;
+    private AtomicReference<MessagePurger> _asynchronousPurger = new AtomicReference(null);
+    private static final int BATCH_INHALE_COUNT = 100;
 
     FlowableBaseQueueEntryList(AMQQueue queue)
     {
@@ -64,6 +67,8 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
 
         _stopped = new AtomicBoolean(false);
         _inhaler = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
+        _purger = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
+        _disabled = true;
     }
 
     public void setFlowed(boolean flowed)
@@ -71,7 +76,23 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
         if (_flowed.get() != flowed)
         {
             _log.warn("Marking Queue(" + _queue.getName() + ") as flowed (" + flowed + ")");
+            showUsage();
             _flowed.set(flowed);
+        }
+    }
+
+    protected void showUsage()
+    {
+        showUsage("");
+    }
+
+    protected void showUsage(String prefix)
+    {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug(prefix + " Queue(" + _queue + ":" + _queue.getName() + ") usage:" + memoryUsed()
+                       + "/" + getMemoryUsageMinimum() + "<>" + getMemoryUsageMaximum()
+                       + "/" + dataSize());
         }
     }
 
@@ -99,19 +120,36 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
     {
         _memoryUsageMaximum = maximumMemoryUsage;
 
+        if (maximumMemoryUsage >= 0)
+        {
+            _disabled = false;
+        }
+
         // Don't attempt to start the inhaler/purger unless we have a minimum value specified.
         if (_memoryUsageMaximum > 0)
         {
-            if (_memoryUsageMinimum == 0)
-            {
-                setMemoryUsageMinimum(_memoryUsageMaximum / 2);
-            }
+            setMemoryUsageMinimum(_memoryUsageMaximum / 2);
 
             // if we have now have to much memory in use we need to purge.
             if (_memoryUsageMaximum < _atomicQueueInMemory.get())
             {
                 startPurger();
             }
+        }
+        else if (_memoryUsageMaximum == 0)
+        {
+            if (_atomicQueueInMemory.get() > 0)
+            {
+                startPurger();
+            }
+        }
+        else
+        {
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Disabling Flow to Disk for queue:" + _queue.getName());
+            }
+            _disabled = true;
         }
     }
 
@@ -134,7 +172,9 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
     private void checkAndStartLoader()
     {
         // If we've increased the minimum memory above what we have in memory then we need to inhale more
-        if (_atomicQueueInMemory.get() <= _memoryUsageMinimum)
+        long inMemory = _atomicQueueInMemory.get();
+        // Can't check if inMemory == 0 or we will cause the inhaler thread to continually run.
+        if (inMemory < _memoryUsageMinimum || _memoryUsageMinimum == 0)
         {
             startInhaler();
         }
@@ -142,22 +182,22 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
 
     private void startInhaler()
     {
-        if (_flowed.get())
-        {
-            MessageInhaler inhaler = new MessageInhaler();
+        MessageInhaler inhaler = new MessageInhaler();
 
-            if (_asynchronousInhaler.compareAndSet(null, inhaler))
-            {
-                _inhaler.execute(inhaler);
-            }
+        if (_asynchronousInhaler.compareAndSet(null, inhaler))
+        {
+            _inhaler.execute(inhaler);
         }
     }
 
     private void startPurger()
     {
-       //TODO create purger, used when maxMemory is reduced creating over memory situation.
-       _log.warn("Requested Purger Start.. purger TBC.");
-       //_purger.execute(new MessagePurger(this));
+        MessagePurger purger = new MessagePurger();
+
+        if (_asynchronousPurger.compareAndSet(null, purger))
+        {
+            _purger.execute(purger);
+        }
     }
 
     public long getMemoryUsageMinimum()
@@ -165,26 +205,30 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
         return _memoryUsageMinimum;
     }
 
+    /**
+     * Only to be called by the QueueEntry
+     *
+     * @param queueEntry the entry to unload
+     */
     public void unloadEntry(QueueEntry queueEntry)
     {
-        try
+        if (_atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
         {
-            queueEntry.unload();
-            _atomicQueueInMemory.addAndGet(-queueEntry.getSize());
-            checkAndStartLoader();
+            _log.error("InMemory Count just went below 0:" + queueEntry.debugIdentity());
         }
-        catch (UnableToFlowMessageException e)
-        {
-            _atomicQueueInMemory.addAndGet(queueEntry.getSize());
-        }
+        checkAndStartLoader();
     }
 
+    /**
+     * Only to be called from the QueueEntry
+     *
+     * @param queueEntry the entry to load
+     */
     public void loadEntry(QueueEntry queueEntry)
     {
-        queueEntry.load();
-        if( _atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
+        if (_atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
         {
-            _log.error("Loaded to much data!:"+_atomicQueueInMemory.get()+"/"+_memoryUsageMaximum);
+            _log.error("Loaded to much data!:" + _atomicQueueInMemory.get() + "/" + _memoryUsageMaximum);
         }
     }
 
@@ -196,43 +240,20 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
             // rather than actively shutdown our threads.
             //Shutdown thread for inhaler.
             ReferenceCountingExecutorService.getInstance().releaseExecutorService();
+            ReferenceCountingExecutorService.getInstance().releaseExecutorService();
         }
-    }
-
-    protected boolean willCauseFlowToDisk(QueueEntryImpl queueEntry)
-    {
-        return _memoryUsageMaximum != 0 && memoryUsed() + queueEntry.getSize() > _memoryUsageMaximum;
     }
 
     protected void incrementCounters(final QueueEntryImpl queueEntry)
     {
         _atomicQueueCount.incrementAndGet();
         _atomicQueueSize.addAndGet(queueEntry.getSize());
-        if (!willCauseFlowToDisk(queueEntry))
-        {
-            _atomicQueueInMemory.addAndGet(queueEntry.getSize());
-        }
-        else
+        long inUseMemory = _atomicQueueInMemory.addAndGet(queueEntry.getSize());
+
+        if (!_disabled && inUseMemory > _memoryUsageMaximum)
         {
             setFlowed(true);
-            flowingToDisk(queueEntry);
-        }
-    }
-
-    /**
-     * Called when we are now flowing to disk
-     *
-     * @param queueEntry the entry that is being flowed to disk
-     */
-    protected void flowingToDisk(QueueEntryImpl queueEntry)
-    {
-        try
-        {
             queueEntry.unload();
-        }
-        catch (UnableToFlowMessageException e)
-        {
-            _atomicQueueInMemory.addAndGet(queueEntry.getSize());
         }
     }
 
@@ -242,7 +263,10 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
         _atomicQueueSize.addAndGet(-queueEntry.getSize());
         if (!queueEntry.isFlowed())
         {
-            _atomicQueueInMemory.addAndGet(-queueEntry.getSize());
+            if (_atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+            {
+                _log.error("InMemory Count just went below 0 on dequeue.");
+            }
         }
     }
 
@@ -270,32 +294,53 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
 
     private void inhaleList(MessageInhaler messageInhaler)
     {
-        _log.info("Inhaler Running");
+        if (_log.isInfoEnabled())
+        {
+            _log.info("Inhaler Running:" + _queue.getName());
+            showUsage("Inhaler Running:" + _queue.getName());
+        }
         // If in memory count is at or over max then we can't inhale
         if (_atomicQueueInMemory.get() >= _memoryUsageMaximum)
         {
-            _log.debug("Unable to start inhaling as we are already over quota:" +
-                       _atomicQueueInMemory.get() + ">=" + _memoryUsageMaximum);
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Unable to start inhaling as we are already over quota:" +
+                           _atomicQueueInMemory.get() + ">=" + _memoryUsageMaximum);
+            }
             return;
         }
 
         _asynchronousInhaler.compareAndSet(messageInhaler, null);
-        while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) && _asynchronousInhaler.compareAndSet(null, messageInhaler))
+        int inhaled = 0;
+
+        while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) && (inhaled < BATCH_INHALE_COUNT)
+               && _asynchronousInhaler.compareAndSet(null, messageInhaler))
         {
             QueueEntryIterator iterator = iterator();
 
-            while (!iterator.getNode().isAvailable() && iterator.advance())
+            // If the inhaler is running and delivery rate picks up ensure that we just don't chase the delivery thread.
+            while ((_atomicQueueInMemory.get() < _memoryUsageMaximum)
+                   && !iterator.getNode().isAvailable() && iterator.advance())
             {
                 //Find first AVAILABLE node
             }
 
-            while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) && !iterator.atTail())
+            while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) && (inhaled < BATCH_INHALE_COUNT) && !iterator.atTail())
             {
                 QueueEntry entry = iterator.getNode();
 
                 if (entry.isAvailable() && entry.isFlowed())
                 {
-                    loadEntry(entry);
+                    if (_atomicQueueInMemory.get() + entry.getSize() > _memoryUsageMaximum)
+                    {
+                        // We don't have space for this message so we need to stop inhaling.
+                        inhaled = BATCH_INHALE_COUNT;
+                    }
+                    else
+                    {
+                        loadEntry(entry);
+                        inhaled++;
+                    }
                 }
 
                 iterator.advance();
@@ -309,13 +354,100 @@ public abstract class FlowableBaseQueueEntryList implements FlowableQueueEntryLi
             _asynchronousInhaler.set(null);
         }
 
+        if (_log.isInfoEnabled())
+        {
+            _log.info("Inhaler Stopping:" + _queue.getName());
+            showUsage("Inhaler Stopping:" + _queue.getName());
+        }
+
         //If we have become flowed or have more capacity since we stopped then schedule the thread to run again.
         if (_flowed.get() && _atomicQueueInMemory.get() < _memoryUsageMaximum)
         {
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Rescheduling Inhaler:" + _queue.getName());
+            }
             _inhaler.execute(messageInhaler);
-
         }
 
     }
 
+    private class MessagePurger implements Runnable
+    {
+        public void run()
+        {
+            String threadName = Thread.currentThread().getName();
+            Thread.currentThread().setName("Purger-" + _queue.getVirtualHost().getName() + "-" + _queue.getName());
+            try
+            {
+                purgeList(this);
+            }
+            finally
+            {
+                Thread.currentThread().setName(threadName);
+            }
+        }
+    }
+
+    private void purgeList(MessagePurger messagePurger)
+    {
+        // If in memory count is at or over max then we can't inhale
+        if (_atomicQueueInMemory.get() <= _memoryUsageMinimum)
+        {
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Unable to start purging as we are already below our minimum cache level:" +
+                           _atomicQueueInMemory.get() + "<=" + _memoryUsageMinimum);
+            }
+            return;
+        }
+
+        _asynchronousPurger.compareAndSet(messagePurger, null);
+
+        while ((_atomicQueueInMemory.get() >= _memoryUsageMinimum) && _asynchronousPurger.compareAndSet(null, messagePurger))
+        {
+            QueueEntryIterator iterator = iterator();
+
+            while (!iterator.getNode().isAvailable() && iterator.advance())
+            {
+                //Find first AVAILABLE node
+            }
+
+            // Count up the memory usage
+            long memoryUsage = 0;
+            while ((memoryUsage < _memoryUsageMaximum) && !iterator.atTail())
+            {
+                QueueEntry entry = iterator.getNode();
+
+                if (entry.isAvailable() && !entry.isFlowed())
+                {
+                    memoryUsage += entry.getSize();
+                }
+
+                iterator.advance();
+            }
+
+            //Purge remainging mesages on queue
+            while (!iterator.atTail())
+            {
+                QueueEntry entry = iterator.getNode();
+
+                if (entry.isAvailable() && !entry.isFlowed())
+                {
+                    entry.unload();
+                }
+
+                iterator.advance();
+            }
+
+            _asynchronousInhaler.set(null);
+        }
+
+        //If we have become flowed or have more capacity since we stopped then schedule the thread to run again.
+        if (_flowed.get() && _atomicQueueInMemory.get() < _memoryUsageMaximum)
+        {
+            _inhaler.execute(messagePurger);
+
+        }
+    }
 }

@@ -393,17 +393,34 @@ public class QueueEntryImpl implements QueueEntry
         return false;
     }
 
-    public void unload() throws UnableToFlowMessageException
+    public void unload()
     {
         if (_message != null && _backingStore != null)
         {
-            if(_log.isDebugEnabled())
+
+            try
             {
-                _log.debug("Unloading:" + debugIdentity());
+                _backingStore.unload(_message);
+
+                if(_log.isDebugEnabled())
+                {
+                    _log.debug("Unloaded:" + debugIdentity());
+                }
+
+                _message = null;
+                //Update the memoryState if this load call resulted in the message being purged from memory                
+                if (!_flowed.getAndSet(true))
+                {
+                    _queueEntryList.unloadEntry(this);
+                }
+
+            } catch (UnableToFlowMessageException utfme) {
+                // There is no recovery needed as the memory states remain unchanged.
+                if(_log.isDebugEnabled())
+                {
+                    _log.debug("Unable to Flow message:" + debugIdentity() + ", due to:" + utfme.getMessage());
+                }
             }
-            _backingStore.unload(_message);
-            _message = null;
-            _flowed.getAndSet(true);
         }
     }
 
@@ -412,11 +429,17 @@ public class QueueEntryImpl implements QueueEntry
         if (_messageId != null && _backingStore != null)
         {
             _message = _backingStore.load(_messageId);
+
             if(_log.isDebugEnabled())
             {
-                _log.debug("Loading:" + debugIdentity());
+                _log.debug("Loaded:" + debugIdentity());
             }
-            _flowed.getAndSet(false);
+
+            //Update the memoryState if this load call resulted in the message comming in to memory
+            if (_flowed.getAndSet(false))
+            {
+                _queueEntryList.loadEntry(this);
+            }
         }
     }
 
