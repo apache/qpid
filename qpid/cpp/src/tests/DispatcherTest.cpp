@@ -170,10 +170,10 @@ int main(int /*argc*/, char** /*argv*/)
     rc = ::sigaction(SIGRTMIN, &sa,0);
     assert(rc == 0);
     
-    ::sigevent se={};
+    ::sigevent se;
+    ::memset(&se, 0, sizeof(se)); // Clear to make valgrind happy (this *is* the neatest way to do this portably - sigh)
     se.sigev_notify = SIGEV_SIGNAL;
     se.sigev_signo = SIGRTMIN;
-    se.sigev_value.sival_ptr = 0;
     rc = ::timer_create(CLOCK_REALTIME, &se, &timer);
     assert(rc == 0);
     
