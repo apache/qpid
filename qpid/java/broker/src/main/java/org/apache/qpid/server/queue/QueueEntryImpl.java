@@ -411,7 +411,7 @@ public class QueueEntryImpl implements QueueEntry
                 //Update the memoryState if this load call resulted in the message being purged from memory                
                 if (!_flowed.getAndSet(true))
                 {
-                    _queueEntryList.unloadEntry(this);
+                    _queueEntryList.entryUnloadedUpdateMemory(this);
                 }
 
             } catch (UnableToFlowMessageException utfme) {
@@ -438,7 +438,7 @@ public class QueueEntryImpl implements QueueEntry
             //Update the memoryState if this load call resulted in the message comming in to memory
             if (_flowed.getAndSet(false))
             {
-                _queueEntryList.loadEntry(this);
+                _queueEntryList.entryLoadedUpdateMemory(this);
             }
         }
     }

@@ -434,7 +434,9 @@ public class SimpleAMQQueueTest extends TestCase
         NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
 
         MESSAGE_SIZE = 1;
-        long MEMORY_MAX = 10;
+        /** Set to larger than the purge batch size. Default 100.
+         * @see FlowableBaseQueueEntryList.BATCH_PROCESS_COUNT */ 
+        long MEMORY_MAX = 500;
         int MESSAGE_COUNT = (int) MEMORY_MAX;
         //Set the Memory Usage to be very low
         _queue.setMemoryUsageMaximum(MEMORY_MAX);
@@ -457,8 +459,14 @@ public class SimpleAMQQueueTest extends TestCase
 
         _queue.setMemoryUsageMaximum(0L);
 
-        //Give the purger time to work
-        Thread.sleep(200);
+        //Give the purger time to work maximum of 1s
+        int slept = 0;
+        while (_queue.getMemoryUsageCurrent() > 0 && slept < 5)
+        {
+            Thread.yield();
+            Thread.sleep(200);
+            slept++;
+        }
 
         assertEquals(MESSAGE_COUNT + 1, _queue.getMessageCount());
         assertEquals(0L , _queue.getMemoryUsageCurrent());

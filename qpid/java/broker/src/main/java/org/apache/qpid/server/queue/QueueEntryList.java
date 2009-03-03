@@ -54,13 +54,13 @@ public interface QueueEntryList
      * Immediately update memory usage based on the unload of this queueEntry, potentially start inhaler.
      * @param queueEntry the entry that has been unloaded
      */
-    void unloadEntry(QueueEntry queueEntry);
+    void entryUnloadedUpdateMemory(QueueEntry queueEntry);
 
     /**
      * Immediately update memory usage based on the load of this queueEntry
      * @param queueEntry the entry that has been loaded
      */
-    void loadEntry(QueueEntry queueEntry);
+    void entryLoadedUpdateMemory(QueueEntry queueEntry);
 
     void stop();
 }
