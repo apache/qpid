@@ -505,8 +505,10 @@ public class ServerConfiguration implements SignalHandler
         _config.setProperty("housekeeping.expiredMessageCheckPeriod", value);
     }
 
-    public long getHousekeepingExpiredMessageCheckPeriod()
+    public long getHousekeepingCheckPeriod()
     {
-        return _config.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+        return _config.getLong("housekeeping.checkPeriod", 
+                   _config.getLong("housekeeping.expiredMessageCheckPeriod", 
+                           DEFAULT_HOUSEKEEPING_PERIOD));
     }
 }

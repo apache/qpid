@@ -623,14 +623,14 @@ public class ServerConfigurationTest extends TestCase
     {
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        assertEquals(30000, serverConfig.getHousekeepingExpiredMessageCheckPeriod());
+        assertEquals(30000, serverConfig.getHousekeepingCheckPeriod());
 
         // Check value we set
         _config.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
         serverConfig = new ServerConfiguration(_config);
-        assertEquals(23, serverConfig.getHousekeepingExpiredMessageCheckPeriod());
+        assertEquals(23, serverConfig.getHousekeepingCheckPeriod());
         serverConfig.setHousekeepingExpiredMessageCheckPeriod(42L);
-        assertEquals(42, serverConfig.getHousekeepingExpiredMessageCheckPeriod());
+        assertEquals(42, serverConfig.getHousekeepingCheckPeriod());
     }
 
     public void testSingleConfiguration() throws IOException, ConfigurationException
