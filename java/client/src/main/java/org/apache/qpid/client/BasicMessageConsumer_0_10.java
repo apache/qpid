@@ -386,13 +386,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         if (o == null && _0_10session.isStarted())
         {
             _0_10session.getQpidSession().messageFlush
-                (getConsumerTagString(), Option.UNRELIABLE);
+                (getConsumerTagString(), Option.UNRELIABLE, Option.SYNC);
             _0_10session.getQpidSession().sync();
+            _0_10session.getQpidSession().messageFlow
+                (getConsumerTagString(), MessageCreditUnit.BYTE,
+                 0xFFFFFFFF, Option.UNRELIABLE);
             if (getSession().prefetch())
             {
-                _0_10session.getQpidSession().messageFlow
-                    (getConsumerTagString(), MessageCreditUnit.BYTE,
-                     0xFFFFFFFF, Option.UNRELIABLE);
                 _0_10session.getQpidSession().messageFlow
                     (getConsumerTagString(), MessageCreditUnit.MESSAGE,
                      _0_10session.getAMQConnection().getMaxPrefetch(),
