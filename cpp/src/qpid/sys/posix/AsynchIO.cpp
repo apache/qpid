@@ -474,7 +474,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                     break;
                 } else {
                     // Report error then just treat as a socket disconnect
-                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(rc) << "(" << rc << ")" );
+                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(errno) << "(" << errno << ")" );
                     eofCallback(*this);
                     h.unwatchRead();
                     break;
