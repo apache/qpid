@@ -74,7 +74,7 @@ void FrameDecoder::setFragment(const char* data, size_t size) {
 }
 
 std::pair<const char*, size_t> FrameDecoder::getFragment() const {
-    return std::pair<const char*, size_t>(fragment.data(), fragment.size());
+    return std::pair<const char*, size_t>(&fragment[0], fragment.size());
 }
 
 }} // namespace qpid::framing
