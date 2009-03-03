@@ -70,7 +70,7 @@ bool FrameDecoder::decode(Buffer& buffer) {
 
 void FrameDecoder::setFragment(const char* data, size_t size) {
     fragment.resize(size);
-    ::memcpy(fragment.data(), data, size);
+    ::memcpy(&fragment[0], data, size);
 }
 
 std::pair<const char*, size_t> FrameDecoder::getFragment() const {
