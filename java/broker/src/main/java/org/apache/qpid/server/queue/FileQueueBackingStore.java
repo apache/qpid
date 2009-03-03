@@ -245,14 +245,18 @@ public class FileQueueBackingStore implements QueueBackingStore
         }
         finally
         {
-            try
+            // In a FileNotFound situation writer will be null.
+            if (writer != null)
             {
-                writer.flush();
-                writer.close();
-            }
-            catch (IOException e)
-            {
-                error = e;
+                try
+                {
+                    writer.flush();
+                    writer.close();
+                }
+                catch (IOException e)
+                {
+                    error = e;
+                }
             }
         }
 
