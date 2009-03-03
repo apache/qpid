@@ -79,13 +79,17 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
             long reclaimed = 0;
 
             //work down the priorities looking for memory
-            int scavangeIndex = _priorities - 1;
 
             //First: Don't take all the memory. So look for a queue that has more than 50% free
-
             long currentMax;
+            int scavangeIndex = 0;
 
-            while (scavangeIndex >= 0 && reclaimed <= requriedSize)
+            if (scavangeIndex == index)
+            {
+                scavangeIndex++;
+            }
+
+            while (scavangeIndex < _priorities  && reclaimed <= requriedSize)
             {
                 currentMax = _priorityLists[scavangeIndex].getMemoryUsageMaximum();
                 long used = _priorityLists[scavangeIndex].memoryUsed();
@@ -105,15 +109,24 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
                 }
                 else
                 {
-                    scavangeIndex--;
+                    scavangeIndex++;
+                    if (scavangeIndex == index)
+                    {
+                        scavangeIndex++;
+                    }
                 }
-            }
+            }                                   
 
-            //Second: Just take the memory we need
-            if (scavangeIndex == -1)
+            //Second: Just take the free memory we need
+            if (scavangeIndex == _priorities)
             {
-                scavangeIndex = _priorities - 1;
-                while (scavangeIndex >= 0 && reclaimed <= requriedSize)
+                scavangeIndex = 0;
+                if (scavangeIndex == index)
+                {
+                    scavangeIndex++;
+                }
+
+                while (scavangeIndex < _priorities && reclaimed <= requriedSize)
                 {
                     currentMax = _priorityLists[scavangeIndex].getMemoryUsageMaximum();
                     long used = _priorityLists[scavangeIndex].memoryUsed();
@@ -139,7 +152,51 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
                     }
                     else
                     {
-                        scavangeIndex--;
+                        scavangeIndex++;
+                        if (scavangeIndex == index)
+                        {
+                            scavangeIndex++;
+                        }
+                    }
+                }
+
+                //Third: Take required memory
+                if (scavangeIndex == _priorities)
+                {
+                    scavangeIndex = 0;
+                    if (scavangeIndex == index)
+                    {
+                        scavangeIndex++;
+                    }
+                    while (scavangeIndex < _priorities && reclaimed <= requriedSize)
+                    {
+                        currentMax = _priorityLists[scavangeIndex].getMemoryUsageMaximum();
+
+                        if (currentMax > 0 )
+                        {
+                            long newMax = currentMax;
+                            // Just take the amount of space required for this message.
+                            if (newMax > requriedSize)
+                            {
+                                newMax = requriedSize;
+                            }
+                            _priorityLists[scavangeIndex].setMemoryUsageMaximum(newMax);
+
+                            reclaimed += currentMax - newMax;
+                            if (_log.isDebugEnabled())
+                            {
+                                _log.debug("Reclaiming(3) :" + (currentMax - newMax) + "(" + reclaimed + "/" + requriedSize + ") from queue:" + scavangeIndex);
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            scavangeIndex++;
+                            if (scavangeIndex == index)
+                            {
+                                scavangeIndex++;
+                            }
+                        }
                     }
                 }
             }
@@ -159,7 +216,10 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
                 _log.debug("No space found.");
             }
 
-            showUsage();
+            if (_log.isTraceEnabled())
+            {
+                showUsage("Add");
+            }
         }
 
         return _priorityLists[index].add(message);
@@ -170,7 +230,10 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug(prefix);
+            if (prefix.length() != 0)
+            {
+                _log.debug(prefix);
+            }
             for (int index = 0; index < _priorities; index++)
             {
                 QueueEntryList queueEntryList = _priorityLists[index];
@@ -280,10 +343,16 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     {
         boolean flowed = false;
         boolean full = true;
-        showUsage();
+
+        if (_log.isTraceEnabled())
+        {
+            showUsage("isFlowed");
+        }
+
         for (QueueEntryList queueEntryList : _priorityLists)
         {
-            full = full && queueEntryList.getMemoryUsageMaximum() == queueEntryList.memoryUsed();
+            //full = full && queueEntryList.getMemoryUsageMaximum() == queueEntryList.memoryUsed();
+            full = full && queueEntryList.getMemoryUsageMaximum() <= queueEntryList.dataSize();
             flowed = flowed || (queueEntryList.isFlowed());
         }
         return flowed && full;
