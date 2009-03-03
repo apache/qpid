@@ -666,6 +666,7 @@ nobase_include_HEADERS = \
   qpid/management/ManagementEvent.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
+  qpid/sys/alloca.h \
   qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AsynchIOHandler.h \
