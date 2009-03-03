@@ -106,6 +106,16 @@ UpdateClient::~UpdateClient() {}
 // Reserved exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
 const std::string UpdateClient::UPDATE("qpid.qpid-update");
 
+void UpdateClient::run() {
+    try {
+        update();
+        done();
+    } catch (const std::exception& e) {
+        failed(e);
+    }
+    delete this;
+}
+
 void UpdateClient::update() {
     QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
     Broker& b = updaterBroker;
@@ -128,16 +138,6 @@ void UpdateClient::update() {
     client::ConnectionAccess::getImpl(connection)->handle(frame);
     connection.close();
     QPID_LOG(debug,  updaterId << " updated state to " << updateeId << " at " << updateeUrl);
-}
-
-void UpdateClient::run() {
-    try {
-        update();
-        done();
-    } catch (const std::exception& e) {
-        failed(e);
-    }
-    delete this;
 }
 
 namespace {
@@ -172,7 +172,13 @@ class MessageUpdater {
     }
 
     ~MessageUpdater() {
-        session.exchangeUnbind(queue, UpdateClient::UPDATE);
+        try {
+            session.exchangeUnbind(queue, UpdateClient::UPDATE);
+        }
+        catch (const std::exception& e) {
+            // Don't throw in a destructor.
+            QPID_LOG(error, "Unbinding update queue " << queue << ": " << e.what());
+        }
     }
 
 
@@ -204,10 +210,7 @@ class MessageUpdater {
     void updateMessage(const boost::intrusive_ptr<broker::Message>& message) {
         updateQueuedMessage(broker::QueuedMessage(0, message, haveLastPos? lastPos.getValue()+1 : 1));
     }
-    
-   
 };
-
 
 void UpdateClient::updateQueue(const boost::shared_ptr<Queue>& q) {
     QPID_LOG(debug, updaterId << " updating queue " << q->getName());
