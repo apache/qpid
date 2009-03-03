@@ -41,9 +41,9 @@ void ForkedBroker::kill(int sig) {
     if (::kill(savePid, sig) < 0) 
         throw ErrnoException("kill failed");
     int status;
-    if (::waitpid(savePid, &status, 0) < 0) 
+    if (::waitpid(savePid, &status, 0) < 0 && sig != 9) 
         throw ErrnoException("wait for forked process failed");
-    if (WEXITSTATUS(status) != 0) 
+    if (WEXITSTATUS(status) != 0 && sig != 9) 
         throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
 }
 
