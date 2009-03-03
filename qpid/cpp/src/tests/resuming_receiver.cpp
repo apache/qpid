@@ -114,11 +114,9 @@ void Listener::check()
     if (gaps) throw Exception("Detected gaps in sequence; messages appear to have been lost.");
 }
 
-void Listener::execute(AsyncSession& session, bool isRetry)
-{
-    if (isRetry) {
-        // std::cout << "Resuming from " << count << std::endl;
-    }
+void Listener::execute(AsyncSession& session, bool isRetry) {
+    if (verbosity > 0)
+        std::cout << "resuming_receiver " << (isRetry ? "first " : "re-") << "connect." << endl;
     if (!done) {
         SubscriptionManager subs(session);
         subscription = subs.subscribe(*this, "message_queue");
