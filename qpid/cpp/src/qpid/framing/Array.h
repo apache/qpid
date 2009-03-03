@@ -47,7 +47,7 @@ class Array
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
 
     QPID_COMMON_EXTERN int count() const;
-    bool operator==(const Array& other) const;
+    QPID_COMMON_EXTERN bool operator==(const Array& other) const;
 
     QPID_COMMON_EXTERN Array();
     QPID_COMMON_EXTERN Array(TypeCode type);
@@ -87,7 +87,7 @@ class Array
     TypeCode type;
     ValueVector values;
 
-    friend std::ostream& operator<<(std::ostream& out, const Array& body);
+    friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const Array& body);
 };
 
 }

@@ -42,7 +42,7 @@ private:
     uint64_t first;
 public:
     AgentAttachment() : first(0) {}
-    void setBanks(uint32_t broker, uint32_t bank);
+    QPID_COMMON_EXTERN void setBanks(uint32_t broker, uint32_t bank);
     uint64_t getFirst() const { return first; }
 };
 
@@ -64,7 +64,7 @@ public:
     QPID_COMMON_EXTERN bool operator<(const ObjectId &other) const;
     QPID_COMMON_EXTERN void encode(framing::Buffer& buffer);
     QPID_COMMON_EXTERN void decode(framing::Buffer& buffer);
-    friend std::ostream& operator<<(std::ostream&, const ObjectId&);
+    friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
 
 class ManagementItem {

@@ -245,7 +245,7 @@ class EncodedValue : public FieldValue::Data {
 
 class Str8Value : public FieldValue {
   public:
-    Str8Value(const std::string& v);
+    QPID_COMMON_EXTERN Str8Value(const std::string& v);
 };
 
 class Str16Value : public FieldValue {
@@ -261,12 +261,12 @@ class Struct32Value : public FieldValue {
 class FloatValue : public FieldValue
 {
   public:
-    FloatValue(float f);
+    QPID_COMMON_EXTERN FloatValue(float f);
 };
 class DoubleValue : public FieldValue
 {
   public:
-    DoubleValue(double f);
+    QPID_COMMON_EXTERN DoubleValue(double f);
 };
 
 /*
@@ -274,32 +274,32 @@ class DoubleValue : public FieldValue
  */
 class IntegerValue : public FieldValue {
   public:
-    IntegerValue(int v);
+    QPID_COMMON_EXTERN IntegerValue(int v);
 };
 
 class TimeValue : public FieldValue {
   public:
-    TimeValue(uint64_t v);
+    QPID_COMMON_EXTERN TimeValue(uint64_t v);
 };
 
 class Integer64Value : public FieldValue {
   public:
-    Integer64Value(int64_t v);
+    QPID_COMMON_EXTERN Integer64Value(int64_t v);
 };
 
 class Unsigned64Value : public FieldValue {
   public:
-    Unsigned64Value(uint64_t v);
+    QPID_COMMON_EXTERN Unsigned64Value(uint64_t v);
 };
 
 class FieldTableValue : public FieldValue {
   public:
-    FieldTableValue(const FieldTable&);
+    QPID_COMMON_EXTERN FieldTableValue(const FieldTable&);
 };
 
 class ArrayValue : public FieldValue {
   public:
-    ArrayValue(const Array&);
+    QPID_COMMON_EXTERN ArrayValue(const Array&);
 };
 
 template <class T>

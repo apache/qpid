@@ -1,5 +1,7 @@
+#ifndef QPID_SYS_ALLOCA_H
+#define QPID_SYS_ALLOCA_H
+
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,34 +20,20 @@
  * under the License.
  *
  */
-#include <iostream>
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQMethodBody.h"
-#include "qpid/framing/ExecutionSyncBody.h"
-#include "qpid/framing/Proxy.h"
 
-#include "unit_test.h"
+#if (defined(_WINDOWS) || defined (WIN32)) && defined(_MSC_VER)
+#include <malloc.h>
+#ifdef alloc
+#  undef alloc
+#endif
+#define alloc _alloc
+#ifdef alloca
+#  undef alloca
+#endif
+#define alloca _alloca
+#endif
+#if !defined _WINDOWS && !defined WIN32
+#include <alloca.h>
+#endif
 
-using namespace qpid::framing;
-
-QPID_AUTO_TEST_SUITE(ProxyTestSuite)
-
-
-QPID_AUTO_TEST_CASE(testScopedSync)
-{
-    struct DummyHandler : FrameHandler
-    {
-        void handle(AMQFrame& f) {
-            AMQMethodBody* m = f.getMethod();
-            BOOST_CHECK(m);
-            BOOST_CHECK(m->isA<ExecutionSyncBody>());
-            BOOST_CHECK(m->isSync());
-        }
-    };
-    DummyHandler f;
-    Proxy p(f);
-    Proxy::ScopedSync s(p);
-    p.send(ExecutionSyncBody(p.getVersion()));
-}
- 
-QPID_AUTO_TEST_SUITE_END()
+#endif  /*!QPID_SYS_ALLOCA_H*/

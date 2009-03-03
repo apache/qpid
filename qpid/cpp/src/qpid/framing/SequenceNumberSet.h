@@ -43,7 +43,7 @@ public:
     void decode(Buffer& buffer);
     uint32_t encodedSize() const;   
     QPID_COMMON_EXTERN SequenceNumberSet condense() const;
-    void addRange(const SequenceNumber& start, const SequenceNumber& end);
+    QPID_COMMON_EXTERN void addRange(const SequenceNumber& start, const SequenceNumber& end);
 
     template <class T>
     void processRanges(T& t) const
@@ -59,7 +59,7 @@ public:
         }
     }
 
-    friend std::ostream& operator<<(std::ostream&, const SequenceNumberSet&);
+    friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SequenceNumberSet&);
 };    
 
 

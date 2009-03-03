@@ -27,20 +27,20 @@ namespace log {
 namespace windows {
 
 struct SinkOptions : public qpid::log::SinkOptions {
-    SinkOptions(const std::string& argv0);
+    QPID_COMMON_EXTERN SinkOptions(const std::string& argv0);
     virtual ~SinkOptions() {}
 
-    virtual qpid::log::SinkOptions& operator=(const qpid::log::SinkOptions& rhs);
+    QPID_COMMON_EXTERN virtual qpid::log::SinkOptions& operator=(const qpid::log::SinkOptions& rhs);
 
     // This allows the caller to indicate that there's no normal outputs
     // available. For example, when running as a service. In these cases, the
     // platform's "syslog"-type output should replace the default stderr
     // unless some other sink has been selected.
-    virtual void detached(void);
+    QPID_COMMON_EXTERN virtual void detached(void);
 
     // The Logger acting on these options calls setup() to request any
     // Sinks be set up and fed back to the logger.
-    virtual void setup(qpid::log::Logger *logger);
+    QPID_COMMON_EXTERN virtual void setup(qpid::log::Logger *logger);
 
     bool logToStderr;
     bool logToStdout;

@@ -163,7 +163,7 @@ const AbsTime FAR_FUTURE = AbsTime::FarFuture();
 QPID_COMMON_EXTERN void sleep(int secs);
 
 /** Portable sleep for a number of microseconds */
-void usleep(uint64_t usecs);
+QPID_COMMON_EXTERN void usleep(uint64_t usecs);
 
 }}
 

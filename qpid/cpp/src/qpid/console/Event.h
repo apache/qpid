@@ -21,6 +21,7 @@
 #ifndef _QPID_CONSOLE_EVENT_H_
 #define _QPID_CONSOLE_EVENT_H_
 
+#include "ConsoleImportExport.h"
 #include "Object.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
@@ -75,7 +76,7 @@ namespace console {
         Object::AttributeMap attributes;
     };
 
-    std::ostream& operator<<(std::ostream& o, const Event& event);
+    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Event& event);
 }
 }
 

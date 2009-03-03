@@ -60,7 +60,7 @@ class SequenceSet : public RangeSet<SequenceNumber> {
             t(i->first(), i->last());
     }
 
-  friend std::ostream& operator<<(std::ostream&, const SequenceSet&);
+  friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SequenceSet&);
 };    
 
 }} // namespace qpid::framing

@@ -51,7 +51,7 @@ struct SessionPoint : boost::totally_ordered1<SessionPoint> {
     QPID_COMMON_EXTERN bool operator==(const SessionPoint&) const;
 };
 
-std::ostream& operator<<(std::ostream&, const SessionPoint&);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SessionPoint&);
 
 /**
  * Support for session idempotence barrier and resume as defined in

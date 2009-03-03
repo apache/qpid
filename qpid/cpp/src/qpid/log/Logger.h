@@ -49,8 +49,8 @@ class Logger : private boost::noncopyable {
      */
     class Output {
       public:
-        Output();
-        virtual ~Output();
+        QPID_COMMON_EXTERN Output();
+        QPID_COMMON_EXTERN virtual ~Output();
         /** Receives the statemnt of origin and formatted message to log. */
         virtual void log(const Statement&, const std::string&) =0;
     };

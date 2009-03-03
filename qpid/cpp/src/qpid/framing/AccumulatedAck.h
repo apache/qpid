@@ -59,13 +59,13 @@ namespace qpid {
              */
             std::list<Range> ranges;
 
-            explicit AccumulatedAck(SequenceNumber r = SequenceNumber());
-            void update(SequenceNumber firstTag, SequenceNumber lastTag);
-            void consolidate();
-            void clear();
-            bool covers(SequenceNumber tag) const;
+            QPID_COMMON_EXTERN explicit AccumulatedAck(SequenceNumber r = SequenceNumber());
+            QPID_COMMON_EXTERN void update(SequenceNumber firstTag, SequenceNumber lastTag);
+            QPID_COMMON_EXTERN void consolidate();
+            QPID_COMMON_EXTERN void clear();
+            QPID_COMMON_EXTERN bool covers(SequenceNumber tag) const;
             void collectRanges(SequenceNumberSet& set) const;
-            void update(const SequenceNumber cumulative, const SequenceNumberSet& range);
+            QPID_COMMON_EXTERN void update(const SequenceNumber cumulative, const SequenceNumberSet& range);
             void operator()(SequenceNumber first, SequenceNumber last) { update(first, last); }
         };
         QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const Range&);

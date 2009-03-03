@@ -42,7 +42,7 @@ class Subscription : public Handle<SubscriptionImpl> {
   public:
     QPID_CLIENT_EXTERN Subscription(SubscriptionImpl* si=0) : Handle<SubscriptionImpl>(si) {}
     
-    /** The name of the subsctription, used as the "destination" for messages from the broker.
+    /** The name of the subscription, used as the "destination" for messages from the broker.
      * Usually the same as the queue name but can be set differently.
      */
     QPID_CLIENT_EXTERN std::string getName() const;

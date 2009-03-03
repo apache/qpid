@@ -49,7 +49,7 @@ class SessionId : boost::totally_ordered1<SessionId> {
     QPID_COMMON_EXTERN bool operator<(const SessionId&) const ;
     QPID_COMMON_EXTERN bool operator==(const SessionId& id) const;
     // Convert to a string
-    std::string str() const;
+    QPID_COMMON_EXTERN std::string str() const;
 };
 
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SessionId&);

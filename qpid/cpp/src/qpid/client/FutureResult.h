@@ -23,6 +23,8 @@
 #define _FutureResult_
 
 #include <string>
+
+#include "ClientImportExport.h"
 #include "qpid/framing/amqp_framing.h"
 #include "FutureCompletion.h"
 
@@ -36,7 +38,7 @@ class FutureResult : public FutureCompletion
 {
     std::string result;
 public:
-    const std::string& getResult(SessionImpl& session) const;
+    QPID_CLIENT_EXTERN const std::string& getResult(SessionImpl& session) const;
     void received(const std::string& result);
 };
 

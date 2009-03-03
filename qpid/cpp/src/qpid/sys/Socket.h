@@ -93,11 +93,11 @@ public:
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
-    Socket* accept(struct sockaddr *addr, socklen_t *addrlen) const;
+    QPID_COMMON_EXTERN Socket* accept(struct sockaddr *addr, socklen_t *addrlen) const;
 
     // TODO The following are raw operations, maybe they need better wrapping? 
-    int read(void *buf, size_t count) const;
-    int write(const void *buf, size_t count) const;
+    QPID_COMMON_EXTERN int read(void *buf, size_t count) const;
+    QPID_COMMON_EXTERN int write(const void *buf, size_t count) const;
 
     QPID_COMMON_EXTERN void setTcpNoDelay(bool nodelay) const;
 
