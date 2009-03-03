@@ -56,7 +56,7 @@ class Message;
 class SessionHandler;
 class SessionManager;
 class RateFlowcontrol;
-class TimerTask;
+struct TimerTask;
 
 /**
  * Broker-side session state includes session's handler chains, which
