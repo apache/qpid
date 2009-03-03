@@ -537,7 +537,15 @@ public class Session extends SessionInvoker
                     }
                     break;
                 case CLOSED:
-                    throw new SessionClosedException();
+                    ExecutionException exc = getException();
+                    if (exc != null)
+                    {
+                        throw new SessionException(exc);
+                    }
+                    else
+                    {
+                        throw new SessionClosedException();
+                    }
                 default:
                     throw new SessionException
                         (String.format
@@ -868,7 +876,7 @@ public class Session extends SessionInvoker
     {
         synchronized (commands)
         {
-            if (expiry == 0)
+            if (expiry == 0 || getException() != null)
             {
                 state = CLOSED;
             }
