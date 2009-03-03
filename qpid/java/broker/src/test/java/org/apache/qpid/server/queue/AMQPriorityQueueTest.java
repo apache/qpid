@@ -134,17 +134,21 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         assertTrue("Queue is flowed.", !_queue.isFlowed());
 
         // Send another and ensure we are flowed
-        sendMessage(txnContext);
-        
+        sendMessage(txnContext, 9);
+
+        //Give the Purging Thread a chance to run
+        Thread.yield();
+        Thread.sleep(500);
+
         assertTrue("Queue is not flowed.", _queue.isFlowed());
-        assertEquals(MESSAGE_COUNT / 2 + 1, _queue.getMessageCount());
-        assertEquals(MESSAGE_COUNT / 2, _queue.getMemoryUsageCurrent());
+        assertEquals("Queue contains more messages than expected.", MESSAGE_COUNT / 2 + 1, _queue.getMessageCount());
+        assertEquals("Queue over memory quota.",MESSAGE_COUNT / 2, _queue.getMemoryUsageCurrent());
 
 
-        //send another 99 so there are 200msgs in total on the queue
-        for (int msgCount = 0; msgCount < (MESSAGE_COUNT / 2) - 1; msgCount++)
+        //send another batch of messagse so the total in each queue is equal
+        for (int msgCount = 0; msgCount < (MESSAGE_COUNT / 2) ; msgCount++)
         {
-            sendMessage(txnContext);
+            sendMessage(txnContext, (msgCount % 10));
 
             long usage = _queue.getMemoryUsageCurrent();
             assertTrue("Queue has gone over quota:" + usage,
@@ -153,21 +157,22 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
             assertTrue("Queue has a negative quota:" + usage, usage > 0);
 
         }
-        assertEquals(MESSAGE_COUNT, _queue.getMessageCount());
+        assertEquals(MESSAGE_COUNT + 1, _queue.getMessageCount());
         assertEquals(MEMORY_MAX, _queue.getMemoryUsageCurrent());
         assertTrue("Queue is not flowed.", _queue.isFlowed());
 
         _queue.registerSubscription(_subscription, false);
 
         int slept = 0;
-        while (_subscription.getQueueEntries().size() != MESSAGE_COUNT && slept < 10)
+        while (_subscription.getQueueEntries().size() != MESSAGE_COUNT + 1 && slept < 10)
         {
+            Thread.yield();
             Thread.sleep(500);
             slept++;
         }
 
         //Ensure the messages are retreived
-        assertEquals("Not all messages were received, slept:" + slept / 2 + "s", MESSAGE_COUNT, _subscription.getQueueEntries().size());
+        assertEquals("Not all messages were received, slept:" + slept / 2 + "s", MESSAGE_COUNT + 1, _subscription.getQueueEntries().size());
 
         //Check the queue is still within it's limits.
         assertTrue("Queue has gone over quota:" + _queue.getMemoryUsageCurrent(),

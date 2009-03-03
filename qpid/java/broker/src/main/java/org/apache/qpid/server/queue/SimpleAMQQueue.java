@@ -468,6 +468,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         if (entry.isFlowed())
         {
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Synchoronus load of entry:" + entry.debugIdentity());
+            }
             entry.load();
         }
 

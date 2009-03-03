@@ -53,7 +53,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
     private AtomicReference<MessageInhaler> _asynchronousInhaler = new AtomicReference(null);
     protected boolean _disabled;
     private AtomicReference<MessagePurger> _asynchronousPurger = new AtomicReference(null);
-    private static final int BATCH_INHALE_COUNT = 100;
+    private static final int BATCH_PROCESS_COUNT = 100;
 
     FlowableBaseQueueEntryList(AMQQueue queue)
     {
@@ -76,7 +76,6 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         if (_flowed.get() != flowed)
         {
             _log.warn("Marking Queue(" + _queue.getName() + ") as flowed (" + flowed + ")");
-            showUsage();
             _flowed.set(flowed);
         }
     }
@@ -126,20 +125,14 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         }
 
         // Don't attempt to start the inhaler/purger unless we have a minimum value specified.
-        if (_memoryUsageMaximum > 0)
+        if (_memoryUsageMaximum >= 0)
         {
             setMemoryUsageMinimum(_memoryUsageMaximum / 2);
 
             // if we have now have to much memory in use we need to purge.
             if (_memoryUsageMaximum < _atomicQueueInMemory.get())
             {
-                startPurger();
-            }
-        }
-        else if (_memoryUsageMaximum == 0)
-        {
-            if (_atomicQueueInMemory.get() > 0)
-            {
+                setFlowed(true);
                 startPurger();
             }
         }
@@ -165,16 +158,15 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         // Don't attempt to start the inhaler unless we have a minimum value specified.
         if (_memoryUsageMinimum > 0)
         {
-            checkAndStartLoader();
+            checkAndStartInhaler();
         }
     }
 
-    private void checkAndStartLoader()
+    private void checkAndStartInhaler()
     {
-        // If we've increased the minimum memory above what we have in memory then we need to inhale more
-        long inMemory = _atomicQueueInMemory.get();
-        // Can't check if inMemory == 0 or we will cause the inhaler thread to continually run.
-        if (inMemory < _memoryUsageMinimum || _memoryUsageMinimum == 0)
+        // If we've increased the minimum memory above what we have in memory then
+        // we need to inhale more if there is more
+        if (_atomicQueueInMemory.get() < _memoryUsageMinimum && _atomicQueueSize.get() > 0)
         {
             startInhaler();
         }
@@ -210,13 +202,14 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      *
      * @param queueEntry the entry to unload
      */
-    public void unloadEntry(QueueEntry queueEntry)
+    public void entryUnloadedUpdateMemory(QueueEntry queueEntry)
     {
         if (_atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
         {
             _log.error("InMemory Count just went below 0:" + queueEntry.debugIdentity());
         }
-        checkAndStartLoader();
+
+        checkAndStartInhaler();
     }
 
     /**
@@ -224,11 +217,13 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      *
      * @param queueEntry the entry to load
      */
-    public void loadEntry(QueueEntry queueEntry)
+    public void entryLoadedUpdateMemory(QueueEntry queueEntry)
     {
         if (_atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
         {
             _log.error("Loaded to much data!:" + _atomicQueueInMemory.get() + "/" + _memoryUsageMaximum);
+            setFlowed(true);
+            startPurger();
         }
     }
 
@@ -311,11 +306,15 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         }
 
         _asynchronousInhaler.compareAndSet(messageInhaler, null);
-        int inhaled = 0;
+        int inhaled = 1;
 
-        while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) && (inhaled < BATCH_INHALE_COUNT)
-               && _asynchronousInhaler.compareAndSet(null, messageInhaler))
+        while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) // we havn't filled our max memory
+               && (_atomicQueueInMemory.get() < _atomicQueueSize.get()) // we haven't loaded all that is available
+               && (inhaled < BATCH_PROCESS_COUNT) // limit the number of runs we do
+               && (inhaled > 0) // ensure we could inhale something
+               && _asynchronousInhaler.compareAndSet(null, messageInhaler)) // Ensure we are the running inhaler
         {
+            inhaled = 0;
             QueueEntryIterator iterator = iterator();
 
             // If the inhaler is running and delivery rate picks up ensure that we just don't chase the delivery thread.
@@ -325,7 +324,13 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
                 //Find first AVAILABLE node
             }
 
-            while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) && (inhaled < BATCH_INHALE_COUNT) && !iterator.atTail())
+            // Because the above loop checks then moves on to the next entry a check for atTail will return true but
+            // we won't have checked the last entry to see if we can load it. So create atEndofList and update it based
+            // on the return from advance() which returns true if it can advance.
+            boolean atEndofList = false;
+            while ((_atomicQueueInMemory.get() < _memoryUsageMaximum) // we havn't filled our max memory
+                   && (inhaled < BATCH_PROCESS_COUNT) // limit the number of runs we do
+                   && !atEndofList) // We have reached end of list QueueEntries
             {
                 QueueEntry entry = iterator.getNode();
 
@@ -334,16 +339,20 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
                     if (_atomicQueueInMemory.get() + entry.getSize() > _memoryUsageMaximum)
                     {
                         // We don't have space for this message so we need to stop inhaling.
-                        inhaled = BATCH_INHALE_COUNT;
+                        if (_log.isDebugEnabled())
+                        {
+                            _log.debug("Entry won't fit in memory stopping inhaler:" + entry.debugIdentity());
+                        }
+                        inhaled = BATCH_PROCESS_COUNT;
                     }
                     else
                     {
-                        loadEntry(entry);
+                        entry.load();
                         inhaled++;
                     }
                 }
 
-                iterator.advance();
+                atEndofList = !iterator.advance();
             }
 
             if (iterator.atTail())
@@ -402,20 +411,34 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
             return;
         }
 
-        _asynchronousPurger.compareAndSet(messagePurger, null);
+        if (_log.isInfoEnabled())
+        {
+            _log.info("Purger Running:" + _queue.getName());
+            showUsage("Purger Running:" + _queue.getName());
+        }
 
-        while ((_atomicQueueInMemory.get() >= _memoryUsageMinimum) && _asynchronousPurger.compareAndSet(null, messagePurger))
+        _asynchronousPurger.compareAndSet(messagePurger, null);
+        int purged = 0;
+
+        while ((_atomicQueueInMemory.get() > _memoryUsageMinimum)
+               && purged < BATCH_PROCESS_COUNT
+               && _asynchronousPurger.compareAndSet(null, messagePurger))
         {
             QueueEntryIterator iterator = iterator();
 
+            //There are potentially AQUIRED messages that can be purged but we can't purge the last AQUIRED message
+            // as it may have just become AQUIRED and not yet delivered.
+
+            //To be safe only purge available messages. This should be fine as long as we have a small prefetch.
             while (!iterator.getNode().isAvailable() && iterator.advance())
             {
                 //Find first AVAILABLE node
             }
 
-            // Count up the memory usage
+            // Count up the memory usage to find our minimum point
             long memoryUsage = 0;
-            while ((memoryUsage < _memoryUsageMaximum) && !iterator.atTail())
+            boolean atTail = false;
+            while ((memoryUsage < _memoryUsageMaximum) && !atTail)
             {
                 QueueEntry entry = iterator.getNode();
 
@@ -424,30 +447,37 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
                     memoryUsage += entry.getSize();
                 }
 
-                iterator.advance();
+                atTail = !iterator.advance();
             }
 
             //Purge remainging mesages on queue
-            while (!iterator.atTail())
+            while (!atTail && (purged < BATCH_PROCESS_COUNT))
             {
                 QueueEntry entry = iterator.getNode();
 
                 if (entry.isAvailable() && !entry.isFlowed())
                 {
                     entry.unload();
+                    purged++;
                 }
 
-                iterator.advance();
+                atTail = !iterator.advance();
             }
 
-            _asynchronousInhaler.set(null);
+            _asynchronousPurger.set(null);
         }
 
-        //If we have become flowed or have more capacity since we stopped then schedule the thread to run again.
-        if (_flowed.get() && _atomicQueueInMemory.get() < _memoryUsageMaximum)
+        if (_log.isInfoEnabled())
         {
-            _inhaler.execute(messagePurger);
+            _log.info("Purger Stopping:" + _queue.getName());
+            showUsage("Purger Stopping:" + _queue.getName());
+        }
 
+        //If we are still flowed and are over the minimum value then schedule to run again.
+        if (_flowed.get() && _atomicQueueInMemory.get() > _memoryUsageMinimum)
+        {
+            _log.info("Rescheduling Purger:" + _queue.getName());
+            _purger.execute(messagePurger);
         }
     }
 }
