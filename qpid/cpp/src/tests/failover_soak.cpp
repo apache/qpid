@@ -269,9 +269,8 @@ children allMyChildren;
 
 
 void 
-childExit ( int signalNumber ) 
+childExit ( int ) 
 {
-    signalNumber ++;  // Now maybe the compiler willleave me alone?
     int  childReturnCode; 
     pid_t pid = waitpid ( 0, & childReturnCode, WNOHANG);  
 
