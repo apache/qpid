@@ -326,7 +326,7 @@ startNewBroker ( brokerVector & brokers,
     stringstream path, prefix, module;
     module << moduleDir << "/cluster.so";
     path << srcRoot << "/qpidd";
-    prefix << "soak-" << brokerId++;
+    prefix << "soak-" << brokerId;
 
     std::vector<std::string> argv = 
         list_of<string> ("qpidd")
@@ -345,8 +345,14 @@ startNewBroker ( brokerVector & brokers,
     ForkedBroker * broker = new ForkedBroker ( argv );
 
     if ( verbosity > 0 )
-      std::cerr << "new broker created: pid == " << broker->getPID() << endl;
+      std::cerr << "new broker created: pid == " 
+                << broker->getPID() 
+                << " log-prefix == "
+                << "soak-" << brokerId
+                << endl;
     brokers.push_back ( broker );
+
+    ++ brokerId;
 }
 
 
@@ -394,7 +400,12 @@ killAllBrokers ( brokerVector & brokers, int delay )
 
     for ( uint i = 0; i < brokers.size(); ++ i )
         try { brokers[i]->kill(9); }
-        catch ( ... ) { }
+        catch ( ... ) 
+        { 
+          std::cerr << "killAllBrokers Warning: exception during kill on broker "
+                    << i
+                    << endl;
+        }
 }
 
 
@@ -633,8 +644,8 @@ main ( int argc, char const ** argv )
      }
 
 
-     int minSleep = 3,
-         maxSleep = 6;
+     int minSleep = 2,
+         maxSleep = 4;
 
 
      for ( int totalBrokers = 3; 
@@ -681,7 +692,7 @@ main ( int argc, char const ** argv )
          // If all children have exited, quit.
          int unfinished = allMyChildren.unfinished();
          if ( ! unfinished ) {
-             killAllBrokers ( brokers, 10 );
+             killAllBrokers ( brokers, 5 );
 
              if ( verbosity > 0 )
                  cout << "failoverSoak: all children have exited.\n";
@@ -707,7 +718,7 @@ main ( int argc, char const ** argv )
              if ( verbosity > 0 )
                  cout << "failoverSoak: error on child.\n";
              allMyChildren.killEverybody();
-             killAllBrokers ( brokers, 10 );
+             killAllBrokers ( brokers, 5 );
              std::cerr << "ERROR: CLIENT END_OF_TEST\n";
              return ERROR_ON_CHILD;
          }
@@ -736,7 +747,7 @@ main ( int argc, char const ** argv )
          cout << "failoverSoak: maxBrokers reached.\n";
 
      allMyChildren.killEverybody();
-     killAllBrokers ( brokers, 10 );
+     killAllBrokers ( brokers, 5 );
 
      std::cerr << "SUCCESSFUL END_OF_TEST\n";
 
