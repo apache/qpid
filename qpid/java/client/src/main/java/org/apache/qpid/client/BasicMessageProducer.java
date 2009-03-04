@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
-    enum PublishMode { ASYNC_PUBLISH_ALLL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL }; 
+    enum PublishMode { ASYNC_PUBLISH_ALL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL }; 
     
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
@@ -123,7 +123,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
     
-    protected PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALLL;
+    protected PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                                    AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
