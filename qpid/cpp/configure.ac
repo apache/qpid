@@ -150,8 +150,9 @@ test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install rub
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
+test -f $AMQP_FINAL_XML || AC_MSG_NOTICE([AMQP specs not present; source code will not be generated.])
 AC_SUBST(AMQP_FINAL_XML)
-AM_CONDITIONAL([GENERATE], [ls $AMQP_FINAL_XML >/dev/null])
+AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
 
 # URL and download URL for the package.
 URL=http://rhm.et.redhat.com/qpidc
