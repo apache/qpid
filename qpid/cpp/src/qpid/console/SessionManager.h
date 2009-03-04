@@ -22,6 +22,7 @@
  *
  */
 
+#include "ConsoleImportExport.h"
 #include "Broker.h"
 #include "Package.h"
 #include "SequenceManager.h"
@@ -80,8 +81,8 @@ class SessionManager
      * and bindClass methods.  If userBindings is false, the listener will receive
      * updates for all object classes.
      */
-    SessionManager(ConsoleListener* listener = 0,
-                   Settings settings = Settings());
+    QPID_CONSOLE_EXTERN SessionManager(ConsoleListener* listener = 0,
+                                       Settings settings = Settings());
 
     /** Connect a broker to the console session
      *
@@ -89,32 +90,33 @@ class SessionManager
      *@return broker object if operation is successful
      * an exception shall be thrown.
      */
-    Broker* addBroker(client::ConnectionSettings& settings);
+    QPID_CONSOLE_EXTERN Broker* addBroker(client::ConnectionSettings& settings);
 
     /** Disconnect a broker from the console session
      *
      *@param broker The broker object returned from an earlier call to addBroker.
      */
-    void delBroker(Broker* broker);
+    QPID_CONSOLE_EXTERN void delBroker(Broker* broker);
 
     /** Get a list of known management packages
      *
      *@param packages Vector of package names returned by the session manager.
      */
-    void getPackages(NameVector& packages);
+    QPID_CONSOLE_EXTERN void getPackages(NameVector& packages);
 
     /** Get a list of class keys associated with a package
      *
      *@param classKeys List of class keys returned by the session manager.
      *@param packageName Name of package being queried.
      */
-    void getClasses(KeyVector& classKeys, const std::string& packageName);
+    QPID_CONSOLE_EXTERN void getClasses(KeyVector& classKeys,
+                                        const std::string& packageName);
 
     /** Get the schema of a class given its class key
      *
      *@param classKey Class key of the desired schema.
      */
-    SchemaClass& getSchema(const ClassKey& classKey);
+    QPID_CONSOLE_EXTERN SchemaClass& getSchema(const ClassKey& classKey);
 
     /** Request that updates be received for all classes within a package
      *
@@ -123,7 +125,7 @@ class SessionManager
      *
      *@param packageName Name of the package to which to bind.
      */
-    void bindPackage(const std::string& packageName);
+    QPID_CONSOLE_EXTERN void bindPackage(const std::string& packageName);
 
     /** Request update to be received for a particular class
      *
@@ -132,8 +134,9 @@ class SessionManager
      *
      *@param classKey Class key of class to which to bind.
      */
-    void bindClass(const ClassKey& classKey);
-    void bindClass(const std::string& packageName, const std::string& className);
+    QPID_CONSOLE_EXTERN void bindClass(const ClassKey& classKey);
+    QPID_CONSOLE_EXTERN void bindClass(const std::string& packageName,
+                                       const std::string& className);
 
     /** Get a list of qmf agents known to the session manager.
      *
@@ -141,7 +144,8 @@ class SessionManager
      *@param broker Return agents registered with this broker only.  If NULL, return agents
      * from all connected brokers.
      */
-    void getAgents(Agent::Vector& agents, Broker* broker = 0);
+    QPID_CONSOLE_EXTERN void getAgents(Agent::Vector& agents,
+                                       Broker* broker = 0);
 
     /** Get objects from agents.  There are four variants of this method with different ways of
      * specifying from which class objects are being queried.
@@ -153,8 +157,10 @@ class SessionManager
      *@param broker Restrict the query to this broker, or all brokers if NULL.
      *@param agent Restrict the query to this agent, or all agents if NULL.
      */
-    void getObjects(Object::Vector& objects, const std::string& className,
-                    Broker* broker = 0, Agent* agent = 0);
+    QPID_CONSOLE_EXTERN void getObjects(Object::Vector& objects,
+                                        const std::string& className,
+                                        Broker* broker = 0,
+                                        Agent* agent = 0);
     //void getObjects(Object::Vector& objects, const ClassKey& classKey,
     //                Broker* broker = 0, Agent* agent = 0);
     //void getObjects(Object::Vector& objects, const ObjectId& objectId,

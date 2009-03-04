@@ -51,8 +51,9 @@ namespace console {
      */
     class Broker : public client::MessageListener {
     public:
-        Broker(SessionManager& sm, client::ConnectionSettings& settings);
-        ~Broker();
+        QPID_CONSOLE_EXTERN Broker(SessionManager& sm,
+                                   client::ConnectionSettings& settings);
+        QPID_CONSOLE_EXTERN ~Broker();
         
         bool isConnected() const { return connected; }
         const std::string& getError() const { return error; }

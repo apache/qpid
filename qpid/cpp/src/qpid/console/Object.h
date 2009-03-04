@@ -74,29 +74,32 @@ namespace console {
 
         Broker* getBroker() const { return broker; }
         const ObjectId& getObjectId() const { return objectId; }
-        const ClassKey& getClassKey() const;
+        QPID_CONSOLE_EXTERN const ClassKey& getClassKey() const;
         SchemaClass* getSchema() const { return schema; }
         uint64_t getCurrentTime() const { return currentTime; }
         uint64_t getCreateTime() const { return createTime; }
         uint64_t getDeleteTime() const { return deleteTime; }
         bool isDeleted() const { return deleteTime != 0; }
-        std::string getIndex() const;
-        void mergeUpdate(const Object& updated);
+        QPID_CONSOLE_EXTERN std::string getIndex() const;
+        QPID_CONSOLE_EXTERN void mergeUpdate(const Object& updated);
         const AttributeMap& getAttributes() const { return attributes; }
-        void invokeMethod(const std::string name, const AttributeMap& args, MethodResponse& result);
-        void handleMethodResp(framing::Buffer& buffer, uint32_t sequence);
+        QPID_CONSOLE_EXTERN void invokeMethod(const std::string name,
+                                              const AttributeMap& args,
+                                              MethodResponse& result);
+        QPID_CONSOLE_EXTERN void handleMethodResp(framing::Buffer& buffer,
+                                                  uint32_t sequence);
 
-        ObjectId attrRef(const std::string& key) const;
-        uint32_t attrUint(const std::string& key) const;
-        int32_t attrInt(const std::string& key) const;
-        uint64_t attrUint64(const std::string& key) const;
-        int64_t attrInt64(const std::string& key) const;
-        std::string attrString(const std::string& key) const;
-        bool attrBool(const std::string& key) const;
-        float attrFloat(const std::string& key) const;
-        double attrDouble(const std::string& key) const;
-        framing::Uuid attrUuid(const std::string& key) const;
-        framing::FieldTable attrMap(const std::string& key) const;
+        QPID_CONSOLE_EXTERN ObjectId attrRef(const std::string& key) const;
+        QPID_CONSOLE_EXTERN uint32_t attrUint(const std::string& key) const;
+        QPID_CONSOLE_EXTERN int32_t attrInt(const std::string& key) const;
+        QPID_CONSOLE_EXTERN uint64_t attrUint64(const std::string& key) const;
+        QPID_CONSOLE_EXTERN int64_t attrInt64(const std::string& key) const;
+        QPID_CONSOLE_EXTERN std::string attrString(const std::string& key) const;
+        QPID_CONSOLE_EXTERN bool attrBool(const std::string& key) const;
+        QPID_CONSOLE_EXTERN float attrFloat(const std::string& key) const;
+        QPID_CONSOLE_EXTERN double attrDouble(const std::string& key) const;
+        QPID_CONSOLE_EXTERN framing::Uuid attrUuid(const std::string& key) const;
+        QPID_CONSOLE_EXTERN framing::FieldTable attrMap(const std::string& key) const;
 
     private:
         Broker* broker;
