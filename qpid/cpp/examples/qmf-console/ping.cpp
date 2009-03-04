@@ -20,6 +20,7 @@
  */
 
 #include "qpid/console/SessionManager.h"
+#include "qpid/sys/Time.h"
 
 using namespace std;
 using namespace qpid::console;
@@ -107,7 +108,7 @@ int main_int(int /*argc*/, char** /*argv*/)
             cout << endl;
 
             if (result.code == 0 && iter < count - 1)
-                ::sleep(1);
+              qpid::sys::sleep(1);
         }
     }
 

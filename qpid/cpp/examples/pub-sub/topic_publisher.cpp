@@ -50,7 +50,6 @@
 #include <qpid/client/Message.h>
 
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
