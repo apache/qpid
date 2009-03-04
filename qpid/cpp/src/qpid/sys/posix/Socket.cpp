@@ -189,9 +189,9 @@ int Socket::listen(uint16_t port, int backlog) const
     return ntohs(name.sin_port);
 }
 
-Socket* Socket::accept(struct sockaddr *addr, socklen_t *addrlen) const
+Socket* Socket::accept() const
 {
-    int afd = ::accept(impl->fd, addr, addrlen);
+    int afd = ::accept(impl->fd, 0, 0);
     if ( afd >= 0)
         return new Socket(new IOHandlePrivate(afd));
     else if (errno == EAGAIN)
