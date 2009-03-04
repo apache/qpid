@@ -25,21 +25,28 @@ import javax.jms.Connection;
 public class FailoverBaseCase extends QpidTestCase
 {
 
-    protected int FAILING_VM_PORT = 2;
-    protected int FAILING_PORT = 5673;
+    public static int FAILING_VM_PORT = 2;
+    public static int FAILING_PORT = 5673;
 
+    protected int failingPort;
+    
     private boolean failedOver = false;
 
-    protected int getFailingPort()
+    public FailoverBaseCase()
     {
         if (_broker.equals(VM))
         {
-            return FAILING_VM_PORT;
+            failingPort = FAILING_VM_PORT;
         }
         else
         {
-            return FAILING_PORT;
+            failingPort = FAILING_PORT;
         }
+    }
+    
+    protected int getFailingPort()
+    {
+        return failingPort;
     }
 
     protected void setUp() throws java.lang.Exception
@@ -64,10 +71,16 @@ public class FailoverBaseCase extends QpidTestCase
 
     public void tearDown() throws Exception
     {
-        if (!failedOver)
+        int port;
+        if (_broker.equals(VM))
         {
-            stopBroker(getFailingPort());
+            port = FAILING_VM_PORT;
         }
+        else
+        {
+            port = FAILING_PORT;
+        }
+        stopBroker(port);
         super.tearDown();
     }
 
@@ -90,13 +103,6 @@ public class FailoverBaseCase extends QpidTestCase
     
     protected void setFailingPort(int p)
     {
-        if (_broker.equals(VM))
-        {
-            FAILING_VM_PORT = p;
-        }
-        else
-        {
-            FAILING_PORT = p;
-        }
+        failingPort = p;
     }
 }
