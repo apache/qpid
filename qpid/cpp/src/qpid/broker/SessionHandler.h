@@ -66,9 +66,8 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     }
 
     virtual void handleDetach();
-    
-    // Overrides
-    void attached(const std::string& name);
+    void attached(const std::string& name);//used by 'pushing' inter-broker bridges
+    void attachAs(const std::string& name);//used by 'pulling' inter-broker bridges
 
   protected:
     virtual void setState(const std::string& sessionName, bool force);
