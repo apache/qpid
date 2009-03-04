@@ -181,6 +181,20 @@ class SessionState {
         const SequenceSet& receivedIncomplete
     );
 
+    /**
+     * So called 'push' bridges work by faking a subscribe request
+     * (and the accompanyingflows etc) to the local broker to initiate
+     * the outflow of messages for the bridge.
+     * 
+     * As the peer doesn't send these it cannot include them in its
+     * session state. To keep the session state on either side of the
+     * bridge in sync, this hack allows the tracking of state for
+     * received messages to be disabled for the faked commands and
+     * subsequently re-enabled.
+     */
+    void disableReceiverTracking();
+    void enableReceiverTracking();
+
   private:
 
     struct SendState {
@@ -209,6 +223,7 @@ class SessionState {
     uint32_t timeout;
     Configuration config;
     bool stateful;
+    bool receiverTrackingDisabled;//very nasty hack for 'push' bridges
 };
 
 inline bool operator==(const SessionId& id, const SessionState& s) { return s == id; }
