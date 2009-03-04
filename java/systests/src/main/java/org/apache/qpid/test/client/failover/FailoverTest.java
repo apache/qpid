@@ -50,8 +50,8 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     private static final String QUEUE = "queue";
     private static final int DEFAULT_NUM_MESSAGES = 10;
     private static final int DEFAULT_SEED = 20080921;
-    private int numMessages = 0;
-    private Connection connnection;
+    protected int numMessages = 0;
+    protected Connection connection;
     private Session producerSession;
     private Queue queue;
     private MessageProducer producer;
@@ -74,20 +74,20 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         seed = Integer.getInteger("profile.failoverRandomSeed",DEFAULT_SEED);
         rand = new Random(seed);
         
-        connnection = getConnection();
-        ((AMQConnection) connnection).setConnectionListener(this);
-        connnection.start();
+        connection = getConnection();
+        ((AMQConnection) connection).setConnectionListener(this);
+        connection.start();
         failoverComplete = new CountDownLatch(1);
     }
 
-    private void init(boolean transacted, int mode) throws JMSException, NamingException
+    protected void init(boolean transacted, int mode) throws JMSException, NamingException
     {
         queue = (Queue) getInitialContext().lookup(QUEUE);
 
-        consumerSession = connnection.createSession(transacted, mode);
+        consumerSession = connection.createSession(transacted, mode);
         consumer = consumerSession.createConsumer(queue);
 
-        producerSession = connnection.createSession(transacted, mode);
+        producerSession = connection.createSession(transacted, mode);
         producer = producerSession.createProducer(queue);
     }
 
@@ -96,7 +96,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     {
         try
         {
-            connnection.close();
+            connection.close();
         }
         catch (Exception e)
         {
@@ -193,7 +193,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         runP2PFailover(totalMessages,consumeAll, produceAll , transacted);
     } 
     
-    private void runP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws JMSException, NamingException
+    protected void runP2PFailover(int totalMessages, boolean consumeAll, boolean produceAll , boolean transacted) throws JMSException, NamingException
     {
         Message msg = null;
         int toProduce = totalMessages;
@@ -281,7 +281,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
             failure = e;
         }
         assertNotNull("Exception should be thrown", failure);
-    }
+    } 
 
     /**
      * The client used to have a fixed timeout of 4 minutes after which failover would no longer work.
@@ -302,12 +302,12 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         details.setProperty(BrokerDetails.OPTIONS_RETRY, String.valueOf(RETRIES));
         details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, String.valueOf(DELAY));
 
-        connnection = new AMQConnection(connectionURL, null);
+        connection = new AMQConnection(connectionURL, null);
 
-        ((AMQConnection) connnection).setConnectionListener(this);
+        ((AMQConnection) connection).setConnectionListener(this);
 
         //Start the connection
-        connnection.start();
+        connection.start();
 
         long FAILOVER_DELAY = (RETRIES * DELAY);
 
@@ -321,6 +321,51 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         assertTrue("Failover did not take long enough", System.nanoTime() > failTime);
     }
 
+    
+    /**
+     * The idea is to run a failover test in a loop by failing over
+     * to the other broker each time.
+     */
+    public void testFailoverInALoop() throws Exception
+    {
+        if (!CLUSTERED)
+        {
+            return;
+        }
+        
+        int iterations = Integer.getInteger("profile.failoverIterations",0);
+        boolean b = true;
+        int failingPort = getFailingPort();
+        init(false, Session.AUTO_ACKNOWLEDGE);
+        for (int i=0; i < iterations; i++)
+        {
+            _logger.debug("===================================================================");
+            _logger.debug("Failover In a loop : iteration number " + i);
+            _logger.debug("===================================================================");
+            
+            runP2PFailover(numMessages, false,false, false);
+            startBroker(failingPort);
+            if (b)
+            {
+                failingPort = getFailingPort()-1;
+                b = false;
+            }
+            else
+            {
+                failingPort = getFailingPort()+1;
+                b = true;
+            }
+            setFailingPort(failingPort);
+        }
+        //To prevent any failover logic being initiaed when we shutdown the brokers.
+        connection.close();
+        
+        // Shutdown the brokers
+        stopBroker(getFailingPort());
+        stopBroker(b?getFailingPort()+1 : getFailingPort()-1);
+        
+    }  
+    
     public void bytesSent(long count)
     {
     }
