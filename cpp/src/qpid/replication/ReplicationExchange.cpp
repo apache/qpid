@@ -73,7 +73,7 @@ void ReplicationExchange::handleEnqueueEvent(const FieldTable* args, Deliverable
     headers.erase(REPLICATION_EVENT_SEQNO);
     headers.erase(REPLICATION_EVENT_TYPE);
     msg.deliverTo(queue);
-    QPID_LOG(debug, "Enqueued replicated message onto " << queue);
+    QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
 }
 
 void ReplicationExchange::handleDequeueEvent(const FieldTable* args)
