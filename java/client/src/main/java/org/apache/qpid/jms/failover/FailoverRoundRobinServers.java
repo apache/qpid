@@ -30,7 +30,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
     private static final Logger _logger = LoggerFactory.getLogger(FailoverRoundRobinServers.class);
 
     /** The default number of times to cycle through all servers */
-    public static final int DEFAULT_CYCLE_RETRIES = 0;
+    public static final int DEFAULT_CYCLE_RETRIES = 1;
     /** The default number of times to retry each server */
     public static final int DEFAULT_SERVER_RETRIES = 0;
 
@@ -66,6 +66,8 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
         String cycleRetries = _connectionDetails.getFailoverOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE);
 
+        _cycleRetries = DEFAULT_CYCLE_RETRIES;
+        
         if (cycleRetries != null)
         {
             try
@@ -74,7 +76,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
             }
             catch (NumberFormatException nfe)
             {
-                _cycleRetries = DEFAULT_CYCLE_RETRIES;
+                _logger.warn("Cannot set cycle Retries, " + cycleRetries + " is not a number. Using default: " + DEFAULT_CYCLE_RETRIES); 
             }
         }
 
@@ -93,8 +95,8 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
     public boolean failoverAllowed()
     {
-        return ((_currentCycleRetries < _cycleRetries) || (_currentServerRetry < _serverRetries)
-                || (_currentBrokerIndex < (_connectionDetails.getBrokerCount() - 1)));
+        return ((_currentCycleRetries < _cycleRetries) || (_currentServerRetry < _serverRetries));
+                //|| (_currentBrokerIndex <= (_connectionDetails.getBrokerCount() - 1)));
     }
 
     public void attainedConnection()
