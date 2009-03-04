@@ -150,7 +150,7 @@ test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install rub
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
-test -f $AMQP_FINAL_XML || AC_MSG_NOTICE([AMQP specs not present; source code will not be generated.])
+test -f $AMQP_FINAL_XML || test -d $srcdir/src/gen || AC_MSG_ERROR([Neither AMQP specs nor spec-generated code present; cannot build.])
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
 
