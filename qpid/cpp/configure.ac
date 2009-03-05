@@ -87,13 +87,14 @@ else
 	AC_CHECK_DECL([__SUNPRO_CC], [SUNCC=yes], [SUNCC=no])
 	
 	# Set up for sun CC compiler
-	if test x$SUNCC = xno; then
+	if test x$SUNCC = xyes; then
 		if test "${enableval}" = yes; then
 			WARNING_FLAGS=+w
 		fi
 		CXXFLAGS="$CXXFLAGS -library=stlport4 -mt"
 		LD="$CXX"
 		LDFLAGS="$LDFLAGS -library=stlport4 -mt"
+		AC_SUBST([SUNCC_RUNTIME_LIBS], [-lCrun])
 	fi
 fi
 
@@ -368,6 +369,30 @@ if test $poller = xno; then
   AC_MSG_ERROR([Polling mechanism not implemented for $host])
 fi
 
+#Guess host architecture, to choose platform-dependent objects
+case "$host" in
+     *sun-solaris*)
+        arch=solaris
+     ;;
+esac
+AM_CONDITIONAL([SUNOS], [test x$arch = xsolaris])
+
+# Check for some syslog capabilities not present in all systems
+AC_TRY_COMPILE([#include <sys/syslog.h>], 
+               [int v = LOG_AUTHPRIV;],
+               [AC_DEFINE([HAVE_LOG_AUTHPRIV], [1], [Set to 1 whether LOG_AUTHPRIV is supported.])],)
+
+AC_TRY_COMPILE([#include <sys/syslog.h>], 
+               [int v = LOG_FTP;],
+               [AC_DEFINE([HAVE_LOG_FTP], [1], [Set to 1 whether LOG_FTP is supported.])],)
+
+#Check if we need to include libacl to provide acl API
+gl_saved_libs=$LIBS
+  AC_SEARCH_LIBS(acl, [acl],
+                [test "$ac_cv_search_acl" = "none required" ||
+                 LIB_ACL=$ac_cv_search_acl])
+  AC_SUBST([LIB_ACL])
+LIBS=$gl_saved_libs
 AM_PATH_PYTHON()
 
 # Files to generate	
