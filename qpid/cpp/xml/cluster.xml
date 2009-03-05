@@ -132,6 +132,7 @@
     <control name="membership" code="0x21" label="Cluster membership details.">
       <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
+      <field name="event-id" type="uint64"/>> <!-- Event id counter value -->
       <field name="frame-id" type="uint64"/>> <!-- Frame id counter value -->
     </control>
 

@@ -44,7 +44,7 @@ const size_t EventHeader::HEADER_SIZE =
     ;
 
 EventHeader::EventHeader(EventType t, const ConnectionId& c,  size_t s)
-    : type(t), connectionId(c), size(s), sequence(0) {}
+    : type(t), connectionId(c), size(s), id(0) {}
 
 
 Event::Event() {}
@@ -128,8 +128,7 @@ std::ostream& operator << (std::ostream& o, EventType t) {
 }
 
 std::ostream& operator << (std::ostream& o, const EventHeader& e) {
-    o << "[event " << e.getConnectionId()  << "/" << e.getSequence()
-      << " " << e.getType() << " " << e.getSize() << " bytes]";
+    o << "Event[id=" << e.getId() << " connection=" << e.getConnectionId() << " " << e.getType() << " " << e.getSize() << " bytes]";
     return o;
 }
 

@@ -88,7 +88,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave();
 
     // Update completed - called in update thread
-    void updateInDone(const ClusterMap&, uint64_t frameId);
+    void updateInDone(const ClusterMap&, uint64_t eventId, uint64_t frameId);
 
     MemberId getId() const;
     broker::Broker& getBroker() const;
@@ -214,6 +214,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Used only in deliveredFrame thread
     ClusterMap::Set elders;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
+    uint64_t eventId;           // FIXME aconway 2009-03-04: review use for thread safety frame-q thread re-enabled.
     uint64_t frameId;
 
     // Used only during initialization
@@ -238,7 +239,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     ClusterMap map;
     size_t lastSize;
     bool lastBroker;
-    uint64_t sequence;
 
     //     Update related
     sys::Thread updateThread;

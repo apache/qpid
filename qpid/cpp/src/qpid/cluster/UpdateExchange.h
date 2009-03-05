@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_UPDATEEXCHANGE_H
+#define QPID_CLUSTER_UPDATEEXCHANGE_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,22 +21,25 @@
  * under the License.
  *
  */
-#include "EventFrame.h"
-#include "Connection.h"
+
+#include "UpdateClient.h"
+#include "qpid/broker/FanOutExchange.h"
+
 
 namespace qpid {
 namespace cluster {
 
-EventFrame::EventFrame() : eventId(0) {}
-
-EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
-    : connectionId(e.getConnectionId()), frame(f), eventId(e.getId()), readCredit(rc), type(e.getType())
+/**
+ * A keyless exchange (like fanout exchange) that does not modify deliver-properties.exchange
+ * on messages.
+ */
+class UpdateExchange : public broker::FanOutExchange
 {
-    QPID_LATENCY_INIT(frame);
-}
-
-std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    return o << e.frame << "(from event " << e.eventId << " read-credit=" << e.readCredit << ")";
-}
+  public:
+    UpdateExchange(management::Manageable* parent) : broker::Exchange(UpdateClient::UPDATE, parent), broker::FanOutExchange(UpdateClient::UPDATE, parent) {}
+    void setProperties(const boost::intrusive_ptr<broker::Message>&) {}
+};
 
 }} // namespace qpid::cluster
+
+#endif  /*!QPID_CLUSTER_UPDATEEXCHANGE_H*/

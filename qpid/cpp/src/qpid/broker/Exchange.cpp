@@ -275,3 +275,7 @@ bool Exchange::MatchQueue::operator()(Exchange::Binding::shared_ptr b)
 {
     return b->queue == queue;
 }
+
+void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
+    msg->getProperties<DeliveryProperties>()->setExchange(getName());
+}

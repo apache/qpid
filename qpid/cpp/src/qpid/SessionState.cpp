@@ -113,7 +113,8 @@ SessionState::ReplayRange SessionState::senderExpected(const SessionPoint& expec
 
 void SessionState::senderRecord(const AMQFrame& f) {
     if (isControl(f)) return;   // Ignore control frames.
-    QPID_LOG_IF(debug, f.getMethod(), getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getMethod());
+    QPID_LOG(trace, getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getBody());
+
     stateful = true;
     if (timeout) sender.replayList.push_back(f);
     sender.unflushedSize += f.encodedSize();
@@ -193,8 +194,8 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
         receiver.received = receiver.expected;
         receiver.incomplete += receiverGetCurrent();
     }
-    QPID_LOG_IF(debug, f.getMethod(), getId() << ": recv cmd " << receiverGetCurrent() << ": " << *f.getMethod());
-    QPID_LOG_IF(debug, !firstTime, "Ignoring duplicate frame: " << receiverGetCurrent() << ": " << f);
+    QPID_LOG(trace, getId() << ": recv cmd " << receiverGetCurrent() << ": " << *f.getBody());
+    if (!firstTime) QPID_LOG(trace, "Ignoring duplicate frame.");
     return firstTime;
 }
     

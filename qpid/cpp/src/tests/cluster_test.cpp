@@ -509,10 +509,11 @@ QPID_AUTO_TEST_CASE(testCatchupSharedState) {
     c0.session.queueDeclare("q");
     c0.session.messageTransfer(arg::content=Message("foo","q"));
     c0.session.messageTransfer(arg::content=Message("bar","q"));
+
     while (c0.session.queueQuery("q").getMessageCount() != 2)
         sys::usleep(1000);    // Wait for message to show up on broker 0.
 
-    // Add a new broker, it should catch up.
+    // Add a new broker, it will catch up.
     cluster.add();
 
     // Do some work post-add
@@ -530,6 +531,7 @@ QPID_AUTO_TEST_CASE(testCatchupSharedState) {
 
     BOOST_CHECK(c1.subs.get(m, "q", TIMEOUT));
     BOOST_CHECK_EQUAL(m.getData(), "foo");
+    BOOST_CHECK_EQUAL(m.getDeliveryProperties().getExchange(), "");
     BOOST_CHECK(c1.subs.get(m, "q", TIMEOUT));
     BOOST_CHECK_EQUAL(m.getData(), "bar");
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);

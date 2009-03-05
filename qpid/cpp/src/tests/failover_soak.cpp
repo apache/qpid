@@ -339,7 +339,6 @@ wait_for_newbie ( )
   {
     Connection connection;
     connection.open ( "127.0.0.1", newbie_port );
-    sleep ( 2 );
     connection.close();
     newbie = 0;  // He's no newbie anymore!
     return true;
@@ -368,20 +367,19 @@ startNewBroker ( brokerVector & brokers,
     module << moduleDir << "/cluster.so";
     path << srcRoot << "/qpidd";
     prefix << "soak-" << brokerId;
-
-    std::vector<std::string> argv = 
-        list_of<string> ("qpidd")
-                        ("--no-module-dir")
-                        ("--load-module=cluster.so")
-                        ("--cluster-name")
-                        (clusterName)
-                        ("--auth=no")
-                        ("--no-data-dir")
-                        ("--mgmt-enable=no")
-                        ("--log-prefix")
-                        (prefix.str())
-                        ("--log-to-file")
-                        ("/tmp/qpidd.log");
+    std::vector<std::string> argv = list_of<string>
+        ("qpidd")
+        ("--no-module-dir")
+        ("--load-module=cluster.so")
+        ("--cluster-name")
+        (clusterName)
+        ("--auth=no")
+        ("--no-data-dir")
+        ("--mgmt-enable=no")
+        ("--log-prefix")
+        (prefix.str())
+        ("--log-to-file")
+        (prefix.str()+".log");
 
     newbie = new ForkedBroker ( argv );
     newbie_port = newbie->getPort();
