@@ -30,8 +30,8 @@
 namespace qpid {
 namespace cluster {
 
-ExpiryPolicy::ExpiryPolicy(const boost::function<bool()> & f, Multicaster& m, const MemberId& id, broker::Timer& t)
-    : expiredPolicy(new Expired), isLeader(f), mcast(m), memberId(id), timer(t) {}
+ExpiryPolicy::ExpiryPolicy(Multicaster& m, const MemberId& id, broker::Timer& t)
+    : expiredPolicy(new Expired), mcast(m), memberId(id), timer(t) {}
 
 namespace {
 uint64_t clusterId(const broker::Message& m) {
@@ -65,8 +65,7 @@ bool ExpiryPolicy::hasExpired(broker::Message& m) {
 
 void ExpiryPolicy::sendExpire(uint64_t id) {
     sys::Mutex::ScopedLock l(lock);
-    if (isLeader()) 
-        mcast.mcastControl(framing::ClusterMessageExpiredBody(framing::ProtocolVersion(), id), memberId);
+    mcast.mcastControl(framing::ClusterMessageExpiredBody(framing::ProtocolVersion(), id), memberId);
 }
 
 void ExpiryPolicy::deliverExpire(uint64_t id) {
