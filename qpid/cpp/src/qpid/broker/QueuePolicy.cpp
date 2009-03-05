@@ -126,7 +126,7 @@ std::string QueuePolicy::getType(const FieldTable& settings)
     FieldTable::ValuePtr v = settings.get(typeKey);
     if (v && v->convertsTo<std::string>()) {
         std::string t = v->get<std::string>();
-        transform(t.begin(), t.end(), t.begin(), tolower);        
+        std::transform(t.begin(), t.end(), t.begin(), tolower);        
         if (t == REJECT || t == FLOW_TO_DISK || t == RING || t == RING_STRICT) return t;
     }
     return FLOW_TO_DISK;
