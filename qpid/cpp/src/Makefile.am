@@ -127,7 +127,6 @@ posix_plat_src = \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp \
   qpid/sys/posix/Shlib.cpp \
-  qpid/sys/posix/SystemInfo.cpp \
   qpid/sys/posix/Mutex.cpp \
   qpid/sys/posix/Fork.cpp \
   qpid/sys/posix/StrError.cpp \
@@ -151,7 +150,13 @@ if HAVE_ECF
   poller = qpid/sys/solaris/ECFPoller.cpp
 endif
 
-platform_src = $(posix_plat_src) $(poller)
+if SUNOS
+  systeminfo = qpid/sys/solaris/SystemInfo.cpp
+else
+  systeminfo = qpid/sys/posix/SystemInfo.cpp
+endif
+
+platform_src = $(posix_plat_src) $(poller) $(systeminfo)
 platform_hdr = $(posix_plat_hdr)
 
 posix_broker_src = \
