@@ -238,7 +238,7 @@ uint16_t Socket::getLocalPort() const
 
 uint16_t Socket::getRemotePort() const
 {
-    return atoi(getService(impl->fd, true).c_str());
+    return std::atoi(getService(impl->fd, true).c_str());
 }
 
 int Socket::getError() const
