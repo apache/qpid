@@ -151,7 +151,7 @@ void ManagementAgentImpl::init(const client::ConnectionSettings& settings,
     // TODO: Abstract the socket calls for portability
     if (extThread) {
         int pair[2];
-        int result = socketpair(PF_LOCAL, SOCK_STREAM, 0, pair);
+        int result = socketpair(PF_UNIX, SOCK_STREAM, 0, pair);
         if (result == -1) {
             return;
         }
