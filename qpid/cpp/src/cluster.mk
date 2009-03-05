@@ -64,6 +64,7 @@ cluster_la_SOURCES =				\
   qpid/cluster/ExpiryPolicy.cpp			\
   qpid/cluster/FailoverExchange.cpp		\
   qpid/cluster/FailoverExchange.h		\
+  qpid/cluster/UpdateExchange.h			\
   qpid/cluster/Multicaster.cpp			\
   qpid/cluster/Multicaster.h			\
   qpid/cluster/McastFrameHandler.h		\

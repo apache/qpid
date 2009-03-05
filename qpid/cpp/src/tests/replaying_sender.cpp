@@ -72,7 +72,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         sender.send(message);
         if (count > reportFrequency && !(sent % reportFrequency)) {
             if ( verbosity > 0 )
-                std::cout << "sent " << sent << " of " << count << std::endl;
+                std::cout << "Sender sent " << sent << " of " << count << std::endl;
         }
     }
     message.setData("That's all, folks!");

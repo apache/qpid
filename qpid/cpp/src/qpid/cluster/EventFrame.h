@@ -49,14 +49,14 @@ struct EventFrame
 
     // True if this frame follows immediately after frame e. 
     bool follows(const EventFrame& e) const {
-        return sequence == e.sequence || (sequence == e.sequence+1 && e.readCredit);
+        return eventId == e.eventId || (eventId == e.eventId+1 && e.readCredit);
     }
 
-    bool operator<(const EventFrame& e) const { return sequence < e.sequence; }
+    bool operator<(const EventFrame& e) const { return eventId < e.eventId; }
     
     ConnectionId connectionId;
     framing::AMQFrame frame;   
-    uint64_t sequence;
+    uint64_t eventId;
     int readCredit; ///< last frame in an event, give credit when processed.
     EventType type;
 };

@@ -280,6 +280,7 @@ void Connection::sessionState(
     const SequenceSet& unknownCompleted,
     const SequenceSet& receivedIncomplete)
 {
+    
     sessionState().setState(
         replayStart,
         sendCommandPoint,
@@ -299,9 +300,9 @@ void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const str
     clusterDecoder.setFragment(fragment.data(), fragment.size());
 }
 
-void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t frameId) {
+void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t eventId, uint64_t frameId) {
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members), frameId);
+    cluster.updateInDone(ClusterMap(joiners, members), eventId, frameId);
     self.second = 0;        // Mark this as completed update connection.
 }
 
