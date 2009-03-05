@@ -68,26 +68,33 @@ void ReplicationExchange::handleEnqueueEvent(const FieldTable* args, Deliverable
 {
     std::string queueName = args->getAsString(REPLICATION_TARGET_QUEUE);
     Queue::shared_ptr queue = queues.find(queueName);
-    FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
-    headers.erase(REPLICATION_TARGET_QUEUE);
-    headers.erase(REPLICATION_EVENT_SEQNO);
-    headers.erase(REPLICATION_EVENT_TYPE);
-    msg.deliverTo(queue);
-    QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
+    if (queue) {
+        FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
+        headers.erase(REPLICATION_TARGET_QUEUE);
+        headers.erase(REPLICATION_EVENT_SEQNO);
+        headers.erase(REPLICATION_EVENT_TYPE);
+        msg.deliverTo(queue);
+        QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
+    } else {
+        QPID_LOG(error, "Cannot enqueue replicated message. Queue " << queueName << " does not exist");
+    }
 }
 
 void ReplicationExchange::handleDequeueEvent(const FieldTable* args)
 {
     std::string queueName = args->getAsString(REPLICATION_TARGET_QUEUE);
     Queue::shared_ptr queue = queues.find(queueName);
-    SequenceNumber position(args->getAsInt(DEQUEUED_MESSAGE_POSITION));
-    
-    QueuedMessage dequeued;
-    if (queue->acquireMessageAt(position, dequeued)) {
-        queue->dequeue(0, dequeued);
-        QPID_LOG(debug, "Processed replicated 'dequeue' event from " << queueName << " at position " << position);
+    if (queue) {
+        SequenceNumber position(args->getAsInt(DEQUEUED_MESSAGE_POSITION));        
+        QueuedMessage dequeued;
+        if (queue->acquireMessageAt(position, dequeued)) {
+            queue->dequeue(0, dequeued);
+            QPID_LOG(debug, "Processed replicated 'dequeue' event from " << queueName << " at position " << position);
+        } else {
+            QPID_LOG(warning, "Could not acquire message " << position << " from " << queueName);
+        }
     } else {
-        QPID_LOG(warning, "Could not acquire message " << position << " from " << queueName);
+        QPID_LOG(error, "Cannot process replicated 'dequeue' event. Queue " << queueName << " does not exist");
     }
 }
 
