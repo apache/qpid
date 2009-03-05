@@ -745,7 +745,8 @@ void SessionImpl::assertOpen() const
 
 void SessionImpl::handleClosed()
 {
-    demux.close(exceptionHolder.empty() ? new ClosedException() : exceptionHolder);
+    demux.close(exceptionHolder.empty() ?
+                sys::ExceptionHolder(new ClosedException()) : exceptionHolder);
     results.close();
 }
 
