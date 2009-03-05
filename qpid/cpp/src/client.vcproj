@@ -121,6 +121,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid\client\no_keyword mkdir deploy\include\qpid\client\no_keyword&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\no_keyword\*.h deploy\include\qpid\client\no_keyword\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidclientd.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidclientd.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -203,6 +204,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid\client\no_keyword mkdir deploy\include\qpid\client\no_keyword&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\no_keyword\*.h deploy\include\qpid\client\no_keyword\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidclient.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidclient.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -287,6 +289,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid\client\no_keyword mkdir deploy\include\qpid\client\no_keyword&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\no_keyword\*.h deploy\include\qpid\client\no_keyword\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidclientd.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidclientd.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -370,6 +373,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid\client\no_keyword mkdir deploy\include\qpid\client\no_keyword&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\*.h deploy\include\qpid\client\&#x0D;&#x0A;@copy /Y gen\qpid\client\no_keyword\*.h deploy\include\qpid\client\no_keyword\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidclient.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidclient.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
