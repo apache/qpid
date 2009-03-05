@@ -564,6 +564,24 @@ QPID_AUTO_TEST_CASE(testSessionManagerSetFlowControl) {
     BOOST_CHECK_EQUAL("my-message", got.getData());
 }
 
+QPID_AUTO_TEST_CASE(testGetThenSubscribe) {
+    ClientSessionFixture fix;
+    std::string name("myqueue");
+    fix.session.queueDeclare(arg::queue=name, arg::exclusive=true, arg::autoDelete=true);
+    fix.session.messageTransfer(arg::content=Message("one", name));
+    fix.session.messageTransfer(arg::content=Message("two", name));
+    Message got;
+    BOOST_CHECK(fix.subs.get(got, name));
+    BOOST_CHECK_EQUAL("one", got.getData());
+
+    DummyListener listener(fix.session, name, 1);
+    listener.run();
+    BOOST_CHECK_EQUAL(1u, listener.messages.size());
+    if (!listener.messages.empty()) {
+        BOOST_CHECK_EQUAL("two", listener.messages[0].getData());
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 
