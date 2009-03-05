@@ -66,25 +66,27 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef boost::intrusive_ptr<Connection> ConnectionPtr;
     typedef std::vector<ConnectionPtr> Connections;
 
-    /** Construct the cluster in plugin earlyInitialize */ 
+    // Public functions are thread safe unless otherwise mentioned in a comment.
+
+    // Construct the cluster in plugin earlyInitialize.
     Cluster(const ClusterSettings&, broker::Broker&);
     virtual ~Cluster();
 
-    /** Join the cluster in plugin initialize. Requires transport
-     * plugins to be available.. */
+    // Called by plugin initialize: cluster start-up requires transport plugins .
+    // Thread safety: only called by plugin initialize.
     void initialize();
 
-    // Connection map - called in connection threads.
+    // Connection map.
     void addLocalConnection(const ConnectionPtr&); 
     void addShadowConnection(const ConnectionPtr&); 
     void erase(const ConnectionId&);       
     
-    // URLs of current cluster members - called in connection threads.
+    // URLs of current cluster members.
     std::vector<std::string> getIds() const;
     std::vector<Url> getUrls() const;
     boost::shared_ptr<FailoverExchange> getFailoverExchange() const { return failoverExchange; }
 
-    // Leave the cluster - called in any thread.
+    // Leave the cluster - called when fatal errors occur.
     void leave();
 
     // Update completed - called in update thread
@@ -94,15 +96,13 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     broker::Broker& getBroker() const;
     Multicaster& getMulticast() { return mcast; }
 
-    boost::function<bool ()> isQuorate;
-    void checkQuorum();         // called in connection threads.
+    void checkQuorum();
 
     size_t getReadMax() { return readMax; }
     size_t getWriteEstimate() { return writeEstimate; }
 
-    bool isLeader() const;       // Called in deliver thread.
-
-    // Called by Connection in deliver event thread with decoded connection data frames.
+    // Process a connection frame. Called by Connection with decoded frames.
+    // Thread safety: only called in deliverEventQueue thread.
     void connectionFrame(const EventFrame&); 
 
   private:
@@ -111,11 +111,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef PollableQueue<Event> PollableEventQueue;
     typedef PollableQueue<EventFrame> PollableFrameQueue;
 
-    // NB: The final Lock& parameter on functions below is used to mark functions
-    // that should only be called by a function that already holds the lock.
-    // The parameter makes it hard to forget since you have to have an instance of
-    // a Lock to call the unlocked functions.
-
+    // NB: A dummy Lock& parameter marks functions that must only be
+    // called with Cluster::lock  locked.
+ 
     void leave(Lock&);
     std::vector<std::string> getIds(Lock&) const;
     std::vector<Url> getUrls(Lock&) const;
@@ -123,18 +121,19 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Make an offer if we can - called in deliver thread.
     void makeOffer(const MemberId&, Lock&);
 
-    // Called in main thread in ~Broker.
+    // Called in main thread from Broker destructor.
     void brokerShutdown();
 
     // Cluster controls implement XML methods from cluster.xml.
-    // Called in deliveredEvent thread.
-    // 
+    // Called in deliverEventQueue thread.
     void updateRequest(const MemberId&, const std::string&, Lock&);
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void shutdown(const MemberId&, Lock&);
+    // Helper, called by updateOffer.
+    void updateStart(const MemberId& updatee, const Url& url, Lock&);
 
     // Used by cluster controls.
     void stall(Lock&);
@@ -143,13 +142,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Handlers for pollable queues.
     void deliveredEvent(const Event&); 
     void deliveredFrame(const EventFrame&); 
-
-    // Helper, called in deliver thread.
-    void updateStart(const MemberId& updatee, const Url& url, Lock&);
-
-    // Called in event deliver thread to check for update status.
-    bool isUpdateComplete(const EventFrame&);
-    bool isUpdateComplete();
 
     void setReady(Lock&);
 
@@ -186,7 +178,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void updateOutError(const std::exception&);
     void updateOutDone(Lock&);
 
-    void setClusterId(const framing::Uuid&);
+    void setClusterId(const framing::Uuid&, Lock&);
 
     // Immutable members set on construction, never changed.
     ClusterSettings settings;
@@ -202,6 +194,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
     qpid::management::ManagementAgent* mAgent;
+    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
 
     // Thread safe members
     Multicaster mcast;
@@ -210,11 +203,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollableFrameQueue deliverFrameQueue;
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
-
-    // Used only in deliveredFrame thread
-    ClusterMap::Set elders;
-    boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
-    uint64_t eventId;           // FIXME aconway 2009-03-04: review use for thread safety frame-q thread re-enabled.
+    ConnectionMap connections;
+ 
+    // Used only in deliverFrameQueue thread or in deliverEventQueue thread when stalled.
     uint64_t frameId;
 
     // Used only during initialization
@@ -235,14 +226,15 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         LEFT     ///< Final state, left the cluster.
     } state;
 
-    ConnectionMap connections;
+    uint64_t eventId;
     ClusterMap map;
+    ClusterMap::Set elders;
     size_t lastSize;
     bool lastBroker;
-
-    //     Update related
     sys::Thread updateThread;
+    sys::Runnable* updateTask;
     boost::optional<ClusterMap> updatedMap;
+
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;
