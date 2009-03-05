@@ -42,7 +42,7 @@ class Multicaster;
 class ExpiryPolicy : public broker::ExpiryPolicy
 {
   public:
-    ExpiryPolicy(const boost::function<bool()> & isLeader, Multicaster&, const MemberId&, broker::Timer&);
+    ExpiryPolicy(Multicaster&, const MemberId&, broker::Timer&);
 
     void willExpire(broker::Message&);
 
@@ -65,7 +65,6 @@ class ExpiryPolicy : public broker::ExpiryPolicy
 
     IdSet expired;
     boost::intrusive_ptr<Expired> expiredPolicy;
-    boost::function<bool()> isLeader;
     Multicaster& mcast;
     MemberId memberId;
     broker::Timer& timer;
