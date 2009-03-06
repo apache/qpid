@@ -375,6 +375,19 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
+    public void testClientIDWithUnderscore() throws URLSyntaxException
+    {
+        String url = "amqp://user:pass@client_id/test?brokerlist='tcp://localhost:5672'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getUsername().equals("user"));
+        assertTrue(connectionurl.getPassword().equals("pass"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+        assertTrue(connectionurl.getClientName().equals("client_id"));
+        
+        assertTrue(connectionurl.getBrokerCount() == 1);
+    }
 
     public void testWrongOptionSeparatorInOptions()
     {
