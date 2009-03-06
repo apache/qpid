@@ -133,6 +133,10 @@ public class QueueEntryImpl implements QueueEntry
 
     public AMQMessage getMessage()
     {
+        if (_message == null)
+        {
+            return _backingStore.load(_messageId);
+        }
         return _message;
     }
 
@@ -149,6 +153,12 @@ public class QueueEntryImpl implements QueueEntry
     public void setDeliveredToConsumer()
     {
         _flags |= DELIVERED_TO_CONSUMER;
+
+        // We have delivered this message so we can unload it if we are flowed.
+        if (_queueEntryList.isFlowed())
+        {
+            unload();
+        }
     }
 
     public boolean expired() throws AMQException
