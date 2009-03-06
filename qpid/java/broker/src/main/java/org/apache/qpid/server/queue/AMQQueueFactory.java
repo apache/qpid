@@ -89,7 +89,7 @@ public class AMQQueueFactory
                                                "Queue create request with negative size:" + queueSize, null);
                     }
 
-                    q.setMaximumMessageSize(queueSize);
+                    q.setMemoryUsageMaximum(queueSize);
                 }
                 else
                 {
