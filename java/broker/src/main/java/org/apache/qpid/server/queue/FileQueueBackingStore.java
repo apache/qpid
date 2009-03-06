@@ -226,13 +226,16 @@ public class FileQueueBackingStore implements QueueBackingStore
             for (int index = 0; index < bodyCount; index++)
             {
                 ContentChunk chunk = message.getContentChunk(index);
-                chunk.reduceToFit();
-
-                byte[] chunkData = chunk.getData().array();
-
                 int length = chunk.getSize();
+
+                byte[] chunk_underlying = new byte[length];
+
+                ByteBuffer chunk_buf = chunk.getData();
+
+                chunk_buf.duplicate().rewind().get(chunk_underlying);
+
                 writer.writeInt(length);
-                writer.write(chunkData, 0, length);
+                writer.write(chunk_underlying, 0, length);
             }
         }
         catch (FileNotFoundException e)
@@ -301,9 +304,8 @@ public class FileQueueBackingStore implements QueueBackingStore
     }
 
     public void delete(Long messageId)
-    {
-        String id = String.valueOf(messageId);
-        File handle = new File(_flowToDiskLocation, id);
+    {        
+        File handle = getFileHandle(messageId);
 
         if (handle.exists())
         {
