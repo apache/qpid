@@ -263,7 +263,7 @@ class ManagementData:
             else:
               return "True"
           elif typecode == 14:
-            return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack ("!LHHHHL", value)
+            return str (value)
           elif typecode == 15:
             return str (value)
     return "*type-error*"
