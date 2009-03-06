@@ -62,15 +62,10 @@ struct AclPlugin : public Plugin {
 
     	if (acl) throw Exception("ACL plugin cannot be initialized twice in one process.");
 
-    	if (values.aclFile.at(0) == '/')
-    	{
-    		values.aclFile = values.aclFile;
-    	}
-    	else
-    	{
-    		std::ostringstream oss;
-    		oss << b.getDataDir().getPath() << "/" << values.aclFile;
-    		values.aclFile = oss.str();
+    	if (values.aclFile.at(0) != '/' && !b.getDataDir().getPath().empty()) {
+            std::ostringstream oss;
+            oss << b.getDataDir().getPath() << "/" << values.aclFile;
+            values.aclFile = oss.str();
     	}
 
         acl = new Acl(values, b);
