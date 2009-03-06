@@ -44,7 +44,7 @@ ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, con
     return 0;
 }
 
-// Used for outgoing Link connections, we don't care.
+// Used for outgoing Link connections
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& logId) {
     return new ConnectionCodec(out, logId, cluster, false, true);
