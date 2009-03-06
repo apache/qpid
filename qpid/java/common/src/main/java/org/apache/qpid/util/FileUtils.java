@@ -246,18 +246,19 @@ public class FileUtils
      {
          boolean success = true;
 
+         // If we have nothing to delete then it must be ok to say it was deleted.
+         if (file == null)
+         {
+             return true;
+         }
+
          if (file.isDirectory())
          {
              if (recursive)
              {
-                 try{
-                     for (File subFile : file.listFiles())
-                     {
-                         success = delete(subFile, true) & success ;
-                     }
-                 }catch (NullPointerException npe)
+                 for (File subFile : file.listFiles())
                  {
-                     success = false;
+                     success = delete(subFile, true) & success ;
                  }
 
                  return success && file.delete();
