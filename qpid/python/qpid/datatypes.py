@@ -289,7 +289,8 @@ class UUID:
   def __cmp__(self, other):
     if isinstance(other, UUID):
       return cmp(self.bytes, other.bytes)
-    raise NotImplemented()
+    else:
+      return -1
 
   def __str__(self):
     return "%08x-%04x-%04x-%04x-%04x%08x" % struct.unpack("!LHHHHL", self.bytes)
