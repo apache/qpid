@@ -129,7 +129,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
             throws AMQException
             {
-                singleMessageCredit.useCreditForMessage(entry.getMessage());
+                singleMessageCredit.useCreditForMessage(entry);
                 session.getProtocolOutputConverter().writeGetOk(entry, channel.getChannelId(),
                                                                         deliveryTag, queue.getMessageCount());
 
@@ -181,9 +181,9 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
         }
 
-        public boolean wouldSuspend(QueueEntry msg)
+        public boolean wouldSuspend(QueueEntry queueEntry)
         {
-            return !getCreditManager().useCreditForMessage(msg.getMessage());
+            return !getCreditManager().useCreditForMessage(queueEntry);
         }
 
     }
