@@ -28,7 +28,7 @@ import re
 from qpid.peer       import Closed
 from qpid.session    import SessionDetached
 from qpid.connection import Connection, ConnectionFailed
-from qpid.datatypes  import UUID, uuid4, Message, RangedSet
+from qpid.datatypes  import Message, RangedSet
 from qpid.util       import connect, ssl, URL
 from qpid.codec010   import StringCodec as Codec
 from threading       import Lock, Condition, Thread
@@ -415,7 +415,7 @@ class Session:
       self.console.brokerDisconnected(broker)
 
   def _handleBrokerResp(self, broker, codec, seq):
-    broker.brokerId = UUID(codec.read_uuid())
+    broker.brokerId = codec.read_uuid()
     if self.console != None:
       self.console.brokerInfo(broker)
 
@@ -616,7 +616,7 @@ class Session:
     elif typecode == 11: data = codec.read_uint8() != 0 # BOOL
     elif typecode == 12: data = codec.read_float()      # FLOAT
     elif typecode == 13: data = codec.read_double()     # DOUBLE
-    elif typecode == 14: data = UUID(codec.read_uuid()) # UUID
+    elif typecode == 14: data = codec.read_uuid()       # UUID
     elif typecode == 15: data = codec.read_map()        # FTABLE
     elif typecode == 16: data = codec.read_int8()       # S8
     elif typecode == 17: data = codec.read_int16()      # S16
