@@ -108,8 +108,7 @@ void timer_handler(int /*signo*/, siginfo_t* /*info*/, void* /*context*/) {
 	   wh->call(wcb);
     } else {
         phase1finished = true;
-        int rc = ::timer_delete(timer);
-        assert(rc == 0);        
+        assert(::timer_delete(timer) == 0);        
     }
 }
 
