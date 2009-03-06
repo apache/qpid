@@ -466,22 +466,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         _deliveredMessages.incrementAndGet();
 
-        if (entry.isFlowed())
-        {
-            if(_logger.isDebugEnabled())
-            {
-                _logger.debug("Synchoronus load of entry:" + entry.debugIdentity());
-            }
-            entry.load();
-        }
-
         sub.send(entry);
-
-        // We have delivered this message so we can unload it.
-        if (_entries.isFlowed() && entry.isAcquired() && entry.getDeliveredToConsumer())
-        {
-            entry.unload();
-        }
 
     }
 
