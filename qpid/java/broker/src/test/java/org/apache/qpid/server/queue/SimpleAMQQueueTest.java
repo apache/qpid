@@ -415,7 +415,7 @@ public class SimpleAMQQueueTest extends TestCase
 
         //Check the queue is still within it's limits.
         long current = _queue.getMemoryUsageCurrent();
-        assertTrue("Queue has gone over quota:" + current+"/"+_queue.getMemoryUsageMaximum() ,
+        assertTrue("Queue has gone over quota:" + current + "/" + _queue.getMemoryUsageMaximum(),
                    current <= _queue.getMemoryUsageMaximum());
 
         assertTrue("Queue has a negative quota:" + _queue.getMemoryUsageCurrent(), _queue.getMemoryUsageCurrent() >= 0);
@@ -428,14 +428,14 @@ public class SimpleAMQQueueTest extends TestCase
         }
     }
 
-      public void testMessagesFlowToDiskPurger() throws AMQException, InterruptedException
+    public void testMessagesFlowToDiskPurger() throws AMQException, InterruptedException
     {
         // Create IncomingMessage and nondurable queue
         NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
 
         MESSAGE_SIZE = 1;
         /** Set to larger than the purge batch size. Default 100.
-         * @see FlowableBaseQueueEntryList.BATCH_PROCESS_COUNT */ 
+         * @see FlowableBaseQueueEntryList.BATCH_PROCESS_COUNT */
         long MEMORY_MAX = 500;
         int MESSAGE_COUNT = (int) MEMORY_MAX;
         //Set the Memory Usage to be very low
@@ -454,7 +454,7 @@ public class SimpleAMQQueueTest extends TestCase
         // Send anothe and ensure we are flowed
         sendMessage(txnContext);
         assertEquals(MESSAGE_COUNT + 1, _queue.getMessageCount());
-        assertEquals(MESSAGE_COUNT , _queue.getMemoryUsageCurrent());
+        assertEquals(MESSAGE_COUNT, _queue.getMemoryUsageCurrent());
         assertTrue("Queue is not flowed.", _queue.isFlowed());
 
         _queue.setMemoryUsageMaximum(0L);
@@ -469,7 +469,7 @@ public class SimpleAMQQueueTest extends TestCase
         }
 
         assertEquals(MESSAGE_COUNT + 1, _queue.getMessageCount());
-        assertEquals(0L , _queue.getMemoryUsageCurrent());
+        assertEquals(0L, _queue.getMemoryUsageCurrent());
         assertTrue("Queue is not flowed.", _queue.isFlowed());
 
     }
@@ -510,6 +510,7 @@ public class SimpleAMQQueueTest extends TestCase
         List<AMQQueue> data = _transactionLog.getMessageReferenceMap(messageId);
         assertNotNull(data);
     }
+
 
     // FIXME: move this to somewhere useful
     private static AMQMessage createMessage(final MessagePublishInfo publishBody)
