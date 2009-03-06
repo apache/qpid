@@ -481,6 +481,7 @@ class Spec(Node):
   ENCODINGS = {
     unicode: direct("str16"),
     str: map_str,
+    buffer: direct("vbin32"),
     int: direct("int64"),
     long: direct("int64"),
     float: direct("float"),
