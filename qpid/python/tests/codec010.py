@@ -48,6 +48,11 @@ class CodecTest(TestCase):
   def testMapBinary(self):
     self.check("map", {"binary": "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5"})
 
+  def testMapBuffer(self):
+    s = "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5"
+    dec = self.check("map", {"buffer": buffer(s)}, False)
+    assert dec["buffer"] == s
+
   def testMapInt(self):
     self.check("map", {"int": 3})
 

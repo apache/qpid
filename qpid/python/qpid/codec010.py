@@ -118,6 +118,8 @@ class Codec(Packer):
   def read_vbin8(self):
     return self.read(self.read_uint8())
   def write_vbin8(self, b):
+    if isinstance(b, buffer):
+      b = str(b)
     self.write_uint8(len(b))
     self.write(b)
 
@@ -140,6 +142,8 @@ class Codec(Packer):
   def read_vbin16(self):
     return self.read(self.read_uint16())
   def write_vbin16(self, b):
+    if isinstance(b, buffer):
+      b = str(b)
     self.write_uint16(len(b))
     self.write(b)
 
@@ -163,6 +167,8 @@ class Codec(Packer):
   def read_vbin32(self):
     return self.read(self.read_uint32())
   def write_vbin32(self, b):
+    if isinstance(b, buffer):
+      b = str(b)
     self.write_uint32(len(b))
     self.write(b)
 
