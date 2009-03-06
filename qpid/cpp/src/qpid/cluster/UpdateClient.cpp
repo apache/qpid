@@ -98,7 +98,7 @@ UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, con
       done(ok), failed(fail), connectionSettings(cs)
 {
     connection.open(url, cs);
-    session = connection.newSession("update_shared");
+    session = connection.newSession(UPDATE);
 }
 
 UpdateClient::~UpdateClient() {}
