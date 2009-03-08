@@ -40,6 +40,8 @@ cluster_la_SOURCES =				\
   $(CMAN_SOURCES)				\
   qpid/cluster/Cluster.cpp			\
   qpid/cluster/Cluster.h			\
+  qpid/cluster/Decoder.cpp			\
+  qpid/cluster/Decoder.h			\
   qpid/cluster/PollableQueue.h			\
   qpid/cluster/ClusterMap.cpp			\
   qpid/cluster/ClusterMap.h			\
@@ -49,8 +51,6 @@ cluster_la_SOURCES =				\
   qpid/cluster/Connection.h			\
   qpid/cluster/ConnectionCodec.cpp		\
   qpid/cluster/ConnectionCodec.h		\
-  qpid/cluster/ConnectionMap.h			\
-  qpid/cluster/ConnectionMap.cpp		\
   qpid/cluster/Cpg.cpp				\
   qpid/cluster/Cpg.h				\
   qpid/cluster/Dispatchable.h			\
@@ -65,6 +65,7 @@ cluster_la_SOURCES =				\
   qpid/cluster/FailoverExchange.cpp		\
   qpid/cluster/FailoverExchange.h		\
   qpid/cluster/UpdateExchange.h			\
+  qpid/cluster/LockedConnectionMap.h		\
   qpid/cluster/Multicaster.cpp			\
   qpid/cluster/Multicaster.h			\
   qpid/cluster/McastFrameHandler.h		\

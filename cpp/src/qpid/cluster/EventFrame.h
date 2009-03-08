@@ -47,16 +47,8 @@ struct EventFrame
     bool isLastInEvent() const { return readCredit; }
 
 
-    // True if this frame follows immediately after frame e. 
-    bool follows(const EventFrame& e) const {
-        return eventId == e.eventId || (eventId == e.eventId+1 && e.readCredit);
-    }
-
-    bool operator<(const EventFrame& e) const { return eventId < e.eventId; }
-    
     ConnectionId connectionId;
     framing::AMQFrame frame;   
-    uint64_t eventId;
     int readCredit; ///< last frame in an event, give credit when processed.
     EventType type;
 };
