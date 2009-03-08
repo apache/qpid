@@ -19,33 +19,34 @@
  *
  */
 
-#include "ClusterSettings.h"
 #include "ClusterMap.h"
-#include "ConnectionMap.h"
+#include "ClusterSettings.h"
 #include "Cpg.h"
+#include "Decoder.h"
 #include "Event.h"
-#include "FailoverExchange.h"
-#include "Multicaster.h"
 #include "EventFrame.h"
+#include "ExpiryPolicy.h"
+#include "FailoverExchange.h"
+#include "LockedConnectionMap.h"
+#include "Multicaster.h"
 #include "NoOpConnectionOutputHandler.h"
+#include "PollableQueue.h"
 #include "PollerDispatch.h"
 #include "Quorum.h"
-#include "PollableQueue.h"
-#include "ExpiryPolicy.h"
 
-#include "qpid/broker/Broker.h"
-#include "qpid/sys/Monitor.h"
-#include "qpid/management/Manageable.h"
-#include "qpid/Url.h"
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
+#include "qpid/Url.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/sys/Monitor.h"
 
-#include <boost/intrusive_ptr.hpp>
 #include <boost/bind.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <boost/optional.hpp>
 
 #include <algorithm>
-#include <vector>
 #include <map>
+#include <vector>
 
 namespace qpid {
 
@@ -57,6 +58,7 @@ class Uuid;
 namespace cluster {
 
 class Connection;
+class EventFrame;
 
 /**
  * Connection to the cluster
@@ -64,7 +66,7 @@ class Connection;
 class Cluster : private Cpg::Handler, public management::Manageable {
   public:
     typedef boost::intrusive_ptr<Connection> ConnectionPtr;
-    typedef std::vector<ConnectionPtr> Connections;
+    typedef std::vector<ConnectionPtr> ConnectionVector;
 
     // Public functions are thread safe unless otherwise mentioned in a comment.
 
@@ -90,7 +92,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave();
 
     // Update completed - called in update thread
-    void updateInDone(const ClusterMap&, uint64_t eventId, uint64_t frameId);
+    void updateInDone(const ClusterMap&, uint64_t frameId);
 
     MemberId getId() const;
     broker::Broker& getBroker() const;
@@ -101,15 +103,19 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     size_t getReadMax() { return readMax; }
     size_t getWriteEstimate() { return writeEstimate; }
 
-    // Process a connection frame. Called by Connection with decoded frames.
-    // Thread safety: only called in deliverEventQueue thread.
-    void connectionFrame(const EventFrame&); 
+    void deliverFrame(const EventFrame&);
+
+    // Called only during update by Connection::shadowReady
+    Decoder& getDecoder() { return decoder; }
 
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
     typedef PollableQueue<Event> PollableEventQueue;
     typedef PollableQueue<EventFrame> PollableFrameQueue;
+    typedef std::map<ConnectionId, ConnectionPtr> ConnectionMap;
+
+    // FIXME aconway 2009-03-07: sort functions by thread
 
     // NB: A dummy Lock& parameter marks functions that must only be
     // called with Cluster::lock  locked.
@@ -118,33 +124,33 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     std::vector<std::string> getIds(Lock&) const;
     std::vector<Url> getUrls(Lock&) const;
 
-    // Make an offer if we can - called in deliver thread.
-    void makeOffer(const MemberId&, Lock&);
-
-    // Called in main thread from Broker destructor.
+    // == Called in main thread from Broker destructor.
     void brokerShutdown();
 
+    // == Called in deliverEventQueue thread
+    void deliveredEvent(const Event&); 
+
+    // == Called in deliverFrameQueue thread
+    void deliveredFrame(const EventFrame&); 
+
     // Cluster controls implement XML methods from cluster.xml.
-    // Called in deliverEventQueue thread.
     void updateRequest(const MemberId&, const std::string&, Lock&);
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& addresses, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void shutdown(const MemberId&, Lock&);
-    // Helper, called by updateOffer.
+
+    // Helper functions
+    ConnectionPtr getConnection(const ConnectionId&, Lock&);
+    ConnectionVector getConnections(Lock&);
     void updateStart(const MemberId& updatee, const Url& url, Lock&);
-
-    // Used by cluster controls.
-    void stall(Lock&);
-    void unstall(Lock&);
-
-    // Handlers for pollable queues.
-    void deliveredEvent(const Event&); 
-    void deliveredFrame(const EventFrame&); 
-
+    void makeOffer(const MemberId&, Lock&);
     void setReady(Lock&);
+    void memberUpdate(Lock&);
+    void setClusterId(const framing::Uuid&, Lock&);
 
+    // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 
         cpg_handle_t /*handle*/,
         struct cpg_name *group,
@@ -153,7 +159,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         void* /*msg*/,
         int /*msg_len*/);
 
-    void deliver(const Event&);
+    void deliverEvent(const Event&);
     
     void configChange( // CPG config change callback.
         cpg_handle_t /*handle*/,
@@ -163,22 +169,20 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         struct cpg_address */*joined*/, int /*nJoined*/
     );
 
+    // == Called in management threads.
     virtual qpid::management::ManagementObject* GetManagementObject() const;
     virtual management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
     void stopClusterNode(Lock&);
     void stopFullCluster(Lock&);
-    void memberUpdate(Lock&);
 
-    // Called in connection IO threads .
+    // == Called in connection IO threads .
     void checkUpdateIn(Lock&);
 
-    // Called in UpdateClient thread.
+    // == Called in UpdateClient thread.
     void updateOutDone();
     void updateOutError(const std::exception&);
     void updateOutDone(Lock&);
-
-    void setClusterId(const framing::Uuid&, Lock&);
 
     // Immutable members set on construction, never changed.
     ClusterSettings settings;
@@ -203,16 +207,22 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollableFrameQueue deliverFrameQueue;
     boost::shared_ptr<FailoverExchange> failoverExchange;
     Quorum quorum;
-    ConnectionMap connections;
- 
-    // Used only in deliverFrameQueue thread or in deliverEventQueue thread when stalled.
-    uint64_t frameId;
+    LockedConnectionMap localConnections;
 
     // Used only during initialization
     bool initialized;
 
-    // Remaining members are protected by lock
+    // Used only in deliverEventQueue thread or when stalled for update.
+    Decoder decoder;
+    bool discarding;
+    
+    // Remaining members are protected by lock.
+    // FIXME aconway 2009-03-06: Most of these members are also only used in
+    // deliverFrameQueue thread or during stall. Review and separate members
+    // that require a lock, drop lock when not needed.
+    // 
     mutable sys::Monitor lock;
+
 
     //    Local cluster state, cluster map
     enum {
@@ -226,13 +236,13 @@ class Cluster : private Cpg::Handler, public management::Manageable {
         LEFT     ///< Final state, left the cluster.
     } state;
 
-    uint64_t eventId;
+    ConnectionMap connections;
+    uint64_t frameId;
     ClusterMap map;
     ClusterMap::Set elders;
     size_t lastSize;
     bool lastBroker;
     sys::Thread updateThread;
-    sys::Runnable* updateTask;
     boost::optional<ClusterMap> updatedMap;
 
 

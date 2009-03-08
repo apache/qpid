@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_LOCKEDCONNECTIONMAP_H
+#define QPID_CLUSTER_LOCKEDCONNECTIONMAP_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,22 +21,42 @@
  * under the License.
  *
  */
-#include "EventFrame.h"
+
+#include "types.h"
+#include "qpid/sys/Mutex.h"
 #include "Connection.h"
 
 namespace qpid {
 namespace cluster {
 
-EventFrame::EventFrame() {}
-
-EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
-    : connectionId(e.getConnectionId()), frame(f), readCredit(rc), type(e.getType())
+/**
+ * Thread safe map of connections.
+ */
+class LockedConnectionMap
 {
-    QPID_LATENCY_INIT(frame);
-}
+  public:
+    void insert(const ConnectionPtr& c) {
+        sys::Mutex::ScopedLock l(lock);
+        map[c->getId()] = c;
+    }
+    
+    ConnectionPtr getErase(const ConnectionId& c) {
+        sys::Mutex::ScopedLock l(lock);
+        Map::iterator i = map.find(c);
+        if (i != map.end()) {
+            ConnectionPtr cp = i->second;
+            map.erase(i);
+            return cp;
+        }
+        else
+            return 0;
+    }
 
-std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    return o << e.frame  << " " << e.type << " " << e.connectionId << " read-credit=" << e.readCredit;
-}
-
+  private:
+    typedef std::map<ConnectionId, ConnectionPtr> Map;
+    mutable sys::Mutex lock;
+    Map map;
+};
 }} // namespace qpid::cluster
+
+#endif  /*!QPID_CLUSTER_LOCKEDCONNECTIONMAP_H*/

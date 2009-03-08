@@ -34,8 +34,8 @@
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
-#include "qpid/framing/FrameDecoder.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/FrameDecoder.h"
 
 #include <iosfwd>
 
@@ -103,9 +103,6 @@ class Connection :
     // ConnectionCodec methods - called by IO layer with a read buffer.
     size_t decode(const char* buffer, size_t size);
 
-    // Decode a data event, a read buffer that has been delivered by the cluster.
-    void decode(const EventHeader& eh, const void* data);
-
     // Called for data delivered from the cluster.
     void deliveredFrame(const EventFrame&);
 
@@ -123,7 +120,7 @@ class Connection :
     
     void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment);
 
-    void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t eventId, uint64_t frameId);
+    void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameId);
 
     void deliveryRecord(const std::string& queue,
                         const framing::SequenceNumber& position,
@@ -153,8 +150,6 @@ class Connection :
 
     void giveReadCredit(int credit);
 
-    framing::FrameDecoder& getDecoder() { return clusterDecoder; }
-
   private:
     struct NullFrameHandler : public framing::FrameHandler {
         void handle(framing::AMQFrame&) {}
@@ -179,7 +174,6 @@ class Connection :
     WriteEstimate writeEstimate;
     OutputInterceptor output;
     framing::FrameDecoder localDecoder;
-    framing::FrameDecoder clusterDecoder;
     broker::Connection connection;
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;

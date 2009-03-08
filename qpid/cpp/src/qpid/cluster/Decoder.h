@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_DECODER_H
+#define QPID_CLUSTER_DECODER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,22 +21,37 @@
  * under the License.
  *
  */
-#include "EventFrame.h"
-#include "Connection.h"
+
+#include "types.h"
+#include "qpid/framing/FrameDecoder.h"
+#include <boost/function.hpp>
+#include <map>
 
 namespace qpid {
 namespace cluster {
 
-EventFrame::EventFrame() {}
+class EventFrame;
+class EventHeader;
 
-EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
-    : connectionId(e.getConnectionId()), frame(f), readCredit(rc), type(e.getType())
+/**
+ * A map of decoders for connections.
+ */
+class Decoder
 {
-    QPID_LATENCY_INIT(frame);
-}
+  public:
+    typedef boost::function<void(const EventFrame&)> FrameHandler;
 
-std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    return o << e.frame  << " " << e.type << " " << e.connectionId << " read-credit=" << e.readCredit;
-}
+    Decoder(FrameHandler fh) : callback(fh) {}
+    void decode(const EventHeader& eh, const char* data);
+    void erase(const ConnectionId&);
+    framing::FrameDecoder& get(const ConnectionId& c) { return map[c]; }
 
+  private:
+    typedef std::map<ConnectionId, framing::FrameDecoder> Map;
+    Map map;
+    void process(const EventFrame&);
+    FrameHandler callback;
+};
 }} // namespace qpid::cluster
+
+#endif  /*!QPID_CLUSTER_DECODER_H*/
