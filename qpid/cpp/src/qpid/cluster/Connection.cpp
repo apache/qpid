@@ -150,7 +150,8 @@ bool Connection::checkUnsupported(const AMQBody& body) {
 void Connection::deliveredFrame(const EventFrame& f) {
     assert(!catchUp);
     currentChannel = f.frame.getChannel(); 
-    if (!framing::invoke(*this, *f.frame.getBody()).wasHandled() // Connection contol.
+    if (f.frame.getBody()       // frame can be emtpy with just readCredit
+        && !framing::invoke(*this, *f.frame.getBody()).wasHandled() // Connection contol.
         && !checkUnsupported(*f.frame.getBody())) // Unsupported operation.
     {
         if (f.type == DATA) // incoming data frames to broker::Connection
@@ -234,29 +235,6 @@ size_t Connection::decode(const char* buffer, size_t size) {
     return size;
 }
 
-// Decode a data event, a read buffer that has been delivered by the cluster.
-void Connection::decode(const EventHeader& eh, const void* data) {
-    assert(eh.getType() == DATA); // Only handle connection data events.
-    const char* cp = static_cast<const char*>(data);
-    Buffer buf(const_cast<char*>(cp), eh.getSize());
-    if (clusterDecoder.decode(buf)) {  // Decoded a frame
-        AMQFrame frame(clusterDecoder.getFrame());
-        while (clusterDecoder.decode(buf)) {
-            cluster.connectionFrame(EventFrame(eh, frame));
-            frame = clusterDecoder.getFrame();
-        }
-        // Set read-credit on the last frame ending in this event.
-        // Credit will be given when this frame is processed.
-        cluster.connectionFrame(EventFrame(eh, frame, 1)); 
-    }
-    else {
-        // We must give 1 unit read credit per event.
-        // This event does not complete any frames so 
-        // we give read credit directly.
-        giveReadCredit(1);
-    }    
-}
-
 broker::SessionState& Connection::sessionState() {
     return *connection.getChannel(currentChannel).getSession();
 }
@@ -297,12 +275,13 @@ void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const str
     QPID_LOG(debug, cluster << " catch-up connection " << *this << " becomes shadow " << shadowId);
     self = shadowId;
     connection.setUserId(username);
-    clusterDecoder.setFragment(fragment.data(), fragment.size());
+    // OK to use decoder here because we are stalled for update.
+    cluster.getDecoder().get(self).setFragment(fragment.data(), fragment.size());
 }
 
-void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t eventId, uint64_t frameId) {
+void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t frameId) {
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members), eventId, frameId);
+    cluster.updateInDone(ClusterMap(joiners, members), frameId);
     self.second = 0;        // Mark this as completed update connection.
 }
 

@@ -57,11 +57,9 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     /** Size of header + payload. */ 
     size_t getStoreSize() { return size + HEADER_SIZE; }
 
-    uint64_t getId() const { return id; }
-    void setId(uint64_t n) { id = n; }
-
     bool isCluster() const { return connectionId.getNumber() == 0; }
     bool isConnection() const { return connectionId.getNumber() != 0; }
+    bool isControl() const { return type == CONTROL; }
 
   protected:
     static const size_t HEADER_SIZE;
@@ -69,7 +67,6 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     EventType type;
     ConnectionId connectionId;
     size_t size;
-    uint64_t id;
 };
 
 /**
