@@ -21,19 +21,17 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.AMQException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class SimpleAMQQueueThreadPoolTest extends TestCase
+public class AMQQueueThreadPoolTest extends TestCase
 {
 
-    public void test() throws AMQException
+    public void testSimpleAMQQueue() throws AMQException
     {
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
         VirtualHost test = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHost("test");
@@ -51,14 +49,50 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
             // 2 - queue InhalerThread
             // 3 - queue PurgerThread
             assertEquals("References not increased", initialCount + 3, ReferenceCountingExecutorService.getInstance().getReferenceCount());
-            
+
             queue.stop();
 
-            assertEquals("References not decreased", initialCount , ReferenceCountingExecutorService.getInstance().getReferenceCount());
+            assertEquals("References not decreased", initialCount, ReferenceCountingExecutorService.getInstance().getReferenceCount());
         }
         finally
         {
             ApplicationRegistry.remove(1);
-        }       
+        }
     }
+
+    public void testPriorityAMQQueue() throws AMQException
+    {
+        int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
+        VirtualHost test = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHost("test");
+
+        try
+        {
+
+            FieldTable arguements = new FieldTable();
+            int priorities = 10;
+            arguements.put(AMQQueueFactory.X_QPID_PRIORITIES, priorities);
+
+            SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false,
+                                                                                       new AMQShortString("owner"),
+                                                                                       false, test, arguements);
+
+            assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
+
+            //This is +2 because:
+            // 1 - asyncDelivery Thread
+            // 2 + 3  - queue InhalerThread, PurgerThread for the Priority Queue
+            // priorities * ( Inhaler , Purger) for each priority level
+            assertEquals("References not increased", (initialCount + 3) + priorities * 2,
+                         ReferenceCountingExecutorService.getInstance().getReferenceCount());
+
+            queue.stop();
+
+            assertEquals("References not decreased", initialCount, ReferenceCountingExecutorService.getInstance().getReferenceCount());
+        }
+        finally
+        {
+            ApplicationRegistry.remove(1);
+        }
+    }
+
 }
