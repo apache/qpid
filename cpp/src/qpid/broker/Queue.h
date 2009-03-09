@@ -101,6 +101,8 @@ namespace qpid {
             RateTracker dequeueTracker;
             int eventMode;
             QueueEvents* eventMgr;
+            bool insertSeqNo;
+            std::string seqNoKey;
 
             void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -291,7 +293,7 @@ namespace qpid {
             void setPosition(framing::SequenceNumber pos);
             int getEventMode();
             void setQueueEventManager(QueueEvents&);
-
+            void insertSequenceNumbers(const std::string& key);
             /**
              * Notify queue that recovery has completed.
              */

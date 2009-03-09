@@ -93,7 +93,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     policyExceeded(false),
     mgmtObject(0),
     eventMode(0),
-    eventMgr(0)
+    eventMgr(0),
+    insertSeqNo(0)
 {
     if (parent != 0)
     {
@@ -551,6 +552,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
         Mutex::ScopedLock locker(messageLock);   
         QueuedMessage qm(this, msg, ++sequence);
         if (policy.get()) policy->tryEnqueue(qm);
+        if (insertSeqNo) msg->getOrInsertHeaders().setInt64(seqNoKey, sequence);
          
         LVQ::iterator i;
         const framing::FieldTable* ft = msg->getApplicationHeaders();
@@ -578,8 +580,9 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
             messages.push_back(qm);
             listeners.populate(copy);
         }
-        if (eventMode && eventMgr) {
-            eventMgr->enqueued(qm);
+        if (eventMode) {
+            if (eventMgr) eventMgr->enqueued(qm);
+            else QPID_LOG(warning, "Enqueue manager not set, events not generated for " << getName());
         }
     }
     copy.notify();
@@ -988,4 +991,10 @@ void Queue::recoveryComplete()
     //process any pending dequeues
     for_each(pendingDequeues.begin(), pendingDequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
     pendingDequeues.clear();
+}
+
+void Queue::insertSequenceNumbers(const std::string& key)
+{
+    seqNoKey = key;
+    insertSeqNo = !seqNoKey.empty();
 }

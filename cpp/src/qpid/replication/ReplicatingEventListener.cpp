@@ -57,7 +57,6 @@ void ReplicatingEventListener::deliverDequeueMessage(const QueuedMessage& dequeu
 {
     FieldTable headers;
     headers.setString(REPLICATION_TARGET_QUEUE, dequeued.queue->getName());
-    headers.setInt(REPLICATION_EVENT_SEQNO, ++sequence);
     headers.setInt(REPLICATION_EVENT_TYPE, DEQUEUE);
     headers.setInt(DEQUEUED_MESSAGE_POSITION, dequeued.position);
     boost::intrusive_ptr<Message> msg(createMessage(headers));
@@ -69,7 +68,6 @@ void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueu
     boost::intrusive_ptr<Message> msg(cloneMessage(*(enqueued.queue), enqueued.payload));
     FieldTable& headers = msg->getProperties<MessageProperties>()->getApplicationHeaders();
     headers.setString(REPLICATION_TARGET_QUEUE, enqueued.queue->getName());
-    headers.setInt(REPLICATION_EVENT_SEQNO, ++sequence);
     headers.setInt(REPLICATION_EVENT_TYPE, ENQUEUE);
     queue->deliver(msg);
 }
@@ -138,6 +136,7 @@ void ReplicatingEventListener::initialize(Plugin::Target& target)
               queue = broker->getQueues().find(options.queue);
           }
           if (queue) {
+              queue->insertSequenceNumbers(REPLICATION_EVENT_SEQNO);
               QueueEvents::EventListener callback = boost::bind(&ReplicatingEventListener::handle, this, _1);
               broker->getQueueEvents().registerListener(options.name, callback);
               QPID_LOG(info, "Registered replicating queue event listener");
