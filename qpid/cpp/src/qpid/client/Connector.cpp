@@ -216,18 +216,21 @@ void TCPConnector::init(){
 }
 
 bool TCPConnector::closeInternal() {
+    bool ret;
+    {
     Mutex::ScopedLock l(closedLock);
-    bool ret = !closed;
+    ret = !closed;
     if (!closed) {
         closed = true;
         aio->queueForDeletion();
         poller->shutdown();
     }
-    if (!joined && receiver.id() != Thread::current().id()) {
-        joined = true;
-        Mutex::ScopedUnlock u(closedLock);
-        receiver.join();
+    if (joined || receiver.id() == Thread::current().id()) {
+        return ret;
     }
+    joined = true;
+    }
+    receiver.join();
     return ret;
 }
         
@@ -260,21 +263,19 @@ const std::string& TCPConnector::getIdentifier() const {
 }
 
 void TCPConnector::send(AMQFrame& frame) {
+    Mutex::ScopedLock l(lock);
+    frames.push_back(frame);
+    //only ask to write if this is the end of a frameset or if we
+    //already have a buffers worth of data
+    currentSize += frame.encodedSize();
     bool notifyWrite = false;
-    {
-        Mutex::ScopedLock l(lock);
-        frames.push_back(frame);
-        //only ask to write if this is the end of a frameset or if we
-        //already have a buffers worth of data
-        currentSize += frame.encodedSize();
-        if (frame.getEof()) {
-            lastEof = frames.size();
-            notifyWrite = true;
-        } else {
-            notifyWrite = (currentSize >= maxFrameSize);
-        }
+    if (frame.getEof()) {
+        lastEof = frames.size();
+        notifyWrite = true;
+    } else {
+        notifyWrite = (currentSize >= maxFrameSize);
     }
-    if (notifyWrite) aio->notifyPendingWrite();
+    if (notifyWrite && !closed) aio->notifyPendingWrite();
 }
 
 void TCPConnector::handleClosed() {
