@@ -457,6 +457,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
     @Override
     public void stop()
     {
+        super.stop();
         for (QueueEntryList queueEntryList : _priorityLists)
         {
             queueEntryList.stop();
