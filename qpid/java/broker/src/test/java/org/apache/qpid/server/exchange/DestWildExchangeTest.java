@@ -100,7 +100,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -140,7 +140,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -159,7 +159,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -198,7 +198,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -217,7 +217,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -236,7 +236,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -254,7 +254,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -294,7 +294,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -312,7 +312,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -352,7 +352,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -384,7 +384,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -425,7 +425,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
@@ -464,7 +464,7 @@ public class DestWildExchangeTest extends TestCase
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageId());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessageId());
 
         queue.deleteMessageFromTop(_context);
         Assert.assertEquals(0, queue.getMessageCount());
