@@ -28,7 +28,6 @@ with_ais_group() {
     echo $* | newgrp ais
 }
 
-test -f cluster.ports && { echo "cluster.ports file already exists" ; exit 1; }
 rm -f cluster*.log
 SIZE=${1:-1}; shift
 CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.

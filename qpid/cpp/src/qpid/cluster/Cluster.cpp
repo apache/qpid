@@ -111,7 +111,6 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     decoder(boost::bind(&Cluster::deliverFrame, this, _1)),
     discarding(true),
     state(INIT),
-    frameId(0),
     lastSize(0),
     lastBroker(false)
 {
@@ -267,9 +266,6 @@ void Cluster::deliveredFrame(const EventFrame& e) {
     }
     else if (state >= CATCHUP) {
         QPID_LOG(trace, *this << " DLVR:  " << e);
-        EventFrame ef(e);       // Non-const copy
-        if (ef.type == DATA)         // Add cluster-id to to data frames.
-            ef.frame.setClusterId(frameId++);  
         ConnectionPtr connection = getConnection(e.connectionId, l);
         if (connection)
             connection->deliveredFrame(e);
@@ -475,18 +471,16 @@ void Cluster::updateStart(const MemberId& updatee, const Url& url, Lock& l) {
     cs.password = settings.password;
     cs.mechanism = settings.mechanism;
     updateThread = Thread(
-        new UpdateClient(self, updatee, url, broker, map, frameId, getConnections(l), decoder,
+        new UpdateClient(self, updatee, url, broker, map, *expiryPolicy, getConnections(l), decoder,
                          boost::bind(&Cluster::updateOutDone, this),
                          boost::bind(&Cluster::updateOutError, this, _1),
                          cs));
 }
 
 // Called in update thread.
-void Cluster::updateInDone(const ClusterMap& m, uint64_t frameId_) {
+void Cluster::updateInDone(const ClusterMap& m) {
     Lock l(lock);
     updatedMap = m;
-    // Safe to set frameId here because we are stalled: deliveredFrame cannot be called concurrently.
-    frameId = frameId_;
     checkUpdateIn(l);
 }
 

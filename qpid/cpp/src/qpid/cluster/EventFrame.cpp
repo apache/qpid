@@ -33,7 +33,9 @@ EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
 }
 
 std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    return o << e.frame  << " " << e.type << " " << e.connectionId << " read-credit=" << e.readCredit;
+    return o << e.frame  << " " << e.type << " " << e.connectionId;
+    if (e.readCredit) o << " read-credit=" << e.readCredit;
+    return o;
 }
 
 }} // namespace qpid::cluster
