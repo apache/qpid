@@ -358,6 +358,7 @@ void Cluster::setReady(Lock&) {
     state = READY;
     if (mgmtObject!=0) mgmtObject->set_status("ACTIVE");
     mcast.release();
+    broker.getQueueEvents().enable();
 }
 
 void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& l) {
@@ -385,8 +386,9 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
             elders = map.getAlive();
             elders.erase(self);
             broker.getLinks().setPassive(true);
+            broker.getQueueEvents().disable();
         }
-    }
+    } 
     else if (state >= CATCHUP && memberChange) {
         memberUpdate(l);
         elders = ClusterMap::intersection(elders, map.getAlive());

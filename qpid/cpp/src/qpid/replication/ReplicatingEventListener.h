@@ -58,7 +58,6 @@ class ReplicatingEventListener : public Plugin
 
     PluginOptions options;    
     qpid::broker::Queue::shared_ptr queue;
-    qpid::framing::SequenceNumber sequence;
 
     void deliverDequeueMessage(const qpid::broker::QueuedMessage& enqueued);
     void deliverEnqueueMessage(const qpid::broker::QueuedMessage& enqueued);
