@@ -279,9 +279,9 @@ void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const str
     cluster.getDecoder().get(self).setFragment(fragment.data(), fragment.size());
 }
 
-void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t frameId) {
+void Connection::membership(const FieldTable& joiners, const FieldTable& members) {
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members), frameId);
+    cluster.updateInDone(ClusterMap(joiners, members));
     self.second = 0;        // Mark this as completed update connection.
 }
 
@@ -350,6 +350,10 @@ void Connection::queuePosition(const string& qname, const SequenceNumber& positi
     shared_ptr<broker::Queue> q = cluster.getBroker().getQueues().find(qname);
     if (!q) throw InvalidArgumentException(QPID_MSG("Invalid queue name " << qname));
     q->setPosition(position);
+}
+
+void Connection::expiryId(uint64_t id) {
+    cluster.getExpiryPolicy().setId(id);
 }
 
 std::ostream& operator<<(std::ostream& o, const Connection& c) {

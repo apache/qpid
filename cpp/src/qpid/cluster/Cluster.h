@@ -92,7 +92,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void leave();
 
     // Update completed - called in update thread
-    void updateInDone(const ClusterMap&, uint64_t frameId);
+    void updateInDone(const ClusterMap&);
 
     MemberId getId() const;
     broker::Broker& getBroker() const;
@@ -108,14 +108,14 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Called only during update by Connection::shadowReady
     Decoder& getDecoder() { return decoder; }
 
+    ExpiryPolicy& getExpiryPolicy() { return *expiryPolicy; }
+    
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
     typedef PollableQueue<Event> PollableEventQueue;
     typedef PollableQueue<EventFrame> PollableFrameQueue;
     typedef std::map<ConnectionId, ConnectionPtr> ConnectionMap;
-
-    // FIXME aconway 2009-03-07: sort functions by thread
 
     // NB: A dummy Lock& parameter marks functions that must only be
     // called with Cluster::lock  locked.
@@ -237,7 +237,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     } state;
 
     ConnectionMap connections;
-    uint64_t frameId;
     ClusterMap map;
     ClusterMap::Set elders;
     size_t lastSize;

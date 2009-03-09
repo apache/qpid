@@ -35,7 +35,6 @@ void AMQFrame::init() {
     subchannel=0;
     channel=0;
     encodedSizeCache = 0;
-    clusterId = 0;
 }
 
 AMQFrame::AMQFrame(const boost::intrusive_ptr<AMQBody>& b) : body(b) { init(); }
