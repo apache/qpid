@@ -247,7 +247,7 @@ public class FileUtils
          boolean success = true;
 
          // If we have nothing to delete then it must be ok to say it was deleted.
-         if (file == null)
+         if (file == null || !file.exists())
          {
              return true;
          }
@@ -258,7 +258,7 @@ public class FileUtils
              {
                  for (File subFile : file.listFiles())
                  {
-                     success = delete(subFile, true) & success ;
+                     success = delete(subFile, true) && success;
                  }
 
                  return success && file.delete();
