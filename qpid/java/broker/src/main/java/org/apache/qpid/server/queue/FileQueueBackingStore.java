@@ -28,6 +28,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.util.FileUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,7 +56,6 @@ public class FileQueueBackingStore implements QueueBackingStore
         MessageMetaData mmd;
 
         File handle = getFileHandle(messageId);
-        handle.deleteOnExit();
 
         ObjectInputStream input = null;
 
@@ -192,8 +192,6 @@ public class FileQueueBackingStore implements QueueBackingStore
             _log.info("Unloading Message (ID:" + messageId + ")");
         }
 
-        handle.deleteOnExit();
-
         ObjectOutputStream writer = null;
         Exception error = null;
 
@@ -295,7 +293,6 @@ public class FileQueueBackingStore implements QueueBackingStore
         if (!bin_dir.exists())
         {
             bin_dir.mkdirs();
-            bin_dir.deleteOnExit();
         }
 
         String id = bin_path + File.separator + messageId;
@@ -304,7 +301,7 @@ public class FileQueueBackingStore implements QueueBackingStore
     }
 
     public void delete(Long messageId)
-    {        
+    {
         File handle = getFileHandle(messageId);
 
         if (handle.exists())
@@ -317,6 +314,15 @@ public class FileQueueBackingStore implements QueueBackingStore
             {
                 throw new RuntimeException("Unable to delete flowToDisk data");
             }
+        }
+    }
+
+    public void close()
+    {
+        _log.info("Closing Backing store at:" + _flowToDiskLocation);
+        if (!FileUtils.delete(new File(_flowToDiskLocation), true))
+        {
+            _log.error("Unable to fully delete backing store location");
         }
     }
 

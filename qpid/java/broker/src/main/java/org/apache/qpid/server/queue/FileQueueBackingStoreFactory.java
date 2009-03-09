@@ -56,6 +56,7 @@ public class FileQueueBackingStoreFactory implements QueueBackingStoreFactory
 
         _flowToDiskLocation += File.separator + QUEUE_BACKING_DIR + File.separator + vHostName;
 
+        //Check the location we will create QUEUE_BACKING_DIR in.
         File root = new File(location);
         if (!root.exists())
         {
@@ -121,8 +122,7 @@ public class FileQueueBackingStoreFactory implements QueueBackingStoreFactory
 
         _log.info("Creating Flow to Disk Store : " + store.getAbsolutePath());
         store.deleteOnExit();
-
-        if(!store.mkdir())
+        if (!store.mkdir())
         {
             throw new ConfigurationException("Unable to create Temporary Flow to Disk store:" + store.getAbsolutePath());
         }
