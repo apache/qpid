@@ -246,12 +246,6 @@ public class FileUtils
      {
          boolean success = true;
 
-         // If we have nothing to delete then it must be ok to say it was deleted.
-         if (file == null || !file.exists())
-         {
-             return true;
-         }
-
          if (file.isDirectory())
          {
              if (recursive)
@@ -267,7 +261,7 @@ public class FileUtils
              return false;
          }
 
-         return success && file.delete();
+         return file.delete();
      }
 
 
