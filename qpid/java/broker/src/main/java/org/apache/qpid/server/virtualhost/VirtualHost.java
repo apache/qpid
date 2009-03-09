@@ -422,6 +422,12 @@ public class VirtualHost implements Accessable
         //Stop Connections
         _connectionRegistry.close();
 
+        //Stop Housekeeping
+        if (_houseKeepingTimer != null)
+        {
+            _houseKeepingTimer.cancel();
+        }
+
         //Stop the Queues processing
         if (_queueRegistry != null)
         {
@@ -429,13 +435,7 @@ public class VirtualHost implements Accessable
             {
                 queue.stop();
             }
-        }        
-
-        //Stop Housekeeping
-        if (_houseKeepingTimer != null)
-        {
-            _houseKeepingTimer.cancel();
-        }        
+        }
 
         //Close TransactionLog
         if (_transactionLog != null)
