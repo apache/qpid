@@ -151,7 +151,10 @@ vector<string> browse(Client& c, const string& q, int n) {
     c.subs.subscribe(lq, q, browseSettings);
     vector<string> result;
     for (int i = 0; i < n; ++i) {
-        result.push_back(lq.get(TIMEOUT).getData());
+        Message m;
+        if (!lq.get(m, TIMEOUT))
+            break;
+        result.push_back(m.getData());
     }
     c.subs.getSubscription(q).cancel();
     return result;
@@ -202,13 +205,23 @@ QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     ClusterFixture cluster(2);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
+    c0.session.queueDeclare("p");
     c0.session.queueDeclare("q");
     c0.session.messageTransfer(arg::content=ttlMessage("a", "q", 200));
     c0.session.messageTransfer(arg::content=Message("b", "q"));
-    BOOST_CHECK_EQUAL(browse(c1, "q", 2), list_of<string>("a")("b"));
-    sys::usleep(300*1000); 
+    c0.session.messageTransfer(arg::content=ttlMessage("x", "p", 10000));
+    c0.session.messageTransfer(arg::content=Message("y", "p"));
+    cluster.add();
+    Client c2(cluster[1], "c2");
+
+    BOOST_CHECK_EQUAL(browse(c0, "p", 2), list_of<string>("x")("y"));
+    BOOST_CHECK_EQUAL(browse(c1, "p", 2), list_of<string>("x")("y"));
+    BOOST_CHECK_EQUAL(browse(c2, "p", 2), list_of<string>("x")("y"));
+
+    sys::usleep(200*1000); 
     BOOST_CHECK_EQUAL(browse(c0, "q", 1), list_of<string>("b"));
     BOOST_CHECK_EQUAL(browse(c1, "q", 1), list_of<string>("b"));
+    BOOST_CHECK_EQUAL(browse(c2, "q", 1), list_of<string>("b"));
 }
 
 QPID_AUTO_TEST_CASE(testSequenceOptions) {

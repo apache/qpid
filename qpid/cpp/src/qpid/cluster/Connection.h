@@ -120,7 +120,7 @@ class Connection :
     
     void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment);
 
-    void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameId);
+    void membership(const framing::FieldTable&, const framing::FieldTable&);
 
     void deliveryRecord(const std::string& queue,
                         const framing::SequenceNumber& position,
@@ -135,6 +135,7 @@ class Connection :
                         uint32_t credit);
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
+    void expiryId(uint64_t);
 
     void txStart();
     void txAccept(const framing::SequenceSet&);
