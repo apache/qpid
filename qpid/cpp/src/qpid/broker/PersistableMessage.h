@@ -26,6 +26,7 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include "BrokerImportExport.h"
 #include "Persistable.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
@@ -93,13 +94,14 @@ class PersistableMessage : public Persistable
     
     bool isContentReleased() const;
 	
-    bool isEnqueueComplete();
+    QPID_BROKER_EXTERN bool isEnqueueComplete();
 
-    void enqueueComplete();
+    QPID_BROKER_EXTERN void enqueueComplete();
 
-    void enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store);
+    QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
+                                         MessageStore* _store);
 
-    void enqueueAsync();
+    QPID_BROKER_EXTERN void enqueueAsync();
 
     bool isDequeueComplete();
     

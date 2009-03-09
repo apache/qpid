@@ -52,7 +52,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -60,14 +60,14 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -76,7 +76,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qmfconsoled.lib qpidbrokersd.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qpidbrokerd.lib qmfconsoled.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -134,19 +134,19 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -155,7 +155,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommon.lib qpidclient.lib qmfconsole.lib qpidbrokersd.lib"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qpidbroker.lib qmfconsole.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -215,7 +215,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -223,14 +223,14 @@
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC;_WIN64"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -240,7 +240,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qmfconsoled.lib qpidbrokersd.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qpidbrokerd.lib qmfconsoled.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -298,19 +298,19 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;QPID_BROKER_STATIC;_WIN64"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -320,7 +320,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommon.lib qpidclient.lib qmfconsole.lib qpidbrokersd.lib"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qpidbroker.lib qmfconsole.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
