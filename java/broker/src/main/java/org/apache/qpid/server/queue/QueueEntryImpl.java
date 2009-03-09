@@ -83,6 +83,7 @@ public class QueueEntryImpl implements QueueEntry
     private long _expiration;
 
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
+    private boolean _persistent;
 
     QueueEntryImpl(SimpleQueueEntryList queueEntryList)
     {
@@ -111,6 +112,7 @@ public class QueueEntryImpl implements QueueEntry
                 _flags |= IMMEDIATE;
             }
             _expiration = message.getExpiration();
+            _persistent = message.isPersistent();
         }
         _backingStore = queueEntryList.getBackingStore();
         _flowed = new AtomicBoolean(false);
@@ -138,6 +140,11 @@ public class QueueEntryImpl implements QueueEntry
             return _backingStore.load(_messageId);
         }
         return _message;
+    }
+
+    public Long getMessageId()
+    {
+        return _messageId;
     }
 
     public long getSize()
@@ -245,12 +252,12 @@ public class QueueEntryImpl implements QueueEntry
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
-        return _message.getContentHeaderBody();
+        return getMessage().getContentHeaderBody();
     }
 
     public boolean isPersistent() throws AMQException
     {
-        return _message.isPersistent();
+        return _persistent;
     }
 
     public boolean isRedelivered()

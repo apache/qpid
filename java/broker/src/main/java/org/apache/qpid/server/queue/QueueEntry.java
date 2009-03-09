@@ -135,6 +135,8 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     AMQMessage getMessage();
 
+    Long getMessageId();
+
     long getSize();
 
     /**

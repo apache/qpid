@@ -417,7 +417,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             deliverAsync();
         }
 
-        _managedObject.checkForNotification(entry.getMessage());
+        _managedObject.checkForNotification(entry);
         
         return entry;
     }
@@ -567,10 +567,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         try
         {
-            AMQMessage msg = entry.getMessage();
-            if (msg.isPersistent())
+            if (entry.isPersistent())
             {
-                _virtualHost.getTransactionLog().dequeueMessage(storeContext, this, msg.getMessageId());
+                _virtualHost.getTransactionLog().dequeueMessage(storeContext, this, entry.getMessageId());
             }
 
         }
@@ -761,7 +760,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                final long messageId = entry.getMessage().getMessageId();
+                final long messageId = entry.getMessageId();
                 return messageId >= fromMessageId && messageId <= toMessageId;
             }
 
@@ -780,7 +779,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                _complete = entry.getMessage().getMessageId() == messageId;
+                _complete = entry.getMessageId() == messageId;
                 return _complete;
             }
 
@@ -829,7 +828,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                final long messageId = entry.getMessage().getMessageId();
+                final long messageId = entry.getMessageId();
                 return (messageId >= fromMessageId)
                        && (messageId <= toMessageId)
                        && entry.acquire();
@@ -848,11 +847,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Move the messages in the transaction log.
             for (QueueEntry entry : entries)
             {
-                AMQMessage message = entry.getMessage();
-
-                if (message.isPersistent() && toQueue.isDurable())
+                if (entry.isPersistent() && toQueue.isDurable())
                 {
-                    transactionLog.enqueueMessage(storeContext, toQueue, message.getMessageId());
+                    transactionLog.enqueueMessage(storeContext, toQueue, entry.getMessageId());
                 }
                 // dequeue will remove the messages from the queue
                 entry.dequeue(storeContext);
@@ -887,6 +884,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             for (QueueEntry entry : entries)
             {
                 toQueue.enqueue(storeContext, entry.getMessage());
+                // As we only did a dequeue above now that we have moved the message we should perform a delete.
+                // We cannot do this earlier as the message will be lost if flowed.
+                //entry.delete();
             }
         }
         catch (MessageCleanupException e)
@@ -913,7 +913,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                final long messageId = entry.getMessage().getMessageId();
+                final long messageId = entry.getMessageId();
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId))
                 {
@@ -939,11 +939,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Move the messages in on the transaction log.
             for (QueueEntry entry : entries)
             {
-                AMQMessage message = entry.getMessage();
-
-                if (!entry.isDeleted() && message.isPersistent() && toQueue.isDurable())
+                if (!entry.isDeleted() && entry.isPersistent() && toQueue.isDurable())
                 {
-                    transactionLog.enqueueMessage(storeContext, toQueue, message.getMessageId());
+                    transactionLog.enqueueMessage(storeContext, toQueue, entry.getMessageId());
                 }
             }
 
@@ -1002,7 +1000,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 QueueEntry node = queueListIterator.getNode();
 
-                final long messageId = node.getMessage().getMessageId();
+                final long messageId = node.getMessageId();
 
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId)
@@ -1438,7 +1436,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             } 
             else 
             {
-                _managedObject.checkForNotification(node.getMessage());
+                _managedObject.checkForNotification(node);
             }
         }
 
@@ -1605,7 +1603,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         for (int i = 0; i < num && !it.atTail(); i++)
         {
             it.advance();
-            ids.add(it.getNode().getMessage().getMessageId());
+            ids.add(it.getNode().getMessageId());
         }
         return ids;
     }

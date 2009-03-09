@@ -215,6 +215,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public Long getMessageId()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public long getSize()
                 {
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.

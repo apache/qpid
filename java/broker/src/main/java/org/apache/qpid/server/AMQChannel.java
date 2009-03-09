@@ -431,7 +431,7 @@ public class AMQChannel
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(debugIdentity() + " Adding unacked message(" + entry.getMessage().toString() + " DT:" + deliveryTag
+                    _log.debug(debugIdentity() + " Adding unacked message(" + entry.toString() + " DT:" + deliveryTag
                                + ") with a queue(" + entry.getQueue() + ") for " + subscription);
                 }
             }
@@ -551,7 +551,7 @@ public class AMQChannel
             }
             else
             {
-                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.getMessage().debugIdentity()
+                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.debugIdentity()
                           + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
 
                 unacked.dequeueAndDelete(_storeContext);
