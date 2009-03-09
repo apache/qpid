@@ -110,6 +110,9 @@ void Receiver::execute(AsyncSession& session, bool /*isRetry*/)
     SubscriptionManager subs(session);
     subscription = subs.subscribe(*this, queue, settings);
     subs.run();
+    if (settings.autoAck) {
+        subscription.accept(subscription.getUnaccepted());
+    }
 }
 
 int main(int argc, char ** argv)
