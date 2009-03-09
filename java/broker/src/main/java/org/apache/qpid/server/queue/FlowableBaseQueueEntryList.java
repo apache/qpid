@@ -236,6 +236,8 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
             //Shutdown thread for inhaler.
             ReferenceCountingExecutorService.getInstance().releaseExecutorService();
             ReferenceCountingExecutorService.getInstance().releaseExecutorService();
+
+            _backingStore.close();
         }
     }
 

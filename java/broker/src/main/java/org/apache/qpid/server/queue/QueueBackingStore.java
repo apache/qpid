@@ -31,4 +31,6 @@ public interface QueueBackingStore
     void unload(AMQMessage message) throws UnableToFlowMessageException;
 
     void delete(Long messageId);
+
+    void close();
 }
