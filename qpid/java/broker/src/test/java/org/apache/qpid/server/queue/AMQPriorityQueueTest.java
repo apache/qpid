@@ -68,17 +68,17 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         ArrayList<QueueEntry> msgs = _subscription.getQueueEntries();
         try
         {
-            assertEquals(new Long(1 + messagIDOffset), msgs.get(0).getMessage().getMessageId());
-            assertEquals(new Long(6 + messagIDOffset), msgs.get(1).getMessage().getMessageId());
-            assertEquals(new Long(8 + messagIDOffset), msgs.get(2).getMessage().getMessageId());
+            assertEquals(new Long(1 + messagIDOffset), msgs.get(0).getMessageId());
+            assertEquals(new Long(6 + messagIDOffset), msgs.get(1).getMessageId());
+            assertEquals(new Long(8 + messagIDOffset), msgs.get(2).getMessageId());
 
-            assertEquals(new Long(2 + messagIDOffset), msgs.get(3).getMessage().getMessageId());
-            assertEquals(new Long(5 + messagIDOffset), msgs.get(4).getMessage().getMessageId());
-            assertEquals(new Long(7 + messagIDOffset), msgs.get(5).getMessage().getMessageId());
+            assertEquals(new Long(2 + messagIDOffset), msgs.get(3).getMessageId());
+            assertEquals(new Long(5 + messagIDOffset), msgs.get(4).getMessageId());
+            assertEquals(new Long(7 + messagIDOffset), msgs.get(5).getMessageId());
 
-            assertEquals(new Long(3 + messagIDOffset), msgs.get(6).getMessage().getMessageId());
-            assertEquals(new Long(4 + messagIDOffset), msgs.get(7).getMessage().getMessageId());
-            assertEquals(new Long(9 + messagIDOffset), msgs.get(8).getMessage().getMessageId());
+            assertEquals(new Long(3 + messagIDOffset), msgs.get(6).getMessageId());
+            assertEquals(new Long(4 + messagIDOffset), msgs.get(7).getMessageId());
+            assertEquals(new Long(9 + messagIDOffset), msgs.get(8).getMessageId());
         }
         catch (AssertionFailedError afe)
         {

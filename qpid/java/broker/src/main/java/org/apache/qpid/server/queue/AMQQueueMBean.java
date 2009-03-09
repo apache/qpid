@@ -274,8 +274,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     /**
      * Checks if there is any notification to be send to the listeners
+     * @param queueEntry
      */
-    public void checkForNotification(AMQMessage msg) throws AMQException
+    public void checkForNotification(QueueEntry queueEntry) throws AMQException
     {
 
         final Set<NotificationCheck> notificationChecks = _queue.getNotificationChecks();
@@ -289,7 +290,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             {
                 if (check.isMessageSpecific() || (_lastNotificationTimes[check.ordinal()] < thresholdTime))
                 {
-                    if (check.notifyIfNecessary(msg, _queue, this))
+                    if (check.notifyIfNecessary(queueEntry, _queue, this))
                     {
                         _lastNotificationTimes[check.ordinal()] = currentTime;
                     }

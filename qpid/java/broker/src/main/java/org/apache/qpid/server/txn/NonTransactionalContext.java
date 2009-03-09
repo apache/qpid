@@ -127,9 +127,9 @@ public class NonTransactionalContext implements TransactionalContext
                     {
                         if (debug)
                         {
-                            _log.debug("Discarding message: " + queueEntry.getMessage().getMessageId());
+                            _log.debug("Discarding message: " + queueEntry.getMessageId());
                         }
-                        if(queueEntry.getMessage().isPersistent())
+                        if(queueEntry.isPersistent())
                         {
                             beginTranIfNecessary();
                         }
@@ -175,9 +175,9 @@ public class NonTransactionalContext implements TransactionalContext
 
             if (debug)
             {
-                _log.debug("Discarding message: " + queueEntry.getMessage().getMessageId());
+                _log.debug("Discarding message: " + queueEntry.getMessageId());
             }
-            if(queueEntry.getMessage().isPersistent())
+            if(queueEntry.isPersistent())
             {
                 beginTranIfNecessary();
             }

@@ -102,7 +102,7 @@ public class TxAck implements TxnOp
         //buffer must be marked as persistent:
         for (QueueEntry msg : _unacked.values())
         {
-            if (msg.getMessage().isPersistent())
+            if (msg.isPersistent())
             {
                 return true;
             }
