@@ -34,11 +34,13 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::replication::constants;
 
+const std::string SEQUENCE_VALUE("qpid.replication-event.sequence");
 ReplicationExchange::ReplicationExchange(const std::string& name, bool durable, 
                                          const FieldTable& args,
                                          QueueRegistry& qr,
                                          Manageable* parent) 
-    : Exchange(name, durable, args, parent), queues(qr), init(false) {}
+    : Exchange(name, durable, args, parent), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
+ {}
 
 std::string ReplicationExchange::getType() const { return typeName; }            
 
@@ -133,6 +135,13 @@ bool ReplicationExchange::isBound(Queue::shared_ptr /*queue*/, const string* con
 }
 
 const std::string ReplicationExchange::typeName("replication");
+
+
+void ReplicationExchange::encode(Buffer& buffer) const
+{
+    args.setInt64(std::string(SEQUENCE_VALUE), sequence);
+    Exchange::encode(buffer);
+}
 
 
 struct ReplicationExchangePlugin : Plugin

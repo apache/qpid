@@ -382,4 +382,9 @@ void Message::resetEnqueueCompleteCallback() { enqueueCallback = 0; }
 void Message::setDequeueCompleteCallback(MessageCallback& cb) { dequeueCallback = &cb; }
 void Message::resetDequeueCompleteCallback() { dequeueCallback = 0; }
 
+framing::FieldTable& Message::getOrInsertHeaders()
+{
+    return getProperties<MessageProperties>()->getApplicationHeaders();
+}
+
 }} // namespace qpid::broker

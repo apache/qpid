@@ -31,6 +31,8 @@
 namespace qpid {
 namespace broker {
 
+class QueueEvents;
+
 /**
  * A registry of queues indexed by queue name.
  *
@@ -86,6 +88,8 @@ class QueueRegistry{
      */
     string generateName();
 
+    void setQueueEvents(QueueEvents*);
+
     /**
      * Set the store to use.  May only be called once.
      */
@@ -120,6 +124,7 @@ private:
     mutable qpid::sys::RWlock lock;
     int counter;
     MessageStore* store;
+    QueueEvents* events;
     management::Manageable* parent;
     bool lastNode; //used to set mode on queue declare
 

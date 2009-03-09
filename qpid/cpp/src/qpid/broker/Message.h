@@ -72,6 +72,7 @@ public:
     std::string getExchangeName() const;
     bool isImmediate() const;
     const framing::FieldTable* getApplicationHeaders() const;
+    framing::FieldTable& getOrInsertHeaders();
     bool isPersistent();
     bool requiresAccept();
 

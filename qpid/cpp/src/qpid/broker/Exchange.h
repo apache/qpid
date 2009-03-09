@@ -58,12 +58,12 @@ public:
 private:
     const std::string name;
     const bool durable;
-    mutable qpid::framing::FieldTable args;
     boost::shared_ptr<Exchange> alternate;
     uint32_t alternateUsers;
     mutable uint64_t persistenceId;
 
 protected:
+    mutable qpid::framing::FieldTable args;
     bool sequence;
     mutable qpid::sys::Mutex sequenceLock;
     int64_t sequenceNo;
@@ -146,7 +146,7 @@ public:
     void setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }
     uint32_t encodedSize() const;
-    void encode(framing::Buffer& buffer) const; 
+    virtual void encode(framing::Buffer& buffer) const; 
 
     static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
