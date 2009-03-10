@@ -428,8 +428,8 @@ QPID_AUTO_TEST_CASE(testConcurrentSenders)
     for (size_t i = 0; i < 5; i++) {
         publishers.push_back(new Publisher(connection, message, 100));
     }
-    for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::start, _1));
-    for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::join, _1));
+    std::for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::start, _1));
+    std::for_each(publishers.begin(), publishers.end(), boost::bind(&Publisher::join, _1));
     connection.close();
 }
 

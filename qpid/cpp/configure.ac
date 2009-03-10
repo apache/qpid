@@ -393,6 +393,13 @@ gl_saved_libs=$LIBS
                  LIB_ACL=$ac_cv_search_acl])
   AC_SUBST([LIB_ACL])
 LIBS=$gl_saved_libs
+
+SOCKLIBS=""
+AC_CHECK_LIB([socket],[socket],[SOCKET_LIB="-lsocket"],[SOCKET_LIB=""],[])
+AC_CHECK_LIB([nsl],[getipnodebyname],[NSL_LIB="-lnsl"],[NSL_LIB=""],[])
+SOCKLIBS="$SOCKET_LIB $NSL_LIB"
+AC_SUBST([SOCKLIBS])
+
 AM_PATH_PYTHON()
 
 # Files to generate	

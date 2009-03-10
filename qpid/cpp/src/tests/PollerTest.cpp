@@ -74,7 +74,7 @@ int main(int /*argc*/, char** /*argv*/)
     try 
     {
         int sv[2];
-        int rc = ::socketpair(AF_LOCAL, SOCK_STREAM, 0, sv);
+        int rc = ::socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
         assert(rc >= 0);
         
         // Set non-blocking

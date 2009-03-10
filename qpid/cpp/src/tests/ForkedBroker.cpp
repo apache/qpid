@@ -22,6 +22,9 @@
 #include "ForkedBroker.h"
 #include <boost/bind.hpp>
 #include <algorithm>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <signal.h>
 
 ForkedBroker::ForkedBroker(const Args& args) { init(args); }
 
