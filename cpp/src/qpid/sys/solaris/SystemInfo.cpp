@@ -33,7 +33,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdio.h>
 #include <errno.h>
+#include <limits.h>
+#include <procfs.h>
+#include <fcntl.h>
+#include <sys/types.h>
 
 using namespace std;
 
@@ -56,12 +61,12 @@ static const string LOCALHOST("127.0.0.1");
 
 void SystemInfo::getLocalIpAddresses(uint16_t port,
                                      std::vector<Address> &addrList) {
-    int s = socket (PF_INET, SOCK_STREAM, 0);
+    int s = socket(PF_INET, SOCK_STREAM, 0);
     for (int i=1;;i++) {
         struct lifreq ifr;
         ifr.lifr_index = i;
         if (::ioctl(s, SIOCGIFADDR, &ifr) < 0) {
-            continue;
+            break;
         }
         struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.lifr_addr;
         std::string addr(inet_ntoa(sin->sin_addr));
@@ -99,6 +104,20 @@ uint32_t SystemInfo::getParentProcessId()
     return (uint32_t) ::getppid();
 }
 
+string SystemInfo::getProcessName()
+{
+    psinfo processInfo;
+    char procfile[PATH_MAX];
+    int fd;
+    string value;
 
+    snprintf(procfile, PATH_MAX, "/proc/%d/psinfo", getProcessId());
+    if ((fd = open(procfile, O_RDONLY)) >= 0) {
+        if (read(fd, (void *) &processInfo, sizeof(processInfo)) == sizeof(processInfo)) {
+            value = processInfo.pr_fname;
+        }
+    }
+    return value;
+}
 
 }} // namespace qpid::sys
