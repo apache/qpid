@@ -252,16 +252,16 @@ public class FileUtils
              {
                  for (File subFile : file.listFiles())
                  {
-                     success = delete(subFile, true) & success ;
+                     success = delete(subFile, true) && success;
                  }
 
-                 return file.delete();
+                 return success && file.delete();
              }
 
              return false;
          }
 
-         return success && file.delete();
+         return file.delete();
      }
 
 

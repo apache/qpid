@@ -60,6 +60,8 @@ Sender::Sender(const std::string& queue, uint count_, uint reportFreq ) : sender
 
 void Sender::execute(AsyncSession& session, bool isRetry)
 {
+    if (verbosity > 0)
+        std::cout << "replaying_sender " << (isRetry ? "first " : "re-") << "connect." << endl;
     if (isRetry) sender.replay(session);
     else sender.init(session);
     while (sent < count) {
@@ -70,7 +72,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         sender.send(message);
         if (count > reportFrequency && !(sent % reportFrequency)) {
             if ( verbosity > 0 )
-                std::cout << "sent " << sent << " of " << count << std::endl;
+                std::cout << "Sender sent " << sent << " of " << count << std::endl;
         }
     }
     message.setData("That's all, folks!");

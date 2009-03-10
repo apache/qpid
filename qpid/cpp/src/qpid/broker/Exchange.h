@@ -59,12 +59,12 @@ public:
 private:
     const std::string name;
     const bool durable;
-    mutable qpid::framing::FieldTable args;
     boost::shared_ptr<Exchange> alternate;
     uint32_t alternateUsers;
     mutable uint64_t persistenceId;
 
 protected:
+    mutable qpid::framing::FieldTable args;
     bool sequence;
     mutable qpid::sys::Mutex sequenceLock;
     int64_t sequenceNo;
@@ -140,13 +140,14 @@ public:
     virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
+    virtual void setProperties(const boost::intrusive_ptr<Message>&);
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
-
+    
     //PersistableExchange:
     void setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }
     uint32_t encodedSize() const;
-    QPID_BROKER_EXTERN void encode(framing::Buffer& buffer) const; 
+    QPID_BROKER_EXTERN virtual void encode(framing::Buffer& buffer) const; 
 
     static QPID_BROKER_EXTERN Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 

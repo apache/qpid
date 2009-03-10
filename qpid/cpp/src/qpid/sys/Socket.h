@@ -27,8 +27,6 @@
 #include "qpid/CommonImportExport.h"
 #include <string>
 
-struct sockaddr;
-
 namespace qpid {
 namespace sys {
 
@@ -93,7 +91,7 @@ public:
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
-    QPID_COMMON_EXTERN Socket* accept(struct sockaddr *addr, socklen_t *addrlen) const;
+    QPID_COMMON_EXTERN Socket* accept() const;
 
     // TODO The following are raw operations, maybe they need better wrapping? 
     QPID_COMMON_EXTERN int read(void *buf, size_t count) const;

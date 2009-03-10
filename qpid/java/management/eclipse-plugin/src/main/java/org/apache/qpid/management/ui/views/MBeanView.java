@@ -30,6 +30,7 @@ import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.AttributeData;
+import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 import org.eclipse.jface.viewers.ISelection;
@@ -135,8 +136,7 @@ public class MBeanView extends ViewPart
     {
         try
         {
-            if (_selectedNode == null || NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
-                NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
+            if (_selectedNode == null || NODE_TYPE_SERVER.equals(_selectedNode.getType()))
             {
                 return;
             }
@@ -176,8 +176,7 @@ public class MBeanView extends ViewPart
      */
     private void setServer()
     {
-        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()) ||
-            NODE_TYPE_DOMAIN.equals(_selectedNode.getType()) )
+        if (NODE_TYPE_SERVER.equals(_selectedNode.getType()))
         {
             _server = (ManagedServer)_selectedNode.getManagedObject();
             _virtualHostName = null;
@@ -359,6 +358,13 @@ public class MBeanView extends ViewPart
     
     private void createNotificationsTab(TabFolder tabFolder)
     {
+        NotificationInfoModel[] items = MBeanUtility.getNotificationInfo(_mbean);
+        if (items == null || items.length == 0)
+        {
+            //the mbean has no notifications to subscribe for, do not create the tab.
+            return;
+        }
+        
         NotificationsTabControl controller = new NotificationsTabControl(tabFolder);
         
         TabItem tab = new TabItem(tabFolder, SWT.NONE);

@@ -24,6 +24,7 @@
 #include <qpid/client/AsyncSession.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageReplayTracker.h>
+#include <qpid/client/QueueOptions.h>
 #include <qpid/Exception.h>
 #include "TestOptions.h"
 
@@ -40,13 +41,17 @@ struct Args : public qpid::TestOptions
     string destination;
     string key;
     uint sendEos;
+    bool durable;
+    string lvqMatchValue;
 
-    Args() : key("test-queue"), sendEos(0)
+    Args() : key("test-queue"), sendEos(0), durable(false)
     {
-        addOptions()            
+        addOptions()
             ("exchange", qpid::optValue(destination, "EXCHANGE"), "Exchange to send messages to")
             ("routing-key", qpid::optValue(key, "KEY"), "Routing key to add to messages")
-            ("send-eos", qpid::optValue(sendEos, "N"), "Send N EOS messages to mark end of input");
+            ("send-eos", qpid::optValue(sendEos, "N"), "Send N EOS messages to mark end of input")
+            ("durable", qpid::optValue(durable, "true|false"), "Mark messages as durable.")
+            ("lvq-match-value", qpid::optValue(lvqMatchValue, "KEY"), "The value to set for the LVQ match key property");
     }
 };
 
@@ -55,7 +60,7 @@ const string EOS("eos");
 class Sender : public FailoverManager::Command
 {
   public:
-    Sender(const std::string& destination, const std::string& key, uint sendEos);
+    Sender(const std::string& destination, const std::string& key, uint sendEos, bool durable, const std::string& lvqMatchValue);
     void execute(AsyncSession& session, bool isRetry);
   private:
     const std::string destination;
@@ -65,8 +70,17 @@ class Sender : public FailoverManager::Command
     uint sent;
 };
 
-Sender::Sender(const std::string& dest, const std::string& key, uint eos) : 
-    destination(dest), sender(10), message("", key), sendEos(eos), sent(0) {}
+Sender::Sender(const std::string& dest, const std::string& key, uint eos, bool durable, const std::string& lvqMatchValue) : 
+    destination(dest), sender(10), message("", key), sendEos(eos), sent(0) 
+{
+    if (durable){
+        message.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
+    }
+
+    if (!lvqMatchValue.empty()) {
+        message.getHeaders().setString(QueueOptions::strLVQMatchProperty, lvqMatchValue);
+    }
+}
 
 void Sender::execute(AsyncSession& session, bool isRetry)
 {
@@ -90,7 +104,7 @@ int main(int argc, char ** argv)
     try {
         opts.parse(argc, argv);
         FailoverManager connection(opts.con);
-        Sender sender(opts.destination, opts.key, opts.sendEos);
+        Sender sender(opts.destination, opts.key, opts.sendEos, opts.durable, opts.lvqMatchValue);
         connection.execute(sender);
         connection.close();
         return 0;  

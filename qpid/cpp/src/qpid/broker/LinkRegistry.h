@@ -66,6 +66,7 @@ namespace broker {
         MessageStore* store;
         bool passive;
         bool passiveChanged;
+        std::string realm;
 
         void periodicMaintenance ();
         bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);

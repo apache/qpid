@@ -42,22 +42,15 @@ struct EventFrame
 
     EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc=0);
 
-    bool isCluster() const { return !connectionId.getPointer(); }
-    bool isConnection() const { return connectionId.getPointer(); }
+    bool isCluster() const { return connectionId.getNumber() == 0; }
+    bool isConnection() const { return connectionId.getNumber() != 0; }
     bool isLastInEvent() const { return readCredit; }
 
 
-    // True if this frame follows immediately after frame e. 
-    bool follows(const EventFrame& e) const {
-        return sequence == e.sequence || (sequence == e.sequence+1 && e.readCredit);
-    }
-
-    bool operator<(const EventFrame& e) const { return sequence < e.sequence; }
-    
     ConnectionId connectionId;
     framing::AMQFrame frame;   
-    uint64_t sequence;
-    int readCredit;             // last frame in an event, give credit when processed.
+    int readCredit; ///< last frame in an event, give credit when processed.
+    EventType type;
 };
 
 std::ostream& operator<<(std::ostream& o, const EventFrame& e);

@@ -70,6 +70,7 @@
     <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
     <property name="dataDir"          type="sstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
+    <statistic name="uptime" type="deltaTime"/>
 
     <method name="echo" desc="Request a response to test the path to the management broker">
       <arg name="sequence" dir="IO" type="uint32" default="0"/>

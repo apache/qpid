@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "qpid/RefCountedBuffer.h"
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/sys/LatencyMetric.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
@@ -34,6 +35,7 @@ namespace qpid {
 
 namespace framing {
 class AMQBody;
+class AMQFrame;
 class Buffer;
 }
 
@@ -55,11 +57,9 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     /** Size of header + payload. */ 
     size_t getStoreSize() { return size + HEADER_SIZE; }
 
-    uint64_t getSequence() const { return sequence; }
-    void setSequence(uint64_t n) { sequence = n; }
-
-    bool isCluster() const { return connectionId.getPointer() == 0; }
-    bool isConnection() const { return connectionId.getPointer() != 0; }
+    bool isCluster() const { return connectionId.getNumber() == 0; }
+    bool isConnection() const { return connectionId.getNumber() != 0; }
+    bool isControl() const { return type == CONTROL; }
 
   protected:
     static const size_t HEADER_SIZE;
@@ -67,7 +67,6 @@ class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
     EventType type;
     ConnectionId connectionId;
     size_t size;
-    uint64_t sequence;
 };
 
 /**
@@ -83,8 +82,11 @@ class Event : public EventHeader {
     /** Create an event copied from delivered data. */
     static Event decodeCopy(const MemberId& m, framing::Buffer&);
 
-    /** Create an event containing a control */
+    /** Create a control event. */
     static Event control(const framing::AMQBody&, const ConnectionId&);
+
+    /** Create a control event. */
+    static Event control(const framing::AMQFrame&, const ConnectionId&);
     
     // Data excluding header.
     char* getData() { return store + HEADER_SIZE; }
@@ -93,6 +95,8 @@ class Event : public EventHeader {
     // Store including header
     char* getStore() { return store; }
     const char* getStore() const { return store; }
+
+    framing::AMQFrame getFrame() const;        
     
     operator framing::Buffer() const;
 
@@ -105,6 +109,7 @@ class Event : public EventHeader {
 };
 
 std::ostream& operator << (std::ostream&, const EventHeader&);
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_EVENT_H*/

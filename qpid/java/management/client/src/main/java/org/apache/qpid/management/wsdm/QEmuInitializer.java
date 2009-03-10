@@ -57,7 +57,9 @@ public class QEmuInitializer extends HttpServlet
     				Names.QPID_EMULATOR_OBJECT_NAME);
 		} catch(Exception exception)
 		{
-			LOGGER.warn(exception,Messages.QMAN_300005_QEMU_INITIALIZATION_FAILURE);
+			LOGGER.warn(
+					exception,
+					Messages.QMAN_300005_QEMU_INITIALIZATION_FAILURE);
 			throw new ServletException(exception);
 		}
 	}
@@ -84,8 +86,8 @@ public class QEmuInitializer extends HttpServlet
 	{
 		try 
 		{
-			ManagementFactory.getPlatformMBeanServer()
-				.unregisterMBean(Names.QPID_EMULATOR_OBJECT_NAME);
+			ManagementFactory.getPlatformMBeanServer().unregisterMBean(
+					Names.QPID_EMULATOR_OBJECT_NAME);
 		} catch (Exception exception) 
 		{
 		}

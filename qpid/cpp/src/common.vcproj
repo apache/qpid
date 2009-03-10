@@ -420,6 +420,9 @@
 				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.cpp">
 			</File>
 			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionExpiryIdBody.cpp">
+			</File>
+			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.cpp">
 			</File>
 			<File
@@ -1124,6 +1127,9 @@
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionExpiryIdBody.h">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.h">

@@ -19,8 +19,9 @@
  *
  */
 
-#include "qpid/sys/uuid.h"
 #include "qpid/CommonImportExport.h"
+#include "qpid/sys/uuid.h"
+#include "qpid/sys/IntegerTypes.h"
 
 #include <boost/array.hpp>
 

@@ -44,18 +44,15 @@ ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, con
     return 0;
 }
 
-// Used for outgoing Link connections, we don't care.
+// Used for outgoing Link connections
 sys::ConnectionCodec*
-ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& id) {
-    return new ConnectionCodec(out, id, cluster, false, true);
-    //return next->create(out, id);
+ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& logId) {
+    return new ConnectionCodec(out, logId, cluster, false, true);
 }
 
-ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& cluster, bool catchUp, bool isLink)
-    : codec(out, id, isLink),
-      interceptor(new Connection(cluster, codec, id, cluster.getId(), catchUp, isLink)),
-      id(interceptor->getId()),
-      localId(id)
+ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& logId, Cluster& cluster, bool catchUp, bool isLink)
+    : codec(out, logId, isLink),
+      interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink))
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);

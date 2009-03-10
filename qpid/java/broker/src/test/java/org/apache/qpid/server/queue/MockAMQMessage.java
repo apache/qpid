@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 
 public class MockAMQMessage extends TransientAMQMessage
 {
@@ -29,6 +30,7 @@ public class MockAMQMessage extends TransientAMQMessage
             throws AMQException
     {
        super(messageId);
+        _messagePublishInfo = new MessagePublishInfoImpl(null,false,false,null);
     }
 
 

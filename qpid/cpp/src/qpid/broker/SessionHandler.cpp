@@ -34,7 +34,8 @@ using namespace qpid::sys;
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : amqp_0_10::SessionHandler(&c.getOutput(), ch),
       connection(c), 
-      proxy(out)
+      proxy(out),
+      clusterOrderProxy(c.getClusterOrderOutput() ? new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
 {}
 
 SessionHandler::~SessionHandler() {}
@@ -84,11 +85,23 @@ void SessionHandler::readyToSend() {
     if (session.get()) session->readyToSend();
 }
 
-// TODO aconway 2008-05-12: hacky - handle attached for bridge clients.
-// We need to integrate the client code so we can run a real client
-// in the bridge.
-// 
-void SessionHandler::attached(const std::string& name) {
+/**
+ * Used by inter-broker bridges to set up session id and attach
+ */
+void SessionHandler::attachAs(const std::string& name)
+{
+    SessionId id(connection.getUserId(), name);
+    SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
+    session.reset(new SessionState(connection.getBroker(), *this, id, config));
+    sendAttach(false);
+}
+
+/**
+ * TODO: this is a little ugly, fix it; its currently still relied on
+ * for 'push' bridges
+ */
+void SessionHandler::attached(const std::string& name)
+{
     if (session.get()) {
         amqp_0_10::SessionHandler::attached(name);
     } else {

@@ -211,7 +211,7 @@ class BrokerManager:
                 if POLICY_TYPE in args: print "--limit-policy=%s" % args[POLICY_TYPE].replace("_", "-"),
                 if LVQ in args and args[LVQ] == 1: print "--order lvq",
                 if LVQNB in args and args[LVQNB] == 1: print "--order lvq-no-browse",
-                if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%d" % args[GENERATE_QUEUE_EVENTS],
+                if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%d" % args[QUEUE_EVENT_GENERATION],
                 print
 
     def QueueListRecurse (self, filter):

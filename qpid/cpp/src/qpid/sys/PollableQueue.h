@@ -53,7 +53,7 @@ class PollableQueue {
      * @param values  Queue of values to process. Any items remaining
      *                on return from Callback are put back on the queue.
      */
-    typedef boost::function<void (Queue& values)> Callback;
+    typedef boost::function<void (Queue&)> Callback;
 
     /**
      * Constructor; sets necessary parameters.

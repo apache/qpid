@@ -92,8 +92,6 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
     
     framing::ProtocolVersion version;
     bool initiated;
-
-    sys::Mutex closedLock;    
     bool closed;
     bool joined;
 
@@ -185,7 +183,7 @@ TCPConnector::~TCPConnector() {
 }
 
 void TCPConnector::connect(const std::string& host, int port){
-    Mutex::ScopedLock l(closedLock);
+    Mutex::ScopedLock l(lock);
     assert(closed);
     try {
         socket.connect(host, port);
@@ -207,7 +205,7 @@ void TCPConnector::connect(const std::string& host, int port){
 }
 
 void TCPConnector::init(){
-    Mutex::ScopedLock l(closedLock);
+    Mutex::ScopedLock l(lock);
     assert(joined);
     ProtocolInitiation init(version);
     writeDataBlock(init);
@@ -216,17 +214,21 @@ void TCPConnector::init(){
 }
 
 bool TCPConnector::closeInternal() {
-    Mutex::ScopedLock l(closedLock);
-    bool ret = !closed;
+    bool ret;
+    {
+    Mutex::ScopedLock l(lock);
+    ret = !closed;
     if (!closed) {
         closed = true;
+        aio->queueForDeletion();
         poller->shutdown();
     }
-    if (!joined && receiver.id() != Thread::current().id()) {
-        joined = true;
-        Mutex::ScopedUnlock u(closedLock);
-        receiver.join();
+    if (joined || receiver.id() == Thread::current().id()) {
+        return ret;
     }
+    joined = true;
+    }
+    receiver.join();
     return ret;
 }
         
@@ -259,21 +261,19 @@ const std::string& TCPConnector::getIdentifier() const {
 }
 
 void TCPConnector::send(AMQFrame& frame) {
+    Mutex::ScopedLock l(lock);
+    frames.push_back(frame);
+    //only ask to write if this is the end of a frameset or if we
+    //already have a buffers worth of data
+    currentSize += frame.encodedSize();
     bool notifyWrite = false;
-    {
-        Mutex::ScopedLock l(lock);
-        frames.push_back(frame);
-        //only ask to write if this is the end of a frameset or if we
-        //already have a buffers worth of data
-        currentSize += frame.encodedSize();
-        if (frame.getEof()) {
-            lastEof = frames.size();
-            notifyWrite = true;
-        } else {
-            notifyWrite = (currentSize >= maxFrameSize);
-        }
+    if (frame.getEof()) {
+        lastEof = frames.size();
+        notifyWrite = true;
+    } else {
+        notifyWrite = (currentSize >= maxFrameSize);
     }
-    if (notifyWrite) aio->notifyPendingWrite();
+    if (notifyWrite && !closed) aio->notifyPendingWrite();
 }
 
 void TCPConnector::handleClosed() {
@@ -384,14 +384,13 @@ void TCPConnector::run() {
     assert(protect);
     try {
         Dispatcher d(poller);
-	
+
         for (int i = 0; i < 32; i++) {
             aio->queueReadBuffer(new Buff(maxFrameSize));
         }
-	
+
         aio->start(poller);
         d.run();
-        aio->queueForDeletion();
         socket.close();
     } catch (const std::exception& e) {
         QPID_LOG(error, QPID_MSG("FAIL " << identifier << ": " << e.what()));

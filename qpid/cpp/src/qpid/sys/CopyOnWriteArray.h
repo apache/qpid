@@ -80,7 +80,7 @@ public:
     bool add_unless(T& t, F f)
     {
         Mutex::ScopedLock l(lock);
-        if (array && find_if(array->begin(), array->end(), f) != array->end()) {
+        if (array && std::find_if(array->begin(), array->end(), f) != array->end()) {
             return false;
         } else {
             ArrayPtr copy(array ? new std::vector<T>(*array) : new std::vector<T>());

@@ -40,6 +40,7 @@ import org.apache.qpid.server.queue.MessageCleanupException;
 import org.apache.qpid.server.queue.MockProtocolSession;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
+import org.apache.qpid.server.queue.UnableToFlowMessageException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
@@ -214,6 +215,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public Long getMessageId()
+                {
+                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public long getSize()
                 {
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
@@ -229,7 +235,17 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public void setExpiration(long expiration)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public boolean isAcquired()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isAvailable()
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
@@ -260,6 +276,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 }
 
                 public void setDeliveredToSubscription()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void setDeliveredToConsumer()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
@@ -314,15 +335,6 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void dispose(final StoreContext storeContext) throws MessageCleanupException
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public void restoreCredit()
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
 
                 public void dequeueAndDelete(StoreContext storeContext) throws FailedDequeueException
                 {
@@ -340,6 +352,21 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 }
 
                 public boolean removeStateChangeListener(StateChangeListener listener)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void unload()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void load()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isFlowed()
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }

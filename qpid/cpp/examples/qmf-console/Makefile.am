@@ -19,7 +19,7 @@
 
 examplesdir=$(pkgdatadir)/examples/qmf-console
 
-MAKELDFLAG = qmfconsole
+MAKELDFLAGS=$(CONSOLEFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=console printevents ping queuestats

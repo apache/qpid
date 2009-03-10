@@ -22,6 +22,8 @@
 #include "Cluster.h"
 #include "ClusterMap.h"
 #include "Connection.h"
+#include "Decoder.h"
+#include "ExpiryPolicy.h"
 #include "qpid/client/SessionBase_0_10Access.h" 
 #include "qpid/client/ConnectionAccess.h" 
 #include "qpid/broker/Broker.h"
@@ -86,49 +88,25 @@ void send(client::AsyncSession& s, const AMQBody& body) {
 // TODO aconway 2008-09-24: optimization: update connections/sessions in parallel.
 
 UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, const Url& url,
-                           broker::Broker& broker, const ClusterMap& m, uint64_t frameId_,
-                           const Cluster::Connections& cons,
+                           broker::Broker& broker, const ClusterMap& m, ExpiryPolicy& expiry_, 
+                           const Cluster::ConnectionVector& cons, Decoder& decoder_,
                            const boost::function<void()>& ok,
                            const boost::function<void(const std::exception&)>& fail,
                            const client::ConnectionSettings& cs
 )
     : updaterId(updater), updateeId(updatee), updateeUrl(url), updaterBroker(broker), map(m),
-      frameId(frameId_), connections(cons), 
+      expiry(expiry_), connections(cons), decoder(decoder_),
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
-      done(ok), failed(fail) 
+      done(ok), failed(fail), connectionSettings(cs)
 {
     connection.open(url, cs);
-    session = connection.newSession("update_shared");
+    session = connection.newSession(UPDATE);
 }
 
 UpdateClient::~UpdateClient() {}
 
 // Reserved exchange/queue name for catch-up, avoid clashes with user queues/exchanges.
-const std::string UpdateClient::UPDATE("qpid.qpid-update");
-
-void UpdateClient::update() {
-    QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
-    Broker& b = updaterBroker;
-    b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
-
-    // Update exchange is used to route messages to the proper queue without modifying routing key.
-    session.exchangeDeclare(arg::exchange=UPDATE, arg::type="fanout", arg::autoDelete=true);
-    b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueue, this, _1));
-    // Update queue is used to transfer acquired messages that are no longer on their original queue.
-    session.queueDeclare(arg::queue=UPDATE, arg::autoDelete=true);
-    session.sync();
-    session.close();
-
-    std::for_each(connections.begin(), connections.end(), boost::bind(&UpdateClient::updateConnection, this, _1));
-
-    ClusterConnectionMembershipBody membership;
-    map.toMethodBody(membership);
-    membership.setFrameId(frameId);
-    AMQFrame frame(membership);
-    client::ConnectionAccess::getImpl(connection)->handle(frame);
-    connection.close();
-    QPID_LOG(debug,  updaterId << " updated state to " << updateeId << " at " << updateeUrl);
-}
+const std::string UpdateClient::UPDATE("qpid.cluster-update");
 
 void UpdateClient::run() {
     try {
@@ -138,6 +116,27 @@ void UpdateClient::run() {
         failed(e);
     }
     delete this;
+}
+
+void UpdateClient::update() {
+    QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
+    Broker& b = updaterBroker;
+    b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
+    b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueue, this, _1));
+    // Update queue is used to transfer acquired messages that are no longer on their original queue.
+    session.queueDeclare(arg::queue=UPDATE, arg::autoDelete=true);
+    session.sync();
+    session.close();
+
+    std::for_each(connections.begin(), connections.end(), boost::bind(&UpdateClient::updateConnection, this, _1));
+
+    ClusterConnectionProxy(session).expiryId(expiry.getId());
+    ClusterConnectionMembershipBody membership;
+    map.toMethodBody(membership);
+    AMQFrame frame(membership);
+    client::ConnectionAccess::getImpl(connection)->handle(frame);
+    connection.close();
+    QPID_LOG(debug,  updaterId << " updated state to " << updateeId << " at " << updateeUrl);
 }
 
 namespace {
@@ -152,8 +151,7 @@ template <class T> std::string encode(const T& t) {
 
 void UpdateClient::updateExchange(const boost::shared_ptr<Exchange>& ex) {
     QPID_LOG(debug, updaterId << " updating exchange " << ex->getName());
-    ClusterConnectionProxy proxy(session);
-    proxy.exchange(encode(*ex));
+    ClusterConnectionProxy(session).exchange(encode(*ex));
 }
 
 /** Bind a queue to the update exchange and update messges to it
@@ -164,24 +162,40 @@ class MessageUpdater {
     bool haveLastPos;
     framing::SequenceNumber lastPos;
     client::AsyncSession session;
-
+    ExpiryPolicy& expiry;
+    
   public:
 
-    MessageUpdater(const string& q, const client::AsyncSession s) : queue(q), haveLastPos(false), session(s) {
+    MessageUpdater(const string& q, const client::AsyncSession s, ExpiryPolicy& expiry_) : queue(q), haveLastPos(false), session(s), expiry(expiry_) {
         session.exchangeBind(queue, UpdateClient::UPDATE);
     }
 
     ~MessageUpdater() {
-        session.exchangeUnbind(queue, UpdateClient::UPDATE);
+        try {
+            session.exchangeUnbind(queue, UpdateClient::UPDATE);
+        }
+        catch (const std::exception& e) {
+            // Don't throw in a destructor.
+            QPID_LOG(error, "Unbinding update queue " << queue << ": " << e.what());
+        }
     }
 
 
     void updateQueuedMessage(const broker::QueuedMessage& message) {
+        // Send the queue position if necessary.
         if (!haveLastPos || message.position - lastPos != 1)  {
             ClusterConnectionProxy(session).queuePosition(queue, message.position.getValue()-1);
             haveLastPos = true;
         }
         lastPos = message.position;
+
+        // Send the expiry ID if necessary.
+        if (message.payload->getProperties<DeliveryProperties>()->getTtl()) {
+            boost::optional<uint64_t> expiryId = expiry.getId(*message.payload);
+            if (!expiryId) return; // Message already expired, don't replicate.
+            ClusterConnectionProxy(session).expiryId(*expiryId);
+        }
+
         SessionBase_0_10Access sb(session);
         framing::MessageTransferBody transfer(
             framing::ProtocolVersion(), UpdateClient::UPDATE, message::ACCEPT_MODE_NONE, message::ACQUIRE_MODE_PRE_ACQUIRED);
@@ -204,16 +218,13 @@ class MessageUpdater {
     void updateMessage(const boost::intrusive_ptr<broker::Message>& message) {
         updateQueuedMessage(broker::QueuedMessage(0, message, haveLastPos? lastPos.getValue()+1 : 1));
     }
-    
-   
 };
-
 
 void UpdateClient::updateQueue(const boost::shared_ptr<Queue>& q) {
     QPID_LOG(debug, updaterId << " updating queue " << q->getName());
     ClusterConnectionProxy proxy(session);
     proxy.queue(encode(*q));
-    MessageUpdater updater(q->getName(), session);
+    MessageUpdater updater(q->getName(), session, expiry);
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
     q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, q->getName(), _1));
 }
@@ -228,13 +239,16 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
     shadowConnection = catchUpConnection();
 
     broker::Connection& bc = updateConnection->getBrokerConnection();
-    // FIXME aconway 2008-10-20: What authentication info to use on reconnect?
-    shadowConnection.open(updateeUrl, bc.getUserId(), ""/*password*/, "/"/*vhost*/, bc.getFrameMax());
+    connectionSettings.maxFrameSize = bc.getFrameMax();
+    shadowConnection.open(updateeUrl, connectionSettings);
     bc.eachSessionHandler(boost::bind(&UpdateClient::updateSession, this, _1));
+    // Safe to use decoder here because we are stalled for update.
+    std::pair<const char*, size_t> fragment = decoder.get(updateConnection->getId()).getFragment();
     ClusterConnectionProxy(shadowConnection).shadowReady(
         updateConnection->getId().getMember(),
-        reinterpret_cast<uint64_t>(updateConnection->getId().getPointer()),
-        updateConnection->getBrokerConnection().getUserId()
+        updateConnection->getId().getNumber(),
+        bc.getUserId(),
+        string(fragment.first, fragment.second)
     );
     shadowConnection.close();
     QPID_LOG(debug, updaterId << " updated connection " << *updateConnection);
@@ -269,7 +283,7 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     SequenceNumber received = ss->receiverGetReceived().command;
     if (inProgress)  
         --received;
-
+             
     // Reset command-sequence state.
     proxy.sessionState(
         ss->senderGetReplayPoint().command,
@@ -285,9 +299,6 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     if (inProgress) {
         inProgress->getFrames().map(simpl->out);
     }
-
-    // FIXME aconway 2008-09-23: update session replay list.
-
     QPID_LOG(debug, updaterId << " updated session " << sh.getSession()->getId());
 }
 
@@ -322,7 +333,7 @@ void UpdateClient::updateUnacked(const broker::DeliveryRecord& dr) {
         // If the message is acquired then it is no longer on the
         // updatees queue, put it on the update queue for updatee to pick up.
         //
-        MessageUpdater(UPDATE, shadowSession).updateQueuedMessage(dr.getMessage());
+        MessageUpdater(UPDATE, shadowSession, expiry).updateQueuedMessage(dr.getMessage());
     }
     ClusterConnectionProxy(shadowSession).deliveryRecord(
         dr.getQueue()->getName(),
@@ -341,8 +352,8 @@ void UpdateClient::updateUnacked(const broker::DeliveryRecord& dr) {
 
 class TxOpUpdater : public broker::TxOpConstVisitor, public MessageUpdater {
   public:
-    TxOpUpdater(UpdateClient& dc, client::AsyncSession s)
-        : MessageUpdater(UpdateClient::UPDATE, s), parent(dc), session(s), proxy(s) {}
+    TxOpUpdater(UpdateClient& dc, client::AsyncSession s, ExpiryPolicy& expiry)
+        : MessageUpdater(UpdateClient::UPDATE, s, expiry), parent(dc), session(s), proxy(s) {}
 
     void operator()(const broker::DtxAck& ) {
         throw InternalErrorException("DTX transactions not currently supported by cluster.");
@@ -385,7 +396,7 @@ void UpdateClient::updateTxState(broker::SemanticState& s) {
     broker::TxBuffer::shared_ptr txBuffer = s.getTxBuffer();
     if (txBuffer) {
         proxy.txStart();
-        TxOpUpdater updater(*this, shadowSession);
+        TxOpUpdater updater(*this, shadowSession, expiry);
         txBuffer->accept(updater);
         proxy.txEnd();
     }

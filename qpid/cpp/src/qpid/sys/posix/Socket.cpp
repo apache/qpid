@@ -108,7 +108,7 @@ void Socket::createTcp() const
 {
     int& socket = impl->fd;
     if (socket != -1) Socket::close();
-    int s = ::socket (PF_INET, SOCK_STREAM, 0);
+    int s = ::socket (AF_INET, SOCK_STREAM, 0);
     if (s < 0) throw QPID_POSIX_ERROR(errno);
     socket = s;
 }
@@ -138,25 +138,30 @@ const char* h_errstr(int e) {
 }
 }
 
-void Socket::connect(const std::string& host, uint16_t port) const
+void Socket::connect(const std::string& host, uint16_t p) const
 {
-    std::stringstream namestream;
-    namestream << host << ":" << port;
-    connectname = namestream.str();
+    std::stringstream portstream;
+    portstream << p;
+    std::string port = portstream.str();
+    connectname = host + ":" + port;
 
     const int& socket = impl->fd;
-    struct sockaddr_in name;
-    name.sin_family = AF_INET;
-    name.sin_port = htons(port);
-    // TODO: Be good to make this work for IPv6 as well as IPv4
-    // Use more modern lookup functions
-    struct hostent* hp = gethostbyname ( host.c_str() );
-    if (hp == 0)
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << h_errstr(h_errno)));
-    ::memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
-    if ((::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0) &&
-        (errno != EINPROGRESS))
+
+    ::addrinfo *res;
+    ::addrinfo hints;
+    ::memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
+    hints.ai_socktype = SOCK_STREAM;
+    int n = ::getaddrinfo(host.c_str(), port.c_str(), &hints, &res);
+    if (n != 0)
+        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
+    // TODO the correct thing to do here is loop on failure until you've used all the returned addresses
+    if ((::connect(socket, res->ai_addr, res->ai_addrlen) < 0) &&
+        (errno != EINPROGRESS)) {
+        ::freeaddrinfo(res);
         throw qpid::Exception(QPID_MSG(strError(errno) << ": " << host << ":" << port));
+    }
+    ::freeaddrinfo(res);
 }
 
 void
@@ -189,9 +194,9 @@ int Socket::listen(uint16_t port, int backlog) const
     return ntohs(name.sin_port);
 }
 
-Socket* Socket::accept(struct sockaddr *addr, socklen_t *addrlen) const
+Socket* Socket::accept() const
 {
-    int afd = ::accept(impl->fd, addr, addrlen);
+    int afd = ::accept(impl->fd, 0, 0);
     if ( afd >= 0)
         return new Socket(new IOHandlePrivate(afd));
     else if (errno == EAGAIN)
@@ -238,7 +243,7 @@ uint16_t Socket::getLocalPort() const
 
 uint16_t Socket::getRemotePort() const
 {
-    return atoi(getService(impl->fd, true).c_str());
+    return std::atoi(getService(impl->fd, true).c_str());
 }
 
 int Socket::getError() const

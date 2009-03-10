@@ -61,6 +61,8 @@ class QueueEvents
     QPID_BROKER_EXTERN void registerListener(const std::string& id,
                                              const EventListener&);
     QPID_BROKER_EXTERN void unregisterListener(const std::string& id);
+    void enable();
+    void disable();
     //process all outstanding events
     QPID_BROKER_EXTERN void shutdown();
   private:
@@ -69,6 +71,7 @@ class QueueEvents
 
     EventQueue eventQueue;
     Listeners listeners;
+    volatile bool enabled;
     qpid::sys::Mutex lock;//protect listeners from concurrent access
     
     void handle(EventQueue::Queue& e);

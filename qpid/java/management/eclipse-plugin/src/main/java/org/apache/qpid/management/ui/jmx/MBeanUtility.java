@@ -440,18 +440,6 @@ public class MBeanUtility
         return mbeans;
     }
     
-    /**
-     * Returns all the domains for the given server. This method can be removed as now this RCP is specific to 
-     * Qpid and domain is also fixed
-     */
-    public static List<String> getAllDomains(ManagedServer server) throws Exception
-    {
-        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
-        MBeanServerConnection mbsc = serverRegistry.getServerConnection();
-        String[] domains = mbsc.getDomains();
-        return Arrays.asList(domains);
-    }
-    
     public static void printOutput(String statement)
     {
         if (ApplicationRegistry.debug)

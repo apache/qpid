@@ -70,17 +70,12 @@ void OutputInterceptor::giveReadCredit(int32_t credit) {
 // Called in write thread when the IO layer has no more data to write.
 // We do nothing in the write thread, we run doOutput only on delivery
 // of doOutput requests.
-bool  OutputInterceptor::doOutput() {
-    QPID_LOG(trace, parent << " write idle.");
-    return false;
-}
+bool  OutputInterceptor::doOutput() { return false; }
 
 // Delivery of doOutput allows us to run the real connection doOutput()
 // which tranfers frames to the codec for writing.
 // 
 void OutputInterceptor::deliverDoOutput(size_t requested) {
-    QPID_LATENCY_RECORD("deliver do-output", *this);
-    QPID_LATENCY_CLEAR(*this);
     size_t buf = getBuffered();
     if (parent.isLocal())
         writeEstimate.delivered(requested, sent, buf); // Update the estimate.
@@ -91,9 +86,7 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
         moreOutput = parent.getBrokerConnection().doOutput();
     } while (sent < requested && moreOutput);
     sent += buf;                // Include buffered data in the sent total.
-
-    QPID_LOG(trace, "Delivered doOutput: requested=" << requested << " output=" << sent << " more=" << moreOutput);
-
+    QPID_LOG(trace, parent << " delivereDoOutput: requested=" << requested << " sent=" << sent << " more=" << moreOutput);
     if (parent.isLocal() && moreOutput)  {
         QPID_LOG(trace,  parent << " deliverDoOutput - sending doOutput, more output available.");
         sendDoOutput();

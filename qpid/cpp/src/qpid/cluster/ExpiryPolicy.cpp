@@ -30,48 +30,46 @@
 namespace qpid {
 namespace cluster {
 
-ExpiryPolicy::ExpiryPolicy(const boost::function<bool()> & f, Multicaster& m, const MemberId& id, broker::Timer& t)
-    : expiredPolicy(new Expired), isLeader(f), mcast(m), memberId(id), timer(t) {}
-
-namespace {
-uint64_t clusterId(const broker::Message& m) {
-    assert(m.getFrames().begin() != m.getFrames().end());
-    return m.getFrames().begin()->getClusterId();
-}
+ExpiryPolicy::ExpiryPolicy(Multicaster& m, const MemberId& id, broker::Timer& t)
+    : expiryId(0), expiredPolicy(new Expired), mcast(m), memberId(id), timer(t) {}
 
 struct ExpiryTask : public broker::TimerTask {
     ExpiryTask(const boost::intrusive_ptr<ExpiryPolicy>& policy, uint64_t id, sys::AbsTime when)
-        : TimerTask(when), expiryPolicy(policy), messageId(id) {}
-    void fire() { expiryPolicy->sendExpire(messageId); }
+        : TimerTask(when), expiryPolicy(policy), expiryId(id) {}
+    void fire() { expiryPolicy->sendExpire(expiryId); }
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
-    const uint64_t messageId;
+    const uint64_t expiryId;
 };
-}
 
 void ExpiryPolicy::willExpire(broker::Message& m) {
-    timer.add(new ExpiryTask(this, clusterId(m), m.getExpiration()));
+    uint64_t id = expiryId++;
+    assert(unexpiredById.find(id) == unexpiredById.end());
+    assert(unexpiredByMessage.find(&m) == unexpiredByMessage.end());
+    unexpiredById[id] = &m;
+    unexpiredByMessage[&m] = id;
+    timer.add(new ExpiryTask(this, id, m.getExpiration()));
 }
 
 bool ExpiryPolicy::hasExpired(broker::Message& m) {
-    sys::Mutex::ScopedLock l(lock);
-    IdSet::iterator i = expired.find(clusterId(m));
-    if (i != expired.end()) {
-        expired.erase(i);
-        const_cast<broker::Message&>(m).setExpiryPolicy(expiredPolicy); // hasExpired() == true; 
-        return true;
-    }
-    return false;
+    return unexpiredByMessage.find(&m) == unexpiredByMessage.end();
 }
 
 void ExpiryPolicy::sendExpire(uint64_t id) {
-    sys::Mutex::ScopedLock l(lock);
-    if (isLeader()) 
-        mcast.mcastControl(framing::ClusterMessageExpiredBody(framing::ProtocolVersion(), id), memberId);
+    mcast.mcastControl(framing::ClusterMessageExpiredBody(framing::ProtocolVersion(), id), memberId);
 }
 
 void ExpiryPolicy::deliverExpire(uint64_t id) {
-    sys::Mutex::ScopedLock l(lock);
-    expired.insert(id);
+    IdMessageMap::iterator i = unexpiredById.find(id);
+    if (i != unexpiredById.end()) {
+        i->second->setExpiryPolicy(expiredPolicy); // hasExpired() == true; 
+        unexpiredByMessage.erase(i->second);
+        unexpiredById.erase(i);
+    }
+}
+
+boost::optional<uint64_t> ExpiryPolicy::getId(broker::Message& m) {
+    MessageIdMap::iterator i = unexpiredByMessage.find(&m);
+    return i == unexpiredByMessage.end() ? boost::optional<uint64_t>() : i->second;
 }
 
 bool ExpiryPolicy::Expired::hasExpired(broker::Message&) { return true; }

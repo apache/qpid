@@ -74,6 +74,8 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     public void opened(Session ssn) {}
 
+    public void resumed(Session ssn) {}
+
     public void message(final Session ssn, MessageTransfer xfr)
     {
         if (queue)
@@ -122,6 +124,13 @@ public class ConnectionTest extends TestCase implements SessionListener
         {
             // do nothing
         }
+        else if (body.startsWith("EXCP"))
+        {
+            ExecutionException exc = new ExecutionException();
+            exc.setDescription("intentional exception for testing");
+            ssn.invoke(exc);
+            ssn.close();
+        }
         else
         {
             throw new IllegalArgumentException
@@ -138,9 +147,14 @@ public class ConnectionTest extends TestCase implements SessionListener
 
     private void send(Session ssn, String msg)
     {
+        send(ssn, msg, false);
+    }
+
+    private void send(Session ssn, String msg, boolean sync)
+    {
         ssn.messageTransfer
             ("xxx", MessageAcceptMode.NONE, MessageAcquireMode.PRE_ACQUIRED,
-             null, msg);
+             null, msg, sync ? SYNC : NONE);
     }
 
     private Connection connect(final Condition closed)
@@ -277,6 +291,7 @@ public class ConnectionTest extends TestCase implements SessionListener
     class TestSessionListener implements SessionListener
     {
         public void opened(Session s) {}
+        public void resumed(Session s) {}
         public void exception(Session s, SessionException e) {}
         public void message(Session s, MessageTransfer xfr)
         {
@@ -389,6 +404,43 @@ public class ConnectionTest extends TestCase implements SessionListener
         conn.connect("localhost", port, null, "guest", "guest");
         conn.connectionHeartbeat();
         conn.close();
+    }
+
+    public void testExecutionExceptionInvoke() throws Exception
+    {
+        startServer();
+
+        Connection conn = new Connection();
+        conn.connect("localhost", port, null, "guest", "guest");
+        Session ssn = conn.createSession();
+        send(ssn, "EXCP 0");
+        Thread.sleep(3000);
+        try
+        {
+            send(ssn, "SINK 1");
+        }
+        catch (SessionException exc)
+        {
+            assertNotNull(exc.getException());
+        }
+    }
+
+    public void testExecutionExceptionSync() throws Exception
+    {
+        startServer();
+
+        Connection conn = new Connection();
+        conn.connect("localhost", port, null, "guest", "guest");
+        Session ssn = conn.createSession();
+        send(ssn, "EXCP 0", true);
+        try
+        {
+            ssn.sync();
+        }
+        catch (SessionException exc)
+        {
+            assertNotNull(exc.getException());
+        }
     }
 
 }

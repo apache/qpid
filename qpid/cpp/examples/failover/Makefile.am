@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/failover
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=declare_queues resuming_receiver replaying_sender

@@ -78,9 +78,6 @@ void reader(DispatchHandle& h, int fd) {
     h.rewatch();
 }
 
-DispatchHandle* rh = 0;
-DispatchHandle* wh = 0;
-
 void rInterrupt(DispatchHandle&) {
 	cerr << "R";
 }
@@ -92,9 +89,27 @@ void wInterrupt(DispatchHandle&) {
 DispatchHandle::Callback rcb = rInterrupt;
 DispatchHandle::Callback wcb = wInterrupt;
 
+DispatchHandleRef *volatile rh = 0;
+DispatchHandleRef *volatile wh = 0;
+
+volatile bool stopWait = false;
+volatile bool phase1finished = false;
+
+timer_t timer;
+
+void stop_handler(int /*signo*/, siginfo_t* /*info*/, void* /*context*/) {
+    stopWait = true;
+}
+
 void timer_handler(int /*signo*/, siginfo_t* /*info*/, void* /*context*/) {
-	rh->call(rcb);
-	wh->call(wcb);
+    static int count = 0;
+    if (count++ < 10) {
+        rh->call(rcb);
+	   wh->call(wcb);
+    } else {
+        phase1finished = true;
+        assert(::timer_delete(timer) == 0);        
+    }
 }
 
 int main(int /*argc*/, char** /*argv*/)
@@ -114,7 +129,7 @@ int main(int /*argc*/, char** /*argv*/)
 
     // Setup sender and receiver
     int sv[2];
-    int rc = ::socketpair(AF_LOCAL, SOCK_STREAM, 0, sv);
+    int rc = ::socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
     assert(rc >= 0);
     
     // Set non-blocking
@@ -132,8 +147,8 @@ int main(int /*argc*/, char** /*argv*/)
     PosixIOHandle f0(sv[0]);
     PosixIOHandle f1(sv[1]);
 
-    rh = new DispatchHandle(f0, boost::bind(reader, _1, sv[0]), 0, 0);
-    wh = new DispatchHandle(f1, 0, boost::bind(writer, _1, sv[1], testString), 0);    
+    rh = new DispatchHandleRef(f0, boost::bind(reader, _1, sv[0]), 0, 0);
+    wh = new DispatchHandleRef(f1, 0, boost::bind(writer, _1, sv[1], testString), 0);    
 
     rh->startWatch(poller);
     wh->startWatch(poller);
@@ -155,10 +170,9 @@ int main(int /*argc*/, char** /*argv*/)
     assert(rc == 0);
     
     ::sigevent se;
+    ::memset(&se, 0, sizeof(se)); // Clear to make valgrind happy (this *is* the neatest way to do this portably - sigh)
     se.sigev_notify = SIGEV_SIGNAL;
     se.sigev_signo = SIGRTMIN;
-    se.sigev_value.sival_ptr = 0;
-    timer_t timer;
     rc = ::timer_create(CLOCK_REALTIME, &se, &timer);
     assert(rc == 0);
     
@@ -169,11 +183,52 @@ int main(int /*argc*/, char** /*argv*/)
     rc = ::timer_settime(timer, 0, &ts, 0);
     assert(rc == 0);
 
-    // wait 2 minutes then shutdown
-    ::sleep(60);
+    // wait
+    while (!phase1finished) {
+        ::sleep(1);
+    }
+
+    // Now test deleting/creating DispatchHandles in tight loop, so that we are likely to still be using the
+    // attached PollerHandles after deleting the DispatchHandle
+    DispatchHandleRef* t = wh;
+    wh = 0;
+    delete t;
+    t = rh;
+    rh = 0;
+    delete t;
+
+    sa.sa_sigaction = stop_handler;
+    rc = ::sigaction(SIGRTMIN, &sa,0);
+    assert(rc == 0);
+    
+    itimerspec nts = {
+    /*.it_value = */ {30, 0},  // s, ns
+    /*.it_interval = */ {30, 0}}; // s, ns
+    
+    rc = ::timer_create(CLOCK_REALTIME, &se, &timer);
+    assert(rc == 0);
+    rc = ::timer_settime(timer, 0, &nts, 0);
+    assert(rc == 0);
+
+    DispatchHandleRef* rh1;
+    DispatchHandleRef* wh1;
+
+    struct timespec w = {0, 1000000};
+    while (!stopWait) {
+        rh1 = new DispatchHandleRef(f0, boost::bind(reader, _1, sv[0]), 0, 0);
+        wh1 = new DispatchHandleRef(f1, 0, boost::bind(writer, _1, sv[1], testString), 0);
+        rh1->startWatch(poller);
+        wh1->startWatch(poller);
+
+        ::nanosleep(&w, 0);
+
+        delete wh1;
+        delete rh1;
+    }
 
     rc = ::timer_delete(timer);
     assert(rc == 0);
+    
     poller->shutdown();
     dt.join();
     dt1.join();

@@ -64,9 +64,9 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     private static final Logger _logger = Logger.getLogger(AMQUserManagementMBean.class);
 
     private PrincipalDatabase _principalDatabase;
-    private String _accessFileName;
     private Properties _accessRights;
-    //    private File _accessFile;
+    private File _accessFile;
+
     private ReentrantLock _accessRightsUpdate = new ReentrantLock();
 
     // Setup for the TabularType
@@ -104,7 +104,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     public AMQUserManagementMBean() throws JMException
     {
-        super(UserManagement.class, UserManagement.TYPE);
+        super(UserManagement.class, UserManagement.TYPE, UserManagement.VERSION);
     }
 
     public String getObjectInstanceName()
@@ -129,9 +129,10 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     public boolean setRights(String username, boolean read, boolean write, boolean admin)
     {
 
-        if (_accessRights.get(username) == null)
+        Object oldRights = null;
+        if ((oldRights =_accessRights.get(username)) == null)
         {
-            // If the user doesn't exist in the user rights file check that they at least have an account.
+            // If the user doesn't exist in the access rights file check that they at least have an account.
             if (_principalDatabase.getUser(username) == null)
             {
                 return false;
@@ -140,7 +141,6 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
         try
         {
-
             _accessRightsUpdate.lock();
 
             // Update the access rights
@@ -166,8 +166,29 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                     _accessRights.remove(username);
                 }
             }
+            
+            //save the rights file
+            try
+            {
+                saveAccessFile();
+            }
+            catch (IOException e)
+            {
+                _logger.warn("Problem occured saving '" + _accessFile + "', the access right changes will not be preserved: " + e);
 
-            saveAccessFile();
+                //the rights file was not successfully saved, restore user rights to previous value
+                _logger.warn("Reverting attempted rights update for user'" + username + "'");
+                if (oldRights != null)
+                {
+                    _accessRights.put(username, oldRights);
+                }
+                else
+                {
+                    _accessRights.remove(username);
+                }
+
+                return false;
+            }
         }
         finally
         {
@@ -184,9 +205,23 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     {
         if (_principalDatabase.createPrincipal(new UsernamePrincipal(username), password))
         {
-            _accessRights.put(username, "");
-
-            return setRights(username, read, write, admin);
+            if (!setRights(username, read, write, admin))
+            {
+                //unable to set rights for user, remove account
+                try
+                {
+                    _principalDatabase.deletePrincipal(new UsernamePrincipal(username));
+                }
+                catch (AccountNotFoundException e)
+                {
+                    //ignore
+                }
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         return false;
@@ -194,7 +229,6 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     public boolean deleteUser(String username)
     {
-
         try
         {
             if (_principalDatabase.deletePrincipal(new UsernamePrincipal(username)))
@@ -204,7 +238,16 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                     _accessRightsUpdate.lock();
 
                     _accessRights.remove(username);
-                    saveAccessFile();
+                    
+                    try
+                    {
+                        saveAccessFile();
+                    }
+                    catch (IOException e)
+                    {
+                        _logger.warn("Problem occured saving '" + _accessFile + "', the access right changes will not be preserved: " + e);
+                        return false;
+                    }
                 }
                 finally
                 {
@@ -213,15 +256,15 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                         _accessRightsUpdate.unlock();
                     }
                 }
-                return true;
             }
         }
         catch (AccountNotFoundException e)
         {
             _logger.warn("Attempt to delete user (" + username + ") that doesn't exist");
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     public boolean reloadData()
@@ -233,12 +276,12 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
             }
             catch (ConfigurationException e)
             {
-                _logger.info("Reload failed due to:" + e);
+                _logger.warn("Reload failed due to:" + e);
                 return false;
             }
             catch (IOException e)
             {
-                _logger.info("Reload failed due to:" + e);
+                _logger.warn("Reload failed due to:" + e);
                 return false;
             }
             // Reload successful
@@ -320,10 +363,24 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
      */
     public void setAccessFile(String accessFile) throws IOException, ConfigurationException
     {
-        _accessFileName = accessFile;
-
-        if (_accessFileName != null)
+        if (accessFile != null)
         {
+            _accessFile = new File(accessFile);
+            if (!_accessFile.exists())
+            {
+                throw new ConfigurationException("'" + _accessFile + "' does not exist");
+            }
+
+            if (!_accessFile.canRead())
+            {
+                throw new ConfigurationException("Cannot read '" + _accessFile + "'.");
+            }
+
+            if (!_accessFile.canWrite())
+            {
+                _logger.warn("Unable to write to access rights file '" + _accessFile + "', changes will not be preserved.");
+            }
+
             loadAccessFile();
         }
         else
@@ -334,39 +391,34 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     private void loadAccessFile() throws IOException, ConfigurationException
     {
-        try
+        if(_accessFile == null)
         {
-            _accessRightsUpdate.lock();
-
-            Properties accessRights = new Properties();
-
-            File accessFile = new File(_accessFileName);
-
-            if (!accessFile.exists())
-            {
-                throw new ConfigurationException("'" + _accessFileName + "' does not exist");
-            }
-
-            if (!accessFile.canRead())
-            {
-                throw new ConfigurationException("Cannot read '" + _accessFileName + "'.");
-            }
-
-            if (!accessFile.canWrite())
-            {
-                _logger.warn("Unable to write to access file '" + _accessFileName + "' changes will not be preserved.");
-            }
-
-            accessRights.load(new FileInputStream(accessFile));
-            checkAccessRights(accessRights);
-            setAccessRights(accessRights);
+            _logger.error("No jmx access rights file has been specified.");
+            return;
         }
-        finally
+        
+        if(_accessFile.exists())
         {
-            if (_accessRightsUpdate.isHeldByCurrentThread())
+            try
             {
-                _accessRightsUpdate.unlock();
+                _accessRightsUpdate.lock();
+
+                Properties accessRights = new Properties();
+                accessRights.load(new FileInputStream(_accessFile));
+                checkAccessRights(accessRights);
+                setAccessRights(accessRights);
             }
+            finally
+            {
+                if (_accessRightsUpdate.isHeldByCurrentThread())
+                {
+                    _accessRightsUpdate.unlock();
+                }
+            }
+        }
+        else
+        {
+            _logger.error("Specified jmxaccess rights file '" + _accessFile + "' does not exist.");
         }
     }
 
@@ -385,33 +437,24 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
     }
 
-    private void saveAccessFile()
+    private void saveAccessFile() throws IOException
     {
         try
         {
             _accessRightsUpdate.lock();
-            try
-            {
-                // Create temporary file
-                File tmp = File.createTempFile(_accessFileName, ".tmp");
 
-                // Rename current file
-                File rights = new File(_accessFileName);
+            // Create temporary file
+            File tmp = File.createTempFile(_accessFile.getName(), ".tmp");
 
-                FileOutputStream output = new FileOutputStream(tmp);
-                _accessRights.store(output, "Generated by AMQUserManagementMBean Console : Last edited by user:" + getCurrentJMXUser());
-                output.close();
+            FileOutputStream output = new FileOutputStream(tmp);
+            _accessRights.store(output, "Generated by AMQUserManagementMBean Console : Last edited by user:" + getCurrentJMXUser());
+            output.close();
 
-                // Rename new file to main file
-                tmp.renameTo(rights);
+            // Rename new file to main file
+            tmp.renameTo(_accessFile);
 
-                // delete tmp
-                tmp.delete();
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Problem occured saving '" + _accessFileName + "' changes may not be preserved. :" + e);
-            }
+            // delete tmp
+            tmp.delete();
         }
         finally
         {
@@ -420,6 +463,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 _accessRightsUpdate.unlock();
             }
         }
+        
     }
 
     private String getCurrentJMXUser()

@@ -53,6 +53,7 @@ class Listener : public MessageListener,
     bool gaps;
     uint  reportFrequency;
     int  verbosity;
+    bool done;
 };
 
 
@@ -62,7 +63,8 @@ Listener::Listener(int freq, int verbosity)
     lastSn(0), 
     gaps(false), 
     reportFrequency(freq),
-    verbosity(verbosity)
+    verbosity(verbosity),
+    done(false)
 {}
 
 
@@ -70,6 +72,7 @@ void Listener::received(Message & message)
 {
     if (message.getData() == "That's all, folks!") 
     {
+        done = true;
         if(verbosity > 0 )
         {
             std::cout << "Shutting down listener for " 
@@ -111,14 +114,14 @@ void Listener::check()
     if (gaps) throw Exception("Detected gaps in sequence; messages appear to have been lost.");
 }
 
-void Listener::execute(AsyncSession& session, bool isRetry)
-{
-    if (isRetry) {
-        // std::cout << "Resuming from " << count << std::endl;
+void Listener::execute(AsyncSession& session, bool isRetry) {
+    if (verbosity > 0)
+        std::cout << "resuming_receiver " << (isRetry ? "first " : "re-") << "connect." << endl;
+    if (!done) {
+        SubscriptionManager subs(session);
+        subscription = subs.subscribe(*this, "message_queue");
+        subs.run();
     }
-    SubscriptionManager subs(session);
-    subscription = subs.subscribe(*this, "message_queue");
-    subs.run();
 }
 
 void Listener::editUrlList(std::vector<Url>& urls)

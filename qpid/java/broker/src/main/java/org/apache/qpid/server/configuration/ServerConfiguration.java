@@ -33,8 +33,18 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationFactory;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.tools.messagestore.MessageStoreTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ServerConfiguration
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
+public class ServerConfiguration implements SignalHandler
 {
 
     private static Configuration _config;
@@ -51,6 +61,13 @@ public class ServerConfiguration
 
     private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
     private SecurityConfiguration _securityConfiguration = null;
+
+    private File _configFile;
+    
+    private Logger _log = LoggerFactory.getLogger(this.getClass());
+
+    private ConfigurationManagementMBean _mbean;
+    
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -82,6 +99,8 @@ public class ServerConfiguration
     public ServerConfiguration(File configurationURL) throws ConfigurationException
     {
         this(parseConfig(configurationURL));
+        _configFile = configurationURL;
+        sun.misc.Signal.handle(new sun.misc.Signal("HUP"), this);
     }
 
     public ServerConfiguration(Configuration conf) throws ConfigurationException
@@ -94,8 +113,9 @@ public class ServerConfiguration
         _securityConfiguration = new SecurityConfiguration(conf.subset("security"));
 
         setupVirtualHosts(conf);
+        
     }
-
+    
     private void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
         List vhosts = conf.getList("virtualhosts");
@@ -113,7 +133,7 @@ public class ServerConfiguration
                     CompositeConfiguration mungedConf = new CompositeConfiguration();
                     mungedConf.addConfiguration(conf.subset("virtualhosts.virtualhost."+name));
                     mungedConf.addConfiguration(vhostConfiguration.subset("virtualhost." + name));
-                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, mungedConf);
+                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, mungedConf, this);
                     _virtualHosts.put(vhostConfig.getName(), vhostConfig);
                 }
             }
@@ -181,6 +201,42 @@ public class ServerConfiguration
         return conf;
     }
 
+    @Override
+    public void handle(Signal arg0)
+    {
+        try
+        {
+            reparseConfigFile();
+        }
+        catch (ConfigurationException e)
+        {
+             _log.error("Could not reload configuration file", e);
+        }        
+    }
+
+    public void reparseConfigFile() throws ConfigurationException
+    {
+        if (_configFile != null)
+        {
+            Configuration newConfig = parseConfig(_configFile);
+            _securityConfiguration = new SecurityConfiguration(newConfig.subset("security"));
+            ApplicationRegistry.getInstance().getAccessManager().configurePlugins(_securityConfiguration);
+            
+            VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
+            for (String hostname : _virtualHosts.keySet())
+            {
+                VirtualHost vhost = vhostRegistry.getVirtualHost(hostname);
+                SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newConfig.subset("virtualhosts.virtualhost."+hostname+".security"));
+                vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
+            }
+        }
+    }
+
+    public String getQpidWork()
+    {
+        return System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir"));
+    }
+
     public void setJMXManagementPort(int mport)
     {
         _jmxPort = mport;
@@ -246,11 +302,6 @@ public class ServerConfiguration
     public int getFrameSize()
     {
         return _config.getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
-    }
-
-    public boolean getManagementSecurityEnabled()
-    {
-        return _config.getBoolean("management.security-enabled", false);
     }
 
     public boolean getProtectIOEnabled()
@@ -454,8 +505,10 @@ public class ServerConfiguration
         _config.setProperty("housekeeping.expiredMessageCheckPeriod", value);
     }
 
-    public long getHousekeepingExpiredMessageCheckPeriod()
+    public long getHousekeepingCheckPeriod()
     {
-        return _config.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+        return _config.getLong("housekeeping.checkPeriod", 
+                   _config.getLong("housekeeping.expiredMessageCheckPeriod", 
+                           DEFAULT_HOUSEKEEPING_PERIOD));
     }
 }

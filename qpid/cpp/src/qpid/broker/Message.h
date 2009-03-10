@@ -73,6 +73,7 @@ public:
     QPID_BROKER_EXTERN std::string getExchangeName() const;
     bool isImmediate() const;
     QPID_BROKER_EXTERN const framing::FieldTable* getApplicationHeaders() const;
+    framing::FieldTable& getOrInsertHeaders();
     QPID_BROKER_EXTERN bool isPersistent();
     bool requiresAccept();
 

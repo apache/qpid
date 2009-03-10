@@ -30,7 +30,16 @@ import org.apache.qpid.management.Messages;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.model.AccessMode;
+import org.apache.qpid.management.domain.model.type.AbsTime;
+import org.apache.qpid.management.domain.model.type.DeltaTime;
+import org.apache.qpid.management.domain.model.type.ObjectReference;
+import org.apache.qpid.management.domain.model.type.Str16;
+import org.apache.qpid.management.domain.model.type.Str8;
 import org.apache.qpid.management.domain.model.type.Type;
+import org.apache.qpid.management.domain.model.type.Uint16;
+import org.apache.qpid.management.domain.model.type.Uint32;
+import org.apache.qpid.management.domain.model.type.Uint64;
+import org.apache.qpid.management.domain.model.type.Uint8;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageProperties;
@@ -71,7 +80,12 @@ public final class Configuration
     private Configuration()
     {
         defineQueueNames();
+        
         createHeaderForCommandMessages();
+        
+        addAccessModeMappings();
+        
+        addTypeMappings();
     }
 
     void clean()
@@ -90,9 +104,11 @@ public final class Configuration
     }  
     
     /**
-     * Returns true if this configuration has at least one broker connection data.
+     * Returns true if this configuration has at least 
+     * one broker configured.
      * 
-     * @return true if this configuration has at least one broker connection data.
+     * @return true if this configuration has at least one 
+     * 				broker configured.
      */
     public boolean hasOneOrMoreBrokersDefined()
     {
@@ -245,26 +261,46 @@ public final class Configuration
     /**
      * Adds a new type mapping to this configuration.
      * 
-     * @param mapping the type mapping that will be added.
+     * @param code the code that will be associated with the declared type.
+     * @param type the type.
+     * @param vailidatorClassName the FQN of the validator class that will be 
+     * 				associated with the given type.
      */
-    void addTypeMapping(TypeMapping mapping) {
-        int code = mapping.getCode();
-        Type type = mapping.getType();
-        String validatorClassName = mapping.getValidatorClassName();
-        _typeMappings.put(code, type);
+    void addTypeMapping(int code, Type type, String validatorClassName) {
+    	_typeMappings.put(code, type);
         _validators.put(type, validatorClassName);
         
-        LOGGER.info(Messages.QMAN_000005_TYPE_MAPPING_CONFIGURED, code,type,validatorClassName);
+        LOGGER.info(
+        		Messages.QMAN_000005_TYPE_MAPPING_CONFIGURED, 
+        		code,
+        		type,
+        		validatorClassName);
     }
-    
+
+
+    /**
+     * Adds a new type mapping to this configuration.
+     * 
+     * @param code the code that will be associated with the declared type.
+     * @param type the type.
+     */
+    void addTypeMapping(int code, Type type) {
+        _typeMappings.put(code, type);
+        
+        LOGGER.info(
+        		Messages.QMAN_000005_TYPE_MAPPING_CONFIGURED, 
+        		code,
+        		type,
+        		"not configured for this type.");
+    }
+
     /**
      * Adds a new access mode mapping to this configuration.
      * 
-     * @param mapping the mapping that will be added.
+     * @param code the code that will be associated with the access mode,
+     * @param accessMode the accessMode.
      */
-    void addAccessModeMapping(AccessModeMapping mapping){
-        int code = mapping.getCode();
-        AccessMode accessMode = mapping.getAccessMode();
+    void addAccessModeMapping(int code, AccessMode accessMode){
         _accessModes.put(code, accessMode);
         
         LOGGER.info(Messages.QMAN_000006_ACCESS_MODE_MAPPING_CONFIGURED, code,accessMode);        
@@ -420,4 +456,34 @@ public final class Configuration
 	{
 		this._keepAliveTime = keepAliveTime;
 	}
+	
+	/**
+     * Configures access mode mappings.
+     * An access mode mapping is an association between a code and an access mode.
+     */
+    private void addAccessModeMappings() {
+    	addAccessModeMapping(1,AccessMode.RC);
+    	addAccessModeMapping(2,AccessMode.RW);
+    	addAccessModeMapping(3,AccessMode.RO);
+	}	
+    
+	/**
+     * Configures type mappings.
+     * A type mapping is an association between a code and a management type.
+     */
+    private void addTypeMappings()
+    {
+    	addTypeMapping(1,new Uint8(),Names.NUMBER_VALIDATOR);
+    	addTypeMapping(2,new Uint16(),Names.NUMBER_VALIDATOR);
+    	addTypeMapping(3,new Uint32(),Names.NUMBER_VALIDATOR);
+    	addTypeMapping(4,new Uint64(),Names.NUMBER_VALIDATOR);
+    	addTypeMapping(6,new Str8(),Names.STRING_VALIDATOR);
+    	addTypeMapping(7,new Str16(),Names.STRING_VALIDATOR);
+    	addTypeMapping(8,new AbsTime());
+    	addTypeMapping(9,new DeltaTime());
+    	addTypeMapping(10,new ObjectReference());
+    	addTypeMapping(11,new org.apache.qpid.management.domain.model.type.Boolean());
+    	addTypeMapping(14,new org.apache.qpid.management.domain.model.type.Uuid());
+    	addTypeMapping(15,new org.apache.qpid.management.domain.model.type.Map());
+    }        
 }

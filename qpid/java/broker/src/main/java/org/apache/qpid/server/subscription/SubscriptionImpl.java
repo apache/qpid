@@ -387,6 +387,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         //todo - client id should be recoreded and this test removed but handled below
         if (_noLocal)
         {
+            //todo getPublisherClientInstance should be moved to QueueEntryImpl
             final Object publisherId = entry.getMessage().getPublisherClientInstance();
 
             // We don't want local messages so check to see if message is one we sent
@@ -407,6 +408,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                 //todo - client id should be recoreded and this test removed but handled here
 
 
+                //todo getPublisherIdentifier should be moved to QueueEntryImpl                
                 if (localInstance != null && localInstance.equals(entry.getMessage().getPublisherIdentifier()))
                 {
                     return false;
@@ -498,9 +500,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     }
 
 
-    public boolean wouldSuspend(QueueEntry msg)
+    public boolean wouldSuspend(QueueEntry queueEntry)
     {
-        return !_creditManager.useCreditForMessage(msg.getMessage());//_channel.wouldSuspend(msg.getMessage());
+        return !_creditManager.useCreditForMessage(queueEntry);
     }
 
     public void getSendLock()

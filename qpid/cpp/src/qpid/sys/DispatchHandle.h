@@ -65,6 +65,7 @@ private:
     Mutex stateLock;
     enum {
         IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW,
+        ACTIVE_DELETE,
         DELAYED_IDLE, DELAYED_INACTIVE, DELAYED_R, DELAYED_W, DELAYED_RW,
         DELAYED_DELETE
     } state;

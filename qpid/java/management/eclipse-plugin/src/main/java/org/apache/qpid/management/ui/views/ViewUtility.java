@@ -39,14 +39,15 @@ import javax.management.openmbean.OpenType;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.ErrorDialog;
+import org.apache.commons.codec.binary.Hex;
+
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ControlAdapter;
+import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -56,12 +57,12 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 /**
  * Utility Class for displaying OpenMbean data types by creating required SWT widgets
- * @author Bhupendra Bhardwaj
  */
 public class ViewUtility
 {
@@ -88,6 +89,10 @@ public class ViewUtility
         SUPPORTED_ARRAY_DATATYPES.add("java.lang.Double");
         SUPPORTED_ARRAY_DATATYPES.add("java.util.Date");
     }
+    
+    private static final int DEFAULT_CONTENT_SIZE = 198;
+    static Button _firstButton, _nextButton, _previousButton, _lastButton;
+    static Text _hexNumTextToEnd, _hexNumTextToStart;
     
     /**
      * Populates the composite with given openmbean data type (TabularType or CompositeType)
@@ -190,15 +195,15 @@ public class ViewUtility
         layoutData.widthHint = 80;
         firstRecordButton.setLayoutData(layoutData);
 
-        final Button nextRecordButton = toolkit.createButton(dataHolder, NEXT, SWT.PUSH);
+        final Button previousRecordButton = toolkit.createButton(dataHolder, PREV, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_END);
         layoutData.widthHint = 80;
-        nextRecordButton.setLayoutData(layoutData);
+        previousRecordButton.setLayoutData(layoutData);
 
-        final Button previousRecordButton = toolkit.createButton(dataHolder, PREV, SWT.PUSH);
+        final Button nextRecordButton = toolkit.createButton(dataHolder, NEXT, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_BEGINNING);
         layoutData.widthHint = 80;
-        previousRecordButton.setLayoutData(layoutData);
+        nextRecordButton.setLayoutData(layoutData);
 
         final Button lastRecordButton = toolkit.createButton(dataHolder, LAST, SWT.PUSH);
         layoutData = new GridData (GridData.HORIZONTAL_ALIGN_BEGINNING);
@@ -352,7 +357,7 @@ public class ViewUtility
                     }
                     else
                     {
-                        setNotSupportedDataType(toolkit, compositeHolder);
+                        handleBinaryMessageContent(toolkit, compositeHolder, data, itemName, encoding);
                     }                        
                 }
                 // If array of any other supported type, show as a list of String array
@@ -436,6 +441,321 @@ public class ViewUtility
         return messageBox.open();
     }
 
+    /**
+     * Creates widgets for object messages and populates the content in hexadecimal format.
+     * @param toolkit
+     * @param compositeHolder
+     * @param data
+     * @param itemName
+     * @param encoding
+     */
+    private static void handleBinaryMessageContent(FormToolkit toolkit, Composite compositeHolder, CompositeData data, String itemName, String encoding)
+    {
+        final String thisEncoding = encoding;
+        final Byte[] arrayItems = (Byte[]) data.get(itemName);
+        final byte[] byteArray = new byte[arrayItems.length];
+
+        for (int i = 0; i < arrayItems.length; i++)
+        {
+            byteArray[i] = arrayItems[i];
+        }
+
+        try
+        {
+            //create a new composite to contain the widgets required to display object messages.
+            final Composite localComposite = toolkit.createComposite(compositeHolder, SWT.NONE);
+            localComposite.setData("currentBytePos", 0);
+            localComposite.setData("startingBytePos", 0);
+            GridLayout layout = new GridLayout(2, true);
+            layout.marginWidth = 0;
+            layout.marginHeight = 0;
+            localComposite.setLayout(layout);
+            localComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1));
+
+            int startContentSize = DEFAULT_CONTENT_SIZE;
+
+            if (byteArray.length < DEFAULT_CONTENT_SIZE)
+            {
+                startContentSize = byteArray.length;
+            }
+
+            //create a text to display the hexadecimal views of object messages, it takes more space than ascii view as 
+            //a hex uses 2 chars and 1 space, while ascii only uses 1 char and 1 space.
+            final Text hexText = toolkit.createText(localComposite,
+                    new String(displayByteFormat(localComposite, byteArray, startContentSize * 2, thisEncoding, "<<", true)),
+                    SWT.READ_ONLY | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL | SWT.BORDER);
+            GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+            gridData.widthHint = 144; //set to 222 if not using any fonts
+            gridData.heightHint = 200;
+            hexText.setLayoutData(gridData);
+
+            final Text asciiText = toolkit.createText(localComposite,
+                    new String(displayByteFormat(localComposite, byteArray, startContentSize * 2, thisEncoding, "<<", false)),
+                    SWT.READ_ONLY | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL | SWT.BORDER);
+
+
+            gridData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+            gridData.widthHint = 52;//set to 98 if not using any fonts
+            gridData.heightHint = 200;
+            asciiText.setLayoutData(gridData);
+
+            //use a monospaced font for a better layout
+            Font font = new Font(compositeHolder.getDisplay(), "Courier", 10, SWT.NORMAL);
+            hexText.setFont(font);
+            asciiText.setFont(font);
+
+            final ScrollBar hexScrollBar = hexText.getVerticalBar();
+            final ScrollBar asciiScrollBar = asciiText.getVerticalBar();
+
+            //create a sub composite to contain all the buttons
+            final Composite buttonComposite = toolkit.createComposite(localComposite, SWT.NONE);
+            layout = new GridLayout(7, false);
+            layout.marginWidth = 0;
+            buttonComposite.setLayout(layout);
+            buttonComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1));
+
+            _firstButton = toolkit.createButton(buttonComposite, "<<", SWT.PUSH);
+            GridData layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            _firstButton.setLayoutData(layoutData);
+            _firstButton.setToolTipText("See the first n bytes");
+
+            _previousButton = toolkit.createButton(buttonComposite, "<", SWT.PUSH);
+            layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            _previousButton.setLayoutData(layoutData);
+            _previousButton.setToolTipText("See the previous n bytes");
+            _previousButton.setEnabled(false);
+
+            _hexNumTextToStart = toolkit.createText(buttonComposite, "0");
+            layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            _hexNumTextToStart.setLayoutData(layoutData);
+            _hexNumTextToStart.setEditable(false);
+
+            final Text hexNumText = toolkit.createText(buttonComposite, "" + startContentSize);
+            layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            hexNumText.setLayoutData(layoutData);
+
+            _hexNumTextToEnd = toolkit.createText(buttonComposite, "" + (byteArray.length - startContentSize));
+            layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            _hexNumTextToEnd.setLayoutData(layoutData);
+            _hexNumTextToEnd.setEditable(false);
+
+            _nextButton = toolkit.createButton(buttonComposite, ">", SWT.PUSH);
+            layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            _nextButton.setLayoutData(layoutData);
+            _nextButton.setToolTipText("See the next n bytes");
+            _nextButton.setEnabled(true);
+
+            _lastButton = toolkit.createButton(buttonComposite, ">>", SWT.PUSH);
+            layoutData = new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING);
+            layoutData.widthHint = 40;
+            _lastButton.setToolTipText("See the last n bytes");
+            _lastButton.setLayoutData(layoutData);
+
+            SelectionListener listener = new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    if (e.widget instanceof Button)
+                    {
+                        String numOfBytes = hexNumText.getText();
+                        try
+                        {
+                            int n = Integer.parseInt(numOfBytes);
+
+                            //Reset range display if user requests a large value
+                            if (n > byteArray.length)
+                            {
+                                n = (byteArray.length > DEFAULT_CONTENT_SIZE) ? DEFAULT_CONTENT_SIZE : byteArray.length;
+                                hexNumText.setText("" + n);
+                            }
+
+                            //rest if the user requests 0
+                            if (n < 1)
+                            {
+                                n = DEFAULT_CONTENT_SIZE;
+                                hexNumText.setText("" + n);
+                            }
+
+                            Button button = (Button) e.widget;
+                            hexText.setText(displayByteFormat(localComposite, byteArray, n * 2, thisEncoding,
+                                                              button.getText(), true));
+                            asciiText.setText(displayByteFormat(localComposite, byteArray, n * 2, thisEncoding,
+                                                                button.getText(), false));
+                        }
+                        catch (NumberFormatException exp)
+                        {
+                            popupErrorMessage("Error", "Please input the number of bytes you wish to look at");
+                        }
+                    }
+                    if (e.widget instanceof ScrollBar)
+                    {
+                        //synchronize the movements of the two scrollbars
+                        ScrollBar sb = (ScrollBar) e.widget;
+                        if (sb.getParent().equals(hexText))
+                        {
+                            asciiScrollBar.setIncrement(sb.getIncrement());
+                            asciiScrollBar.setSelection(sb.getSelection());
+                        }
+                        else if (sb.getParent().equals(asciiText))
+                        {
+                            hexScrollBar.setSelection(sb.getSelection());
+                            hexScrollBar.setIncrement(sb.getIncrement());
+                        }
+                    }
+                }
+            };
+            localComposite.addControlListener(new ControlAdapter()
+            {
+                public void controlResized(ControlEvent e)
+                {
+                    //if the control is resized, set different parameters to make a single line displays the same contents.
+                    if (((GridLayout) localComposite.getLayout()).makeColumnsEqualWidth)
+                    {
+                        ((GridLayout) localComposite.getLayout()).makeColumnsEqualWidth = false;
+                        ((GridLayout) localComposite.getLayout()).numColumns = 2;
+                        ((GridData) hexText.getLayoutData()).horizontalSpan = 1;
+                        ((GridData) hexText.getLayoutData()).widthHint = 144;
+                        ((GridData) asciiText.getLayoutData()).horizontalSpan = 1;
+                        ((GridData) asciiText.getLayoutData()).widthHint = 52;
+                        ((GridData) buttonComposite.getLayoutData()).horizontalSpan = 2;
+                    }
+                    else
+                    {
+                        ((GridLayout) localComposite.getLayout()).makeColumnsEqualWidth = true;
+                        ((GridLayout) localComposite.getLayout()).numColumns = 42; //set to 47 if not using any fonts
+                        ((GridData) hexText.getLayoutData()).horizontalSpan = 25; // set to 30 if not using any fonts
+                        ((GridData) asciiText.getLayoutData()).horizontalSpan = 17; // set to 17 if not using any fonts
+                        ((GridData) buttonComposite.getLayoutData()).horizontalSpan = 42;
+                    }
+                }
+            });
+
+            _firstButton.addSelectionListener(listener);
+            _previousButton.addSelectionListener(listener);
+            _nextButton.addSelectionListener(listener);
+            _lastButton.addSelectionListener(listener);
+            hexScrollBar.addSelectionListener(listener);
+            asciiScrollBar.addSelectionListener(listener);
+            //f.dispose();
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Format object messages to have a hexadecimal view and a ascii view.
+     * @param numOfBytes
+     * @param encoding
+     * @return
+     */
+    private static String displayByteFormat(Composite localComposite, byte[] byteArray, int numOfBytes,
+                                            String encoding, String direction, boolean isHex)
+    {
+        final Hex hexeconder = new Hex();
+        final byte[] encoded = hexeconder.encode(byteArray);
+
+        int hexLength = byteArray.length * 2;
+        StringBuilder sb = new StringBuilder();
+        int currentBytePos = (Integer) localComposite.getData("currentBytePos");
+        int startingBytePos = (Integer) localComposite.getData("startingBytePos");
+
+        int strLength = 0;
+        int offset = 0;
+        String encStr;
+        if (isHex)
+        {
+            if (direction.equals("<<"))
+            {
+                strLength = (numOfBytes > hexLength) ? hexLength : numOfBytes;
+                offset = 0;
+            }
+            else if (direction.equals("<"))
+            {
+                strLength = (startingBytePos - numOfBytes < 0) ? startingBytePos : numOfBytes;
+                offset = (startingBytePos - numOfBytes < 0) ? 0 : startingBytePos - numOfBytes;
+            }
+            else if (direction.equals(">"))
+            {
+                strLength = (numOfBytes > (hexLength - currentBytePos)) ? hexLength - currentBytePos : numOfBytes;
+                offset = currentBytePos;
+            }
+            else if (direction.equals(">>"))
+            {
+                strLength = (numOfBytes > hexLength) ? hexLength : numOfBytes;
+                offset = (hexLength - numOfBytes > 0) ? hexLength - numOfBytes : 0;
+            }
+            else
+            {
+                strLength = hexLength;
+                offset = 0;
+            }
+            localComposite.setData("strLength", strLength);
+            localComposite.setData("currentBytePos", offset + strLength);
+            localComposite.setData("startingBytePos", offset);
+
+            if (_lastButton != null && !_lastButton.isDisposed())
+            {
+                //Set button state
+                _previousButton.setEnabled(offset != 0);
+                _nextButton.setEnabled(offset + strLength != hexLength);
+
+                //set the text fields
+                _hexNumTextToStart.setText("" + offset / 2);
+                _hexNumTextToEnd.setText("" + (hexLength - (offset + strLength)) / 2);
+            }
+        }
+
+        try
+        {
+            if (isHex)
+            {
+                encStr = new String(encoded, offset, strLength, encoding);
+                for (int c = 0; c < strLength; c++)
+                {
+                    sb.append(encStr.charAt(c));
+                    if (c % 2 == 1)
+                    {
+                        sb.append(" ");
+                    }
+                }
+                return sb.toString().toUpperCase();
+            }
+            else
+            {
+                strLength = (Integer) localComposite.getData("strLength");
+                sb = new StringBuilder();
+                encStr = new String(byteArray, startingBytePos / 2, strLength / 2, encoding);
+                for (int c = 0; c < encStr.length(); c++)
+                {
+                    char ch = encStr.charAt(c);
+                    if (ch > 31 && ch < 127)
+                    {
+                        sb.append(ch);
+                    }
+                    else
+                    {
+                        sb.append("?");
+                    }
+
+                    sb.append(" ");
+                }
+            }
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            e.printStackTrace();
+        }
+        return sb.toString();
+    }
+    
     public static int popupInfoMessage(String title, String message)
     {
         return showBox(title, message, SWT.ICON_INFORMATION | SWT.OK);
@@ -448,7 +768,7 @@ public class ViewUtility
 
     public static int popupConfirmationMessage(String title, String message)
     {
-        return showBox(title, message,SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
+        return showBox(title, message,SWT.ICON_QUESTION | SWT.YES | SWT.NO);
     }
 
     

@@ -19,7 +19,7 @@
 
 import datetime
 from packer import Packer
-from datatypes import serial, timestamp, RangedSet, Struct
+from datatypes import serial, timestamp, RangedSet, Struct, UUID
 
 class CodecException(Exception): pass
 
@@ -118,6 +118,8 @@ class Codec(Packer):
   def read_vbin8(self):
     return self.read(self.read_uint8())
   def write_vbin8(self, b):
+    if isinstance(b, buffer):
+      b = str(b)
     self.write_uint8(len(b))
     self.write(b)
 
@@ -131,10 +133,17 @@ class Codec(Packer):
   def write_str16(self, s):
     self.write_vbin16(s.encode("utf8"))
 
+  def read_str16_latin(self):
+    return self.read_vbin16().decode("iso-8859-15")
+  def write_str16_latin(self, s):
+    self.write_vbin16(s.encode("iso-8859-15"))
+
 
   def read_vbin16(self):
     return self.read(self.read_uint16())
   def write_vbin16(self, b):
+    if isinstance(b, buffer):
+      b = str(b)
     self.write_uint16(len(b))
     self.write(b)
 
@@ -158,6 +167,8 @@ class Codec(Packer):
   def read_vbin32(self):
     return self.read(self.read_uint32())
   def write_vbin32(self, b):
+    if isinstance(b, buffer):
+      b = str(b)
     self.write_uint32(len(b))
     self.write(b)
 
@@ -166,7 +177,7 @@ class Codec(Packer):
     if m is not None:
       sc.write_uint32(len(m))
       for k, v in m.items():
-        type = self.spec.encoding(v.__class__)
+        type = self.spec.encoding(v)
         if type == None:
           raise CodecException("no encoding for %s" % v.__class__)
         sc.write_str8(k)
@@ -191,9 +202,9 @@ class Codec(Packer):
     sc = StringCodec(self.spec)
     if a is not None:
       if len(a) > 0:
-        type = self.spec.encoding(a[0].__class__)
+        type = self.spec.encoding(a[0])
       else:
-        type = self.spec.encoding(None.__class__)
+        type = self.spec.encoding(None)
       sc.write_uint8(type.code)
       sc.write_uint32(len(a))
       for o in a:
@@ -216,7 +227,7 @@ class Codec(Packer):
     if l is not None:
       sc.write_uint32(len(l))
       for o in l:
-        type = self.spec.encoding(o.__class__)
+        type = self.spec.encoding(o)
         sc.write_uint8(type.code)
         type.encode(sc, o)
     self.write_vbin32(sc.encoded)
@@ -273,9 +284,11 @@ class Codec(Packer):
       getattr(self, attr)(n)
 
   def read_uuid(self):
-    return self.unpack("16s")
+    return UUID(self.unpack("16s"))
 
   def write_uuid(self, s):
+    if isinstance(s, UUID):
+      s = s.bytes
     self.pack("16s", s)
 
   def read_bin128(self):

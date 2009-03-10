@@ -1,5 +1,5 @@
-#ifndef QPID_CLUSTER_CONNECTIONDECODER_H
-#define QPID_CLUSTER_CONNECTIONDECODER_H
+#ifndef QPID_CLUSTER_MCASTFRAMEHANDLER_H
+#define QPID_CLUSTER_MCASTFRAMEHANDLER_H
 
 /*
  *
@@ -22,40 +22,25 @@
  *
  */
 
-#include "qpid/framing/FrameDecoder.h"
-#include <boost/function.hpp>
+#include "types.h"
+#include "Multicaster.h"
+#include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
 namespace cluster {
 
-class EventHeader;
-class EventFrame;
-class ConnectionMap;
-
 /**
- * Decodes delivered connection data Event's as EventFrame's for a
- * connection replica, local or shadow. Manages state for frame
- * fragments and flow control.
- * 
- * THREAD UNSAFE: connection events are decoded in sequence.
+ * A frame handler that multicasts frames as CONTROL events.
  */
-class ConnectionDecoder
+class McastFrameHandler : public framing::FrameHandler
 {
   public:
-    typedef boost::function<void(const EventFrame&)> Handler;
-
-    ConnectionDecoder(const Handler& h);
-
-    /** Takes EventHeader + data rather than Event so that the caller can
-     * pass a pointer to connection data or a CPG buffer directly without copy.
-     */
-    void decode(const EventHeader& eh, const void* data, ConnectionMap& connections);
-
+    McastFrameHandler(Multicaster& m, const ConnectionId& cid) : mcast(m), connection(cid) {}
+    void handle(framing::AMQFrame& frame) { mcast.mcastControl(frame, connection); }
   private:
-    Handler handler;
-    framing::FrameDecoder decoder;
+    Multicaster& mcast;
+    ConnectionId connection;
 };
-
 }} // namespace qpid::cluster
 
-#endif  /*!QPID_CLUSTER_CONNECTIONDECODER_H*/
+#endif  /*!QPID_CLUSTER_MCASTFRAMEHANDLER_H*/

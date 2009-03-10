@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
@@ -37,10 +38,12 @@ public class VirtualHostConfiguration
     private String _name;
     private Map<String, QueueConfiguration> _queues = new HashMap<String, QueueConfiguration>();
     private Map<String, ExchangeConfiguration> _exchanges = new HashMap<String, ExchangeConfiguration>();
+    private ServerConfiguration _serverConfiguration;
 
-
-    public VirtualHostConfiguration(String name, Configuration config) throws ConfigurationException
+    public VirtualHostConfiguration(String name, Configuration config,
+                                    ServerConfiguration serverConfiguration) throws ConfigurationException
     {
+        _serverConfiguration = serverConfiguration;
         _config = config;
         _name = name;
 
@@ -52,7 +55,7 @@ public class VirtualHostConfiguration
             CompositeConfiguration mungedConf = new CompositeConfiguration();
             mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
             mungedConf.addConfiguration(_config.subset("queues"));
-            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf));
+            _queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
         }
 
         i = _config.getList("exchanges.exchange.name").iterator();
@@ -67,6 +70,21 @@ public class VirtualHostConfiguration
         }
     }
 
+    /**
+     * All future usages should use the constructor that takes the ServerConfiguration.
+     *
+     * This can be removed after QPID-1696 has been resolved.
+     *
+     * @param name
+     * @param mungedConf
+     * @throws ConfigurationException
+     */
+    @Deprecated
+    public VirtualHostConfiguration(String name, Configuration mungedConf) throws ConfigurationException
+    {
+        this(name,mungedConf,  ApplicationRegistry.getInstance().getConfiguration());
+    }
+
     public String getName()
     {
         return _name;
@@ -74,7 +92,7 @@ public class VirtualHostConfiguration
 
     public long getHousekeepingExpiredMessageCheckPeriod()
     {
-        return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingExpiredMessageCheckPeriod());
+        return _config.getLong("housekeeping.expiredMessageCheckPeriod", _serverConfiguration.getHousekeepingCheckPeriod());
     }
 
     public String getAuthenticationDatabase()
@@ -125,6 +143,27 @@ public class VirtualHostConfiguration
     public QueueConfiguration getQueueConfiguration(String queueName)
     {
         return _queues.get(queueName);
+    }
+
+    public long getMemoryUsageMaximum()
+    {
+        return _config.getLong("queues.maximumMemoryUsage", 0);
+    }
+
+    public long getMemoryUsageMinimum()
+    {
+        return _config.getLong("queues.minimumMemoryUsage", 0);
+    }
+
+    public ServerConfiguration getServerConfiguration()
+    {
+        return _serverConfiguration;
+    }
+
+    public static final String FLOW_TO_DISK_PATH = "flowToDiskPath";
+    public String getFlowToDiskLocation()
+    {
+        return _config.getString(FLOW_TO_DISK_PATH, getServerConfiguration().getQpidWork());
     }
 
 }

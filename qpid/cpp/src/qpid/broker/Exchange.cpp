@@ -102,8 +102,8 @@ static const std::string QPID_MANAGEMENT("qpid.management");
 
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent)
-    : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0), 
-      sequence(false), sequenceNo(0), ive(false), mgmtExchange(0)
+    : name(_name), durable(_durable), alternateUsers(0), persistenceId(0), 
+      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0)
 {
     if (parent != 0)
     {
@@ -274,4 +274,8 @@ Exchange::MatchQueue::MatchQueue(Queue::shared_ptr q) : queue(q) {}
 bool Exchange::MatchQueue::operator()(Exchange::Binding::shared_ptr b)
 {
     return b->queue == queue;
+}
+
+void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
+    msg->getProperties<DeliveryProperties>()->setExchange(getName());
 }

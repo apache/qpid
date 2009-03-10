@@ -50,6 +50,9 @@ public class EntityInstanceNotFoundFault extends QManFault
 	 */
 	public EntityInstanceNotFoundFault(EndpointReference endpointReference, ObjectName targetEntityName) 
 	{
-		super(endpointReference,EXCEPTION_QNAME, targetEntityName.getCanonicalName());
+		super(
+				endpointReference,
+				EXCEPTION_QNAME, 
+				targetEntityName.getCanonicalName());
 	}
 }

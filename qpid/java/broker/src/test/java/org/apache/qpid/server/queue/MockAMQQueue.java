@@ -115,6 +115,11 @@ public class MockAMQQueue implements AMQQueue
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean isFlowed()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public int getMessageCount()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
@@ -216,6 +221,26 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public long getMemoryUsageMaximum()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setMemoryUsageMaximum(long maximumMemoryUsage)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getMemoryUsageMinimum()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setMemoryUsageMinimum(long minimumMemoryUsage)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public long getMaximumMessageSize()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
@@ -271,7 +296,6 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
     public void checkMessageStatus() throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -302,6 +326,11 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public long getMemoryUsageCurrent()
+    {
+        return 0;
+    }
+
     public ManagedObject getManagedObject()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -312,7 +341,6 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
     public void setMinimumAlertRepeatGap(long value)
     {
         

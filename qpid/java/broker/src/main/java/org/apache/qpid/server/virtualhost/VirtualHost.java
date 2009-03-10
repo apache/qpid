@@ -48,6 +48,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.QueueBackingStore;
+import org.apache.qpid.server.queue.FileQueueBackingStoreFactory;
+import org.apache.qpid.server.queue.QueueBackingStoreFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.server.security.access.ACLManager;
@@ -84,7 +87,10 @@ public class VirtualHost implements Accessable
     private ACLManager _accessManager;
 
     private final Timer _houseKeepingTimer;
-     
+    
+    private VirtualHostConfiguration _configuration;
+    private QueueBackingStoreFactory _queueBackingStoreFactory;
+
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -106,6 +112,16 @@ public class VirtualHost implements Accessable
         return _routingTable;
     }
 
+    public VirtualHostConfiguration getConfiguration()
+    {
+        return _configuration ;
+    }
+
+    public QueueBackingStoreFactory getQueueBackingStoreFactory()
+    {
+        return _queueBackingStoreFactory;
+    }
+
     /**
      * Abstract MBean class. This has some of the methods implemented from management intrerface for exchanges. Any
      * implementaion of an Exchange MBean should extend this class.
@@ -114,7 +130,7 @@ public class VirtualHost implements Accessable
     {
         public VirtualHostMBean() throws NotCompliantMBeanException
         {
-            super(ManagedVirtualHost.class, "VirtualHost");
+            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE, ManagedVirtualHost.VERSION);
         }
 
         public String getObjectInstanceName()
@@ -137,7 +153,6 @@ public class VirtualHost implements Accessable
 
     /**
      * Normal Constructor
-     * @param name
      * @param hostConfig
      * @throws Exception
      */
@@ -148,6 +163,7 @@ public class VirtualHost implements Accessable
 
     public VirtualHost(VirtualHostConfiguration hostConfig, TransactionLog transactionLog) throws Exception
     {
+        _configuration = hostConfig;
         _name = hostConfig.getName();
         
         if (_name == null || _name.length() == 0)
@@ -178,6 +194,9 @@ public class VirtualHost implements Accessable
             initialiseTransactionLog(hostConfig);
             initialiseRoutingTable(hostConfig);
         }
+
+        _queueBackingStoreFactory = new FileQueueBackingStoreFactory();
+        _queueBackingStoreFactory.configure(this, hostConfig);
 
         _exchangeFactory.initialise(hostConfig);
         _exchangeRegistry.initialise();
@@ -403,6 +422,12 @@ public class VirtualHost implements Accessable
         //Stop Connections
         _connectionRegistry.close();
 
+        //Stop Housekeeping
+        if (_houseKeepingTimer != null)
+        {
+            _houseKeepingTimer.cancel();
+        }
+
         //Stop the Queues processing
         if (_queueRegistry != null)
         {
@@ -410,13 +435,7 @@ public class VirtualHost implements Accessable
             {
                 queue.stop();
             }
-        }        
-
-        //Stop Housekeeping
-        if (_houseKeepingTimer != null)
-        {
-            _houseKeepingTimer.cancel();
-        }        
+        }
 
         //Close TransactionLog
         if (_transactionLog != null)

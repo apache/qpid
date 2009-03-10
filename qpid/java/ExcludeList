@@ -1,8 +1,6 @@
 org.apache.qpid.client.MultipleJCAProviderRegistrationTest#test
-// QPID-1451 : testBrowsingWithSelector test is not correct.
-org.apache.qpid.test.client.QueueBrowserAutoAckTest#testBrowsingWithSelector
-org.apache.qpid.test.client.QueueBrowserClientAckTest#testBrowsingWithSelector
-org.apache.qpid.test.client.QueueBrowserDupsOkTest#testBrowsingWithSelector
-org.apache.qpid.test.client.QueueBrowserNoAckTest#testBrowsingWithSelector
-org.apache.qpid.test.client.QueueBrowserPreAckTest#testBrowsingWithSelector
-org.apache.qpid.test.client.QueueBrowserTransactedTest#testBrowsingWithSelector
+// QPID-1715, QPID-1715 : Client Error Handling on close is still broken
+org.apache.qpid.server.queue.QueueCreateTest#testCreatePriorityString
+org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskValidNoSize
+org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalid
+org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalidSize

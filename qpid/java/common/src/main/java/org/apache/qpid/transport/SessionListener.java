@@ -31,6 +31,8 @@ public interface SessionListener
 
     void opened(Session session);
 
+    void resumed(Session session);
+
     void message(Session ssn, MessageTransfer xfr);
 
     void exception(Session session, SessionException exception);
