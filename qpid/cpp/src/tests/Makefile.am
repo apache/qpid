@@ -164,7 +164,7 @@ header_test_LDADD=$(lib_client)
 
 check_PROGRAMS+=failover_soak
 failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
-failover_soak_LDADD=$(lib_client) 
+failover_soak_LDADD=$(lib_client) $(lib_broker)
 
 check_PROGRAMS+=declare_queues
 declare_queues_SOURCES=declare_queues.cpp  
@@ -196,11 +196,11 @@ sender_LDADD=$(lib_client)
 
 check_PROGRAMS+=PollerTest
 PollerTest_SOURCES=PollerTest.cpp
-PollerTest_LDADD=$(lib_common)
+PollerTest_LDADD=$(lib_common) $(SOCKLIBS)
 
 check_PROGRAMS+=DispatcherTest
 DispatcherTest_SOURCES=DispatcherTest.cpp
-DispatcherTest_LDADD=$(lib_common)
+DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
 

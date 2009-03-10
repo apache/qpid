@@ -26,6 +26,8 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <string.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #include <string>
 #include <iostream>
@@ -237,7 +239,14 @@ struct children : public vector<child *>
         vector<child *>::iterator i;
         for ( i = begin(); i != end(); ++ i )
         {
-            timersub ( & now, &((*i)->startTime), & duration );
+            //Not in POSIX
+            //timersub ( & now, &((*i)->startTime), & duration );
+            duration.tv_sec = now.tv_sec - (*i)->startTime.tv_sec;
+            duration.tv_usec = now.tv_usec - (*i)->startTime.tv_usec;
+            if (duration.tv_usec < 0) {
+                --duration.tv_sec;
+                duration.tv_usec += 1000000;
+            }
 
             if ( (COMPLETED != (*i)->status)     // child isn't done running
                   &&

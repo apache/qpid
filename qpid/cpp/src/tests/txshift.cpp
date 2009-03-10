@@ -174,8 +174,8 @@ int main(int argc, char** argv)
             for (size_t i = 0; i < opts.workers; i++) {
                 workers.push_back(new Worker(connection, opts.workQueue));
             }
-            for_each(workers.begin(), workers.end(), boost::bind(&Worker::start, _1));
-            for_each(workers.begin(), workers.end(), boost::bind(&Worker::join, _1));
+            std::for_each(workers.begin(), workers.end(), boost::bind(&Worker::start, _1));
+            std::for_each(workers.begin(), workers.end(), boost::bind(&Worker::join, _1));
         }
 
         return 0;
