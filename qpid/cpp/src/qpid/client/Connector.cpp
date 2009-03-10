@@ -92,8 +92,6 @@ class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
     
     framing::ProtocolVersion version;
     bool initiated;
-
-    sys::Mutex closedLock;    
     bool closed;
     bool joined;
 
@@ -185,7 +183,7 @@ TCPConnector::~TCPConnector() {
 }
 
 void TCPConnector::connect(const std::string& host, int port){
-    Mutex::ScopedLock l(closedLock);
+    Mutex::ScopedLock l(lock);
     assert(closed);
     try {
         socket.connect(host, port);
@@ -207,7 +205,7 @@ void TCPConnector::connect(const std::string& host, int port){
 }
 
 void TCPConnector::init(){
-    Mutex::ScopedLock l(closedLock);
+    Mutex::ScopedLock l(lock);
     assert(joined);
     ProtocolInitiation init(version);
     writeDataBlock(init);
@@ -218,7 +216,7 @@ void TCPConnector::init(){
 bool TCPConnector::closeInternal() {
     bool ret;
     {
-    Mutex::ScopedLock l(closedLock);
+    Mutex::ScopedLock l(lock);
     ret = !closed;
     if (!closed) {
         closed = true;
