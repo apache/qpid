@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/pub-sub
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=topic_listener topic_publisher

@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/xml-exchange
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=declare_queues xml_producer listener

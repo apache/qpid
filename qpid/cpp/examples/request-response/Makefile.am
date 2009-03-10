@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/request-response
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=client server

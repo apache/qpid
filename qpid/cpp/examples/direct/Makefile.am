@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/direct
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=direct_producer listener declare_queues
