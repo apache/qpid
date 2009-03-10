@@ -32,6 +32,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementBroker.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
@@ -68,6 +69,9 @@ const std::string qpidLastValueQueueNoBrowse("qpid.last_value_queue_no_browse");
 const std::string qpidPersistLastNode("qpid.persist_last_node");
 const std::string qpidVQMatchProperty("qpid.LVQ_key");
 const std::string qpidQueueEventGeneration("qpid.queue_event_generation");
+//following feature is not ready for general use as it doesn't handle
+//the case where a message is enqueued on more than one queue well enough:
+const std::string qpidInsertSequenceNumbers("qpid.insert_sequence_numbers");
 
 const int ENQUEUE_ONLY=1;
 const int ENQUEUE_AND_DEQUEUE=2;
@@ -774,6 +778,9 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
 
     eventMode = _settings.getAsInt(qpidQueueEventGeneration);
 
+    FieldTable::ValuePtr p =_settings.get(qpidInsertSequenceNumbers);
+    if (p && p->convertsTo<std::string>()) insertSequenceNumbers(p->get<std::string>());
+
     if (mgmtObject != 0)
         mgmtObject->set_arguments (_settings);
 
@@ -997,4 +1004,5 @@ void Queue::insertSequenceNumbers(const std::string& key)
 {
     seqNoKey = key;
     insertSeqNo = !seqNoKey.empty();
+    QPID_LOG(debug, "Inserting sequence numbers as " << key);
 }

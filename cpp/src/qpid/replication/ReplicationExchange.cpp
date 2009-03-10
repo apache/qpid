@@ -102,6 +102,7 @@ void ReplicationExchange::handleDequeueEvent(const FieldTable* args)
 
 bool ReplicationExchange::isDuplicate(const FieldTable* args)
 {
+    if (!args->get(REPLICATION_EVENT_SEQNO)) return false;
     SequenceNumber seqno(args->getAsInt(REPLICATION_EVENT_SEQNO));
     if (!init) {
         init = true;
