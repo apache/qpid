@@ -313,14 +313,19 @@ LIBS=$tmp_LIBS
 AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
 
 # Setup --with-ssl/--without-ssl as arguments to configure
-tmp_LIBS=$LIBS
+SSL_CFLAGS=""
+SSL_LDFLAGS=""
 AC_ARG_WITH([ssl],
   [AS_HELP_STRING([--with-ssl], [Build with support for SSL])],
   [case ${withval} in
    yes)
      with_SSL=yes
-     PKG_CHECK_MODULES([SSL], [nspr],,[AC_MSG_ERROR([nspr not found])])
-     PKG_CHECK_MODULES([SSL], [nss],,[AC_MSG_ERROR([nss not found])])
+     AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
+     AS_IF([test x$NSPR_CONFIG = x], [AC_MSG_ERROR([libnspr not found])], [])
+     AC_PATH_PROG([NSS_CONFIG], [nss-config])
+     AS_IF([test x$NSS_CONFIG = x], [AC_MSG_ERROR([libnss not found])], [])
+     SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
+     SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"
      ;;
    no)
      with_SSL=no
@@ -331,13 +336,18 @@ AC_ARG_WITH([ssl],
    esac],
   [
     with_SSL=yes
-    PKG_CHECK_MODULES([SSL], [nspr],,[with_SSL=no])
-    PKG_CHECK_MODULES([SSL], [nss],,[with_SSL=no])
+    AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
+    AS_IF([test x$NSPR_CONFIG = x], [with_SSL=no], 
+      [AC_PATH_PROG([NSS_CONFIG], [nss-config])
+       AS_IF([test x$NSS_CONFIG = x], [with_SSL=no], 
+             [SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
+              SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"])])
   ]
 )
 # Remove from LIBS, we will link it explicitly in make files.
-LIBS=$tmp_LIBS
 AM_CONDITIONAL([SSL], [test x$with_SSL = xyes])
+AC_SUBST([SSL_CFLAGS])
+AC_SUBST([SSL_LDFLAGS])
 
 
 poller=no
