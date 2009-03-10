@@ -474,7 +474,7 @@ def map_str(s):
   for c in s:
     if ord(c) >= 0x80:
       return "vbin16"
-  return "str16_latin"
+  return "str16"
 
 class Spec(Node):
 
