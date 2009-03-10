@@ -160,43 +160,56 @@ vector<string> browse(Client& c, const string& q, int n) {
     return result;
 }
 
+ConnectionSettings aclSettings(int port, const std::string& id) {
+    ConnectionSettings settings;
+    settings.port = port;
+    settings.mechanism = "PLAIN";
+    settings.username = id;
+    settings.password = id;
+    return settings;
+}
 
-// FIXME aconway 2009-02-12: need to figure out how to test this properly.
-// Current problems:
-// - all brokers share the same data-dir (set ACL without data dir?)
-// - updater's user name not making it through to updatee for ACL checks.
-// 
-// QPID_AUTO_TEST_CASE(testAcl) {
-//     ofstream policyFile("cluster_test.acl");
-//     // FIXME aconway 2009-02-12: guest -> qpidd?
-//     policyFile << "acl allow guest@QPID all all" << endl
-//                << "acl allow foo@QPID create queue name=foo" << endl
-//                << "acl allow bar@QPID create queue name=bar" << endl
-//                << "acl deny all create queue" << endl
-//                << "acl allow all all" << endl;
-//     policyFile.close();
-//     ClusterFixture cluster(2,-1, list_of<string>
-//                            ("--data-dir=.") ("--auth=no")
-//                            ("--acl-file=cluster_test.acl")
-//                            ("--cluster-mechanism=PLAIN")
-//                            ("--load-module=../.libs/acl.so"));
-//     Client c0(cluster[0], "c0");
-//     Client c1(cluster[1], "c1");
+#if 0
+// FIXME aconway 2009-03-10: This test passes but exposes a memory leak in the SASL client code.
+// Enable it when the leak is fixed.
 
-//     ConnectionSettings settings;
-//     settings.port = cluster[0];
-//     settings.username = "foo";
-//     Client foo(settings, "foo");
+QPID_AUTO_TEST_CASE(testAcl) {
+    ofstream policyFile("cluster_test.acl");
+    // FIXME aconway 2009-02-12: guest -> qpidd?
+    policyFile << "acl allow foo@QPID create queue name=foo" << endl
+               << "acl allow foo@QPID create queue name=foo2" << endl
+               << "acl deny foo@QPID create queue name=bar" << endl
+               << "acl allow all all" << endl;
+    policyFile.close();
+    char cwd[1024];
+    BOOST_CHECK(::getcwd(cwd, sizeof(cwd)));
+    ClusterFixture cluster(2,-1, list_of<string>
+                           ("--no-data-dir")
+                           ("--auth=no")
+                           ("--acl-file="+string(cwd)+"/cluster_test.acl")
+                           ("--cluster-mechanism=PLAIN")
+                           ("--cluster-username=cluster")
+                           ("--cluster-password=cluster")
+                           ("--load-module=../.libs/acl.so"));
 
-//     foo.session.queueDeclare("foo");
-//     BOOST_CHECK_EQUAL(c0.session.queueQuery("foo").getQueue(), "foo");
-//     BOOST_CHECK_EQUAL(c1.session.queueQuery("foo").getQueue(), "foo");
+    Client c0(aclSettings(cluster[0], "c0"), "c0");
+    Client c1(aclSettings(cluster[1], "c1"), "c1");
+    Client foo(aclSettings(cluster[1], "foo"), "foo");
 
-//     BOOST_CHECK_THROW(foo.session.queueDeclare("bar"), int);
-//     BOOST_CHECK_EQUAL(c0.session.queueQuery("bar").getQueue(), "");
-//     BOOST_CHECK_EQUAL(c1.session.queueQuery("bar").getQueue(), "");
-// }
+    foo.session.queueDeclare("foo");
+    BOOST_CHECK_EQUAL(c0.session.queueQuery("foo").getQueue(), "foo");
 
+    BOOST_CHECK_THROW(foo.session.queueDeclare("bar"), framing::NotAllowedException);
+    BOOST_CHECK(c0.session.queueQuery("bar").getQueue().empty());
+    BOOST_CHECK(c1.session.queueQuery("bar").getQueue().empty());
+
+    cluster.add();
+    Client c2(aclSettings(cluster[2], "c2"), "c2");
+    BOOST_CHECK_THROW(foo.session.queueDeclare("bar"), framing::NotAllowedException);
+    BOOST_CHECK(c2.session.queueQuery("bar").getQueue().empty());
+}
+
+#endif
 
 QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     // Note: this doesn't actually test for cluster race conditions around TTL,
