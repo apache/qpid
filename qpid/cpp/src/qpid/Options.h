@@ -23,8 +23,20 @@
  */
 
 #include "qpid/Exception.h"
+
+// Disable warnings triggered by boost.
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4251 4275)
+#endif
+
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
 #include <sstream>
 #include <iterator>
 #include <algorithm>
