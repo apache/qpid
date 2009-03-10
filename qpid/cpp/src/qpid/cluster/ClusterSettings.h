@@ -35,7 +35,7 @@ struct ClusterSettings {
     size_t readMax, writeEstimate;
     std::string username, password, mechanism;
 
-    ClusterSettings() : quorum(false), readMax(10), writeEstimate(64), username("guest"), password("guest") {}
+    ClusterSettings() : quorum(false), readMax(10), writeEstimate(64) {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
