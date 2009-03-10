@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/uuid.h"
+#include "qpid/sys/IntegerTypes.h"
 
 #include <boost/array.hpp>
 
