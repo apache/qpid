@@ -518,6 +518,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
         else
             try {
                 outBuffer.record();
+                Mutex::ScopedUnlock u(userLock);
                 iter->second->doMethod(methodName, inBuffer, outBuffer);
             } catch(exception& e) {
                 outBuffer.restore();

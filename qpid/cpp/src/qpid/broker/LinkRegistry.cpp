@@ -238,67 +238,70 @@ MessageStore* LinkRegistry::getStore() const {
     return store;
 }
 
-void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
+Link::shared_ptr LinkRegistry::findLink(const std::string& key)
 {
     Mutex::ScopedLock locker(lock);
     LinkMap::iterator l = links.find(key);
-    if (l != links.end())
-    {
-        l->second->established();
-        l->second->setConnection(c);
-        c->setUserId(str(format("%1%@%2%") % l->second->getUsername() % realm));
+    if (l != links.end()) return l->second;
+    else return Link::shared_ptr();
+}
+
+void LinkRegistry::notifyConnection(const std::string& key, Connection* c)
+{
+    Link::shared_ptr link = findLink(key);
+    if (link) {
+        link->established();
+        link->setConnection(c);
+        c->setUserId(str(format("%1%@%2%") % link->getUsername() % realm));
     }
 }
 
 void LinkRegistry::notifyClosed(const std::string& key)
 {
-    Mutex::ScopedLock locker(lock);
-    LinkMap::iterator l = links.find(key);
-    if (l != links.end())
-        l->second->closed(0, "Closed by peer");
+    Link::shared_ptr link = findLink(key);
+    if (link) {
+        link->closed(0, "Closed by peer");
+    }
 }
 
 void LinkRegistry::notifyConnectionForced(const std::string& key, const std::string& text)
 {
-    Mutex::ScopedLock locker(lock);
-    LinkMap::iterator l = links.find(key);
-    if (l != links.end())
-        l->second->notifyConnectionForced(text);
+    Link::shared_ptr link = findLink(key);
+    if (link) {
+        link->notifyConnectionForced(text);
+    }
 }
 
 std::string LinkRegistry::getAuthMechanism(const std::string& key)
 {
-    Mutex::ScopedLock locker(lock);
-    LinkMap::iterator l = links.find(key);
-    if (l != links.end())
-        return l->second->getAuthMechanism();
+    Link::shared_ptr link = findLink(key);
+    if (link)
+        return link->getAuthMechanism();
     return string("ANONYMOUS");
 }
 
 std::string LinkRegistry::getAuthCredentials(const std::string& key)
 {
-    Mutex::ScopedLock locker(lock);
-    LinkMap::iterator l = links.find(key);
-    if (l == links.end())
+    Link::shared_ptr link = findLink(key);
+    if (!link)
         return string();
 
     string result;
     result += '\0';
-    result += l->second->getUsername();
+    result += link->getUsername();
     result += '\0';
-    result += l->second->getPassword();
+    result += link->getPassword();
 
     return result;
 }
 
 std::string LinkRegistry::getAuthIdentity(const std::string& key)
 {
-    Mutex::ScopedLock locker(lock);
-    LinkMap::iterator l = links.find(key);
-    if (l == links.end())
+    Link::shared_ptr link = findLink(key);
+    if (!link)
         return string();
 
-    return l->second->getUsername();
+    return link->getUsername();
 }
 
 

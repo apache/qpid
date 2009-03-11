@@ -70,6 +70,7 @@ namespace broker {
 
         void periodicMaintenance ();
         bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);
+        Link::shared_ptr findLink(const std::string& key);
         static std::string createKey(const TcpAddress& address);
 
     public:
