@@ -193,8 +193,8 @@ class SessionState {
      * received messages to be disabled for the faked commands and
      * subsequently re-enabled.
      */
-    void disableReceiverTracking();
-    void enableReceiverTracking();
+    QPID_COMMON_EXTERN void disableReceiverTracking();
+    QPID_COMMON_EXTERN void enableReceiverTracking();
 
   private:
 
