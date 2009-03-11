@@ -196,13 +196,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
      * not need to be attached to a queue.
      */
-    protected static final boolean DEFAULT_IMMEDIATE = false;
+    protected static final boolean DEFAULT_IMMEDIATE = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
 
     /**
      * The default value for mandatory flag used by producers created by this session is true. That is, server will not
      * silently drop messages where no queue is connected to the exchange for the message.
      */
-    protected static final boolean DEFAULT_MANDATORY = true;
+    protected static final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
 
     /** System property to enable strict AMQP compliance. */
     public static final String STRICT_AMQP = "STRICT_AMQP";
