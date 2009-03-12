@@ -23,6 +23,7 @@
 #include "qpid/memory.h"
 #include "qpid/Options.h"
 #if defined (_WIN32)
+#  include "qpid/log/windows/SinkOptions.h"
 #else
 #  include "qpid/log/posix/SinkOptions.h"
 #endif
@@ -270,7 +271,11 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
         "--log-function", "YES"
     };
     qpid::log::Options opts("");
+#ifdef _WIN32
+    qpid::log::windows::SinkOptions sinks("test");
+#else
     qpid::log::posix::SinkOptions sinks("test");
+#endif
     opts.parse(ARGC(argv), const_cast<char**>(argv));
     sinks = *opts.sinkOptions;
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
@@ -286,7 +291,11 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
 
 QPID_AUTO_TEST_CASE(testOptionsDefault) {
     Options opts("");
+#ifdef _WIN32
+    qpid::log::windows::SinkOptions sinks("test");
+#else
     qpid::log::posix::SinkOptions sinks("test");
+#endif
     sinks = *opts.sinkOptions;
     BOOST_CHECK(sinks.logToStderr);
     BOOST_CHECK(!sinks.logToStdout);
@@ -345,8 +354,13 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     ScopedSuppressLogging ls(l);
     Options opts("test");
     opts.time=false;
+#ifdef _WIN32
+    qpid::log::windows::SinkOptions *sinks =
+      dynamic_cast<qpid::log::windows::SinkOptions *>(opts.sinkOptions.get());
+#else
     qpid::log::posix::SinkOptions *sinks =
       dynamic_cast<qpid::log::posix::SinkOptions *>(opts.sinkOptions.get());
+#endif
     sinks->logToStderr = false;
     sinks->logFile = "logging.tmp";
     l.configure(opts);

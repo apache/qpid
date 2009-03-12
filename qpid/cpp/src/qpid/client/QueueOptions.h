@@ -18,6 +18,8 @@
  * under the License.
  *
  */
+
+#include "ClientImportExport.h"
 #include "qpid/framing/FieldTable.h"
 
 #ifndef _QueueOptions_
@@ -36,8 +38,8 @@ enum QueueOrderingPolicy {FIFO, LVQ, LVQ_NO_BROWSE};
 class QueueOptions: public framing::FieldTable
 {
   public:
-    QueueOptions();
-    virtual ~QueueOptions();
+    QPID_CLIENT_EXTERN QueueOptions();
+    QPID_CLIENT_EXTERN virtual ~QueueOptions();
 	
     /**
      * Sets the queue sizing policy
@@ -51,58 +53,58 @@ class QueueOptions: public framing::FieldTable
      * @param maxSize Set the max number of bytes for the sizing policies
      * @param setMaxCount Set the max number of messages for the sizing policies
      */
-    void setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount );
+    QPID_CLIENT_EXTERN void setSizePolicy(QueueSizePolicy sp, uint64_t maxSize, uint32_t maxCount );
 
     /**
      * Enables the persisting of a queue to the store module when a cluster fails down to it's last
      * node. Does so optimistically. Will start persisting when cluster count >1 again.
      */
-    void setPersistLastNode();
+    QPID_CLIENT_EXTERN void setPersistLastNode();
 	
     /**
      * Sets the odering policy on the Queue, default ordering is FIFO.
      */
-    void setOrdering(QueueOrderingPolicy op);
+    QPID_CLIENT_EXTERN void setOrdering(QueueOrderingPolicy op);
     
     /**
      * Use broker defualt sizing ploicy
      */
-    void clearSizePolicy();
+    QPID_CLIENT_EXTERN void clearSizePolicy();
 	
     /**
      * Clear Persist Last Node Policy
      */ 
-    void clearPersistLastNode();
+    QPID_CLIENT_EXTERN void clearPersistLastNode();
 	
     /**
      * get the key used match LVQ in args for message transfer 
      */
-    void getLVQKey(std::string& key);
+    QPID_CLIENT_EXTERN void getLVQKey(std::string& key);
 		
     /**
      * Use default odering policy
      */ 
-    void clearOrdering();
+    QPID_CLIENT_EXTERN void clearOrdering();
 
     /**
      * Turns on event generation for this queue (either enqueue only
      * or for enqueue and dequeue events); the events can then be
      * processed by a regsitered broker plugin.
      */
-    void enableQueueEvents(bool enqueueOnly);
+    QPID_CLIENT_EXTERN void enableQueueEvents(bool enqueueOnly);
 	
-    static const std::string strMaxCountKey;
-    static const std::string strMaxSizeKey;
-    static const std::string strTypeKey;
-    static const std::string strREJECT;
-    static const std::string strFLOW_TO_DISK;
-    static const std::string strRING;
-    static const std::string strRING_STRICT;
-    static const std::string strLastValueQueue;
-    static const std::string strPersistLastNode;
-    static const std::string strLVQMatchProperty;
-    static const std::string strLastValueQueueNoBrowse;
-    static const std::string strQueueEventMode;
+    static QPID_CLIENT_EXTERN const std::string strMaxCountKey;
+    static QPID_CLIENT_EXTERN const std::string strMaxSizeKey;
+    static QPID_CLIENT_EXTERN const std::string strTypeKey;
+    static QPID_CLIENT_EXTERN const std::string strREJECT;
+    static QPID_CLIENT_EXTERN const std::string strFLOW_TO_DISK;
+    static QPID_CLIENT_EXTERN const std::string strRING;
+    static QPID_CLIENT_EXTERN const std::string strRING_STRICT;
+    static QPID_CLIENT_EXTERN const std::string strLastValueQueue;
+    static QPID_CLIENT_EXTERN const std::string strPersistLastNode;
+    static QPID_CLIENT_EXTERN const std::string strLVQMatchProperty;
+    static QPID_CLIENT_EXTERN const std::string strLastValueQueueNoBrowse;
+    static QPID_CLIENT_EXTERN const std::string strQueueEventMode;
 };
 
 }

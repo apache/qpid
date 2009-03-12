@@ -23,6 +23,7 @@
  */
 
 #include <Rpc.h>
+#include "qpid/CommonImportExport.h"
 
 #ifdef uuid_t   /*  Done in rpcdce.h */
 #  undef uuid_t
@@ -31,11 +32,11 @@
 namespace qpid { namespace sys { const size_t UuidSize = 16; }}
 typedef uint8_t uuid_t[qpid::sys::UuidSize];
 
-void uuid_clear (uuid_t uu);
-void uuid_copy (uuid_t dst, const uuid_t src);
-void uuid_generate (uuid_t out);
-int  uuid_is_null (const uuid_t uu);          // Returns 1 if null, else 0
-int  uuid_parse (const char *in, uuid_t uu);  // Returns 0 on success, else -1
-void uuid_unparse (const uuid_t uu, char *out);
+QPID_COMMON_EXTERN void uuid_clear (uuid_t uu);
+QPID_COMMON_EXTERN void uuid_copy (uuid_t dst, const uuid_t src);
+QPID_COMMON_EXTERN void uuid_generate (uuid_t out);
+QPID_COMMON_EXTERN int  uuid_is_null (const uuid_t uu);          // Returns 1 if null, else 0
+QPID_COMMON_EXTERN int  uuid_parse (const char *in, uuid_t uu);  // Returns 0 on success, else -1
+QPID_COMMON_EXTERN void uuid_unparse (const uuid_t uu, char *out);
 
 #endif  /*!_sys_windows_uuid_h*/

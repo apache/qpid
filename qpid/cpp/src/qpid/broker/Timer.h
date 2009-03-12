@@ -21,6 +21,7 @@
 #ifndef _Timer_
 #define _Timer_
 
+#include "BrokerImportExport.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
@@ -43,9 +44,9 @@ struct TimerTask : public RefCounted {
     qpid::sys::AbsTime time;
     volatile bool cancelled;
 
-    TimerTask(qpid::sys::Duration timeout);
+    QPID_BROKER_EXTERN TimerTask(qpid::sys::Duration timeout);
     TimerTask(qpid::sys::AbsTime time);
-    virtual ~TimerTask();
+    QPID_BROKER_EXTERN virtual ~TimerTask();
     void reset();
     void cancel();
     bool isCancelled() const;
@@ -69,10 +70,10 @@ class Timer : private qpid::sys::Runnable {
     virtual void run();
 
   public:
-    Timer();
-    virtual ~Timer();
+    QPID_BROKER_EXTERN Timer();
+    QPID_BROKER_EXTERN virtual ~Timer();
 
-    void add(boost::intrusive_ptr<TimerTask> task);
+    QPID_BROKER_EXTERN void add(boost::intrusive_ptr<TimerTask> task);
     void start();
     void stop();
 

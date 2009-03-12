@@ -30,13 +30,14 @@ class MethodBodyDefaultVisitorGen < CppGen
   def generate()
     h_file(@filename) {
       include "qpid/framing/MethodBodyConstVisitor"
+      include "qpid/CommonImportExport.h"
       namespace(@namespace) { 
         genl "class AMQMethodBody;"
         cpp_class(@classname, "public MethodBodyConstVisitor") {
           genl "public:"
           genl "virtual void defaultVisit(const AMQMethodBody&) = 0;"
           @amqp.methods_.each { |m|
-            genl "virtual void visit(const #{m.body_name}&);" }
+            genl "QPID_COMMON_EXTERN virtual void visit(const #{m.body_name}&);" }
         }}}
 
     cpp_file(@filename) {

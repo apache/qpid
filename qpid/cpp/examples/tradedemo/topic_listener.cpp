@@ -58,7 +58,6 @@
 #include <qpid/client/SubscriptionManager.h>
 #include "qpid/client/QueueOptions.h"
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 

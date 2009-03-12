@@ -21,6 +21,7 @@
 #ifndef _TxPublish_
 #define _TxPublish_
 
+#include "BrokerImportExport.h"
 #include "Queue.h"
 #include "Deliverable.h"
 #include "Message.h"
@@ -65,19 +66,19 @@ namespace qpid {
             std::list<Queue::shared_ptr> queues;
 
         public:
-            TxPublish(boost::intrusive_ptr<Message> msg);
-            virtual bool prepare(TransactionContext* ctxt) throw();
-            virtual void commit() throw();
-            virtual void rollback() throw();
+            QPID_BROKER_EXTERN TxPublish(boost::intrusive_ptr<Message> msg);
+            QPID_BROKER_EXTERN virtual bool prepare(TransactionContext* ctxt) throw();
+            QPID_BROKER_EXTERN virtual void commit() throw();
+            QPID_BROKER_EXTERN virtual void rollback() throw();
 
 	    virtual Message& getMessage() { return *msg; };
             
-            virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
+            QPID_BROKER_EXTERN virtual void deliverTo(const boost::shared_ptr<Queue>& queue);
 
             virtual ~TxPublish(){}
             virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
 
-            uint64_t contentSize();
+            QPID_BROKER_EXTERN uint64_t contentSize();
 
             boost::intrusive_ptr<Message> getMessage() const { return msg; }
             const std::list<Queue::shared_ptr> getQueues() const { return queues; }

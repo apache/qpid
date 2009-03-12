@@ -26,6 +26,7 @@
 #include "qpid/framing/AMQP_AllProxy.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/SessionState.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 
@@ -43,8 +44,8 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
                        public framing::FrameHandler::InOutHandler
 {
   public:
-    SessionHandler(framing::FrameHandler* out=0, uint16_t channel=0);
-    ~SessionHandler();
+    QPID_COMMON_EXTERN SessionHandler(framing::FrameHandler* out=0, uint16_t channel=0);
+    QPID_COMMON_EXTERN ~SessionHandler();
 
     void setChannel(uint16_t ch) { channel = ch; }
     uint16_t getChannel() const { return channel.get(); }
@@ -55,35 +56,35 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     virtual framing::FrameHandler* getInHandler() = 0;
 
     // Non-protocol methods, called locally to initiate some action.
-    void sendDetach();
-    void sendCompletion();
-    void sendAttach(bool force);
-    void sendTimeout(uint32_t t);
-    void sendFlush();
-    void markReadyToSend();//TODO: only needed for inter-broker bridge; cleanup
+    QPID_COMMON_EXTERN void sendDetach();
+    QPID_COMMON_EXTERN void sendCompletion();
+    QPID_COMMON_EXTERN void sendAttach(bool force);
+    QPID_COMMON_EXTERN void sendTimeout(uint32_t t);
+    QPID_COMMON_EXTERN void sendFlush();
+    QPID_COMMON_EXTERN void markReadyToSend();//TODO: only needed for inter-broker bridge; cleanup
 
     /** True if the handler is ready to send and receive */
     bool ready() const;
 
     // Protocol methods
-    void attach(const std::string& name, bool force);
-    void attached(const std::string& name);
-    void detach(const std::string& name);
-    void detached(const std::string& name, uint8_t code);
+    QPID_COMMON_EXTERN void attach(const std::string& name, bool force);
+    QPID_COMMON_EXTERN void attached(const std::string& name);
+    QPID_COMMON_EXTERN void detach(const std::string& name);
+    QPID_COMMON_EXTERN void detached(const std::string& name, uint8_t code);
 
-    void requestTimeout(uint32_t t);
-    void timeout(uint32_t t);
+    QPID_COMMON_EXTERN void requestTimeout(uint32_t t);
+    QPID_COMMON_EXTERN void timeout(uint32_t t);
 
-    void commandPoint(const framing::SequenceNumber& id, uint64_t offset);
-    void expected(const framing::SequenceSet& commands, const framing::Array& fragments);
-    void confirmed(const framing::SequenceSet& commands,const framing::Array& fragments);
-    void completed(const framing::SequenceSet& commands, bool timelyReply);
-    void knownCompleted(const framing::SequenceSet& commands);
-    void flush(bool expected, bool confirmed, bool completed);
-    void gap(const framing::SequenceSet& commands);    
+    QPID_COMMON_EXTERN void commandPoint(const framing::SequenceNumber& id, uint64_t offset);
+    QPID_COMMON_EXTERN void expected(const framing::SequenceSet& commands, const framing::Array& fragments);
+    QPID_COMMON_EXTERN void confirmed(const framing::SequenceSet& commands,const framing::Array& fragments);
+    QPID_COMMON_EXTERN void completed(const framing::SequenceSet& commands, bool timelyReply);
+    QPID_COMMON_EXTERN void knownCompleted(const framing::SequenceSet& commands);
+    QPID_COMMON_EXTERN void flush(bool expected, bool confirmed, bool completed);
+    QPID_COMMON_EXTERN void gap(const framing::SequenceSet& commands);    
 
   protected:
-    virtual void invoke(const framing::AMQMethodBody& m);
+    QPID_COMMON_EXTERN virtual void invoke(const framing::AMQMethodBody& m);
 
     virtual void setState(const std::string& sessionName, bool force) = 0;
     virtual void channelException(framing::session::DetachCode code, const std::string& msg) = 0;
@@ -94,9 +95,9 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     virtual void readyToSend() {}
     virtual void readyToReceive() {}
     
-    virtual void handleDetach();
-    virtual void handleIn(framing::AMQFrame&);
-    virtual void handleOut(framing::AMQFrame&);
+    QPID_COMMON_EXTERN virtual void handleDetach();
+    QPID_COMMON_EXTERN virtual void handleIn(framing::AMQFrame&);
+    QPID_COMMON_EXTERN virtual void handleOut(framing::AMQFrame&);
 
     framing::ChannelHandler channel;
     framing::AMQP_AllProxy::Session  peer;

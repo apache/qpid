@@ -23,7 +23,7 @@
  */
 #include "AsyncSession.h"
 #include "Message.h"
-
+#include "qpid/client/ClientImportExport.h"
 #include <list>
 #include <string>
 
@@ -37,13 +37,13 @@ namespace client {
 class MessageReplayTracker
 {
   public:
-    MessageReplayTracker(uint flushInterval);
-    void send(const Message& message, const std::string& destination = "");
-    void init(AsyncSession session);
-    void replay(AsyncSession session);
-    void setFlushInterval(uint interval);
-    uint getFlushInterval();
-    void checkCompletion();
+    QPID_CLIENT_EXTERN MessageReplayTracker(uint flushInterval);
+    QPID_CLIENT_EXTERN void send(const Message& message, const std::string& destination = "");
+    QPID_CLIENT_EXTERN void init(AsyncSession session);
+    QPID_CLIENT_EXTERN void replay(AsyncSession session);
+    QPID_CLIENT_EXTERN void setFlushInterval(uint interval);
+    QPID_CLIENT_EXTERN uint getFlushInterval();
+    QPID_CLIENT_EXTERN void checkCompletion();
 
     template <class F> void foreach(F& f) {
         for (std::list<ReplayRecord>::const_iterator i = buffer.begin(); i != buffer.end(); i++) {

@@ -671,6 +671,7 @@ nobase_include_HEADERS = \
   qpid/management/ManagementEvent.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
+  qpid/sys/alloca.h \
   qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AsynchIOHandler.h \
@@ -720,7 +721,9 @@ nobase_include_HEADERS = \
   qpid/sys/Time.h \
   qpid/sys/Timer.h \
   qpid/sys/TimeoutHandler.h \
-  qpid/sys/uuid.h
+  qpid/sys/uuid.h \
+  qpid/CommonImportExport.h \
+  qpid/client/ClientImportExport.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

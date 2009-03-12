@@ -25,6 +25,7 @@
 #include "Options.h"
 #include <string>
 #include <vector>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 
@@ -32,11 +33,11 @@ struct ModuleOptions : public qpid::Options {
     std::string              loadDir;
     std::vector<std::string> load;
     bool                     noLoad;
-    ModuleOptions(const std::string& defaultModuleDir);
+    QPID_COMMON_EXTERN ModuleOptions(const std::string& defaultModuleDir);
 };
 
-void tryShlib(const char* libname, bool noThrow);
-void loadModuleDir (std::string dirname, bool isDefault);
+QPID_COMMON_EXTERN void tryShlib(const char* libname, bool noThrow);
+QPID_COMMON_EXTERN void loadModuleDir (std::string dirname, bool isDefault);
 
 } // namespace qpid
 

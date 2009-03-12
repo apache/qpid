@@ -25,6 +25,7 @@
 #include "amqp_types.h"
 #include "Buffer.h"
 #include "FieldTable.h"
+#include "qpid/CommonImportExport.h"
 
 #include "assert.h"
 
@@ -87,8 +88,8 @@ class FieldValue {
     bool empty() const { return data.get() == 0; } 
     void encode(Buffer& buffer);
     void decode(Buffer& buffer);
-    bool operator==(const FieldValue&) const;
-    bool operator!=(const FieldValue& v) const { return !(*this == v); }
+    QPID_COMMON_EXTERN bool operator==(const FieldValue&) const;
+    QPID_COMMON_EXTERN bool operator!=(const FieldValue& v) const { return !(*this == v); }
     
     void print(std::ostream& out) const;
     
@@ -244,28 +245,28 @@ class EncodedValue : public FieldValue::Data {
 
 class Str8Value : public FieldValue {
   public:
-    Str8Value(const std::string& v);
+    QPID_COMMON_EXTERN Str8Value(const std::string& v);
 };
 
 class Str16Value : public FieldValue {
   public:
-    Str16Value(const std::string& v);
+    QPID_COMMON_EXTERN Str16Value(const std::string& v);
 };
 
 class Struct32Value : public FieldValue {
   public:
-    Struct32Value(const std::string& v);
+    QPID_COMMON_EXTERN Struct32Value(const std::string& v);
 };
 
 class FloatValue : public FieldValue
 {
   public:
-    FloatValue(float f);
+    QPID_COMMON_EXTERN FloatValue(float f);
 };
 class DoubleValue : public FieldValue
 {
   public:
-    DoubleValue(double f);
+    QPID_COMMON_EXTERN DoubleValue(double f);
 };
 
 /*
@@ -273,32 +274,32 @@ class DoubleValue : public FieldValue
  */
 class IntegerValue : public FieldValue {
   public:
-    IntegerValue(int v);
+    QPID_COMMON_EXTERN IntegerValue(int v);
 };
 
 class TimeValue : public FieldValue {
   public:
-    TimeValue(uint64_t v);
+    QPID_COMMON_EXTERN TimeValue(uint64_t v);
 };
 
 class Integer64Value : public FieldValue {
   public:
-    Integer64Value(int64_t v);
+    QPID_COMMON_EXTERN Integer64Value(int64_t v);
 };
 
 class Unsigned64Value : public FieldValue {
   public:
-    Unsigned64Value(uint64_t v);
+    QPID_COMMON_EXTERN Unsigned64Value(uint64_t v);
 };
 
 class FieldTableValue : public FieldValue {
   public:
-    FieldTableValue(const FieldTable&);
+    QPID_COMMON_EXTERN FieldTableValue(const FieldTable&);
 };
 
 class ArrayValue : public FieldValue {
   public:
-    ArrayValue(const Array&);
+    QPID_COMMON_EXTERN ArrayValue(const Array&);
 };
 
 template <class T>

@@ -22,6 +22,7 @@
  *
  */
 
+#include "ClientImportExport.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Subscription.h"
 #include "qpid/client/Demux.h"
@@ -75,16 +76,16 @@ class LocalQueue {
      *
      * LocalQueue is an alternative to implementing a MessageListener.
      */
-    LocalQueue();
+    QPID_CLIENT_EXTERN LocalQueue();
 
-    ~LocalQueue();
+    QPID_CLIENT_EXTERN ~LocalQueue();
 
     /** Wait up to timeout for the next message from the local queue.
      *@param result Set to the message from the queue.
      *@param timeout wait up this timeout for a message to appear. 
      *@return true if result was set, false if queue was empty after timeout.
      */
-    bool get(Message& result, sys::Duration timeout=0);
+    QPID_CLIENT_EXTERN bool get(Message& result, sys::Duration timeout=0);
 
     /** Get the next message off the local queue, or wait up to the timeout
      * for message from the broker queue.
@@ -92,16 +93,16 @@ class LocalQueue {
      *@return message from the queue.
      *@throw ClosedException if subscription is closed or timeout exceeded.
      */
-    Message get(sys::Duration timeout=sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN Message get(sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Synonym for get() */
-    Message pop(sys::Duration timeout=sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN Message pop(sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Return true if local queue is empty. */
-    bool empty() const;
+    QPID_CLIENT_EXTERN bool empty() const;
 
     /** Number of messages on the local queue */
-    size_t size() const;
+    QPID_CLIENT_EXTERN size_t size() const;
 
   private:
     Demux::QueuePtr queue;

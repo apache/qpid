@@ -23,6 +23,7 @@
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/CommonImportExport.h"
 
 #ifndef _FrameSet_
 #define _FrameSet_
@@ -44,20 +45,20 @@ class FrameSet
 public:
     typedef boost::shared_ptr<FrameSet> shared_ptr;
 
-    FrameSet(const SequenceNumber& id);
-    void append(const AMQFrame& part);
-    bool isComplete() const;
+    QPID_COMMON_EXTERN FrameSet(const SequenceNumber& id);
+    QPID_COMMON_EXTERN void append(const AMQFrame& part);
+    QPID_COMMON_EXTERN bool isComplete() const;
 
-    uint64_t getContentSize() const;
+    QPID_COMMON_EXTERN uint64_t getContentSize() const;
 
-    void getContent(std::string&) const;
-    std::string getContent() const;
+    QPID_COMMON_EXTERN void getContent(std::string&) const;
+    QPID_COMMON_EXTERN std::string getContent() const;
 
     bool isContentBearing() const;
 
-    const AMQMethodBody* getMethod() const;
-    const AMQHeaderBody* getHeaders() const;
-    AMQHeaderBody* getHeaders();
+    QPID_COMMON_EXTERN const AMQMethodBody* getMethod() const;
+    QPID_COMMON_EXTERN const AMQHeaderBody* getHeaders() const;
+    QPID_COMMON_EXTERN AMQHeaderBody* getHeaders();
      
     template <class T> bool isA() const {
         const AMQMethodBody* method = getMethod();
