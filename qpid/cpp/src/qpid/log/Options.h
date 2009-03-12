@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/Options.h"
+#include "qpid/CommonImportExport.h"
 #include "SinkOptions.h"
 #include <iosfwd>
 #include <memory>
@@ -29,11 +30,11 @@ namespace log {
 /** Logging options for config parser. */
 struct Options : public qpid::Options {
     /** Pass argv[0] for use in syslog output */
-    Options(const std::string& argv0_=std::string(),
+    QPID_COMMON_EXTERN Options(const std::string& argv0_=std::string(),
             const std::string& name_="Logging options");
-    Options(const Options &);
+    QPID_COMMON_EXTERN Options(const Options &);
 
-    Options& operator=(const Options&);
+    QPID_COMMON_EXTERN Options& operator=(const Options&);
 
     std::string argv0;
     std::string name;

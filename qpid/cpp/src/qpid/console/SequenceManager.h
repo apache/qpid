@@ -21,6 +21,7 @@
 #ifndef _QPID_CONSOLE_SEQUENCEMANAGER_H_
 #define _QPID_CONSOLE_SEQUENCEMANAGER_H_
 
+#include "ConsoleImportExport.h"
 #include "qpid/sys/Mutex.h"
 #include <map>
 #include <string>
@@ -38,8 +39,8 @@ namespace console {
         typedef std::set<uint32_t> set;
 
         SequenceManager() : sequence(0) {}
-        uint32_t reserve(const std::string& context = "");
-        std::string release(uint32_t seq);
+        QPID_CONSOLE_EXTERN uint32_t reserve(const std::string& context = "");
+        QPID_CONSOLE_EXTERN std::string release(uint32_t seq);
 
     private:
         sys::Mutex lock;

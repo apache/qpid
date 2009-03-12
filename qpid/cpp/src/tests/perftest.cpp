@@ -38,7 +38,6 @@
 #include <sstream>
 #include <numeric>
 #include <algorithm>
-#include <unistd.h>
 #include <math.h>
 
 
@@ -525,7 +524,8 @@ struct PublishThread : public Client {
                             sync(session).txCommit();
                         }
                     }
-                    if (opts.intervalPub) ::usleep(opts.intervalPub*1000);
+                    if (opts.intervalPub)
+                        qpid::sys::usleep(opts.intervalPub*1000);
                 }
                 if (opts.confirm) session.sync();
                 AbsTime end=now();
@@ -615,7 +615,8 @@ struct SubscribeThread : public Client {
                         if (opts.commitAsync) session.txCommit();
                         else sync(session).txCommit();
                     }
-                    if (opts.intervalSub) ::usleep(opts.intervalSub*1000);
+                    if (opts.intervalSub)
+                        qpid::sys::usleep(opts.intervalSub*1000);
                     // TODO aconway 2007-11-23: check message order for. 
                     // multiple publishers. Need an array of counters,
                     // one per publisher and a publisher ID in the

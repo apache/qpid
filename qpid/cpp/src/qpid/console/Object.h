@@ -21,6 +21,7 @@
 #ifndef _QPID_CONSOLE_OBJECT_H_
 #define _QPID_CONSOLE_OBJECT_H_
 
+#include "ConsoleImportExport.h"
 #include "ObjectId.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
@@ -55,47 +56,50 @@ namespace console {
     public:
         typedef std::vector<Object> Vector;
         struct AttributeMap : public std::map<std::string, boost::shared_ptr<Value> > {
-            void addRef(const std::string& key, const ObjectId& val);
-            void addUint(const std::string& key, uint32_t val);
-            void addInt(const std::string& key, int32_t val);
-            void addUint64(const std::string& key, uint64_t val);
-            void addInt64(const std::string& key, int64_t val);
-            void addString(const std::string& key, const std::string& val);
-            void addBool(const std::string& key, bool val);
-            void addFloat(const std::string& key, float val);
-            void addDouble(const std::string& key, double val);
-            void addUuid(const std::string& key, const framing::Uuid& val);
-            void addMap(const std::string& key, const framing::FieldTable& val);
+            QPID_CONSOLE_EXTERN void addRef(const std::string& key, const ObjectId& val);
+            QPID_CONSOLE_EXTERN void addUint(const std::string& key, uint32_t val);
+            QPID_CONSOLE_EXTERN void addInt(const std::string& key, int32_t val);
+            QPID_CONSOLE_EXTERN void addUint64(const std::string& key, uint64_t val);
+            QPID_CONSOLE_EXTERN void addInt64(const std::string& key, int64_t val);
+            QPID_CONSOLE_EXTERN void addString(const std::string& key, const std::string& val);
+            QPID_CONSOLE_EXTERN void addBool(const std::string& key, bool val);
+            QPID_CONSOLE_EXTERN void addFloat(const std::string& key, float val);
+            QPID_CONSOLE_EXTERN void addDouble(const std::string& key, double val);
+            QPID_CONSOLE_EXTERN void addUuid(const std::string& key, const framing::Uuid& val);
+            QPID_CONSOLE_EXTERN void addMap(const std::string& key, const framing::FieldTable& val);
         };
 
-        Object(Broker* broker, SchemaClass* schemaClass, framing::Buffer& buffer, bool prop, bool stat);
-        ~Object();
+        QPID_CONSOLE_EXTERN Object(Broker* broker, SchemaClass* schemaClass, framing::Buffer& buffer, bool prop, bool stat);
+        QPID_CONSOLE_EXTERN ~Object();
 
         Broker* getBroker() const { return broker; }
         const ObjectId& getObjectId() const { return objectId; }
-        const ClassKey& getClassKey() const;
+        QPID_CONSOLE_EXTERN const ClassKey& getClassKey() const;
         SchemaClass* getSchema() const { return schema; }
         uint64_t getCurrentTime() const { return currentTime; }
         uint64_t getCreateTime() const { return createTime; }
         uint64_t getDeleteTime() const { return deleteTime; }
         bool isDeleted() const { return deleteTime != 0; }
-        std::string getIndex() const;
-        void mergeUpdate(const Object& updated);
+        QPID_CONSOLE_EXTERN std::string getIndex() const;
+        QPID_CONSOLE_EXTERN void mergeUpdate(const Object& updated);
         const AttributeMap& getAttributes() const { return attributes; }
-        void invokeMethod(const std::string name, const AttributeMap& args, MethodResponse& result);
-        void handleMethodResp(framing::Buffer& buffer, uint32_t sequence);
+        QPID_CONSOLE_EXTERN void invokeMethod(const std::string name,
+                                              const AttributeMap& args,
+                                              MethodResponse& result);
+        QPID_CONSOLE_EXTERN void handleMethodResp(framing::Buffer& buffer,
+                                                  uint32_t sequence);
 
-        ObjectId attrRef(const std::string& key) const;
-        uint32_t attrUint(const std::string& key) const;
-        int32_t attrInt(const std::string& key) const;
-        uint64_t attrUint64(const std::string& key) const;
-        int64_t attrInt64(const std::string& key) const;
-        std::string attrString(const std::string& key) const;
-        bool attrBool(const std::string& key) const;
-        float attrFloat(const std::string& key) const;
-        double attrDouble(const std::string& key) const;
-        framing::Uuid attrUuid(const std::string& key) const;
-        framing::FieldTable attrMap(const std::string& key) const;
+        QPID_CONSOLE_EXTERN ObjectId attrRef(const std::string& key) const;
+        QPID_CONSOLE_EXTERN uint32_t attrUint(const std::string& key) const;
+        QPID_CONSOLE_EXTERN int32_t attrInt(const std::string& key) const;
+        QPID_CONSOLE_EXTERN uint64_t attrUint64(const std::string& key) const;
+        QPID_CONSOLE_EXTERN int64_t attrInt64(const std::string& key) const;
+        QPID_CONSOLE_EXTERN std::string attrString(const std::string& key) const;
+        QPID_CONSOLE_EXTERN bool attrBool(const std::string& key) const;
+        QPID_CONSOLE_EXTERN float attrFloat(const std::string& key) const;
+        QPID_CONSOLE_EXTERN double attrDouble(const std::string& key) const;
+        QPID_CONSOLE_EXTERN framing::Uuid attrUuid(const std::string& key) const;
+        QPID_CONSOLE_EXTERN framing::FieldTable attrMap(const std::string& key) const;
 
     private:
         Broker* broker;
@@ -111,7 +115,7 @@ namespace console {
         void parsePresenceMasks(framing::Buffer& buffer, std::set<std::string>& excludeList);
     };
 
-    std::ostream& operator<<(std::ostream& o, const Object& object);
+    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Object& object);
 }
 }
 

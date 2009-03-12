@@ -24,6 +24,7 @@
 #include <deque>
 #include <iostream>
 #include <memory>
+#include "BrokerImportExport.h"
 #include "QueuedMessage.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/AtomicValue.h"
@@ -47,20 +48,20 @@ class QueuePolicy
     static std::string getType(const qpid::framing::FieldTable& settings);
 
   public:
-    static const std::string maxCountKey;
-    static const std::string maxSizeKey;
-    static const std::string typeKey;
-    static const std::string REJECT;
-    static const std::string FLOW_TO_DISK;
-    static const std::string RING;
-    static const std::string RING_STRICT;            
+    static QPID_BROKER_EXTERN const std::string maxCountKey;
+    static QPID_BROKER_EXTERN const std::string maxSizeKey;
+    static QPID_BROKER_EXTERN const std::string typeKey;
+    static QPID_BROKER_EXTERN const std::string REJECT;
+    static QPID_BROKER_EXTERN const std::string FLOW_TO_DISK;
+    static QPID_BROKER_EXTERN const std::string RING;
+    static QPID_BROKER_EXTERN const std::string RING_STRICT;            
 
     virtual ~QueuePolicy() {}
-    void tryEnqueue(const QueuedMessage&);
+    QPID_BROKER_EXTERN void tryEnqueue(const QueuedMessage&);
     virtual void dequeued(const QueuedMessage&);
     virtual bool isEnqueued(const QueuedMessage&);
     virtual bool checkLimit(const QueuedMessage&);
-    void update(qpid::framing::FieldTable& settings);
+    QPID_BROKER_EXTERN void update(qpid::framing::FieldTable& settings);
     uint32_t getMaxCount() const { return maxCount; }
     uint64_t getMaxSize() const { return maxSize; }           
     void encode(framing::Buffer& buffer) const;
@@ -68,10 +69,11 @@ class QueuePolicy
     uint32_t encodedSize() const;
 
 
-    static std::auto_ptr<QueuePolicy> createQueuePolicy(const qpid::framing::FieldTable& settings);
-    static std::auto_ptr<QueuePolicy> createQueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
+    static QPID_BROKER_EXTERN std::auto_ptr<QueuePolicy> createQueuePolicy(const qpid::framing::FieldTable& settings);
+    static QPID_BROKER_EXTERN std::auto_ptr<QueuePolicy> createQueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
     static void setDefaultMaxSize(uint64_t);
-    friend std::ostream& operator<<(std::ostream&, const QueuePolicy&);
+    friend QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream&,
+                                                       const QueuePolicy&);
   protected:
     QueuePolicy(uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
 

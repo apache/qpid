@@ -22,6 +22,8 @@
 #include "FrameHandler.h"
 #include "ProtocolVersion.h"
 
+#include "qpid/CommonImportExport.h"
+
 namespace qpid {
 namespace framing {
 
@@ -37,19 +39,19 @@ class Proxy
     {
         Proxy& proxy;
       public:
-        ScopedSync(Proxy& p);
-        ~ScopedSync();
+        QPID_COMMON_EXTERN ScopedSync(Proxy& p);
+        QPID_COMMON_EXTERN ~ScopedSync();
     };
 
-    Proxy(FrameHandler& h);
-    virtual ~Proxy();
+    QPID_COMMON_EXTERN Proxy(FrameHandler& h);
+    QPID_COMMON_EXTERN virtual ~Proxy();
 
-    void send(const AMQBody&);
+    QPID_COMMON_EXTERN void send(const AMQBody&);
 
-    ProtocolVersion getVersion() const;
+    QPID_COMMON_EXTERN ProtocolVersion getVersion() const;
 
-    FrameHandler& getHandler();
-    void setHandler(FrameHandler&);
+    QPID_COMMON_EXTERN FrameHandler& getHandler();
+    QPID_COMMON_EXTERN void setHandler(FrameHandler&);
   private:
     FrameHandler* out;
     bool sync;

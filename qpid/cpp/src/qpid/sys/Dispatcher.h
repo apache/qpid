@@ -24,6 +24,7 @@
 
 #include "Poller.h"
 #include "Runnable.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace sys {
@@ -32,10 +33,10 @@ class Dispatcher : public Runnable {
     const Poller::shared_ptr poller;
 
 public:
-    Dispatcher(Poller::shared_ptr poller);
-    ~Dispatcher();
+    QPID_COMMON_EXTERN Dispatcher(Poller::shared_ptr poller);
+    QPID_COMMON_EXTERN ~Dispatcher();
     
-    void run();
+    QPID_COMMON_EXTERN void run();
 };
 
 }}
