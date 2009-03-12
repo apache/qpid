@@ -103,13 +103,14 @@ class PersistableMessage : public Persistable
 
     QPID_BROKER_EXTERN void enqueueAsync();
 
-    bool isDequeueComplete();
+    QPID_BROKER_EXTERN bool isDequeueComplete();
     
-    void dequeueComplete();
+    QPID_BROKER_EXTERN void dequeueComplete();
 
-    void dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store);
+    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
+                                         MessageStore* _store);
 
-    void dequeueAsync();
+    QPID_BROKER_EXTERN void dequeueAsync();
 };
 
 }}
