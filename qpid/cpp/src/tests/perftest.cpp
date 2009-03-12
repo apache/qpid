@@ -238,8 +238,10 @@ struct Client : public Runnable {
 
     ~Client() {
         try {
-            session.close();
-            connection->close();
+            if (connection->isOpen()) {
+                session.close();
+                connection->close();
+            }
         } catch (const std::exception& e) {
             std::cerr << "Error in shutdown: " << e.what() << std::endl;
         }
