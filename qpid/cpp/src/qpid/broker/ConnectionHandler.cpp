@@ -24,8 +24,7 @@
 #include "Connection.h"
 #include "SecureConnection.h"
 #include "qpid/Url.h"
-#include "qpid/framing/ClientInvoker.h"
-#include "qpid/framing/ServerInvoker.h"
+#include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
@@ -54,32 +53,25 @@ const int SESSION_FLOW_CONTROL_VER = 1;
 
 void ConnectionHandler::close(connection::CloseCode code, const string& text)
 {
-    handler->client.close(code, text);
+    handler->proxy.close(code, text);
 }
 
 void ConnectionHandler::heartbeat()
 {
-    handler->client.heartbeat();
+    handler->proxy.heartbeat();
 }
 
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
     try{
-        bool handled = false;
-        if (handler->serverMode) {
-            handled = invoke(static_cast<AMQP_ServerOperations::ConnectionHandler&>(*handler.get()), *method);
-        } else {
-            handled = invoke(static_cast<AMQP_ClientOperations::ConnectionHandler&>(*handler.get()), *method);
-        }
-        if (!handled) {
+        if (!invoke(static_cast<AMQP_AllOperations::ConnectionHandler&>(*handler.get()), *method)) {
             handler->connection.getChannel(frame.getChannel()).in(frame);
         }
-
     }catch(ConnectionException& e){
-        handler->client.close(e.code, e.what());
+        handler->proxy.close(e.code, e.what());
     }catch(std::exception& e){
-        handler->client.close(541/*internal error*/, e.what());
+        handler->proxy.close(541/*internal error*/, e.what());
     }
 }
 
@@ -91,7 +83,7 @@ void ConnectionHandler::setSecureConnection(SecureConnection* secured)
 ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient)  : handler(new Handler(connection, isClient)) {}
 
 ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
-    client(c.getOutput()), server(c.getOutput()),
+    proxy(c.getOutput()),
     connection(c), serverMode(!isClient), acl(0), secured(0)
 {
     if (serverMode) {
@@ -109,7 +101,7 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient) :
         Array locales(0x95);
         boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
         locales.add(l);
-        client.start(properties, mechanisms, locales);
+        proxy.start(properties, mechanisms, locales);
     }
 }
 
@@ -139,7 +131,7 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
     connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     if (connection.isFederationLink()) {
     	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
-            client.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
+            proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
             return;
         }
         QPID_LOG(info, "Connection is a federation link");
@@ -193,7 +185,7 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
     framing::Array array(0x95); // str16 array
     for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i) 
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
-    client.openOk(array);
+    proxy.openOk(array);
 
     //install security layer if one has been negotiated:
     if (secured) {
@@ -212,7 +204,7 @@ void ConnectionHandler::Handler::close(uint16_t replyCode, const string& replyTe
     if (replyCode == framing::connection::CLOSE_CODE_CONNECTION_FORCED)
         connection.notifyConnectionForced(replyText);
 
-    client.closeOk();
+    proxy.closeOk();
     connection.getOutput().close();
 } 
         
@@ -238,12 +230,12 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
     FieldTable ft;
     ft.setInt(QPID_FED_LINK,1);
     ft.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
-    server.startOk(ft, mechanism, response, en_US);
+    proxy.startOk(ft, mechanism, response, en_US);
 }
 
 void ConnectionHandler::Handler::secure(const string& /*challenge*/)
 {
-    server.secureOk("");
+    proxy.secureOk("");
 }
 
 void ConnectionHandler::Handler::tune(uint16_t channelMax,
@@ -253,8 +245,8 @@ void ConnectionHandler::Handler::tune(uint16_t channelMax,
 {
     connection.setFrameMax(frameMax);
     connection.setHeartbeat(heartbeatMax);
-    server.tuneOk(channelMax, frameMax, heartbeatMax);
-    server.open("/", Array(), true);
+    proxy.tuneOk(channelMax, frameMax, heartbeatMax);
+    proxy.open("/", Array(), true);
 }
 
 void ConnectionHandler::Handler::openOk(const framing::Array& knownHosts)
