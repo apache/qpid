@@ -22,6 +22,7 @@
 #define _QPID_CONSOLE_CONSOLE_LISTENER_H_
 
 #include <string>
+#include "ConsoleImportExport.h"
 #include "Broker.h"
 #include "ClassKey.h"
 #include "Object.h"
@@ -36,7 +37,7 @@ namespace console {
      *
      * \ingroup qmfconsoleapi
      */
-    class ConsoleListener{
+    class QPID_CONSOLE_EXTERN ConsoleListener{
     public:
         virtual ~ConsoleListener() {};
 

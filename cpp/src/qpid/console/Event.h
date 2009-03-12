@@ -21,6 +21,7 @@
 #ifndef _QPID_CONSOLE_EVENT_H_
 #define _QPID_CONSOLE_EVENT_H_
 
+#include "ConsoleImportExport.h"
 #include "Object.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
@@ -46,26 +47,28 @@ namespace console {
         SEV_WARNING = 4, SEV_NOTICE = 5, SEV_INFO = 6, SEV_DEBUG = 7
         } Severity;
 
-        Event(Broker* broker, SchemaClass* schemaClass, framing::Buffer& buffer);
+        QPID_CONSOLE_EXTERN Event(Broker* broker,
+                                  SchemaClass* schemaClass,
+                                  framing::Buffer& buffer);
         Broker* getBroker() const { return broker; }
-        const ClassKey& getClassKey() const;
+        QPID_CONSOLE_EXTERN const ClassKey& getClassKey() const;
         SchemaClass* getSchema() const { return schema; }
         const Object::AttributeMap& getAttributes() const { return attributes; }
         uint64_t getTimestamp() const { return timestamp; }
         uint8_t getSeverity() const { return severity; }
-        std::string getSeverityString() const;
+        QPID_CONSOLE_EXTERN std::string getSeverityString() const;
 
-        ObjectId attrRef(const std::string& key) const;
-        uint32_t attrUint(const std::string& key) const;
-        int32_t attrInt(const std::string& key) const;
-        uint64_t attrUint64(const std::string& key) const;
-        int64_t attrInt64(const std::string& key) const;
-        std::string attrString(const std::string& key) const;
-        bool attrBool(const std::string& key) const;
-        float attrFloat(const std::string& key) const;
-        double attrDouble(const std::string& key) const;
-        framing::Uuid attrUuid(const std::string& key) const;
-        framing::FieldTable attrMap(const std::string& key) const;
+        QPID_CONSOLE_EXTERN ObjectId attrRef(const std::string& key) const;
+        QPID_CONSOLE_EXTERN uint32_t attrUint(const std::string& key) const;
+        QPID_CONSOLE_EXTERN int32_t attrInt(const std::string& key) const;
+        QPID_CONSOLE_EXTERN uint64_t attrUint64(const std::string& key) const;
+        QPID_CONSOLE_EXTERN int64_t attrInt64(const std::string& key) const;
+        QPID_CONSOLE_EXTERN std::string attrString(const std::string& key) const;
+        QPID_CONSOLE_EXTERN bool attrBool(const std::string& key) const;
+        QPID_CONSOLE_EXTERN float attrFloat(const std::string& key) const;
+        QPID_CONSOLE_EXTERN double attrDouble(const std::string& key) const;
+        QPID_CONSOLE_EXTERN framing::Uuid attrUuid(const std::string& key) const;
+        QPID_CONSOLE_EXTERN framing::FieldTable attrMap(const std::string& key) const;
 
     private:
         Broker* broker;
@@ -75,7 +78,7 @@ namespace console {
         Object::AttributeMap attributes;
     };
 
-    std::ostream& operator<<(std::ostream& o, const Event& event);
+    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Event& event);
 }
 }
 

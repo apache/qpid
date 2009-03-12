@@ -23,6 +23,7 @@
 
 #include <map>
 #include <vector>
+#include "BrokerImportExport.h"
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/CopyOnWriteArray.h"
@@ -44,18 +45,27 @@ class DirectExchange : public virtual Exchange {
 public:
     static const std::string typeName;
         
-    DirectExchange(const std::string& name, management::Manageable* parent = 0);
-    DirectExchange(const string& _name, bool _durable, 
-                   const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN DirectExchange(const std::string& name,
+                                      management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN DirectExchange(const string& _name,
+                                      bool _durable, 
+                                      const qpid::framing::FieldTable& _args,
+                                      management::Manageable* parent = 0);
 
     virtual std::string getType() const { return typeName; }            
         
-    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
+                                         const std::string& routingKey,
+                                         const qpid::framing::FieldTable* args);
     virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
-    virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
-    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+    QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
+                                          const std::string& routingKey,
+                                          const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
+                                            const string* const routingKey,
+                                            const qpid::framing::FieldTable* const args);
 
-    virtual ~DirectExchange();
+    QPID_BROKER_EXTERN virtual ~DirectExchange();
 
     virtual bool supportsDynamicBinding() { return true; }
 };

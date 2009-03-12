@@ -37,6 +37,7 @@
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/FieldValue.h"
 #include <iostream>
@@ -132,7 +133,7 @@ int main(int argc, char** argv){
 
             if( args.statusqueue.length() > 0 ) {
                 stringstream msg_str;
-                msg_str << "topic_listener: " << (int)getpid();
+                msg_str << "topic_listener: " << qpid::sys::SystemInfo::getProcessId();
                 session.messageTransfer(arg::content=Message(msg_str.str(), args.statusqueue));
                 cout << "Ready status put on queue '" << args.statusqueue << "'" << endl;
             }

@@ -21,6 +21,7 @@
 #ifndef _QueueRegistry_
 #define _QueueRegistry_
 
+#include "BrokerImportExport.h"
 #include "Queue.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
@@ -40,10 +41,10 @@ class QueueEvents;
  * are deleted when and only when they are no longer in use.
  *
  */
-class QueueRegistry{
+class QueueRegistry {
   public:
-    QueueRegistry();
-    ~QueueRegistry();
+    QPID_BROKER_EXTERN QueueRegistry();
+    QPID_BROKER_EXTERN ~QueueRegistry();
 
     /**
      * Declare a queue.
@@ -51,8 +52,11 @@ class QueueRegistry{
      * @return The queue and a boolean flag which is true if the queue
      * was created by this declare call false if it already existed.
      */
-    std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, bool autodelete = false, 
-                                               const OwnershipToken* owner = 0);
+    QPID_BROKER_EXTERN std::pair<Queue::shared_ptr, bool> declare
+      (const string& name,
+       bool durable = false,
+       bool autodelete = false, 
+       const OwnershipToken* owner = 0);
 
     /**
      * Destroy the named queue.
@@ -66,7 +70,7 @@ class QueueRegistry{
      * subsequent calls to find or declare with the same name.
      *
      */
-    void destroy   (const string& name);
+    QPID_BROKER_EXTERN void destroy(const string& name);
     template <class Test> bool destroyIf(const string& name, Test test)
     {
         qpid::sys::RWlock::ScopedWlock locker(lock);
@@ -81,7 +85,7 @@ class QueueRegistry{
     /**
      * Find the named queue. Return 0 if not found.
      */
-    Queue::shared_ptr find(const string& name);
+    QPID_BROKER_EXTERN Queue::shared_ptr find(const string& name);
 
     /**
      * Generate unique queue name.

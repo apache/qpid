@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="shlibtest"
-	ProjectGUID="{37AB26B9-FECA-1BAD-2235-047BCDC7409E}"
+	ProjectGUID="{37AB26B9-FECA-1BAD-2431-8A11DB0D67CE}"
 	RootNamespace="shlibtest"
 	Keyword="Win32Proj"
 	SignManifests="true"
@@ -22,8 +22,8 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Debug\shlibtest\I386"
-			ConfigurationType="4"
+			IntermediateDirectory="Debug\shlibtest\I386"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -52,10 +52,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\."
-                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS"
+                                PreprocessorDefinitions="SHLIBTEST_BUILD_DLL;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -74,8 +74,16 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\shlibtestsd.lib"
+				Name="VCLinkerTool"
+				AdditionalDependencies=""
+				OutputFile="$(OutDir)\shlibtestd.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				ImportLibrary=".\shlibtestd.lib"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -96,8 +104,8 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Release\shlibtest\I386"
-			ConfigurationType="4"
+			IntermediateDirectory="Release\shlibtest\I386"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -126,8 +134,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\."
-                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="SHLIBTEST_BUILD_DLL;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -145,8 +153,18 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\shlibtests.lib"
+				Name="VCLinkerTool"
+				AdditionalDependencies=""
+				OutputFile="$(OutDir)\shlibtest.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary=".\shlibtest.lib"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -167,8 +185,8 @@
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Debug\shlibtest\AMD64"
-			ConfigurationType="4"
+			IntermediateDirectory="Debug\shlibtest\AMD64"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -197,10 +215,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\."
-                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64"
+                                PreprocessorDefinitions="SHLIBTEST_BUILD_DLL;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -219,8 +237,17 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\shlibtestsd.lib"
+				Name="VCLinkerTool"
+				AdditionalOptions="/machine:AMD64"
+				AdditionalDependencies=""
+				OutputFile="$(OutDir)\shlibtestd.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				ImportLibrary=".\shlibtestd.lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -241,8 +268,8 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Release\shlibtest\AMD64"
-			ConfigurationType="4"
+			IntermediateDirectory="Release\shlibtest\AMD64"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -271,8 +298,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\."
-                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="SHLIBTEST_BUILD_DLL;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -290,8 +317,19 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\shlibtests.lib"
+				Name="VCLinkerTool"
+				AdditionalOptions="/machine:AMD64"
+				AdditionalDependencies=""
+				OutputFile="$(OutDir)\shlibtest.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary=".\shlibtest.lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -334,6 +372,9 @@
 			</File>
 			<File
 				RelativePath="BrokerFixture.h">
+			</File>
+			<File
+				RelativePath="ClusterFixture.h">
 			</File>
 			<File
 				RelativePath="ConnectionOptions.h">

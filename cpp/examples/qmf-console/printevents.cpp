@@ -88,7 +88,7 @@ int main_int(int /*argc*/, char** /*argv*/)
     //  Sleep indefinitely while asynchronous events are handled by the listener.
     //
     for (;;)
-        ::sleep(1);
+      qpid::sys::sleep(1);
 
     sm.delBroker(broker);
     return 0;

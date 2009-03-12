@@ -23,6 +23,7 @@
 
 #include <map>
 #include <vector>
+#include "BrokerImportExport.h"
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/CopyOnWriteArray.h"
@@ -38,22 +39,30 @@ class FanOutExchange : public virtual Exchange {
   public:
     static const std::string typeName;
         
-    FanOutExchange(const std::string& name, management::Manageable* parent = 0);
-    FanOutExchange(const string& _name, bool _durable, 
-                   const qpid::framing::FieldTable& _args,
-                   management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN FanOutExchange(const std::string& name,
+                                      management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN FanOutExchange(const string& _name,
+                                      bool _durable, 
+                                      const qpid::framing::FieldTable& _args,
+                                      management::Manageable* parent = 0);
 
     virtual std::string getType() const { return typeName; }            
         
-    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
+                                         const std::string& routingKey,
+                                         const qpid::framing::FieldTable* args);
 
     virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
+                                          const std::string& routingKey,
+                                          const qpid::framing::FieldTable* args);
 
-    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+    QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
+                                            const string* const routingKey,
+                                            const qpid::framing::FieldTable* const args);
 
-    virtual ~FanOutExchange();
+    QPID_BROKER_EXTERN virtual ~FanOutExchange();
     virtual bool supportsDynamicBinding() { return true; }
 };
 

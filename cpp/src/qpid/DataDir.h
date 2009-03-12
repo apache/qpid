@@ -24,6 +24,7 @@
 #include <string>
 #include <memory>
 #include "qpid/sys/LockFile.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 
@@ -38,8 +39,8 @@ class DataDir
 
   public:
 
-    DataDir (std::string path);
-    ~DataDir ();
+	QPID_COMMON_EXTERN DataDir (std::string path);
+	QPID_COMMON_EXTERN ~DataDir ();
 
     bool isEnabled() { return enabled; }
     const std::string& getPath() { return dirPath; }

@@ -74,7 +74,7 @@ class OperationsInvokerGen < CppGen
       public
       genl("Invoker(#{target}& target_) : target(target_) {}")
       genl "using MethodBodyDefaultVisitor::visit;"
-      methods.each { |m| genl "void visit(const #{m.body_name}& body);" }
+      methods.each { |m| genl "QPID_COMMON_EXTERN void visit(const #{m.body_name}& body);" }
     }
   end
   
@@ -82,6 +82,7 @@ class OperationsInvokerGen < CppGen
     h_file(@filename) {
       include "qpid/framing/#{@ops}"
       include "qpid/framing/Invoker.h"
+      include "qpid/CommonImportExport.h"
       namespace("qpid::framing") {
         # AMQP_*Operations invoker.
         methods=@amqp.classes.map { |c| visit_methods(c).to_a }.flatten

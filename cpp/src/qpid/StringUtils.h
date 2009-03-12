@@ -22,6 +22,8 @@
  *
  */
 
+#include "qpid/CommonImportExport.h"
+
 #include <string>
 #include <vector>
 
@@ -31,12 +33,12 @@ namespace qpid {
  * Split 'in' into words using delimiters in 'delims' and put
  * resulting strings into 'out' vector.
  */
-void split(std::vector<std::string>& out, const std::string& in, const std::string& delims);
+QPID_COMMON_EXTERN void split(std::vector<std::string>& out, const std::string& in, const std::string& delims);
 /**
  * Split 'in' into words using delimiters in 'delims' and return the
  * resulting strings in a vector.
  */
-std::vector<std::string> split(const std::string& in, const std::string& delims);
+QPID_COMMON_EXTERN std::vector<std::string> split(const std::string& in, const std::string& delims);
 
 } // namespace qpid
 
