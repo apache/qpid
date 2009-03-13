@@ -71,7 +71,7 @@ public class AMQPriorityQueue extends SimpleAMQQueue
     @Override
     public String getType()
     {
-        return getClass().getName() + "[" + getName() + "][Priorities:" + getPriorities() + "]";
+        return getClass().getSimpleName() + "[" + getName() + "][Priorities:" + getPriorities() + "]";
     }
 
 }
