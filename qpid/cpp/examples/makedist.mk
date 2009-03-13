@@ -13,7 +13,7 @@ $(MAKEDIST): Makefile
 	mkdir -p .libs
 	@$(ECHO) CXX=$(CXX)                     > $(MAKEDIST)
 	@$(ECHO) CXXFLAGS=$(CXXFLAGS)           >> $(MAKEDIST)
-	@$(ECHO) LDFLAGS=-l$(MAKELDFLAGS)        >> $(MAKEDIST)
+	@$(ECHO) LDFLAGS=$(MAKELDFLAGS)        >> $(MAKEDIST)
 	@$(ECHO)                                >> $(MAKEDIST)
 	@$(ECHO) all: $(noinst_PROGRAMS)       >> $(MAKEDIST)
 	@$(ECHO)                                >> $(MAKEDIST)
