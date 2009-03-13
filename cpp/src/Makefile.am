@@ -500,6 +500,7 @@ nobase_include_HEADERS = \
   qpid/broker/Queue.h \
   qpid/broker/QueueListeners.h \
   qpid/broker/QueueCleaner.h \
+  qpid/broker/BrokerImportExport.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Bridge.h \
   qpid/broker/Connection.h \
@@ -576,6 +577,7 @@ nobase_include_HEADERS = \
   qpid/client/AckMode.h \
   qpid/client/Bounds.h \
   qpid/client/ChainableFrameHandler.h \
+  qpid/client/ClientImportExport.h \
   qpid/client/Completion.h \
   qpid/client/Connection.h \
   qpid/client/ConnectionHandler.h \
@@ -722,8 +724,7 @@ nobase_include_HEADERS = \
   qpid/sys/Timer.h \
   qpid/sys/TimeoutHandler.h \
   qpid/sys/uuid.h \
-  qpid/CommonImportExport.h \
-  qpid/client/ClientImportExport.h
+  qpid/CommonImportExport.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)
