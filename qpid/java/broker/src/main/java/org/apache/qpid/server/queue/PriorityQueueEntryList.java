@@ -237,7 +237,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
             for (int index = 0; index < _priorities; index++)
             {
                 QueueEntryList queueEntryList = _priorityLists[index];
-                _log.debug("Queue (" + _queue + ":" + _queue.getName() + ")[" + index + "] usage:" + queueEntryList.memoryUsed()
+                _log.debug("Queue (" + _queue.getName() + ")[" + index + "] usage:" + queueEntryList.memoryUsed()
                            + "/" + queueEntryList.getMemoryUsageMaximum()
                            + "/" + queueEntryList.dataSize());
             }
