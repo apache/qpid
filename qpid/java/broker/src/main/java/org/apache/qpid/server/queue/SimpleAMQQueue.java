@@ -1607,4 +1607,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
         return ids;
     }
+
+
+    public String getType()
+    {
+        return getClass().getSimpleName() + "[" + getName() +"]";
+    }
+
+    public String toString()
+    {
+        return getType() + "[Owner:" + _owner + "][Durable:" + _durable + "]";
+    }
 }
