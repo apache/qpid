@@ -72,7 +72,8 @@ import org.eclipse.ui.part.ViewPart;
 public class NavigationView extends ViewPart
 {
     public static final String ID = "org.apache.qpid.management.ui.navigationView";
-    public static final String INI_FILENAME = System.getProperty("user.home") + File.separator + "qpidManagementConsole.ini";
+    public static final String APP_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
+    public static final String INI_FILENAME = APP_DIR + File.separator + "qpidmc_navigation.ini";
 
     private static final String INI_SERVERS = "Servers";
     private static final String INI_QUEUES = QUEUE + "s";
@@ -290,6 +291,16 @@ public class NavigationView extends ViewPart
      */
     private void createConfigFile()
     {
+        File dir = new File(APP_DIR);
+        if (!dir.exists())
+        {
+            if(!dir.mkdir())
+            {
+                System.out.println("Could not create application data directory " + APP_DIR);
+                System.exit(1);
+            }
+        }
+
         File file = new File(INI_FILENAME);
         try
         {
