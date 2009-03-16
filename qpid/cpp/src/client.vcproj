@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="client"
-	ProjectGUID="{6961DBA3-FECA-1BAD-F396-8C398F43FDD9}"
+	ProjectGUID="{6961DBA3-FECA-1BAD-F396-8C394564ADCF}"
 	RootNamespace="client"
 	Keyword="Win32Proj"
 	SignManifests="true"
@@ -456,9 +456,6 @@
 				RelativePath="qpid\client\Results.cpp">
 			</File>
 			<File
-				RelativePath="qpid\client\SaslFactory.cpp">
-			</File>
-			<File
 				RelativePath="qpid\client\SessionBase_0_10.cpp">
 			</File>
 			<File
@@ -481,6 +478,9 @@
 			</File>
 			<File
 				RelativePath="qpid\client\SubscriptionManager.cpp">
+			</File>
+			<File
+				RelativePath="qpid\client\windows\SaslFactory.cpp">
 			</File>
 		</Filter>
 		<Filter

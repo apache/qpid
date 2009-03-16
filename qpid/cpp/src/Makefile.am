@@ -29,6 +29,7 @@ windows_dist = \
   client.vcproj \
   qmfconsole.vcproj \
   protocol_gen.mak \
+  qpid/client/windows/SaslFactory.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   qpid/sys/windows/check.h \

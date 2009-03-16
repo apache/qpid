@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="common"
-	ProjectGUID="{C961EF23-FECA-1BAD-BB9C-8C3A8F43FDD9}"
+	ProjectGUID="{C961EF23-FECA-1BAD-BB9C-8C3A4564ADCF}"
 	RootNamespace="common"
 	Keyword="Win32Proj"
 	SignManifests="true"
