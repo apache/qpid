@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="qmfconsole"
-	ProjectGUID="{C95DE177-FECA-1BAD-5EDC-8FFA8F43FDD9}"
+	ProjectGUID="{C95DE177-FECA-1BAD-5EDC-8FFA4564ADCF}"
 	RootNamespace="qmfconsole"
 	Keyword="Win32Proj"
 	SignManifests="true"
