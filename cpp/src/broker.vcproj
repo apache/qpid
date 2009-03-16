@@ -24,7 +24,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="broker"
-	ProjectGUID="{09613D48-FECA-1BAD-9D20-8C378F43FDD9}"
+	ProjectGUID="{09613D48-FECA-1BAD-9D20-8C374564ADCF}"
 	RootNamespace="broker"
 	Keyword="Win32Proj"
 	SignManifests="true"
