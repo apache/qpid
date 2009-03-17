@@ -11,13 +11,13 @@ MAKEDIST=.libs/Makefile
 
 $(MAKEDIST): Makefile
 	mkdir -p .libs
-	@$(ECHO) CXX=$(CXX)                     > $(MAKEDIST)
-	@$(ECHO) CXXFLAGS=$(CXXFLAGS)           >> $(MAKEDIST)
-	@$(ECHO) LDFLAGS=$(MAKELDFLAGS)        >> $(MAKEDIST)
-	@$(ECHO)                                >> $(MAKEDIST)
-	@$(ECHO) all: $(noinst_PROGRAMS)       >> $(MAKEDIST)
-	@$(ECHO)                                >> $(MAKEDIST)
-	@$(ECHO) clean:                         >> $(MAKEDIST)
-	@$(ECHO) "	rm -f $(noinst_PROGRAMS)"  >> $(MAKEDIST)
-
+	@(echo CXX=$(CXX)                     ; \
+        echo CXXFLAGS=$(CXXFLAGS)           ; \
+        echo LDFLAGS=$(MAKELDFLAGS)          ; \
+        echo                                ; \
+	echo all: $(noinst_PROGRAMS)        ; \
+	echo                                ; \
+	echo clean:                         ; \
+	echo "        rm -f $(noinst_PROGRAMS)" ; \
+	) > $(MAKEDIST)
 
