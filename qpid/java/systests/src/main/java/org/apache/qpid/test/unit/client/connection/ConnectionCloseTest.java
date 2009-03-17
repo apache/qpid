@@ -77,7 +77,7 @@ public class ConnectionCloseTest extends QpidTestCase
         // This should leave the finalizer enough time to notify those threads 
         synchronized (this)
         {
-            this.wait(1000);
+            this.wait(10000);
         }
 
         Map<Thread,StackTraceElement[]> after = Thread.getAllStackTraces();
