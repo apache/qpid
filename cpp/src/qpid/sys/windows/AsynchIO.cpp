@@ -690,10 +690,9 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
         }
     }
 
-    // If there are no writes outstanding, the priority is to write any
-    // remaining buffers first (either queued or via idle), then close the
-    // socket if that's queued.
-    // opsInProgress handled in completion()
+    // If there are no writes outstanding, check for more writes to initiate
+    // (either queued or via idle). The opsInProgress count is handled in
+    // completion()
     if (!writeInProgress) {
         bool writing = false;
         {
@@ -706,11 +705,8 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
                 writing = true;
             }
         }
-        if (!writing) {
-            if (queuedClose)
-                close();
-            else
-                notifyIdle();
+        if (!writing && !queuedClose) {
+            notifyIdle();
         }
     }
     return;
@@ -757,9 +753,11 @@ void AsynchIO::completion(AsynchIoResult *result) {
         }
         working = false;
     }
-    // Lock released; ok to delete if all is done.
-    if (opsInProgress == 0 && queuedDelete)
-        delete this;
+    // Lock released; ok to close if ops are done and close requested.
+    // Layer above will call back to queueForDeletion()
+    if (opsInProgress == 0 && queuedClose) {
+        close();
+    }
 }
 
 } // namespace windows
