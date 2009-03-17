@@ -173,7 +173,7 @@ QPID_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
-    BOOST_CHECK_REGEX("void .*testLoggerFormat.*\\(\\): foo\n", out->last());
+    BOOST_CHECK_EQUAL(string(BOOST_CURRENT_FUNCTION) + ": foo\n", out->last());
     
     l.format(Logger::LEVEL);
     QPID_LOG(critical, "foo");
