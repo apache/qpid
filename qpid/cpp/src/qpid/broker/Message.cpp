@@ -160,6 +160,7 @@ void Message::decodeContent(framing::Buffer& buffer)
         //body on a frame then add that frame to the frameset
         AMQFrame frame((AMQContentBody()));
         frame.castBody<AMQContentBody>()->decode(buffer, buffer.available());
+        frame.setFirstSegment(false);
         frames.append(frame);
     } else {
         //adjust header flags
