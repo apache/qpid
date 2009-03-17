@@ -131,7 +131,7 @@ public interface ManagedQueue
     void setMaximumMessageAge(Long age) throws IOException;
 
     /**
-     * Returns the maximum size of a message (in kbytes) allowed to be accepted by the
+     * Returns the maximum size of a message (in Bytes) allowed to be accepted by the
      * ManagedQueue. This is useful in setting notifications or taking
      * appropriate action, if the size of the message received is more than
      * the allowed size.
@@ -142,12 +142,12 @@ public interface ManagedQueue
     Long getMaximumMessageSize() throws IOException;
 
     /**
-     * Sets the maximum size of the message (in kbytes) that is allowed to be
+     * Sets the maximum size of the message (in Bytes) that is allowed to be
      * accepted by the Queue.
      * @param size  maximum size of message.
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumMessageSize", description="Threshold high value(KB) for a message size")
+    @MBeanAttribute(name="MaximumMessageSize", description="Threshold high value(Bytes) for a message size")
     void setMaximumMessageSize(Long size) throws IOException;
 
     /**
@@ -184,7 +184,6 @@ public interface ManagedQueue
     @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(Bytes) for Queue Depth")
     void setMaximumQueueDepth(Long value) throws IOException;
 
-                                             //TODO change descriptions
     /**
      * View the limit on the memory that this queue will utilise.
      *
@@ -201,7 +200,7 @@ public interface ManagedQueue
      *
      * @param maximumMemoryUsage The new maximum memory(B) to be used by this queue
      */
-    @MBeanAttribute(name="MemoryUsageMaximum", description="The maximum memory(B) that the queue will occupy.")
+    @MBeanAttribute(name="MemoryUsageMaximum", description="The maximum memory(Bytes) that the queue will occupy.")
     public void setMemoryUsageMaximum(Long maximumMemoryUsage);
 
     /**
@@ -220,7 +219,7 @@ public interface ManagedQueue
      *
      * @param minimumMemoryUsage The new minimum memory(B) level to be used by this queue
      */
-    @MBeanAttribute(name="MemoryUsageMinimum", description="The minimum memory(B) that the queue will occupy.")
+    @MBeanAttribute(name="MemoryUsageMinimum", description="The minimum memory(Bytes) that the queue will occupy.")
     public void setMemoryUsageMinimum(Long minimumMemoryUsage);
 
     /**
@@ -228,7 +227,7 @@ public interface ManagedQueue
      *
      * @return The current memory(B) usage of this queue.
      */
-    @MBeanAttribute(name="MemoryUsageCurrent", description="The current amount of memory(B) used by this queue.")
+    @MBeanAttribute(name="MemoryUsageCurrent", description="The current amount of memory(Bytes) used by this queue.")
     public Long getMemoryUsageCurrent();
 
     /**
