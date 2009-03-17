@@ -22,21 +22,20 @@
 # Run a test of the replication feature
 MY_DIR=`dirname \`which $0\``
 PYTHON_DIR=${MY_DIR}/../../../python
-
 trap stop_brokers INT TERM QUIT
 
 stop_brokers() {
-    if [[ $BROKER_A ]] ; then
+    if [ x$BROKER_A != x ]; then
         ../qpidd -q --port $BROKER_A
         unset BROKER_A
     fi      
-    if [[ $BROKER_B ]] ; then
+    if [ x$BROKER_B != x ]; then
         ../qpidd -q --port $BROKER_B
         unset BROKER_B
     fi
 }
 
-if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e ../.libs/replication_exchange.so ;  then
+if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f ../.libs/replication_exchange.so;  then
     rm -f queue-*.repl replication-*.log #cleanup from any earlier runs
 
     ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable info+ --log-to-file replication-source.log  --log-to-stderr 0 > qpidd.port
@@ -44,7 +43,8 @@ if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e 
 
     ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
     BROKER_B=`cat qpidd.port`
-    export PYTHONPATH=$PYTHON_DIR
+    PYTHONPATH=$PYTHON_DIR
+    export PYTHONPATH
     echo "Running replication test between localhost:$BROKER_A and localhost:$BROKER_B"
 
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
@@ -62,10 +62,22 @@ if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e 
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-c
     #queue-d deliberately not declared on DR; this error case should be handled
 
-    #publish and consume from test queus on broker A:
-    for i in `seq 1 10`; do echo Message $i for A >> queue-a-input.repl; done
-    for i in `seq 1 20`; do echo Message $i for B >> queue-b-input.repl; done
-    for i in `seq 1 15`; do echo Message $i for C >> queue-c-input.repl; done
+    #publish and consume from test queues on broker A:
+    i=1
+    while [ $i -le 10 ]; do
+        echo Message $i for A >> queue-a-input.repl
+        i=`expr $i + 1`
+    done
+    i=1
+    while [ $i -le 20 ]; do
+        echo Message $i for B >> queue-b-input.repl 
+        i=`expr $i + 1`
+    done
+    i=1
+    while [ $i -le 15 ]; do
+        echo Message $i for C >> queue-c-input.repl 
+        i=`expr $i + 1`
+    done
 
     ./sender --port $BROKER_A --routing-key queue-a --send-eos 1 < queue-a-input.repl
     ./sender --port $BROKER_A --routing-key queue-b --send-eos 1 < queue-b-input.repl
@@ -96,7 +108,7 @@ if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e 
 
     grep 'queue-d does not exist' replication-dest.log > /dev/null || echo "WARNING: Expected error to be logged!"
 
-    if [[ $FAIL ]]; then
+    if [ x$FAIL != x ]; then
         echo replication test failed: expectations not met!
         exit 1
     else 
