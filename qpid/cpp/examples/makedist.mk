@@ -18,6 +18,6 @@ $(MAKEDIST): Makefile
 	echo all: $(noinst_PROGRAMS)        ; \
 	echo                                ; \
 	echo clean:                         ; \
-	echo "        rm -f $(noinst_PROGRAMS)" ; \
+	echo "	rm -f $(noinst_PROGRAMS)" ; \
 	) > $(MAKEDIST)
 
