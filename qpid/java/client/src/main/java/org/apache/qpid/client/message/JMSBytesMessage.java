@@ -381,10 +381,4 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
             throw new MessageFormatException("Only primitives plus byte arrays and String are valid types");
         }
     }
-
-    public String toString()
-    {
-        return String.valueOf(System.identityHashCode(this));
-    }
-
 }
