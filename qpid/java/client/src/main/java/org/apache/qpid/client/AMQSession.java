@@ -1015,6 +1015,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             catch (URISyntaxException urlse)
             {
+                _logger.error("", urlse);
                 JMSException jmse = new JMSException(urlse.getReason());
                 jmse.setLinkedException(urlse);
 
