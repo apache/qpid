@@ -435,7 +435,7 @@ public class StreamMessageTest extends TestCase
         JMSStreamMessage bm = TestMessageHelper.newJMSStreamMessage();
         bm.reset();
         String result = bm.toBodyString();
-        assertNull(result);
+        assertEquals("\"\"", result);
     }
 
     private void checkConversionsFail(StreamMessage sm, int[] conversions) throws JMSException
