@@ -31,7 +31,7 @@ MAKEDIST=.libs/Makefile
 $(MAKEDIST): Makefile
 	mkdir -p .libs
 	@(echo 'all clean:' ; \
-		echo '	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done' ; \
+	echo '	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done' ; \
 	) > $(MAKEDIST)
 
 examplesdir=$(pkgdatadir)/examples
