@@ -84,6 +84,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
     private boolean _persistent;
+    private boolean _hasBeenUnloaded = false;
 
     QueueEntryImpl(SimpleQueueEntryList queueEntryList)
     {
@@ -407,11 +408,16 @@ public class QueueEntryImpl implements QueueEntry
 
             try
             {
-                _backingStore.unload(_message);
-
-                if (_log.isDebugEnabled())
+                if (!_hasBeenUnloaded)
                 {
-                    _log.debug("Unloaded:" + debugIdentity());
+                    _hasBeenUnloaded = true;
+
+                    _backingStore.unload(_message);
+
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug("Unloaded:" + debugIdentity());
+                    }
                 }
                 _message = null;
 
@@ -502,7 +508,7 @@ public class QueueEntryImpl implements QueueEntry
         if (state != DELETED_STATE && _stateUpdater.compareAndSet(this, state, DELETED_STATE))
         {
             _queueEntryList.advanceHead();
-            if (_backingStore != null)
+            if (_backingStore != null && _hasBeenUnloaded)
             {
                 _backingStore.delete(_messageId);
             }
