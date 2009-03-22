@@ -155,7 +155,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
                 if (!ksf.exists())
                 {
-                    throw new FileNotFoundException("Cannot find JMX management SSL keystore file " + ksf);
+                    throw new FileNotFoundException("Cannot find JMX management SSL keystore file " + ksf + "\n"
+                                                  + "Check broker configuration, or see create-example-ssl-stores script"
+                                                  + "in the bin/ directory if you need to generate an example store.");
                 }
                 if (!ksf.canRead())
                 {
