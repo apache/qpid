@@ -116,18 +116,18 @@ public interface ManagedQueue
     boolean isAutoDelete() throws IOException;
 
     /**
-     * Returns the maximum age of a message (expiration time)
+     * Returns the maximum age of a message (expiration time) in milliseconds
      * @return the maximum age
      * @throws IOException
      */
     Long getMaximumMessageAge() throws IOException;
 
     /**
-     * Sets the maximum age of a message
+     * Sets the maximum age of a message in milliseconds
      * @param age  maximum age of message.
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumMessageAge", description="Threshold high value for message age on the broker")
+    @MBeanAttribute(name="MaximumMessageAge", description="Threshold high value(milliseconds) for message age")
     void setMaximumMessageAge(Long age) throws IOException;
 
     /**
