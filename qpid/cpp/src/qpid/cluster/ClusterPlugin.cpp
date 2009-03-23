@@ -134,6 +134,11 @@ struct ClusterPlugin : public Plugin {
         if (settings.name.empty()) return; // Only if --cluster-name option was specified.
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
+        if (settings.readMax < 3) {
+            QPID_LOG(notice, "invalid value for cluster-read-max: " << settings.readMax << ", setting to 3");            
+            settings.readMax = 3;//prevent lower values being used as they are unsafe
+        }
+
         cluster = new Cluster(settings, *broker);
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
