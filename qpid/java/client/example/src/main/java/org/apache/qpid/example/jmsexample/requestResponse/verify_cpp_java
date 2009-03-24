@@ -3,7 +3,7 @@ cpp=$CPP/request-response
 
 client_java()
 {
-java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Client
+java -Dlog4j.configuration=$LOG4J -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.requestResponse.Client
 }
 
 background "Waiting" $cpp/server
