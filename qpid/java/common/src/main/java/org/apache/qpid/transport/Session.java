@@ -559,7 +559,7 @@ public class Session extends SessionInvoker
                 if (isFull(next))
                 {
                     Waiter w = new Waiter(commands, timeout);
-                    while (w.hasTime() && isFull(next))
+                    while (w.hasTime() && isFull(next) && state != CLOSED)
                     {
                         if (state == OPEN || state == RESUMING)
                         {
@@ -582,6 +582,19 @@ public class Session extends SessionInvoker
                             }
                         }
                         w.await();
+                    }
+                }
+
+                if (state == CLOSED)
+                {
+                    ExecutionException exc = getException();
+                    if (exc != null)
+                    {
+                        throw new SessionException(exc);
+                    }
+                    else
+                    {
+                        throw new SessionClosedException();
                     }
                 }
 
