@@ -70,7 +70,9 @@ public class TimeToLiveTest extends QpidTestCase
 
         producerConnection.start();
 
-        Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        // Move to a Transacted session to ensure that all messages have been delivered to broker before
+        // we start waiting for TTL
+        Session producerSession = producerConnection.createSession(true, Session.SESSION_TRANSACTED);
 
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -89,12 +91,15 @@ public class TimeToLiveTest extends QpidTestCase
         producer.setTimeToLive(0L);
         producer.send(nextMessage(String.valueOf(msg), false, producerSession, producer));
 
+        producerSession.commit();
+
         consumer = clientSession.createConsumer(queue);
 
         // Ensure we sleep the required amount of time.
         ReentrantLock waitLock = new ReentrantLock();
         Condition wait = waitLock.newCondition();
         final long MILLIS = 1000000L;
+
         long waitTime = TIME_TO_LIVE * MILLIS;
         while (waitTime > 0)
         {
