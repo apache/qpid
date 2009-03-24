@@ -47,12 +47,13 @@ void Decoder::decode(const EventHeader& eh, const char* data) {
         // We must give 1 unit read credit per event.
         // This event does not complete any frames so 
         // send an empty frame with the read credit.
-        process(EventFrame(EventHeader(), framing::AMQFrame(), 1));
+        process(EventFrame(eh, framing::AMQFrame(), 1));
     }    
 }
 
 void Decoder::process(const EventFrame& ef) {
-    if (ef.frame.getMethod() && ef.frame.getMethod()->isA<framing::ClusterConnectionDeliverCloseBody>())
+    //need to check that this is not the empty frame mentioned above
+    if (ef.frame.getBody() && ef.frame.getMethod() && ef.frame.getMethod()->isA<framing::ClusterConnectionDeliverCloseBody>())
         map.erase(ef.connectionId);
     callback(ef);
 }
