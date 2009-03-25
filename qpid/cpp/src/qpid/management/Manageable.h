@@ -43,7 +43,7 @@ class QPID_COMMON_EXTERN Manageable
     static const status_t STATUS_UNKNOWN_OBJECT          = 1;
     static const status_t STATUS_UNKNOWN_METHOD          = 2;
     static const status_t STATUS_NOT_IMPLEMENTED         = 3;
-    static const status_t STATUS_INVALID_PARAMETER       = 4;
+    static const status_t STATUS_PARAMETER_INVALID       = 4;
     static const status_t STATUS_FEATURE_NOT_IMPLEMENTED = 5;
     static const status_t STATUS_FORBIDDEN               = 6;
     static const status_t STATUS_EXCEPTION               = 7;
