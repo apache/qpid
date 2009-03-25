@@ -386,7 +386,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
 	if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
             status = Manageable::STATUS_OK;
 	else
-            return Manageable::STATUS_PARAMETER_INVALID;
+            return Manageable::STATUS_INVALID_PARAMETER;
         break;
       }
    default:
