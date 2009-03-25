@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class QueueEntryImpl implements QueueEntry
@@ -41,7 +42,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private final SimpleQueueEntryList _queueEntryList;
 
-    private AMQMessage _message;
+    private AtomicReference<AMQMessage> _messageRef;
 
     private boolean _redelivered;
 
@@ -102,7 +103,7 @@ public class QueueEntryImpl implements QueueEntry
     public QueueEntryImpl(SimpleQueueEntryList queueEntryList, AMQMessage message)
     {
         _queueEntryList = queueEntryList;
-        _message = message;
+        _messageRef = new AtomicReference<AMQMessage>(message);
         if (message != null)
         {
             _messageId = message.getMessageId();
@@ -136,11 +137,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public AMQMessage getMessage()
     {
-        if (_message == null)
-        {
-            return _backingStore.load(_messageId);
-        }
-        return _message;
+        return load();
     }
 
     public Long getMessageId()
@@ -231,13 +228,17 @@ public class QueueEntryImpl implements QueueEntry
     public String debugIdentity()
     {
         String entry = "[State:" + _state.getState().name() + "]";
-        if (_message == null)
+
+        AMQMessage message = _messageRef.get();
+
+        if (message == null)
         {
             return entry + "(Message Unloaded ID:" + _messageId + ")";
         }
         else
         {
-            return entry + _message.debugIdentity();
+
+            return entry + message.debugIdentity();
         }
     }
 
@@ -398,23 +399,27 @@ public class QueueEntryImpl implements QueueEntry
 
     public void unload()
     {
-        if (_message != null && _backingStore != null)
-        {
+        //Get the currently loaded message
+        AMQMessage message = _messageRef.get();
 
+        // If we have a message in memory and we have a valid backingStore attempt to unload
+        if (message != null && _backingStore != null)
+        {
             try
             {
-                if (!_hasBeenUnloaded)
+                // The backingStore will now handle concurrent calls to unload and safely synchronize to ensure
+                // multiple initial unloads are unloads
+                _backingStore.unload(message);
+                _hasBeenUnloaded = true;
+                _messageRef.set(null);
+
+                if (_log.isDebugEnabled())
                 {
-                    _hasBeenUnloaded = true;
-
-                    _backingStore.unload(_message);
-
-                    if (_log.isDebugEnabled())
-                    {
-                        _log.debug("Unloaded:" + debugIdentity());
-                    }
+                    _log.debug("Unloaded:" + debugIdentity());
                 }
-                _message = null;
+
+
+                // Clear the message reference if the loaded message is still the one we are processing.
 
                 //Update the memoryState if this load call resulted in the message being purged from memory
                 if (!_flowed.getAndSet(true))
@@ -434,23 +439,56 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void load()
+    public AMQMessage load()
     {
+        // MessageId and Backing store are null in test scenarios, normally this is not the case.
         if (_messageId != null && _backingStore != null)
         {
-            _message = _backingStore.load(_messageId);
-
-            if (_log.isDebugEnabled())
+            // See if we have the message currently in memory to return
+            AMQMessage message = _messageRef.get();
+            // if we don't then we need to start a load process.
+            if (message == null)
             {
-                _log.debug("Loaded:" + debugIdentity());
+                //Synchronize here to ensure only the first thread that attempts to load will perform the load from the
+                // backing store.
+                synchronized (this)
+                {
+                    // Check again to see if someone else ahead of us loaded the message
+                    message = _messageRef.get();
+                    // if we still don't have the message then we need to start a load process.
+                    if (message == null)
+                    {
+                        // Load the message and keep a reference to it
+                        message = _backingStore.load(_messageId);
+                        // Set the message reference
+                        _messageRef.set(message);
+                    }
+                    else
+                    {
+                        // If someone else loaded the message then we can jump out here as the Memory Updates will
+                        // have been performed by the loading thread
+                        return message;
+                    }
+                }
+
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug("Loaded:" + debugIdentity());
+                }
+
+                //Update the memoryState if this load call resulted in the message comming in to memory
+                if (_flowed.getAndSet(false))
+                {
+                    _queueEntryList.entryLoadedUpdateMemory(this);
+                }
             }
 
-            //Update the memoryState if this load call resulted in the message comming in to memory
-            if (_flowed.getAndSet(false))
-            {
-                _queueEntryList.entryLoadedUpdateMemory(this);
-            }
+            // Return the message that was either already in memory or the value we just loaded.
+            return message;
         }
+        // This can be null but only in the case where we have no messageId
+        // in the case where we have no backingStore then we will never have unloaded the message
+        return _messageRef.get();
     }
 
     public boolean isFlowed()

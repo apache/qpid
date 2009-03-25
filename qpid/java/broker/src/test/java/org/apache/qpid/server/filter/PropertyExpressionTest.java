@@ -23,9 +23,17 @@ package org.apache.qpid.server.filter;
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.MockQueueEntry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class PropertyExpressionTest extends TestCase
 {
+
+    public void tearDown() throws Exception
+    {
+        //Ensure we close the registry that the MockQueueEntry will create
+        ApplicationRegistry.remove(1);
+    }
+
 
     public void testJMSRedelivered()
     {

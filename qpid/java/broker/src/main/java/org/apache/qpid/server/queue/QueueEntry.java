@@ -226,7 +226,7 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
 
     void unload();
 
-    void load();
+    AMQMessage load();
 
     boolean isFlowed();
 

@@ -40,6 +40,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.MockProtocolSession;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class ACLManagerTest extends TestCase
 {
@@ -67,6 +68,12 @@ public class ACLManagerTest extends TestCase
         
         _session = new MockProtocolSession(new TestableMemoryMessageStore());
     }
+
+    public void tearDown() throws Exception
+    {
+        //Ensure we close the registry that the MockAMQQueue will create
+        ApplicationRegistry.getInstance().close();
+    }    
     
     public void testACLManagerConfigurationPluginManager() throws Exception
     {
