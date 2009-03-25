@@ -33,7 +33,7 @@ string Manageable::StatusText (status_t status, string text)
     case STATUS_UNKNOWN_OBJECT          : return "UnknownObject";
     case STATUS_UNKNOWN_METHOD          : return "UnknownMethod";
     case STATUS_NOT_IMPLEMENTED         : return "NotImplemented";
-    case STATUS_PARAMETER_INVALID       : return "InvalidParameter";
+    case STATUS_INVALID_PARAMETER       : return "InvalidParameter";
     case STATUS_FEATURE_NOT_IMPLEMENTED : return "FeatureNotImplemented";
     case STATUS_FORBIDDEN               : return "Forbidden";
     }
