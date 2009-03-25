@@ -125,7 +125,7 @@ def serial(o):
 class Serial:
 
   def __init__(self, value):
-    self.value = value & 0xFFFFFFFF
+    self.value = value & 0xFFFFFFFFL
 
   def __hash__(self):
     return hash(self.value)
@@ -136,8 +136,8 @@ class Serial:
 
     other = serial(other)
 
-    delta = (self.value - other.value) & 0xFFFFFFFF
-    neg = delta & 0x80000000
+    delta = (self.value - other.value) & 0xFFFFFFFFL
+    neg = delta & 0x80000000L
     mag = delta & 0x7FFFFFFF
 
     if neg:

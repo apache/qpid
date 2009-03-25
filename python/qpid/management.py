@@ -177,12 +177,12 @@ class managementChannel:
     ssn.incoming ("rdest").listen (self.replyCb)
 
     ssn.message_set_flow_mode (destination="tdest", flow_mode=1)
-    ssn.message_flow (destination="tdest", unit=0, value=0xFFFFFFFF)
-    ssn.message_flow (destination="tdest", unit=1, value=0xFFFFFFFF)
+    ssn.message_flow (destination="tdest", unit=0, value=0xFFFFFFFFL)
+    ssn.message_flow (destination="tdest", unit=1, value=0xFFFFFFFFL)
 
     ssn.message_set_flow_mode (destination="rdest", flow_mode=1)
-    ssn.message_flow (destination="rdest", unit=0, value=0xFFFFFFFF)
-    ssn.message_flow (destination="rdest", unit=1, value=0xFFFFFFFF)
+    ssn.message_flow (destination="rdest", unit=0, value=0xFFFFFFFFL)
+    ssn.message_flow (destination="rdest", unit=1, value=0xFFFFFFFFL)
 
   def setBrokerInfo (self, data):
     self.brokerInfo = data

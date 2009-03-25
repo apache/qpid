@@ -192,8 +192,8 @@ class ManagementTest (TestBase010):
 
         "Consume the messages of the queue and check they are all there in order"
         session.message_subscribe(queue="src-queue", destination="tag")
-        session.message_flow(destination="tag", unit=session.credit_unit.message, value=0xFFFFFFFF)
-        session.message_flow(destination="tag", unit=session.credit_unit.byte, value=0xFFFFFFFF)
+        session.message_flow(destination="tag", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="tag", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
         queue = session.incoming("tag")
         for count in twenty:
             consumed_msg = queue.get(timeout=1)
