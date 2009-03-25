@@ -70,7 +70,7 @@ class IpAddr:
         self.addr = (int(nums[0]) << 24) + (int(nums[1]) << 16) + (int(nums[2]) << 8) + int(nums[3])
 
     def bestAddr(self, addrPortList):
-        bestDiff = 0xFFFFFFFF
+        bestDiff = 0xFFFFFFFFL
         bestAddr = None
         for addrPort in addrPortList:
             diff = IpAddr(addrPort[0]).addr ^ self.addr

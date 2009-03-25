@@ -460,6 +460,6 @@ class IncomingCompletion:
       #TODO: record and manage the ranges properly
       range = [mark, mark]
       if (self.mark == -1):#hack until wraparound is implemented        
-        self.channel.execution_complete(cumulative_execution_mark=0xFFFFFFFF, ranged_execution_set=range)
+        self.channel.execution_complete(cumulative_execution_mark=0xFFFFFFFFL, ranged_execution_set=range)
       else:
         self.channel.execution_complete(cumulative_execution_mark=self.mark, ranged_execution_set=range)

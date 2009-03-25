@@ -1337,8 +1337,8 @@ class Broker:
                                          acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
       self.amqpSession.incoming("rdest").listen(self._replyCb, self._exceptionCb)
       self.amqpSession.message_set_flow_mode(destination="rdest", flow_mode=1)
-      self.amqpSession.message_flow(destination="rdest", unit=0, value=0xFFFFFFFF)
-      self.amqpSession.message_flow(destination="rdest", unit=1, value=0xFFFFFFFF)
+      self.amqpSession.message_flow(destination="rdest", unit=0, value=0xFFFFFFFFL)
+      self.amqpSession.message_flow(destination="rdest", unit=1, value=0xFFFFFFFFL)
 
       self.topicName = "topic-%s" % self.amqpSessionId
       self.amqpSession.queue_declare(queue=self.topicName, exclusive=True, auto_delete=True)
@@ -1347,8 +1347,8 @@ class Broker:
                                          acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
       self.amqpSession.incoming("tdest").listen(self._replyCb)
       self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=1)
-      self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFF)
-      self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFF)
+      self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFFL)
+      self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFFL)
 
       self.connected = True
       self.session._handleBrokerConnect(self)
