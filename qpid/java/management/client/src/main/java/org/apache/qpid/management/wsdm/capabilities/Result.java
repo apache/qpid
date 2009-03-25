@@ -29,11 +29,9 @@ import java.util.*;
  * 
  * @author Andrea Gazzarini
  */
-public class Result
+public final class Result
 {
-	private long _statusCode;
-	private String _statusText;
-	private Map<String,Object> _outputParameters;
+	private final Map<String,Object> _outputParameters;
 	
 	/**
 	 * Builds a new result DTO with the given parameters.
@@ -42,53 +40,11 @@ public class Result
 	 * @param statusText the status message.
 	 * @param outputParameters the output parameters.
 	 */
-	public Result(long statusCode, String statusText,Map<String, Object> outputParameters)
+	public Result(Map<String, Object> outputParameters)
 	{
-		this._statusCode = statusCode;
-		this._statusText = statusText;
 		this._outputParameters = outputParameters;
 	}
-	
-	/**
-	 * Returns the status code.
-	 * 
-	 * @return the status code.
-	 */
-	public long getStatusCode()
-	{
-		return _statusCode;
-	}
-	
-	/**
-	 * Sets the status code.
-	 * 
-	 * @param statusCode the status code.
-	 */
-	void setStatusCode(long statusCode)
-	{
-		this._statusCode = statusCode;
-	}
-	
-	/**
-	 * Returns the status text.
-	 * 
-	 * @return the status text.
-	 */
-	public String getStatusText()
-	{
-		return _statusText;
-	}
-	
-	/**
-	 * Sets the status text.
-	 * 
-	 * @param statusText the status text.
-	 */
-	void setStatusText(String statusText)
-	{
-		this._statusText = statusText;
-	}
-	
+		
 	/**
 	 * Returns the output parameterss.
 	 * 
@@ -97,15 +53,5 @@ public class Result
 	public Map<String, Object> getOutputParameters()
 	{
 		return _outputParameters;
-	}
-	
-	/**
-	 * Sets the output parameters.
-	 * 
-	 * @param outputParameters the output parameters.
-	 */
-	void setOutputParameters(Map<String, Object> outputParameters)
-	{
-		this._outputParameters = outputParameters;
 	}
 }

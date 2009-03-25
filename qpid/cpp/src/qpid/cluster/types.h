@@ -68,15 +68,16 @@ inline bool operator==(const cpg_address& caddr, const MemberId& id) { return id
 
 std::ostream& operator<<(std::ostream&, const MemberId&);
 
-struct ConnectionId : public std::pair<MemberId, Connection*>  {
-    ConnectionId(const MemberId& m=MemberId(), Connection* c=0) :  std::pair<MemberId, Connection*> (m,c) {}
-    ConnectionId(uint64_t m, uint64_t c)
-        : std::pair<MemberId, Connection*>(MemberId(m), reinterpret_cast<Connection*>(c)) {}
+struct ConnectionId : public std::pair<MemberId, uint64_t>  {
+    ConnectionId(const MemberId& m=MemberId(), uint64_t c=0) :  std::pair<MemberId, uint64_t> (m,c) {}
+    ConnectionId(uint64_t m, uint64_t c) : std::pair<MemberId, uint64_t>(MemberId(m), c) {}
     MemberId getMember() const { return first; }
-    Connection* getPointer() const { return second; }
+    uint64_t getNumber() const { return second; }
 };
 
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
+
+std::ostream& operator<<(std::ostream&, EventType);
 
 }} // namespace qpid::cluster
 

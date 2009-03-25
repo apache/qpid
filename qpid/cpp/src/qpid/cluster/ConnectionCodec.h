@@ -56,7 +56,7 @@ class ConnectionCodec : public sys::ConnectionCodec {
         sys::ConnectionCodec* create(sys::OutputControl&, const std::string& id);
     };
 
-    ConnectionCodec(sys::OutputControl& out, const std::string& id, Cluster& c, bool catchUp, bool isLink);
+    ConnectionCodec(sys::OutputControl& out, const std::string& logId, Cluster& c, bool catchUp, bool isLink);
     ~ConnectionCodec();
 
     // ConnectionCodec functions.
@@ -71,8 +71,6 @@ class ConnectionCodec : public sys::ConnectionCodec {
   private:
     amqp_0_10::Connection codec;
     boost::intrusive_ptr<cluster::Connection> interceptor;
-    cluster::ConnectionId id;
-    std::string localId;
 };
 
 }} // namespace qpid::cluster

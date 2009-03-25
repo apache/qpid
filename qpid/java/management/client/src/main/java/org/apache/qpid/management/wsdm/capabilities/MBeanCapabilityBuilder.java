@@ -178,6 +178,14 @@ public class MBeanCapabilityBuilder implements IArtifactBuilder{
 			} 
 		}
 
+		/**
+		 * Director callback. 
+		 * All attributes have been notified.
+		 * 
+		 * This builder is using this callback in order to create the initial 
+		 * properties QNames declaration.
+		 * 
+		 */
 		public void endAttributes() throws BuilderException
 		{
 			_endAttributeHandler.endAttributes();

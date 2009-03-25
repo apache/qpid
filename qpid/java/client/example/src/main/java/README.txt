@@ -13,5 +13,5 @@ QPID_SAMPLE
 This is the parent directory of the directory in which you find the runSample.sh
 (Ex:- $QPID_SRC_HOME/java/client/example/src/main)
 
-default: /usr/share/doc/rhm-0.2
+default: $PWD
 

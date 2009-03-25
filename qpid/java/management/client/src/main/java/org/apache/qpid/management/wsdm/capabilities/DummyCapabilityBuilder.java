@@ -29,32 +29,57 @@ import org.apache.muse.core.Environment;
 /**
  * Dummy capability builder used for avoid duplicated builds for the 
  * same class.
+ * Basically it acts likes a Null Object when the target capability class has been 
+ * already built.
  * 
  * @author Andrea Gazzarini
  */
 public class DummyCapabilityBuilder implements IArtifactBuilder
 {
-
-	public void begin(ObjectName objectName) throws BuilderException
+	/**
+	 * Director callback.
+	 * Do nothing here (see class comments above.)
+	 */
+	public void begin(ObjectName objectName)
 	{
 	}
 
-	public void endAttributes() throws BuilderException
+	/**
+	 * Director callback.
+	 * Do nothing here (see class comments above.)
+	 */
+	public void endAttributes()
 	{
 	}
 
-	public void endOperations() throws BuilderException
+	/**
+	 * Director callback.
+	 * Do nothing here (see class comments above.)
+	 */
+	public void endOperations()
 	{
 	}
 
-	public void onAttribute(MBeanAttributeInfo attributeMetadata) throws BuilderException
+	/**
+	 * Director callback.
+	 * Do nothing here (see class comments above.)
+	 */
+	public void onAttribute(MBeanAttributeInfo attributeMetadata) 
 	{
 	}
 
-	public void onOperation(MBeanOperationInfo operationMetadata) throws BuilderException
+	/**
+	 * Director callback.
+	 * Do nothing here (see class comments above.)
+	 */
+	public void onOperation(MBeanOperationInfo operationMetadata)
 	{
 	}
 
+	/**
+	 * Director callback.
+	 * Do nothing here (see class comments above.)
+	 */
 	public void setEnvironment(Environment environment)
 	{
 	}

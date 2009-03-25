@@ -32,9 +32,12 @@ import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
@@ -85,7 +88,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
 
         // Retrieve the config parameters
-        boolean platformServer = appRegistry.getConfiguration().getBoolean("management.platform-mbeanserver", true);
+        boolean platformServer = appRegistry.getConfiguration().getPlatformMbeanserver();
 
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
@@ -104,196 +107,164 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-
-        boolean jmxmpSecurity = appRegistry.getConfiguration().getBoolean("management.security-enabled", false);
-        int port = appRegistry.getConfiguration().getInt(MANAGEMENT_PORT_CONFIG_PATH, MANAGEMENT_PORT_DEFAULT);
+        int port = appRegistry.getConfiguration().getJMXManagementPort();
 
         //retrieve the Principal Database assigned to JMX authentication duties
-        String jmxDatabaseName = appRegistry.getConfiguration().getString("security.jmx.principal-database");
+        String jmxDatabaseName = appRegistry.getConfiguration().getJMXPrincipalDatabase();
         Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();        
         PrincipalDatabase db = map.get(jmxDatabaseName);
 
         final JMXConnectorServer cs;
         HashMap<String,Object> env = new HashMap<String,Object>();
 
-        if (jmxmpSecurity)
+        //Socket factories for the RMIConnectorServer, either default or SLL depending on configuration
+        RMIClientSocketFactory csf;
+        RMIServerSocketFactory ssf;
+
+        //check ssl enabled option in config, default to true if option is not set
+        boolean sslEnabled = appRegistry.getConfiguration().getManagementSSLEnabled();
+
+        if (sslEnabled)
         {
-            // For SASL using JMXMP
-            JMXServiceURL jmxURL = new JMXServiceURL("jmxmp", null, port);
+            //set the SSL related system properties used by the SSL RMI socket factories to the values
+            //given in the configuration file, unless command line settings have already been specified
+            String keyStorePath;
 
-            String saslType = null;
-            if (db instanceof Base64MD5PasswordFilePrincipalDatabase)
+            if(System.getProperty("javax.net.ssl.keyStore") != null)
             {
-                saslType = "SASL/CRAM-MD5";
-                env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
-                CRAMMD5HashedInitialiser initialiser = new CRAMMD5HashedInitialiser();
-                initialiser.initialise(db);
-                env.put("jmx.remote.sasl.callback.handler", initialiser.getCallbackHandler());
-            }
-            else if (db instanceof PlainPasswordFilePrincipalDatabase)
-            {
-                saslType = "SASL/PLAIN";
-                PlainInitialiser initialiser = new PlainInitialiser();
-                initialiser.initialise(db);
-                env.put("jmx.remote.sasl.callback.handler", initialiser.getCallbackHandler());
-                env.put("jmx.remote.profiles", "SASL/PLAIN");
-            }
-
-            //workaround NPE generated from env map classloader issue when using Eclipse 3.4 to launch
-            env.put("jmx.remote.profile.provider.class.loader", this.getClass().getClassLoader());
-
-            _log.warn("Starting JMXMP based JMX ConnectorServer on port '" + port + "' with " + saslType);
-            _startupLog.warn("Starting JMXMP based JMX ConnectorServer on port '" + port + "' with " + saslType);
-            
-            cs = JMXConnectorServerFactory.newJMXConnectorServer(jmxURL, env, _mbeanServer);
-        }
-        else
-        {   
-            //Socket factories for the RMIConnectorServer, either default or SLL depending on configuration
-            RMIClientSocketFactory csf;
-            RMIServerSocketFactory ssf;
-            
-            //check ssl enabled option in config, default to true if option is not set
-            boolean sslEnabled = appRegistry.getConfiguration().getBoolean("management.ssl.enabled", true);
-
-            if (sslEnabled)
-            {
-                //set the SSL related system properties used by the SSL RMI socket factories to the values
-                //given in the configuration file, unless command line settings have already been specified
-                String keyStorePath;
-                
-                if(System.getProperty("javax.net.ssl.keyStore") != null)
-                {
-                    keyStorePath = System.getProperty("javax.net.ssl.keyStore");
-                }
-                else{
-                    keyStorePath = appRegistry.getConfiguration().getString("management.ssl.keyStorePath", null);
-                }
-                
-                //check the keystore path value is valid
-                if (keyStorePath == null)
-                {
-                    throw new ConfigurationException("JMX management SSL keystore path not defined, " +
-                    		                         "unable to start SSL protected JMX ConnectorServer");
-                }
-                else
-                {
-                    //ensure the system property is set
-                    System.setProperty("javax.net.ssl.keyStore", keyStorePath);
-                    
-                    //check the file is usable
-                    File ksf = new File(keyStorePath);
-                    
-                    if (!ksf.exists())
-                    {
-                        throw new FileNotFoundException("Cannot find JMX management SSL keystore file " + ksf);
-                    }
-                    if (!ksf.canRead())
-                    {
-                        throw new FileNotFoundException("Cannot read JMX management SSL keystore file: " 
-                                                        + ksf +  ". Check permissions.");
-                    }
-                    
-                    _log.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
-                    _startupLog.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
-                }
-
-                //check the key store password is set
-                if (System.getProperty("javax.net.ssl.keyStorePassword") == null)
-                {
-                
-                    if (appRegistry.getConfiguration().getString("management.ssl.keyStorePassword") == null)
-                    {
-                        throw new ConfigurationException("JMX management SSL keystore password not defined, " +
-                        		                         "unable to start requested SSL protected JMX server");
-                    }
-                    else
-                    {
-                        System.setProperty("javax.net.ssl.keyStorePassword",
-                                appRegistry.getConfiguration().getString("management.ssl.keyStorePassword"));
-                    }
-                }
-
-                //create the SSL RMI socket factories
-                csf = new SslRMIClientSocketFactory();
-                ssf = new SslRMIServerSocketFactory();
-
-                _log.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
-                        (port +PORT_EXPORT_OFFSET) + ") with SSL");
-                _startupLog.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
-                        (port +PORT_EXPORT_OFFSET) + ") with SSL");
+                keyStorePath = System.getProperty("javax.net.ssl.keyStore");
             }
             else
             {
-                //Do not specify any specific RMI socket factories, resulting in use of the defaults.
-                csf = null;
-                ssf = null;
-                
-                _log.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
-                _startupLog.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
+                keyStorePath = appRegistry.getConfiguration().getManagementKeyStorePath();
             }
-            
-            //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-            RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator();
-            rmipa.setPrincipalDatabase(db);
-            env.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
-            
-            /*
-             * Start a RMI registry on the management port, to hold the JMX RMI ConnectorServer stub. 
-             * Using custom socket factory to prevent anyone (including us unfortunately) binding to the registry using RMI.
-             * As a result, only binds made using the object reference will succeed, thus securing it from external change. 
-             */
-            System.setProperty("java.rmi.server.randomIDs", "true");
-            _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
-            
-            /*
-             * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls 
-             * to bind the ConnectorServer to the registry, which will now fail as for security we have
-             * locked it from any RMI based modifications, including our own. Instead, we will manually bind 
-             * the RMIConnectorServer stub to the registry using its object reference, which will still succeed.
-             * 
-             * The registry is exported on the defined management port 'port'. We will export the RMIConnectorServer
-             * on 'port +1'. Use of these two well-defined ports will ease any navigation through firewall's. 
-             */
-            final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(port+PORT_EXPORT_OFFSET, csf, ssf, env); 
-            final String hostname = InetAddress.getLocalHost().getHostName();
-            final JMXServiceURL externalUrl = new JMXServiceURL(
-                    "service:jmx:rmi://"+hostname+":"+(port+PORT_EXPORT_OFFSET)+"/jndi/rmi://"+hostname+":"+port+"/jmxrmi");
 
-            final JMXServiceURL internalUrl = new JMXServiceURL("rmi", hostname, port+PORT_EXPORT_OFFSET);
-            cs = new RMIConnectorServer(internalUrl, env, rmiConnectorServerStub, _mbeanServer)
-            {   
-                @Override  
-                public synchronized void start() throws IOException
-                {   
-                    try
-                    {   
-                        //manually bind the connector server to the registry at key 'jmxrmi', like the out-of-the-box agent                        
-                        _rmiRegistry.bind("jmxrmi", rmiConnectorServerStub);   
-                    }
-                    catch (AlreadyBoundException abe)
-                    {   
-                        //key was already in use. shouldnt happen here as its a new registry, unbindable by normal means.
-                        
-                        //IOExceptions are the only checked type throwable by the method, wrap and rethrow
-                        IOException ioe = new IOException(abe.getMessage());   
-                        ioe.initCause(abe);   
-                        throw ioe;   
-                    }
-                    
-                    //now do the normal tasks
-                    super.start();   
-                }   
-                
-                @Override  
-                public JMXServiceURL getAddress()
+            //check the keystore path value is valid
+            if (keyStorePath == null)
+            {
+                throw new ConfigurationException("JMX management SSL keystore path not defined, " +
+                    		                     "unable to start SSL protected JMX ConnectorServer");
+            }
+            else
+            {
+                //ensure the system property is set
+                System.setProperty("javax.net.ssl.keyStore", keyStorePath);
+
+                //check the file is usable
+                File ksf = new File(keyStorePath);
+
+                if (!ksf.exists())
                 {
-                    //must return our pre-crafted url that includes the full details, inc JNDI details
-                    return externalUrl;
-                }   
+                    throw new FileNotFoundException("Cannot find JMX management SSL keystore file " + ksf + "\n"
+                                                  + "Check broker configuration, or see create-example-ssl-stores script"
+                                                  + "in the bin/ directory if you need to generate an example store.");
+                }
+                if (!ksf.canRead())
+                {
+                    throw new FileNotFoundException("Cannot read JMX management SSL keystore file: " 
+                                                    + ksf +  ". Check permissions.");
+                }
+                
+                _log.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
+                _startupLog.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
+            }
 
-            };   
+            //check the key store password is set
+            if (System.getProperty("javax.net.ssl.keyStorePassword") == null)
+            {
+
+                if (appRegistry.getConfiguration().getManagementKeyStorePassword() == null)
+                {
+                    throw new ConfigurationException("JMX management SSL keystore password not defined, " +
+                      		                         "unable to start requested SSL protected JMX server");
+                }
+                else
+                {
+                   System.setProperty("javax.net.ssl.keyStorePassword",
+                           appRegistry.getConfiguration().getManagementKeyStorePassword());
+                }
+            }
+
+            //create the SSL RMI socket factories
+            csf = new SslRMIClientSocketFactory();
+            ssf = new SslRMIServerSocketFactory();
+
+            _log.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
+                     (port +PORT_EXPORT_OFFSET) + ") with SSL");
+            _startupLog.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
+                     (port +PORT_EXPORT_OFFSET) + ") with SSL");
         }
+        else
+        {
+            //Do not specify any specific RMI socket factories, resulting in use of the defaults.
+            csf = null;
+            ssf = null;
+
+            _log.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
+            _startupLog.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
+        }
+
+        //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
+        RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator();
+        rmipa.setPrincipalDatabase(db);
+        env.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
+
+        /*
+         * Start a RMI registry on the management port, to hold the JMX RMI ConnectorServer stub. 
+         * Using custom socket factory to prevent anyone (including us unfortunately) binding to the registry using RMI.
+         * As a result, only binds made using the object reference will succeed, thus securing it from external change. 
+         */
+        System.setProperty("java.rmi.server.randomIDs", "true");
+        _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
+
+        /*
+         * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls 
+         * to bind the ConnectorServer to the registry, which will now fail as for security we have
+         * locked it from any RMI based modifications, including our own. Instead, we will manually bind 
+         * the RMIConnectorServer stub to the registry using its object reference, which will still succeed.
+         * 
+         * The registry is exported on the defined management port 'port'. We will export the RMIConnectorServer
+         * on 'port +1'. Use of these two well-defined ports will ease any navigation through firewall's. 
+         */
+        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(port+PORT_EXPORT_OFFSET, csf, ssf, env); 
+        final String hostname = InetAddress.getLocalHost().getHostName();
+        final JMXServiceURL externalUrl = new JMXServiceURL(
+                "service:jmx:rmi://"+hostname+":"+(port+PORT_EXPORT_OFFSET)+"/jndi/rmi://"+hostname+":"+port+"/jmxrmi");
+
+        final JMXServiceURL internalUrl = new JMXServiceURL("rmi", hostname, port+PORT_EXPORT_OFFSET);
+        cs = new RMIConnectorServer(internalUrl, env, rmiConnectorServerStub, _mbeanServer)
+        {   
+            @Override  
+            public synchronized void start() throws IOException
+            {   
+                try
+                {   
+                    //manually bind the connector server to the registry at key 'jmxrmi', like the out-of-the-box agent                        
+                    _rmiRegistry.bind("jmxrmi", rmiConnectorServerStub);   
+                }
+                catch (AlreadyBoundException abe)
+                {   
+                    //key was already in use. shouldnt happen here as its a new registry, unbindable by normal means.
+
+                    //IOExceptions are the only checked type throwable by the method, wrap and rethrow
+                    IOException ioe = new IOException(abe.getMessage());   
+                    ioe.initCause(abe);   
+                    throw ioe;   
+                }
+
+                //now do the normal tasks
+                super.start();   
+            }   
+
+            @Override  
+            public JMXServiceURL getAddress()
+            {
+                //must return our pre-crafted url that includes the full details, inc JNDI details
+                return externalUrl;
+            }   
+
+        };   
+        
 
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
         MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
@@ -378,6 +349,17 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             // Stopping the RMI registry
             UnicastRemoteObject.unexportObject(_rmiRegistry, true);
+        }
+        for (ObjectName name : _mbeanServer.queryNames(null, null))
+        {
+            try
+            {
+                _mbeanServer.unregisterMBean(name);
+            }
+            catch (JMException e)
+            {
+                // Really shouldn't happen, but we'll ignore that...
+            }
         }
     }
 

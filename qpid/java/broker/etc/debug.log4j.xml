@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
  -
  - Licensed to the Apache Software Foundation (ASF) under one
@@ -18,10 +18,10 @@
  - specific language governing permissions and limitations
  - under the License.
  -
- -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-    <appender name="ArchivingFileAppender" class="org.apache.log4j.QpidCompositeRollingAppender">
+ --><!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="null" threshold="null">
+    <appender class="org.apache.log4j.QpidCompositeRollingAppender" name="ArchivingFileAppender">
         <!-- Ensure that logs allways have the dateFormat set-->
         <param name="StaticLogFileName" value="false"/>
         <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
@@ -48,7 +48,7 @@
         </layout>
     </appender>
 
-    <appender name="FileAppender" class="org.apache.log4j.FileAppender">
+    <appender class="org.apache.log4j.FileAppender" name="FileAppender">
         <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
         <param name="Append" value="false"/>
 
@@ -57,7 +57,7 @@
         </layout>
     </appender>
 
-    <appender name="AlertFile" class="org.apache.log4j.FileAppender">
+    <appender class="org.apache.log4j.FileAppender" name="AlertFile">
         <param name="File" value="${QPID_WORK}/log/alert.log"/>
         <param name="Append" value="false"/>
 
@@ -66,28 +66,28 @@
         </layout>
     </appender>
 
-    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+    <appender class="org.apache.log4j.ConsoleAppender" name="STDOUT">
 
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
         </layout>
     </appender>
 
-    <category name="Qpid.Broker">
+    <category additivity="true" name="Qpid.Broker">
         <priority value="debug"/>
         <appender-ref ref="AlertFile"/>
         <!--appender-ref ref="STDOUT"/-->        
     </category>
 
 
-    <category name="org.apache.qpid.server.queue.AMQQueueMBean">
+    <category additivity="true" name="org.apache.qpid.server.queue.AMQQueueMBean">
         <priority value="info"/>
         <appender-ref ref="AlertFile"/>
     </category>
 
 
     <!-- Provide warnings to standard output -->
-    <!--category name="org.apache.qpid">
+    <!--category additivity="true" name="org.apache.qpid">
         <priority value="warn"/>
         <appender-ref ref="STDOUT"/>
     </category-->
@@ -96,11 +96,11 @@
     <!-- Additional level settings for debugging -->
     <!-- Each class in the Broker is a category that can have its logging level adjusted. -->
     <!-- This will provide more details if available about that classes processing. -->
-    <!--category name="org.apache.qpid.server.txn">
+    <!--category additivity="true" name="org.apache.qpid.server.txn">
         <priority value="debug"/>
     </category>-->
 
-    <!--<category name="org.apache.qpid.server.store">
+    <!--<category additivity="true" name="org.apache.qpid.server.store">
         <priority value="debug"/>
     </category-->
 

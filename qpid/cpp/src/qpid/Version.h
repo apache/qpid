@@ -36,7 +36,7 @@ namespace qpid {
 #  endif
 #else
   const std::string product  = "qpidc";
-  const std::string version  = "0.3";
+  const std::string version  = "0.5";
   const std::string saslName = "qpid-broker";
 #endif
 }

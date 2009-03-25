@@ -22,6 +22,7 @@
 #include "ConnectionState.h"
 #include "Connection.h"
 #include "LinkRegistry.h"
+#include "SessionState.h"
 
 #include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
@@ -80,31 +81,31 @@ Bridge::~Bridge()
     mgmtObject->resourceDestroy(); 
 }
 
-void Bridge::create(ConnectionState& c)
+void Bridge::create(Connection& c)
 {
+    connState = &c;
     FieldTable options;
     if (args.i_sync) options.setInt("qpid.sync_frequency", args.i_sync);
-    connState = &c;
+    SessionHandler& sessionHandler = c.getChannel(id);
     if (args.i_srcIsLocal) {
         if (args.i_dynamic)
             throw Exception("Dynamic routing not supported for push routes");
         // Point the bridging commands at the local connection handler
-        Connection* conn = dynamic_cast<Connection*>(&c);
-        if (conn == 0)
-            return;
-        pushHandler.reset(new PushHandler(conn));
+        pushHandler.reset(new PushHandler(&c));
         channelHandler.reset(new framing::ChannelHandler(id, pushHandler.get()));
+
+        session.reset(new framing::AMQP_ServerProxy::Session(*channelHandler));
+        peer.reset(new framing::AMQP_ServerProxy(*channelHandler));
+        
+        session->attach(name, false);
+        session->commandPoint(0,0);
     } else {
+        sessionHandler.attachAs(name);
         // Point the bridging commands at the remote peer broker
-        channelHandler.reset(new framing::ChannelHandler(id, &(connState->getOutput())));
+        peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
     }
 
-    session.reset(new framing::AMQP_ServerProxy::Session(*channelHandler));
-    peer.reset(new framing::AMQP_ServerProxy(*channelHandler));
-
-    session->attach(name, false);
-    session->commandPoint(0,0);
-        
+    if (args.i_srcIsLocal) sessionHandler.getSession()->disableReceiverTracking();
     if (args.i_srcIsQueue) {        
         peer->getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, options);
         peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
@@ -116,7 +117,7 @@ void Bridge::create(ConnectionState& c)
         if (args.i_tag.size()) {
             queueSettings.setString("qpid.trace.id", args.i_tag);
         } else {
-            const string& peerTag = connState->getFederationPeerTag();
+            const string& peerTag = c.getFederationPeerTag();
             if (peerTag.size())
                 queueSettings.setString("qpid.trace.id", peerTag);
         }
@@ -129,7 +130,7 @@ void Bridge::create(ConnectionState& c)
                 queueSettings.setString("qpid.trace.exclude", localTag);
         }
 
-        bool durable = false;//should this be an arg, or would be use srcIsQueue for durable queues?
+        bool durable = false;//should this be an arg, or would we use srcIsQueue for durable queues?
         bool autoDelete = !durable;//auto delete transient queues?
         peer->getQueue().declare(queueName, "", false, durable, true, autoDelete, queueSettings);
         if (!args.i_dynamic)
@@ -148,12 +149,23 @@ void Bridge::create(ConnectionState& c)
             QPID_LOG(debug, "Activated static route from exchange " << args.i_src << " to " << args.i_dest);
         }
     }
+    if (args.i_srcIsLocal) sessionHandler.getSession()->enableReceiverTracking();
 }
 
-void Bridge::cancel()
+void Bridge::cancel(Connection& c)
 {
+    if (args.i_srcIsLocal) {    
+        //recreate peer to be sure that the session handler reference
+        //is valid (it could have been deleted due to a detach)
+        SessionHandler& sessionHandler = c.getChannel(id);
+        peer.reset(new framing::AMQP_ServerProxy(sessionHandler.out));
+    }
     peer->getMessage().cancel(args.i_dest);
     peer->getSession().detach(name);
+}
+
+void Bridge::closed()
+{
     if (args.i_dynamic) {
         Exchange::shared_ptr exchange = link->getBroker()->getExchanges().get(args.i_src);
         if (exchange.get() != 0)
@@ -166,13 +178,13 @@ void Bridge::destroy()
     listener(this);
 }
 
-void Bridge::setPersistenceId(uint64_t id) const
+void Bridge::setPersistenceId(uint64_t pId) const
 {
     if (mgmtObject != 0 && persistenceId == 0) {
         ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
-        agent->addObject (mgmtObject, id);
+        agent->addObject (mgmtObject, pId);
     }
-    persistenceId = id;
+    persistenceId = pId;
 }
 
 const string& Bridge::getName() const

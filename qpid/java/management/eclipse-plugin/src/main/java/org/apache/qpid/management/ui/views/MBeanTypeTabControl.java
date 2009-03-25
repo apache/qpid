@@ -191,7 +191,7 @@ public abstract class MBeanTypeTabControl
      */
     protected void createAddButton(Composite parentComposite)
     {
-        Button _addButton = _toolkit.createButton(parentComposite, "<- Add to Navigation", SWT.PUSH);
+        Button _addButton = _toolkit.createButton(parentComposite, "<- Add selected " + _type + "(s) to navigation tree", SWT.PUSH);
         GridData gridData = new GridData(SWT.CENTER, SWT.CENTER, false, false);
         _addButton.setLayoutData(gridData);
         _addButton.addSelectionListener(new SelectionAdapter(){
@@ -292,7 +292,7 @@ public abstract class MBeanTypeTabControl
     protected void setLabelValues()
     {
         _labelName.setText("Type : " + _type);        
-        _labelDesc.setText("Select the " + _type + "(s) to add in the Navigation View");
+        _labelDesc.setText("Select the " + _type + "(s) to add to the navigation tree for further interaction.");
         _labelList.setText("-- List of " + _type + "s --");
     }
     

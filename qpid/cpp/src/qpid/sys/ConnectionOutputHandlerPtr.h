@@ -30,7 +30,7 @@ namespace sys {
 /**
  * A ConnectionOutputHandler that delegates to another
  * ConnectionOutputHandler.  Allows the "real" ConnectionOutputHandler
- * to be changed modified without updating all the pointers/references
+ * to be changed without updating all the pointers/references
  * using the ConnectionOutputHandlerPtr
  */
 class ConnectionOutputHandlerPtr : public ConnectionOutputHandler

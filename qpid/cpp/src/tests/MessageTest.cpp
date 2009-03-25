@@ -24,13 +24,12 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
 #include <iostream>
-#include <alloca.h>
 
-using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
@@ -44,7 +43,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     string data1("abcdefg");
     string data2("hijklmn");
 
-    intrusive_ptr<Message> msg(new Message());
+    boost::intrusive_ptr<Message> msg(new Message());
 
     AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
     AMQFrame header((AMQHeaderBody()));

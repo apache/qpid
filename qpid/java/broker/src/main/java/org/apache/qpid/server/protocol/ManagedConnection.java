@@ -41,6 +41,7 @@ import org.apache.qpid.server.management.MBeanOperationParameter;
 public interface ManagedConnection
 {
     static final String TYPE = "Connection";
+    static final int VERSION = 1;
 
     @MBeanAttribute(name = "ClientId", description = "Client Id")
     String getClientId();

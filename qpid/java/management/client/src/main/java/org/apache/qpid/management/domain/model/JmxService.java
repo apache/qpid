@@ -54,11 +54,10 @@ public class JmxService
      */
     public void registerQManService(QMan qman) throws MBeanException 
     {
-    	ObjectName name = createQManName();
-    	if (!_mxServer.isRegistered(name))
+    	if (!_mxServer.isRegistered(Names.QMAN_OBJECT_NAME))
     	{
     		try {
-				_mxServer.registerMBean(qman, name);
+				_mxServer.registerMBean(qman, Names.QMAN_OBJECT_NAME);
 			} catch (Exception exception) {
 				throw new MBeanException(exception);
 			}
@@ -358,27 +357,6 @@ public class JmxService
             throw new RuntimeException(exception);
         } 
     }        
-    
-    /**
-     * Creates the QMan object name.
-     * 
-     * @return the QMan object name.
-     */
-    private ObjectName createQManName() 
-    {
-        String asString = new StringBuilder()
-            .append(Names.DOMAIN_NAME)
-            .append(':')
-            .append("Type=Service")
-            .toString();
-        try
-        {
-            return new ObjectName(asString);
-        } catch (MalformedObjectNameException exception)
-        {
-            throw new RuntimeException(exception);
-        } 
-    }
 
     ObjectName createEntityDefinitionName(String packageName, String className, String type) 
     {
@@ -407,7 +385,7 @@ public class JmxService
 		{
 			if (!_mxServer.isRegistered(name))
 				_mxServer.registerMBean(entity, name);
-				_mxServer.addNotificationListener(name, createQManName(), null, null);
+				_mxServer.addNotificationListener(name, Names.QMAN_OBJECT_NAME, null, null);
 		} catch(Exception exception)  
 		{
 			throw new RuntimeException(exception);

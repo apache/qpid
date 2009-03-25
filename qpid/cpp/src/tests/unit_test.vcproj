@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="unit_test"
-	ProjectGUID="{51E5F6B9-FECA-1BAD-2235-047BCDC7409E}"
+	ProjectGUID="{51E5F6B9-FECA-1BAD-2431-8A11DB0D67CE}"
 	RootNamespace="unit_test"
 	Keyword="Win32Proj"
 	SignManifests="true"
@@ -21,8 +21,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Static_Debug"
-			IntermediateDirectory="Static_Debug\unit_test\I386"
+			OutputDirectory="."
+			IntermediateDirectory="Debug\unit_test\I386"
 			ConfigurationType="1"
 			CharacterSet="0"
 
@@ -52,22 +52,22 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -76,7 +76,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommonsd.lib qpidclientsd.lib qmfconsolesd.lib ws2_32.lib rpcrt4.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qpidbrokerd.lib qmfconsoled.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -103,8 +103,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Static_Release"
-			IntermediateDirectory="Static_Release\unit_test\I386"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release\unit_test\I386"
 			ConfigurationType="1"
 			CharacterSet="0"
 
@@ -134,19 +134,19 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -155,7 +155,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommons.lib qpidclients.lib qmfconsoles.lib ws2_32.lib rpcrt4.lib"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qpidbroker.lib qmfconsole.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -184,8 +184,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="Static_Debug"
-			IntermediateDirectory="Static_Debug\unit_test\AMD64"
+			OutputDirectory="."
+			IntermediateDirectory="Debug\unit_test\AMD64"
 			ConfigurationType="1"
 			CharacterSet="0"
 
@@ -215,22 +215,22 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -240,7 +240,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommonsd.lib qpidclientsd.lib qmfconsolesd.lib ws2_32.lib rpcrt4.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qpidbrokerd.lib qmfconsoled.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -267,8 +267,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="Static_Release"
-			IntermediateDirectory="Static_Release\unit_test\AMD64"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release\unit_test\AMD64"
 			ConfigurationType="1"
 			CharacterSet="0"
 
@@ -298,19 +298,19 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800"
+				DisableSpecificWarnings="4244;4800;4290;4355"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
 			/>
@@ -320,7 +320,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommons.lib qpidclients.lib qmfconsoles.lib ws2_32.lib rpcrt4.lib"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qpidbroker.lib qmfconsole.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -361,13 +361,31 @@
 				RelativePath="Array.cpp">
 			</File>
 			<File
+				RelativePath="AsyncCompletion.cpp">
+			</File>
+			<File
 				RelativePath="AtomicValue.cpp">
 			</File>
 			<File
 				RelativePath="Blob.cpp">
 			</File>
 			<File
+				RelativePath="ClientSessionTest.cpp">
+			</File>
+			<File
 				RelativePath="ConsoleTest.cpp">
+			</File>
+			<File
+				RelativePath="DeliveryRecordTest.cpp">
+			</File>
+			<File
+				RelativePath="DtxWorkRecordTest.cpp">
+			</File>
+			<File
+				RelativePath="exception_test.cpp">
+			</File>
+			<File
+				RelativePath="ExchangeTest.cpp">
 			</File>
 			<File
 				RelativePath="FieldTable.cpp">
@@ -379,7 +397,13 @@
 				RelativePath="FramingTest.cpp">
 			</File>
 			<File
+				RelativePath="HeadersExchangeTest.cpp">
+			</File>
+			<File
 				RelativePath="HeaderTest.cpp">
+			</File>
+			<File
+				RelativePath="IncompleteMessageList.cpp">
 			</File>
 			<File
 				RelativePath="InlineAllocator.cpp">
@@ -394,6 +418,15 @@
 				RelativePath="ManagementTest.cpp">
 			</File>
 			<File
+				RelativePath="MessageBuilderTest.cpp">
+			</File>
+			<File
+				RelativePath="MessageReplayTracker.cpp">
+			</File>
+			<File
+				RelativePath="MessageTest.cpp">
+			</File>
+			<File
 				RelativePath="ProxyTest.cpp">
 			</File>
 			<File
@@ -401,6 +434,15 @@
 			</File>
 			<File
 				RelativePath="QueueOptionsTest.cpp">
+			</File>
+			<File
+				RelativePath="QueuePolicyTest.cpp">
+			</File>
+			<File
+				RelativePath="QueueRegistryTest.cpp">
+			</File>
+			<File
+				RelativePath="QueueTest.cpp">
 			</File>
 			<File
 				RelativePath="RangeSet.cpp">
@@ -428,6 +470,18 @@
 			</File>
 			<File
 				RelativePath="StringUtils.cpp">
+			</File>
+			<File
+				RelativePath="TimerTest.cpp">
+			</File>
+			<File
+				RelativePath="TopicExchangeTest.cpp">
+			</File>
+			<File
+				RelativePath="TxBufferTest.cpp">
+			</File>
+			<File
+				RelativePath="TxPublishTest.cpp">
 			</File>
 			<File
 				RelativePath="unit_test.cpp">

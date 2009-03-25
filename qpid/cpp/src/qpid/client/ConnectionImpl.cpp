@@ -180,6 +180,9 @@ void ConnectionImpl::close()
 
 
 template <class F> void ConnectionImpl::closeInternal(const F& f) {
+    if (heartbeatTask) {
+        heartbeatTask->cancel();
+    }
     {
         Mutex::ScopedUnlock u(lock);
         connector->close();

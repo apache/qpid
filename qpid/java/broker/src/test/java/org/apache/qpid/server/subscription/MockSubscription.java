@@ -30,10 +30,13 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
+import org.apache.log4j.Logger;
 
 public class MockSubscription implements Subscription
 {
+    private static final Logger _logger = Logger.getLogger(MockSubscription.class);
 
     private boolean _closed = false;
     private AMQShortString tag = new AMQShortString("mocktag");
@@ -41,8 +44,12 @@ public class MockSubscription implements Subscription
     private StateListener _listener = null;
     private QueueEntry lastSeen = null;
     private State _state = State.ACTIVE;
-    private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
+    private ArrayList<QueueEntry> _queueEntries = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();
+    private ArrayList<AMQMessage> _messages = new ArrayList<AMQMessage>();
+
+
+
 
     public void close()
     {
@@ -136,10 +143,14 @@ public class MockSubscription implements Subscription
     {
     }
 
-    public void send(QueueEntry msg) throws AMQException
+    public void send(QueueEntry entry) throws AMQException
     {
-        lastSeen = msg;
-        messages.add(msg);
+        _logger.info("Sending Message(" + entry.debugIdentity() + ")  to subscription:" + this);
+
+        lastSeen = entry;
+        _queueEntries.add(entry);
+        _messages.add(entry.getMessage());
+        entry.setDeliveredToSubscription();        
     }
 
     public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue)
@@ -173,8 +184,14 @@ public class MockSubscription implements Subscription
         return false;
     }
 
-    public ArrayList<QueueEntry> getMessages()
+    public ArrayList<QueueEntry> getQueueEntries()
     {
-        return messages;
+        return _queueEntries;
     }
+
+    public ArrayList<AMQMessage> getMessages()
+    {
+        return _messages;
+    }
+
 }

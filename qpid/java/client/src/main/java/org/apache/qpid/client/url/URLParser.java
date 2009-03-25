@@ -58,22 +58,31 @@ public class URLParser
 
             if ((connection.getHost() == null) || connection.getHost().equals(""))
             {
-                String uid = AMQConnectionFactory.getUniqueClientID();
-                if (uid == null)
-                {
-                    throw URLHelper.parseError(-1, "Client Name not specified", fullURL);
+                String tmp = connection.getAuthority();
+                // hack to read a clientid such as "my_clientID"
+                if (tmp != null && tmp.indexOf('@') < tmp.length()-1)
+                {                   
+                    _url.setClientName(tmp.substring(tmp.indexOf('@')+1,tmp.length()));
                 }
                 else
                 {
-                    _url.setClientName(uid);
+                    String uid = AMQConnectionFactory.getUniqueClientID();
+                    if (uid == null)
+                    {
+                        throw URLHelper.parseError(-1, "Client Name not specified", fullURL);
+                    }
+                    else
+                    {
+                        _url.setClientName(uid);
+                    }
                 }
 
-            }
+            }            
             else
             {
                 _url.setClientName(connection.getHost());
             }
-
+            
             String userInfo = connection.getUserInfo();
 
             if (userInfo == null)

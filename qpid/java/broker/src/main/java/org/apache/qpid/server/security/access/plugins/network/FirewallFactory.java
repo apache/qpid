@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.access.plugins.network;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
 
@@ -28,7 +29,7 @@ public class FirewallFactory implements ACLPluginFactory
 {
 
     @Override
-    public ACLPlugin newInstance(Configuration config)
+    public ACLPlugin newInstance(Configuration config) throws ConfigurationException
     {
         FirewallPlugin plugin = new FirewallPlugin();
         plugin.setConfiguration(config);

@@ -25,7 +25,6 @@
 	
 	<import file="../../module.xml"/>
 
-	<property name="war.name" value="qman.war"/>
     <property name="build.root" value="${module.build}"/>
     <property name="web.module" value="${module.build}${file.separator}wsdm-module"/>	
     <property name="web-inf.folder" value="${web.module}${file.separator}WEB-INF"/>
@@ -49,7 +48,6 @@
 	    </copy>
 	</target>
 
-	
 	<target name="libs-release" description="copy dependencies into module release">
 	    <copy todir="${module.release}${file.separator}" failonerror="true" verbose="true">
 	    	<fileset dir="${build}" casesensitive="yes" includes="${module.libs}">
@@ -59,6 +57,8 @@
 	    		<not><filename name="**/*xalan*"/></not>	    		
 	    		<not><filename name="**/*wsdl*"/></not>	    		
 	    		<not><filename name="**/*muse*"/></not>
+	    		<not><filename name="**/*jsp*"/></not>
+		    		<not><filename name="**/*core-3.1.1.jar*"/></not>
 	    	</fileset>
 	    </copy>
 		<copy todir="${module.release}${file.separator}lib" failonerror="true">
@@ -195,7 +195,7 @@
 
 			<batchtest fork="${test.fork}" todir="${module.results}">
 	        	<fileset dir="${module.test.src}" excludes="${module.test.excludes}">
-					<include name="**/${test}.java"/>
+					<include name="**/${test}.java"/>	        		
 	        	</fileset>
 			</batchtest>
 		</junit>

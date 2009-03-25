@@ -20,6 +20,7 @@
 #include "Options.h"
 #include <boost/bind.hpp>
 #include <algorithm>
+#include <string.h>
 
 namespace qpid {
 namespace log {

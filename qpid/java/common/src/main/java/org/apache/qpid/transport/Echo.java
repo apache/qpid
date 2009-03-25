@@ -37,6 +37,8 @@ public class Echo implements SessionListener
 
     public void opened(Session ssn) {}
 
+    public void resumed(Session ssn) {}
+
     public void message(Session ssn, MessageTransfer xfr)
     {
         int id = xfr.getId();

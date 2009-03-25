@@ -179,12 +179,8 @@ public abstract class MBeanCapability extends AbstractWsResourceCapability
 						params, 
 						signature);
 			
-			Result result = new Result(
-					output.getReturnCode(),
-					output.getStatusText(),
-					output.getOutputSection());
-			
-			return result;
+		return new Result(output.getOutputSection());
+
 		} catch (InstanceNotFoundException exception)
 		{
 			throw new EntityInstanceNotFoundFault(

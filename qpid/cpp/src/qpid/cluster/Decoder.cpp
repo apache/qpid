@@ -18,33 +18,44 @@
  * under the License.
  *
  */
-
 #include "Decoder.h"
-#include "Event.h"
+#include "EventFrame.h"
+#include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/ptr_map.h"
+#include "qpid/framing/AMQFrame.h"
+
 
 namespace qpid {
 namespace cluster {
 
-using namespace framing;
-
-Decoder::Decoder(const Handler& h, ConnectionMap& cm) : handler(h), connections(cm) {}
-
-void Decoder::decode(const EventHeader& eh, const void* data) {
-    ConnectionId id = eh.getConnectionId();
-    Map::iterator i = map.find(id);
-    if (i == map.end())  {
-        std::pair<Map::iterator, bool> ib = map.insert(id, new ConnectionDecoder(handler));
-        i = ib.first;
+void Decoder::decode(const EventHeader& eh, const char* data) {
+    assert(eh.getType() == DATA); // Only handle connection data events.
+    const char* cp = static_cast<const char*>(data);
+    framing::Buffer buf(const_cast<char*>(cp), eh.getSize());
+    framing::FrameDecoder& decoder = map[eh.getConnectionId()];
+    if (decoder.decode(buf)) {  // Decoded a frame
+        framing::AMQFrame frame(decoder.getFrame());
+        while (decoder.decode(buf)) {
+            process(EventFrame(eh, frame));
+            frame = decoder.getFrame();
+        }
+        // Set read-credit on the last frame ending in this event.
+        // Credit will be given when this frame is processed.
+        process(EventFrame(eh, frame, 1)); 
     }
-    ptr_map_ptr(i)->decode(eh, data, connections);
+    else {
+        // We must give 1 unit read credit per event.
+        // This event does not complete any frames so 
+        // send an empty frame with the read credit.
+        process(EventFrame(eh, framing::AMQFrame(), 1));
+    }    
 }
 
-void Decoder::erase(const ConnectionId& c) {
-    Map::iterator i = map.find(c);
-    if (i != map.end()) 
-        map.erase(i);
+void Decoder::process(const EventFrame& ef) {
+    //need to check that this is not the empty frame mentioned above
+    if (ef.frame.getBody() && ef.frame.getMethod() && ef.frame.getMethod()->isA<framing::ClusterConnectionDeliverCloseBody>())
+        map.erase(ef.connectionId);
+    callback(ef);
 }
 
 }} // namespace qpid::cluster

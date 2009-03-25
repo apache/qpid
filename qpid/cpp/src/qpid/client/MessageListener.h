@@ -19,6 +19,7 @@
  *
  */
 #include <string>
+#include "qpid/client/ClientImportExport.h"
 
 #ifndef _MessageListener_
 #define _MessageListener_
@@ -85,7 +86,7 @@ namespace client {
 
     class MessageListener{
     public:
-        virtual ~MessageListener();
+        QPID_CLIENT_EXTERN virtual ~MessageListener();
 
         /** Called for each message arriving from the broker. Override
          * in your own subclass to process messages.

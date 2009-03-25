@@ -100,7 +100,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     @MBeanConstructor("Creates an MBean exposing an AMQQueue")
     public AMQQueueMBean(AMQQueue queue) throws JMException
     {
-        super(ManagedQueue.class, ManagedQueue.TYPE);
+        super(ManagedQueue.class, ManagedQueue.TYPE, ManagedQueue.VERSION);
         _queue = queue;
         _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
     }
@@ -221,11 +221,12 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _queue.setMaximumMessageCount(value);
     }
 
+    /**
+     * returns the maximum total size of messages(bytes) in the queue.
+     */
     public Long getMaximumQueueDepth()
     {
-        long queueDepthInBytes = _queue.getMaximumQueueDepth();
-
-        return queueDepthInBytes >> 10;
+        return _queue.getMaximumQueueDepth();
     }
 
     public void setMaximumQueueDepth(Long value)
@@ -233,20 +234,49 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _queue.setMaximumQueueDepth(value);
     }
 
+    public Long getMemoryUsageMaximum()
+    {
+        return _queue.getMemoryUsageMaximum();
+    }
+
+    public void setMemoryUsageMaximum(Long maximumMemoryUsage)
+    {
+        _queue.setMemoryUsageMaximum(maximumMemoryUsage);
+    }
+
+    public Long getMemoryUsageMinimum()
+    {
+        return _queue.getMemoryUsageMinimum();
+    }
+
+    public void setMemoryUsageMinimum(Long minimumMemoryUsage)
+    {
+        _queue.setMemoryUsageMinimum(minimumMemoryUsage);
+    }
+
+    public Long getMemoryUsageCurrent()
+    {
+        return _queue.getMemoryUsageCurrent();
+    }
+
+    public boolean isFlowed()
+    {
+       return _queue.isFlowed();
+    }
+
     /**
-     * returns the size of messages(KB) in the queue.
+     * returns the total size of messages(bytes) in the queue.
      */
     public Long getQueueDepth() throws JMException
     {
-        long queueBytesSize = _queue.getQueueDepth();
-
-        return queueBytesSize >> 10;
+        return _queue.getQueueDepth();
     }
 
     /**
      * Checks if there is any notification to be send to the listeners
+     * @param queueEntry
      */
-    public void checkForNotification(AMQMessage msg) throws AMQException
+    public void checkForNotification(QueueEntry queueEntry) throws AMQException
     {
 
         final Set<NotificationCheck> notificationChecks = _queue.getNotificationChecks();
@@ -260,7 +290,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             {
                 if (check.isMessageSpecific() || (_lastNotificationTimes[check.ordinal()] < thresholdTime))
                 {
-                    if (check.notifyIfNecessary(msg, _queue, this))
+                    if (check.notifyIfNecessary(queueEntry, _queue, this))
                     {
                         _lastNotificationTimes[check.ordinal()] = currentTime;
                     }

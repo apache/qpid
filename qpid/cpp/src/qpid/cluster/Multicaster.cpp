@@ -24,6 +24,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/LatencyMetric.h"
 #include "qpid/framing/AMQBody.h"
+#include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
 namespace cluster {
@@ -41,6 +42,11 @@ Multicaster::Multicaster(Cpg& cpg_,
 void Multicaster::mcastControl(const framing::AMQBody& body, const ConnectionId& id) {
     QPID_LOG(trace, "MCAST " << id << ": " << body);
     mcast(Event::control(body, id));
+}
+
+void Multicaster::mcastControl(const framing::AMQFrame& frame, const ConnectionId& id) {
+    QPID_LOG(trace, "MCAST " << id << ": " << frame);
+    mcast(Event::control(frame, id));
 }
 
 void Multicaster::mcastBuffer(const char* data, size_t size, const ConnectionId& id) {

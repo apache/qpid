@@ -105,33 +105,42 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
 
 
 void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
-    if (!args) return;//can't match if there were no headers passed in
+    if (!args) {
+        //can't match if there were no headers passed in
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgReceives();
+            mgmtExchange->inc_byteReceives(msg.contentSize());
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        }
+        return;
+    }
+
     PreRoute pr(msg, this);
 
     uint32_t count(0);
 
     Bindings::ConstPtr p = bindings.snapshot();
     if (p.get()){
-        for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++) {
-            if (match((*i)->args, *args)) msg.deliverTo((*i)->queue);
-            if ((*i)->mgmtBinding != 0)
-                (*i)->mgmtBinding->inc_msgMatched ();
+        for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i) {
+            if (match((*i)->args, *args)) {
+                msg.deliverTo((*i)->queue);
+                count++;
+                if ((*i)->mgmtBinding != 0)
+                    (*i)->mgmtBinding->inc_msgMatched();
+            }
         }
     }
 
-    if (mgmtExchange != 0)
-    {
-        mgmtExchange->inc_msgReceives  ();
-        mgmtExchange->inc_byteReceives (msg.contentSize ());
-        if (count == 0)
-        {
-            mgmtExchange->inc_msgDrops  ();
-            mgmtExchange->inc_byteDrops (msg.contentSize ());
-        }
-        else
-        {
-            mgmtExchange->inc_msgRoutes  (count);
-            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
+    if (mgmtExchange != 0) {
+        mgmtExchange->inc_msgReceives();
+        mgmtExchange->inc_byteReceives(msg.contentSize());
+        if (count == 0) {
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        } else {
+            mgmtExchange->inc_msgRoutes(count);
+            mgmtExchange->inc_byteRoutes(count * msg.contentSize());
         }
     }
 }

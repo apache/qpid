@@ -24,16 +24,20 @@
 namespace qpid {
 namespace cluster {
 
-EventFrame::EventFrame() : sequence(0) {}
+EventFrame::EventFrame() {}
 
 EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
-    : connectionId(e.getConnectionId()), frame(f), sequence(e.getSequence()), readCredit(rc)
+    : connectionId(e.getConnectionId()), frame(f), readCredit(rc), type(e.getType())
 {
     QPID_LATENCY_INIT(frame);
 }
 
 std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
-    return o << e.connectionId << "/" << e.sequence << " " << e.frame << " rc=" << e.readCredit;
+    if (e.frame.getBody()) o << e.frame;
+    else o << "null-frame";
+    o << " " << e.type << " " << e.connectionId;
+    if (e.readCredit) o << " read-credit=" << e.readCredit;
+    return o;
 }
 
 }} // namespace qpid::cluster

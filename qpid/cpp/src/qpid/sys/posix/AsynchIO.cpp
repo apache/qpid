@@ -123,7 +123,7 @@ void AsynchAcceptorPrivate::readable(DispatchHandle& h) {
         // TODO: Currently we ignore the peers address, perhaps we should
         // log it or use it for connection acceptance.
         try {
-            s = socket.accept(0, 0);
+            s = socket.accept();
             if (s) {
                 acceptedCallback(*s);
             } else {
@@ -474,7 +474,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                     break;
                 } else {
                     // Report error then just treat as a socket disconnect
-                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(rc) << "(" << rc << ")" );
+                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(errno) << "(" << errno << ")" );
                     eofCallback(*this);
                     h.unwatchRead();
                     break;

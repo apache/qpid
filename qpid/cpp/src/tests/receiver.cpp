@@ -23,7 +23,7 @@
 #include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/SubscriptionManager.h>
-#include <qpid/client/SubscriptionManager.h>
+#include <qpid/client/SubscriptionSettings.h>
 #include "TestOptions.h"
 
 #include <iostream>
@@ -43,15 +43,17 @@ struct Args : public qpid::TestOptions
     bool ignoreDuplicates;
     uint creditWindow;
     uint ackFrequency;
+    bool browse;
 
-    Args() : queue("test-queue"), messages(0), ignoreDuplicates(false), creditWindow(0), ackFrequency(1)
+    Args() : queue("test-queue"), messages(0), ignoreDuplicates(false), creditWindow(0), ackFrequency(1), browse(false)
     {
         addOptions()            
             ("queue", qpid::optValue(queue, "QUEUE NAME"), "Queue from which to request messages")
             ("messages", qpid::optValue(messages, "N"), "Number of messages to receive; 0 means receive indefinitely")
             ("ignore-duplicates", qpid::optValue(ignoreDuplicates), "Detect and ignore duplicates (by checking 'sn' header)")
             ("credit-window", qpid::optValue(creditWindow, "N"), "Credit window (0 implies infinite window)")
-            ("ack-frequency", qpid::optValue(ackFrequency, "N"), "Ack frequency (0 implies none of the messages will get accepted)");
+            ("ack-frequency", qpid::optValue(ackFrequency, "N"), "Ack frequency (0 implies none of the messages will get accepted)")
+            ("browse", qpid::optValue(browse), "Browse rather than consuming");
     }
 };
 
@@ -60,7 +62,7 @@ const string EOS("eos");
 class Receiver : public MessageListener, public FailoverManager::Command
 {
   public:
-    Receiver(const string& queue, uint messages, bool ignoreDuplicates, uint creditWindow, uint ackFrequency);
+    Receiver(const string& queue, uint messages, bool ignoreDuplicates, uint creditWindow, uint ackFrequency, bool browse);
     void received(Message& message);
     void execute(AsyncSession& session, bool isRetry);
   private:
@@ -75,9 +77,10 @@ class Receiver : public MessageListener, public FailoverManager::Command
     bool isDuplicate(Message& message);
 };
 
-Receiver::Receiver(const string& q, uint messages, bool ignoreDuplicates, uint creditWindow, uint ackFrequency) : 
+Receiver::Receiver(const string& q, uint messages, bool ignoreDuplicates, uint creditWindow, uint ackFrequency, bool browse) : 
     queue(q), count(messages), skipDups(ignoreDuplicates), processed(0), lastSn(0) 
 {
+    if (browse) settings.acquireMode = ACQUIRE_MODE_NOT_ACQUIRED;
     if (creditWindow) settings.flowControl = FlowControl::messageWindow(creditWindow);
     settings.autoAck = ackFrequency;
 }
@@ -107,6 +110,9 @@ void Receiver::execute(AsyncSession& session, bool /*isRetry*/)
     SubscriptionManager subs(session);
     subscription = subs.subscribe(*this, queue, settings);
     subs.run();
+    if (settings.autoAck) {
+        subscription.accept(subscription.getUnaccepted());
+    }
 }
 
 int main(int argc, char ** argv)
@@ -115,7 +121,7 @@ int main(int argc, char ** argv)
     try {
         opts.parse(argc, argv);
         FailoverManager connection(opts.con);
-        Receiver receiver(opts.queue, opts.messages, opts.ignoreDuplicates, opts.creditWindow, opts.ackFrequency);
+        Receiver receiver(opts.queue, opts.messages, opts.ignoreDuplicates, opts.creditWindow, opts.ackFrequency, opts.browse);
         connection.execute(receiver);
         connection.close();
         return 0;

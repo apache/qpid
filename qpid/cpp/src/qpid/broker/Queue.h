@@ -21,6 +21,8 @@
  * under the License.
  *
  */
+
+#include "BrokerImportExport.h"
 #include "OwnershipToken.h"
 #include "Consumer.h"
 #include "Message.h"
@@ -85,6 +87,7 @@ namespace qpid {
             std::vector<std::string> traceExclude;
             QueueListeners listeners;
             Messages messages;
+            Messages pendingDequeues;//used to avoid dequeuing during recovery
             LVQ lvq;
             mutable qpid::sys::Mutex consumerLock;
             mutable qpid::sys::Mutex messageLock;
@@ -100,8 +103,10 @@ namespace qpid {
             RateTracker dequeueTracker;
             int eventMode;
             QueueEvents* eventMgr;
+            bool insertSeqNo;
+            std::string seqNoKey;
 
-            void push(boost::intrusive_ptr<Message>& msg);
+            void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             bool seek(QueuedMessage& msg, Consumer::shared_ptr position);
             bool getNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
@@ -149,13 +154,14 @@ namespace qpid {
 
             typedef std::vector<shared_ptr> vector;
 
-            Queue(const string& name, bool autodelete = false, 
-                  MessageStore* const store = 0, 
-                  const OwnershipToken* const owner = 0,
-                  management::Manageable* parent = 0);
-            ~Queue();
+            QPID_BROKER_EXTERN Queue(const string& name,
+                                     bool autodelete = false, 
+                                     MessageStore* const store = 0, 
+                                     const OwnershipToken* const owner = 0,
+                                     management::Manageable* parent = 0);
+            QPID_BROKER_EXTERN ~Queue();
 
-            bool dispatch(Consumer::shared_ptr);
+            QPID_BROKER_EXTERN bool dispatch(Consumer::shared_ptr);
             /**
              * Check whether there would be a message available for
              * dispatch to this consumer. If not, the consumer will be
@@ -167,24 +173,28 @@ namespace qpid {
             void create(const qpid::framing::FieldTable& settings);
 
             // "recovering" means we are doing a MessageStore recovery.
-            void configure(const qpid::framing::FieldTable& settings, bool recovering = false);
+            QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings,
+                                              bool recovering = false);
             void destroy();
-            void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
-            void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
+            QPID_BROKER_EXTERN void bound(const string& exchange,
+                                          const string& key,
+                                          const qpid::framing::FieldTable& args);
+            QPID_BROKER_EXTERN void unbind(ExchangeRegistry& exchanges,
+                                           Queue::shared_ptr shared_ref);
 
-            bool acquire(const QueuedMessage& msg);
+            QPID_BROKER_EXTERN bool acquire(const QueuedMessage& msg);
             bool acquireMessageAt(const qpid::framing::SequenceNumber& position, QueuedMessage& message);
 
             /**
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
              */
-            void deliver(boost::intrusive_ptr<Message>& msg);
+            QPID_BROKER_EXTERN void deliver(boost::intrusive_ptr<Message>& msg);
             /**
              * Dispatches the messages immediately to a consumer if
              * one is available or stores it for later if not.
              */
-            void process(boost::intrusive_ptr<Message>& msg);
+            QPID_BROKER_EXTERN void process(boost::intrusive_ptr<Message>& msg);
             /**
              * Returns a message to the in-memory queue (due to lack
              * of acknowledegement from a receiver). If a consumer is
@@ -197,17 +207,18 @@ namespace qpid {
              */
             void recover(boost::intrusive_ptr<Message>& msg);
 
-            void consume(Consumer::shared_ptr c, bool exclusive = false);
-            void cancel(Consumer::shared_ptr c);
+            QPID_BROKER_EXTERN void consume(Consumer::shared_ptr c,
+                                            bool exclusive = false);
+            QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
             uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
-            void purgeExpired();
+            QPID_BROKER_EXTERN void purgeExpired();
 
             //move qty # of messages to destination Queue destq
             uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
 
-            uint32_t getMessageCount() const;
-            uint32_t getConsumerCount() const;
+            QPID_BROKER_EXTERN uint32_t getMessageCount() const;
+            QPID_BROKER_EXTERN uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }
             bool isExclusiveOwner(const OwnershipToken* const o) const;
             void releaseExclusiveOwnership();
@@ -223,8 +234,8 @@ namespace qpid {
             /**
              * used to take messages from in memory and flush down to disk.
              */
-            void setLastNodeFailure();
-            void clearLastNodeFailure();
+            QPID_BROKER_EXTERN void setLastNodeFailure();
+            QPID_BROKER_EXTERN void clearLastNodeFailure();
 
             bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
             /**
@@ -240,7 +251,7 @@ namespace qpid {
             /**
              * Gets the next available message 
              */
-            QueuedMessage get();
+            QPID_BROKER_EXTERN QueuedMessage get();
 
             /** Get the message at position pos */
             QueuedMessage find(framing::SequenceNumber pos) const;
@@ -290,6 +301,11 @@ namespace qpid {
             void setPosition(framing::SequenceNumber pos);
             int getEventMode();
             void setQueueEventManager(QueueEvents&);
+            void insertSequenceNumbers(const std::string& key);
+            /**
+             * Notify queue that recovery has completed.
+             */
+            void recoveryComplete();
         };
     }
 }

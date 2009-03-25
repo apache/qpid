@@ -33,7 +33,7 @@ struct MessageUtils
     static boost::intrusive_ptr<Message> createMessage(const string& exchange="", const string& routingKey="", 
                                                        const Uuid& messageId=Uuid(true), uint64_t contentSize = 0)
     {
-        boost::intrusive_ptr<Message> msg(new Message());
+        boost::intrusive_ptr<broker::Message> msg(new broker::Message());
 
         AMQFrame method(( MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
         AMQFrame header((AMQHeaderBody()));

@@ -25,6 +25,7 @@
 #include "qpid/Options.h"
 #include "qpid/log/Options.h"
 #include "qpid/Url.h"
+#include "qpid/client/ClientImportExport.h"
 
 #include <iostream>
 #include <exception>
@@ -42,14 +43,14 @@ namespace client {
  */
 struct ConnectionSettings {
 
-    ConnectionSettings();
-    virtual ~ConnectionSettings();
+    QPID_CLIENT_EXTERN ConnectionSettings();
+    QPID_CLIENT_EXTERN virtual ~ConnectionSettings();
 
     /**
      * Allows socket to be configured; default only sets tcp-nodelay
      * based on the flag set. Can be overridden.
      */
-    virtual void configureSocket(qpid::sys::Socket&) const;
+    QPID_CLIENT_EXTERN virtual void configureSocket(qpid::sys::Socket&) const;
 
     /**
      * The protocol used for the connection (defaults to 'tcp')

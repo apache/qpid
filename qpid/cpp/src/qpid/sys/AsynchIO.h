@@ -22,7 +22,7 @@
  */
 
 #include "qpid/sys/IntegerTypes.h"
-
+#include "qpid/CommonImportExport.h"
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -45,9 +45,9 @@ private:
     AsynchAcceptorPrivate* impl;
 
 public:
-    AsynchAcceptor(const Socket& s, Callback callback);
-    ~AsynchAcceptor();
-    void start(boost::shared_ptr<Poller> poller);
+    QPID_COMMON_EXTERN AsynchAcceptor(const Socket& s, Callback callback);
+    QPID_COMMON_EXTERN ~AsynchAcceptor();
+    QPID_COMMON_EXTERN void start(boost::shared_ptr<Poller> poller);
 };
 
 /*
@@ -65,7 +65,7 @@ public:
     // create a correctly typed object. The platform code also manages
     // deletes. To correctly manage heaps when needed, the allocate and
     // delete should both be done from the same class/library.
-    static AsynchConnector* create(const Socket& s,
+    QPID_COMMON_EXTERN static AsynchConnector* create(const Socket& s,
                                    boost::shared_ptr<Poller> poller,
                                    std::string hostname,
                                    uint16_t port,
@@ -121,7 +121,7 @@ public:
     // create a correctly typed object. The platform code also manages
     // deletes. To correctly manage heaps when needed, the allocate and
     // delete should both be done from the same class/library.
-    static AsynchIO* create(const Socket& s,
+    QPID_COMMON_EXTERN static AsynchIO* create(const Socket& s,
                             ReadCallback rCb,
                             EofCallback eofCb,
                             DisconnectCallback disCb,

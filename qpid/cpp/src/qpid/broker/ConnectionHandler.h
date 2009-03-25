@@ -25,10 +25,8 @@
 #include "SaslAuthenticator.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQP_ClientOperations.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
-#include "qpid/framing/AMQP_ServerProxy.h"
+#include "qpid/framing/AMQP_AllOperations.h"
+#include "qpid/framing/AMQP_AllProxy.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -44,11 +42,9 @@ class SecureConnection;
 
 class ConnectionHandler : public framing::FrameHandler
 {
-    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler, 
-        public framing::AMQP_ClientOperations::ConnectionHandler
+    struct Handler : public framing::AMQP_AllOperations::ConnectionHandler
     {
-        framing::AMQP_ClientProxy::Connection client;
-        framing::AMQP_ServerProxy::Connection server;
+        framing::AMQP_AllProxy::Connection proxy;
         Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;

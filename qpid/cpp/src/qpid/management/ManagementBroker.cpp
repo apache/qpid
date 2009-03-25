@@ -80,7 +80,7 @@ ManagementBroker::RemoteAgent::~RemoteAgent ()
 }
 
 ManagementBroker::ManagementBroker () :
-    threadPoolSize(1), interval(10), broker(0)
+    threadPoolSize(1), interval(10), broker(0), startTime(uint64_t(Duration(now())))
 {
     nextObjectId   = 1;
     brokerBank     = 1;
@@ -346,6 +346,9 @@ void ManagementBroker::periodicProcessing (void)
     string              routingKey;
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
+    uint64_t uptime = uint64_t(Duration(now())) - startTime;
+    static_cast<_qmf::Broker*>(broker->GetManagementObject())->set_uptime(uptime);
+
     moveNewObjectsLH();
 
     if (clientWasAdded) {
@@ -515,6 +518,7 @@ void ManagementBroker::handleMethodRequestLH (Buffer& inBuffer, string replyToKe
         else
             try {
                 outBuffer.record();
+                Mutex::ScopedUnlock u(userLock);
                 iter->second->doMethod(methodName, inBuffer, outBuffer);
             } catch(exception& e) {
                 outBuffer.restore();
@@ -844,6 +848,9 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
 
+            if (object->getConfigChanged() || object->getInstChanged())
+                object->setUpdateTime();
+
             encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);
             object->writeStatistics(outBuffer, true);
@@ -864,6 +871,9 @@ void ManagementBroker::handleGetQueryLH (Buffer& inBuffer, string replyToKey, ui
         if (object->getClassName () == className) {
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
+
+            if (object->getConfigChanged() || object->getInstChanged())
+                object->setUpdateTime();
 
             encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);

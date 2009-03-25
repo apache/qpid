@@ -21,7 +21,9 @@
 #include "Connection.h"
 #include "UpdateClient.h"
 #include "FailoverExchange.h"
+#include "UpdateExchange.h"
 
+#include "qpid/assert.h"
 #include "qmf/org/apache/qpid/cluster/ArgsClusterStopClusterNode.h"
 #include "qmf/org/apache/qpid/cluster/Package.h"
 #include "qpid/broker/Broker.h"
@@ -91,9 +93,10 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     cpg(*this),
     name(settings.name),
     myUrl(settings.url.empty() ? Url() : Url(settings.url)),
-    myId(cpg.self()),
+    self(cpg.self()),
     readMax(settings.readMax),
     writeEstimate(settings.writeEstimate),
+    expiryPolicy(new ExpiryPolicy(mcast, self, broker.getTimer())),
     mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),
     deliverEventQueue(boost::bind(&Cluster::deliveredEvent, this, _1),
@@ -104,15 +107,12 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
                       boost::bind(&Cluster::leave, this),
                       "Error delivering frames",
                       poller),
-    connections(*this),
-    decoder(boost::bind(&PollableFrameQueue::push, &deliverFrameQueue, _1), connections),
-    expiryPolicy(new ExpiryPolicy(boost::bind(&Cluster::isLeader, this), mcast, myId, broker.getTimer())),
-    frameId(0),
     initialized(false),
+    decoder(boost::bind(&Cluster::deliverFrame, this, _1)),
+    discarding(true),
     state(INIT),
     lastSize(0),
-    lastBroker(false),
-    sequence(0)
+    lastBroker(false)
 {
     mAgent = ManagementAgent::Singleton::getInstance();
     if (mAgent != 0){
@@ -122,7 +122,13 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
         mgmtObject->set_status("JOINING");
     }
 
+    // Failover exchange provides membership updates to clients.
     failoverExchange.reset(new FailoverExchange(this));
+    broker.getExchanges().registerExchange(failoverExchange);
+
+    // Update exchange is used during updates to replicate messages without modifying delivery-properties.exchange.
+    broker.getExchanges().registerExchange(boost::shared_ptr<broker::Exchange>(new UpdateExchange(this)));
+
     if (settings.quorum) quorum.init();
     cpg.join(name);
     // pump the CPG dispatch manually till we get initialized. 
@@ -149,21 +155,21 @@ void Cluster::initialize() {
 
 // Called in connection thread to insert a client connection.
 void Cluster::addLocalConnection(const boost::intrusive_ptr<Connection>& c) {
-    Lock l(lock);
-    connections.insert(c);
+    localConnections.insert(c);
 }
 
 // Called in connection thread to insert an updated shadow connection.
 void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
-    Lock l(lock);
-    assert(state <= UPDATEE);   // Only during update.
-    connections.insert(c);
+    // Safe to use connections here because we're pre-catchup, either
+    // discarding or stalled, so deliveredFrame is not processing any
+    // connection events.
+    assert(discarding);         
+    connections.insert(ConnectionMap::value_type(c->getId(), c));
 }
 
+// Called by Connection::deliverClose() in deliverFrameQueue thread.
 void Cluster::erase(const ConnectionId& id) {
-    // Called only by Connection::deliverClose in deliver thread, no need to lock.
     connections.erase(id);
-    decoder.erase(id);
 }
 
 std::vector<string> Cluster::getIds() const {
@@ -193,7 +199,6 @@ void Cluster::leave(Lock&) {
     if (state != LEFT) {
         state = LEFT;
         QPID_LOG(notice, *this << " leaving cluster " << name);
-        connections.clear();
         try { broker.shutdown(); }
         catch (const std::exception& e) {
             QPID_LOG(critical, *this << " error during broker shutdown: " << e.what());
@@ -213,52 +218,88 @@ void Cluster::deliver(
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     Event e(Event::decodeCopy(from, buf));
-    e.setSequence(sequence++);
-    if (from == myId)  // Record self-deliveries for flow control.
+    if (from == self)  // Record self-deliveries for flow control.
         mcast.selfDeliver(e);
-    deliver(e);
+    deliverEvent(e);
 }
 
-void Cluster::deliver(const Event& e) {
-    if (state == LEFT) return;
-    QPID_LATENCY_INIT(e);
+void Cluster::deliverEvent(const Event& e) {
     deliverEventQueue.push(e);
 }
 
-// Handler for deliverEventQueue
-void Cluster::deliveredEvent(const Event& e) {
-    QPID_LATENCY_RECORD("delivered event queue", e);
-    Buffer buf(const_cast<char*>(e.getData()), e.getSize());
-    if (e.getType() == CONTROL) {
-        AMQFrame frame;
-        while (frame.decode(buf)) 
-            deliverFrameQueue.push(EventFrame(e, frame));
-    }
-    else if (e.getType() == DATA)
-        decoder.decode(e, e.getData());
+void Cluster::deliverFrame(const EventFrame& e) {
+    deliverFrameQueue.push(e);
 }
 
-// Handler for deliverFrameQueue
+// Handler for deliverEventQueue.
+// This thread decodes frames from events.
+void Cluster::deliveredEvent(const Event& e) {
+        QPID_LOG(trace, *this << " DLVR: " << e);
+    if (e.isCluster()) {
+        EventFrame ef(e, e.getFrame());
+        // Stop the deliverEventQueue on update offers.
+        // This preserves the connection decoder fragments for an update.
+        ClusterUpdateOfferBody* offer = dynamic_cast<ClusterUpdateOfferBody*>(ef.frame.getBody());
+        if (offer)
+            deliverEventQueue.stop();
+        deliverFrame(ef);
+    }
+    else if(!discarding) {    
+        if (e.isControl())
+            deliverFrame(EventFrame(e, e.getFrame()));
+        else
+            decoder.decode(e, e.getData());
+}
+    else // Discard connection events if discarding is set.
+        QPID_LOG(trace, *this << " DROP: " << e);
+}
+
+// Handler for deliverFrameQueue.
+// This thread executes the main logic.
 void Cluster::deliveredFrame(const EventFrame& e) {
     Mutex::ScopedLock l(lock);
-    const_cast<AMQFrame&>(e.frame).setClusterId(frameId++);
-    QPID_LOG(trace, *this << " DLVR: " << e);
-    QPID_LATENCY_RECORD("delivered frame queue", e.frame);
-    if (e.isCluster()) {        // Cluster control frame
+    if (e.isCluster()) {
+        QPID_LOG(trace, *this << " DLVR: " << e);
         ClusterDispatcher dispatch(*this, e.connectionId.getMember(), l);
         if (!framing::invoke(dispatch, *e.frame.getBody()).wasHandled())
             throw Exception(QPID_MSG("Invalid cluster control"));
     }
-    else {                      // Connection frame.
-        if (state <= UPDATEE) {
-            QPID_LOG(trace, *this << " DROP: " << e);
-            return;
-        }
-        boost::intrusive_ptr<Connection> connection = connections.get(e.connectionId);
-        if (connection)         // Ignore frames to closed local connections.
+    else if (state >= CATCHUP) {
+        QPID_LOG(trace, *this << " DLVR:  " << e);
+        ConnectionPtr connection = getConnection(e.connectionId, l);
+        if (connection)
             connection->deliveredFrame(e);
     }
-    QPID_LATENCY_RECORD("processed", e.frame);
+    else // Drop connection frames while state < CATCHUP
+        QPID_LOG(trace, *this << " DROP: " << e);        
+}
+
+// Called in deliverFrameQueue thread
+ConnectionPtr Cluster::getConnection(const ConnectionId& id, Lock&) {
+    ConnectionPtr cp;
+    ConnectionMap::iterator i = connections.find(id);
+    if (i != connections.end())
+        cp = i->second;
+    else {
+        if(id.getMember() == self) 
+            cp = localConnections.getErase(id);
+        else {
+            // New remote connection, create a shadow.
+            std::ostringstream mgmtId;
+            mgmtId << id;
+            cp = new Connection(*this, shadowOut, mgmtId.str(), id);
+        }
+        if (cp)
+            connections.insert(ConnectionMap::value_type(id, cp));
+    }
+    return cp;
+}
+
+Cluster::ConnectionVector Cluster::getConnections(Lock&) {
+    ConnectionVector result(connections.size());
+    std::transform(connections.begin(), connections.end(), result.begin(),
+                   boost::bind(&ConnectionMap::value_type::second, _1));
+    return result;
 }
   
 struct AddrList {
@@ -306,42 +347,45 @@ void Cluster::configChange (
     std::string addresses;
     for (cpg_address* p = current; p < current+nCurrent; ++p) 
         addresses.append(MemberId(*p).str());
-    deliver(Event::control(ClusterConfigChangeBody(ProtocolVersion(), addresses), myId));
+    deliverEvent(Event::control(ClusterConfigChangeBody(ProtocolVersion(), addresses), self));
 }
 
 void Cluster::setReady(Lock&) {
     state = READY;
     if (mgmtObject!=0) mgmtObject->set_status("ACTIVE");
     mcast.release();
+    broker.getQueueEvents().enable();
 }
 
 void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& l) {
     bool memberChange = map.configChange(addresses);
     if (state == LEFT) return;
     
-    if (!map.isAlive(myId)) {  // Final config change.
+    if (!map.isAlive(self)) {  // Final config change.
         leave(l);
         return;
     }
 
     if (state == INIT) {        // First configChange
         if (map.aliveCount() == 1) {
-            setClusterId(true);
+            setClusterId(true, l);
+            discarding = false;
             setReady(l);
-            map = ClusterMap(myId, myUrl, true);
+            map = ClusterMap(self, myUrl, true);
             memberUpdate(l);
             QPID_LOG(notice, *this << " first in cluster");
         }
         else {                  // Joining established group.
             state = JOINER;
             QPID_LOG(info, *this << " joining cluster: " << map);
-            mcast.mcastControl(ClusterUpdateRequestBody(ProtocolVersion(), myUrl.str()), myId);
+            mcast.mcastControl(ClusterUpdateRequestBody(ProtocolVersion(), myUrl.str()), self);
             elders = map.getAlive();
-            elders.erase(myId);
+            elders.erase(self);
             broker.getLinks().setPassive(true);
+            broker.getQueueEvents().disable();
         }
-    }
-    else if (state >= READY && memberChange) {
+    } 
+    else if (state >= CATCHUP && memberChange) {
         memberUpdate(l);
         elders = ClusterMap::intersection(elders, map.getAlive());
         if (elders.empty()) {
@@ -351,13 +395,11 @@ void Cluster::configChange(const MemberId&, const std::string& addresses, Lock& 
     }
 }
 
-bool Cluster::isLeader() const { return elders.empty(); }
-
-void Cluster::tryMakeOffer(const MemberId& id, Lock& ) {
+void Cluster::makeOffer(const MemberId& id, Lock& ) {
     if (state == READY && map.isJoiner(id)) {
         state = OFFER;
         QPID_LOG(info, *this << " send update-offer to " << id);
-        mcast.mcastControl(ClusterUpdateOfferBody(ProtocolVersion(), id, clusterId), myId);
+        mcast.mcastControl(ClusterUpdateOfferBody(ProtocolVersion(), id, clusterId), self);
     }
 }
 
@@ -367,88 +409,89 @@ void Cluster::tryMakeOffer(const MemberId& id, Lock& ) {
 // callbacks will be invoked.
 // 
 void Cluster::brokerShutdown()  {
-    if (state != LEFT) {
-        try { cpg.shutdown(); }
-        catch (const std::exception& e) {
-            QPID_LOG(error, *this << " shutting down CPG: " << e.what());
-        }
+    try { cpg.shutdown(); }
+    catch (const std::exception& e) {
+        QPID_LOG(error, *this << " shutting down CPG: " << e.what());
     }
     delete this;
 }
 
 void Cluster::updateRequest(const MemberId& id, const std::string& url, Lock& l) {
     map.updateRequest(id, url);
-    tryMakeOffer(id, l);
+    makeOffer(id, l);
 }
 
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
     if (map.ready(id, Url(url))) 
         memberUpdate(l);
-    if (state == CATCHUP && id == myId) {
+    if (state == CATCHUP && id == self) {
         setReady(l);
         QPID_LOG(notice, *this << " caught up, active cluster member");
     }
 }
 
 void Cluster::updateOffer(const MemberId& updater, uint64_t updateeInt, const Uuid& uuid, Lock& l) {
+    // NOTE: deliverEventQueue has been stopped at the update offer by
+    // deliveredEvent in case an update is required.
     if (state == LEFT) return;
     MemberId updatee(updateeInt);
     boost::optional<Url> url = map.updateOffer(updater, updatee);
-    if (updater == myId) {
+    if (updater == self) {
         assert(state == OFFER);
-        if (url) {              // My offer was first.
+        if (url)               // My offer was first.
             updateStart(updatee, *url, l);
-        }
         else {                  // Another offer was first.
+            deliverEventQueue.start(); // Don't need to update
             setReady(l);
             QPID_LOG(info, *this << " cancelled update offer to " << updatee);
-            tryMakeOffer(map.firstJoiner(), l); // Maybe make another offer.
+            makeOffer(map.firstJoiner(), l); // Maybe make another offer.
         }
     }
-    else if (updatee == myId && url) {
+    else if (updatee == self && url) {
         assert(state == JOINER);
-        setClusterId(uuid);
+        setClusterId(uuid, l);
         state = UPDATEE;
         QPID_LOG(info, *this << " receiving update from " << updater);
-        deliverFrameQueue.stop();
         checkUpdateIn(l);
     }
+    else
+        deliverEventQueue.start(); // Don't need to update
 }
 
-void Cluster::updateStart(const MemberId& updatee, const Url& url, Lock&) {
+void Cluster::updateStart(const MemberId& updatee, const Url& url, Lock& l) {
+    // NOTE: deliverEventQueue is already stopped at the stall point by deliveredEvent.
     if (state == LEFT) return;
     assert(state == OFFER);
     state = UPDATER;
-    QPID_LOG(info, *this << " stall for update to " << updatee << " at " << url);
-    deliverFrameQueue.stop();
-    if (updateThread.id()) updateThread.join(); // Join the previous updatethread.
+    QPID_LOG(info, *this << " sending update to " << updatee << " at " << url);
+    if (updateThread.id())
+        updateThread.join(); // Join the previous updateThread to avoid leaks.
     client::ConnectionSettings cs;
     cs.username = settings.username;
     cs.password = settings.password;
     cs.mechanism = settings.mechanism;
     updateThread = Thread(
-        new UpdateClient(myId, updatee, url, broker, map, frameId, connections.values(),
+        new UpdateClient(self, updatee, url, broker, map, *expiryPolicy, getConnections(l), decoder,
                          boost::bind(&Cluster::updateOutDone, this),
                          boost::bind(&Cluster::updateOutError, this, _1),
                          cs));
 }
 
 // Called in update thread.
-void Cluster::updateInDone(const ClusterMap& m, uint64_t fid) {
+void Cluster::updateInDone(const ClusterMap& m) {
     Lock l(lock);
     updatedMap = m;
-    frameId = fid;
     checkUpdateIn(l);
 }
 
-void Cluster::checkUpdateIn(Lock& ) {
-    if (state == LEFT) return;
+void Cluster::checkUpdateIn(Lock&) {
     if (state == UPDATEE && updatedMap) {
         map = *updatedMap;
-        mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), myId);
+        mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
         state = CATCHUP;
+        discarding = false;     // ok to set, we're stalled for update.
         QPID_LOG(info, *this << " received update, starting catch-up");
-        deliverFrameQueue.start();
+        deliverEventQueue.start();
     }
 }
 
@@ -462,8 +505,8 @@ void Cluster::updateOutDone(Lock& l) {
     assert(state == UPDATER);
     state = READY;
     mcast.release();
-    deliverFrameQueue.start();
-    tryMakeOffer(map.firstJoiner(), l); // Try another offer
+    deliverEventQueue.start();       // Start processing events again.
+    makeOffer(map.firstJoiner(), l); // Try another offer
 }
 
 void Cluster::updateOutError(const std::exception& e)  {
@@ -487,7 +530,7 @@ Manageable::status_t Cluster::ManagementMethod (uint32_t methodId, Args& args, s
         {
             _qmf::ArgsClusterStopClusterNode& iargs = (_qmf::ArgsClusterStopClusterNode&) args;
             stringstream stream;
-            stream << myId;
+            stream << self;
             if (iargs.i_brokerId == stream.str())
                 stopClusterNode(l);
         }
@@ -508,7 +551,7 @@ void Cluster::stopClusterNode(Lock& l) {
 
 void Cluster::stopFullCluster(Lock& ) {
     QPID_LOG(notice, *this << " shutting down cluster " << name);
-    mcast.mcastControl(ClusterShutdownBody(), myId);
+    mcast.mcastControl(ClusterShutdownBody(), self);
 }
 
 void Cluster::memberUpdate(Lock& l) {
@@ -518,13 +561,13 @@ void Cluster::memberUpdate(Lock& l) {
     size_t size = urls.size();
     failoverExchange->setUrls(urls);
 
-    if (size == 1 && lastSize > 1 && state >= READY) { 
-        QPID_LOG(info, *this << " last broker standing, update queue policies");
+    if (size == 1 && lastSize > 1 && state >= CATCHUP) { 
+        QPID_LOG(notice, *this << " last broker standing, update queue policies");
         lastBroker = true;
         broker.getQueues().updateQueueClusterState(true);
     }
     else if (size > 1 && lastBroker) {
-        QPID_LOG(info, *this << " last broker standing joined by " << size-1 << " replicas, updating queue policies" << size);
+        QPID_LOG(notice, *this << " last broker standing joined by " << size-1 << " replicas, updating queue policies" << size);
         lastBroker = false;
         broker.getQueues().updateQueueClusterState(false);
     }
@@ -546,17 +589,23 @@ void Cluster::memberUpdate(Lock& l) {
         mgmtObject->set_memberIDs(idstr);
     }
 
-    // Close connections belonging to members that have now been excluded
-    connections.update(myId, map);
+    // Erase connections belonging to members that have left the cluster.
+    ConnectionMap::iterator i = connections.begin();
+    while (i != connections.end()) {
+        ConnectionMap::iterator j = i++;
+        MemberId m = j->second->getId().getMember();
+        if (m != self && !map.isMember(m))
+            connections.erase(j);
+    }
 }
 
 std::ostream& operator<<(std::ostream& o, const Cluster& cluster) {
     static const char* STATE[] = { "INIT", "JOINER", "UPDATEE", "CATCHUP", "READY", "OFFER", "UPDATER", "LEFT" };
-    return o << cluster.myId << "(" << STATE[cluster.state] << ")";
+    return o << cluster.self << "(" << STATE[cluster.state] << ")";
 }
 
 MemberId Cluster::getId() const {
-    return myId;            // Immutable, no need to lock.
+    return self;            // Immutable, no need to lock.
 }
 
 broker::Broker& Cluster::getBroker() const {
@@ -571,11 +620,11 @@ void Cluster::checkQuorum() {
     }
 }
 
-void Cluster::setClusterId(const Uuid& uuid) {
+void Cluster::setClusterId(const Uuid& uuid, Lock&) {
     clusterId = uuid;
     if (mgmtObject) {
         stringstream stream;
-        stream << myId;
+        stream << self;
         mgmtObject->set_clusterID(clusterId.str());
         mgmtObject->set_memberID(stream.str());
     }

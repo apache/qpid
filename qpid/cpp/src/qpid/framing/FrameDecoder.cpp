@@ -21,8 +21,9 @@
 #include "FrameDecoder.h"
 #include "Buffer.h"
 #include "qpid/log/Statement.h"
-#include <algorithm>
 #include "qpid/framing/reply_exceptions.h"
+#include <algorithm>
+#include <string.h>
 
 namespace qpid {
 namespace framing {
@@ -65,6 +66,15 @@ bool FrameDecoder::decode(Buffer& buffer) {
         }
     }
     return false;
+}
+
+void FrameDecoder::setFragment(const char* data, size_t size) {
+    fragment.resize(size);
+    ::memcpy(&fragment[0], data, size);
+}
+
+std::pair<const char*, size_t> FrameDecoder::getFragment() const {
+    return std::pair<const char*, size_t>(&fragment[0], fragment.size());
 }
 
 }} // namespace qpid::framing

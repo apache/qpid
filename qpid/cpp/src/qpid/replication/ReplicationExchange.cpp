@@ -34,11 +34,13 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::replication::constants;
 
+const std::string SEQUENCE_VALUE("qpid.replication-event.sequence");
 ReplicationExchange::ReplicationExchange(const std::string& name, bool durable, 
                                          const FieldTable& args,
                                          QueueRegistry& qr,
                                          Manageable* parent) 
-    : Exchange(name, durable, args, parent), queues(qr), init(false) {}
+    : Exchange(name, durable, args, parent), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
+ {}
 
 std::string ReplicationExchange::getType() const { return typeName; }            
 
@@ -68,31 +70,39 @@ void ReplicationExchange::handleEnqueueEvent(const FieldTable* args, Deliverable
 {
     std::string queueName = args->getAsString(REPLICATION_TARGET_QUEUE);
     Queue::shared_ptr queue = queues.find(queueName);
-    FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
-    headers.erase(REPLICATION_TARGET_QUEUE);
-    headers.erase(REPLICATION_EVENT_SEQNO);
-    headers.erase(REPLICATION_EVENT_TYPE);
-    msg.deliverTo(queue);
-    QPID_LOG(debug, "Enqueued replicated message onto " << queue);
+    if (queue) {
+        FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
+        headers.erase(REPLICATION_TARGET_QUEUE);
+        headers.erase(REPLICATION_EVENT_SEQNO);
+        headers.erase(REPLICATION_EVENT_TYPE);
+        msg.deliverTo(queue);
+        QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
+    } else {
+        QPID_LOG(error, "Cannot enqueue replicated message. Queue " << queueName << " does not exist");
+    }
 }
 
 void ReplicationExchange::handleDequeueEvent(const FieldTable* args)
 {
     std::string queueName = args->getAsString(REPLICATION_TARGET_QUEUE);
     Queue::shared_ptr queue = queues.find(queueName);
-    SequenceNumber position(args->getAsInt(DEQUEUED_MESSAGE_POSITION));
-    
-    QueuedMessage dequeued;
-    if (queue->acquireMessageAt(position, dequeued)) {
-        queue->dequeue(0, dequeued);
-        QPID_LOG(debug, "Processed replicated 'dequeue' event from " << queueName << " at position " << position);
+    if (queue) {
+        SequenceNumber position(args->getAsInt(DEQUEUED_MESSAGE_POSITION));        
+        QueuedMessage dequeued;
+        if (queue->acquireMessageAt(position, dequeued)) {
+            queue->dequeue(0, dequeued);
+            QPID_LOG(debug, "Processed replicated 'dequeue' event from " << queueName << " at position " << position);
+        } else {
+            QPID_LOG(warning, "Could not acquire message " << position << " from " << queueName);
+        }
     } else {
-        QPID_LOG(warning, "Could not acquire message " << position << " from " << queueName);
+        QPID_LOG(error, "Cannot process replicated 'dequeue' event. Queue " << queueName << " does not exist");
     }
 }
 
 bool ReplicationExchange::isDuplicate(const FieldTable* args)
 {
+    if (!args->get(REPLICATION_EVENT_SEQNO)) return false;
     SequenceNumber seqno(args->getAsInt(REPLICATION_EVENT_SEQNO));
     if (!init) {
         init = true;
@@ -126,6 +136,13 @@ bool ReplicationExchange::isBound(Queue::shared_ptr /*queue*/, const string* con
 }
 
 const std::string ReplicationExchange::typeName("replication");
+
+
+void ReplicationExchange::encode(Buffer& buffer) const
+{
+    args.setInt64(std::string(SEQUENCE_VALUE), sequence);
+    Exchange::encode(buffer);
+}
 
 
 struct ReplicationExchangePlugin : Plugin

@@ -32,6 +32,7 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.AMQException;
 
 import java.util.Map;
@@ -87,13 +88,19 @@ public class ExtractResendAndRequeueTest extends TestCase
         while(queueEntries.advance())
         {
             QueueEntry entry = queueEntries.getNode();
-            _unacknowledgedMessageMap.add(entry.getMessage().getMessageId(), entry);
+            _unacknowledgedMessageMap.add(entry.getMessageId(), entry);
 
             // Store the entry for future inspection
             _referenceList.add(entry);
         }
 
         assertEquals("Map does not contain correct setup data", INITIAL_MSG_COUNT, _unacknowledgedMessageMap.size());
+    }
+
+    public void tearDown() throws Exception
+    {
+        //Ensure we close the registry that the MockAMQQueue will create
+        ApplicationRegistry.getInstance().close();
     }
 
     /**

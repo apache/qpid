@@ -26,18 +26,32 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <string.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <vector>
 
+#include <boost/assign.hpp>
+
+#include "qpid/framing/Uuid.h"
+
 #include <ForkedBroker.h>
+#include <qpid/client/Connection.h>
+
+
 
 
 
 
 using namespace std;
+using boost::assign::list_of;
+using namespace qpid::framing;
+using namespace qpid::client;
+
+
 
 
 typedef vector<ForkedBroker *> brokerVector;
@@ -51,11 +65,34 @@ typedef enum
 childStatus;
 
 
+typedef enum
+{
+    NO_TYPE,
+    DECLARING_CLIENT,
+    SENDING_CLIENT,
+    RECEIVING_CLIENT
+}
+childType;
+
+
+ostream& operator<< ( ostream& os, const childType& ct ) {
+  switch ( ct ) {
+      case DECLARING_CLIENT:  os << "Declaring Client"; break;
+      case SENDING_CLIENT:    os << "Sending Client";   break;
+      case RECEIVING_CLIENT:  os << "Receiving Client"; break;
+      default:                os << "No Client";        break;
+  }
+
+  return os;
+}
+
+
+
 
 struct child
 {
-    child ( string & name, pid_t pid ) 
-        : name(name), pid(pid), retval(-999), status(RUNNING)
+    child ( string & name, pid_t pid, childType type ) 
+        : name(name), pid(pid), retval(-999), status(RUNNING), type(type)
     { 
         gettimeofday ( & startTime, 0 );
     }
@@ -70,10 +107,18 @@ struct child
     }
 
 
+    void
+    setType ( childType t ) 
+    {
+        type = t;
+    }
+
+
     string name;
     pid_t pid;
     int   retval;
     childStatus status;
+    childType   type;
     struct timeval startTime,
                    stopTime;
 };
@@ -83,10 +128,11 @@ struct child
 
 struct children : public vector<child *>
 { 
+
     void
-    add ( string & name, pid_t pid )
+    add ( string & name, pid_t pid, childType type )
     {
-        push_back(new child ( name, pid ));
+        push_back ( new child ( name, pid, type ) );
     }
 
 
@@ -108,7 +154,7 @@ struct children : public vector<child *>
         child * kid = get ( pid );
         if(! kid)
         {
-            if ( verbosity > 0 )
+            if ( verbosity > 1 )
             {
                 cerr << "children::exited warning: Can't find child with pid " 
                      << pid
@@ -138,10 +184,15 @@ struct children : public vector<child *>
     int
     checkChildren ( )
     {
-        vector<child *>::iterator i;
+       vector<child *>::iterator i;
         for ( i = begin(); i != end(); ++ i )
             if ( (COMPLETED == (*i)->status) && (0 != (*i)->retval) )
-                return (*i)->retval;
+            {
+              cerr << "checkChildren: error on child of type "
+                   << (*i)->type
+                   << endl;
+              return (*i)->retval;
+            }
       
         return 0;
     }
@@ -176,22 +227,43 @@ struct children : public vector<child *>
        If it has been at least that long since a shild stopped
        running, we judge the system to have hung.
     */
-    bool
+    int
     hanging ( int hangTime )
     {
         struct timeval now,
                        duration;
         gettimeofday ( &now, 0 );
 
+        int how_many_hanging = 0;
+
         vector<child *>::iterator i;
         for ( i = begin(); i != end(); ++ i )
         {
-            timersub ( & now, &((*i)->startTime), & duration );
-            if ( duration.tv_sec >= hangTime )
-                return true;
+            //Not in POSIX
+            //timersub ( & now, &((*i)->startTime), & duration );
+            duration.tv_sec = now.tv_sec - (*i)->startTime.tv_sec;
+            duration.tv_usec = now.tv_usec - (*i)->startTime.tv_usec;
+            if (duration.tv_usec < 0) {
+                --duration.tv_sec;
+                duration.tv_usec += 1000000;
+            }
+
+            if ( (COMPLETED != (*i)->status)     // child isn't done running
+                  &&
+                 ( duration.tv_sec >= hangTime ) // it's been too long
+               )
+            {
+                std::cerr << "Child of type " 
+                          << (*i)->type 
+                          << " hanging.   "
+                          << "PID is "
+                          << (*i)->pid
+                          << endl;
+                ++ how_many_hanging;
+            }
         }
         
-        return false;
+        return how_many_hanging;
     }
     
 
@@ -206,9 +278,8 @@ children allMyChildren;
 
 
 void 
-childExit ( int signalNumber ) 
+childExit ( int ) 
 {
-    signalNumber ++;  // Now maybe the compiler willleave me alone?
     int  childReturnCode; 
     pid_t pid = waitpid ( 0, & childReturnCode, WNOHANG);  
 
@@ -235,10 +306,9 @@ mrand ( int minDesiredVal, int maxDesiredVal ) {
 
 
 void
-makeClusterName ( string & s, int & num ) {
-    num = mrand(1000);
+makeClusterName ( string & s ) {
     stringstream ss;
-    ss << "soakTestCluster_" << num;
+    ss << "soakTestCluster_" << Uuid(true).str();
     s = ss.str();
 }
 
@@ -263,66 +333,136 @@ printBrokers ( brokerVector & brokers )
 
 
 
+ForkedBroker * newbie = 0;
+int newbie_port       = 0;
+
+
+
+bool
+wait_for_newbie ( )
+{
+  if ( ! newbie )
+    return true;
+
+  try 
+  {
+    Connection connection;
+    connection.open ( "127.0.0.1", newbie_port );
+    connection.close();
+    newbie = 0;  // He's no newbie anymore!
+    return true;
+  }
+  catch ( const std::exception& error )
+  {
+    std::cerr << "wait_for_newbie error: " 
+              << error.what() 
+              << endl;
+    return false;
+  }
+}
+
+
+
 
 void
 startNewBroker ( brokerVector & brokers,
                  char const * srcRoot,
                  char const * moduleDir,
-                 string const clusterName ) 
+                 string const clusterName,
+                 int verbosity ) 
 {
     static int brokerId = 0;
     stringstream path, prefix, module;
     module << moduleDir << "/cluster.so";
     path << srcRoot << "/qpidd";
-    prefix << "soak-" << brokerId++;
-  
-    const char * const argv[] = 
-    {
-        "qpidd",
-        "-p0",
-        "--load-module=cluster.so",
-        "--cluster-name",
-        clusterName.c_str(),
-        "--auth=no", 
-        "--no-data-dir",
-        "--no-module-dir",
-        "--mgmt-enable=no",
-        "--log-prefix", prefix.str().c_str(),
-        0
-    };
+    prefix << "soak-" << brokerId;
+    std::vector<std::string> argv = list_of<string>
+        ("qpidd")
+        ("--no-module-dir")
+        ("--load-module=cluster.so")
+        ("--cluster-name")
+        (clusterName)
+        ("--auth=no")
+        ("--no-data-dir")
+        ("--mgmt-enable=no")
+        ("--log-prefix")
+        (prefix.str())
+        ("--log-to-file")
+        (prefix.str()+".log");
 
-    size_t argc = sizeof(argv)/sizeof(argv[0]);
-    brokers.push_back ( new ForkedBroker ( argc, argv ) );
+    newbie = new ForkedBroker ( argv );
+    newbie_port = newbie->getPort();
+    ForkedBroker * broker = newbie;
+
+    if ( verbosity > 0 )
+      std::cerr << "new broker created: pid == " 
+                << broker->getPID() 
+                << " log-prefix == "
+                << "soak-" << brokerId
+                << endl;
+    brokers.push_back ( broker );
+
+    ++ brokerId;
 }
 
 
 
 
 
-void
+bool
 killFrontBroker ( brokerVector & brokers, int verbosity )
 {
+    cerr << "killFrontBroker: waiting for newbie sync...\n";
+    if ( ! wait_for_newbie() )
+      return false;
+    cerr << "killFrontBroker: newbie synced.\n";
+
     if ( verbosity > 0 )
         cout << "killFrontBroker pid: " << brokers[0]->getPID() << " on port " << brokers[0]->getPort() << endl;
     try { brokers[0]->kill(9); }
     catch ( const exception& error ) {
         if ( verbosity > 0 )
-            cout << "error killing broker: " << error.what() << endl;
+        {
+            cout << "error killing broker: " 
+                 << error.what() 
+                 << endl;
+        }
+
+        return false;
     }
     delete brokers[0];
     brokers.erase ( brokers.begin() );
+    return true;
 }
 
 
 
 
 
+/*
+ *  The optional delay is to avoid killing newbie brokers that have just 
+ *  been added and are still in the process of updating.  This causes
+ *  spurious, test-generated errors that scare everybody.
+ */
 void
-killAllBrokers ( brokerVector & brokers )
+killAllBrokers ( brokerVector & brokers, int delay )
 {
+    if ( delay > 0 ) 
+    {
+        std::cerr << "Killing all brokers after delay of " << delay << endl;
+        sleep ( delay );
+    }
+
     for ( uint i = 0; i < brokers.size(); ++ i )
         try { brokers[i]->kill(9); }
-        catch ( ... ) { }
+        catch ( const exception& error ) 
+        { 
+          std::cerr << "killAllBrokers Warning: exception during kill on broker "
+                    << i
+                    << " "
+                    << error.what()
+                    << endl;
+        }
 }
 
 
@@ -339,7 +479,7 @@ runDeclareQueuesClient ( brokerVector brokers,
     string name("declareQueues");
     int port = brokers[0]->getPort ( );
 
-    if ( verbosity > 0 )
+    if ( verbosity > 1 )
         cout << "startDeclareQueuesClient: host:  " 
              << host 
              << "  port: " 
@@ -357,11 +497,11 @@ runDeclareQueuesClient ( brokerVector brokers,
 
     if ( ! pid ) {
         execv ( path, const_cast<char * const *>(&argv[0]) );
-        perror ( "error executing dq: " );
+        perror ( "error executing declareQueues: " );
         return 0;
     }
 
-    allMyChildren.add ( name, pid );
+    allMyChildren.add ( name, pid, DECLARING_CLIENT );
     return pid;
 }
 
@@ -380,12 +520,16 @@ startReceivingClient ( brokerVector brokers,
     string name("receiver");
     int port = brokers[0]->getPort ( );
 
-    if ( verbosity > 0 )
+    if ( verbosity > 1 )
         cout << "startReceivingClient: port " << port << endl;
+
+    // verbosity has to be > 1 to let clients talk.
+    int client_verbosity = (verbosity > 1 ) ? 1 : 0;
+
     char portStr[100];
     char verbosityStr[100];
     sprintf(portStr, "%d", port);
-    sprintf(verbosityStr, "%d", verbosity);
+    sprintf(verbosityStr, "%d", client_verbosity);
 
 
     vector<const char*> argv;
@@ -404,7 +548,7 @@ startReceivingClient ( brokerVector brokers,
         return 0;
     }
 
-    allMyChildren.add ( name, pid );
+    allMyChildren.add ( name, pid, RECEIVING_CLIENT );
     return pid;
 }
 
@@ -424,13 +568,16 @@ startSendingClient ( brokerVector brokers,
     string name("sender");
     int port = brokers[0]->getPort ( );
 
-    if ( verbosity )
+    if ( verbosity > 1)
         cout << "startSenderClient: port " << port << endl;
     char portStr[100];
     char verbosityStr[100];
+    //
+    // verbosity has to be > 1 to let clients talk.
+    int client_verbosity = (verbosity > 1 ) ? 1 : 0;
 
     sprintf ( portStr,      "%d", port);
-    sprintf ( verbosityStr, "%d", verbosity);
+    sprintf ( verbosityStr, "%d", client_verbosity);
 
     vector<const char*> argv;
     argv.push_back ( "replayingSender" );
@@ -449,19 +596,21 @@ startSendingClient ( brokerVector brokers,
         return 0;
     }
 
-    allMyChildren.add ( name, pid );
+    allMyChildren.add ( name, pid, SENDING_CLIENT );
     return pid;
 }
 
 
 
-#define HUNKY_DORY          0
-#define BAD_ARGS            1
-#define CANT_FORK_DQ        2
-#define CANT_FORK_RECEIVER  3
-#define DQ_FAILED           4
-#define ERROR_ON_CHILD      5
-#define HANGING             6
+#define HUNKY_DORY            0
+#define BAD_ARGS              1
+#define CANT_FORK_DQ          2
+#define CANT_FORK_RECEIVER    3
+#define CANT_FORK_SENDER      4
+#define DQ_FAILED             5
+#define ERROR_ON_CHILD        6
+#define HANGING               7
+#define ERROR_KILLING_BROKER  8
 
 
 int
@@ -489,16 +638,15 @@ main ( int argc, char const ** argv )
 
     allMyChildren.verbosity = verbosity;
 
-    int clusterNum;
     string clusterName;
 
     srand ( getpid() );
 
-    makeClusterName ( clusterName, clusterNum );
+    makeClusterName ( clusterName );
 
     brokerVector brokers;
 
-    if ( verbosity > 0 )
+    if ( verbosity > 1 )
         cout << "Starting initial cluster...\n";
 
     int nBrokers = 3;
@@ -506,7 +654,8 @@ main ( int argc, char const ** argv )
         startNewBroker ( brokers,
                          srcRoot,
                          moduleDir, 
-                         clusterName ); 
+                         clusterName,
+                         verbosity ); 
     }
 
 
@@ -518,14 +667,14 @@ main ( int argc, char const ** argv )
      pid_t dqClientPid = 
      runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity );
      if ( -1 == dqClientPid ) {
-         cerr << "failoverSoak error: Couldn't fork declareQueues.\n";
+         cerr << "END_OF_TEST ERROR_START_DECLARE_1\n";
          return CANT_FORK_DQ;
      }
 
      // Don't continue until declareQueues is finished.
      pid_t retval = waitpid ( dqClientPid, & childStatus, 0);
      if ( retval != dqClientPid) {
-         cerr << "failoverSoak error:  waitpid on declareQueues returned value " <<  retval << endl;
+         cerr << "END_OF_TEST ERROR_START_DECLARE_2\n";
          return DQ_FAILED;
      }
      allMyChildren.exited ( dqClientPid, childStatus );
@@ -540,7 +689,7 @@ main ( int argc, char const ** argv )
                               reportFrequency,
                               verbosity );
      if ( -1 == receivingClientPid ) {
-         cerr << "failoverSoak error: Couldn't fork receiver.\n";
+         cerr << "END_OF_TEST ERROR_START_RECEIVER\n";
          return CANT_FORK_RECEIVER;
      }
 
@@ -554,13 +703,13 @@ main ( int argc, char const ** argv )
                             reportFrequency,
                             verbosity );
      if ( -1 == sendingClientPid ) {
-         cerr << "failoverSoak error: Couldn't fork sender.\n";
-         return CANT_FORK_RECEIVER;
+         cerr << "END_OF_TEST ERROR_START_SENDER\n";
+         return CANT_FORK_SENDER;
      }
 
 
-     int minSleep = 3,
-         maxSleep = 6;
+     int minSleep = 2,
+         maxSleep = 4;
 
 
      for ( int totalBrokers = 3; 
@@ -578,11 +727,16 @@ main ( int argc, char const ** argv )
          sleep ( sleepyTime );
 
          // Kill the oldest broker. --------------------------
-         killFrontBroker ( brokers, verbosity );
+         if ( ! killFrontBroker ( brokers, verbosity ) )
+         {
+           allMyChildren.killEverybody();
+           std::cerr << "END_OF_TEST ERROR_BROKER\n";
+           return ERROR_KILLING_BROKER;
+         }
 
          // Sleep for a while. -------------------------
          sleepyTime = mrand ( minSleep, maxSleep );
-         if ( verbosity > 0 )
+         if ( verbosity > 1 )
              cerr << "Sleeping for " << sleepyTime << " seconds.\n";
          sleep ( sleepyTime );
 
@@ -593,22 +747,33 @@ main ( int argc, char const ** argv )
          startNewBroker ( brokers,
                           srcRoot,
                           moduleDir, 
-                          clusterName ); 
+                          clusterName,
+                          verbosity ); 
        
-         if ( verbosity > 0 )
+         if ( verbosity > 1 )
              printBrokers ( brokers );
        
          // If all children have exited, quit.
          int unfinished = allMyChildren.unfinished();
          if ( ! unfinished ) {
-             killAllBrokers ( brokers );
+             killAllBrokers ( brokers, 5 );
 
-             if ( verbosity > 0 )
+             if ( verbosity > 1 )
                  cout << "failoverSoak: all children have exited.\n";
            int retval = allMyChildren.checkChildren();
-           if ( verbosity > 0 )
+           if ( verbosity > 1 )
              std::cerr << "failoverSoak: checkChildren: " << retval << endl;
-           return retval ? ERROR_ON_CHILD : HUNKY_DORY;
+
+           if ( retval )
+           {
+               std::cerr << "END_OF_TEST ERROR_CLIENT\n";
+               return ERROR_ON_CHILD;
+           }
+           else
+           {
+               std::cerr << "END_OF_TEST SUCCESSFUL\n";
+               return HUNKY_DORY;
+           }
          }
 
          // Even if some are still running, if there's an error, quit.
@@ -617,35 +782,38 @@ main ( int argc, char const ** argv )
              if ( verbosity > 0 )
                  cout << "failoverSoak: error on child.\n";
              allMyChildren.killEverybody();
-             killAllBrokers ( brokers );
+             killAllBrokers ( brokers, 5 );
+             std::cerr << "END_OF_TEST ERROR_CLIENT\n";
              return ERROR_ON_CHILD;
          }
 
          // If one is hanging, quit.
          if ( allMyChildren.hanging ( 120 ) )
          {
-             if ( verbosity > 0 )
-                 cout << "failoverSoak: child hanging.\n";
-             allMyChildren.killEverybody();
-             killAllBrokers ( brokers );
+             /*
+              * Don't kill any processes.  Leave alive for questioning.
+              * */
+             std::cerr << "END_OF_TEST ERROR_HANGING\n";
              return HANGING;
          }
 
-         if ( verbosity > 0 ) {
+         if ( verbosity > 1 ) {
            std::cerr << "------- next kill-broker loop --------\n";
            allMyChildren.print();
          }
      }
 
      retval = allMyChildren.checkChildren();
-     if ( verbosity > 0 )
+     if ( verbosity > 1 )
        std::cerr << "failoverSoak: checkChildren: " << retval << endl;
 
-     if ( verbosity > 0 )
+     if ( verbosity > 1 )
          cout << "failoverSoak: maxBrokers reached.\n";
 
      allMyChildren.killEverybody();
-     killAllBrokers ( brokers );
+     killAllBrokers ( brokers, 5 );
+
+     std::cerr << "END_OF_TEST SUCCESSFUL\n";
 
      return retval ? ERROR_ON_CHILD : HUNKY_DORY;
 }

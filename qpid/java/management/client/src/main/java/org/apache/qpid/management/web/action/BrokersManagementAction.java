@@ -42,9 +42,10 @@ import org.apache.qpid.management.domain.services.QMan;
  * This controller is responsible to :
  * 
  * <ul>
- * <li> prepare data for the page that is showing all connected brokers.</li>.
- * </li> connect QMan with a broker on demand.
+ * 	<li> prepare data for the page that is showing all connected brokers.</li>.
+ * 	</li> connect QMan with a broker on demand.
  * </ul>
+ * 
  * @author Andrea Gazzarini
  */
 public class BrokersManagementAction extends HttpServlet
@@ -54,6 +55,11 @@ public class BrokersManagementAction extends HttpServlet
 	/**
 	 * Retrieves all connected brokers (their connection data) and prepare the model that
 	 * is then forwarded to the appropriate view page.
+	 * 
+	 * @param request the http request.
+	 * @param response the http response.
+	 * @throws ServletException in case of failure while forwarding to the view component.
+	 * @throws IOException in case of failure while forwarding to the view component.
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -87,7 +93,13 @@ public class BrokersManagementAction extends HttpServlet
 	}
 	
 	/**
-	 * Connects QMan with a new broker.
+	 * Connects QMan with a new broker and forwards to 
+	 * the brokers list view page.
+	 * 
+	 * @param request the http request.
+	 * @param response the http response.
+	 * @throws ServletException in case of failure while forwarding to the view component.
+	 * @throws IOException in case of failure while forwarding to the view component.
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -123,28 +135,32 @@ public class BrokersManagementAction extends HttpServlet
 				errors.add("Invalid value for \"virtualHost\" attribute. Must be not null.");				
 			}
 			
-			try{
+			try
+			{
 				port = Integer.parseInt(portString);
 			} catch(Exception exception) 
 			{
 				errors.add("Invalid value for \"port\" attribute. Must be not null and must be a number.");
 			}
 			
-			try{
+			try
+			{
 				initialPoolCapacity = Integer.parseInt(initialCapacityString);
 			} catch(Exception exception) 
 			{
 				errors.add("Invalid value for \"Initial Pool Capacity\" attribute. Must be not null and must be a number.");
 			}
 			
-			try{
+			try
+			{
 				maxPoolCapacity = Integer.parseInt(maxCapacityString);
 			} catch(Exception exception) 
 			{
 				errors.add("Invalid value for \"Max Pool Capacity\" attribute. Must be not null and must be a number.");
 			}
 
-			try{
+			try
+			{
 				maxWaitTimeout = Long.parseLong(maxWaitTimeoutString);
 			} catch(Exception exception) 
 			{

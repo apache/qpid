@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/fanout
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=fanout_producer listener

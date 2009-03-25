@@ -63,5 +63,5 @@ public interface TestConstants
 	int SAMPLE_ACCESS_CODE = 1;
 	String YEARS = "years";
 	int SAMPLE_MIN_VALUE = 1;
-	int SAMPLE_MAX_VALUE = 120;	
+	int SAMPLE_MAX_VALUE = 120;		
 }

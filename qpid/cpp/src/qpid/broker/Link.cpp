@@ -158,7 +158,7 @@ void Link::closed (int, std::string text)
     }
 
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
-        (*i)->cancel();
+        (*i)->closed();
         created.push_back(*i);
     }
     active.clear();
@@ -217,20 +217,26 @@ void Link::add(Bridge::shared_ptr bridge)
 
 void Link::cancel(Bridge::shared_ptr bridge)
 {
-    Mutex::ScopedLock mutex(lock);
-
-    for (Bridges::iterator i = created.begin(); i != created.end(); i++) {
-        if ((*i).get() == bridge.get()) {
-            created.erase(i);
-            break;
+    {
+        Mutex::ScopedLock mutex(lock);
+        
+        for (Bridges::iterator i = created.begin(); i != created.end(); i++) {
+            if ((*i).get() == bridge.get()) {
+                created.erase(i);
+                break;
+            }
+        }
+        for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+            if ((*i).get() == bridge.get()) {
+                cancellations.push_back(bridge);
+                bridge->closed();
+                active.erase(i);
+                break;
+            }
         }
     }
-    for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
-        if ((*i).get() == bridge.get()) {
-            bridge->cancel();
-            active.erase(i);
-            break;
-        }
+    if (!cancellations.empty()) {
+        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
     }
 }
 
@@ -242,13 +248,20 @@ void Link::ioThreadProcessing()
         return;
     QPID_LOG(debug, "Link::ioThreadProcessing()");
 
-    //process any pending creates
+    //process any pending creates and/or cancellations
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
             active.push_back(*i);
             (*i)->create(*connection);
         }
         created.clear();
+    }
+    if (!cancellations.empty()) {
+        for (Bridges::iterator i = cancellations.begin(); i != cancellations.end(); ++i) {
+            active.push_back(*i);
+            (*i)->cancel(*connection);
+        }
+        cancellations.clear();
     }
 }
 
@@ -284,7 +297,7 @@ void Link::maintenanceVisit ()
             }
         }
     }
-    else if (state == STATE_OPERATIONAL && !created.empty() && connection != 0)
+    else if (state == STATE_OPERATIONAL && (!created.empty() || !cancellations.empty()) && connection != 0)
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 

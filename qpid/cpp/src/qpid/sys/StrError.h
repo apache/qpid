@@ -23,12 +23,13 @@
  */
 
 #include <string>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace sys {
 
 /** Get the error message for a system number err, e.g. errno. */
-std::string strError(int err);
+QPID_COMMON_EXTERN std::string strError(int err);
 
 }} // namespace qpid
  

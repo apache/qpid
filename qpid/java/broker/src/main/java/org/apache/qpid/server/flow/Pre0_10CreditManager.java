@@ -20,7 +20,7 @@
 */
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 
 public class Pre0_10CreditManager extends AbstractFlowCreditManager implements FlowCreditManager
 {
@@ -123,7 +123,7 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                 && (_messageCreditLimit == 0L || _messageCredit > 0);
     }
 
-    public synchronized boolean useCreditForMessage(final AMQMessage msg)
+    public synchronized boolean useCreditForMessage(final QueueEntry queueEntry)
     {
         if(_messageCreditLimit != 0L)
         {
@@ -137,10 +137,10 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                 }
                 else
                 {
-                    if((_bytesCredit >= msg.getSize()) || (_bytesCredit == _bytesCreditLimit))
+                    if((_bytesCredit >= queueEntry.getSize()) || (_bytesCredit == _bytesCreditLimit))
                     {
                         _messageCredit--;
-                        _bytesCredit -= msg.getSize();
+                        _bytesCredit -= queueEntry.getSize();
 
                         return true;
                     }
@@ -166,9 +166,9 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
             }
             else
             {
-                if((_bytesCredit >= msg.getSize()) || (_bytesCredit == _bytesCreditLimit))
+                if((_bytesCredit >= queueEntry.getSize()) || (_bytesCredit == _bytesCreditLimit))
                 {
-                    _bytesCredit -= msg.getSize();
+                    _bytesCredit -= queueEntry.getSize();
 
                     return true;
                 }

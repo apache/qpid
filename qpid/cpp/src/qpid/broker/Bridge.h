@@ -52,8 +52,9 @@ public:
            const qmf::org::apache::qpid::broker::ArgsLinkBridge& args);
     ~Bridge();
 
-    void create(ConnectionState& c);
-    void cancel();
+    void create(Connection& c);
+    void cancel(Connection& c);
+    void closed();
     void destroy();
     bool isDurable() { return args.i_durable; }
 

@@ -20,15 +20,18 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.AMQException;
-import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.List;
 import java.util.Set;
@@ -38,10 +41,20 @@ public class MockAMQQueue implements AMQQueue
     private boolean _deleted = false;
     private int _queueCount;
     private AMQShortString _name;
+    private VirtualHost _virtualhost;
 
     public MockAMQQueue(String name)
     {
-       _name = new AMQShortString(name);
+        _name = new AMQShortString(name);
+        _virtualhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        try
+        {
+            _virtualhost.getQueueRegistry().registerQueue(this);
+        }
+        catch (AMQException e)
+        {
+            e.printStackTrace(); 
+        }
     }
 
     public AMQShortString getName()
@@ -66,7 +79,7 @@ public class MockAMQQueue implements AMQQueue
 
     public VirtualHost getVirtualHost()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _virtualhost;
     }
 
     public void bind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
@@ -114,6 +127,11 @@ public class MockAMQQueue implements AMQQueue
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean isFlowed()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public int getMessageCount()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
@@ -146,7 +164,7 @@ public class MockAMQQueue implements AMQQueue
 
     public int delete() throws AMQException
     {
-       return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
@@ -215,6 +233,26 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public long getMemoryUsageMaximum()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setMemoryUsageMaximum(long maximumMemoryUsage)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getMemoryUsageMinimum()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setMemoryUsageMinimum(long minimumMemoryUsage)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public long getMaximumMessageSize()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
@@ -270,7 +308,6 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
     public void checkMessageStatus() throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -301,9 +338,9 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void configure(Configuration virtualHostDefaultQueueConfiguration)
+    public long getMemoryUsageCurrent()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public ManagedObject getManagedObject()
@@ -315,4 +352,10 @@ public class MockAMQQueue implements AMQQueue
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    public void setMinimumAlertRepeatGap(long value)
+    {
+
+    }
+
 }

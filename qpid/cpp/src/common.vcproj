@@ -43,8 +43,8 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Debug\common\I386"
-			ConfigurationType="4"
+			IntermediateDirectory="Debug\common\I386"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -73,10 +73,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+                                PreprocessorDefinitions="COMMON_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -88,7 +88,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -96,8 +96,16 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\qpidcommonsd.lib"
+				Name="VCLinkerTool"
+				AdditionalDependencies=" ws2_32.lib rpcrt4.lib"
+				OutputFile="$(OutDir)\qpidcommond.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				ImportLibrary=".\qpidcommond.lib"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -113,13 +121,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid mkdir deploy\include\qpid&#x0D;&#x0A;@if not exist deploy\include\qpid\amqp_0_10 mkdir deploy\include\qpid\amqp_0_10&#x0D;&#x0A;@if not exist deploy\include\qpid\framing mkdir deploy\include\qpid\framing&#x0D;&#x0A;@if not exist deploy\include\qpid\sys\windows mkdir deploy\include\qpid\sys\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\log\windows mkdir deploy\include\qpid\log\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\management mkdir deploy\include\qpid\management&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\*.h deploy\include\qpid\&#x0D;&#x0A;@copy /Y qpid\amqp_0_10\*.h deploy\include\qpid\amqp_0_10\&#x0D;&#x0A;@copy /Y qpid\framing\*.h deploy\include\qpid\framing\&#x0D;&#x0A;@copy /Y qpid\sys\*.h deploy\include\qpid\sys\&#x0D;&#x0A;@copy /Y qpid\sys\windows\*.h deploy\include\qpid\sys\windows\&#x0D;&#x0A;@copy /Y qpid\log\*.h deploy\include\qpid\log\&#x0D;&#x0A;@copy /Y qpid\log\windows\*.h deploy\include\qpid\log\windows\&#x0D;&#x0A;@copy /Y qpid\management\*.h deploy\include\qpid\management\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidcommond.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidcommond.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Release\common\I386"
-			ConfigurationType="4"
+			IntermediateDirectory="Release\common\I386"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -148,8 +157,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="COMMON_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -160,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -168,8 +177,18 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\qpidcommons.lib"
+				Name="VCLinkerTool"
+				AdditionalDependencies=" ws2_32.lib rpcrt4.lib"
+				OutputFile="$(OutDir)\qpidcommon.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary=".\qpidcommon.lib"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -185,13 +204,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid mkdir deploy\include\qpid&#x0D;&#x0A;@if not exist deploy\include\qpid\amqp_0_10 mkdir deploy\include\qpid\amqp_0_10&#x0D;&#x0A;@if not exist deploy\include\qpid\framing mkdir deploy\include\qpid\framing&#x0D;&#x0A;@if not exist deploy\include\qpid\sys\windows mkdir deploy\include\qpid\sys\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\log\windows mkdir deploy\include\qpid\log\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\management mkdir deploy\include\qpid\management&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\*.h deploy\include\qpid\&#x0D;&#x0A;@copy /Y qpid\amqp_0_10\*.h deploy\include\qpid\amqp_0_10\&#x0D;&#x0A;@copy /Y qpid\framing\*.h deploy\include\qpid\framing\&#x0D;&#x0A;@copy /Y qpid\sys\*.h deploy\include\qpid\sys\&#x0D;&#x0A;@copy /Y qpid\sys\windows\*.h deploy\include\qpid\sys\windows\&#x0D;&#x0A;@copy /Y qpid\log\*.h deploy\include\qpid\log\&#x0D;&#x0A;@copy /Y qpid\log\windows\*.h deploy\include\qpid\log\windows\&#x0D;&#x0A;@copy /Y qpid\management\*.h deploy\include\qpid\management\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidcommon.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidcommon.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Debug\common\AMD64"
-			ConfigurationType="4"
+			IntermediateDirectory="Debug\common\AMD64"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -220,10 +240,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+                                PreprocessorDefinitions="COMMON_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -235,7 +255,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -243,8 +263,17 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\qpidcommonsd.lib"
+				Name="VCLinkerTool"
+				AdditionalOptions="/machine:AMD64"
+				AdditionalDependencies=" ws2_32.lib rpcrt4.lib"
+				OutputFile="$(OutDir)\qpidcommond.dll"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				ImportLibrary=".\qpidcommond.lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -260,13 +289,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid mkdir deploy\include\qpid&#x0D;&#x0A;@if not exist deploy\include\qpid\amqp_0_10 mkdir deploy\include\qpid\amqp_0_10&#x0D;&#x0A;@if not exist deploy\include\qpid\framing mkdir deploy\include\qpid\framing&#x0D;&#x0A;@if not exist deploy\include\qpid\sys\windows mkdir deploy\include\qpid\sys\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\log\windows mkdir deploy\include\qpid\log\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\management mkdir deploy\include\qpid\management&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\*.h deploy\include\qpid\&#x0D;&#x0A;@copy /Y qpid\amqp_0_10\*.h deploy\include\qpid\amqp_0_10\&#x0D;&#x0A;@copy /Y qpid\framing\*.h deploy\include\qpid\framing\&#x0D;&#x0A;@copy /Y qpid\sys\*.h deploy\include\qpid\sys\&#x0D;&#x0A;@copy /Y qpid\sys\windows\*.h deploy\include\qpid\sys\windows\&#x0D;&#x0A;@copy /Y qpid\log\*.h deploy\include\qpid\log\&#x0D;&#x0A;@copy /Y qpid\log\windows\*.h deploy\include\qpid\log\windows\&#x0D;&#x0A;@copy /Y qpid\management\*.h deploy\include\qpid\management\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidcommond.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidcommond.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory="."
-			IntermediateDirectory="Static_Release\common\AMD64"
-			ConfigurationType="4"
+			IntermediateDirectory="Release\common\AMD64"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -295,8 +325,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="COMMON_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -307,7 +337,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -315,8 +345,19 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile=".\qpidcommons.lib"
+				Name="VCLinkerTool"
+				AdditionalOptions="/machine:AMD64"
+				AdditionalDependencies=" ws2_32.lib rpcrt4.lib"
+				OutputFile="$(OutDir)\qpidcommon.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary=".\qpidcommon.lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -332,6 +373,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\include\qpid mkdir deploy\include\qpid&#x0D;&#x0A;@if not exist deploy\include\qpid\amqp_0_10 mkdir deploy\include\qpid\amqp_0_10&#x0D;&#x0A;@if not exist deploy\include\qpid\framing mkdir deploy\include\qpid\framing&#x0D;&#x0A;@if not exist deploy\include\qpid\sys\windows mkdir deploy\include\qpid\sys\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\log\windows mkdir deploy\include\qpid\log\windows&#x0D;&#x0A;@if not exist deploy\include\qpid\management mkdir deploy\include\qpid\management&#x0D;&#x0A;@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y qpid\*.h deploy\include\qpid\&#x0D;&#x0A;@copy /Y qpid\amqp_0_10\*.h deploy\include\qpid\amqp_0_10\&#x0D;&#x0A;@copy /Y qpid\framing\*.h deploy\include\qpid\framing\&#x0D;&#x0A;@copy /Y qpid\sys\*.h deploy\include\qpid\sys\&#x0D;&#x0A;@copy /Y qpid\sys\windows\*.h deploy\include\qpid\sys\windows\&#x0D;&#x0A;@copy /Y qpid\log\*.h deploy\include\qpid\log\&#x0D;&#x0A;@copy /Y qpid\log\windows\*.h deploy\include\qpid\log\windows\&#x0D;&#x0A;@copy /Y qpid\management\*.h deploy\include\qpid\management\&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidcommon.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidcommon.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -376,6 +418,9 @@
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.cpp">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionExpiryIdBody.cpp">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.cpp">
@@ -954,6 +999,9 @@
 				RelativePath="qpid\sys\windows\LockFile.cpp">
 			</File>
 			<File
+				RelativePath="qpid\sys\windows\PollableCondition.cpp">
+			</File>
+			<File
 				RelativePath="qpid\sys\windows\Shlib.cpp">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1079,6 +1127,9 @@
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionExchangeBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterConnectionExpiryIdBody.h">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionMembershipBody.h">

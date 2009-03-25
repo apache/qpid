@@ -38,16 +38,6 @@ import org.apache.qpid.management.domain.handler.impl.HeartBeatIndicationMessage
 import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.MethodResponseMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
-import org.apache.qpid.management.domain.model.AccessMode;
-import org.apache.qpid.management.domain.model.type.AbsTime;
-import org.apache.qpid.management.domain.model.type.DeltaTime;
-import org.apache.qpid.management.domain.model.type.ObjectReference;
-import org.apache.qpid.management.domain.model.type.Str16;
-import org.apache.qpid.management.domain.model.type.Str8;
-import org.apache.qpid.management.domain.model.type.Uint16;
-import org.apache.qpid.management.domain.model.type.Uint32;
-import org.apache.qpid.management.domain.model.type.Uint64;
-import org.apache.qpid.management.domain.model.type.Uint8;
 import org.apache.qpid.transport.util.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -148,9 +138,6 @@ public class Configurator extends DefaultHandler
         		}
         	}
             
-            addTypeMappings();
-            addAccessModeMappings();
-            
             addMandatoryManagementMessageHandlers();
             addMandatoryMethodReplyMessageHandlers();                        
         } catch (Exception exception)
@@ -207,38 +194,6 @@ public class Configurator extends DefaultHandler
     			maxWaitTimeout);
     	Configuration.getInstance().addBrokerConnectionData(brokerId, data);
     	return data;
-    }
-    
-	/**
-     * Configures access mode mappings.
-     * An access mode mapping is an association between a code and an access mode.
-     */
-    private void addAccessModeMappings() {
-    	Configuration configuration = Configuration.getInstance();
-    	configuration.addAccessModeMapping(new AccessModeMapping(1,AccessMode.RC));
-    	configuration.addAccessModeMapping(new AccessModeMapping(2,AccessMode.RW));
-    	configuration.addAccessModeMapping(new AccessModeMapping(3,AccessMode.RO));
-	}
-
-	/**
-     * Configures type mappings.
-     * A type mapping is an association between a code and a management type.
-     */
-    private void addTypeMappings()
-    {
-    	Configuration configuration = Configuration.getInstance();
-    	configuration.addTypeMapping(new TypeMapping(1,new Uint8(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(2,new Uint16(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(3,new Uint32(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(4,new Uint64(),Names.NUMBER_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(6,new Str8(),Names.STRING_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(7,new Str16(),Names.STRING_VALIDATOR));
-    	configuration.addTypeMapping(new TypeMapping(8,new AbsTime()));
-    	configuration.addTypeMapping(new TypeMapping(9,new DeltaTime()));
-    	configuration.addTypeMapping(new TypeMapping(10,new ObjectReference()));
-    	configuration.addTypeMapping(new TypeMapping(11,new org.apache.qpid.management.domain.model.type.Boolean()));
-    	configuration.addTypeMapping(new TypeMapping(14,new org.apache.qpid.management.domain.model.type.Uuid()));
-    	configuration.addTypeMapping(new TypeMapping(15,new org.apache.qpid.management.domain.model.type.Map()));
     }
     
     /**

@@ -149,7 +149,8 @@ RecoverableConfig::shared_ptr RecoveryManagerImpl::recoverConfig(framing::Buffer
 
 void RecoveryManagerImpl::recoveryComplete()
 {
-    //TODO (finalise binding setup etc)
+    //notify all queues
+    queues.eachQueue(boost::bind(&Queue::recoveryComplete, _1));
 }
 
 bool RecoverableMessageImpl::loadContent(uint64_t available)

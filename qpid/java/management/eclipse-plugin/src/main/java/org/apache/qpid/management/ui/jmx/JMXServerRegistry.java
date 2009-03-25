@@ -164,7 +164,6 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
-        MBeanUtility.printOutput("Removing MBean:" + mbean.getUniqueName());
         
         if (mbean.isQueue())
         {

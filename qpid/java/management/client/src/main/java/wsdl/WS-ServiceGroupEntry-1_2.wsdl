@@ -200,7 +200,7 @@
     </wsdl:binding>
 	<wsdl:service name="ServiceGroupEntryService">
     	<wsdl:port name="ServiceGroupEntryPort" binding="tns:ServiceGroupEntryBinding">
-    		<wsdl-soap:address location="http://romagazzarini:8080/wsrf/services/ServiceGroupEntry"/>
+    		<wsdl-soap:address location="http://localhost:8080/wsrf/services/ServiceGroupEntry"/>
     	</wsdl:port>
 	</wsdl:service>
 </wsdl:definitions>

@@ -277,7 +277,6 @@ void SessionHandler::sendCompletion() {
 }
 
 void SessionHandler::sendAttach(bool force) {
-    CHECK_ATTACHED("session.send-attach");
     QPID_LOG(debug, "SessionHandler::sendAttach attach id=" << getState()->getId());
     peer.attach(getState()->getId().getName(), force);
     if (getState()->hasState())

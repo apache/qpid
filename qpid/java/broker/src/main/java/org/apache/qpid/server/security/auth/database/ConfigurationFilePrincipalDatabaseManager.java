@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.qpid.configuration.PropertyException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
@@ -46,20 +47,18 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 {
     private static final Logger _logger = Logger.getLogger(ConfigurationFilePrincipalDatabaseManager.class);
 
-    private static final String _base = "security.principal-databases.principal-database";
-
     Map<String, PrincipalDatabase> _databases;
 
-    public ConfigurationFilePrincipalDatabaseManager(Configuration configuration) throws Exception
+    public ConfigurationFilePrincipalDatabaseManager(ServerConfiguration _configuration) throws Exception
     {
         _logger.info("Initialising PrincipleDatabase authentication manager");
-        _databases = initialisePrincipalDatabases(configuration);
+        _databases = initialisePrincipalDatabases(_configuration);
     }
 
-    private Map<String, PrincipalDatabase> initialisePrincipalDatabases(Configuration configuration) throws Exception
+    private Map<String, PrincipalDatabase> initialisePrincipalDatabases(ServerConfiguration _configuration) throws Exception
     {
-        List<String> databaseNames = configuration.getList(_base + ".name");
-        List<String> databaseClasses = configuration.getList(_base + ".class");
+        List<String> databaseNames = _configuration.getPrincipalDatabaseNames();
+        List<String> databaseClasses = _configuration.getPrincipalDatabaseClass();
         Map<String, PrincipalDatabase> databases = new HashMap<String, PrincipalDatabase>();
 
         if (databaseNames.size() == 0)
@@ -84,7 +83,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
                 throw new Exception("Principal databases must implement the PrincipalDatabase interface");
             }
 
-            initialisePrincipalDatabase((PrincipalDatabase) o, configuration, i);
+            initialisePrincipalDatabase((PrincipalDatabase) o, _configuration, i);
 
             String name = databaseNames.get(i);
             if ((name == null) || (name.length() == 0))
@@ -105,12 +104,11 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
         return databases;
     }
 
-    private void initialisePrincipalDatabase(PrincipalDatabase principalDatabase, Configuration config, int index)
+    private void initialisePrincipalDatabase(PrincipalDatabase principalDatabase, ServerConfiguration _configuration, int index)
             throws FileNotFoundException, ConfigurationException
     {
-        String baseName = _base + "(" + index + ").attributes.attribute.";
-        List<String> argumentNames = config.getList(baseName + "name");
-        List<String> argumentValues = config.getList(baseName + "value");
+        List<String> argumentNames = _configuration.getPrincipalDatabaseAttributeNames(index);
+        List<String> argumentValues = _configuration.getPrincipalDatabaseAttributeValues(index);
         for (int i = 0; i < argumentNames.size(); i++)
         {
             String argName = argumentNames.get(i);
@@ -166,18 +164,17 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
         return _databases;
     }
 
-    public void initialiseManagement(Configuration config) throws ConfigurationException
+    public void initialiseManagement(ServerConfiguration config) throws ConfigurationException
     {
         try
         {
             AMQUserManagementMBean _mbean = new AMQUserManagementMBean();
 
-            String baseSecurity = "security.jmx";
-            List<String> principalDBs = config.getList(baseSecurity + ".principal-database");
+            List<String> principalDBs = config.getManagementPrincipalDBs();
 
             if (principalDBs.size() == 0)
             {
-                throw new ConfigurationException("No principal-database specified for jmx security(" + baseSecurity + ".principal-database)");
+                throw new ConfigurationException("No principal-database specified for jmx security");
             }
 
             String databaseName = principalDBs.get(0);
@@ -191,11 +188,11 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 
             _mbean.setPrincipalDatabase(database);
 
-            List<String> jmxaccesslist = config.getList(baseSecurity + ".access");
+            List<String> jmxaccesslist = config.getManagementAccessList();
 
             if (jmxaccesslist.size() == 0)
             {
-                throw new ConfigurationException("No access control files specified for jmx security(" + baseSecurity + ".access)");
+                throw new ConfigurationException("No access control files specified for jmx security");
             }
 
             String jmxaccesssFile = null;

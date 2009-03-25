@@ -22,6 +22,7 @@
  *
  */
 
+#include "BrokerImportExport.h"
 #include "PersistableMessage.h"
 #include "MessageAdapter.h"
 #include "qpid/framing/amqp_types.h"
@@ -51,8 +52,8 @@ class Message : public PersistableMessage {
 public:
     typedef boost::function<void (const boost::intrusive_ptr<Message>&)> MessageCallback;
     
-    Message(const framing::SequenceNumber& id = framing::SequenceNumber());
-    ~Message();
+    QPID_BROKER_EXTERN Message(const framing::SequenceNumber& id = framing::SequenceNumber());
+    QPID_BROKER_EXTERN ~Message();
         
     uint64_t getPersistenceId() const { return persistenceId; }
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
@@ -65,17 +66,18 @@ public:
 
     const framing::SequenceNumber& getCommandId() { return frames.getId(); }
 
-    uint64_t contentSize() const;
+    QPID_BROKER_EXTERN uint64_t contentSize() const;
 
-    std::string getRoutingKey() const;
+    QPID_BROKER_EXTERN std::string getRoutingKey() const;
     const boost::shared_ptr<Exchange> getExchange(ExchangeRegistry&) const;
-    std::string getExchangeName() const;
+    QPID_BROKER_EXTERN std::string getExchangeName() const;
     bool isImmediate() const;
-    const framing::FieldTable* getApplicationHeaders() const;
-    bool isPersistent();
+    QPID_BROKER_EXTERN const framing::FieldTable* getApplicationHeaders() const;
+    framing::FieldTable& getOrInsertHeaders();
+    QPID_BROKER_EXTERN bool isPersistent();
     bool requiresAccept();
 
-    void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
+    QPID_BROKER_EXTERN void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e);
     bool hasExpired();
     sys::AbsTime getExpiration() const { return expiration; }
@@ -124,8 +126,8 @@ public:
     uint32_t encodedHeaderSize() const;
     uint32_t encodedContentSize() const;
 
-    void decodeHeader(framing::Buffer& buffer);
-    void decodeContent(framing::Buffer& buffer);
+    QPID_BROKER_EXTERN void decodeHeader(framing::Buffer& buffer);
+    QPID_BROKER_EXTERN void decodeContent(framing::Buffer& buffer);
             
     /**
      * Releases the in-memory content data held by this
@@ -139,7 +141,7 @@ public:
     void sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
     void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize) const;
 
-    bool isContentLoaded() const;
+    QPID_BROKER_EXTERN bool isContentLoaded() const;
 
     bool isExcluded(const std::vector<std::string>& excludes) const;
     void addTraceId(const std::string& id);

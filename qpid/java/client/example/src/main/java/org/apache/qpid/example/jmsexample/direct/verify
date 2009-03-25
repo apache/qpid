@@ -23,11 +23,11 @@ cpp=$CPP/direct
 
 direct_consumer_java()
 {
-java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Consumer
+java -Dlog4j.configuration=$LOG4J -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Consumer
 }
 
 direct_producer_java(){
-java -Dlog4j.configuration=file://"$JAVA"/log4j.xml -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Producer
+java -Dlog4j.configuration=$LOG4J -cp "$CLASSPATH" org.apache.qpid.example.jmsexample.direct.Producer
 }
 
 clients $cpp/declare_queues direct_producer_java direct_consumer_java

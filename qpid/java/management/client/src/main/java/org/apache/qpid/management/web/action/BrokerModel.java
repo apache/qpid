@@ -30,12 +30,21 @@ import javax.management.ObjectName;
 
 import org.apache.qpid.management.Names;
 
+/**
+ * Value Object encapsulating a broker management domain model.
+ * 
+ * @author Andrea Gazzarini
+ */
 public class BrokerModel
 {
-	private Map<String, List<ObjectName>> objectsByType = new HashMap<String, List<ObjectName>>();
+	private Map<String, List<ObjectName>> _objectsByType = new HashMap<String, List<ObjectName>>();
+	private String _id;
 	
-	private String id;
-	
+	/**
+	 * Adds a new object to this domain model.
+	 * 
+	 * @param name the object name of the JMX entity.
+	 */
 	void addObject(ObjectName name)
 	{
 		String packageName = name.getKeyProperty(Names.PACKAGE);
@@ -44,37 +53,48 @@ public class BrokerModel
 		{
 			String fqn = packageName+"."+className;
 			
-			List<ObjectName> objects = objectsByType.get(fqn);
+			List<ObjectName> objects = _objectsByType.get(fqn);
 			if (objects == null)
 			{
 				objects = new ArrayList<ObjectName>();
-				objectsByType.put(fqn,objects);
+				_objectsByType.put(fqn,objects);
 			}
 			objects.add(name);		
 		}
 	}
 
+	/**
+	 * Gets the identifier of the owner of this model.
+	 * 
+	 * @return the identifier of the owner of this model.
+	 */
 	public String getId()
 	{
-		return id;
+		return _id;
 	}
 
+	/**
+	 * Sets the identifier of the owner of this model.
+	 * 
+	 * @param id the identifier of the owner of this model.
+	 */
 	public void setId(String id)
 	{
-		this.id = id;
+		this._id = id;
 	}
 	
-	public Set<String> getCategoryNames(){
-		return objectsByType.keySet();
+	public Set<String> getCategoryNames()
+	{
+		return _objectsByType.keySet();
 	}
 	
 	public List<ObjectName> getCategory(String name) 
 	{
-		return objectsByType.get(name);
+		return _objectsByType.get(name);
 	}
 	
 	public int getCategoryCount()
 	{
-		return objectsByType.keySet().size();
+		return _objectsByType.keySet().size();
 	}
 }

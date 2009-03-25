@@ -27,18 +27,17 @@ if !HAVE_XML
 endif
 
 MAKEDIST=.libs/Makefile
-SUBMAKE='	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done'
+
 $(MAKEDIST): Makefile
 	mkdir -p .libs
-	@$(ECHO) all: 		        > $(MAKEDIST)
-	@$(ECHO) $(SUBMAKE)             >> $(MAKEDIST)
-	@$(ECHO) clean:                 >> $(MAKEDIST)
-	@$(ECHO) $(SUBMAKE)             >> $(MAKEDIST)
+	@(echo 'all clean:' ; \
+	echo '	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done' ; \
+	) > $(MAKEDIST)
 
 examplesdir=$(pkgdatadir)/examples
-examples_DATA = README $(MAKEDIST)
+dist_examples_DATA = README $(MAKEDIST)
 
-EXTRA_DIST = $(examples_DATA) README.verify verify verify_all 
+EXTRA_DIST = README.verify verify verify_all
 
 # For older versions of automake
 abs_top_srcdir = @abs_top_srcdir@

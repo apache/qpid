@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -67,7 +68,7 @@ public interface TransactionLog
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception;
+    void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
@@ -75,18 +76,6 @@ public interface TransactionLog
      * @throws Exception If the close fails.
      */
     void close() throws Exception;
-
-    /**
-     * Removes the specified message from the store in the given transactional store context.
-     *
-     * @param storeContext The transactional context to remove the message in.
-     * @param messageId    Identifies the message to remove.
-     *
-     * @throws AMQException If the operation fails for any reason.
-     */
-    void removeMessage(StoreContext storeContext, Long messageId) throws AMQException;
-
-
 
     /**
      * Places a message onto a specified queue, in a given transactional context.

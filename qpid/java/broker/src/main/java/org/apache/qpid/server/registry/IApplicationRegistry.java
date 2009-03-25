@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.net.InetSocketAddress;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -49,21 +51,11 @@ public interface IApplicationRegistry
     void close() throws Exception;
 
     /**
-     * This gets access to a "configured object". A configured object has fields populated from a the configuration
-     * object (Commons Configuration) automatically, where it has the appropriate attributes defined on fields.
-     * Application registry implementations can choose the refresh strategy or caching approach.
-     * @param instanceType the type of object you want initialised. This must be unique - i.e. you can only
-     * have a single object of this type in the system.
-     * @return the configured object
-     */
-    <T> T getConfiguredObject(Class<T> instanceType);
-
-    /**
      * Get the low level configuration. For use cases where the configured object approach is not required
      * you can get the complete configuration information.
      * @return a Commons Configuration instance
      */
-    Configuration getConfiguration();
+    ServerConfiguration getConfiguration();
 
     ManagedObjectRegistry getManagedObjectRegistry();
 
@@ -71,11 +63,9 @@ public interface IApplicationRegistry
 
     AuthenticationManager getAuthenticationManager();
 
-    Collection<String> getVirtualHostNames();
-
     VirtualHostRegistry getVirtualHostRegistry();
 
-    ACLManager getAccessManager();
+    ACLManager getAccessManager() throws ConfigurationException;
 
     PluginManager getPluginManager();
 

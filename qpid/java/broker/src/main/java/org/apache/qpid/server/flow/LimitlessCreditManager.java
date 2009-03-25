@@ -1,6 +1,6 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 
 /*
 *
@@ -37,7 +37,7 @@ public class LimitlessCreditManager extends AbstractFlowCreditManager implements
         return true;
     }
 
-    public boolean useCreditForMessage(AMQMessage msg)
+    public boolean useCreditForMessage(QueueEntry queueEntry)
     {
         return true;
     }

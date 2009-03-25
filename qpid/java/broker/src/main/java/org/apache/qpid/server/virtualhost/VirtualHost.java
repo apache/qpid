@@ -20,40 +20,48 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-import javax.management.NotCompliantMBeanException;
-
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
-import org.apache.qpid.server.routing.RoutingTable;
-import org.apache.qpid.server.transactionlog.TransactionLog;
-import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.configuration.ExchangeConfiguration;
+import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
+import org.apache.qpid.server.queue.FileQueueBackingStoreFactory;
+import org.apache.qpid.server.queue.QueueBackingStoreFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+
+import javax.management.NotCompliantMBeanException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class VirtualHost implements Accessable
 {
     private static final Logger _logger = Logger.getLogger(VirtualHost.class);
-
 
     private final String _name;
 
@@ -78,9 +86,9 @@ public class VirtualHost implements Accessable
     private ACLManager _accessManager;
 
     private final Timer _houseKeepingTimer;
-     
-    private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
 
+    private VirtualHostConfiguration _configuration;
+    private QueueBackingStoreFactory _queueBackingStoreFactory;
 
     public void setAccessableName(String name)
     {
@@ -103,6 +111,16 @@ public class VirtualHost implements Accessable
         return _routingTable;
     }
 
+    public VirtualHostConfiguration getConfiguration()
+    {
+        return _configuration;
+    }
+
+    public QueueBackingStoreFactory getQueueBackingStoreFactory()
+    {
+        return _queueBackingStoreFactory;
+    }
+
     /**
      * Abstract MBean class. This has some of the methods implemented from management intrerface for exchanges. Any
      * implementaion of an Exchange MBean should extend this class.
@@ -111,7 +129,7 @@ public class VirtualHost implements Accessable
     {
         public VirtualHostMBean() throws NotCompliantMBeanException
         {
-            super(ManagedVirtualHost.class, "VirtualHost");
+            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE, ManagedVirtualHost.VERSION);
         }
 
         public String getObjectInstanceName()
@@ -129,49 +147,57 @@ public class VirtualHost implements Accessable
             return VirtualHost.this;
         }
 
-
     } // End of MBean class
 
     /**
-     * Used for testing only
-     * @param name
-     * @param transactionLog
-     * @throws Exception
-     */
-    public VirtualHost(String name, TransactionLog transactionLog) throws Exception
-    {
-        this(name, new PropertiesConfiguration(), transactionLog);
-    }
-
-    /**
      * Normal Constructor
-     * @param name
+     *
      * @param hostConfig
+     *
      * @throws Exception
      */
-    public VirtualHost(String name, Configuration hostConfig) throws Exception
+    public VirtualHost(VirtualHostConfiguration hostConfig) throws Exception
     {
-        this(name, hostConfig, null);
+        this(hostConfig, null);
     }
 
-    public VirtualHost(String name, Configuration hostConfig, TransactionLog transactionLog) throws Exception
+    public VirtualHost(VirtualHostConfiguration hostConfig, TransactionLog transactionLog) throws Exception
     {
-        if (name == null || name.length() == 0)
-        {
-            throw new IllegalArgumentException("Illegal name (" + name + ") for virtualhost.");
-        }
+        _configuration = hostConfig;
+        _name = hostConfig.getName();
 
-        _name = name;
+        if (_name == null || _name.length() == 0)
+        {
+            throw new IllegalArgumentException("Illegal name (" + _name + ") for virtualhost.");
+        }
 
         _virtualHostMBean = new VirtualHostMBean();
 
         _connectionRegistry = new ConnectionRegistry(this);
 
-        _houseKeepingTimer = new Timer("Queue-housekeeping-"+name, true);
+        _houseKeepingTimer = new Timer("Queue-housekeeping-" + _name, true);
+
         _queueRegistry = new DefaultQueueRegistry(this);
+
         _exchangeFactory = new DefaultExchangeFactory(this);
         _exchangeFactory.initialise(hostConfig);
+
         _exchangeRegistry = new DefaultExchangeRegistry(this);
+
+        _queueBackingStoreFactory = new FileQueueBackingStoreFactory();
+        _queueBackingStoreFactory.configure(this, hostConfig);
+
+        //Create a temporary RT to store the durable entries from the config file
+        // so we can replay them in to the real _RT after it has been loaded.
+        /// This should be removed after the _RT has been fully split from the the TL
+
+        StartupRoutingTable configFileRT = new StartupRoutingTable();
+
+        _routingTable = configFileRT;
+
+        // This needs to be after the RT has been defined as it creates the default durable exchanges.
+        _exchangeRegistry.initialise();
+        initialiseModel(hostConfig);
 
         if (transactionLog != null)
         {
@@ -183,41 +209,47 @@ public class VirtualHost implements Accessable
         }
         else
         {
-            if (hostConfig == null)
-            {
-                throw new IllegalAccessException("HostConfig and TransactionLog cannot be null");
-            }
             initialiseTransactionLog(hostConfig);
             initialiseRoutingTable(hostConfig);
         }
 
+        //Now that the RT has been initialised loop through the persistent queues/exchanges created from the config
+        // file and write them in to the new routing Table.
+        for (StartupRoutingTable.CreateQueueTuple cqt : configFileRT.queue)
+        {
+            _routingTable.createQueue(cqt.queue, cqt.arguments);
+        }
 
+        for (Exchange exchange : configFileRT.exchange)
+        {
+            _routingTable.createExchange(exchange);
+        }
 
-        _exchangeRegistry.initialise();
+        for (StartupRoutingTable.CreateBindingTuple cbt : configFileRT.bindings)
+        {
+            _routingTable.bindQueue(cbt.exchange, cbt.routingKey, cbt.queue, cbt.arguments);
+        }
 
-        _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
+        _authenticationManager = new PrincipalDatabaseAuthenticationManager(_name, hostConfig);
 
         _accessManager = ApplicationRegistry.getInstance().getAccessManager();
-        _accessManager.configureHostPlugins(hostConfig);
-        
+        _accessManager.configureHostPlugins(hostConfig.getSecurityConfiguration());
+
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
-        initialiseHouseKeeping(hostConfig);
+        initialiseHouseKeeping(hostConfig.getHousekeepingExpiredMessageCheckPeriod());
     }
 
-    private void initialiseHouseKeeping(final Configuration hostConfig)
+    private void initialiseHouseKeeping(long period)
     {
-     
-        long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
-    
         /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
-        if(period != 0L)
+        if (period != 0L)
         {
             class RemoveExpiredMessagesTask extends TimerTask
             {
                 public void run()
                 {
-                    for(AMQQueue q : _queueRegistry.getQueues())
+                    for (AMQQueue q : _queueRegistry.getQueues())
                     {
 
                         try
@@ -226,7 +258,7 @@ public class VirtualHost implements Accessable
                         }
                         catch (AMQException e)
                         {
-                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
+                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(), e);
                             throw new RuntimeException(e);
                         }
                     }
@@ -234,15 +266,15 @@ public class VirtualHost implements Accessable
             }
 
             _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
-                    period/2,
-                    period);
+                                                   period / 2,
+                                                   period);
         }
     }
 
     //todo we need to move from store.class to transactionlog.class
-    private void initialiseTransactionLog(Configuration config) throws Exception
+    private void initialiseTransactionLog(VirtualHostConfiguration config) throws Exception
     {
-        String transactionLogClass = config.getString("store.class");
+        String transactionLogClass = config.getTransactionLogClass();
 
         Class clazz = Class.forName(transactionLogClass);
         Object o = clazz.newInstance();
@@ -253,13 +285,20 @@ public class VirtualHost implements Accessable
                                          " does not.");
         }
         _transactionLog = (TransactionLog) o;
+
+        //Assign RoutingTable as old MessageStores converted to TransactionLog will require the _routingTable.
+        if (_transactionLog instanceof RoutingTable)
+        {
+            _routingTable = (RoutingTable) _transactionLog;
+        }
+
         _transactionLog.configure(this, "store", config);
     }
 
     //todo we need to move from store.class to transactionlog.class
-    private void initialiseRoutingTable(Configuration config) throws Exception
+    private void initialiseRoutingTable(VirtualHostConfiguration hostConfig) throws Exception
     {
-        String transactionLogClass = config.getString("routingtable.class");
+        String transactionLogClass = hostConfig.getRoutingTableClass();
 
         if (transactionLogClass != null)
         {
@@ -272,34 +311,99 @@ public class VirtualHost implements Accessable
                                              " does not.");
             }
             _routingTable = (RoutingTable) o;
-            _routingTable.configure(this, "routingtable", config);
+            _routingTable.configure(this, "routingtable", hostConfig);
         }
         else
         {
-            if (_transactionLog instanceof RoutingTable)
+            if (_routingTable == null)
             {
-                _routingTable = (RoutingTable)_transactionLog;
+                throw new RuntimeException("No Routing Table configured unable to startup.");
             }
         }
     }
 
-
-
-    public <T> T getConfiguredObject(Class<T> instanceType, Configuration config)
+    private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
     {
-        T instance;
-        try
-        {
-            instance = instanceType.newInstance();
-        }
-        catch (Exception e)
-        {
-            _logger.error("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
-            throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor", e);
-        }
-        Configurator.configure(instance);
+        _logger.debug("Loading configuration for virtualhost: " + config.getName());
 
-        return instance;
+        List exchangeNames = config.getExchanges();
+
+        for (Object exchangeNameObj : exchangeNames)
+        {
+            String exchangeName = String.valueOf(exchangeNameObj);
+            configureExchange(config.getExchangeConfiguration(exchangeName));
+        }
+
+        String[] queueNames = config.getQueueNames();
+
+        for (Object queueNameObj : queueNames)
+        {
+            String queueName = String.valueOf(queueNameObj);
+            configureQueue(config.getQueueConfiguration(queueName));
+        }
+    }
+
+    private void configureExchange(ExchangeConfiguration exchangeConfiguration) throws AMQException
+    {
+        AMQShortString exchangeName = new AMQShortString(exchangeConfiguration.getName());
+
+        Exchange exchange;
+        exchange = _exchangeRegistry.getExchange(exchangeName);
+        if (exchange == null)
+        {
+
+            AMQShortString type = new AMQShortString(exchangeConfiguration.getType());
+            boolean durable = exchangeConfiguration.getDurable();
+            boolean autodelete = exchangeConfiguration.getAutoDelete();
+
+            Exchange newExchange = _exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
+            _exchangeRegistry.registerExchange(newExchange);
+        }
+    }
+
+    private void configureQueue(QueueConfiguration queueConfiguration) throws AMQException, ConfigurationException
+    {
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueConfiguration, this);
+
+        if (queue.isDurable())
+        {
+            _routingTable.createQueue(queue);
+        }
+
+        String exchangeName = queueConfiguration.getExchange();
+
+        Exchange exchange = _exchangeRegistry.getExchange(exchangeName == null ? null : new AMQShortString(exchangeName));
+
+        if (exchange == null)
+        {
+            exchange = _exchangeRegistry.getDefaultExchange();
+        }
+
+        if (exchange == null)
+        {
+            throw new ConfigurationException("Attempt to bind queue to unknown exchange:" + exchangeName);
+        }
+
+        List routingKeys = queueConfiguration.getRoutingKeys();
+        if (routingKeys == null || routingKeys.isEmpty())
+        {
+            routingKeys = Collections.singletonList(queue.getName());
+        }
+
+        for (Object routingKeyNameObj : routingKeys)
+        {
+            AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
+            if (_logger.isInfoEnabled())
+            {
+                _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + this);
+            }
+            queue.bind(exchange, routingKey, null);
+        }
+
+        if (exchange != _exchangeRegistry.getDefaultExchange())
+        {
+            queue.bind(_exchangeRegistry.getDefaultExchange(), queue.getName(), null);
+        }
     }
 
     public String getName()
@@ -340,13 +444,19 @@ public class VirtualHost implements Accessable
     public ACLManager getAccessManager()
     {
         return _accessManager;
-    }                                                                   
+    }
 
     public void close() throws Exception
     {
 
         //Stop Connections
         _connectionRegistry.close();
+
+        //Stop Housekeeping
+        if (_houseKeepingTimer != null)
+        {
+            _houseKeepingTimer.cancel();
+        }
 
         //Stop the Queues processing
         if (_queueRegistry != null)
@@ -355,13 +465,7 @@ public class VirtualHost implements Accessable
             {
                 queue.stop();
             }
-        }        
-
-        //Stop Housekeeping
-        if (_houseKeepingTimer != null)
-        {
-            _houseKeepingTimer.cancel();
-        }        
+        }
 
         //Close TransactionLog
         if (_transactionLog != null)
@@ -378,5 +482,96 @@ public class VirtualHost implements Accessable
     public ManagedObject getManagedObject()
     {
         return _virtualHostMBean;
+    }
+
+    /**
+     * Temporary Startup RT class to record the creation of persistent queues / exchanges.
+     *
+     *
+     * This is so we can replay the creation of queues/exchanges in to the real _RT after it has been loaded.
+     * This should be removed after the _RT has been fully split from the the TL
+     */
+    private class StartupRoutingTable implements RoutingTable
+    {
+        public List<Exchange> exchange = new LinkedList<Exchange>();
+        public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
+        public List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
+
+        public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+        {
+        }
+
+        public void close() throws Exception
+        {
+        }
+
+        public void createExchange(Exchange exchange) throws AMQException
+        {
+            if (exchange.isDurable())
+            {
+                this.exchange.add(exchange);
+            }
+        }
+
+        public void removeExchange(Exchange exchange) throws AMQException
+        {
+        }
+
+        public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+        {
+            if (exchange.isDurable() && queue.isDurable())
+            {
+                bindings.add(new CreateBindingTuple(exchange, routingKey, queue, args));
+            }
+        }
+
+        public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+        {
+        }
+
+        public void createQueue(AMQQueue queue) throws AMQException
+        {
+            createQueue(queue, null);
+        }
+
+        public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
+        {
+            if (queue.isDurable())
+            {
+                this.queue.add(new CreateQueueTuple(queue, arguments));
+            }
+        }
+
+        public void removeQueue(AMQQueue queue) throws AMQException
+        {
+        }
+
+        private class CreateQueueTuple
+        {
+            public AMQQueue queue;
+            public FieldTable arguments;
+
+            public CreateQueueTuple(AMQQueue queue, FieldTable arguments)
+            {
+                this.queue = queue;
+                this.arguments = arguments;
+            }
+        }
+
+        private class CreateBindingTuple
+        {
+            public AMQQueue queue;
+            public FieldTable arguments;
+            public Exchange exchange;
+            public AMQShortString routingKey;
+
+            public CreateBindingTuple(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args)
+            {
+                this.exchange = exchange;
+                this.routingKey = routingKey;
+                this.queue = queue;
+                arguments = args;
+            }
+        }
     }
 }

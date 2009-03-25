@@ -32,8 +32,6 @@ typedef          __int64 int64_t;
 
 // Visual Studio doesn't define other common types, so set them up here too.
 typedef int              pid_t;
-typedef int              socklen_t;
-typedef unsigned int     size_t;
 typedef int              ssize_t;
 typedef unsigned int     uint;
 

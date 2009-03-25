@@ -29,16 +29,15 @@ public class MessageFactoryRecoveryTest extends TestCase
     public void setUp()
     {
         _factory = MessageFactory.getInstance();
-
+        _factory.reset();
     }
 
     public void test()
     {
-        AMQMessage message = _factory.createMessage(null, false);
 
-        _factory.enableRecover();
-
-        Long messasgeID = message.getMessageId();
+        Long messasgeID = 1L;
+        //Create initial message
+        _factory.createMessage(messasgeID, null);
 
         try
         {
@@ -67,7 +66,7 @@ public class MessageFactoryRecoveryTest extends TestCase
         messasgeID += 100;
         try
         {
-            message = _factory.createMessage(messasgeID, null);
+            AMQMessage message = _factory.createMessage(messasgeID, null);
             assertEquals("Factory assigned incorrect id.", messasgeID, message.getMessageId());
         }
         catch (Exception re)
@@ -76,7 +75,7 @@ public class MessageFactoryRecoveryTest extends TestCase
         }
 
         // End the reovery process.
-        _factory.start();
+        _factory.recoveryComplete();
 
         //Check we cannot still create by id after ending recovery phase
         try
@@ -96,7 +95,7 @@ public class MessageFactoryRecoveryTest extends TestCase
 
         try
         {
-            message = _factory.createMessage(null, false);
+            AMQMessage message = _factory.createMessage(null, false);
             assertEquals("Factory assigned incorrect id.", messasgeID, message.getMessageId());
         }
         catch (Exception re)

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -30,5 +31,5 @@ public interface PrincipalDatabaseManager
 {
     public Map<String, PrincipalDatabase> getDatabases();
 
-    public void initialiseManagement(Configuration config) throws ConfigurationException;
+    public void initialiseManagement(ServerConfiguration _configuration) throws ConfigurationException;
 }

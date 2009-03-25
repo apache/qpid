@@ -24,7 +24,7 @@
 
 #include "Poller.h"
 #include "Mutex.h"
-
+#include "qpid/CommonImportExport.h"
 #include <boost/function.hpp>
 
 #include <queue>
@@ -65,6 +65,7 @@ private:
     Mutex stateLock;
     enum {
         IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW,
+        ACTIVE_DELETE,
         DELAYED_IDLE, DELAYED_INACTIVE, DELAYED_R, DELAYED_W, DELAYED_RW,
         DELAYED_DELETE
     } state;
@@ -82,7 +83,7 @@ public:
      *@param wCb Callback called when the handle is writable.
      *@param dCb Callback called when the handle is disconnected.
      */
-    DispatchHandle(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb) :
+    QPID_COMMON_EXTERN DispatchHandle(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb) :
       PollerHandle(h),
       readableCallback(rCb),
       writableCallback(wCb),
@@ -90,42 +91,42 @@ public:
       state(IDLE)
     {}
 
-    ~DispatchHandle();
+    QPID_COMMON_EXTERN ~DispatchHandle();
 
     /** Add this DispatchHandle to the poller to be watched. */
-    void startWatch(Poller::shared_ptr poller);
+    QPID_COMMON_EXTERN void startWatch(Poller::shared_ptr poller);
 
     /** Resume watching for all non-0 callbacks. */
-    void rewatch();
+    QPID_COMMON_EXTERN void rewatch();
     /** Resume watching for read only. */
-    void rewatchRead();
+    QPID_COMMON_EXTERN void rewatchRead();
 
     /** Resume watching for write only. */
-    void rewatchWrite();
+    QPID_COMMON_EXTERN void rewatchWrite();
 
     /** Stop watching temporarily. The DispatchHandle remains
         associated with the poller and can be re-activated using
         rewatch. */
-    void unwatch();
+    QPID_COMMON_EXTERN void unwatch();
     /** Stop watching for read */
-    void unwatchRead();
+    QPID_COMMON_EXTERN void unwatchRead();
     /** Stop watching for write */
-    void unwatchWrite();
+    QPID_COMMON_EXTERN void unwatchWrite();
 
     /** Stop watching permanently. Disassociates from the poller. */
-    void stopWatch();
+    QPID_COMMON_EXTERN void stopWatch();
     
     /** Interrupt watching this handle and make a serialised callback that respects the
      * same exclusivity guarantees as the other callbacks
      */
-    void call(Callback iCb);
+    QPID_COMMON_EXTERN void call(Callback iCb);
 
 protected:
     /** Override to get extra processing done when the DispatchHandle is deleted. */
-    void doDelete();
+    QPID_COMMON_EXTERN void doDelete();
 
 private:
-    void processEvent(Poller::EventType dir);
+    QPID_COMMON_EXTERN void processEvent(Poller::EventType dir);
 };
 
 class DispatchHandleRef {

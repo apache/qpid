@@ -21,6 +21,7 @@
 #include "ReplicatingEventListener.h"
 #include "constants.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FrameHandler.h"
@@ -57,11 +58,12 @@ void ReplicatingEventListener::deliverDequeueMessage(const QueuedMessage& dequeu
 {
     FieldTable headers;
     headers.setString(REPLICATION_TARGET_QUEUE, dequeued.queue->getName());
-    headers.setInt(REPLICATION_EVENT_SEQNO, ++sequence);
     headers.setInt(REPLICATION_EVENT_TYPE, DEQUEUE);
     headers.setInt(DEQUEUED_MESSAGE_POSITION, dequeued.position);
     boost::intrusive_ptr<Message> msg(createMessage(headers));
-    queue->deliver(msg);
+    DeliveryProperties* props = msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
+    props->setRoutingKey(dequeued.queue->getName());
+    route(msg);
 }
 
 void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueued)
@@ -69,10 +71,26 @@ void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueu
     boost::intrusive_ptr<Message> msg(cloneMessage(*(enqueued.queue), enqueued.payload));
     FieldTable& headers = msg->getProperties<MessageProperties>()->getApplicationHeaders();
     headers.setString(REPLICATION_TARGET_QUEUE, enqueued.queue->getName());
-    headers.setInt(REPLICATION_EVENT_SEQNO, ++sequence);
     headers.setInt(REPLICATION_EVENT_TYPE, ENQUEUE);
-    queue->deliver(msg);
+    route(msg);
 }
+
+void ReplicatingEventListener::route(boost::intrusive_ptr<qpid::broker::Message> msg)
+{
+    try {
+        if (exchange) {
+            DeliverableMessage deliverable(msg);
+            exchange->route(deliverable, msg->getRoutingKey(), msg->getApplicationHeaders());
+        } else if (queue) {
+            queue->deliver(msg);
+        } else {
+            QPID_LOG(error, "Cannot route replication event, neither replication queue nor exchange configured");
+        }
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Error enqueing replication event: " << e.what());
+    }
+}
+
 
 boost::intrusive_ptr<Message> ReplicatingEventListener::createMessage(const FieldTable& headers)
 {
@@ -129,30 +147,49 @@ Options* ReplicatingEventListener::getOptions()
 
 void ReplicatingEventListener::initialize(Plugin::Target& target)
 {
-      Broker* broker = dynamic_cast<broker::Broker*>(&target);
-      if (broker && !options.queue.empty()) {
-          if (options.createQueue) {
-              queue = broker->getQueues().declare(options.queue).first;
-          } else {
-              queue = broker->getQueues().find(options.queue);
-          }
-          if (queue) {
-              QueueEvents::EventListener callback = boost::bind(&ReplicatingEventListener::handle, this, _1);
-              broker->getQueueEvents().registerListener(options.name, callback);
-              QPID_LOG(info, "Registered replicating queue event listener");
-          } else {
-              QPID_LOG(error, "Replication queue named '" << options.queue << "' does not exist; replication plugin disabled.");
-          }
-      }
+    Broker* broker = dynamic_cast<broker::Broker*>(&target);
+    if (broker) {
+        broker->addFinalizer(boost::bind(&ReplicatingEventListener::shutdown, this));
+        if (!options.exchange.empty()) {
+            if (!options.queue.empty()) {
+                QPID_LOG(warning, "Replication queue option ignored as replication exchange has been specified");
+            }
+            try {
+                exchange = broker->getExchanges().declare(options.exchange, options.exchangeType).first;
+            } catch (const UnknownExchangeTypeException&) {
+                QPID_LOG(error, "Replication disabled due to invalid type: " << options.exchangeType);                  
+            }
+        } else if (!options.queue.empty()) {
+            if (options.createQueue) {
+                queue = broker->getQueues().declare(options.queue).first;
+            } else {
+                queue = broker->getQueues().find(options.queue);
+            }
+            if (queue) {
+                queue->insertSequenceNumbers(REPLICATION_EVENT_SEQNO);
+            } else {
+                QPID_LOG(error, "Replication queue named '" << options.queue << "' does not exist; replication plugin disabled.");
+            }
+        }
+        if (queue || exchange) {
+            QueueEvents::EventListener callback = boost::bind(&ReplicatingEventListener::handle, this, _1);
+            broker->getQueueEvents().registerListener(options.name, callback);
+            QPID_LOG(info, "Registered replicating queue event listener");
+        }
+    }
 }
 
 void ReplicatingEventListener::earlyInitialize(Target&) {}
+void ReplicatingEventListener::shutdown() { queue.reset(); exchange.reset(); }
 
 ReplicatingEventListener::PluginOptions::PluginOptions() : Options("Queue Replication Options"), 
-                                                           name("replicator"), 
+                                                           exchangeType("direct"),
+                                                           name("replicator"),
                                                            createQueue(false)
 {
     addOptions()
+        ("replication-exchange-name", optValue(exchange, "EXCHANGE"), "Exchange to which events for other queues are routed")
+        ("replication-exchange-type", optValue(exchangeType, "direct|topic etc"), "Type of exchange to use")
         ("replication-queue", optValue(queue, "QUEUE"), "Queue on which events for other queues are recorded")
         ("replication-listener-name", optValue(name, "NAME"), "name by which to register the replicating event listener")
         ("create-replication-queue", optValue(createQueue), "if set, the replication will be created if it does not exist");

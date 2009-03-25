@@ -20,6 +20,7 @@
 """ Console API for Qpid Management Framework """
 
 import os
+import platform
 import qpid
 import struct
 import socket
@@ -27,7 +28,7 @@ import re
 from qpid.peer       import Closed
 from qpid.session    import SessionDetached
 from qpid.connection import Connection, ConnectionFailed
-from qpid.datatypes  import UUID, uuid4, Message, RangedSet
+from qpid.datatypes  import Message, RangedSet
 from qpid.util       import connect, ssl, URL
 from qpid.codec010   import StringCodec as Codec
 from threading       import Lock, Condition, Thread
@@ -414,7 +415,7 @@ class Session:
       self.console.brokerDisconnected(broker)
 
   def _handleBrokerResp(self, broker, codec, seq):
-    broker.brokerId = UUID(codec.read_uuid())
+    broker.brokerId = codec.read_uuid()
     if self.console != None:
       self.console.brokerInfo(broker)
 
@@ -615,7 +616,7 @@ class Session:
     elif typecode == 11: data = codec.read_uint8() != 0 # BOOL
     elif typecode == 12: data = codec.read_float()      # FLOAT
     elif typecode == 13: data = codec.read_double()     # DOUBLE
-    elif typecode == 14: data = UUID(codec.read_uuid()) # UUID
+    elif typecode == 14: data = codec.read_uuid()       # UUID
     elif typecode == 15: data = codec.read_map()        # FTABLE
     elif typecode == 16: data = codec.read_int8()       # S8
     elif typecode == 17: data = codec.read_int16()      # S16
@@ -1230,6 +1231,7 @@ class ManagedConnection(Thread):
 class Broker:
   """ This object represents a connection (or potential connection) to a QMF broker. """
   SYNC_TIME = 60
+  nextSeq = 1
 
   def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False):
     self.session  = session
@@ -1242,7 +1244,8 @@ class Broker:
     self.error = None
     self.brokerId = None
     self.connected = False
-    self.amqpSessionId = "%s.%d" % (os.uname()[1], os.getpid())
+    self.amqpSessionId = "%s.%d.%d" % (platform.uname()[1], os.getpid(), Broker.nextSeq)
+    Broker.nextSeq += 1
     if self.session.manageConnections:
       self.thread = ManagedConnection(self)
       self.thread.start()
@@ -1334,8 +1337,8 @@ class Broker:
                                          acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
       self.amqpSession.incoming("rdest").listen(self._replyCb, self._exceptionCb)
       self.amqpSession.message_set_flow_mode(destination="rdest", flow_mode=1)
-      self.amqpSession.message_flow(destination="rdest", unit=0, value=0xFFFFFFFF)
-      self.amqpSession.message_flow(destination="rdest", unit=1, value=0xFFFFFFFF)
+      self.amqpSession.message_flow(destination="rdest", unit=0, value=0xFFFFFFFFL)
+      self.amqpSession.message_flow(destination="rdest", unit=1, value=0xFFFFFFFFL)
 
       self.topicName = "topic-%s" % self.amqpSessionId
       self.amqpSession.queue_declare(queue=self.topicName, exclusive=True, auto_delete=True)
@@ -1344,8 +1347,8 @@ class Broker:
                                          acquire_mode=self.amqpSession.acquire_mode.pre_acquired)
       self.amqpSession.incoming("tdest").listen(self._replyCb)
       self.amqpSession.message_set_flow_mode(destination="tdest", flow_mode=1)
-      self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFF)
-      self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFF)
+      self.amqpSession.message_flow(destination="tdest", unit=0, value=0xFFFFFFFFL)
+      self.amqpSession.message_flow(destination="tdest", unit=1, value=0xFFFFFFFFL)
 
       self.connected = True
       self.session._handleBrokerConnect(self)

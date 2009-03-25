@@ -21,6 +21,7 @@
 #ifndef _DtxBuffer_
 #define _DtxBuffer_
 
+#include "BrokerImportExport.h"
 #include "TxBuffer.h"
 #include "qpid/sys/Mutex.h"
 
@@ -37,9 +38,9 @@ namespace qpid {
         public:
             typedef boost::shared_ptr<DtxBuffer> shared_ptr;
 
-            DtxBuffer(const std::string& xid = "");
-            ~DtxBuffer();
-            void markEnded();
+            QPID_BROKER_EXTERN DtxBuffer(const std::string& xid = "");
+            QPID_BROKER_EXTERN ~DtxBuffer();
+            QPID_BROKER_EXTERN void markEnded();
             bool isEnded();
             void setSuspended(bool suspended);
             bool isSuspended();

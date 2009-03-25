@@ -19,10 +19,12 @@
  *
  */
 
-#include <string>
+#include "qpid/sys/IntegerTypes.h"
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
+#include <string>
+
 
 namespace qpid {
 namespace broker {

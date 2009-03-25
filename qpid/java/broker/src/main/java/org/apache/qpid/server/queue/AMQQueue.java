@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.subscription.Subscription;
@@ -67,6 +68,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     boolean isEmpty();
 
+    boolean isFlowed();
+
     int getMessageCount();
 
     int getUndeliveredMessageCount();
@@ -80,9 +83,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     boolean isDeleted();
 
-
     int delete() throws AMQException;
-
 
     QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
 
@@ -90,14 +91,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
 
-
-
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 
-    
-
     void addQueueDeleteTask(final Task task);
-
 
     List<QueueEntry> getMessagesOnTheQueue();
 
@@ -117,7 +113,15 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext);
 
+    long getMemoryUsageMaximum();
 
+    void setMemoryUsageMaximum(long maximumMemoryUsage);
+
+    long getMemoryUsageMinimum();
+
+    void setMemoryUsageMinimum(long minimumMemoryUsage);
+
+    long getMemoryUsageCurrent();
 
     long getMaximumMessageSize();
 
@@ -141,6 +145,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     long getMinimumAlertRepeatGap();
 
+    void setMinimumAlertRepeatGap(long value);
+
 
     void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
 
@@ -161,7 +167,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void deliverAsync();
 
     void stop();
-
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
@@ -210,6 +215,4 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     {
         public void doTask(AMQQueue queue) throws AMQException;
     }
-
-    void configure(Configuration virtualHostDefaultQueueConfiguration);
 }

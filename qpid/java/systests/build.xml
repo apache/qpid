@@ -20,7 +20,7 @@ nn - or more contributor license agreements.  See the NOTICE file
  -->
 <project name="System Tests" default="build">
 
-    <property name="module.depends" value="client broker common junit-toolkit"/>
+    <property name="module.depends" value="client broker broker/test common junit-toolkit"/>
     <property name="module.test.src" location="src/main/java"/>
     <property name="module.test.excludes"
               value="**/TTLTest.java,**/DropInTest.java,**/TestClientControlledTest.java"/>

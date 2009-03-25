@@ -199,6 +199,7 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
+    queues.setQueueEvents(&queueEvents);
 
     // Early-Initialize plugins
     const Plugin::Plugins& plugins=Plugin::getPlugins();
@@ -383,9 +384,9 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
 	if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
-	  status = Manageable::STATUS_OK;
+            status = Manageable::STATUS_OK;
 	else
-	  return Manageable::STATUS_INVALID_PARAMETER;
+            return Manageable::STATUS_INVALID_PARAMETER;
         break;
       }
    default:

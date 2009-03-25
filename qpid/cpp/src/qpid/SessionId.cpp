@@ -35,7 +35,7 @@ bool SessionId::operator==(const SessionId& id) const {
 }
 
 std::ostream& operator<<(std::ostream& o, const SessionId& id) {
-    return o << id.getName() << "@" << id.getUserId();
+    return o << id.getUserId() << "." << id.getName();
 }
 
 std::string SessionId::str() const {

@@ -27,8 +27,11 @@ import java.io.FileWriter;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.SecurityConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.MockPluginManager;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -37,13 +40,14 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.MockProtocolSession;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class ACLManagerTest extends TestCase
 {
 
     private ACLManager _authzManager;
     private AMQProtocolSession _session;
-    private XMLConfiguration _conf;
+    private SecurityConfiguration _conf;
     private PluginManager _pluginManager;
 
     @Override
@@ -52,10 +56,10 @@ public class ACLManagerTest extends TestCase
         File tmpFile = File.createTempFile(getClass().getName(), "testconfig");
         tmpFile.deleteOnExit();
         BufferedWriter out = new BufferedWriter(new FileWriter(tmpFile));
-        out.write("<broker><security><queueDenier>notyet</queueDenier><exchangeDenier>yes</exchangeDenier></security></broker>");
+        out.write("<security><queueDenier>notyet</queueDenier><exchangeDenier>yes</exchangeDenier></security>");
         out.close();
         
-        _conf = new XMLConfiguration(tmpFile);
+        _conf = new SecurityConfiguration(new XMLConfiguration(tmpFile));
         
         // Create ACLManager
         
@@ -64,6 +68,12 @@ public class ACLManagerTest extends TestCase
         
         _session = new MockProtocolSession(new TestableMemoryMessageStore());
     }
+
+    public void tearDown() throws Exception
+    {
+        //Ensure we close the registry that the MockAMQQueue will create
+        ApplicationRegistry.getInstance().close();
+    }    
     
     public void testACLManagerConfigurationPluginManager() throws Exception
     {
@@ -77,7 +87,7 @@ public class ACLManagerTest extends TestCase
         assertTrue(_authzManager.authorisePurge(_session, queue));
     }
 
-    public void testACLManagerConfigurationPluginManagerACLPlugin()
+    public void testACLManagerConfigurationPluginManagerACLPlugin() throws ConfigurationException
     {
         _authzManager = new ACLManager(_conf, _pluginManager, ExchangeDenier.FACTORY);
         
@@ -85,13 +95,12 @@ public class ACLManagerTest extends TestCase
         assertFalse(_authzManager.authoriseDelete(_session, exchange));
     }
     
-    public void testConfigurePlugins()
+    public void testConfigurePlugins() throws ConfigurationException
     {
         Configuration hostConfig = new PropertiesConfiguration();
-        hostConfig.setProperty("security.queueDenier", "thisoneneither");
-        _authzManager.configureHostPlugins(hostConfig);
+        hostConfig.setProperty("queueDenier", "thisoneneither");
+        _authzManager.configureHostPlugins(new SecurityConfiguration(hostConfig));
         AMQQueue queue = new MockAMQQueue("thisoneneither");
         assertFalse(_authzManager.authoriseDelete(_session, queue));
     }
-
 }

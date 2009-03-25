@@ -182,6 +182,7 @@ private:
     uint32_t                     nextRemoteBank;
     uint32_t                     nextRequestSequence;
     bool                         clientWasAdded;
+    const uint64_t               startTime;
 
     std::auto_ptr<IdAllocator> allocator;
 

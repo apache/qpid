@@ -31,4 +31,8 @@ acl_la_SOURCES = \
   qpid/acl/AclReader.h
 
 acl_la_LIBADD = libqpidbroker.la
+if SUNOS
+  acl_la_LIBADD +=  libqmfagent.la libqmfconsole.la libqpidcommon.la -lboost_program_options $(SUNCC_RUNTIME_LIBS)
+endif
+
 acl_la_LDFLAGS = $(PLUGINLDFLAGS)

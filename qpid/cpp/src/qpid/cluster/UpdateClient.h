@@ -46,6 +46,7 @@ class SessionHandler;
 class DeliveryRecord;
 class SessionState;
 class SemanticState;
+class Decoder;
 
 } // namespace broker
 
@@ -54,6 +55,8 @@ namespace cluster {
 class Cluster;
 class Connection;
 class ClusterMap;
+class Decoder;
+class ExpiryPolicy;
 
 /**
  * A client that updates the contents of a local broker to a remote one using AMQP.
@@ -63,8 +66,8 @@ class UpdateClient : public sys::Runnable {
     static const std::string UPDATE; // Name for special update queue and exchange.
     
     UpdateClient(const MemberId& updater, const MemberId& updatee, const Url&,
-                 broker::Broker& donor, const ClusterMap& map, uint64_t sequence,
-                 const std::vector<boost::intrusive_ptr<Connection> >& ,
+                 broker::Broker& donor, const ClusterMap& map, ExpiryPolicy& expiry,
+                 const std::vector<boost::intrusive_ptr<Connection> >&, Decoder&,
                  const boost::function<void()>& done,
                  const boost::function<void(const std::exception&)>& fail,
                  const client::ConnectionSettings& 
@@ -92,12 +95,14 @@ class UpdateClient : public sys::Runnable {
     Url updateeUrl;
     broker::Broker& updaterBroker;
     ClusterMap map;
-    uint64_t frameId;
+    ExpiryPolicy& expiry;
     std::vector<boost::intrusive_ptr<Connection> > connections;
+    Decoder& decoder;
     client::Connection connection, shadowConnection;
     client::AsyncSession session, shadowSession;
     boost::function<void()> done;
     boost::function<void(const std::exception& e)> failed;
+    client::ConnectionSettings connectionSettings;
 };
 
 }} // namespace qpid::cluster

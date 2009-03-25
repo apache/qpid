@@ -26,6 +26,7 @@
 #include "qpid/framing/BodyFactory.h"
 #include <boost/intrusive_ptr.hpp>
 #include <ostream>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -48,7 +49,7 @@ struct AMQBodyConstVisitor {
 class AMQBody : public RefCounted {
   public:
     AMQBody() {}
-    virtual ~AMQBody();
+    QPID_COMMON_EXTERN virtual ~AMQBody();
 
     // Make AMQBody copyable even though RefCounted. 
     AMQBody(const AMQBody&) : RefCounted() {}  
@@ -71,7 +72,7 @@ class AMQBody : public RefCounted {
     virtual boost::intrusive_ptr<AMQBody> clone() const = 0;
 };
 
-std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& out, const AMQBody& body) ;
 
 enum BodyTypes {
     METHOD_BODY = 1,

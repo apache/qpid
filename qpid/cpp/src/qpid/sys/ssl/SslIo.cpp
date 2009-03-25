@@ -90,7 +90,7 @@ void SslAcceptor::readable(DispatchHandle& h) {
         // TODO: Currently we ignore the peers address, perhaps we should
         // log it or use it for connection acceptance.
         try {
-            s = socket.accept(0, 0);
+            s = socket.accept();
             if (s) {
                 acceptedCallback(*s);
             } else {

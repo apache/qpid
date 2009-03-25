@@ -23,6 +23,7 @@
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include "amqp_types.h"
+#include "qpid/CommonImportExport.h"
 
 #ifndef _FieldTable_
 #define _FieldTable_
@@ -51,45 +52,45 @@ class FieldTable
     typedef std::map<std::string, ValuePtr> ValueMap;
     typedef ValueMap::iterator iterator;
 
-    FieldTable() {};
-    FieldTable(const FieldTable& ft);
-    ~FieldTable();
-    FieldTable& operator=(const FieldTable& ft);
-    uint32_t encodedSize() const;
-    void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer);
+    QPID_COMMON_EXTERN FieldTable() {};
+    QPID_COMMON_EXTERN FieldTable(const FieldTable& ft);
+    QPID_COMMON_EXTERN ~FieldTable();
+    QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable& ft);
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
+    QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
+    QPID_COMMON_EXTERN void decode(Buffer& buffer);
 
-    int count() const;
-    void set(const std::string& name, const ValuePtr& value);
-    ValuePtr get(const std::string& name) const;
-    bool isSet(const std::string& name) const { return get(name).get() != 0; }
+    QPID_COMMON_EXTERN int count() const;
+    QPID_COMMON_EXTERN void set(const std::string& name, const ValuePtr& value);
+    QPID_COMMON_EXTERN ValuePtr get(const std::string& name) const;
+    QPID_COMMON_EXTERN bool isSet(const std::string& name) const { return get(name).get() != 0; }
 
-    void setString(const std::string& name, const std::string& value);
-    void setInt(const std::string& name, const int value);
-    void setInt64(const std::string& name, const int64_t value);
-    void setTimestamp(const std::string& name, const uint64_t value);
-    void setUInt64(const std::string& name, const uint64_t value);
-    void setTable(const std::string& name, const FieldTable& value);
-    void setArray(const std::string& name, const Array& value);
-    void setFloat(const std::string& name, const float value);
-    void setDouble(const std::string& name, const double value);
+    QPID_COMMON_EXTERN void setString(const std::string& name, const std::string& value);
+    QPID_COMMON_EXTERN void setInt(const std::string& name, const int value);
+    QPID_COMMON_EXTERN void setInt64(const std::string& name, const int64_t value);
+    QPID_COMMON_EXTERN void setTimestamp(const std::string& name, const uint64_t value);
+    QPID_COMMON_EXTERN void setUInt64(const std::string& name, const uint64_t value);
+    QPID_COMMON_EXTERN void setTable(const std::string& name, const FieldTable& value);
+    QPID_COMMON_EXTERN void setArray(const std::string& name, const Array& value);
+    QPID_COMMON_EXTERN void setFloat(const std::string& name, const float value);
+    QPID_COMMON_EXTERN void setDouble(const std::string& name, const double value);
     //void setDecimal(string& name, xxx& value);
 
-    int getAsInt(const std::string& name) const;
-    uint64_t getAsUInt64(const std::string& name) const;
-    int64_t getAsInt64(const std::string& name) const;
-    std::string getAsString(const std::string& name) const;
+    QPID_COMMON_EXTERN int getAsInt(const std::string& name) const;
+    QPID_COMMON_EXTERN uint64_t getAsUInt64(const std::string& name) const;
+    QPID_COMMON_EXTERN int64_t getAsInt64(const std::string& name) const;
+    QPID_COMMON_EXTERN std::string getAsString(const std::string& name) const;
 
-    bool getTable(const std::string& name, FieldTable& value) const;
-    bool getArray(const std::string& name, Array& value) const;
-    bool getFloat(const std::string& name, float& value) const;
-    bool getDouble(const std::string& name, double& value) const;
+    QPID_COMMON_EXTERN bool getTable(const std::string& name, FieldTable& value) const;
+    QPID_COMMON_EXTERN bool getArray(const std::string& name, Array& value) const;
+    QPID_COMMON_EXTERN bool getFloat(const std::string& name, float& value) const;
+    QPID_COMMON_EXTERN bool getDouble(const std::string& name, double& value) const;
     //bool getTimestamp(const std::string& name, uint64_t& value) const;
     //bool getDecimal(string& name, xxx& value);
-    void erase(const std::string& name);
+    QPID_COMMON_EXTERN void erase(const std::string& name);
     
 
-    bool operator==(const FieldTable& other) const;
+    QPID_COMMON_EXTERN bool operator==(const FieldTable& other) const;
 
     // Map-like interface.
     // TODO: may need to duplicate into versions that return mutable iterator
@@ -107,7 +108,7 @@ class FieldTable
   private:
     ValueMap values;
 
-    friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
+    QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };
 
 //class FieldNotFoundException{};

@@ -35,7 +35,7 @@ import org.w3c.dom.Element;
  * 
  * @author Andrea Gazzarini
  */
-class WSDMArtifactsDirector 
+final class WSDMArtifactsDirector 
 {
 	private final ObjectName _eventSourceObjectName;
 	private final MBeanInfo _metadata;
@@ -189,7 +189,8 @@ class WSDMArtifactsDirector
 	 * 
 	 * @param resource the ws resource.
 	 */
-	public void setResource(Resource resource) {
+	public void setResource(Resource resource) 
+	{
 		_wsdlBuilder.setWsdlPath(resource.getWsdlPath());
 	}
 }

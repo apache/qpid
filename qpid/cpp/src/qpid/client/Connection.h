@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 #include "qpid/client/Session.h"
+#include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
 
@@ -58,9 +59,9 @@ class Connection
      * Creates a connection object, but does not open the connection.
      * @see open()
      */
-    Connection();
+    QPID_CLIENT_EXTERN Connection();
 
-    ~Connection();
+    QPID_CLIENT_EXTERN ~Connection();
 
     /**
      * Opens a connection to a broker.
@@ -79,7 +80,7 @@ class Connection
      * hosts, where implemented(!), provide namespace partitioning
      * within a single broker).
      */
-    void open(const std::string& host, int port = 5672, 
+    QPID_CLIENT_EXTERN void open(const std::string& host, int port = 5672, 
               const std::string& uid = "guest",
               const std::string& pwd = "guest", 
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
@@ -101,7 +102,7 @@ class Connection
      * hosts, where implemented(!), provide namespace partitioning
      * within a single broker).
      */
-    void open(const Url& url,
+    QPID_CLIENT_EXTERN void open(const Url& url,
               const std::string& uid = "guest",
               const std::string& pwd = "guest", 
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
@@ -116,14 +117,14 @@ class Connection
      * @param settings used for any settings not provided by the URL.
      * Settings provided by the url (e.g. host, port) are ignored.
      */
-    void open(const Url& url, const ConnectionSettings& settings);
+    QPID_CLIENT_EXTERN void open(const Url& url, const ConnectionSettings& settings);
 
     /**
      * Opens a connection to a broker.
      * 
      * @param the settings to use (host, port etc). @see ConnectionSettings.
      */
-    void open(const ConnectionSettings& settings);
+    QPID_CLIENT_EXTERN void open(const ConnectionSettings& settings);
 
     /**
      * Close the connection.
@@ -131,7 +132,7 @@ class Connection
      * Any further use of this connection (without reopening it) will
      * not succeed.
      */
-    void close();
+    QPID_CLIENT_EXTERN void close();
 
     /**
      * Create a new session on this connection.  Sessions allow
@@ -174,23 +175,23 @@ class Connection
      * If the name is empty (the default) then a unique name will be
      * chosen using a Universally-unique identifier (UUID) algorithm.
      */
-    Session newSession(const std::string& name=std::string(), uint32_t timeoutSeconds = 0);
+    QPID_CLIENT_EXTERN Session newSession(const std::string& name=std::string(), uint32_t timeoutSeconds = 0);
 
     /**
      * Resume a suspended session. A session may be resumed
      * on a different connection to the one that created it.
      */
-    void resume(Session& session);
+    QPID_CLIENT_EXTERN void resume(Session& session);
 
-    bool isOpen() const;
+    QPID_CLIENT_EXTERN bool isOpen() const;
 
-    std::vector<Url> getKnownBrokers();
-    void registerFailureCallback ( boost::function<void ()> fn );
+    QPID_CLIENT_EXTERN std::vector<Url> getKnownBrokers();
+    QPID_CLIENT_EXTERN void registerFailureCallback ( boost::function<void ()> fn );
 
     /**
      * Return the set of client negotiated settings
      */
-    const ConnectionSettings& getNegotiatedSettings();
+    QPID_CLIENT_EXTERN const ConnectionSettings& getNegotiatedSettings();
 
   friend class ConnectionAccess; ///<@internal
   friend class SessionBase_0_10; ///<@internal

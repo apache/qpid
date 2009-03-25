@@ -40,12 +40,13 @@ public interface ManagedBroker
 {
     static final String TYPE = "VirtualHostManager";
 
+    static final int VERSION = 1 ;
+
     /**
      * Creates a new Exchange.
      * @param name
      * @param type
      * @param durable
-     * @param passive
      * @throws IOException
      * @throws JMException
      */
@@ -73,7 +74,6 @@ public interface ManagedBroker
      * @param queueName
      * @param durable
      * @param owner
-     * @param autoDelete
      * @throws IOException
      * @throws JMException
      */

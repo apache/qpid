@@ -29,6 +29,7 @@ windows_dist = \
   client.vcproj \
   qmfconsole.vcproj \
   protocol_gen.mak \
+  qpid/client/windows/SaslFactory.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   qpid/sys/windows/check.h \
@@ -41,6 +42,7 @@ windows_dist = \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/Mutex.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/Socket.cpp \
@@ -126,7 +128,6 @@ posix_plat_src = \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp \
   qpid/sys/posix/Shlib.cpp \
-  qpid/sys/posix/SystemInfo.cpp \
   qpid/sys/posix/Mutex.cpp \
   qpid/sys/posix/Fork.cpp \
   qpid/sys/posix/StrError.cpp \
@@ -139,7 +140,6 @@ posix_plat_hdr = \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Fork.h \
-  qpid/sys/posix/PollableCondition.h \
   qpid/sys/posix/IntegerTypes.h \
   qpid/sys/posix/Time.h
 
@@ -151,7 +151,13 @@ if HAVE_ECF
   poller = qpid/sys/solaris/ECFPoller.cpp
 endif
 
-platform_src = $(posix_plat_src) $(poller)
+if SUNOS
+  systeminfo = qpid/sys/solaris/SystemInfo.cpp
+else
+  systeminfo = qpid/sys/posix/SystemInfo.cpp
+endif
+
+platform_src = $(posix_plat_src) $(poller) $(systeminfo)
 platform_hdr = $(posix_plat_hdr)
 
 posix_broker_src = \
@@ -495,6 +501,7 @@ nobase_include_HEADERS = \
   qpid/broker/Queue.h \
   qpid/broker/QueueListeners.h \
   qpid/broker/QueueCleaner.h \
+  qpid/broker/BrokerImportExport.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Bridge.h \
   qpid/broker/Connection.h \
@@ -571,6 +578,7 @@ nobase_include_HEADERS = \
   qpid/client/AckMode.h \
   qpid/client/Bounds.h \
   qpid/client/ChainableFrameHandler.h \
+  qpid/client/ClientImportExport.h \
   qpid/client/Completion.h \
   qpid/client/Connection.h \
   qpid/client/ConnectionHandler.h \
@@ -666,6 +674,7 @@ nobase_include_HEADERS = \
   qpid/management/ManagementEvent.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
+  qpid/sys/alloca.h \
   qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AsynchIOHandler.h \
@@ -715,7 +724,8 @@ nobase_include_HEADERS = \
   qpid/sys/Time.h \
   qpid/sys/Timer.h \
   qpid/sys/TimeoutHandler.h \
-  qpid/sys/uuid.h
+  qpid/sys/uuid.h \
+  qpid/CommonImportExport.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

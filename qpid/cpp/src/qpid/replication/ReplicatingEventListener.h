@@ -24,6 +24,7 @@
 
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueEvents.h"
@@ -50,6 +51,8 @@ class ReplicatingEventListener : public Plugin
     struct PluginOptions : public Options
     {
         std::string queue;
+        std::string exchange;
+        std::string exchangeType;
         std::string name;
         bool createQueue;
 
@@ -58,10 +61,12 @@ class ReplicatingEventListener : public Plugin
 
     PluginOptions options;    
     qpid::broker::Queue::shared_ptr queue;
-    qpid::framing::SequenceNumber sequence;
+    qpid::broker::Exchange::shared_ptr exchange;
 
     void deliverDequeueMessage(const qpid::broker::QueuedMessage& enqueued);
     void deliverEnqueueMessage(const qpid::broker::QueuedMessage& enqueued);
+    void route(boost::intrusive_ptr<qpid::broker::Message>);
+    void shutdown();
 
     boost::intrusive_ptr<qpid::broker::Message> createMessage(const qpid::framing::FieldTable& headers);
     boost::intrusive_ptr<qpid::broker::Message> cloneMessage(qpid::broker::Queue& queue, 

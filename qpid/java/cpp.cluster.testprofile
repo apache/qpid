@@ -3,3 +3,6 @@ broker=${project.root}/../cpp/src/qpidd --load-module ${project.root}/../cpp/src
 test.excludesfile=${project.root}/ExcludeList ${project.root}/XAExcludeList ${project.root}/010ExcludeList
 
 profile.clustered=true
+profile.failoverMsgCount=10
+profile.failoverIterations=10
+profile.failoverRandomSeed=20080921

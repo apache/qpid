@@ -48,6 +48,7 @@ public class MessageFactoryRegistry
     private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
     private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap =
             new HashMap<AMQShortString, MessageFactory>();
+    private final MessageFactory _default = new JMSBytesMessageFactory();
 
     /**
      * Construct a new registry with the default message factories registered
@@ -63,7 +64,7 @@ public class MessageFactoryRegistry
         mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
         mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
         mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
-        mf.registerFactory(null, new JMSBytesMessageFactory());
+        mf.registerFactory(null, mf._default);
 
         return mf;
     }
@@ -113,12 +114,10 @@ public class MessageFactoryRegistry
         MessageFactory mf = _mimeShortStringToFactoryMap.get(contentTypeShortString);
         if (mf == null)
         {
-            throw new AMQException(null, "Unsupport MIME type of " + properties.getContentTypeAsString(), null);
+            mf = _default;
         }
-        else
-        {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies);
-        }
+
+        return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies);
     }
 
     public AbstractJMSMessage createMessage(MessageTransfer transfer) throws AMQException, JMSException
@@ -138,22 +137,20 @@ public class MessageFactoryRegistry
         MessageFactory mf = _mimeStringToFactoryMap.get(messageType);
         if (mf == null)
         {
-            throw new AMQException(null, "Unsupport MIME type of " + messageType, null);
+            mf = _default;
         }
-        else
+
+        boolean redelivered = false;
+        DeliveryProperties deliverProps;
+        if((deliverProps = transfer.getHeader().get(DeliveryProperties.class)) != null)
         {
-            boolean redelivered = false;
-            DeliveryProperties deliverProps;
-            if((deliverProps = transfer.getHeader().get(DeliveryProperties.class)) != null)
-            {
-                redelivered = deliverProps.getRedelivered();
-            }
-            return mf.createMessage(transfer.getId(), 
-                                    redelivered, 
-                                    mprop == null? new MessageProperties():mprop,
-                                    deliverProps == null? new DeliveryProperties():deliverProps,
-                                    transfer.getBody());
+            redelivered = deliverProps.getRedelivered();
         }
+        return mf.createMessage(transfer.getId(),
+                                redelivered,
+                                mprop == null? new MessageProperties():mprop,
+                                deliverProps == null? new DeliveryProperties():deliverProps,
+                                transfer.getBody());
     }
 
 
@@ -167,11 +164,9 @@ public class MessageFactoryRegistry
         MessageFactory mf = _mimeStringToFactoryMap.get(mimeType);
         if (mf == null)
         {
-            throw new AMQException(null, "Unsupport MIME type of " + mimeType, null);
+            mf = _default;
         }
-        else
-        {
-            return mf.createMessage(delegateFactory);
-        }
+
+        return mf.createMessage(delegateFactory);
     }
 }

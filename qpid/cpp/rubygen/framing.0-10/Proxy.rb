@@ -44,7 +44,7 @@ public:
 static #{cname}& get(#{@classname}& proxy) { return proxy.get#{cname}(); }
 EOS
       methods_on(c, @chassis).each { |m|
-        genl "virtual void #{m.cppname}(#{m.signature.join(",\n            ")});"
+        genl "QPID_COMMON_EXTERN virtual void #{m.cppname}(#{m.signature.join(",\n            ")});"
         genl
       }}
   end
@@ -66,10 +66,12 @@ EOS
       include "qpid/framing/Array.h"
       include "qpid/framing/amqp_types.h"
       include "qpid/framing/amqp_structs.h"
+      include "qpid/CommonImportExport.h"
+
       namespace("qpid::framing") { 
         cpp_class(@classname, "public Proxy") {
           public
-          genl "#{@classname}(FrameHandler& out);"
+          genl "QPID_COMMON_EXTERN #{@classname}(FrameHandler& out);"
           genl
           @amqp.classes.each { |c|
             inner_class_decl(c)

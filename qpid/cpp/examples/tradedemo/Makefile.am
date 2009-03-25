@@ -18,6 +18,7 @@
 #
 examplesdir=$(pkgdatadir)/examples/tradedemo
 
+MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
 noinst_PROGRAMS=topic_listener topic_publisher declare_queues

@@ -50,12 +50,12 @@ void TxAccept::RangeOps::operator()(SequenceNumber start, SequenceNumber end)
 
 void TxAccept::RangeOps::prepare(TransactionContext* ctxt)
 {
-    for_each(ranges.begin(), ranges.end(), bind(&RangeOp::prepare, _1, ctxt));
+    std::for_each(ranges.begin(), ranges.end(), bind(&RangeOp::prepare, _1, ctxt));
 }
 
 void TxAccept::RangeOps::commit()
 {
-    for_each(ranges.begin(), ranges.end(), bind(&RangeOp::commit, _1));
+    std::for_each(ranges.begin(), ranges.end(), bind(&RangeOp::commit, _1));
     //now remove if isRedundant():
     if (!ranges.empty()) {
         ack_iterator i = ranges.front().range.start;

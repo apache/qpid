@@ -151,7 +151,7 @@ void ManagementAgentImpl::init(const client::ConnectionSettings& settings,
     // TODO: Abstract the socket calls for portability
     if (extThread) {
         int pair[2];
-        int result = socketpair(PF_LOCAL, SOCK_STREAM, 0, pair);
+        int result = socketpair(PF_UNIX, SOCK_STREAM, 0, pair);
         if (result == -1) {
             return;
         }
@@ -485,6 +485,9 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
             Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
 
+            if (object->getConfigChanged() || object->getInstChanged())
+                object->setUpdateTime();
+
             encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);
             object->writeStatistics(outBuffer, true);
@@ -507,6 +510,9 @@ void ManagementAgentImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, st
         if (object->getClassName() == className) {
             Buffer   outBuffer(outputBuffer, MA_BUFFER_SIZE);
             uint32_t outLen;
+
+            if (object->getConfigChanged() || object->getInstChanged())
+                object->setUpdateTime();
 
             encodeHeader(outBuffer, 'g', sequence);
             object->writeProperties(outBuffer);

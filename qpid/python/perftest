@@ -44,8 +44,8 @@ def publisher(n):
 	consumer = "consumer"
 	queue = client.queue(consumer)	
 	channel.message_subscribe(queue="sync_queue", destination=consumer)
-	channel.message_flow(consumer, 0, 0xFFFFFFFF)
-	channel.message_flow(consumer, 1, 0xFFFFFFFF)
+	channel.message_flow(consumer, 0, 0xFFFFFFFFL)
+	channel.message_flow(consumer, 1, 0xFFFFFFFFL)
         queue.get(block = True)
 	print "done"
 	channel.session_close()
@@ -62,8 +62,8 @@ def consumer():
 	consumer = "consumer"
 	queue = client.queue(consumer)	
 	channel.message_subscribe(queue="message_queue", destination=consumer)
-	channel.message_flow(consumer, 0, 0xFFFFFFFF)
-	channel.message_flow(consumer, 1, 0xFFFFFFFF)
+	channel.message_flow(consumer, 0, 0xFFFFFFFFL)
+	channel.message_flow(consumer, 1, 0xFFFFFFFFL)
         final = "That's done"   
 	content = ""	
 	message = None

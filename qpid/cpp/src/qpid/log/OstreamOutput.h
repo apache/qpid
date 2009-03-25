@@ -26,8 +26,8 @@ namespace log {
  */
 class OstreamOutput : public qpid::log::Logger::Output {
 public:
-    OstreamOutput(std::ostream& o);
-    OstreamOutput(const std::string& file);
+    QPID_COMMON_EXTERN OstreamOutput(std::ostream& o);
+    QPID_COMMON_EXTERN OstreamOutput(const std::string& file);
 
     virtual void log(const Statement&, const std::string& m);
 

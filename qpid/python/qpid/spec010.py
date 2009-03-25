@@ -467,19 +467,31 @@ class Exception(Named, Node):
     node.exceptions.append(self)
     Node.register(self)
 
+def direct(t):
+  return lambda x: t
+
+def map_str(s):
+  for c in s:
+    if ord(c) >= 0x80:
+      return "vbin16"
+  return "str16"
+
 class Spec(Node):
 
   ENCODINGS = {
-    basestring: "vbin16",
-    int: "int64",
-    long: "int64",
-    float: "float",
-    None.__class__: "void",
-    list: "list",
-    tuple: "list",
-    dict: "map",
-    datatypes.timestamp: "datetime",
-    datetime.datetime: "datetime"
+    unicode: direct("str16"),
+    str: map_str,
+    buffer: direct("vbin32"),
+    int: direct("int64"),
+    long: direct("int64"),
+    float: direct("double"),
+    None.__class__: direct("void"),
+    list: direct("list"),
+    tuple: direct("list"),
+    dict: direct("map"),
+    datatypes.timestamp: direct("datetime"),
+    datetime.datetime: direct("datetime"),
+    datatypes.UUID: direct("uuid")
     }
 
   def __init__(self, major, minor, port, children):
@@ -500,11 +512,14 @@ class Spec(Node):
     self.structs_by_name = {}
     self.enums = {}
 
-  def encoding(self, klass):
+  def encoding(self, obj):
+    return self._encoding(obj.__class__, obj)
+
+  def _encoding(self, klass, obj):
     if Spec.ENCODINGS.has_key(klass):
-      return self.named[Spec.ENCODINGS[klass]]
+      return self.named[Spec.ENCODINGS[klass](obj)]
     for base in klass.__bases__:
-      result = self.encoding(base)
+      result = self._encoding(base, obj)
       if result != None:
         return result
 

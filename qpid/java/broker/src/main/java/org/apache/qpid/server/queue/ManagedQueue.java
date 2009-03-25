@@ -41,6 +41,7 @@ import org.apache.qpid.server.management.MBeanOperationParameter;
 public interface ManagedQueue
 {
     static final String TYPE = "Queue";
+    static final int VERSION = 2;
 
     /**
      * Returns the Name of the ManagedQueue.
@@ -71,7 +72,7 @@ public interface ManagedQueue
      * @return
      * @throws IOException
      */
-    @MBeanAttribute(name="QueueDepth", description="Size of messages(KB) in the queue")
+    @MBeanAttribute(name="QueueDepth", description="The total size(Bytes) of messages in the queue")
     Long getQueueDepth() throws IOException, JMException;
 
     /**
@@ -115,22 +116,22 @@ public interface ManagedQueue
     boolean isAutoDelete() throws IOException;
 
     /**
-     * Returns the maximum age of a message (expiration time)
+     * Returns the maximum age of a message (expiration time) in milliseconds
      * @return the maximum age
      * @throws IOException
      */
     Long getMaximumMessageAge() throws IOException;
 
     /**
-     * Sets the maximum age of a message
+     * Sets the maximum age of a message in milliseconds
      * @param age  maximum age of message.
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumMessageAge", description="Threshold high value for message age on the broker")
+    @MBeanAttribute(name="MaximumMessageAge", description="Threshold high value(milliseconds) for message age")
     void setMaximumMessageAge(Long age) throws IOException;
 
     /**
-     * Returns the maximum size of a message (in kbytes) allowed to be accepted by the
+     * Returns the maximum size of a message (in Bytes) allowed to be accepted by the
      * ManagedQueue. This is useful in setting notifications or taking
      * appropriate action, if the size of the message received is more than
      * the allowed size.
@@ -141,12 +142,12 @@ public interface ManagedQueue
     Long getMaximumMessageSize() throws IOException;
 
     /**
-     * Sets the maximum size of the message (in kbytes) that is allowed to be
+     * Sets the maximum size of the message (in Bytes) that is allowed to be
      * accepted by the Queue.
      * @param size  maximum size of message.
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumMessageSize", description="Threshold high value(KB) for a message size")
+    @MBeanAttribute(name="MaximumMessageSize", description="Threshold high value(Bytes) for a message size")
     void setMaximumMessageSize(Long size) throws IOException;
 
     /**
@@ -180,8 +181,64 @@ public interface ManagedQueue
      * @param value
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(KB) for Queue Depth")
+    @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(Bytes) for Queue Depth")
     void setMaximumQueueDepth(Long value) throws IOException;
+
+    /**
+     * View the limit on the memory that this queue will utilise.
+     *
+     * Used by Flow to Disk.
+     *
+     * @return The maximum memory(B) that the queue will occuy.
+     */
+    public Long getMemoryUsageMaximum();
+
+    /**
+     * Place a limit on the memory that this queue will utilise.
+     *
+     * Used by Flow to Disk
+     *
+     * @param maximumMemoryUsage The new maximum memory(B) to be used by this queue
+     */
+    @MBeanAttribute(name="MemoryUsageMaximum", description="The maximum memory(Bytes) that the queue will occupy.")
+    public void setMemoryUsageMaximum(Long maximumMemoryUsage);
+
+    /**
+     * View the minimum amount of memory that has been defined for this queue.
+     *
+     * Used by Flow to Disk
+     *
+     * @return The minimum amount of queue data(B) that the queue will attempt to keep in memory
+     */
+    public Long getMemoryUsageMinimum();
+
+    /**
+     * Set the minimum amount of memory that has been defined for this queue.
+     *
+     * Used by Flow to Disk
+     *
+     * @param minimumMemoryUsage The new minimum memory(B) level to be used by this queue
+     */
+    @MBeanAttribute(name="MemoryUsageMinimum", description="The minimum memory(Bytes) that the queue will occupy.")
+    public void setMemoryUsageMinimum(Long minimumMemoryUsage);
+
+    /**
+     * View the amount of memory(B) that this queue is using.
+     *
+     * @return The current memory(B) usage of this queue.
+     */
+    @MBeanAttribute(name="MemoryUsageCurrent", description="The current amount of memory(Bytes) used by this queue.")
+    public Long getMemoryUsageCurrent();
+
+    /**
+     * When a queue exceeds its MemoryUsageMaximum value then the Queue will start flowing to disk.
+     *
+     * This boolean is used to show that change in state.
+     *
+     * @return true if the Queue is currently flowing to disk
+     */
+    @MBeanAttribute(name="isFlowed", description="true if the queue is currently flowing to disk.")
+    public boolean isFlowed();
 
 
 

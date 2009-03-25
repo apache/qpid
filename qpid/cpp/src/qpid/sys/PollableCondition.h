@@ -22,7 +22,58 @@
  *
  */
 
-// Currently only has a posix implementation, add #ifdefs for other platforms as needed.
-#include "posix/PollableCondition.h"
+#include "qpid/sys/Poller.h"
+#include "qpid/CommonImportExport.h"
+#include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+
+
+namespace qpid {
+namespace sys {
+
+class PollableConditionPrivate;
+
+class PollableCondition {
+public:
+    typedef boost::function1<void, PollableCondition&> Callback;
+
+    QPID_COMMON_EXTERN PollableCondition(const Callback& cb,
+                      const boost::shared_ptr<sys::Poller>& poller);
+
+    QPID_COMMON_EXTERN ~PollableCondition();
+
+    /**
+     * Set the condition. Triggers callback to Callback from Poller.
+     * When callback is made, condition is suspended. Call rearm() to
+     * resume reacting to the condition.
+     */
+    QPID_COMMON_EXTERN void set();
+
+    /**
+     * Get the current state of the condition, then clear it.
+     *
+     * @return The state of the condition before it was cleared.
+     */
+    QPID_COMMON_EXTERN bool clear();
+
+    /**
+     * Temporarily suspend the ability for the poller to react to the
+     * condition. It can be rearm()ed later.
+     */
+    QPID_COMMON_EXTERN void disarm();
+
+    /**
+     * Reset the ability for the poller to react to the condition.
+     */
+    QPID_COMMON_EXTERN void rearm();
+
+ private:
+    PollableConditionPrivate *impl;
+
+    Callback callback;
+    boost::shared_ptr<sys::Poller> poller;
+};
+
+}} // namespace qpid::sys
 
 #endif  /*!QPID_SYS_POLLABLECONDITION_H*/

@@ -152,8 +152,39 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     public boolean verifyPassword(String principal, char[] password) throws AccountNotFoundException
     {
         char[] pwd = lookupPassword(principal);
+        
+        if (pwd == null)
+        {
+            throw new AccountNotFoundException("Unable to lookup the specfied users password");
+        }
+        
+        byte[] byteArray = new byte[password.length];
+        int index = 0;
+        for (char c : password)
+        {
+            byteArray[index++] = (byte) c;
+        }
+        
+        byte[] MD5byteArray;
+        try
+        {
+            MD5byteArray = HashedUser.getMD5(byteArray);
+        }
+        catch (Exception e1)
+        {
+            _logger.warn("Unable to hash password for user '" + principal + "' for comparison");
+            return false;
+        }
+        
+        char[] hashedPassword = new char[MD5byteArray.length];
 
-        return compareCharArray(pwd, password);
+        index = 0;
+        for (byte c : MD5byteArray)
+        {
+            hashedPassword[index++] = (char) c;
+        }
+
+        return compareCharArray(pwd, hashedPassword);
     }
     
     private boolean compareCharArray(char[] a, char[] b)
@@ -193,7 +224,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             {
                 _userUpdate.lock();
                 char[] orig = user.getPassword();
-                user.setPassword(password);
+                user.setPassword(password,false);
 
                 try
                 {
@@ -204,7 +235,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     _logger.error("Unable to save password file, password change for user'"
                                   + principal + "' will revert at restart");
                     //revert the password change
-                    user.setPassword(orig);
+                    user.setPassword(orig,true);
                     return false;
                 }
                 return true;
@@ -230,7 +261,17 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return false;
         }
 
-        HashedUser user = new HashedUser(principal.getName(), password);
+        HashedUser user;
+        try
+        {
+            user = new HashedUser(principal.getName(), password);
+        }
+        catch (Exception e1)
+        {
+            _logger.warn("Unable to create new user '" + principal.getName() + "'");
+            return false;
+        }
+
 
         try
         {

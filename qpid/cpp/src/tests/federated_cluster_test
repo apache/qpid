@@ -21,8 +21,8 @@
 
 # Test reliability of the replication feature in the face of link
 # failures:
-MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python
+srcdir=`dirname $0`
+PYTHON_DIR=$srcdir/../../../python
 
 trap stop_brokers EXIT
 
@@ -37,9 +37,14 @@ stop_brokers() {
         unset BROKER_A
     fi      
     if [[ $NODE_1 ]] ; then
-        ./stop_cluster
+        ../qpidd -q --port $NODE_1
         unset NODE_1
     fi
+    if [[ $NODE_2 ]] ; then
+        ../qpidd -q --port $NODE_2
+        unset NODE_2
+    fi
+    rm cluster.ports
 }
 
 start_brokers() {
@@ -48,19 +53,20 @@ start_brokers() {
     BROKER_A=`cat fed.port.tmp`
 
     #...and start cluster
-    ./start_cluster 2 || fail "Could not start cluster"
+    $srcdir/start_cluster 2 || fail "Could not start cluster"
     NODE_1=$(head -1 cluster.ports)
     NODE_2=$(tail -1 cluster.ports)
 }
 
 setup() {
+    export PYTHONPATH=$PYTHON_DIR
     #create exchange on both cluster and single broker
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add exchange direct test-exchange
     $PYTHON_DIR/commands/qpid-config -a "localhost:$NODE_1" add exchange direct test-exchange
 
     #create dynamic routes for test exchange
-    $PYTHON_DIR/commands/qpid-route dynamic add "localhost:$NODE_1" "localhost:$BROKER_A" test-exchange
-    $PYTHON_DIR/commands/qpid-route dynamic add "localhost:$BROKER_A" "localhost:$NODE_1" test-exchange
+    $PYTHON_DIR/commands/qpid-route dynamic add "localhost:$NODE_2" "localhost:$BROKER_A" test-exchange
+    $PYTHON_DIR/commands/qpid-route dynamic add "localhost:$BROKER_A" "localhost:$NODE_2" test-exchange
 
     #create test queue on cluster and bind it to the test exchange
     $PYTHON_DIR/commands/qpid-config -a "localhost:$NODE_1" add queue test-queue
@@ -71,7 +77,7 @@ setup() {
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" bind test-exchange test-queue from-cluster
 }
 
-run_test_pull_to_cluster() {
+run_test_pull_to_cluster_two_consumers() {
     #start consumers on each of the two nodes of the cluster
     ./receiver --port $NODE_1 --queue test-queue --credit-window 1 > fed1.out.tmp &
     ./receiver --port $NODE_2 --queue test-queue --credit-window 1 > fed2.out.tmp &
@@ -83,6 +89,20 @@ run_test_pull_to_cluster() {
     #combine output of the two consumers, sort it and compare with the expected stream
     wait
     sort -g -k 2 fed1.out.tmp fed2.out.tmp > fed.out.tmp
+    diff fed.in.tmp fed.out.tmp || fail "federated link to cluster failed: expectations not met!"
+        
+    rm -f fed*.tmp #cleanup
+}
+
+run_test_pull_to_cluster() {
+    #send stream of messages to test exchange on single broker
+    for i in `seq 1 1000`; do echo Message $i >> fed.in.tmp; done
+    ./sender --port $BROKER_A --exchange test-exchange --routing-key to-cluster --send-eos 1 < fed.in.tmp
+
+    #consume from remaining node of the cluster
+    ./receiver --port $NODE_2 --queue test-queue > fed.out.tmp
+
+    #verify all messages are received
     diff fed.in.tmp fed.out.tmp || fail "federated link to cluster failed: expectations not met!"
         
     rm -f fed*.tmp #cleanup
@@ -124,8 +144,19 @@ EOF
     echo "brokers started"
     setup
     echo "setup completed"
-    run_test_pull_to_cluster    
+    run_test_pull_to_cluster_two_consumers    
     echo "federated link to cluster verified"
     run_test_pull_from_cluster    
     echo "federated link from cluster verified"
+    if [[ $TEST_NODE_FAILURE ]] ; then
+        #kill first cluster node and retest
+        kill -9 $(../qpidd --check --port $NODE_1) && unset NODE_1
+        echo "killed first cluster node; waiting for links to re-establish themselves..."
+        sleep 5
+        echo "retesting..."
+        run_test_pull_to_cluster
+        echo "federated link to cluster verified"
+        run_test_pull_from_cluster    
+        echo "federated link from cluster verified"    
+    fi
 fi

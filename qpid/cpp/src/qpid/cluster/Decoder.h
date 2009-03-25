@@ -22,44 +22,36 @@
  *
  */
 
-#include "ConnectionDecoder.h"
 #include "types.h"
-#include <boost/ptr_container/ptr_map.hpp>
+#include "qpid/framing/FrameDecoder.h"
+#include <boost/function.hpp>
+#include <map>
 
 namespace qpid {
 namespace cluster {
 
+class EventFrame;
 class EventHeader;
-class ConnectionMap;
 
 /**
- * Holds a map of ConnectionDecoders. Decodes Events into EventFrames
- * and forwards EventFrames to a handler.
- *
- * THREAD UNSAFE: Called sequentially with un-decoded cluster events from CPG.
+ * A map of decoders for connections.
  */
 class Decoder
 {
   public:
-    typedef boost::function<void(const EventFrame&)> Handler;
+    typedef boost::function<void(const EventFrame&)> FrameHandler;
 
-    Decoder(const Handler& h, ConnectionMap&);
-
-    /** Takes EventHeader + data rather than Event so that the caller can
-     * pass a pointer to connection data or a CPG buffer directly without copy.
-     */
-    void decode(const EventHeader& eh, const void* data);
-
-    /** Erase the decoder for a connection. */
+    Decoder(FrameHandler fh) : callback(fh) {}
+    void decode(const EventHeader& eh, const char* data);
     void erase(const ConnectionId&);
+    framing::FrameDecoder& get(const ConnectionId& c) { return map[c]; }
 
   private:
-    typedef boost::ptr_map<ConnectionId, ConnectionDecoder> Map;
-    Handler handler;
+    typedef std::map<ConnectionId, framing::FrameDecoder> Map;
     Map map;
-    ConnectionMap& connections;
+    void process(const EventFrame&);
+    FrameHandler callback;
 };
-
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_DECODER_H*/

@@ -27,26 +27,31 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.routing.RoutingTable;
+import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A simple message store that stores the messages in a threadsafe structure in memory.
+/**
+ * A simple message store that stores the messages in a threadsafe structure in memory.
  *
  * NOTE: Now that we have removed the MessageStore interface and are using a TransactionLog
  *
  * This class really should have no storage unless we want to do inMemory Recovery.
- *
  */
 public class MemoryMessageStore implements TransactionLog, RoutingTable
 {
@@ -62,6 +67,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
 
     private final AtomicLong _messageId = new AtomicLong(1);
     private AtomicBoolean _closed = new AtomicBoolean(false);
+    protected final Map<Long, List<AMQQueue>> _messageEnqueueMap = new HashMap<Long, List<AMQQueue>>();
 
     public void configure()
     {
@@ -70,19 +76,19 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(DEFAULT_HASHTABLE_CAPACITY);
     }
 
-    public void configure(String base, Configuration config)
+    public void configure(String base, VirtualHostConfiguration config)
     {
         //Only initialise when called with current 'store' configs i.e. don't reinit when used as a 'RoutingTable'
         if (base.equals("store"))
         {
-            int hashtableCapacity = config.getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
+            int hashtableCapacity = config.getStoreConfiguration().getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
             _log.info("Using capacity " + hashtableCapacity + " for hash tables");
             _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
             _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
         }
     }
 
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         configure(base, config);
     }
@@ -102,7 +108,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         }
     }
 
-    public void removeMessage(StoreContext context, Long messageId) throws AMQException
+    private void removeMessage(StoreContext context, Long messageId) throws AMQException
     {
         checkNotClosed();
         if (_log.isDebugEnabled())
@@ -111,6 +117,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         }
         _metaDataMap.remove(messageId);
         _contentBodyMap.remove(messageId);
+        _messageEnqueueMap.remove(messageId);
     }
 
     public void createExchange(Exchange exchange) throws AMQException
@@ -133,7 +140,6 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
 
     }
 
-
     public void createQueue(AMQQueue queue) throws AMQException
     {
         // Not requred to do anything
@@ -151,12 +157,39 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
 
     public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
-        // Not required to do anything
+        synchronized (_messageEnqueueMap)
+        {
+            List<AMQQueue> queues = _messageEnqueueMap.get(messageId);
+            if (queues == null)
+            {
+                queues = new LinkedList<AMQQueue>();
+                _messageEnqueueMap.put(messageId, queues);
+            }
+
+            queues.add(queue);
+        }
     }
 
     public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
-        // Not required to do anything
+        synchronized (_messageEnqueueMap)
+        {
+            List<AMQQueue> queues = _messageEnqueueMap.get(messageId);
+            if (queues == null || !queues.contains(queue))
+            {
+                throw new RuntimeException("Attempt to dequeue messageID:" + messageId + " from queue:" + queue.getName()
+                                           + " but it is not enqueued on that queue.");
+            }
+            else
+            {
+                queues.remove(queue);
+                if (queues.isEmpty())
+                {
+                    removeMessage(context,messageId);
+                }
+            }
+        }
+
     }
 
     public void beginTran(StoreContext context) throws AMQException
@@ -237,7 +270,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
     }
 
     private void checkNotClosed() throws MessageStoreClosedException
-     {
+    {
         if (_closed.get())
         {
             throw new MessageStoreClosedException();

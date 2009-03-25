@@ -52,9 +52,9 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.routing.RoutingTable;
@@ -77,7 +77,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     @MBeanConstructor("Creates the Broker Manager MBean")
     public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
-        super(ManagedBroker.class, ManagedBroker.TYPE);
+        super(ManagedBroker.class, ManagedBroker.TYPE, ManagedBroker.VERSION);
 
         _virtualHostMBean = virtualHostMBean;
         VirtualHost virtualHost = virtualHostMBean.getVirtualHost();

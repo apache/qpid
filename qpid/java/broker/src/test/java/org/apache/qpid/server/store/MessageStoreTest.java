@@ -21,6 +21,8 @@
 package org.apache.qpid.server.store;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
@@ -102,7 +104,7 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            _virtualHost = new VirtualHost(virtualHostName, configuration, null);
+            _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), configuration));
             ApplicationRegistry.getInstance().getVirtualHostRegistry().registerVirtualHost(_virtualHost);
         }
         catch (Exception e)

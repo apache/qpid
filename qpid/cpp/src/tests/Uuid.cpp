@@ -18,11 +18,11 @@
 
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
 
 #include <set>
-#include <alloca.h>
 
 QPID_AUTO_TEST_SUITE(UuidTestSuite)
 

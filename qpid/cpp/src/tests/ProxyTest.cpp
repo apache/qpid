@@ -23,7 +23,6 @@
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/ExecutionSyncBody.h"
 #include "qpid/framing/Proxy.h"
-#include <alloca.h>
 
 #include "unit_test.h"
 

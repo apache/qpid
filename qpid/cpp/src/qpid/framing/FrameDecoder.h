@@ -35,9 +35,16 @@ class FrameDecoder
 {
   public:
     bool decode(Buffer& buffer);
-    AMQFrame frame;
+    const AMQFrame& getFrame() const { return frame; }
+    AMQFrame& getFrame() { return frame; }
+
+    void setFragment(const char*, size_t);
+    std::pair<const char*, size_t> getFragment() const;
+
   private:
     std::vector<char> fragment;
+    AMQFrame frame;
+
 };
 }} // namespace qpid::framing
 

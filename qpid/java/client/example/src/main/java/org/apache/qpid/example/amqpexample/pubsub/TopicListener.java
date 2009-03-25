@@ -40,6 +40,8 @@ public class TopicListener implements SessionListener
 
     public void opened(Session ssn) {}
 
+    public void resumed(Session ssn) {}
+
     public void message(Session ssn, MessageTransfer xfr)
     {
         DeliveryProperties dp = xfr.getHeader().get(DeliveryProperties.class);

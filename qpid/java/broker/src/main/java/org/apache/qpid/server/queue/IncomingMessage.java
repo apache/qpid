@@ -43,7 +43,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private static final Logger _logger = Logger.getLogger(IncomingMessage.class);
 
     private static final boolean SYNCHED_CLOCKS =
-            ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false);
+            ApplicationRegistry.getInstance().getConfiguration().getSynchedClocks();
 
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
@@ -51,7 +51,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private final TransactionalContext _txnContext;
 
     private static final boolean MSG_AUTH = 
-        ApplicationRegistry.getInstance().getConfiguration().getBoolean("security.msg-auth", false);
+        ApplicationRegistry.getInstance().getConfiguration().getMsgAuth();
 
 
     /**
@@ -78,6 +78,10 @@ public class IncomingMessage implements Filterable<RuntimeException>
                            final AMQProtocolSession publisher,
                            TransactionLog messasgeStore)
     {
+        if (publisher == null)
+        {
+            throw new NullPointerException("Message Publisher cannot be null");
+        }
         _messagePublishInfo = info;
         _txnContext = txnContext;
         _publisher = publisher;
@@ -152,8 +156,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
             _logger.debug("Delivering message " + getMessageId() + " to " + _destinationQueues);
         }
 
-        try
-        {
+
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
             _message.setPublishAndContentHeaderBody(_txnContext.getStoreContext(), _messagePublishInfo, getContentHeaderBody());
@@ -192,7 +195,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
             {
                 int offset;
                 final int queueCount = _destinationQueues.size();
-                _message.incrementReference(queueCount);
                 if(queueCount == 1)
                 {
                     offset = 0;
@@ -218,12 +220,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
             }
 
             return _message;
-        }
-        finally
-        {
-            // Remove refence for routing process . Reference count should now == delivered queue count
-            if(_message != null) _message.decrementReference(_txnContext.getStoreContext());
-        }
+      
+
 
     }
 

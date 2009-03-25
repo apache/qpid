@@ -50,10 +50,10 @@ public abstract class AMQManagedObject extends DefaultManagedObject
 
     protected MBeanInfo _mbeanInfo;
 
-    protected AMQManagedObject(Class<?> managementInterface, String typeName)
+    protected AMQManagedObject(Class<?> managementInterface, String typeName, int version)
         throws NotCompliantMBeanException
     {
-        super(managementInterface, typeName);
+        super(managementInterface, typeName, version);
         buildMBeanInfo();
     }
 

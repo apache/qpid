@@ -42,10 +42,14 @@ public:
         struct NameValue { const char* name; int value; };
         NameValue nameValue[] = {
             { "AUTH", LOG_AUTH },
+#ifdef HAVE_LOG_AUTHPRIV            
             { "AUTHPRIV", LOG_AUTHPRIV },
+#endif
             { "CRON", LOG_CRON },
             { "DAEMON", LOG_DAEMON },
+#ifdef HAVE_LOG_FTP
             { "FTP", LOG_FTP },
+#endif
             { "KERN", LOG_KERN },
             { "LOCAL0", LOG_LOCAL0 },
             { "LOCAL1", LOG_LOCAL1 },
@@ -72,7 +76,7 @@ public:
     
     int value(const string& name) const {
         string key(name);
-        transform(key.begin(), key.end(), key.begin(), ::toupper);        
+        std::transform(key.begin(), key.end(), key.begin(), ::toupper);        
         ByName::const_iterator i = byName.find(key);
         if (i == byName.end())
             throw Exception("Not a valid syslog facility: " + name);

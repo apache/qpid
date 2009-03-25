@@ -158,6 +158,15 @@ QPID_AUTO_TEST_CASE(testRingPolicy)
         BOOST_CHECK_EQUAL((boost::format("%1%_%2%") % "Message" % (i+1)).str(), msg.getData());
     }
     BOOST_CHECK(!f.subs.get(msg, q));
+
+    for (int i = 10; i < 20; i++) {
+        f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
+    }
+    for (int i = 15; i < 20; i++) {
+        BOOST_CHECK(f.subs.get(msg, q, qpid::sys::TIME_SEC));
+        BOOST_CHECK_EQUAL((boost::format("%1%_%2%") % "Message" % (i+1)).str(), msg.getData());
+    }
+    BOOST_CHECK(!f.subs.get(msg, q));
 }
 
 QPID_AUTO_TEST_CASE(testStrictRingPolicy) 

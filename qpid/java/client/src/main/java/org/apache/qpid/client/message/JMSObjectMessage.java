@@ -25,8 +25,6 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -35,8 +33,6 @@ import javax.jms.ObjectMessage;
 import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
@@ -157,7 +153,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         }
         finally
         {
-            _data.rewind();
+          //  _data.rewind();
             close(in);
         }
     }

@@ -25,7 +25,7 @@
 #include "AMQBody.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/shared_ptr.h"
-
+#include "qpid/CommonImportExport.h"
 #include <ostream>
 
 #include <assert.h>
@@ -40,7 +40,7 @@ class MethodBodyConstVisitor;
 class AMQMethodBody : public AMQBody {
   public:
     AMQMethodBody() {}
-    virtual ~AMQMethodBody();
+    QPID_COMMON_EXTERN virtual ~AMQMethodBody();
 
     virtual void accept(MethodBodyConstVisitor&) const = 0;
     

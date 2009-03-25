@@ -21,6 +21,7 @@
 #ifndef _DtxWorkRecord_
 #define _DtxWorkRecord_
 
+#include "BrokerImportExport.h"
 #include "DtxBuffer.h"
 #include "DtxTimeout.h"
 #include "TransactionalStore.h"
@@ -61,12 +62,13 @@ class DtxWorkRecord
     void abort();
     bool prepare(TransactionContext* txn);
 public:
-    DtxWorkRecord(const std::string& xid, TransactionalStore* const store);
-    ~DtxWorkRecord();
-    bool prepare();
-    bool commit(bool onePhase);
-    void rollback();
-    void add(DtxBuffer::shared_ptr ops);
+    QPID_BROKER_EXTERN DtxWorkRecord(const std::string& xid,
+                                     TransactionalStore* const store);
+    QPID_BROKER_EXTERN ~DtxWorkRecord();
+    QPID_BROKER_EXTERN bool prepare();
+    QPID_BROKER_EXTERN bool commit(bool onePhase);
+    QPID_BROKER_EXTERN void rollback();
+    QPID_BROKER_EXTERN void add(DtxBuffer::shared_ptr ops);
     void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
     void timedout();
     void setTimeout(boost::intrusive_ptr<DtxTimeout> t) { timeout = t; }

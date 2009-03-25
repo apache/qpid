@@ -27,11 +27,15 @@
 #include "qpid/sys/Mutex.h"
 #include <boost/function.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <set>
+#include <boost/optional.hpp>
+#include <map>
 
 namespace qpid {
 
-namespace broker { class Timer; }
+namespace broker {
+class Timer;
+class Message;
+}
 
 namespace cluster {
 class Multicaster;
@@ -42,7 +46,7 @@ class Multicaster;
 class ExpiryPolicy : public broker::ExpiryPolicy
 {
   public:
-    ExpiryPolicy(const boost::function<bool()> & isLeader, Multicaster&, const MemberId&, broker::Timer&);
+    ExpiryPolicy(Multicaster&, const MemberId&, broker::Timer&);
 
     void willExpire(broker::Message&);
 
@@ -54,18 +58,24 @@ class ExpiryPolicy : public broker::ExpiryPolicy
     // Cluster delivers expiry notice.
     void deliverExpire(uint64_t);
 
+    void setId(uint64_t id) { expiryId = id; }
+    uint64_t getId() const { return expiryId; }
+    
+    boost::optional<uint64_t> getId(broker::Message&);
+    
   private:
-    sys::Mutex lock;
-    typedef std::set<uint64_t> IdSet;
+    typedef std::map<broker::Message*,  uint64_t> MessageIdMap;
+    typedef std::map<uint64_t, broker::Message*> IdMessageMap;
 
     struct Expired : public broker::ExpiryPolicy {
         bool hasExpired(broker::Message&);
         void willExpire(broker::Message&);
     };
 
-    IdSet expired;
+    MessageIdMap unexpiredByMessage;
+    IdMessageMap unexpiredById;
+    uint64_t expiryId;
     boost::intrusive_ptr<Expired> expiredPolicy;
-    boost::function<bool()> isLeader;
     Multicaster& mcast;
     MemberId memberId;
     broker::Timer& timer;

@@ -20,7 +20,7 @@
  */
 
 #include "qpid/Msg.h"
-
+#include "qpid/CommonImportExport.h"
 #include <boost/current_function.hpp>
 
 namespace qpid {
@@ -63,10 +63,10 @@ struct Statement {
     const char* function;
     Level level;           
 
-    void log(const std::string& message);
+    QPID_COMMON_EXTERN void log(const std::string& message);
 
     struct Initializer {
-        Initializer(Statement& s);
+        QPID_COMMON_EXTERN Initializer(Statement& s);
         Statement& statement;
     };
 };

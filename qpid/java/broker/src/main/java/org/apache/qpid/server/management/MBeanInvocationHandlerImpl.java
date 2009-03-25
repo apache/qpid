@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.server.configuration.management.ConfigurationManagement;
+import org.apache.qpid.server.logging.management.LoggingManagement;
 import org.apache.qpid.server.security.access.management.UserManagement;
 import org.apache.log4j.Logger;
 
@@ -37,6 +39,8 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Properties;
 
@@ -53,9 +57,16 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     public final static String READWRITE = "readwrite";
     public final static String READONLY = "readonly";
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
-    private MBeanServer mbs;
+    private MBeanServer _mbs;
     private static Properties _userRoles = new Properties();
 
+    private static HashSet<String> _adminOnlyMethods = new HashSet<String>();
+    {
+        _adminOnlyMethods.add(UserManagement.TYPE); 
+        _adminOnlyMethods.add(LoggingManagement.TYPE);
+        _adminOnlyMethods.add(ConfigurationManagement.TYPE);
+    }
+    
     public static MBeanServerForwarder newProxyInstance()
     {
         final InvocationHandler handler = new MBeanInvocationHandlerImpl();
@@ -71,7 +82,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 
         if (methodName.equals("getMBeanServer"))
         {
-            return mbs;
+            return _mbs;
         }
 
         if (methodName.equals("setMBeanServer"))
@@ -80,11 +91,11 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
             {
                 throw new IllegalArgumentException("Null MBeanServer");
             }
-            if (mbs != null)
+            if (_mbs != null)
             {
                 throw new IllegalArgumentException("MBeanServer object already initialized");
             }
-            mbs = (MBeanServer) args[0];
+            _mbs = (MBeanServer) args[0];
             return null;
         }
 
@@ -95,12 +106,12 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         // Allow operations performed locally on behalf of the connector server itself
         if (subject == null)
         {
-            return method.invoke(mbs, args);
+            return method.invoke(_mbs, args);
         }
 
         if (args == null || DELEGATE.equals(args[0]))
         {
-            return method.invoke(mbs, args);
+            return method.invoke(_mbs, args);
         }
 
         // Restrict access to "createMBean" and "unregisterMBean" to any user
@@ -124,7 +135,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             if (isAdmin(identity))
             {
-                return method.invoke(mbs, args);
+                return method.invoke(_mbs, args);
             }
             else
             {
@@ -135,14 +146,14 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         // Following users can perform any operation other than "createMBean" and "unregisterMBean"
         if (isAllowedToModify(identity))
         {
-            return method.invoke(mbs, args);
+            return method.invoke(_mbs, args);
         }
 
         // These users can only call "getAttribute" on the MBeanServerDelegate MBean
         // Here we can add other fine grained permissions like specific method for a particular mbean
         if (isReadOnlyUser(identity) && isReadOnlyMethod(method, args))
         {
-            return method.invoke(mbs, args);
+            return method.invoke(_mbs, args);
         }
 
         throw new SecurityException("Access denied");
@@ -153,9 +164,9 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         if (args[0] instanceof ObjectName)
         {
             ObjectName object = (ObjectName) args[0];
-            return UserManagement.TYPE.equals(object.getKeyProperty("type"));
+            
+            return _adminOnlyMethods.contains(object.getKeyProperty("type"));
         }
-
         return false;
     }
 
@@ -196,7 +207,10 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private boolean isReadOnlyMethod(Method method, Object[] args)
     {
         String methodName = method.getName();
-        if (methodName.startsWith("query") || methodName.startsWith("get"))
+        
+        //handle standard get/set/query and select 'is' methods from MBeanServer
+        if (methodName.startsWith("query") || methodName.startsWith("get")
+            ||methodName.startsWith("isInstanceOf") || methodName.startsWith("isRegistered"))
         {
             return true;
         }
@@ -205,8 +219,11 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
             return false;
         }
 
+        //handle invocation of other methods on mbeans
         if ((args[0] instanceof ObjectName) && (methodName.equals("invoke")))
         {
+
+            //get invoked method name
             String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
             if (mbeanMethod == null)
             {
@@ -215,7 +232,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 
             try
             {
-                MBeanInfo mbeanInfo = mbs.getMBeanInfo((ObjectName) args[0]);
+                //check if the given method is tagged with an INFO impact attribute
+                MBeanInfo mbeanInfo = _mbs.getMBeanInfo((ObjectName) args[0]);
                 if (mbeanInfo != null)
                 {
                     MBeanOperationInfo[] opInfos = mbeanInfo.getOperations();

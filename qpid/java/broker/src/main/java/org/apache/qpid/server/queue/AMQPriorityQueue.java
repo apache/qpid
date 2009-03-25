@@ -36,12 +36,12 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                                int priorities)
             throws AMQException
     {
-        super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
+        super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueEntryList.Factory(priorities));
     }
 
     public int getPriorities()
     {
-        return ((PriorityQueueList) _entries).getPriorities();
+        return ((PriorityQueueEntryList) _entries).getPriorities();
     }
 
     @Override
@@ -66,6 +66,12 @@ public class AMQPriorityQueue extends SimpleAMQQueue
             }
 
         }
+    }
+
+    @Override
+    public String getType()
+    {
+        return getClass().getSimpleName() + "[" + getName() + "][Priorities:" + getPriorities() + "]";
     }
 
 }

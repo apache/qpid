@@ -28,12 +28,13 @@ package org.apache.qpid.management.ui;
 public class Constants
 {
     public final static String APPLICATION_NAME = "Qpid Management Console";
+    public static final String DEFAULT_DOMAIN = "org.apache.qpid";
     
     public final static String ACTION_REMOVE_MBEANNODE = "Remove from list";
     public final static String VALUE = "value";
     public final static String TYPE  = "type";
+    public final static String VERSION  = "version";
     public final static String NODE_TYPE_SERVER    = "server";
-    public final static String NODE_TYPE_DOMAIN    = "domain";
     public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
     // currently used only for virtual host instances, but will work as general also
     public final static String NODE_TYPE_TYPEINSTANCE = "mbeantype_instance";
@@ -80,8 +81,6 @@ public class Constants
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
     public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
-    public static final String[] CONNECTION_PROTOCOLS ={"RMI"};
-    public static final String DEFAULT_PROTOCOL = CONNECTION_PROTOCOLS[0];
     
     public final static String ACTION_ADDSERVER = "New Connection";
     public final static String ACTION_RECONNECT = "Reconnect";

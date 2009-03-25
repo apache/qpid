@@ -26,6 +26,7 @@
 #include <vector>
 #include <ostream>
 #include "qpid/framing/SequenceSet.h"
+#include "BrokerImportExport.h"
 #include "Queue.h"
 #include "QueuedMessage.h"
 #include "DeliveryId.h"
@@ -74,17 +75,16 @@ class DeliveryRecord
     const uint32_t credit;
 
   public:
-    DeliveryRecord(
-        const QueuedMessage& msg,
-        const Queue::shared_ptr& queue, 
-        const std::string& tag,
-        bool acquired,
-        bool accepted,
-        bool windowing,
-        uint32_t credit=0       // Only used if msg is empty.
+    QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
+                                      const Queue::shared_ptr& queue, 
+                                      const std::string& tag,
+                                      bool acquired,
+                                      bool accepted,
+                                      bool windowing,
+                                      uint32_t credit=0       // Only used if msg is empty.
     );
     
-    bool matches(DeliveryId tag) const;
+    QPID_BROKER_EXTERN bool matches(DeliveryId tag) const;
     bool matchOrAfter(DeliveryId tag) const;
     bool after(DeliveryId tag) const;
     bool coveredBy(const framing::SequenceSet* const range) const;
@@ -119,7 +119,7 @@ class DeliveryRecord
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
     Queue::shared_ptr getQueue() const { return queue; }
-    friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
+    friend QPID_BROKER_EXTERN bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };
 

@@ -24,6 +24,7 @@ from errno           import *
 import os
 import os.path
 import filecmp
+import re
 
 class Template:
   """
@@ -175,6 +176,81 @@ class Makefile:
       return variables["qpidbroker"]
     return False
 
+class CMakeLists(Makefile):
+  """ Object representing a makefile fragment """
+
+  # Regardless of what normalize() did, switch all the dir separators back
+  # to '/' - cmake expects that regardless of platform.
+  def unNormCase (self, path):
+    return re.sub("\\\\", "/", path)
+
+  def genGenSources (self, stream, variables):
+    mdir = self.unNormCase(variables["mgenDir"])
+    sdir = self.unNormCase(variables["specDir"])
+    stream.write (mdir + "/qmf-gen \n")
+    stream.write ("    " + mdir + "/qmfgen/generate.py\n")
+    stream.write ("    " + mdir + "/qmfgen/schema.py\n")
+    stream.write ("    " + mdir + "/qmfgen/management-types.xml\n")
+    stream.write ("    " + sdir + "/management-schema.xml\n")
+    first = True
+    for template in self.templateFiles:
+      if first:
+        first = False
+        stream.write ("    ")
+      else:
+        stream.write ("\n    ")
+      stream.write (mdir + "/qmfgen/templates/" + template)
+
+  def genGenCppFiles (self, stream, variables):
+    first = True
+    for file in self.filelists["cpp"]:
+      if first:
+        first = False
+      else:
+        stream.write (" \n    ")
+      stream.write (self.unNormCase(file))
+
+  def genGenHFiles (self, stream, variables):
+    first = True
+    for file in self.filelists["h"]:
+      if first:
+        first = False
+      else:
+        stream.write (" \n    ")
+      stream.write (self.unNormCase(file))
+
+  def genGeneratedFiles(self, stream, variables):
+    first = True
+    extensions = ("h", "cpp")
+    for ext in extensions:
+      for file in self.filelists[ext]:
+        if first:
+          first = False
+        else:
+          stream.write(" \n    ")
+        if "genprefix" in variables:
+          prefix = variables["genprefix"]
+          if prefix != "":
+            stream.write(prefix + "/")
+        stream.write(self.unNormCase(file))
+
+  def genHeaderInstalls (self, stream, variables):
+    for package in self.packagelist:
+      stream.write("#Come back to this later...\n")
+      name = "_".join(package.split("/"))
+      stream.write("#" + name + "dir = $(includedir)/qmf/" + package + "\n")
+      stream.write("#dist_" + name + "_HEADERS = ")
+      first = True
+      for file in self.filelists["h"]:
+        file = self.unNormCase(file)
+        if file.find("gen/qmf/" + package) == 0:
+          if first:
+            first = False
+          else:
+            stream.write ("\n    ")
+          stream.write("#" + file)
+      stream.write("\n\n")
+
 
 class Generator:
   """
@@ -208,9 +284,10 @@ class Generator:
     self.input       = self.normalize (templateDir)
     self.packagePath = self.dest
     self.filelists   = {}
-    self.filelists["h"]   = []
-    self.filelists["cpp"] = []
-    self.filelists["mk"]  = []
+    self.filelists["h"]     = []
+    self.filelists["cpp"]   = []
+    self.filelists["mk"]    = []
+    self.filelists["cmake"] = []
     self.packagelist      = []
     self.templateFiles    = []
     self.variables        = {}
@@ -354,7 +431,17 @@ class Generator:
 
   def makeSingleFile (self, templateFile, target, force=False, vars=None):
     """ Generate a single expanded template """
-    makefile = Makefile (self.filelists, self.templateFiles, self.packagelist)
+    dot = templateFile.find(".")
+    if dot == -1:
+      raise ValueError ("Invalid template file name %s" % templateFile)
+    className = templateFile[0:dot]
+    if className == "Makefile":
+      classType = Makefile
+    elif className == "CMakeLists":
+      classType = CMakeLists
+    else:
+      raise ValueError ("Invalid class name %s" % className)
+    makefile = classType (self.filelists, self.templateFiles, self.packagelist)
     template = Template (self.input + templateFile, self)
     if vars:
       for arg in vars:

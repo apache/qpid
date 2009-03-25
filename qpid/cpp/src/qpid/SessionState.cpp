@@ -113,7 +113,8 @@ SessionState::ReplayRange SessionState::senderExpected(const SessionPoint& expec
 
 void SessionState::senderRecord(const AMQFrame& f) {
     if (isControl(f)) return;   // Ignore control frames.
-    QPID_LOG_IF(debug, f.getMethod(), getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getMethod());
+    QPID_LOG(trace, getId() << ": sent cmd " << sender.sendPoint.command << ": " << *f.getBody());
+
     stateful = true;
     if (timeout) sender.replayList.push_back(f);
     sender.unflushedSize += f.encodedSize();
@@ -183,6 +184,7 @@ void SessionState::receiverSetCommandPoint(const SessionPoint& point) {
 }
 
 bool SessionState::receiverRecord(const AMQFrame& f) {
+    if (receiverTrackingDisabled) return true; //Very nasty hack for push bridges
     if (isControl(f)) return true; // Ignore control frames.
     stateful = true;
     receiver.expected.advance(f);
@@ -192,12 +194,13 @@ bool SessionState::receiverRecord(const AMQFrame& f) {
         receiver.received = receiver.expected;
         receiver.incomplete += receiverGetCurrent();
     }
-    QPID_LOG_IF(debug, f.getMethod(), getId() << ": recv cmd " << receiverGetCurrent() << ": " << *f.getMethod());
-    QPID_LOG_IF(debug, !firstTime, "Ignoring duplicate frame: " << receiverGetCurrent() << ": " << f);
+    QPID_LOG(trace, getId() << ": recv cmd " << receiverGetCurrent() << ": " << *f.getBody());
+    if (!firstTime) QPID_LOG(trace, "Ignoring duplicate frame.");
     return firstTime;
 }
     
 void SessionState::receiverCompleted(SequenceNumber command, bool cumulative) {
+    if (receiverTrackingDisabled) return; //Very nasty hack for push bridges
     assert(receiver.incomplete.contains(command)); // Internal error to complete command twice.
     SequenceNumber first =cumulative ? receiver.incomplete.front() : command;
     SequenceNumber last = command;
@@ -237,7 +240,7 @@ SessionState::Configuration::Configuration(size_t flush, size_t hard) :
     replayFlushLimit(flush), replayHardLimit(hard) {}
 
 SessionState::SessionState(const SessionId& i, const Configuration& c)
-    : id(i), timeout(), config(c), stateful()
+    : id(i), timeout(), config(c), stateful(), receiverTrackingDisabled(false)
 {
     QPID_LOG(debug, "SessionState::SessionState " << id << ": " << this);
 }
@@ -274,5 +277,8 @@ void SessionState::setState(
     receiver.incomplete = receivedIncomplete;
     receiver.bytesSinceKnownCompleted = 0;
 }
+
+void SessionState::disableReceiverTracking() { receiverTrackingDisabled = true; }
+void SessionState::enableReceiverTracking() { receiverTrackingDisabled = false; }
 
 } // namespace qpid

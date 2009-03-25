@@ -38,8 +38,6 @@ import org.w3c.dom.Element;
  */
 public class InvocationResultSerializer implements Serializer 
 {	
-	private Serializer _longSerializer = SerializerRegistry.getInstance().getSerializer(long.class);
-	private Serializer _stringSerializer = SerializerRegistry.getInstance().getSerializer(String.class);
 	private Serializer _mapSerializer = SerializerRegistry.getInstance().getSerializer(Map.class);
 	
 	/**
@@ -51,26 +49,8 @@ public class InvocationResultSerializer implements Serializer
 	@SuppressWarnings("unchecked")
 	public Object fromXML(Element elementData) throws SoapFault 
 	{
-		long statusCode = 0;
-		String statusText = null;
-		Map<String, Object> outputSection = null;
-		
-		Element[] elements = XmlUtils.getAllElements(elementData);
-		for (Element element : elements)
-		{
-			if ("statusCode".equals(element.getNodeName()))
-			{
-				statusCode = (Long) _longSerializer.fromXML(element);
-			} else if ("statusText".equals(element.getNodeName()))
-			{
-				statusText = (String) _stringSerializer.fromXML(element);
-			} else if ("outputParameters".equals(element.getNodeName()))
-			{
-				outputSection = (Map<String, Object>) _mapSerializer.fromXML(element);
-			} 
-		}
-		
-		return new Result(statusCode,statusText,outputSection);
+		Element outputParameters = XmlUtils.getFirstElement(elementData);
+		return new Result((Map<String, Object>) _mapSerializer.fromXML(outputParameters));
 	}
 
 	/**
@@ -95,17 +75,11 @@ public class InvocationResultSerializer implements Serializer
 	{
 		Result result = (Result) obj;
 		Element root = XmlUtils.createElement(qname);
-		Element statusCode = SerializerRegistry.getInstance().getSerializer(long.class).toXML(result.getStatusCode(), new QName("statusCode"));
-		Element statusText = SerializerRegistry.getInstance().getSerializer(String.class).toXML(result.getStatusText(), new QName("statusText"));		
-		
-		root.appendChild(statusCode);
-		root.appendChild(statusText);
 		if (result.getOutputParameters() != null)
 		{
 			Element outputSection = SerializerRegistry.getInstance().getSerializer(Map.class).toXML(result.getOutputParameters(), new QName("outputParameters"));
 			root.appendChild(outputSection);
 		}
-		return root;
-		
+		return root;	
 	}
 }

@@ -145,6 +145,7 @@ if options or base == "Method":
   if base == "Method":
     out("""            case SYNC: this.setSync(true); break;
             case BATCH: this.setBatch(true); break;
+            case UNRELIABLE: this.setUnreliable(true); break;
 """)
   out("""            case NONE: break;
             default: throw new IllegalArgumentException("invalid option: " + _options[i]);

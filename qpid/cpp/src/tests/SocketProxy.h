@@ -94,7 +94,7 @@ class SocketProxy : private qpid::sys::Runnable
             throwIf(!(event.type == qpid::sys::Poller::READABLE && event.handle == &listenerHandle), "SocketProxy: Accept failed");
 
             poller.delFd(listenerHandle);
-            server.reset(listener.accept(0, 0));
+            server.reset(listener.accept());
 
             // Pump data between client & server sockets
             qpid::sys::PollerHandle clientHandle(client);

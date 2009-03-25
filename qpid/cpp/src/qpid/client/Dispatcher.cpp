@@ -136,8 +136,7 @@ void Dispatcher::listen(const boost::intrusive_ptr<SubscriptionImpl>& subscripti
 
 void Dispatcher::cancel(const std::string& destination) {
     ScopedLock<Mutex> l(lock);
-    listeners.erase(destination);
-    if (autoStop && listeners.empty())
+    if (listeners.erase(destination) && running && autoStop && listeners.empty())
         queue->close();
 }
 

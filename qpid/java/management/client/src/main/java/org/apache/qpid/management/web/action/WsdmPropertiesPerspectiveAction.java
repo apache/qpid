@@ -43,15 +43,12 @@ import javax.xml.namespace.QName;
 import org.apache.muse.core.proxy.ProxyHandler;
 import org.apache.muse.core.proxy.ReflectionProxyHandler;
 import org.apache.muse.ws.addressing.EndpointReference;
-import org.apache.muse.ws.resource.remote.WsResourceClient;
 import org.apache.qpid.management.Names;
 import org.w3c.dom.Element;
 
 public class WsdmPropertiesPerspectiveAction extends HttpServlet
 {
 	private static final long serialVersionUID = -2411413147821629363L;
-	private static final Object [] WSDL_DIALECT = new Object[]{"http://schemas.xmlsoap.org/wsdl/"};
-	private static final Object [] RMD_DIALECT = new Object[]{"http://docs.oasis-open.org/wsrf/rmd-1"};
 	
 	private ProxyHandler proxyHandler;
 	

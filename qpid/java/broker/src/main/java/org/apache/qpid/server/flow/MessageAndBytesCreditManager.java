@@ -1,6 +1,6 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 
 /*
 *
@@ -52,7 +52,7 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
         return (_messageCredit > 0L) && ( _bytesCredit > 0L );
     }
 
-    public synchronized boolean useCreditForMessage(AMQMessage msg)
+    public synchronized boolean useCreditForMessage(QueueEntry queueEntry)
     {
         if(_messageCredit == 0L)
         {
@@ -61,7 +61,7 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
         }
         else
         {
-            final long msgSize = msg.getSize();
+            final long msgSize = queueEntry.getSize();
             if(msgSize > _bytesCredit)
             {
                 setSuspended(true);

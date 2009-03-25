@@ -25,7 +25,7 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/RefCounted.h"
-
+#include "qpid/CommonImportExport.h"
 #include <memory>
 #include <queue>
 
@@ -49,15 +49,15 @@ class TimerTask : public RefCounted {
     void fireTask();
 
 public:
-    TimerTask(Duration period);
-    TimerTask(AbsTime fireTime);
-    virtual ~TimerTask();
+    QPID_COMMON_EXTERN TimerTask(Duration period);
+    QPID_COMMON_EXTERN TimerTask(AbsTime fireTime);
+    QPID_COMMON_EXTERN virtual ~TimerTask();
 
-    void setupNextFire();
-    void restart();
-    void delayTill(AbsTime fireTime);
-    void cancel();
-    bool isCancelled() const;
+    QPID_COMMON_EXTERN void setupNextFire();
+    QPID_COMMON_EXTERN void restart();
+    QPID_COMMON_EXTERN void delayTill(AbsTime fireTime);
+    QPID_COMMON_EXTERN void cancel();
+    QPID_COMMON_EXTERN bool isCancelled() const;
 
 protected:
     // Must be overridden with callback
@@ -78,12 +78,12 @@ class Timer : private Runnable {
     void run();
 
 public:
-    Timer();
-    ~Timer();
+    QPID_COMMON_EXTERN Timer();
+    QPID_COMMON_EXTERN ~Timer();
 
-    void add(boost::intrusive_ptr<TimerTask> task);
-    void start();
-    void stop();
+    QPID_COMMON_EXTERN void add(boost::intrusive_ptr<TimerTask> task);
+    QPID_COMMON_EXTERN void start();
+    QPID_COMMON_EXTERN void stop();
 };
 
 

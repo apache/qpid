@@ -99,6 +99,8 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
     // Create the login popup fot th user to enter usernaem and password
     private void createLoginPopup()
     {
+        final Shell appShell = _window.getShell();
+
         Display display = Display.getCurrent();
         final Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE);
         shell.setText(_title);
@@ -108,9 +110,11 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
         createWidgets(shell);        
         shell.pack();
         
-        //get current size dialog, and screen size
-        int displayWidth = display.getBounds().width;
-        int displayHeight = display.getBounds().height;        
+        //get current size dialog, and application window size and location
+        int appWidth = appShell.getBounds().width;
+        int appHeight = appShell.getBounds().height;
+        int appLocX = appShell.getBounds().x;
+        int appLocY = appShell.getBounds().y;
         int currentShellWidth = shell.getSize().x;
         int currentShellHeight = shell.getSize().y;
         
@@ -121,8 +125,8 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
         int newShellWidth =  currentShellWidth > minShellWidth ? currentShellWidth : minShellWidth;
         int newShellHeight = currentShellHeight > minShellHeight ? currentShellHeight : minShellHeight;
         
-        //set the final size and centre the dialog
-        shell.setBounds((displayWidth - newShellWidth)/2 , (displayHeight - newShellHeight)/2, newShellWidth, newShellHeight);
+        //set the final size and centre the dialog within the app window
+        shell.setBounds((appWidth - newShellWidth)/2  + appLocX, (appHeight - newShellHeight)/2 + appLocY, newShellWidth, newShellHeight);
         
         shell.open();
         _window.getShell().setEnabled(false);
@@ -182,7 +186,7 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
                     if (event.character == SWT.ESC)
                     {
                       //Escape key acts as cancel on all widgets
-                        shell.close();
+                        shell.dispose();
                     }
                 }
             });
@@ -248,7 +252,7 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
                     if (event.character == SWT.ESC)
                     {
                         //Escape key acts as cancel on all widgets
-                        shell.close();
+                        shell.dispose();
                     }
                 }
             });

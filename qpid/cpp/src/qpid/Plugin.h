@@ -24,6 +24,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
 #include <vector>
+#include "qpid/CommonImportExport.h"
 
 /**@file Generic plug-in framework. */
 
@@ -46,10 +47,10 @@ class Plugin : private boost::noncopyable {
     {
       public:
         /** Calls finalize() if not already called. */
-        virtual ~Target();
+        QPID_COMMON_EXTERN virtual ~Target();
 
         /** Run all the finalizers */
-        void finalize();
+        QPID_COMMON_EXTERN void finalize();
 
         /** Add a function to run when finalize() is called */
         void addFinalizer(const boost::function<void()>&);
@@ -65,9 +66,9 @@ class Plugin : private boost::noncopyable {
      * member variable in a library so it is registered during 
      * initialization when the library is loaded.
      */
-    Plugin();
+    QPID_COMMON_EXTERN Plugin();
     
-    virtual ~Plugin();
+    QPID_COMMON_EXTERN virtual ~Plugin();
 
     /**
      * Configuration options for the plugin.
@@ -76,7 +77,7 @@ class Plugin : private boost::noncopyable {
      * @return An options group or 0 for no options. Default returns 0.
      * Plugin retains ownership of return value.
      */
-    virtual Options* getOptions();
+    QPID_COMMON_EXTERN virtual Options* getOptions();
 
     /**
      * Initialize Plugin functionality on a Target, called before
@@ -101,16 +102,16 @@ class Plugin : private boost::noncopyable {
     /** List of registered Plugin objects.
      * Caller must not delete plugin pointers.
      */
-    static const Plugins& getPlugins();
+    QPID_COMMON_EXTERN static const Plugins& getPlugins();
 
     /** Call earlyInitialize() on all registered plugins */
-    static void earlyInitAll(Target&);
+    QPID_COMMON_EXTERN static void earlyInitAll(Target&);
 
     /** Call initialize() on all registered plugins */
-    static void initializeAll(Target&);
+    QPID_COMMON_EXTERN static void initializeAll(Target&);
 
     /** For each registered plugin, add plugin.getOptions() to opts. */
-    static void addOptions(Options& opts);
+    QPID_COMMON_EXTERN static void addOptions(Options& opts);
 };
  
 } // namespace qpid

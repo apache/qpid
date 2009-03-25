@@ -70,6 +70,7 @@
     <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
     <property name="dataDir"          type="sstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
+    <statistic name="uptime" type="deltaTime"/>
 
     <method name="echo" desc="Request a response to test the path to the management broker">
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
@@ -206,6 +207,9 @@
     <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation, ...)"/>
     <property name="federationLink"     type="bool"   access="RO" desc="Is this a federation link"/>
     <property name="authIdentity"       type="sstr"   access="RO" desc="authId of connection if authentication enabled"/>
+    <property name="remoteProcessName"  type="sstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>
+    <property name="remotePid"          type="uint32" access="RO" optional="y" desc="Process ID of remote client"/>
+    <property name="remoteParentPid"    type="uint32" access="RO" optional="y" desc="Parent Process ID of remote client"/>
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>

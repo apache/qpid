@@ -22,6 +22,7 @@
 #define _NullMessageStore_
 
 #include <set>
+#include "BrokerImportExport.h"
 #include "MessageStore.h"
 #include "Queue.h"
 
@@ -38,46 +39,54 @@ class NullMessageStore : public MessageStore
     std::set<std::string> prepared;
     uint64_t nextPersistenceId;
   public:
-    NullMessageStore();
+    QPID_BROKER_EXTERN NullMessageStore();
 
-    virtual bool init(const Options* options);
-    virtual std::auto_ptr<TransactionContext> begin();
-    virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
-    virtual void prepare(TPCTransactionContext& txn);
-    virtual void commit(TransactionContext& txn);
-    virtual void abort(TransactionContext& txn);
-    virtual void collectPreparedXids(std::set<std::string>& xids);
+    QPID_BROKER_EXTERN virtual bool init(const Options* options);
+    QPID_BROKER_EXTERN virtual std::auto_ptr<TransactionContext> begin();
+    QPID_BROKER_EXTERN virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
+    QPID_BROKER_EXTERN virtual void prepare(TPCTransactionContext& txn);
+    QPID_BROKER_EXTERN virtual void commit(TransactionContext& txn);
+    QPID_BROKER_EXTERN virtual void abort(TransactionContext& txn);
+    QPID_BROKER_EXTERN virtual void collectPreparedXids(std::set<std::string>& xids);
 
-    virtual void create(PersistableQueue& queue, const framing::FieldTable& args);
-    virtual void destroy(PersistableQueue& queue);
-    virtual void create(const PersistableExchange& exchange, const framing::FieldTable& args);
-    virtual void destroy(const PersistableExchange& exchange);
+    QPID_BROKER_EXTERN virtual void create(PersistableQueue& queue,
+                                           const framing::FieldTable& args);
+    QPID_BROKER_EXTERN virtual void destroy(PersistableQueue& queue);
+    QPID_BROKER_EXTERN virtual void create(const PersistableExchange& exchange,
+                                           const framing::FieldTable& args);
+    QPID_BROKER_EXTERN virtual void destroy(const PersistableExchange& exchange);
 
-    virtual void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
-                      const std::string& key, const framing::FieldTable& args);
-    virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
-                        const std::string& key, const framing::FieldTable& args);
-    virtual void create(const PersistableConfig& config);
-    virtual void destroy(const PersistableConfig& config);
-    virtual void recover(RecoveryManager& queues);
-    virtual void stage(const boost::intrusive_ptr<PersistableMessage>& msg);
-    virtual void destroy(PersistableMessage& msg);
-    virtual void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
-                               const std::string& data);
-    virtual void loadContent(const qpid::broker::PersistableQueue& queue,
-                             const boost::intrusive_ptr<const PersistableMessage>& msg, std::string& data,
-                             uint64_t offset, uint32_t length);
-    virtual void enqueue(TransactionContext* ctxt,
-                         const boost::intrusive_ptr<PersistableMessage>& msg,
-                         const PersistableQueue& queue);
-    virtual void dequeue(TransactionContext* ctxt,
-                         const boost::intrusive_ptr<PersistableMessage>& msg,
-                         const PersistableQueue& queue);
-    virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue);
-    virtual void flush(const qpid::broker::PersistableQueue& queue);
+    QPID_BROKER_EXTERN virtual void bind(const PersistableExchange& exchange,
+                                         const PersistableQueue& queue, 
+                                         const std::string& key,
+                                         const framing::FieldTable& args);
+    QPID_BROKER_EXTERN virtual void unbind(const PersistableExchange& exchange,
+                                           const PersistableQueue& queue, 
+                                           const std::string& key,
+                                           const framing::FieldTable& args);
+    QPID_BROKER_EXTERN virtual void create(const PersistableConfig& config);
+    QPID_BROKER_EXTERN virtual void destroy(const PersistableConfig& config);
+    QPID_BROKER_EXTERN virtual void recover(RecoveryManager& queues);
+    QPID_BROKER_EXTERN virtual void stage(const boost::intrusive_ptr<PersistableMessage>& msg);
+    QPID_BROKER_EXTERN virtual void destroy(PersistableMessage& msg);
+    QPID_BROKER_EXTERN virtual void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
+                                                  const std::string& data);
+    QPID_BROKER_EXTERN virtual void loadContent(const qpid::broker::PersistableQueue& queue,
+                                                const boost::intrusive_ptr<const PersistableMessage>& msg,
+                                                std::string& data,
+                                                uint64_t offset,
+                                                uint32_t length);
+    QPID_BROKER_EXTERN virtual void enqueue(TransactionContext* ctxt,
+                                            const boost::intrusive_ptr<PersistableMessage>& msg,
+                                            const PersistableQueue& queue);
+    QPID_BROKER_EXTERN virtual void dequeue(TransactionContext* ctxt,
+                                            const boost::intrusive_ptr<PersistableMessage>& msg,
+                                            const PersistableQueue& queue);
+    QPID_BROKER_EXTERN virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue);
+    QPID_BROKER_EXTERN virtual void flush(const qpid::broker::PersistableQueue& queue);
     ~NullMessageStore(){}
 
-    virtual bool isNull() const;
+    QPID_BROKER_EXTERN virtual bool isNull() const;
     static bool isNullStore(const MessageStore*);
 };
 

@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/Exchange.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
@@ -58,6 +59,7 @@ class ReplicationExchange : public qpid::broker::Exchange
     bool isDuplicate(const qpid::framing::FieldTable* args);
     void handleEnqueueEvent(const qpid::framing::FieldTable* args, qpid::broker::Deliverable& msg);
     void handleDequeueEvent(const qpid::framing::FieldTable* args);
+    void encode(framing::Buffer& buffer) const;
 };
 }} // namespace qpid::replication
 

@@ -25,6 +25,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 
@@ -63,10 +64,22 @@ public class HashedUser implements Principal
         }
     }
 
-    public HashedUser(String name, char[] password)
+    public HashedUser(String name, char[] password) throws UnsupportedEncodingException, NoSuchAlgorithmException
     {
         _name = name;
-        setPassword(password);
+        setPassword(password,false);
+    }
+
+    public static byte[] getMD5(byte[] data) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        for (byte b : data)
+        {
+            md.update(b);
+        }
+
+        return md.digest();
     }
 
     public String getName()
@@ -84,9 +97,31 @@ public class HashedUser implements Principal
         return _password;
     }
 
-    void setPassword(char[] password)
+    void setPassword(char[] password, boolean alreadyHashed) throws UnsupportedEncodingException,  NoSuchAlgorithmException
     {
-        _password = password;
+        if(alreadyHashed){
+            _password = password;
+        }
+        else
+        {
+            byte[] byteArray = new byte[password.length];
+            int index = 0;
+            for (char c : password)
+            {
+                byteArray[index++] = (byte) c;
+            }
+            
+            byte[] MD5byteArray = getMD5(byteArray);
+            
+            _password = new char[MD5byteArray.length];
+
+            index = 0;
+            for (byte c : MD5byteArray)
+            {
+                _password[index++] = (char) c;
+            }
+        }
+        
         _modified = true;
         _encodedPassword = null;
     }

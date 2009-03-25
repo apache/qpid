@@ -22,8 +22,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 * under the License.
 *
 */
-public class SimpleQueueEntryList implements QueueEntryList
+public class SimpleQueueEntryList extends FlowableBaseQueueEntryList
 {
+
     private final QueueEntryImpl _head;
 
     private volatile QueueEntryImpl _tail;
@@ -41,12 +42,9 @@ public class SimpleQueueEntryList implements QueueEntryList
             AtomicReferenceFieldUpdater.newUpdater
             (QueueEntryImpl.class, QueueEntryImpl.class, "_next");
 
-
-
-
-
     public SimpleQueueEntryList(AMQQueue queue)
     {
+        super(queue);
         _queue = queue;
         _head = new QueueEntryImpl(this);
         _tail = _head;
@@ -77,6 +75,9 @@ public class SimpleQueueEntryList implements QueueEntryList
     public QueueEntry add(AMQMessage message)
     {
         QueueEntryImpl node = new QueueEntryImpl(this, message);
+
+        incrementCounters(node);
+
         for (;;)
         {
             QueueEntryImpl tail = _tail;
@@ -101,11 +102,11 @@ public class SimpleQueueEntryList implements QueueEntryList
         }
     }
 
+
     public QueueEntry next(QueueEntry node)
     {
         return ((QueueEntryImpl)node).getNext();
     }
-
 
     public class QueueEntryIteratorImpl implements QueueEntryIterator
     {
@@ -172,7 +173,9 @@ public class SimpleQueueEntryList implements QueueEntryList
         {
             return new SimpleQueueEntryList(queue);
         }
+
     }
-    
+
+
 
 }

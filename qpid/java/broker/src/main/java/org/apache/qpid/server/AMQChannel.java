@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.server;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,12 +37,12 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -45,18 +53,14 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.subscription.ClientDeliveryMethod;
+import org.apache.qpid.server.subscription.RecordDeliveryMethod;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.transactionlog.TransactionLog;
-
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQChannel
 {
@@ -114,9 +118,6 @@ public class AMQChannel
     public AMQChannel(AMQProtocolSession session, int channelId, TransactionLog transactionLog)
             throws AMQException
     {
-        //Set values from configuration
-        Configurator.configure(this);
-
         _session = session;
         _channelId = channelId;
         _storeContext = new StoreContext("Session: " + session.getClientIdentifier() + "; channel: " + channelId);
@@ -250,7 +251,6 @@ public class AMQChannel
         }
         catch (NoRouteException e)
         {
-            //_currentMessage.incrementReference();
             _returnMessages.add(e);
         }
     }
@@ -431,7 +431,7 @@ public class AMQChannel
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(debugIdentity() + " Adding unacked message(" + entry.getMessage().toString() + " DT:" + deliveryTag
+                    _log.debug(debugIdentity() + " Adding unacked message(" + entry.toString() + " DT:" + deliveryTag
                                + ") with a queue(" + entry.getQueue() + ") for " + subscription);
                 }
             }
@@ -498,7 +498,7 @@ public class AMQChannel
             }
             else
             {
-                unacked.discard(_storeContext);
+                unacked.dequeueAndDelete(_storeContext);
             }
         }
 
@@ -551,10 +551,10 @@ public class AMQChannel
             }
             else
             {
-                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.getMessage().debugIdentity()
+                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.debugIdentity()
                           + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
 
-                unacked.discard(_storeContext);
+                unacked.dequeueAndDelete(_storeContext);
             }
         }
         else
@@ -711,7 +711,7 @@ public class AMQChannel
                     {
                         try
                         {
-                            message.discard(_storeContext);
+                            message.dequeueAndDelete(_storeContext);
                             message.setQueueDeleted(true);
 
                         }
@@ -830,9 +830,7 @@ public class AMQChannel
             {
                 AMQMessage message = bouncedMessage.getAMQMessage();
                 _session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
-                                                                 new AMQShortString(bouncedMessage.getMessage()));
-
-                message.decrementReference(_storeContext);
+                                                                 new AMQShortString(bouncedMessage.getMessage()));                
             }
 
             _returnMessages.clear();

@@ -22,8 +22,8 @@ package org.apache.qpid.server.txn;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.LinkedList;
@@ -194,7 +194,7 @@ public class TxnBufferTest extends TestCase
         }
     }
 
-    class MockStore extends TestMemoryMessageStore
+    class MockStore extends TestableMemoryMessageStore
     {
         final Object BEGIN = "BEGIN";
         final Object ABORT = "ABORT";

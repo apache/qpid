@@ -142,7 +142,7 @@ EOS
     enum = @amqp.class_(class_name).domain(domain_name).enum
     enum.choices.each { |c| declare_exception(c, base, class_name, enum) unless c.name == "normal" }
     genl
-    genl "sys::ExceptionHolder create#{base}(int code, const std::string& text);"
+    genl "QPID_COMMON_EXTERN sys::ExceptionHolder create#{base}(int code, const std::string& text);"
   end
 
   def create_exception(class_name, domain_name, base, invalid)
@@ -165,6 +165,7 @@ EOS
       include "qpid/Exception"
       include "qpid/sys/ExceptionHolder"
       include "enum"
+      include "qpid/CommonImportExport.h"
       namespace(@namespace) {
         declare_exceptions("execution", "error-code", "SessionException")
         declare_exceptions("connection", "close-code", "ConnectionException")

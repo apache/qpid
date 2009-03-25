@@ -107,17 +107,16 @@ void Cpg::leave() {
     check(cpg_leave(handle, &group), cantLeaveMsg(group));
 }
 
-bool Cpg::isFlowControlEnabled() {
-    cpg_flow_control_state_t flowState;
-    check(cpg_flow_control_state_get(handle, &flowState), "Cannot get CPG flow control status.");
-    return flowState == CPG_FLOW_CONTROL_ENABLED;
-}
+
+
 
 bool Cpg::mcast(const iovec* iov, int iovLen) {
-    if (isFlowControlEnabled()) {
-        QPID_LOG(debug, "CPG flow control enabled")
+    // Check for flow control
+    cpg_flow_control_state_t flowState;
+    check(cpg_flow_control_state_get(handle, &flowState), "Cannot get CPG flow control status.");
+    if (flowState == CPG_FLOW_CONTROL_ENABLED)
         return false;
-    }
+
     cpg_error_t result;
     do {
         result = cpg_mcast_joined(handle, CPG_TYPE_AGREED, const_cast<iovec*>(iov), iovLen);
@@ -149,9 +148,13 @@ void Cpg::dispatchBlocking() {
 string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
     std::ostringstream  os;
     os << msg << ": ";
+    // FIXME aconway 2009-03-11: The commented out cases below are
+    // because of mistakes in the latest corosync header files.
+    // The code should be re-instated when that is sorted out.
+    // 
     switch (err) {
       case CPG_OK: os << "ok"; break;
-      case CPG_ERR_LIBRARY: os << "library"; break;
+        // case CPG_ERR_LIBRARY: os << "library"; break;
       case CPG_ERR_TIMEOUT: os << "timeout"; break;
       case CPG_ERR_TRY_AGAIN: os << "try again"; break;
       case CPG_ERR_INVALID_PARAM: os << "invalid param"; break;
@@ -161,8 +164,8 @@ string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
       case CPG_ERR_NOT_EXIST: os << "not exist"; break;
       case CPG_ERR_EXIST: os << "exist"; break;
       case CPG_ERR_NOT_SUPPORTED: os << "not supported"; break;
-      case CPG_ERR_SECURITY: os << "security"; break;
-      case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
+        // case CPG_ERR_SECURITY: os << "security"; break;
+        // case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
       default: os << ": unknown cpg error " << err;
     };
     os << " (" << err << ")";
@@ -203,13 +206,19 @@ ostream& operator<<(ostream& o, const ConnectionId& c) {
 
 std::string MemberId::str() const  {
     char s[8];
-    reinterpret_cast<uint32_t&>(s[0]) = htonl(first);
-    reinterpret_cast<uint32_t&>(s[4]) = htonl(second);
+    uint32_t x;
+    x = htonl(first);
+    ::memcpy(s, &x, 4);
+    x = htonl(second);
+    ::memcpy(s+4, &x, 4);
     return std::string(s,8);
 }
 
 MemberId::MemberId(const std::string& s) {
-    first = ntohl(reinterpret_cast<const uint32_t&>(s[0]));
-    second = ntohl(reinterpret_cast<const uint32_t&>(s[4]));
+    uint32_t x;
+    memcpy(&x, &s[0], 4);
+    first = ntohl(x);
+    memcpy(&x, &s[4], 4);
+    second = ntohl(x);
 }
 }} // namespace qpid::cluster

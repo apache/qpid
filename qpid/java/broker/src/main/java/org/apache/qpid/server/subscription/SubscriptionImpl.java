@@ -144,7 +144,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             StoreContext storeContext = getChannel().getStoreContext();
             try
-            { // if we do not need to wait for client acknowledgements
+            {
+                // if we do not need to wait for client acknowledgements
                 // we can decrement the reference count immediately.
 
                 // By doing this _before_ the send we ensure that it
@@ -153,7 +154,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
                 // The send may of course still fail, in which case, as
                 // the message is unacked, it will be lost.
-                entry.dequeue(storeContext);
+                entry.dequeueAndDelete(storeContext);
 
 
                 synchronized (getChannel())
@@ -163,7 +164,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                     sendToClient(entry, deliveryTag);
 
                 }
-                entry.dispose(storeContext);
             }
             finally
             {
@@ -316,7 +316,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             _autoClose = false;
         }
 
-
+        _logger.info(debugIdentity()+" Created subscription:");
     }
 
 
@@ -387,6 +387,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         //todo - client id should be recoreded and this test removed but handled below
         if (_noLocal)
         {
+            //todo getPublisherClientInstance should be moved to QueueEntryImpl
             final Object publisherId = entry.getMessage().getPublisherClientInstance();
 
             // We don't want local messages so check to see if message is one we sent
@@ -407,6 +408,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                 //todo - client id should be recoreded and this test removed but handled here
 
 
+                //todo getPublisherIdentifier should be moved to QueueEntryImpl                
                 if (localInstance != null && localInstance.equals(entry.getMessage().getPublisherIdentifier()))
                 {
                     return false;
@@ -498,9 +500,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     }
 
 
-    public boolean wouldSuspend(QueueEntry msg)
+    public boolean wouldSuspend(QueueEntry queueEntry)
     {
-        return !_creditManager.useCreditForMessage(msg.getMessage());//_channel.wouldSuspend(msg.getMessage());
+        return !_creditManager.useCreditForMessage(queueEntry);
     }
 
     public void getSendLock()
@@ -594,6 +596,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     protected void sendToClient(final QueueEntry entry, final long deliveryTag)
             throws AMQException
     {
+        _logger.info("Sending Message(" + entry + ") DTag:" + deliveryTag + " to subscription:" + debugIdentity());
         _deliveryMethod.deliverToClient(this,entry,deliveryTag);
     }
 

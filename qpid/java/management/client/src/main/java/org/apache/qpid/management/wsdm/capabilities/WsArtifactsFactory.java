@@ -105,13 +105,18 @@ class WsArtifactsFactory
 				
 				_cache.put(searchKey, result);
 
-				LOGGER.debug(Messages.QMAN_200040_WS_ARTIFACTS_CACHED,searchKey);
+				LOGGER.debug(
+						Messages.QMAN_200040_WS_ARTIFACTS_CACHED,
+						searchKey);
 			}
 			
 			return result;
 		} catch(Exception exception)
 		{
-			throw new ArtifactsNotAvailableException(result,exception,objectName);
+			throw new ArtifactsNotAvailableException(
+					result,
+					exception,
+					objectName);
 		}
 	}
 	

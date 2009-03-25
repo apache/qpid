@@ -22,6 +22,7 @@
  *
  */
 
+#include "BrokerImportExport.h"
 #include "Exchange.h"
 #include "MessageStore.h"
 #include "qpid/framing/FieldTable.h"
@@ -45,13 +46,17 @@ class ExchangeRegistry{
                              bool, const qpid::framing::FieldTable&, qpid::management::Manageable*> FactoryFunction;
 
     ExchangeRegistry () : parent(0) {}
-    std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
+    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
+      (const std::string& name, const std::string& type)
         throw(UnknownExchangeTypeException);
-    std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type, 
-                                                  bool durable, const qpid::framing::FieldTable& args = framing::FieldTable())
-        throw(UnknownExchangeTypeException);
-    void destroy(const std::string& name);
-    Exchange::shared_ptr get(const std::string& name);
+    QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
+      (const std::string& name,
+       const std::string& type, 
+       bool durable,
+       const qpid::framing::FieldTable& args = framing::FieldTable())
+         throw(UnknownExchangeTypeException);
+    QPID_BROKER_EXTERN void destroy(const std::string& name);
+    QPID_BROKER_EXTERN Exchange::shared_ptr get(const std::string& name);
     Exchange::shared_ptr getDefault();
 
     /**

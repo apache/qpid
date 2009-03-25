@@ -29,6 +29,7 @@
 #include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -36,15 +37,15 @@ namespace framing {
 class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
 {
   public:
-    AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);
-    AMQFrame(const AMQBody& b);
-    ~AMQFrame();
+    QPID_COMMON_EXTERN AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);
+    QPID_COMMON_EXTERN AMQFrame(const AMQBody& b);
+    QPID_COMMON_EXTERN ~AMQFrame();
 
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    AMQBody* getBody();
-    const AMQBody* getBody() const;
+    QPID_COMMON_EXTERN AMQBody* getBody();
+    QPID_COMMON_EXTERN const AMQBody* getBody() const;
 
     AMQMethodBody* getMethod() { return getBody()->getMethod(); }
     const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
@@ -59,9 +60,9 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
         return boost::polymorphic_downcast<const T*>(getBody());
     }
 
-    void encode(Buffer& buffer) const; 
-    bool decode(Buffer& buffer); 
-    uint32_t encodedSize() const;
+    QPID_COMMON_EXTERN void encode(Buffer& buffer) const; 
+    QPID_COMMON_EXTERN bool decode(Buffer& buffer); 
+    QPID_COMMON_EXTERN uint32_t encodedSize() const;
 
     // 0-10 terminology: first/last frame (in segment) first/last segment (in assembly)
 
@@ -88,13 +89,10 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     void setEos(bool isEos) { eos = isEos; }
 
     static uint16_t DECODE_SIZE_MIN;
-    static uint32_t frameOverhead();
+    QPID_COMMON_EXTERN static uint32_t frameOverhead();
     /** Must point to at least DECODE_SIZE_MIN bytes of data */
     static uint16_t decodeSize(char* data);
 
-    uint64_t getClusterId() const { return clusterId; }
-    void setClusterId(uint64_t id) { clusterId = id; }
-    
   private:
     void init();
 
@@ -106,10 +104,9 @@ class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
     bool bos : 1;
     bool eos : 1;
     mutable uint32_t encodedSizeCache;
-    uint64_t clusterId;         // Used to identify frames in a clustered broekr.
 };
 
-std::ostream& operator<<(std::ostream&, const AMQFrame&);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const AMQFrame&);
 
 }} // namespace qpid::framing
 

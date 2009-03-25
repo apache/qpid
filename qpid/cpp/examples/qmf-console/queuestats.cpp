@@ -21,6 +21,7 @@
 
 #include "qpid/console/ConsoleListener.h"
 #include "qpid/console/SessionManager.h"
+#include "qpid/sys/Time.h"
 
 using namespace std;
 using namespace qpid::console;
@@ -123,7 +124,7 @@ int main_int(int /*argc*/, char** /*argv*/)
     // Sleep while the listener does all the work asynchronously.
     //
     for (;;) {
-        sleep(1);
+      qpid::sys::sleep(1);
     }
 
     sm.delBroker(broker);

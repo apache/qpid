@@ -23,6 +23,7 @@
 
 #include <map>
 #include <vector>
+#include "BrokerImportExport.h"
 #include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
@@ -40,7 +41,7 @@ class Tokens : public std::vector<std::string> {
     /** Tokenize s, provides automatic conversion of string to Tokens */
     Tokens(const std::string& s) { operator=(s); }
     /** Tokenizing assignment operator s */
-    Tokens & operator=(const std::string& s);
+    QPID_BROKER_EXTERN Tokens & operator=(const std::string& s);
     void key(std::string& key) const;
     
   private:
@@ -60,12 +61,12 @@ class TopicPattern : public Tokens
     // Default copy, assign, dtor are sufficient.
     TopicPattern(const Tokens& tokens) { operator=(tokens); }
     TopicPattern(const std::string& str) { operator=(str); }
-    TopicPattern& operator=(const Tokens&);
+    QPID_BROKER_EXTERN TopicPattern& operator=(const Tokens&);
     TopicPattern& operator=(const std::string& str) { return operator=(Tokens(str)); }
     
     /** Match a topic */
     bool match(const std::string& topic) { return match(Tokens(topic)); }
-    bool match(const Tokens& topic) const;
+    QPID_BROKER_EXTERN bool match(const Tokens& topic) const;
 
   private:
     void normalize();
@@ -84,21 +85,30 @@ class TopicExchange : public virtual Exchange {
   public:
     static const std::string typeName;
 
-    TopicExchange(const string& name, management::Manageable* parent = 0);
-    TopicExchange(const string& _name, bool _durable, 
-                  const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN TopicExchange(const string& name,
+                                     management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN TopicExchange(const string& _name,
+                                     bool _durable, 
+                                     const qpid::framing::FieldTable& _args,
+                                     management::Manageable* parent = 0);
 
     virtual std::string getType() const { return typeName; }            
 
-    virtual bool bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
+                                         const string& routingKey,
+                                         const qpid::framing::FieldTable* args);
 
     virtual bool unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args);
+    QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
+                                          const string& routingKey,
+                                          const qpid::framing::FieldTable* args);
 
-    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+    QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
+                                            const string* const routingKey,
+                                            const qpid::framing::FieldTable* const args);
 
-    virtual ~TopicExchange();
+    QPID_BROKER_EXTERN virtual ~TopicExchange();
     virtual bool supportsDynamicBinding() { return true; }
 };
 

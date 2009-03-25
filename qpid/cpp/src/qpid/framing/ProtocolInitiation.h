@@ -22,6 +22,7 @@
 #include "Buffer.h"
 #include "AMQDataBlock.h"
 #include "ProtocolVersion.h"
+#include "qpid/CommonImportExport.h"
 
 #ifndef _ProtocolInitiation_
 #define _ProtocolInitiation_
@@ -35,12 +36,12 @@ private:
     ProtocolVersion version;
         
 public:
-    ProtocolInitiation();
-    ProtocolInitiation(uint8_t major, uint8_t minor);
-    ProtocolInitiation(ProtocolVersion p);
-    virtual ~ProtocolInitiation();
-    virtual void encode(Buffer& buffer) const; 
-    virtual bool decode(Buffer& buffer); 
+    QPID_COMMON_EXTERN ProtocolInitiation();
+    QPID_COMMON_EXTERN ProtocolInitiation(uint8_t major, uint8_t minor);
+    QPID_COMMON_EXTERN ProtocolInitiation(ProtocolVersion p);
+    QPID_COMMON_EXTERN virtual ~ProtocolInitiation();
+    QPID_COMMON_EXTERN virtual void encode(Buffer& buffer) const; 
+    QPID_COMMON_EXTERN virtual bool decode(Buffer& buffer); 
     inline virtual uint32_t encodedSize() const { return 8; }
     inline uint8_t getMajor() const { return version.getMajor(); }
     inline uint8_t getMinor() const { return version.getMinor(); }
@@ -48,7 +49,7 @@ public:
     bool operator==(ProtocolVersion v) const { return v == getVersion(); }
 };
 
-std::ostream& operator<<(std::ostream& o, const framing::ProtocolInitiation& pi);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& o, const framing::ProtocolInitiation& pi);
 
 
 }

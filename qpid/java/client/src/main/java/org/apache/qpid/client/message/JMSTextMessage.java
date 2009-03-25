@@ -100,6 +100,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 if (encoding == null || encoding.equalsIgnoreCase("UTF-8"))
                 {
                     _data = ByteBuffer.wrap(Strings.toUTF8(text));
+                    setEncoding("UTF-8");
                 }
                 else
                 {

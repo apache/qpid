@@ -63,12 +63,8 @@
                         </tr>                                          
                         <tr>    
                         	<td valign="top">
-								<div class="panel" align="justify" style="height:500px; overflow-y:auto;">								
-									<c:set var="xml">
-										${wsdl} 	  									
-  									</c:set>
-  									<c:import var="xslt" url="wsdl-viewer.xsl" />
-									<x:transform xml="${xml}" xslt="${xslt}" />
+								<div class="panel" align="left" style="height:500px; width=200px; overflow-y:auto; font-size: smaller; font-weight:bold;">								
+									<pre>  <c:out value="${wsdl}" /> </pre>
                             	</div>
                             </td>
                         </tr>

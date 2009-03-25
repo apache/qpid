@@ -75,7 +75,11 @@ class TestTask : public TimerTask
         BOOST_CHECK(fired);
         BOOST_CHECK_EQUAL(expected_position, position);
         Duration actual(start, end);
+#ifdef _WIN32
+        uint64_t difference = _abs64(expected - actual);
+#else
         uint64_t difference = abs(expected - actual);
+#endif
         std::string msg(boost::lexical_cast<std::string>(boost::format("tolerance = %1%, difference = %2%") % tolerance % difference));
         BOOST_CHECK_MESSAGE(difference < tolerance, msg);
     }

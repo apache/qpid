@@ -125,13 +125,13 @@
       <field name="member-id" type="uint64"/>
       <field name="connection-id" type="uint64"/>
       <field name="user-name" type="str8"/>
+      <field name="fragment" type="str32"/>
     </control>
 
     <!-- Complete a cluster state update. -->
     <control name="membership" code="0x21" label="Cluster membership details.">
       <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
-      <field name="frame-id" type="uint64"/>> <!-- Frame id counter value -->
     </control>
 
     <!-- Set the position of a replicated queue. -->
@@ -139,11 +139,12 @@
       <field name="queue" type="str8"/>
       <field name="position" type="sequence-no"/>
     </control>
-    
+
     <!-- Replicate encoded exchanges/queues. -->
     <control name="exchange" code="0x31"><field name="encoded" type="str32"/></control>
     <control name="queue" code="0x32"><field name="encoded" type="str32"/></control>
-    
 
+    <!-- Set expiry-id for subsequent messages. -->
+    <control name="expiry-id" code="0x33"><field name="expiry-id" type="uint64"/></control>
   </class>
 </amqp>

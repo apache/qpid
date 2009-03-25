@@ -1,6 +1,7 @@
 package org.apache.qpid.server.flow;
 
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 
 /*
 *
@@ -40,5 +41,5 @@ public interface FlowCreditManager
 
     public boolean hasCredit();
 
-    public boolean useCreditForMessage(AMQMessage msg);
+    public boolean useCreditForMessage(QueueEntry queueEntry);
 }

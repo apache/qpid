@@ -20,12 +20,13 @@
  */
 #include "QueueEvents.h"
 #include "qpid/Exception.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
 
 QueueEvents::QueueEvents(const boost::shared_ptr<sys::Poller>& poller) : 
-    eventQueue(boost::bind(&QueueEvents::handle, this, _1), poller) 
+    eventQueue(boost::bind(&QueueEvents::handle, this, _1), poller), enabled(true) 
 {
     eventQueue.start();
 }
@@ -37,12 +38,12 @@ QueueEvents::~QueueEvents()
 
 void QueueEvents::enqueued(const QueuedMessage& m)
 {
-    eventQueue.push(Event(ENQUEUE, m));
+    if (enabled) eventQueue.push(Event(ENQUEUE, m));
 }
 
 void QueueEvents::dequeued(const QueuedMessage& m)
 {
-    eventQueue.push(Event(DEQUEUE, m));
+    if (enabled) eventQueue.push(Event(DEQUEUE, m));
 }
 
 void QueueEvents::registerListener(const std::string& id, const EventListener& listener)
@@ -79,6 +80,18 @@ void QueueEvents::handle(EventQueue::Queue& events)
 void QueueEvents::shutdown()
 {
     if (!eventQueue.empty() && !listeners.empty()) eventQueue.shutdown();
+}
+
+void QueueEvents::enable()
+{
+    enabled = true;
+    QPID_LOG(debug, "Queue events enabled");
+}
+
+void QueueEvents::disable()
+{
+    enabled = false;
+    QPID_LOG(debug, "Queue events disabled");
 }
 
 QueueEvents::Event::Event(EventType t, const QueuedMessage& m) : type(t), msg(m) {}

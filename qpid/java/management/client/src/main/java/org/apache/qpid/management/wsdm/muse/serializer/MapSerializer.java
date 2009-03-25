@@ -62,25 +62,29 @@ public class MapSerializer implements Serializer
 	public Object fromXML(Element xml) throws SoapFault 
 	{
 		Map<Object,Object> result = new HashMap<Object,Object>();
-		Element[] children = XmlUtils.getAllElements(xml);
-		Serializer objectDeserializer = SerializerRegistry.getInstance().getSerializer(Object.class);
 
-		for (Element entry : children) 
+		if (xml != null)
 		{
-			Element[] keysAndValues = XmlUtils.getAllElements(entry);
-			Object key = null;
-			Object value = null;
-			for (Element element : keysAndValues) 
+			Element[] children = XmlUtils.getAllElements(xml);
+			Serializer objectDeserializer = SerializerRegistry.getInstance().getSerializer(Object.class);
+	
+			for (Element entry : children) 
 			{
-				if (Names.KEY.equals(element.getLocalName()))
+				Element[] keysAndValues = XmlUtils.getAllElements(entry);
+				Object key = null;
+				Object value = null;
+				for (Element element : keysAndValues) 
 				{
-					key = _stringSerializer.fromXML(element);
-				} else if (Names.VALUE.equals(element.getLocalName()))
-				{
-					value = objectDeserializer.fromXML(element);
+					if (Names.KEY.equals(element.getLocalName()))
+					{
+						key = _stringSerializer.fromXML(element);
+					} else if (Names.VALUE.equals(element.getLocalName()))
+					{
+						value = objectDeserializer.fromXML(element);
+					}
 				}
+				result.put(key, value);
 			}
-			result.put(key, value);
 		}
 		return result;
 	}

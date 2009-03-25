@@ -30,7 +30,7 @@
 
     <!-- Sets build properties consistently accross all assemblies in the project. -->
     <property name="build.version.major" value="0"/>
-    <property name="build.version.minor" value="3"/>
+    <property name="build.version.minor" value="5"/>
     <property name="build.version.build" value="0"/>
     <property name="build.version.revision" value="0"/>
     <property name="build.company" value="Apache Software Foundation"/>

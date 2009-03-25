@@ -44,6 +44,9 @@
 
     	    For linux libcairo-swt.so file:
             qpidmc.companion.library
+
+    	    For solaris .xpm files:
+            qpidmc.solaris.xpm.files
             
             -->
         </condition>
@@ -86,15 +89,22 @@
             <fileset file="${qpidmc.companion.library}"/>
         </copy>
     </target>
+
+    <target name="release-bin-executable-solaris-xpm-files" if="qpidmc.solaris.xpm.files">
+        <!-- Copy the solaris xpm files -->
+        <copy todir="${release.subdir}" flatten="true" failonerror="true">
+            <fileset dir="${basedir}" includes="${qpidmc.solaris.xpm.files}"/>
+        </copy>
+    </target>
     
     <target name="release-bin-rcp-deps" description="copy eclipse-rcp dependencies into module release"
-        depends="release-bin-executable-companion-library">
+        depends="release-bin-executable-companion-library, release-bin-executable-solaris-xpm-files">
         
         <!-- Copy the rcp executable file -->
         <copy todir="${release.subdir}" flatten="true" failonerror="true">
             <fileset file="${qpidmc.executable}"/>
         </copy>
-        <chmod dir="${release.subdir}" perm="u+rx" includes="**/*"/>
+        <chmod dir="${release.subdir}" perm="u+rx" includes="qpidmc*"/>
         
         <!-- Copy remaining startup & license files -->
         <copy todir="${release.subdir}" flatten="true" failonerror="true">

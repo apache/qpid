@@ -37,5 +37,6 @@ for c in composites:
         options[option] = None
         out("    $option,\n")}
     BATCH,
+    UNRELIABLE,
     NONE
 }

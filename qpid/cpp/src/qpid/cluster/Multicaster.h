@@ -50,6 +50,7 @@ class Multicaster
                 boost::function<void()> onError
     );
     void mcastControl(const framing::AMQBody& controlBody, const ConnectionId&);
+    void mcastControl(const framing::AMQFrame& controlFrame, const ConnectionId&);
     void mcastBuffer(const char*, size_t, const ConnectionId&);
     void mcast(const Event& e);
     /** End holding mode, held events are mcast */

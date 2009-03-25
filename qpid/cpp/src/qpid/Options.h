@@ -23,13 +23,25 @@
  */
 
 #include "qpid/Exception.h"
+
+// Disable warnings triggered by boost.
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4251 4275)
+#endif
+
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
 #include <sstream>
 #include <iterator>
 #include <algorithm>
 #include <string>
-
+#include "qpid/CommonImportExport.h"
 
 namespace qpid { 
 namespace po=boost::program_options;
@@ -37,7 +49,7 @@ namespace po=boost::program_options;
 
 
 ///@internal
-std::string prettyArg(const std::string&, const std::string&);
+QPID_COMMON_EXTERN std::string prettyArg(const std::string&, const std::string&);
 
 /** @internal Normally only constructed by optValue() */
 template <class T>
@@ -192,24 +204,20 @@ options_description_less_easy_init
 #endif
 
 
-
-
-
-
 struct Options : public po::options_description {
 
     struct Exception : public qpid::Exception {
         Exception(const std::string& msg) : qpid::Exception(msg) {}
     };
 
-    Options(const std::string& name=std::string());
+    QPID_COMMON_EXTERN Options(const std::string& name=std::string());
 
     /**
      * Parses options from argc/argv, environment variables and config file.
      * Note the filename argument can reference an options variable that
      * is updated by argc/argv or environment variable parsing.
      */
-    void parse(int argc, char const* const* argv,
+    QPID_COMMON_EXTERN void parse(int argc, char const* const* argv,
                const std::string& configfile=std::string(),
                bool  allowUnknown = false);
     
@@ -242,7 +250,7 @@ struct Options : public po::options_description {
  * Standard options for configuration
  */
 struct CommonOptions : public Options {
-    CommonOptions(const std::string& name=std::string(),
+    QPID_COMMON_EXTERN CommonOptions(const std::string& name=std::string(),
                   const std::string& configfile=std::string());
     bool help;
     bool version;

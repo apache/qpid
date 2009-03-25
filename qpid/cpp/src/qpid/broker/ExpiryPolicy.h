@@ -23,6 +23,7 @@
  */
 
 #include "qpid/RefCounted.h"
+#include "BrokerImportExport.h"
 
 namespace qpid {
 namespace broker {
@@ -35,9 +36,9 @@ class Message;
 class ExpiryPolicy : public RefCounted
 {
   public:
-    virtual ~ExpiryPolicy();
-    virtual void willExpire(Message&);
-    virtual bool hasExpired(Message&);
+    QPID_BROKER_EXTERN virtual ~ExpiryPolicy();
+    QPID_BROKER_EXTERN virtual void willExpire(Message&);
+    QPID_BROKER_EXTERN virtual bool hasExpired(Message&);
 };
 }} // namespace qpid::broker
 

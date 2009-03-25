@@ -43,7 +43,7 @@ if test "'x$QPID_SAMPLE'" != "'x'"
 then
     QPID_SAMPLE=$QPID_SAMPLE
 else
-    QPID_SAMPLE="/usr/share/doc/rhm-0.2"
+    QPID_SAMPLE=$PWD
 fi
 echo "Using QPID_SAMPLE: $QPID_SAMPLE"
 

@@ -19,6 +19,7 @@
  *
  */
 #include "QueueRegistry.h"
+#include "QueueEvents.h"
 #include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>
@@ -27,7 +28,7 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 
 QueueRegistry::QueueRegistry() :
-    counter(1), store(0), parent(0), lastNode(false) {}
+    counter(1), store(0), events(0), parent(0), lastNode(false) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -43,7 +44,8 @@ QueueRegistry::declare(const string& declareName, bool durable,
     if (i == queues.end()) {
         Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent));
         queues[name] = queue;
-		if (lastNode) queue->setLastNodeFailure();
+        if (lastNode) queue->setLastNodeFailure();
+        if (events) queue->setQueueEventManager(*events);
 
         return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
@@ -105,3 +107,7 @@ void QueueRegistry::updateQueueClusterState(bool _lastNode)
     lastNode = _lastNode;
 }
 
+void QueueRegistry::setQueueEvents(QueueEvents* e)
+{
+    events = e;
+}

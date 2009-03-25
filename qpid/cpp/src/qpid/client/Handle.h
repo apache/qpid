@@ -22,6 +22,8 @@
  *
  */
 
+#include "qpid/client/ClientImportExport.h"
+
 namespace qpid {
 namespace client {
 
@@ -34,23 +36,23 @@ template <class T> class HandlePrivate;
  */
 template <class T> class Handle {
   public:
-    ~Handle();
-    Handle(const Handle&);
-    Handle& operator=(const Handle&);
+    QPID_CLIENT_EXTERN ~Handle();
+    QPID_CLIENT_EXTERN Handle(const Handle&);
+    QPID_CLIENT_EXTERN Handle& operator=(const Handle&);
 
     /**@return true if handle is valid,  i.e. not null. */
-    bool isValid() const { return impl; }
+    QPID_CLIENT_EXTERN bool isValid() const { return impl; }
 
     /**@return true if handle is null. It is an error to call any function on a null handle. */
-    bool isNull() const { return !impl; }
+    QPID_CLIENT_EXTERN bool isNull() const { return !impl; }
 
-    operator bool() const { return impl; }
-    bool operator !() const { return impl; }
+    QPID_CLIENT_EXTERN operator bool() const { return impl; }
+    QPID_CLIENT_EXTERN bool operator !() const { return impl; }
 
-    void swap(Handle<T>&);
+    QPID_CLIENT_EXTERN void swap(Handle<T>&);
 
   protected:
-    Handle(T* =0);
+    QPID_CLIENT_EXTERN Handle(T* =0);
     T* impl;
 
   friend class HandlePrivate<T>;

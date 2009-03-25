@@ -170,6 +170,6 @@ public interface Messages
 	String QMAN_100037_INVOKE_OPERATION_FAILURE = "<QMAN-100037> : Operation Invocation failure for operation.";	
 	String QMAN_100038_UNABLE_TO_SEND_WS_NOTIFICATION = "<QMAN-100038> : Unable to send notification.";	
 	String QMAN_100039_UNABLE_TO_CONFIGURE_PROPERLY_WORKER_MANAGER = "<QMAN-100039> : Unable to properly configure WorkManager. A malformed property (NaN) was given as input parameter.";	
-	
+	String QMAN_100040_UNABLE_TO_LOCATE_WSRP_PROPERTIES = "<QMAN-100040> : Unable to evaluate the WSRP XPath expression on resource WSDL.";	
 	
 }

@@ -201,9 +201,9 @@ int SslSocket::listen(uint16_t port, int backlog, const std::string& certName, b
     return ntohs(name.sin_port);
 }
 
-SslSocket* SslSocket::accept(struct sockaddr *addr, socklen_t *addrlen) const
+SslSocket* SslSocket::accept() const
 {
-    int afd = ::accept(impl->fd, addr, addrlen);
+    int afd = ::accept(impl->fd, 0, 0);
     if ( afd >= 0) {
         return new SslSocket(new IOHandlePrivate(afd), prototype);
     } else if (errno == EAGAIN) {

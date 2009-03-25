@@ -22,6 +22,7 @@
  */
 
 #include <boost/function.hpp>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace sys {
@@ -35,7 +36,7 @@ class Runnable
     /** Type to represent a runnable as a Functor */
     typedef boost::function0<void> Functor;
     
-    virtual ~Runnable();
+    QPID_COMMON_EXTERN virtual ~Runnable();
 
     /** Derived classes override run(). */
     virtual void run() = 0;

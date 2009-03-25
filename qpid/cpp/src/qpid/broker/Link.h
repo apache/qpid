@@ -67,6 +67,7 @@ namespace qpid {
             typedef std::vector<Bridge::shared_ptr> Bridges;
             Bridges created;   // Bridges pending creation
             Bridges active;    // Bridges active
+            Bridges cancellations;    // Bridges pending cancellation
             uint channelCounter;
             Connection* connection;
             management::ManagementAgent* agent;

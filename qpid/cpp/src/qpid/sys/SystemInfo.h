@@ -23,6 +23,7 @@
 
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/Address.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace sys {
@@ -36,15 +37,15 @@ namespace SystemInfo {
      * Estimate available concurrency, e.g. number of CPU cores.
      * -1 means estimate not available on this platform.
      */
-    long concurrency();
+    QPID_COMMON_EXTERN long concurrency();
 
     /**
      * Get the local host name and set it in the specified TcpAddress.
      * Returns false if it can't be obtained and sets errno to any error value.
      */
-    bool getLocalHostname (TcpAddress &address);
+    QPID_COMMON_EXTERN bool getLocalHostname (TcpAddress &address);
 
-    void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
+    QPID_COMMON_EXTERN void getLocalIpAddresses (uint16_t port, std::vector<Address> &addrList);
 
     /**
      * Retrieve system identifiers and versions. This is information that can
@@ -57,7 +58,7 @@ namespace SystemInfo {
      * @param version  Receives the OS release version (kernel, build, sp, etc.)
      * @param machine  Receives the hardware type.
      */
-    void getSystemId (std::string &osName,
+    QPID_COMMON_EXTERN void getSystemId (std::string &osName,
                       std::string &nodeName,
                       std::string &release,
                       std::string &version,
@@ -66,12 +67,17 @@ namespace SystemInfo {
     /**
      * Get the process ID of the current process.
      */
-    uint32_t getProcessId();
+    QPID_COMMON_EXTERN uint32_t getProcessId();
 
     /**
      * Get the process ID of the parent of the current process.
      */
-    uint32_t getParentProcessId();
+    QPID_COMMON_EXTERN uint32_t getParentProcessId();
+
+    /**
+     * Get the name of the current process (i.e. the name of the executable)
+     */
+    QPID_COMMON_EXTERN std::string getProcessName();
 
 
 }}} // namespace qpid::sys::SystemInfo

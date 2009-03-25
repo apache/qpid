@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
  -
  - Licensed to the Apache Software Foundation (ASF) under one
@@ -18,10 +18,10 @@
  - specific language governing permissions and limitations
  - under the License.
  -
- -->
-<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
-    <appender name="ArchivingFileAppender" class="org.apache.log4j.QpidCompositeRollingAppender">
+ --><!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="null" threshold="null">
+    <appender class="org.apache.log4j.QpidCompositeRollingAppender" name="ArchivingFileAppender">
         <!-- Ensure that logs allways have the dateFormat set-->
         <param name="StaticLogFileName" value="false"/>
         <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
@@ -48,7 +48,7 @@
         </layout>
     </appender>
 
-    <appender name="FileAppender" class="org.apache.log4j.FileAppender">
+    <appender class="org.apache.log4j.FileAppender" name="FileAppender">
         <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
         <param name="Append" value="false"/>
 
@@ -57,25 +57,25 @@
         </layout>
     </appender>
 
-    <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+    <appender class="org.apache.log4j.ConsoleAppender" name="STDOUT">
 
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
         </layout>
     </appender>
 
-    <!-- Qpid.Broker log is a special log category used to only useful broker startup details -->
-    <category name="Qpid.Broker">
+    <!-- Qpid.Broker log is a special log category used to log only useful broker startup details -->
+    <category additivity="true" name="Qpid.Broker">
         <priority value="debug"/>
         <appender-ref ref="STDOUT"/>
     </category>
 
-    <category name="org.apache.qpid.server.queue.AMQQueueMBean">
+    <category additivity="true" name="org.apache.qpid.server.queue.AMQQueueMBean">
         <priority value="info"/>
     </category>
 
     <!-- Provide warnings to standard output -->
-    <category name="org.apache.qpid">
+    <category additivity="true" name="org.apache.qpid">
         <priority value="warn"/>
     </category>
 
@@ -83,7 +83,7 @@
     <!-- Examples of additional logging settings -->
     <!-- Used to generate extra debug. See debug.log4j.xml -->
     
-    <!--<category name="org.apache.qpid.server.store">
+    <!--<category additivity="true" name="org.apache.qpid.server.store">
         <priority value="debug"/>
     </category-->
 

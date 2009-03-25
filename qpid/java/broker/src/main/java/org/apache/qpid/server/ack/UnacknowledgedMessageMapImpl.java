@@ -89,7 +89,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             QueueEntry message = _map.remove(deliveryTag);
             if(message != null)
             {
-                _unackedSize -= message.getMessage().getSize();
+                _unackedSize -= message.getSize();
 
             }
 
@@ -115,7 +115,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.put(deliveryTag, message);
-            _unackedSize += message.getMessage().getSize();
+            _unackedSize += message.getSize();
             _lastDeliveryTag = deliveryTag;
         }
     }
@@ -174,12 +174,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                                            " When deliveryTag is:" + deliveryTag + "ES:" + _map.entrySet().toString());
                 }
 
-                //Message has been ack so discard it. This will dequeue and decrement the reference.
-                unacked.getValue().discard(storeContext);
+                //Message has been ack so dequeueAndDelete it.
+                // If the message is persistent and this is the last QueueEntry that uses it then the data will be removed
+                // from the transaciton log                
+                unacked.getValue().dequeueAndDelete(storeContext);
 
                 it.remove();
 
-                _unackedSize -= unacked.getValue().getMessage().getSize();
+                _unackedSize -= unacked.getValue().getSize();
 
 
                 if (unacked.getKey() == deliveryTag)

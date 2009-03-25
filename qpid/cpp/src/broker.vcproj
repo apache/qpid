@@ -42,9 +42,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Static_Debug"
-			IntermediateDirectory="Static_Debug\broker\I386"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Debug\broker\I386"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -73,10 +73,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+                                PreprocessorDefinitions="BROKER_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -88,7 +88,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -97,13 +97,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommonsd.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
+				AdditionalDependencies="qpidcommond.lib secur32.lib"
+				OutputFile="$(OutDir)\qpidbrokerd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
+				ImportLibrary=".\qpidbrokerd.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -120,13 +121,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidbrokerd.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidbrokerd.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Static_Release"
-			IntermediateDirectory="Static_Release\broker\I386"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Release\broker\I386"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -155,8 +157,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="BROKER_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -167,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -176,15 +178,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommons.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
+				AdditionalDependencies="qpidcommon.lib secur32.lib"
+				OutputFile="$(OutDir)\qpidbroker.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary=".\qpidbroker.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -201,13 +204,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidbroker.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidbroker.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="Static_Debug"
-			IntermediateDirectory="Static_Debug\broker\AMD64"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Debug\broker\AMD64"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -236,10 +240,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
+                                PreprocessorDefinitions="BROKER_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -251,7 +255,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -261,13 +265,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommonsd.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
+				AdditionalDependencies="qpidcommond.lib secur32.lib"
+				OutputFile="$(OutDir)\qpidbrokerd.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
+				ImportLibrary=".\qpidbrokerd.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -284,13 +289,14 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidbrokerd.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidbrokerd.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="Static_Release"
-			IntermediateDirectory="Static_Release\broker\AMD64"
-			ConfigurationType="1"
+			OutputDirectory="."
+			IntermediateDirectory="Release\broker\AMD64"
+			ConfigurationType="2"
 			CharacterSet="0"
 
 			>
@@ -319,8 +325,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
-				RuntimeLibrary="0"
+                                PreprocessorDefinitions="BROKER_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
@@ -331,7 +337,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;BOOST_ALL_DYN_LINK;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -341,15 +347,16 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommons.lib ws2_32.lib secur32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\qpidbroker.exe"
+				AdditionalDependencies="qpidcommon.lib secur32.lib"
+				OutputFile="$(OutDir)\qpidbroker.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				ImportLibrary=".\qpidbroker.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -366,6 +373,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="@if not exist deploy\lib mkdir deploy\lib&#x0D;&#x0A;&#x0D;&#x0A;@copy /Y $(OutDir)\qpidbroker.dll deploy\lib\&#x0D;&#x0A;@copy /Y .\qpidbroker.lib deploy\lib\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -909,12 +917,6 @@
 			<File
 				RelativePath="qpid\sys\TCPIOPlugin.cpp">
 			</File>
-			<File
-				RelativePath="qpidd.cpp">
-			</File>
-			<File
-				RelativePath="windows\QpiddBroker.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -1305,9 +1307,6 @@
 			</File>
 			<File
 				RelativePath="qpid\management\ManagementObject.h">
-			</File>
-			<File
-				RelativePath="qpidd.h">
 			</File>
 		</Filter>
 	</Files>

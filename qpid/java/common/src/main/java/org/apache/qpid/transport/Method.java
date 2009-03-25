@@ -48,6 +48,7 @@ public abstract class Method extends Struct implements ProtocolEvent
     private boolean idSet = false;
     private boolean sync = false;
     private boolean batch = false;
+    private boolean unreliable = false;
 
     public final int getId()
     {
@@ -88,6 +89,16 @@ public abstract class Method extends Struct implements ProtocolEvent
     final void setBatch(boolean value)
     {
         this.batch = value;
+    }
+
+    public final boolean isUnreliable()
+    {
+        return unreliable;
+    }
+
+    final void setUnreliable(boolean value)
+    {
+        this.unreliable = value;
     }
 
     public abstract boolean hasPayload();

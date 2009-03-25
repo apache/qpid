@@ -29,7 +29,7 @@
    		<java-serializer-class>org.apache.qpid.management.wsdm.muse.serializer.DateSerializer</java-serializer-class>
 	</custom-serializer>
 	<router>
-		<java-router-class>org.apache.muse.core.routing.SimpleResourceRouter</java-router-class>
+		<java-router-class>org.apache.muse.ws.resource.impl.WsResourceRouter</java-router-class>
 		<logging>
 			<log-file>log/muse.log</log-file>
 			<log-level>SEVERE</log-level>

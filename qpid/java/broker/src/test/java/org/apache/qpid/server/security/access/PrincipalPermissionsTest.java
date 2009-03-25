@@ -23,11 +23,13 @@ package org.apache.qpid.server.security.access;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.amqp_0_9.ExchangeDeclareBodyImpl;
 import org.apache.qpid.framing.amqp_0_9.QueueDeclareBodyImpl;
 import org.apache.qpid.framing.amqp_8_0.QueueBindBodyImpl;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -50,7 +52,6 @@ public class PrincipalPermissionsTest extends TestCase
     private boolean _nowait = false;
     private boolean _passive = false;
     private boolean _durable = false;
-    private boolean _exclusive = false;
     private boolean _autoDelete = false;
     private AMQShortString _exchangeType = new AMQShortString("direct");
     private boolean _internal = false;
@@ -67,7 +68,8 @@ public class PrincipalPermissionsTest extends TestCase
         _perms = new PrincipalPermissions(_user);
         try 
         {
-            _virtualHost = new VirtualHost("localhost", new SkeletonMessageStore());
+            PropertiesConfiguration env = new PropertiesConfiguration();
+            _virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
             _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
             _queue = AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, _virtualHost, _arguments);
         } 

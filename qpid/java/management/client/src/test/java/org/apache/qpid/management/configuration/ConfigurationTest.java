@@ -23,16 +23,13 @@ package org.apache.qpid.management.configuration;
 import java.util.Map;
 import java.util.UUID;
 
+import junit.framework.TestCase;
+
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
-import org.apache.qpid.management.domain.model.AccessMode;
-import org.apache.qpid.management.domain.model.type.Type;
-import org.apache.qpid.management.domain.model.type.Uint8;
-
-import junit.framework.TestCase;
 
 /**
  * Test case for Configuration singleton.
@@ -46,22 +43,7 @@ public class ConfigurationTest extends TestCase
     {
         assertSame(Configuration.getInstance(),Configuration.getInstance());
     }
-    
-    /**
-     * Tests the execution of getType() method when a valid code is supplied.
-     * 
-     * <br>precondition : the requested type already exist on the configuration.
-     * <br>postcondition : the requested type is returned and no exception is thrown.
-     */
-    public void testGetTypeOk() throws UnknownTypeCodeException 
-    {
-        TypeMapping mapping = new TypeMapping(TestConstants.VALID_CODE,new Uint8());
-        Configuration.getInstance().addTypeMapping(mapping);
-        Type type = Configuration.getInstance().getType(TestConstants.VALID_CODE);
         
-        assertTrue(type instanceof Uint8);
-    }
-    
     /**
      * Tests the execution of getType() method when a unknown code is supplied.
      * 
@@ -79,22 +61,7 @@ public class ConfigurationTest extends TestCase
             assertEquals(TestConstants.VALID_CODE*10001,expected.getCode());
         }        
     }
-    
-    /**
-     * Tests the execution of getAccessMode() method when a valid code is supplied.
-     * 
-     * <br>precondition : the requested access mode already exist on the configuration.
-     * <br>postcondition : the requested access mode is returned and no exception is thrown.
-     */
-    public void testGetAccessModeOk() throws UnknownAccessCodeException
-    {
-        AccessModeMapping mapping = new AccessModeMapping(TestConstants.VALID_CODE,AccessMode.RW);
-        Configuration.getInstance().addAccessModeMapping(mapping);
-        AccessMode accessMode = Configuration.getInstance().getAccessMode(TestConstants.VALID_CODE);
-
-        assertSame(AccessMode.RW,accessMode);
-    }
-    
+        
     /**
      * Tests the execution of getAccessMode() method when a unknown code is supplied.
      * 

@@ -72,7 +72,8 @@ import org.eclipse.ui.part.ViewPart;
 public class NavigationView extends ViewPart
 {
     public static final String ID = "org.apache.qpid.management.ui.navigationView";
-    public static final String INI_FILENAME = System.getProperty("user.home") + File.separator + "qpidManagementConsole.ini";
+    public static final String APP_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
+    public static final String INI_FILENAME = APP_DIR + File.separator + "qpidmc_navigation.ini";
 
     private static final String INI_SERVERS = "Servers";
     private static final String INI_QUEUES = QUEUE + "s";
@@ -130,16 +131,26 @@ public class NavigationView extends ViewPart
             {
                 public void treeExpanded(TreeExpansionEvent event)
                 {
-                    _treeViewer.setExpandedState(event.getElement(), true);
-                    // Following will cause the selection event to be sent, so commented
-                    // _treeViewer.setSelection(new StructuredSelection(event.getElement()));
-                    _treeViewer.refresh();
+                    getSite().getShell().getDisplay().asyncExec(
+                            new Runnable()
+                            {
+                                public void run()
+                                {
+                                     _treeViewer.refresh();
+                                }
+                            });
                 }
 
                 public void treeCollapsed(TreeExpansionEvent event)
                 {
-                    _treeViewer.setExpandedState(event.getElement(), false);
-                    _treeViewer.refresh();
+                    getSite().getShell().getDisplay().asyncExec(
+                            new Runnable()
+                            {
+                                public void run()
+                                {
+                                     _treeViewer.refresh();
+                                }
+                            });
                 }
             });
 
@@ -201,11 +212,11 @@ public class NavigationView extends ViewPart
     }
 
     /**
-     * Creates Qpid Server connection using JMX RMI protocol
+     * Creates Qpid Server connection
      * @param server
      * @throws Exception
      */
-    private void createRMIServerConnection(ManagedServer server) throws Exception
+    private void createJMXServerConnection(ManagedServer server) throws Exception
     {
         // Currently Qpid Management Console only supports JMX MBeanServer
         ServerRegistry serverRegistry = new JMXServerRegistry(server);
@@ -220,42 +231,32 @@ public class NavigationView extends ViewPart
      * @param domain
      * @throws Exception
      */
-    public void addNewServer(String transportProtocol, String host, int port, String domain, String user, String pwd)
+    public void addNewServer(String host, int port, String domain, String user, String pwd)
         throws Exception
     {
-        String serverAddress = host + ":" + port;
-        String url = null;
         ManagedServer managedServer = new ManagedServer(host, port, domain, user, pwd);
 
-        if ("RMI".equals(transportProtocol))
+        String server = managedServer.getName();
+        List<TreeObject> list = _serversRootNode.getChildren();
+        for (TreeObject node : list)
         {
-            url = managedServer.getUrl();
-            List<TreeObject> list = _serversRootNode.getChildren();
-            for (TreeObject node : list)
+            ManagedServer nodeServer = (ManagedServer)node.getManagedObject();
+            if (server.equals(nodeServer.getName()))
             {
-                ManagedServer nodeServer = (ManagedServer)node.getManagedObject();
-                if (url.equals(nodeServer.getUrl()))
-                {
-                    // Server is already in the list of added servers, so now connect it.
-                    // Set the server node as selected and then connect it.
-                    _treeViewer.setSelection(new StructuredSelection(node));
-                    reconnect(user, pwd);
+                // Server is already in the list of added servers, so now connect it.
+                // Set the server node as selected and then connect it.
+                _treeViewer.setSelection(new StructuredSelection(node));
+                reconnect(user, pwd);
 
-                    return;
-                }
+                return;
             }
+        }
 
-            // The server is not in the list of already added servers, so now connect and add it.
-            managedServer.setName(serverAddress);
-            createRMIServerConnection(managedServer);
-        }
-        else
-        {
-            throw new InfoRequiredException(transportProtocol + " transport is not supported");
-        }
+        // The server is not in the list of already added servers, so now connect and add it.
+        createJMXServerConnection(managedServer);
 
         // Server connection is successful. Now add the server in the tree
-        TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
+        TreeObject serverNode = new TreeObject(server, NODE_TYPE_SERVER);
         serverNode.setManagedObject(managedServer);
         _serversRootNode.addChild(serverNode);
 
@@ -276,10 +277,12 @@ public class NavigationView extends ViewPart
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
 
+        expandInitialMBeanView(serverNode);
+        
         _treeViewer.refresh();
 
         // save server address in file
-        addServerInConfigFile(serverAddress);
+        addServerInConfigFile(server);
     }
 
     /**
@@ -288,6 +291,16 @@ public class NavigationView extends ViewPart
      */
     private void createConfigFile()
     {
+        File dir = new File(APP_DIR);
+        if (!dir.exists())
+        {
+            if(!dir.mkdir())
+            {
+                System.out.println("Could not create application data directory " + APP_DIR);
+                System.exit(1);
+            }
+        }
+
         File file = new File(INI_FILENAME);
         try
         {
@@ -405,50 +418,33 @@ public class NavigationView extends ViewPart
         }
     }
 
+    //check if the MBeanInfo can be retrieved.
+    private boolean haveAccessPermission(ManagedBean mbean)
+    {
+        try
+        {                
+            MBeanUtility.getMBeanInfo(mbean);     
+        }
+        catch(Exception ex)
+        {
+            return false;
+        }
+        
+        return true;
+    }
+    
     /**
      * Queries the qpid server for MBeans and populates the navigation view with all MBeans for
      * the given server node.
      * @param serverNode
+     * @throws Exception
      */
     private void populateServer(TreeObject serverNode) throws Exception
     {
         ManagedServer server = (ManagedServer) serverNode.getManagedObject();
         String domain = server.getDomain();
-        if (!domain.equals(ALL))
-        {
-            TreeObject domainNode = new TreeObject(domain, NODE_TYPE_DOMAIN);
-            domainNode.setParent(serverNode);
 
-            populateDomain(domainNode);
-        }
-        else
-        {
-            List<TreeObject> domainList = new ArrayList<TreeObject>();
-            List<String> domains = MBeanUtility.getAllDomains(server);
-
-            for (String domainName : domains)
-            {
-                TreeObject domainNode = new TreeObject(domainName, NODE_TYPE_DOMAIN);
-                domainNode.setParent(serverNode);
-
-                domainList.add(domainNode);
-                populateDomain(domainNode);
-            }
-        }
-    }
-
-    /**
-     * Queries the Qpid Server and populates the given domain node with all MBeans undser that domain.
-     * @param domain
-     * @throws IOException
-     * @throws Exception
-     */
-    private void populateDomain(TreeObject domain) throws IOException, Exception
-    {
-        ManagedServer server = (ManagedServer) domain.getParent().getManagedObject();
-
-        // Now populate the mbenas under those types
-        List<ManagedBean> mbeans = MBeanUtility.getManagedObjectsForDomain(server, domain.getName());
+        List<ManagedBean> mbeans = MBeanUtility.getManagedObjectsForDomain(server, domain);
         for (ManagedBean mbean : mbeans)
         {
             mbean.setServer(server);
@@ -459,13 +455,17 @@ public class NavigationView extends ViewPart
             // manually by selecting from MBeanView
             if (!(mbean.isConnection() || mbean.isExchange() || mbean.isQueue()))
             {
-                addManagedBean(domain, mbean);
+                //if we cant get the MBeanInfo then we cant display the mbean, so dont add it to the tree
+                if (haveAccessPermission(mbean))
+                {
+                    addManagedBean(serverNode, mbean);
+                }
             }
         }
         // To make it work with the broker without virtual host implementation.
         // This will add the default nodes to the domain node
         boolean hasVirtualHost = false;
-        for (TreeObject child : domain.getChildren())
+        for (TreeObject child : serverNode.getChildren())
         {
             if (child.getName().startsWith(VIRTUAL_HOST))
             {
@@ -475,7 +475,7 @@ public class NavigationView extends ViewPart
         }
         
         if (!hasVirtualHost){
-            addDefaultNodes(domain);
+            addDefaultNodes(serverNode);
         }
     }
 
@@ -540,15 +540,14 @@ public class NavigationView extends ViewPart
     }
 
     /**
-     * Adds the given MBean to the given domain node. Creates Notification node for the MBean.
+     * Adds the given MBean to the given domain node.
      * sample ObjectNames -
      * org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost=localhost
      * org.apache.qpid:type=VirtualHost.Queue,VirtualHost=test,name=ping_1
-     * @param domain
-     * @param mbean
-     * @throws Exception
+     * @param parent parent tree node to add the mbean to
+     * @param mbean mbean to add
      */
-    private void addManagedBean(TreeObject domain, ManagedBean mbean) // throws Exception
+    private void addManagedBean(TreeObject parent, ManagedBean mbean)
     {
         String name = mbean.getName();
         // Split the mbean type into array of Strings, to create hierarchy
@@ -558,7 +557,7 @@ public class NavigationView extends ViewPart
         // test->Queue->ping
         String[] types = mbean.getType().split("\\.");
         TreeObject typeNode = null;
-        TreeObject parentNode = domain;
+        TreeObject parentNode = parent;
 
         // Run this loop till all nodes(hierarchy) for this mbean are created. This loop only creates
         // all the required parent nodes for the mbean
@@ -638,11 +637,6 @@ public class NavigationView extends ViewPart
         {
             addItemInConfigFile(mbeanNode);
         }
-
-        // Add notification node
-        // TODO: show this only if the mbean sends any notification
-        //TreeObject notificationNode = new TreeObject(NOTIFICATION, NOTIFICATION);
-        //notificationNode.setParent(mbeanNode);
     }
 
     private TreeObject createTypeNode(TreeObject parent, String name)
@@ -755,7 +749,7 @@ public class NavigationView extends ViewPart
 
         managedServer.setUser(user);
         managedServer.setPassword(password);
-        createRMIServerConnection(managedServer);
+        createJMXServerConnection(managedServer);
 
         // put the server in the managed server map
         _managedServerMap.put(managedServer, selectedNode);
@@ -775,7 +769,30 @@ public class NavigationView extends ViewPart
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
 
+        expandInitialMBeanView(selectedNode);
+        
         _treeViewer.refresh();
+    }
+    
+    private void expandInitialMBeanView(TreeObject serverNode)
+    {
+        if (serverNode.getChildren().size() == 0 )
+        {
+            return;
+        }
+        else
+        {
+            _treeViewer.setExpandedState(serverNode , true);
+        }
+        
+        List<TreeObject> children = serverNode.getChildren();
+        for (TreeObject child : children)
+        {
+            if (child.getChildren().size() > 0)
+            {
+                _treeViewer.setExpandedState(child, true);
+            }
+        }
     }
 
     /**
@@ -1157,25 +1174,12 @@ public class NavigationView extends ViewPart
 
     /**
      * Adds the mbean to the navigation tree
-     * @param mbean
-     * @throws Exception
+     * @param mbean mbean to add to the tree
      */
-    public void addManagedBean(ManagedBean mbean) // throws Exception
+    public void addManagedBean(ManagedBean mbean)
     {
         TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
-        List<TreeObject> domains = treeServerObject.getChildren();
-        TreeObject domain = null;
-        for (TreeObject child : domains)
-        {
-            if (child.getName().equals(mbean.getDomain()))
-            {
-                domain = child;
-
-                break;
-            }
-        }
-
-        addManagedBean(domain, mbean);
+        addManagedBean(treeServerObject, mbean);
         _treeViewer.refresh();
     }
 
@@ -1200,20 +1204,8 @@ public class NavigationView extends ViewPart
                             for (ManagedBean mbean : removalList)
                             {
                                 TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
-                                List<TreeObject> domains = treeServerObject.getChildren();
-                                TreeObject domain = null;
-                                for (TreeObject child : domains)
-                                {
-                                    if (child.getName().equals(mbean.getDomain()))
-                                    {
-                                        domain = child;
 
-                                        break;
-                                    }
-                                }
-
-                                removeManagedObject(domain, mbean);
-                                // serverRegistry.removeManagedObject(mbean);
+                                removeManagedObject(treeServerObject, mbean);
                             }
 
                             _treeViewer.refresh();

@@ -23,7 +23,7 @@ from unittest import TestCase
 from qpid.spec010 import load
 from qpid.codec010 import StringCodec
 from qpid.testlib import testrunner
-from qpid.datatypes import timestamp
+from qpid.datatypes import timestamp, uuid4
 
 class CodecTest(TestCase):
 
@@ -41,6 +41,17 @@ class CodecTest(TestCase):
 
   def testMapString(self):
     self.check("map", {"string": "this is a test"})
+
+  def testMapUnicode(self):
+    self.check("map", {"unicode": u"this is a unicode test"})
+
+  def testMapBinary(self):
+    self.check("map", {"binary": "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5"})
+
+  def testMapBuffer(self):
+    s = "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5"
+    dec = self.check("map", {"buffer": buffer(s)}, False)
+    assert dec["buffer"] == s
 
   def testMapInt(self):
     self.check("map", {"int": 3})
@@ -68,14 +79,20 @@ class CodecTest(TestCase):
   def testMapList(self):
     self.check("map", {"list": [1, "two", 3.0, -4]})
 
+  def testMapUUID(self):
+    self.check("map", {"uuid": uuid4()})
+
   def testMapAll(self):
     decoded = self.check("map", {"string": "this is a test",
+                                 "unicode": u"this is a unicode test",
+                                 "binary": "\x7f\xb4R^\xe5\xf0:\x89\x96E1\xf6\xfe\xb9\x1b\xf5",
                                  "int": 3,
                                  "long": 2**32,
                                  "timestamp": timestamp(0),
                                  "none": None,
                                  "map": {"string": "nested map"},
-                                 "list": [1, "two", 3.0, -4]})
+                                 "list": [1, "two", 3.0, -4],
+                                 "uuid": uuid4()})
     assert isinstance(decoded["timestamp"], timestamp)
 
   def testMapEmpty(self):

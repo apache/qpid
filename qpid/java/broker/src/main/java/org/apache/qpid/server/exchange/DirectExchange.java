@@ -168,16 +168,14 @@ public class DirectExchange extends AbstractExchange
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Queue (" + queue.getName() + ")" + queue + " is already registered with routing key " + routingKey);
+                _logger.debug("Queue (" + queue + ") is already registered with routing key " + routingKey);
             }
         }
         else
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Binding queue(" + queue.getName() + ") " + queue + " with routing key " + routingKey
-                              + (args == null ? "" : " and arguments " + args.toString())
-                              + " to exchange " + this);
+                _logger.debug("Binding queue:" + queue + " with routing key '" + routingKey +"' to exchange:" + this);
             }
         }
     }

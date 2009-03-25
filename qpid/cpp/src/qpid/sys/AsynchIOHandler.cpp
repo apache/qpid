@@ -84,10 +84,11 @@ void AsynchIOHandler::giveReadCredit(int32_t credit) {
     // Check whether we started in the don't about credit state
     if (readCredit.boolCompareAndSwap(InfiniteCredit, credit))
         return;
-    else if (readCredit.fetchAndAdd(credit) != 0)
-        return;
-    // Lock and retest credit to make sure we don't race with decreasing credit
+    // TODO In theory should be able to use an atomic operation before taking the lock
+    // but in practice there seems to be an unexplained race in that case
     ScopedLock<Mutex> l(creditLock);
+    if (readCredit.fetchAndAdd(credit) != 0)
+        return;
     assert(readCredit.get() >= 0);
     if (readCredit.get() != 0)
         aio->startReading();
@@ -141,9 +142,10 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     }
     // Check here for read credit
     if (readCredit.get() != InfiniteCredit) {
+        // TODO In theory should be able to use an atomic operation before taking the lock
+        // but in practice there seems to be an unexplained race in that case
+        ScopedLock<Mutex> l(creditLock);
         if (--readCredit == 0) {
-            // Lock and retest credit to make sure we don't race with increasing credit
-            ScopedLock<Mutex> l(creditLock);
             assert(readCredit.get() >= 0);
             if (readCredit.get() == 0) {
                 aio->stopReading();

@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhost;
 
 import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
 public class VirtualhostInitRoutingTableFromTransactionLogTest extends TestCase
 {
@@ -35,7 +36,7 @@ public class VirtualhostInitRoutingTableFromTransactionLogTest extends TestCase
         VirtualHost _virtualHost = null;
         try
         {
-            _virtualHost = new VirtualHost("test", env);
+            _virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
 
             assertNotNull(_virtualHost.getTransactionLog());
             assertNotNull(_virtualHost.getRoutingTable());

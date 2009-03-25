@@ -22,6 +22,7 @@
 #define _QPID_CONSOLE_AGENT_H_
 
 #include "Broker.h"
+#include "ConsoleImportExport.h"
 
 namespace qpid {
 namespace console {
@@ -30,7 +31,7 @@ namespace console {
      *
      * \ingroup qmfconsoleapi
      */
-    class Agent {
+    class QPID_CONSOLE_EXTERN Agent {
     public:
         typedef std::vector<Agent*> Vector;
 
@@ -49,7 +50,7 @@ namespace console {
         const std::string label;
     };
 
-    std::ostream& operator<<(std::ostream& o, const Agent& agent);
+    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Agent& agent);
 }
 }
 

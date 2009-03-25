@@ -21,12 +21,15 @@
 #include "FailoverManager.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Time.h"
 
 
 namespace qpid {
 namespace client {
 
 using qpid::sys::Monitor;
+using qpid::sys::AbsTime;
+using qpid::sys::Duration;
 
 FailoverManager::FailoverManager(const ConnectionSettings& s, 
                                  ReconnectionStrategy* rs) : settings(s), strategy(rs), state(IDLE) {}
@@ -35,15 +38,21 @@ void FailoverManager::execute(Command& c)
 {
     bool retry = false;
     bool completed = false;
+    AbsTime failed;
     while (!completed) {
         try {
             AsyncSession session = connect().newSession();
+            if (retry) {
+                Duration failoverTime(failed, AbsTime::now());
+                QPID_LOG(info, "Failed over for " << &c << " in " << (failoverTime/qpid::sys::TIME_MSEC) << " milliseconds");
+            }
             c.execute(session, retry);
             session.sync();//TODO: shouldn't be required
             session.close();
             completed = true;
         } catch(const TransportFailure&) {
-            retry = true;            
+            retry = true;
+            failed = AbsTime::now();
         }            
     }
 }

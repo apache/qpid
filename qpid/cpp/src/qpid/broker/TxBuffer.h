@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <vector>
+#include "BrokerImportExport.h"
 #include "TransactionalStore.h"
 #include "TxOp.h"
 
@@ -68,7 +69,7 @@ namespace qpid {
             /**
              * Adds an operation to the transaction.
              */
-            void enlist(TxOp::shared_ptr op);
+            QPID_BROKER_EXTERN void enlist(TxOp::shared_ptr op);
 
             /**
              * Requests that all ops are prepared. This should
@@ -81,7 +82,7 @@ namespace qpid {
              * @returns true if all the operations prepared
              * successfully, false if not.
              */
-            bool prepare(TransactionContext* const ctxt);
+            QPID_BROKER_EXTERN bool prepare(TransactionContext* const ctxt);
 
             /**
              * Signals that the ops all prepared successfully and can
@@ -91,7 +92,7 @@ namespace qpid {
              * Should only be called after a call to prepare() returns
              * true.
              */
-            void commit();
+            QPID_BROKER_EXTERN void commit();
 
             /**
              * Signals that all ops can be rolled back.
@@ -100,13 +101,13 @@ namespace qpid {
              * returns true (2pc) or instead of a prepare call
              * ('server-local')
              */
-            void rollback();
+            QPID_BROKER_EXTERN void rollback();
 
             /**
              * Helper method for managing the process of server local
              * commit
              */
-            bool commitLocal(TransactionalStore* const store);
+            QPID_BROKER_EXTERN bool commitLocal(TransactionalStore* const store);
 
             // Used by cluster to replicate transaction status.
             void accept(TxOpConstVisitor& v) const;

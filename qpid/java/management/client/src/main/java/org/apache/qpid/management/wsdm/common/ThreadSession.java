@@ -25,7 +25,6 @@ import javax.management.ObjectName;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-
 /**
  * Thread-scoped session.
  * 
@@ -35,7 +34,8 @@ public class ThreadSession
 {	
 	private ObjectName _objectName;
 	private Document _wsdl;
-	private Element [] additionalProperties;
+	private Element [] _wsrmdProperties;
+	
 	/**
 	 * Empty constructor.
 	 */
@@ -90,7 +90,7 @@ public class ThreadSession
 	 */
 	public Element[] getResourceMetadataDescriptor() 
 	{
-		return additionalProperties;
+		return _wsrmdProperties;
 	}
 	
 	/**
@@ -100,6 +100,6 @@ public class ThreadSession
 	 */
 	public void setResourceMetadataDescriptor(Element[] rmd) 
 	{
-		this.additionalProperties = rmd;
+		this._wsrmdProperties = rmd;
 	}	
 }

@@ -11,7 +11,7 @@ dnl
 dnl When updating the name/version number here, also update it in
 dnl src/qpid/Version.h
 
-AC_INIT([qpidc], [0.4], [qpid-dev@incubator.apache.org])
+AC_INIT([qpidc], [0.5], [dev@qpid.apache.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 
@@ -87,13 +87,14 @@ else
 	AC_CHECK_DECL([__SUNPRO_CC], [SUNCC=yes], [SUNCC=no])
 	
 	# Set up for sun CC compiler
-	if test x$SUNCC = xno; then
+	if test x$SUNCC = xyes; then
 		if test "${enableval}" = yes; then
 			WARNING_FLAGS=+w
 		fi
 		CXXFLAGS="$CXXFLAGS -library=stlport4 -mt"
 		LD="$CXX"
 		LDFLAGS="$LDFLAGS -library=stlport4 -mt"
+		AC_SUBST([SUNCC_RUNTIME_LIBS], [-lCrun])
 	fi
 fi
 
@@ -150,8 +151,9 @@ test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install rub
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
+test -f $AMQP_FINAL_XML || test -d $srcdir/src/gen || AC_MSG_ERROR([Neither AMQP specs nor spec-generated code present; cannot build.])
 AC_SUBST(AMQP_FINAL_XML)
-AM_CONDITIONAL([GENERATE], [ls $AMQP_FINAL_XML >/dev/null])
+AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
 
 # URL and download URL for the package.
 URL=http://rhm.et.redhat.com/qpidc
@@ -311,14 +313,19 @@ LIBS=$tmp_LIBS
 AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
 
 # Setup --with-ssl/--without-ssl as arguments to configure
-tmp_LIBS=$LIBS
+SSL_CFLAGS=""
+SSL_LDFLAGS=""
 AC_ARG_WITH([ssl],
   [AS_HELP_STRING([--with-ssl], [Build with support for SSL])],
   [case ${withval} in
    yes)
      with_SSL=yes
-     PKG_CHECK_MODULES([SSL], [nspr],,[AC_MSG_ERROR([nspr not found])])
-     PKG_CHECK_MODULES([SSL], [nss],,[AC_MSG_ERROR([nss not found])])
+     AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
+     AS_IF([test x$NSPR_CONFIG = x], [AC_MSG_ERROR([libnspr not found])], [])
+     AC_PATH_PROG([NSS_CONFIG], [nss-config])
+     AS_IF([test x$NSS_CONFIG = x], [AC_MSG_ERROR([libnss not found])], [])
+     SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
+     SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"
      ;;
    no)
      with_SSL=no
@@ -329,13 +336,18 @@ AC_ARG_WITH([ssl],
    esac],
   [
     with_SSL=yes
-    PKG_CHECK_MODULES([SSL], [nspr],,[with_SSL=no])
-    PKG_CHECK_MODULES([SSL], [nss],,[with_SSL=no])
+    AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
+    AS_IF([test x$NSPR_CONFIG = x], [with_SSL=no], 
+      [AC_PATH_PROG([NSS_CONFIG], [nss-config])
+       AS_IF([test x$NSS_CONFIG = x], [with_SSL=no], 
+             [SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
+              SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"])])
   ]
 )
 # Remove from LIBS, we will link it explicitly in make files.
-LIBS=$tmp_LIBS
 AM_CONDITIONAL([SSL], [test x$with_SSL = xyes])
+AC_SUBST([SSL_CFLAGS])
+AC_SUBST([SSL_LDFLAGS])
 
 
 poller=no
@@ -366,6 +378,37 @@ AM_CONDITIONAL([HAVE_EPOLL], [test x$poller = xepoll])
 if test $poller = xno; then
   AC_MSG_ERROR([Polling mechanism not implemented for $host])
 fi
+
+#Guess host architecture, to choose platform-dependent objects
+case "$host" in
+     *sun-solaris*)
+        arch=solaris
+     ;;
+esac
+AM_CONDITIONAL([SUNOS], [test x$arch = xsolaris])
+
+# Check for some syslog capabilities not present in all systems
+AC_TRY_COMPILE([#include <sys/syslog.h>], 
+               [int v = LOG_AUTHPRIV;],
+               [AC_DEFINE([HAVE_LOG_AUTHPRIV], [1], [Set to 1 whether LOG_AUTHPRIV is supported.])],)
+
+AC_TRY_COMPILE([#include <sys/syslog.h>], 
+               [int v = LOG_FTP;],
+               [AC_DEFINE([HAVE_LOG_FTP], [1], [Set to 1 whether LOG_FTP is supported.])],)
+
+#Check if we need to include libacl to provide acl API
+gl_saved_libs=$LIBS
+  AC_SEARCH_LIBS(acl, [acl],
+                [test "$ac_cv_search_acl" = "none required" ||
+                 LIB_ACL=$ac_cv_search_acl])
+  AC_SUBST([LIB_ACL])
+LIBS=$gl_saved_libs
+
+SOCKLIBS=""
+AC_CHECK_LIB([socket],[socket],[SOCKET_LIB="-lsocket"],[SOCKET_LIB=""],[])
+AC_CHECK_LIB([nsl],[getipnodebyname],[NSL_LIB="-lnsl"],[NSL_LIB=""],[])
+SOCKLIBS="$SOCKET_LIB $NSL_LIB"
+AC_SUBST([SOCKLIBS])
 
 AM_PATH_PYTHON()
 

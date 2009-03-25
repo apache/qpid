@@ -28,8 +28,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.SecurityConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -46,12 +50,12 @@ public class ACLManager
     private Map<String, ACLPlugin> _globalPlugins = new HashMap<String, ACLPlugin>();
     private Map<String, ACLPlugin> _hostPlugins = new HashMap<String, ACLPlugin>();
 
-    public ACLManager(Configuration configuration, PluginManager manager)
+    public ACLManager(SecurityConfiguration configuration, PluginManager manager) throws ConfigurationException
     {
         this(configuration, manager, null);
     }
 
-    public ACLManager(Configuration configuration, PluginManager manager, ACLPluginFactory securityPlugin)
+    public ACLManager(SecurityConfiguration configuration, PluginManager manager, ACLPluginFactory securityPlugin) throws ConfigurationException
     {
         _pluginManager = manager;
 
@@ -70,14 +74,14 @@ public class ACLManager
     }
 
 
-    public void configureHostPlugins(Configuration hostConfig)
+    public void configureHostPlugins(SecurityConfiguration hostConfig) throws ConfigurationException
     {
         _hostPlugins = configurePlugins(hostConfig);
     }
     
-    public Map<String, ACLPlugin> configurePlugins(Configuration configuration)
+    public Map<String, ACLPlugin> configurePlugins(SecurityConfiguration hostConfig) throws ConfigurationException
     {
-        Configuration securityConfig = configuration.subset("security");
+        Configuration securityConfig = hostConfig.getConfiguration();
         Map<String, ACLPlugin> plugins = new HashMap<String, ACLPlugin>();
         Iterator keys = securityConfig.getKeys();
         Collection<String> handledTags = new HashSet();
@@ -86,7 +90,6 @@ public class ACLManager
             // Splitting the string is necessary here because of the way that getKeys() returns only
             // bottom level children
             String tag = ((String) keys.next()).split("\\.", 2)[0];
-            
             if (!handledTags.contains(tag))
             {
                 for (ACLPluginFactory plugin : _allSecurityPlugins.values())

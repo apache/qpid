@@ -21,6 +21,7 @@
 #ifndef _QPID_CONSOLE_BROKER_H_
 #define _QPID_CONSOLE_BROKER_H_
 
+#include "ConsoleImportExport.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/SubscriptionManager.h"
@@ -50,8 +51,9 @@ namespace console {
      */
     class Broker : public client::MessageListener {
     public:
-        Broker(SessionManager& sm, client::ConnectionSettings& settings);
-        ~Broker();
+        QPID_CONSOLE_EXTERN Broker(SessionManager& sm,
+                                   client::ConnectionSettings& settings);
+        QPID_CONSOLE_EXTERN ~Broker();
         
         bool isConnected() const { return connected; }
         const std::string& getError() const { return error; }
@@ -61,7 +63,7 @@ namespace console {
         void addBinding(const std::string& key) {
             connThreadBody.bindExchange("qpid.management", key);
         }
-        std::string getUrl() const;
+        QPID_CONSOLE_EXTERN std::string getUrl() const;
 
     private:
         friend class SessionManager;
@@ -120,10 +122,10 @@ namespace console {
         void setBrokerId(const framing::Uuid& id) { brokerId = id; }
         void appendAgents(std::vector<Agent*>& agents) const;
 
-        friend std::ostream& operator<<(std::ostream& o, const Broker& k);
+        friend QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Broker& k);
     };
 
-    std::ostream& operator<<(std::ostream& o, const Broker& k);
+    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Broker& k);
 }
 }
 

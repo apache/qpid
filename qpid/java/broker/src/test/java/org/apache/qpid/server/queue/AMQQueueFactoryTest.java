@@ -29,8 +29,11 @@ import org.apache.qpid.AMQException;
 
 public class AMQQueueFactoryTest extends TestCase
 {
+    final int MAX_SIZE = 50;
+
     QueueRegistry _queueRegistry;
     VirtualHost _virtualHost;
+    protected FieldTable _arguments;
 
     public void setUp()
     {
@@ -41,6 +44,15 @@ public class AMQQueueFactoryTest extends TestCase
         _queueRegistry = _virtualHost.getQueueRegistry();
 
         assertEquals("Queues registered on an empty virtualhost", 0, _queueRegistry.getQueues().size());
+
+
+        _arguments = new FieldTable();
+
+        //Ensure we can call createQueue with a priority int value
+        _arguments.put(AMQQueueFactory.QPID_POLICY_TYPE, AMQQueueFactory.QPID_FLOW_TO_DISK);
+        // each message in the QBAAT is around 9-10 bytes each so only give space for half
+
+        _arguments.put(AMQQueueFactory.QPID_MAX_SIZE, MAX_SIZE);
     }
 
     public void tearDown()
@@ -50,31 +62,18 @@ public class AMQQueueFactoryTest extends TestCase
     }
 
 
-    public void testPriorityQueueRegistration()
+    protected AMQQueue createQueue() throws AMQException
     {
-        FieldTable fieldTable = new FieldTable();
-        fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 5);
-
-        try
-        {
-            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testPriorityQueue"), false, new AMQShortString("owner"), false,
-                                               _virtualHost, fieldTable);
-
-            assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());            
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        return AMQQueueFactory.createAMQQueueImpl(new AMQShortString(this.getName()), false, new AMQShortString("owner"), false,
+                                               _virtualHost, _arguments);
     }
 
 
-    public void testSimpleQueueRegistration()
+    public void testQueueRegistration()
     {
         try
         {
-            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
-                                               _virtualHost, null);
+            AMQQueue queue = createQueue();
             assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
         }
         catch (AMQException e)
@@ -82,4 +81,21 @@ public class AMQQueueFactoryTest extends TestCase
             fail(e.getMessage());
         }
     }
+
+    public void testQueueValuesAfterCreation()
+    {
+        try
+        {
+            AMQQueue queue = createQueue();
+
+            assertEquals("MemoryMaximumSize not set correctly:", MAX_SIZE, queue.getMemoryUsageMaximum());
+            assertEquals("MemoryMinimumSize not defaulted to half maximum:", MAX_SIZE / 2, queue.getMemoryUsageMinimum());
+
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+    }
+
 }

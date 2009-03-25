@@ -109,7 +109,7 @@ void ClusterFixture::addLocal() {
     Args args(makeArgs(prefix));
     vector<const char*> argv(args.size());
     transform(args.begin(), args.end(), argv.begin(), boost::bind(&string::c_str, _1));
-    qpid::log::Logger::instance().setPrefix(os.str());
+    qpid::log::Logger::instance().setPrefix(prefix);
     localBroker.reset(new BrokerFixture(parseOpts(argv.size(), &argv[0])));
     push_back(localBroker->getPort());
     forkedBrokers.push_back(shared_ptr<ForkedBroker>());

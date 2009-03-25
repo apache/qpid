@@ -47,6 +47,19 @@ public class ClientProperties
      */
     public static final String SYNC_PERSISTENT_PROP_NAME = "sync_persistence";
     
+    /**
+     * When true a sync command is sent after sending a message ack.
+     * type: boolean
+     */
+    public static final String SYNC_ACK_PROP_NAME = "sync_ack";
+        
+    /**
+     * sync_publish property - {persistent|all}
+     * If set to 'persistent',then persistent messages will be publish synchronously
+     * If set to 'all', then all messages regardless of the delivery mode will be
+     * published synchronously.
+     */
+    public static final String SYNC_PUBLISH_PROP_NAME = "sync_publish";
     
     /**
      * This value will be used in the following settings

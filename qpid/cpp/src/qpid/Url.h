@@ -25,10 +25,11 @@
 #include <vector>
 #include <new>
 #include <ostream>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 
-std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const TcpAddress& a);
 
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {
@@ -38,12 +39,12 @@ struct Url : public std::vector<Address> {
 
     /** Url with local IP address(es), may be more than one address
      * on a multi-homed host. */
-    static Url getIpAddressesUrl(uint16_t port);
+    QPID_COMMON_EXTERN static Url getIpAddressesUrl(uint16_t port);
 
     struct Invalid : public Exception { Invalid(const std::string& s); };
 
     /** Convert to string form. */
-    std::string str() const;
+    QPID_COMMON_EXTERN std::string str() const;
 
     /** Empty URL. */
     Url() {}
@@ -62,14 +63,14 @@ struct Url : public std::vector<Address> {
     Url& operator=(const std::string& s) { parse(s); return *this; }
     
     /** Throw Invalid if the URL does not contain any addresses. */
-    void throwIfEmpty() const;
+    QPID_COMMON_EXTERN void throwIfEmpty() const;
 
     /** Replace contents with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
      *@exception Invalid if the url is invalid.
      */
-    void parse(const char* url);
-    void parse(const std::string& url) { parse(url.c_str()); }
+    QPID_COMMON_EXTERN void parse(const char* url);
+    QPID_COMMON_EXTERN void parse(const std::string& url) { parse(url.c_str()); }
 
     /** Replace contesnts with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
@@ -84,8 +85,8 @@ struct Url : public std::vector<Address> {
 inline bool operator==(const Url& a, const Url& b) { return a.str()==b.str(); }
 inline bool operator!=(const Url& a, const Url& b) { return a.str()!=b.str(); }
 
-std::ostream& operator<<(std::ostream& os, const Url& url);
-std::istream& operator>>(std::istream& is, Url& url);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Url& url);
+QPID_COMMON_EXTERN std::istream& operator>>(std::istream& is, Url& url);
 
 } // namespace qpid
 

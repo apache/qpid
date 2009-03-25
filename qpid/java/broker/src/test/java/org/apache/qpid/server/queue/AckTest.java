@@ -30,14 +30,16 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.NullApplicationRegistry;
@@ -57,7 +59,7 @@ public class AckTest extends TestCase
 
     private MockProtocolSession _protocolSession;
 
-    private TestMemoryMessageStore _messageStore;
+    private TestableMemoryMessageStore _messageStore;
 
     private StoreContext _storeContext = new StoreContext();
 
@@ -72,14 +74,15 @@ public class AckTest extends TestCase
         super.setUp();
         ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
 
-        _messageStore = new TestMemoryMessageStore();
+        VirtualHost vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        _messageStore = new TestableMemoryMessageStore((MemoryMessageStore)vhost.getTransactionLog());
         _protocolSession = new MockProtocolSession(_messageStore);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 
         _protocolSession.addChannel(_channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"),
-                                                    null);
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"),
+                                                    true, vhost, null);
     }
 
     protected void tearDown()
@@ -185,7 +188,7 @@ public class AckTest extends TestCase
     /**
      * Tests that in no-ack mode no messages are retained
      */
-    public void testPersistentNoAckMode() throws AMQException
+    public void testPersistentNoAckMode() throws AMQException, InterruptedException
     {
         // false arg means no acks expected
         _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, false,null,false, new LimitlessCreditManager());
@@ -194,7 +197,7 @@ public class AckTest extends TestCase
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
+        assertTrue("Size:" + _messageStore.getMessageMetaDataMap().size(), _messageStore.getMessageMetaDataMap().size() == 0);
         assertTrue(_messageStore.getContentBodyMap().size() == 0);
 
     }

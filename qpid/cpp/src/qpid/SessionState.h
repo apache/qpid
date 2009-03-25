@@ -31,6 +31,7 @@
 #include <boost/range/iterator_range.hpp>
 #include <vector>
 #include <iosfwd>
+#include <qpid/CommonImportExport.h>
 
 namespace qpid {
 using framing::SequenceNumber;
@@ -38,19 +39,19 @@ using framing::SequenceSet;
 
 /** A point in the session. Points to command id + offset */
 struct SessionPoint : boost::totally_ordered1<SessionPoint> {
-    SessionPoint(SequenceNumber command = 0, uint64_t offset = 0);
+    QPID_COMMON_EXTERN SessionPoint(SequenceNumber command = 0, uint64_t offset = 0);
 
     SequenceNumber command;
     uint64_t offset;
 
     /** Advance past frame f */
-    void advance(const framing::AMQFrame& f);
+    QPID_COMMON_EXTERN void advance(const framing::AMQFrame& f);
 
-    bool operator<(const SessionPoint&) const;
-    bool operator==(const SessionPoint&) const;
+    QPID_COMMON_EXTERN bool operator<(const SessionPoint&) const;
+    QPID_COMMON_EXTERN bool operator==(const SessionPoint&) const;
 };
 
-std::ostream& operator<<(std::ostream&, const SessionPoint&);
+QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SessionPoint&);
 
 /**
  * Support for session idempotence barrier and resume as defined in
@@ -78,14 +79,14 @@ class SessionState {
     typedef boost::iterator_range<ReplayList::iterator> ReplayRange;
 
     struct Configuration {
-        Configuration(size_t flush=1024*1024, size_t hard=0);
+        QPID_COMMON_EXTERN Configuration(size_t flush=1024*1024, size_t hard=0);
         size_t replayFlushLimit; // Flush when the replay list >= N bytes. 0 disables.
         size_t replayHardLimit; // Kill session if replay list > N bytes. 0 disables.
     };
 
-    SessionState(const SessionId& =SessionId(), const Configuration& =Configuration());
+    QPID_COMMON_EXTERN SessionState(const SessionId& =SessionId(), const Configuration& =Configuration());
     
-    virtual ~SessionState();
+    QPID_COMMON_EXTERN virtual ~SessionState();
 
     bool hasState() const;
 
@@ -100,78 +101,78 @@ class SessionState {
     // ==== Functions for sender state.
 
     /** Record frame f for replay. Should not be called during replay. */
-    virtual void senderRecord(const framing::AMQFrame& f);
+    QPID_COMMON_EXTERN virtual void senderRecord(const framing::AMQFrame& f);
 
     /** @return true if we should send flush for confirmed and completed commands. */
-    virtual bool senderNeedFlush() const;
+    QPID_COMMON_EXTERN virtual bool senderNeedFlush() const;
 
     /** Called when flush for confirmed and completed commands is sent to peer. */
-    virtual void senderRecordFlush();
+    QPID_COMMON_EXTERN virtual void senderRecordFlush();
 
     /** True if we should reply to the next incoming completed command */
-    virtual bool senderNeedKnownCompleted() const;
+    QPID_COMMON_EXTERN virtual bool senderNeedKnownCompleted() const;
 
     /** Called when knownCompleted is sent to peer. */
-    virtual void senderRecordKnownCompleted();
+    QPID_COMMON_EXTERN virtual void senderRecordKnownCompleted();
 
     /** Called when the peer confirms up to comfirmed. */
-    virtual void senderConfirmed(const SessionPoint& confirmed);
+    QPID_COMMON_EXTERN virtual void senderConfirmed(const SessionPoint& confirmed);
 
     /** Called when the peer indicates commands completed */
-    virtual void senderCompleted(const SequenceSet& commands);
+    QPID_COMMON_EXTERN virtual void senderCompleted(const SequenceSet& commands);
 
     /** Point from which the next new (not replayed) data will be sent. */
-    virtual SessionPoint senderGetCommandPoint();
+    QPID_COMMON_EXTERN virtual SessionPoint senderGetCommandPoint();
 
     /** Set of outstanding incomplete commands */
-    virtual SequenceSet senderGetIncomplete() const;
+    QPID_COMMON_EXTERN virtual SequenceSet senderGetIncomplete() const;
 
     /** Point from which we can replay. */
-    virtual SessionPoint senderGetReplayPoint() const;
+    QPID_COMMON_EXTERN virtual SessionPoint senderGetReplayPoint() const;
 
     /** Peer expecting commands from this point.
      *@return Range of frames to be replayed.
      */
-    virtual ReplayRange senderExpected(const SessionPoint& expected);
+    QPID_COMMON_EXTERN virtual ReplayRange senderExpected(const SessionPoint& expected);
 
     // ==== Functions for receiver state
 
     /** Set the command point. */
-    virtual void receiverSetCommandPoint(const SessionPoint& point);
+    QPID_COMMON_EXTERN virtual void receiverSetCommandPoint(const SessionPoint& point);
 
     /** Returns true if frame should be be processed, false if it is a duplicate. */
-    virtual bool receiverRecord(const framing::AMQFrame& f);
+    QPID_COMMON_EXTERN virtual bool receiverRecord(const framing::AMQFrame& f);
 
     /** Command completed locally */
-    virtual void receiverCompleted(SequenceNumber command, bool cumulative=false);
+    QPID_COMMON_EXTERN virtual void receiverCompleted(SequenceNumber command, bool cumulative=false);
 
     /** Peer has indicated commands are known completed */
-    virtual void receiverKnownCompleted(const SequenceSet& commands);
+    QPID_COMMON_EXTERN virtual void receiverKnownCompleted(const SequenceSet& commands);
 
     /** True if the next completed control should set the timely-reply argument
      * to request a knonw-completed response.
      */
-    virtual bool receiverNeedKnownCompleted() const;
+    QPID_COMMON_EXTERN virtual bool receiverNeedKnownCompleted() const;
 
     /** Get the incoming command point */
-    virtual const SessionPoint& receiverGetExpected() const;
+    QPID_COMMON_EXTERN virtual const SessionPoint& receiverGetExpected() const;
 
     /** Get the received high-water-mark, may be > getExpected() during replay */
-    virtual const SessionPoint& receiverGetReceived() const;
+    QPID_COMMON_EXTERN virtual const SessionPoint& receiverGetReceived() const;
 
     /** Completed received commands that the peer may not know about. */
-    virtual const SequenceSet& receiverGetUnknownComplete() const;
+    QPID_COMMON_EXTERN virtual const SequenceSet& receiverGetUnknownComplete() const;
 
     /** Incomplete received commands. */
-    virtual const SequenceSet& receiverGetIncomplete() const;
+    QPID_COMMON_EXTERN virtual const SequenceSet& receiverGetIncomplete() const;
 
     /** ID of the command currently being handled. */
-    virtual SequenceNumber receiverGetCurrent() const;
+    QPID_COMMON_EXTERN virtual SequenceNumber receiverGetCurrent() const;
 
     /** Set the state variables, used to create a session that will resume
      *  from some previously established point.
      */
-    virtual void setState(
+    QPID_COMMON_EXTERN virtual void setState(
         const SequenceNumber& replayStart,
         const SequenceNumber& sendCommandPoint,
         const SequenceSet& sentIncomplete,
@@ -180,6 +181,20 @@ class SessionState {
         const SequenceSet& unknownCompleted,
         const SequenceSet& receivedIncomplete
     );
+
+    /**
+     * So called 'push' bridges work by faking a subscribe request
+     * (and the accompanying flows etc) to the local broker to initiate
+     * the outflow of messages for the bridge.
+     * 
+     * As the peer doesn't send these it cannot include them in its
+     * session state. To keep the session state on either side of the
+     * bridge in sync, this hack allows the tracking of state for
+     * received messages to be disabled for the faked commands and
+     * subsequently re-enabled.
+     */
+    QPID_COMMON_EXTERN void disableReceiverTracking();
+    QPID_COMMON_EXTERN void enableReceiverTracking();
 
   private:
 
@@ -209,6 +224,7 @@ class SessionState {
     uint32_t timeout;
     Configuration config;
     bool stateful;
+    bool receiverTrackingDisabled;//very nasty hack for 'push' bridges
 };
 
 inline bool operator==(const SessionId& id, const SessionState& s) { return s == id; }

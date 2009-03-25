@@ -280,6 +280,30 @@ public class FileUtilsTest extends TestCase
         checkFileLists(filesBefore, filesAfter);
     }
 
+    public void testDeleteNonExistentFile()
+    {
+        File test = new File("FileUtilsTest-testDelete-"+System.currentTimeMillis());
+
+        assertTrue("File exists", !test.exists());
+        assertFalse("File is a directory", test.isDirectory());
+
+        assertTrue("Delete Succeeded ", !FileUtils.delete(test, true));
+    }
+
+    public void testDeleteNull()
+    {
+        try
+        {
+            FileUtils.delete(null, true);
+            fail("Delete with null value should throw NPE.");
+        }
+        catch (NullPointerException npe)
+        {
+            // expected path
+        }
+    }
+
+
     /**
      * Given two lists of File arrays ensure they are the same length and all entries in Before are in After
      *

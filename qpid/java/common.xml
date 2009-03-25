@@ -23,7 +23,7 @@
   <dirname property="project.root" file="${ant.file.common}"/>
 
   <property name="project.name"          value="qpid"/>
-  <property name="project.version"       value="M4"/>
+  <property name="project.version"       value="0.5"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
 
   <property name="resources"             location="${project.root}/resources"/>
