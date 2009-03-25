@@ -23,6 +23,14 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.amqp_8_0.BasicPublishBodyImpl;
+
+import java.util.LinkedList;
+import java.util.ArrayList;
 
 public class MockAMQMessage extends TransientAMQMessage
 {
@@ -31,6 +39,14 @@ public class MockAMQMessage extends TransientAMQMessage
     {
        super(messageId);
         _messagePublishInfo = new MessagePublishInfoImpl(null,false,false,null);
+        BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
+
+        properties.setMessageId(String.valueOf(messageId));
+        properties.setTimestamp(System.currentTimeMillis());
+        properties.setDeliveryMode((byte)1);
+
+        _contentHeaderBody = new ContentHeaderBody(properties, BasicPublishBodyImpl.CLASS_ID);
+        _contentBodies = new ArrayList<ContentChunk>();
     }
 
 
