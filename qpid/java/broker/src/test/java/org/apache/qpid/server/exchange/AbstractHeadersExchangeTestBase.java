@@ -36,11 +36,9 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.FailedDequeueException;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageCleanupException;
 import org.apache.qpid.server.queue.MockProtocolSession;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.queue.UnableToFlowMessageException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
@@ -356,9 +354,9 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void load()
+                public AMQMessage load()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                    return null;
                 }
 
                 public boolean isFlowed()

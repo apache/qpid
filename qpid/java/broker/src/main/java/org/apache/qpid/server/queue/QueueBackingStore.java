@@ -26,8 +26,36 @@ import org.apache.commons.configuration.ConfigurationException;
 
 public interface QueueBackingStore
 {
+    /**
+     * Retrieve the message with a given ID
+     *
+     * This method must be thread safe.
+     *
+     * Multiple calls to load with a given messageId DO NOT need to return the same object.
+     *
+     * @param messageId the id of the message to retreive.
+     * @return
+     */
     AMQMessage load(Long messageId);
 
+    /**
+     * Store a message in the BackingStore.
+     *
+     * This method must be thread safe understanding that multiple message objects may be the same data.
+     *
+     * Allowing a thread to return from this method means that it is safe to call load()
+     *
+     * Implementer guide:
+     * Until the message has been loaded the message references will all be the same object.
+     *
+     * One appraoch as taken by the @see FileQueueBackingStore is to block aimulataneous calls to this method 
+     * until the message is fully on disk. This can be done by synchronising on message as initially it is always the
+     * same object. Only after a load has taken place will there be a discrepency.
+     *
+     *
+     * @param message the message to unload
+     * @throws UnableToFlowMessageException
+     */
     void unload(AMQMessage message) throws UnableToFlowMessageException;
 
     void delete(Long messageId);
