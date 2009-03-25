@@ -484,7 +484,7 @@ class Spec(Node):
     buffer: direct("vbin32"),
     int: direct("int64"),
     long: direct("int64"),
-    float: direct("float"),
+    float: direct("double"),
     None.__class__: direct("void"),
     list: direct("list"),
     tuple: direct("list"),
