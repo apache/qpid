@@ -166,7 +166,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
     {
         // If we've increased the minimum memory above what we have in memory then
         // we need to inhale more if there is more
-        if (_atomicQueueInMemory.get() < _memoryUsageMinimum && _atomicQueueSize.get() > 0)
+        if (!_disabled && _atomicQueueInMemory.get() < _memoryUsageMinimum && _atomicQueueSize.get() > 0)
         {
             startInhaler();
         }
@@ -204,7 +204,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      */
     public void entryUnloadedUpdateMemory(QueueEntry queueEntry)
     {
-        if (_atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+        if (!_disabled && _atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
         {
             _log.error("InMemory Count just went below 0:" + queueEntry.debugIdentity());
         }
@@ -219,7 +219,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      */
     public void entryLoadedUpdateMemory(QueueEntry queueEntry)
     {
-        if (_atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
+        if (!_disabled && _atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
         {
             _log.error("Loaded to much data!:" + _atomicQueueInMemory.get() + "/" + _memoryUsageMaximum);
             setFlowed(true);

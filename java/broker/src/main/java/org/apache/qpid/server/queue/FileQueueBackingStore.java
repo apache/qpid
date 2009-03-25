@@ -157,10 +157,10 @@ public class FileQueueBackingStore implements QueueBackingStore
         {
             try
             {
-                input.close();
-                // We can purge the message here then reflow it if required but I believe it to be cleaner to leave it
-                // on disk until it has been deleted from the queue at that point we can be sure we won't need the data
-                //handle.delete();
+                if (input != null)
+                {
+                    input.close();
+                }
             }
             catch (IOException e)
             {
@@ -171,101 +171,123 @@ public class FileQueueBackingStore implements QueueBackingStore
         throw new UnableToRecoverMessageException(error);
     }
 
+    /**
+     * Thread safety is ensured here by synchronizing on the message object.
+     *
+     * This is safe as load() calls will fail until the first thread through here has created the file on disk
+     * and fully written the content.
+     *
+     * After this point new AMQMessages can exist that reference the same data thus breaking the synchronisation.
+     *
+     * Thread safety is maintained here as the existence of the file is checked allowing then subsequent unload() calls
+     * to skip the writing.
+     *
+     * Multiple unload() calls will initially be blocked using the synchronization until the data exists on disk thus
+     * safely allowing any reference to the message to be cleared prompting a load call.
+     *
+     * @param message the message to unload
+     * @throws UnableToFlowMessageException
+     */
     public void unload(AMQMessage message) throws UnableToFlowMessageException
     {
-        long messageId = message.getMessageId();
-
-        File handle = getFileHandle(messageId);
-
-        //If we have written the data once then we don't need to do it again.
-        if (handle.exists())
+        //Synchorize on the message to ensure that one only thread can unload at a time.
+        // If a second unload is attempted then it will block until the unload has completed.
+        synchronized (message)
         {
-            if (_log.isDebugEnabled())
+            long messageId = message.getMessageId();
+
+            File handle = getFileHandle(messageId);
+
+            //If we have written the data once then we don't need to do it again.
+            if (handle.exists())
             {
-                _log.debug("Message(ID:" + messageId + ") already unloaded.");
-            }
-            return;
-        }
-
-        if (_log.isInfoEnabled())
-        {
-            _log.info("Unloading Message (ID:" + messageId + ")");
-        }
-
-        ObjectOutputStream writer = null;
-        Exception error = null;
-
-        try
-        {
-            writer = new ObjectOutputStream(new FileOutputStream(handle));
-
-            writer.writeLong(message.getArrivalTime());
-
-            MessagePublishInfo mpi = message.getMessagePublishInfo();
-            writer.writeUTF(String.valueOf(mpi.getExchange()));
-            writer.writeUTF(String.valueOf(mpi.getRoutingKey()));
-            writer.writeBoolean(mpi.isMandatory());
-            writer.writeBoolean(mpi.isImmediate());
-            ContentHeaderBody chb = message.getContentHeaderBody();
-
-            // write out the content header body
-            final int bodySize = chb.getSize();
-            byte[] underlying = new byte[bodySize];
-            ByteBuffer buf = ByteBuffer.wrap(underlying);
-            chb.writePayload(buf);
-
-            writer.writeInt(bodySize);
-            writer.write(underlying, 0, bodySize);
-
-            int bodyCount = message.getBodyCount();
-            writer.writeInt(bodyCount);
-
-            //WriteContentBody
-            for (int index = 0; index < bodyCount; index++)
-            {
-                ContentChunk chunk = message.getContentChunk(index);
-                int length = chunk.getSize();
-
-                byte[] chunk_underlying = new byte[length];
-
-                ByteBuffer chunk_buf = chunk.getData();
-
-                chunk_buf.duplicate().rewind().get(chunk_underlying);
-
-                writer.writeInt(length);
-                writer.write(chunk_underlying, 0, length);
-            }
-        }
-        catch (FileNotFoundException e)
-        {
-            error = e;
-        }
-        catch (IOException e)
-        {
-            error = e;
-        }
-        finally
-        {
-            // In a FileNotFound situation writer will be null.
-            if (writer != null)
-            {
-                try
+                if (_log.isDebugEnabled())
                 {
-                    writer.flush();
-                    writer.close();
+                    _log.debug("Message(ID:" + messageId + ") already unloaded.");
                 }
-                catch (IOException e)
+                return;
+            }
+
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Unloading Message (ID:" + messageId + ")");
+            }
+
+            ObjectOutputStream writer = null;
+            Exception error = null;
+
+            try
+            {
+                writer = new ObjectOutputStream(new FileOutputStream(handle));
+
+                writer.writeLong(message.getArrivalTime());
+
+                MessagePublishInfo mpi = message.getMessagePublishInfo();
+                writer.writeUTF(String.valueOf(mpi.getExchange()));
+                writer.writeUTF(String.valueOf(mpi.getRoutingKey()));
+                writer.writeBoolean(mpi.isMandatory());
+                writer.writeBoolean(mpi.isImmediate());
+                ContentHeaderBody chb = message.getContentHeaderBody();
+
+                // write out the content header body
+                final int bodySize = chb.getSize();
+                byte[] underlying = new byte[bodySize];
+                ByteBuffer buf = ByteBuffer.wrap(underlying);
+                chb.writePayload(buf);
+
+                writer.writeInt(bodySize);
+                writer.write(underlying, 0, bodySize);
+
+                int bodyCount = message.getBodyCount();
+                writer.writeInt(bodyCount);
+
+                //WriteContentBody
+                for (int index = 0; index < bodyCount; index++)
                 {
-                    error = e;
+                    ContentChunk chunk = message.getContentChunk(index);
+                    int length = chunk.getSize();
+
+                    byte[] chunk_underlying = new byte[length];
+
+                    ByteBuffer chunk_buf = chunk.getData();
+
+                    chunk_buf.duplicate().rewind().get(chunk_underlying);
+
+                    writer.writeInt(length);
+                    writer.write(chunk_underlying, 0, length);
                 }
             }
-        }
+            catch (FileNotFoundException e)
+            {
+                error = e;
+            }
+            catch (IOException e)
+            {
+                error = e;
+            }
+            finally
+            {
+                // In a FileNotFound situation writer will be null.
+                if (writer != null)
+                {
+                    try
+                    {
+                        writer.flush();
+                        writer.close();
+                    }
+                    catch (IOException e)
+                    {
+                        error = e;
+                    }
+                }
+            }
 
-        if (error != null)
-        {
-            _log.error("Unable to unload message(" + messageId + ") to disk, restoring state.");
-            handle.delete();
-            throw new UnableToFlowMessageException(messageId, error);
+            if (error != null)
+            {
+                _log.error("Unable to unload message(" + messageId + ") to disk, restoring state.");
+                handle.delete();
+                throw new UnableToFlowMessageException(messageId, error);
+            }
         }
     }
 
