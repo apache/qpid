@@ -21,20 +21,19 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentHeaderProperties;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
-import org.apache.qpid.server.store.StoreContext;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class QueueEntryImplTest extends TestCase
 {
+    protected static final Logger _log = Logger.getLogger(QueueEntryImplTest.class);
 
     /** Test the Redelivered state of a QueueEntryImpl */
     public void testRedelivered()
@@ -141,7 +140,7 @@ public class QueueEntryImplTest extends TestCase
         Condition wait = waitLock.newCondition();
         try
         {
-            message.setExpiration(System.currentTimeMillis() + 10L);
+            message.setExpiration(System.currentTimeMillis() + 500L);
 
             message.setPublishAndContentHeaderBody(null, mpi, chb);
 
@@ -150,7 +149,7 @@ public class QueueEntryImplTest extends TestCase
             assertFalse("New messages should not be expired.", queueEntry.expired());
 
             final long MILLIS = 1000000L;
-            long waitTime = 20 * MILLIS;
+            long waitTime = 500 * MILLIS;
 
             while (waitTime > 0)
             {
@@ -171,7 +170,9 @@ public class QueueEntryImplTest extends TestCase
                 }
 
             }
-
+            _log.info("m.GetExpiration:" + message.getExpiration());
+            _log.info("qe.GetExpiration:" + ((QueueEntryImpl)queueEntry).getExpiration());
+            _log.info("AfterSleep:" + System.currentTimeMillis());
             assertTrue("After a sleep messages should now be expired.", queueEntry.expired());
 
         }
@@ -200,7 +201,7 @@ public class QueueEntryImplTest extends TestCase
         {
 
             message.setPublishAndContentHeaderBody(null, mpi, chb);
-            
+
             QueueEntry queueEntry = new MockQueueEntry(message);
 
             assertFalse("New messages should not be expired.", queueEntry.expired());
