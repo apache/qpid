@@ -170,14 +170,15 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable<AMQExcept
     boolean isDeleted();
 
     boolean acquiredBySubscription();
-
-    void setDeliveredToSubscription();
-
+    
     /**
      * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
      * And for selector efficiency.
+     *
+     * This is now also used to unload the message if this entry is on a flowed queue. As a result this method should
+     * only be called after the message has been sent.
      */
-    public void setDeliveredToConsumer();    
+    void setDeliveredToSubscription();
 
     void release();
 

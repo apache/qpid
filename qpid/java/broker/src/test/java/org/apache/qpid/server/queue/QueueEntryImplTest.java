@@ -77,7 +77,7 @@ public class QueueEntryImplTest extends TestCase
 
             assertFalse("Undelivered Message should not say it is delivered.", queueEntry.getDeliveredToConsumer());
 
-            queueEntry.setDeliveredToConsumer();
+            queueEntry.setDeliveredToSubscription();
 
             assertTrue("Delivered Message should say it is delivered.", queueEntry.getDeliveredToConsumer());
 
@@ -112,7 +112,7 @@ public class QueueEntryImplTest extends TestCase
 
             assertFalse("Undelivered Message should not say it is delivered.", queueEntry.getDeliveredToConsumer());
 
-            queueEntry.setDeliveredToConsumer();
+            queueEntry.setDeliveredToSubscription();
 
             assertTrue("Delivered Message should say it is delivered.", queueEntry.getDeliveredToConsumer());
 

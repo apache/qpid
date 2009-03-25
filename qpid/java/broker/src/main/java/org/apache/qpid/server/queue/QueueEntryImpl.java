@@ -158,7 +158,7 @@ public class QueueEntryImpl implements QueueEntry
         return (_flags & DELIVERED_TO_CONSUMER) != 0;
     }
 
-    public void setDeliveredToConsumer()
+    public void setDeliveredToSubscription()
     {
         _flags |= DELIVERED_TO_CONSUMER;
 
@@ -221,11 +221,6 @@ public class QueueEntryImpl implements QueueEntry
     {
 
         return (_state instanceof SubscriptionAcquiredState);
-    }
-
-    public void setDeliveredToSubscription()
-    {
-        _flags |= DELIVERED_TO_CONSUMER;
     }
 
     public void release()
