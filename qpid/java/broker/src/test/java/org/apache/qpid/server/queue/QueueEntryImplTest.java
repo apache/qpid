@@ -21,7 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -33,7 +32,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class QueueEntryImplTest extends TestCase
 {
-    protected static final Logger _log = Logger.getLogger(QueueEntryImplTest.class);
 
     /** Test the Redelivered state of a QueueEntryImpl */
     public void testRedelivered()
@@ -76,7 +74,7 @@ public class QueueEntryImplTest extends TestCase
 
             assertFalse("Undelivered Message should not say it is delivered.", queueEntry.getDeliveredToConsumer());
 
-            queueEntry.setDeliveredToConsumer();
+            queueEntry.setDeliveredToSubscription();
 
             assertTrue("Delivered Message should say it is delivered.", queueEntry.getDeliveredToConsumer());
 
@@ -111,7 +109,7 @@ public class QueueEntryImplTest extends TestCase
 
             assertFalse("Undelivered Message should not say it is delivered.", queueEntry.getDeliveredToConsumer());
 
-            queueEntry.setDeliveredToConsumer();
+            queueEntry.setDeliveredToSubscription();
 
             assertTrue("Delivered Message should say it is delivered.", queueEntry.getDeliveredToConsumer());
 
@@ -170,9 +168,6 @@ public class QueueEntryImplTest extends TestCase
                 }
 
             }
-            _log.info("m.GetExpiration:" + message.getExpiration());
-            _log.info("qe.GetExpiration:" + ((QueueEntryImpl)queueEntry).getExpiration());
-            _log.info("AfterSleep:" + System.currentTimeMillis());
             assertTrue("After a sleep messages should now be expired.", queueEntry.expired());
 
         }
