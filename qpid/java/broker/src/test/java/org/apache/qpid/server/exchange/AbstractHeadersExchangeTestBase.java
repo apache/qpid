@@ -280,11 +280,6 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void setDeliveredToConsumer()
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
                 public void release()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
