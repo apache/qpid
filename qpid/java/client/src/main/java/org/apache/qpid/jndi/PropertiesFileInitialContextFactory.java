@@ -126,7 +126,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(CONNECTION_FACTORY_PREFIX))
             {
                 String jndiName = key.substring(CONNECTION_FACTORY_PREFIX.length());
-                ConnectionFactory cf = createFactory(entry.getValue().toString());
+                ConnectionFactory cf = createFactory(entry.getValue().toString().trim());
                 if (cf != null)
                 {
                     data.put(jndiName, cf);
@@ -144,7 +144,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(DESTINATION_PREFIX))
             {
                 String jndiName = key.substring(DESTINATION_PREFIX.length());
-                Destination dest = createDestination(entry.getValue().toString());
+                Destination dest = createDestination(entry.getValue().toString().trim());
                 if (dest != null)
                 {
                     data.put(jndiName, dest);
@@ -162,7 +162,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(QUEUE_PREFIX))
             {
                 String jndiName = key.substring(QUEUE_PREFIX.length());
-                Queue q = createQueue(entry.getValue().toString());
+                Queue q = createQueue(entry.getValue().toString().trim());
                 if (q != null)
                 {
                     data.put(jndiName, q);
@@ -180,7 +180,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (key.startsWith(TOPIC_PREFIX))
             {
                 String jndiName = key.substring(TOPIC_PREFIX.length());
-                Topic t = createTopic(entry.getValue().toString());
+                Topic t = createTopic(entry.getValue().toString().trim());
                 if (t != null)
                 {
                     if (_logger.isDebugEnabled())
@@ -283,7 +283,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             int i = 0;
             for (String key:keys)
             {
-                bindings[i] = new AMQShortString(key);
+                bindings[i] = new AMQShortString(key.trim());
                 i++;
             }
             // The Destination has a dual nature. If this was used for a producer the key is used
