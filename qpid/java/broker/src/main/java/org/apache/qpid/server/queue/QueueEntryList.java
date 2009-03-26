@@ -63,4 +63,14 @@ public interface QueueEntryList
     void entryLoadedUpdateMemory(QueueEntry queueEntry);
 
     void stop();
+
+    /**
+     * Mark this queue as part of another QueueEntryList for accounting purposes.
+     *
+     * All Calls from the QueueEntry to the QueueEntryList need to check if there is
+     * a parent QueueEntrylist upon which the action should take place.
+     *
+     * @param queueEntryList The parent queue that is performing accounting.
+     */
+    void setParentQueueEntryList(FlowableBaseQueueEntryList queueEntryList);
 }

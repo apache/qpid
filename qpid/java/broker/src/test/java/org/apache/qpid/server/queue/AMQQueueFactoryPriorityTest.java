@@ -50,21 +50,4 @@ public class AMQQueueFactoryPriorityTest extends AMQQueueFactoryTest
             fail(e.getMessage());
         }
     }
-
-    @Override
-    public void testQueueValuesAfterCreation()
-    {
-        try
-        {
-            AMQQueue queue = createQueue();
-
-            assertEquals("MemoryMaximumSize not set correctly:", MAX_SIZE, queue.getMemoryUsageMaximum());
-            //NOTE: Priority queue will show 0 as minimum as the minimum value is actually spread between its sub QELs
-            assertEquals("MemoryMinimumSize not 0 as expected for a priority queue:", 0, queue.getMemoryUsageMinimum());
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
-    }
 }

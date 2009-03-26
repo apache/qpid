@@ -155,6 +155,13 @@ public class QueueEntryImpl implements QueueEntry
         return (_flags & DELIVERED_TO_CONSUMER) != 0;
     }
 
+    /**
+     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
+     * And for selector efficiency.
+     *
+     * This is now also used to unload the message if this entry is on a flowed queue. As a result this method should
+     * only be called after the message has been sent.
+     */    
     public void setDeliveredToSubscription()
     {
         _flags |= DELIVERED_TO_CONSUMER;
