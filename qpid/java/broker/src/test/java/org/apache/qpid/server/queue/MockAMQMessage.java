@@ -48,11 +48,4 @@ public class MockAMQMessage extends TransientAMQMessage
         _contentHeaderBody = new ContentHeaderBody(properties, BasicPublishBodyImpl.CLASS_ID);
         _contentBodies = new ArrayList<ContentChunk>();
     }
-
-
-    @Override
-    public long getSize()
-    {
-        return 0l;
-    }
 }
