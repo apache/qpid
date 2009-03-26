@@ -51,7 +51,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
     private Executor _purger;
     private AtomicBoolean _stopped;
     private AtomicReference<MessageInhaler> _asynchronousInhaler = new AtomicReference(null);
-    protected boolean _disabled;
+    protected boolean _disableFlowToDisk;
     private AtomicReference<MessagePurger> _asynchronousPurger = new AtomicReference(null);
     private static final int BATCH_PROCESS_COUNT = 100;
 
@@ -68,7 +68,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         _stopped = new AtomicBoolean(false);
         _inhaler = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
         _purger = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
-        _disabled = true;
+        _disableFlowToDisk = true;
     }
 
     public void setFlowed(boolean flowed)
@@ -121,7 +121,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
 
         if (maximumMemoryUsage >= 0)
         {
-            _disabled = false;
+            _disableFlowToDisk = false;
         }
 
         // Don't attempt to start the inhaler/purger unless we have a minimum value specified.
@@ -142,7 +142,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
             {
                 _log.info("Disabling Flow to Disk for queue:" + _queue.getName());
             }
-            _disabled = true;
+            _disableFlowToDisk = true;
         }
     }
 
@@ -166,7 +166,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
     {
         // If we've increased the minimum memory above what we have in memory then
         // we need to inhale more if there is more
-        if (!_disabled && _atomicQueueInMemory.get() < _memoryUsageMinimum && _atomicQueueSize.get() > 0)
+        if (!_disableFlowToDisk && _atomicQueueInMemory.get() < _memoryUsageMinimum && _atomicQueueSize.get() > 0)
         {
             startInhaler();
         }
@@ -204,7 +204,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      */
     public void entryUnloadedUpdateMemory(QueueEntry queueEntry)
     {
-        if (!_disabled && _atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+        if (!_disableFlowToDisk && _atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
         {
             _log.error("InMemory Count just went below 0:" + queueEntry.debugIdentity());
         }
@@ -219,7 +219,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      */
     public void entryLoadedUpdateMemory(QueueEntry queueEntry)
     {
-        if (!_disabled && _atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
+        if (!_disableFlowToDisk && _atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
         {
             _log.error("Loaded to much data!:" + _atomicQueueInMemory.get() + "/" + _memoryUsageMaximum);
             setFlowed(true);
@@ -247,7 +247,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         _atomicQueueSize.addAndGet(queueEntry.getSize());
         long inUseMemory = _atomicQueueInMemory.addAndGet(queueEntry.getSize());
 
-        if (!_disabled && inUseMemory > _memoryUsageMaximum)
+        if (!_disableFlowToDisk && inUseMemory > _memoryUsageMaximum)
         {
             setFlowed(true);
             queueEntry.unload();
