@@ -68,7 +68,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
 
         long requriedSize = message.getSize();
         // Check and see if list would flow on adding message
-        if (!_disabled && !isFlowed() && _priorityLists[index].memoryUsed() + requriedSize > _priorityLists[index].getMemoryUsageMaximum())
+        if (!_disableFlowToDisk && !isFlowed() && _priorityLists[index].memoryUsed() + requriedSize > _priorityLists[index].getMemoryUsageMaximum())
         {
             if (_log.isDebugEnabled())
             {
@@ -401,7 +401,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
 
         if (maximumMemoryUsage >= 0)
         {
-            _disabled = false;
+            _disableFlowToDisk = false;
         }
 
         long share = maximumMemoryUsage / _priorities;
@@ -418,7 +418,7 @@ public class PriorityQueueEntryList extends FlowableBaseQueueEntryList implement
             {
                 _log.info("Disabling Flow to Disk for queue:" + _queue.getName());
             }
-            _disabled = true;
+            _disableFlowToDisk = true;
             return;
         }
 
