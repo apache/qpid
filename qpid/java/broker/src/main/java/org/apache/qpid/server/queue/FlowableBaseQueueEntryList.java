@@ -54,6 +54,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
     protected boolean _disableFlowToDisk;
     private AtomicReference<MessagePurger> _asynchronousPurger = new AtomicReference(null);
     private static final int BATCH_PROCESS_COUNT = 100;
+    protected FlowableBaseQueueEntryList _parentQueue;
 
     FlowableBaseQueueEntryList(AMQQueue queue)
     {
@@ -89,7 +90,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug(prefix + " Queue(" + _queue + ":" + _queue.getName() + ") usage:" + memoryUsed()
+            _log.debug(prefix + " Queue(" + _queue.getName() + ") usage:" + memoryUsed()
                        + "/" + getMemoryUsageMinimum() + "<>" + getMemoryUsageMaximum()
                        + "/" + dataSize());
         }
@@ -97,7 +98,14 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
 
     public boolean isFlowed()
     {
-        return _flowed.get();
+        if (_parentQueue != null)
+        {
+            return _parentQueue.isFlowed();
+        }
+        else
+        {
+            return _flowed.get();
+        }
     }
 
     public int size()
@@ -204,12 +212,19 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      */
     public void entryUnloadedUpdateMemory(QueueEntry queueEntry)
     {
-        if (!_disableFlowToDisk && _atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+        if (_parentQueue != null)
         {
-            _log.error("InMemory Count just went below 0:" + queueEntry.debugIdentity());
+            _parentQueue.entryUnloadedUpdateMemory(queueEntry);
         }
+        else
+        {
+            if (!_disableFlowToDisk && _atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+            {
+                _log.error("InMemory Count just went below 0:" + queueEntry.debugIdentity());
+            }
 
-        checkAndStartInhaler();
+            checkAndStartInhaler();
+        }
     }
 
     /**
@@ -219,11 +234,18 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
      */
     public void entryLoadedUpdateMemory(QueueEntry queueEntry)
     {
-        if (!_disableFlowToDisk && _atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
+        if (_parentQueue != null)
         {
-            _log.error("Loaded to much data!:" + _atomicQueueInMemory.get() + "/" + _memoryUsageMaximum);
-            setFlowed(true);
-            startPurger();
+            _parentQueue.entryLoadedUpdateMemory(queueEntry);
+        }
+        else
+        {
+            if (!_disableFlowToDisk && _atomicQueueInMemory.addAndGet(queueEntry.getSize()) > _memoryUsageMaximum)
+            {
+                _log.error("Loaded to much data!:" + _atomicQueueInMemory.get() + "/" + _memoryUsageMaximum);
+                setFlowed(true);
+                startPurger();
+            }
         }
     }
 
@@ -241,28 +263,55 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         }
     }
 
+    /**
+     * Mark this queue as part of another QueueEntryList for accounting purposes.
+     *
+     * All Calls from the QueueEntry to the QueueEntryList need to check if there is
+     * a parent QueueEntrylist upon which the action should take place.
+     *
+     * @param queueEntryList The parent queue that is performing accounting.
+     */    
+    public void setParentQueueEntryList(FlowableBaseQueueEntryList queueEntryList)
+    {
+        _parentQueue = queueEntryList;
+    }
+
     protected void incrementCounters(final QueueEntryImpl queueEntry)
     {
-        _atomicQueueCount.incrementAndGet();
-        _atomicQueueSize.addAndGet(queueEntry.getSize());
-        long inUseMemory = _atomicQueueInMemory.addAndGet(queueEntry.getSize());
-
-        if (!_disableFlowToDisk && inUseMemory > _memoryUsageMaximum)
+        if (_parentQueue != null)
         {
-            setFlowed(true);
-            queueEntry.unload();
+            _parentQueue.incrementCounters(queueEntry);
+        }
+        else
+        {
+            _atomicQueueCount.incrementAndGet();
+            _atomicQueueSize.addAndGet(queueEntry.getSize());
+            long inUseMemory = _atomicQueueInMemory.addAndGet(queueEntry.getSize());
+
+            if (!_disableFlowToDisk && inUseMemory > _memoryUsageMaximum)
+            {
+                setFlowed(true);
+                queueEntry.unload();
+            }
         }
     }
 
     protected void dequeued(QueueEntryImpl queueEntry)
     {
-        _atomicQueueCount.decrementAndGet();
-        _atomicQueueSize.addAndGet(-queueEntry.getSize());
-        if (!queueEntry.isFlowed())
+        if (_parentQueue != null)
         {
-            if (_atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+            _parentQueue.dequeued(queueEntry);
+        }
+        else
+        {
+            _atomicQueueCount.decrementAndGet();
+            _atomicQueueSize.addAndGet(-queueEntry.getSize());
+            if (!queueEntry.isFlowed())
             {
-                _log.error("InMemory Count just went below 0 on dequeue.");
+                if (_atomicQueueInMemory.addAndGet(-queueEntry.getSize()) < 0)
+                {
+                    _log.error("InMemory Count just went below 0 on dequeue.");
+                }
             }
         }
     }
