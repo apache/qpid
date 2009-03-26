@@ -130,10 +130,16 @@ public class ServerConfiguration implements SignalHandler
                 for (int j = 0; j < hosts.size(); j++)
                 {
                     String name = (String) hosts.get(j);
-                    CompositeConfiguration mungedConf = new CompositeConfiguration();
-                    mungedConf.addConfiguration(conf.subset("virtualhosts.virtualhost."+name));
-                    mungedConf.addConfiguration(vhostConfiguration.subset("virtualhost." + name));
-                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, mungedConf, this);
+                    // Add the keys of the virtual host to the main config then bail out
+                    
+                    Configuration myConf = vhostConfiguration.subset("virtualhost." + name);
+                    Iterator k = myConf.getKeys();
+                    while (k.hasNext())
+                    {
+                        String key = (String) k.next();
+                        conf.setProperty("virtualhosts.virtualhost."+name+"."+key, myConf.getProperty(key));
+                    }
+                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, conf.subset("virtualhosts.virtualhost."+name), this);
                     _virtualHosts.put(vhostConfig.getName(), vhostConfig);
                 }
             }

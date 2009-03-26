@@ -677,6 +677,24 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(true, config.getQpidNIO()); // From the second file, not
                                                  // present in the first
     }
+    
+    public void testVariableInterpolation() throws Exception
+    {
+        File mainFile = File.createTempFile(getClass().getName(), null);
+
+        mainFile.deleteOnExit();
+
+        FileWriter out = new FileWriter(mainFile);
+        out.write("<broker>\n");
+        out.write("\t<work>foo</work>\n");
+        out.write("\t<management><ssl><keyStorePath>${work}</keyStorePath></ssl></management>\n");
+        out.write("</broker>\n");
+        out.close();
+
+        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
+        assertEquals("Did not get correct interpolated value", 
+                "foo", config.getManagementKeyStorePath());
+    }
 
     public void testCombinedConfigurationFirewall() throws Exception
     {
