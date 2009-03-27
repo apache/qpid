@@ -365,8 +365,8 @@ class TestBase010(unittest.TestCase):
         self.session = self.conn.session("test-session", timeout=10)
         self.qmf = None
 
-    def startQmf(self):
-        self.qmf = qmf.console.Session()
+    def startQmf(self, handler=None):
+        self.qmf = qmf.console.Session(handler)
         self.qmf_broker = self.qmf.addBroker(str(testrunner.url))
 
     def connect(self, host=None, port=None):

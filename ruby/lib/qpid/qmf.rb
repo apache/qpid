@@ -58,9 +58,14 @@ module Qpid::Qmf
     # Invoked when an event is raised
     def event(broker, event); end
 
+    # Invoked when an agent heartbeat is received.
     def heartbeat(agent, timestamp); end
 
+    # Invoked when the connection sequence reaches the point where broker information is available.
     def broker_info(broker); end
+
+    # Invoked when a method response from an asynchronous method call is received.
+    def method_response(broker, seq, response); end
   end
 
   class BrokerURL
@@ -105,7 +110,7 @@ module Qpid::Qmf
     CONTEXT_STARTUP  = 2
     CONTEXT_MULTIGET = 3
 
-    GET_WAIT_TIME = 60
+    DEFAULT_GET_WAIT_TIME = 60
 
     include MonitorMixin
 
@@ -305,10 +310,16 @@ module Qpid::Qmf
     # Otherwise, the query will go to all agents.
     #
     # :agent = <agent> - supply an agent from the list returned by getAgents.
+    #
     # If the get query is to be restricted to one broker (as opposed to
     # all connected brokers), add the following argument:
     #
     # :broker = <broker> - supply a broker as returned by addBroker.
+    #
+    # The default timeout for this synchronous operation is 60 seconds.  To change the timeout,
+    # use the following argument:
+    #
+    # :_timeout = <time in seconds>
     #
     # If additional arguments are supplied, they are used as property
     # selectors, as long as their keys are strings.  For example, if
@@ -389,9 +400,13 @@ module Qpid::Qmf
       end
 
       timeout = false
+      if kwargs.include?(:_timeout)
+        wait_time = kwargs[:_timeout]
+      else
+        wait_time = DEFAULT_GET_WAIT_TIME
+      end
       synchronize do
-        unless @cv.wait_for(GET_WAIT_TIME) {
-            @sync_sequence_list.empty? || @error }
+        unless @cv.wait_for(wait_time) { @sync_sequence_list.empty? || @error }
           @sync_sequence_list.each do |pending_seq|
             @seq_mgr.release(pending_seq)
           end
@@ -504,10 +519,11 @@ module Qpid::Qmf
 
     def handle_method_resp(broker, codec, seq)
       code = codec.read_uint32
-
       text = codec.read_str16
       out_args = {}
-      method, synchronous = @seq_mgr.release(seq)
+      pair = @seq_mgr.release(seq)
+      return unless pair
+      method, synchronous = pair
       if code == 0
         method.arguments.each do |arg|
           if arg.dir.index(?O)
@@ -1054,7 +1070,7 @@ module Qpid::Qmf
 
     private
 
-    def send_method_request(method, name, args, synchronous = false)
+    def send_method_request(method, name, args, synchronous = false, time_wait = nil)
       @schema.methods.each do |schema_method|
         if name == schema_method.name
           send_codec = Qpid::StringCodec.new(@broker.conn.spec)
@@ -1077,9 +1093,9 @@ module Qpid::Qmf
             @session.encode_value(send_codec, actual, formal.type)
           end
 
+          ttl = time_wait ? time_wait * 1000 : nil
           smsg = @broker.message(send_codec.encoded,
-                                 "agent.#{object_id.broker_bank}.#{object_id.agent_bank}")
-
+                                 "agent.#{object_id.broker_bank}.#{object_id.agent_bank}", ttl=ttl)
           @broker.sync_start if synchronous
           @broker.emit(smsg)
 
@@ -1089,8 +1105,25 @@ module Qpid::Qmf
     end
 
     def invoke(method, name, args)
-      if send_method_request(method, name, args, synchronous = true)
-        unless @broker.wait_for_sync_done
+      kwargs = args[args.size - 1]
+      sync = true
+      timeout = nil
+
+      if kwargs.class == Hash
+        if kwargs.include?(:_timeout)
+          timeout = kwargs[:_timeout]
+        end
+
+        if kwargs.include?(:_async)
+          sync = !kwargs[:_async]
+        end
+        args.pop
+      end
+
+      seq = send_method_request(method, name, args, synchronous = sync)
+      if seq
+        return seq unless sync
+        unless @broker.wait_for_sync_done(timeout)
           @session.seq_mgr.release(seq)
           raise "Timed out waiting for method to respond"
         end
@@ -1284,9 +1317,10 @@ module Qpid::Qmf
       end
     end
 
-    def wait_for_sync_done
+    def wait_for_sync_done(timeout=nil)
+      wait_time = timeout ? timeout : SYNC_TIME
       synchronize do
-        return @cv.wait_for(SYNC_TIME) { ! @sync_in_flight || @error }
+        return @cv.wait_for(wait_time) { ! @sync_in_flight || @error }
       end
     end
 
@@ -1309,9 +1343,10 @@ module Qpid::Qmf
       codec.write_uint32(seq)
     end
 
-    def message(body, routing_key="broker")
+    def message(body, routing_key="broker", ttl=nil)
       dp = @amqp_session.delivery_properties
       dp.routing_key = routing_key
+      dp.ttl = ttl if ttl
       mp = @amqp_session.message_properties
       mp.content_type = "x-application/qmf"
       mp.reply_to = amqp_session.reply_to("amq.direct", @reply_name)
