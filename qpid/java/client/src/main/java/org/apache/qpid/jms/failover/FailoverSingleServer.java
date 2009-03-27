@@ -36,10 +36,10 @@ public class FailoverSingleServer implements FailoverMethod
     private BrokerDetails _brokerDetail;
 
     /** The number of times to retry connecting to the sever */
-    private int _retries;
+    protected int _retries;
 
     /** The current number of attempts made to the server */
-    private int _currentRetries;
+    protected int _currentRetries;
 
 
     public FailoverSingleServer(ConnectionURL connectionDetails)
@@ -157,7 +157,7 @@ public class FailoverSingleServer implements FailoverMethod
 
     public String toString()
     {
-        return "SingleServer:\n" +
+        return methodName()+":\n" +
                "Max Retries:" + _retries +
                "\nCurrent Retry:" + _currentRetries +
                "\n" + _brokerDetail + "\n";
