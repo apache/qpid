@@ -28,8 +28,6 @@ import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.url.URLSyntaxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -151,4 +149,78 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             _failoverComplete.countDown();
         }
     }
+
+    public void testNoFailover() throws URLSyntaxException, AMQVMBrokerCreationException,
+                                        InterruptedException, JMSException
+    {
+        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='500',retries='3'',failover='nofailover'";
+
+        AMQConnectionURL url = new AMQConnectionURL(connectionString);
+
+        try
+        {
+            //Kill initial broker
+            TransportConnection.killAllVMBrokers();
+
+            //Create a thread to start the broker asynchronously
+            Thread brokerStart = new Thread(new Runnable()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        //Wait before starting broker
+                        // The wait should allow atleast 1 retries to fail before broker is ready
+                        Thread.sleep(750);
+                        TransportConnection.createVMBroker(1);
+                    }
+                    catch (Exception e)
+                    {
+                        System.err.println(e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+
+            brokerStart.start();
+            long start = System.currentTimeMillis();
+
+
+            //Start the connection so it will use the retries
+            AMQConnection connection = new AMQConnection(url, null);
+
+            long end = System.currentTimeMillis();
+
+            long duration = (end - start);
+
+            // Check that we actually had a delay had a delay in connection
+            assertTrue("Initial connection should be longer than 1 delay : 500 <:(" + duration + ")", duration > 500);
+
+
+            connection.setExceptionListener(this);
+
+            //Ensure we collect the brokerStart thread
+            brokerStart.join();
+
+            start = System.currentTimeMillis();
+
+            //Kill connection
+            TransportConnection.killAllVMBrokers();                                    
+
+            _failoverComplete.await();
+
+            end = System.currentTimeMillis();
+
+            duration = (end - start);
+
+            // Notification of the connection failure should be very quick as we are denying the ability to failover.
+            assertTrue("Notification of the connection failure took was : 100 >:(" + duration + ")", duration < 100);
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+    }
+
 }
