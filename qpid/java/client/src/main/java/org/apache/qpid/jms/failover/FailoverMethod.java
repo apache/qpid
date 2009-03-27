@@ -29,6 +29,8 @@ public interface FailoverMethod
     public static final String ROUND_ROBIN = "roundrobin";
     public static final String FAILOVER_EXCHANGE= "failover_exchange";
     public static final String RANDOM = "random";
+    public static final String NO_FAILOVER = "nofailover";
+
     /**
      * Reset the Failover to initial conditions
      */

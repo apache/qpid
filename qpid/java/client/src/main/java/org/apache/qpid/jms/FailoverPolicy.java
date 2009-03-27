@@ -25,6 +25,7 @@ import org.apache.qpid.jms.failover.FailoverExchangeMethod;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
+import org.apache.qpid.jms.failover.NoFailover;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +94,10 @@ public class FailoverPolicy
                 else if (failoverMethod.equals(FailoverMethod.FAILOVER_EXCHANGE))
                 {
                     method = new FailoverExchangeMethod(connectionDetails, conn);
+                }
+                else if (failoverMethod.equals(FailoverMethod.NO_FAILOVER))
+                {
+                    method = new NoFailover(connectionDetails);
                 }
                 else
                 {
