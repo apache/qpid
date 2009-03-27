@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="sender"
-	ProjectGUID="{09714CB8-FECA-1BAD-2431-8A11DB0D67CE}"
+	ProjectGUID="{09714CB8-FECA-1BAD-2431-8A11CDC7409E}"
 	RootNamespace="sender"
 	Keyword="Win32Proj"
 	SignManifests="true"
