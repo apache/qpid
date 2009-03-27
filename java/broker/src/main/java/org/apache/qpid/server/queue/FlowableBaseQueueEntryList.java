@@ -88,9 +88,9 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
 
     protected void showUsage(String prefix)
     {
-        if (_log.isDebugEnabled())
+        if (_log.isTraceEnabled())
         {
-            _log.debug(prefix + " Queue(" + _queue.getName() + ") usage:" + memoryUsed()
+            _log.trace(prefix + " Queue(" + _queue.getName() + ") usage:" + memoryUsed()
                        + "/" + getMemoryUsageMinimum() + "<>" + getMemoryUsageMaximum()
                        + "/" + dataSize());
         }
@@ -527,7 +527,10 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         //If we are still flowed and are over the minimum value then schedule to run again.
         if (_flowed.get() && _atomicQueueInMemory.get() > _memoryUsageMinimum)
         {
-            _log.info("Rescheduling Purger:" + _queue.getName());
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Rescheduling Purger:" + _queue.getName());
+            }
             _purger.execute(messagePurger);
         }
     }
