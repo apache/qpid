@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="shlibtest"
-	ProjectGUID="{37AB26B9-FECA-1BAD-2431-8A11DB0D67CE}"
+	ProjectGUID="{37AB26B9-FECA-1BAD-2431-8A11CDC7409E}"
 	RootNamespace="shlibtest"
 	Keyword="Win32Proj"
 	SignManifests="true"

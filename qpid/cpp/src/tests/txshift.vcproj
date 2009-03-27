@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="txshift"
-	ProjectGUID="{6E3B2A6B-FECA-1BAD-2431-8A11DB0D67CE}"
+	ProjectGUID="{6E3B2A6B-FECA-1BAD-2431-8A11CDC7409E}"
 	RootNamespace="txshift"
 	Keyword="Win32Proj"
 	SignManifests="true"
