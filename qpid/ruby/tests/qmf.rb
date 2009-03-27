@@ -21,31 +21,69 @@ require "test/unit"
 require "qpid"
 require "tests/util"
 require "socket"
+require "monitor.rb"
 
 class QmfTest < Test::Unit::TestCase
+
+  class Handler < Qpid::Qmf::Console
+    include MonitorMixin
+
+    def initialize
+      super()
+      @xmt_list = {}
+      @rcv_list = {}
+    end
+
+    def method_response(broker, seq, response)
+      synchronize do
+        @rcv_list[seq] = response
+      end
+    end
+
+    def request(broker, count)
+      @count = count
+      for idx in 0...count
+        synchronize do
+          seq = broker.echo(idx, "Echo Message", :_async => true)
+          @xmt_list[seq] = idx
+        end
+      end
+    end
+
+    def check
+      return "fail (attempted send=%d, actual sent=%d)" % [@count, @xmt_list.size] unless @count == @xmt_list.size
+      lost = 0
+      mismatched = 0
+      @xmt_list.each do |seq, value|
+        if @rcv_list.include?(seq)
+          result = @rcv_list.delete(seq)
+          mismatch += 1 unless result.sequence == value
+        else
+          lost += 1
+        end
+      end
+      spurious = @rcv_list.size
+      if lost == 0 and mismatched == 0 and spurious == 0
+        return "pass"
+      else
+        return "fail (lost=%d, mismatch=%d, spurious=%d)" % [lost, mismatched, spurious]
+      end
+    end
+  end
 
   def setup()
     # Make sure errors in threads lead to a noisy death of the test
     Thread.abort_on_exception = true
 
-    host = ENV.fetch("QMF_TEST_HOST", 'localhost')
-    port = ENV.fetch("QMF_TEST_PORT", 5672)
+    @host = ENV.fetch("QMF_TEST_HOST", 'localhost')
+    @port = ENV.fetch("QMF_TEST_PORT", 5672)
 
-    sock = TCPSocket.new(host, port)
+    sock = TCPSocket.new(@host, @port)
 
     @conn = Qpid::Connection.new(sock)
     @conn.start()
 
     @session = @conn.session("test-session")
-
-    # It's a bit odd that we're using two connections but that's the way
-    # the python one works afaict.
-    @qmf = Qpid::Qmf::Session.new()
-    @qmf_broker = @qmf.add_broker("amqp://%s:%d" % [host, port])
-
-    brokers = @qmf.objects(:class => "broker")
-    assert_equal(1, brokers.length)
-    @broker = brokers[0]
   end
 
   def teardown
@@ -58,15 +96,33 @@ class QmfTest < Test::Unit::TestCase
     end
   end
 
-  def test_broker_connectivity()
+  def start_qmf(kwargs = {})
+    @qmf = Qpid::Qmf::Session.new(kwargs)
+    @qmf_broker = @qmf.add_broker("amqp://%s:%d" % [@host, @port])
+
+    brokers = @qmf.objects(:class => "broker")
+    assert_equal(1, brokers.length)
+    @broker = brokers[0]
+  end
+
+  def test_methods_sync()
+    start_qmf
     body = "Echo Message Body"
     for seq in 1..10
-      res = @broker.echo(seq, body)
+      res = @broker.echo(seq, body, :_timeout => 10)
       assert_equal(0, res.status)
       assert_equal("OK", res.text)
       assert_equal(seq, res.sequence)
       assert_equal(body, res.body)
     end
+  end
+
+  def test_methods_async()
+    handler = Handler.new
+    start_qmf(:console => handler)
+    handler.request(@broker, 20)
+    sleep(1)
+    assert_equal("pass", handler.check)
   end
 
   def test_move_queued_messages()
@@ -76,6 +132,7 @@ class QmfTest < Test::Unit::TestCase
         """
 
     "Set up source queue"
+    start_qmf
     @session.queue_declare(:queue => "src-queue", :exclusive => true, :auto_delete => true)
     @session.exchange_bind(:queue => "src-queue", :exchange => "amq.direct", :binding_key => "routing_key")
 
@@ -151,6 +208,7 @@ class QmfTest < Test::Unit::TestCase
   # Test ability to purge messages from the head of a queue. Need to test
   # moveing all, 1 (top message) and N messages.
   def test_purge_queue
+    start_qmf
     # Set up purge queue"
     @session.queue_declare(:queue => "purge-queue",
                            :exclusive => true,

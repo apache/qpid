@@ -20,6 +20,9 @@
 from qpid.datatypes import Message, RangedSet
 from qpid.testlib import TestBase010
 from qpid.management import managementChannel, managementClient
+from threading import Condition
+from time import sleep
+import qmf.console
 
 class ManagementTest (TestBase010):
     """
@@ -52,7 +55,7 @@ class ManagementTest (TestBase010):
             self.assertEqual (res.body,       body)
         mc.removeChannel (mch)
 
-    def test_broker_connectivity (self):
+    def test_methods_sync (self):
         """
         Call the "echo" method on the broker to verify it is alive and talking.
         """
@@ -60,16 +63,16 @@ class ManagementTest (TestBase010):
         self.startQmf()
  
         brokers = self.qmf.getObjects(_class="broker")
-        self.assertEqual (len(brokers), 1)
+        self.assertEqual(len(brokers), 1)
         broker = brokers[0]
 
         body = "Echo Message Body"
-        for seq in range (1, 10):
+        for seq in range(1, 20):
             res = broker.echo(seq, body)
-            self.assertEqual (res.status,   0)
-            self.assertEqual (res.text,     "OK")
-            self.assertEqual (res.sequence, seq)
-            self.assertEqual (res.body,     body)
+            self.assertEqual(res.status, 0)
+            self.assertEqual(res.text, "OK")
+            self.assertEqual(res.sequence, seq)
+            self.assertEqual(res.body, body)
 
     def test_get_objects(self):
         self.startQmf()
@@ -237,4 +240,58 @@ class ManagementTest (TestBase010):
         self.assertEqual (result.status, 0) 
         pq = self.qmf.getObjects(_class="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,0)
+
+    def test_methods_async (self):
+        """
+        """
+        class Handler (qmf.console.Console):
+            def __init__(self):
+                self.cv = Condition()
+                self.xmtList = {}
+                self.rcvList = {}
+
+            def methodResponse(self, broker, seq, response):
+                self.cv.acquire()
+                try:
+                    self.rcvList[seq] = response
+                finally:
+                    self.cv.release()
+
+            def request(self, broker, count):
+                self.count = count
+                for idx in range(count):
+                    self.cv.acquire()
+                    try:
+                        seq = broker.echo(idx, "Echo Message", _async = True)
+                        self.xmtList[seq] = idx
+                    finally:
+                        self.cv.release()
+
+            def check(self):
+                if self.count != len(self.xmtList):
+                    return "fail (attempted send=%d, actual sent=%d)" % (self.count, len(self.xmtList))
+                lost = 0
+                mismatched = 0
+                for seq in self.xmtList:
+                    value = self.xmtList[seq]
+                    if seq in self.rcvList:
+                        result = self.rcvList.pop(seq)
+                        if result.sequence != value:
+                            mismatched += 1
+                    else:
+                        lost += 1
+                spurious = len(self.rcvList)
+                if lost == 0 and mismatched == 0 and spurious == 0:
+                    return "pass"
+                else:
+                    return "fail (lost=%d, mismatch=%d, spurious=%d)" % (lost, mismatched, spurious)
+
+        handler = Handler()
+        self.startQmf(handler)
+        brokers = self.qmf.getObjects(_class="broker")
+        self.assertEqual(len(brokers), 1)
+        broker = brokers[0]
+        handler.request(broker, 20)
+        sleep(1)
+        self.assertEqual(handler.check(), "pass")
 

@@ -200,10 +200,16 @@ module Qpid
         start.mechanisms.each do |m|
           mech_list += m + " "
         end
-        resp = Sasl.client_start(@saslConn, mech_list)
-        ch.connection_start_ok(:client_properties => PROPERTIES,
-                               :mechanism => resp[2],
-                               :response => resp[1])
+        begin
+          resp = Sasl.client_start(@saslConn, mech_list)
+          ch.connection_start_ok(:client_properties => PROPERTIES,
+                                 :mechanism => resp[2],
+                                 :response => resp[1])
+        rescue exception
+          ch.connection_close(:message => $!.message)
+          @connection.failed = true
+          @connection.signal
+        end
       end
 
       def connection_secure(ch, secure)
