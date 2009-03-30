@@ -46,8 +46,11 @@ template <class T> class Handle {
     /**@return true if handle is null. It is an error to call any function on a null handle. */
     QPID_CLIENT_EXTERN bool isNull() const { return !impl; }
 
+    /** Conversion to bool supports idiom if (handle) { handle->... } */
     QPID_CLIENT_EXTERN operator bool() const { return impl; }
-    QPID_CLIENT_EXTERN bool operator !() const { return impl; }
+
+    /** Operator ! supports idiom if (!handle) { do_if_handle_is_null(); } */
+    QPID_CLIENT_EXTERN bool operator !() const { return !impl; }
 
     QPID_CLIENT_EXTERN void swap(Handle<T>&);
 
