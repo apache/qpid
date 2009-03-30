@@ -53,6 +53,8 @@ Message::Message(const framing::SequenceNumber& id) :
 
 Message::~Message()
 {
+    if (expiryPolicy)
+        expiryPolicy->forget(*this);
 }
 
 void Message::forcePersistent()
@@ -334,7 +336,7 @@ void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
 
 void Message::setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) {
     expiryPolicy = e;
-    if (expiryPolicy)
+    if (expiryPolicy) 
         expiryPolicy->willExpire(*this);
 }
 
