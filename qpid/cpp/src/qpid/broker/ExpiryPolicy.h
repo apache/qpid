@@ -39,6 +39,7 @@ class ExpiryPolicy : public RefCounted
     QPID_BROKER_EXTERN virtual ~ExpiryPolicy();
     QPID_BROKER_EXTERN virtual void willExpire(Message&);
     QPID_BROKER_EXTERN virtual bool hasExpired(Message&);
+    QPID_BROKER_EXTERN virtual void forget(Message&);
 };
 }} // namespace qpid::broker
 

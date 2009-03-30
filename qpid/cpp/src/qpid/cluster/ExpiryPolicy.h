@@ -49,8 +49,8 @@ class ExpiryPolicy : public broker::ExpiryPolicy
     ExpiryPolicy(Multicaster&, const MemberId&, broker::Timer&);
 
     void willExpire(broker::Message&);
-
     bool hasExpired(broker::Message&);
+    void forget(broker::Message&);
 
     // Send expiration notice to cluster.
     void sendExpire(uint64_t);

@@ -33,4 +33,6 @@ bool ExpiryPolicy::hasExpired(Message& m) {
     return m.getExpiration() < sys::AbsTime::now();
 }
 
+void ExpiryPolicy::forget(Message&) {}
+
 }} // namespace qpid::broker
