@@ -108,8 +108,8 @@ class TestHelper(TestBase010):
         else: self.uniqueTag += 1
         consumer_tag = "tag" + str(self.uniqueTag)
         self.session.message_subscribe(queue=queueName, destination=consumer_tag)
-        self.session.message_flow(destination=consumer_tag, unit=self.session.credit_unit.message, value=0xFFFFFFFF)
-        self.session.message_flow(destination=consumer_tag, unit=self.session.credit_unit.byte, value=0xFFFFFFFF)
+        self.session.message_flow(destination=consumer_tag, unit=self.session.credit_unit.message, value=0xFFFFFFFFL)
+        self.session.message_flow(destination=consumer_tag, unit=self.session.credit_unit.byte, value=0xFFFFFFFFL)
         return self.session.incoming(consumer_tag)
 
 

@@ -25,16 +25,16 @@ from qpid.datatypes import *
 class SerialTest(TestCase):
 
   def test(self):
-    for s in (serial(0), serial(0x8FFFFFFF), serial(0xFFFFFFFF)):
+    for s in (serial(0), serial(0x8FFFFFFFL), serial(0xFFFFFFFFL)):
       assert s + 1 > s
       assert s - 1 < s
       assert s < s + 1
       assert s > s - 1
 
-    assert serial(0xFFFFFFFF) + 1 == serial(0)
+    assert serial(0xFFFFFFFFL) + 1 == serial(0)
 
-    assert min(serial(0xFFFFFFFF), serial(0x0)) == serial(0xFFFFFFFF)
-    assert max(serial(0xFFFFFFFF), serial(0x0)) == serial(0x0)
+    assert min(serial(0xFFFFFFFFL), serial(0x0)) == serial(0xFFFFFFFFL)
+    assert max(serial(0xFFFFFFFFL), serial(0x0)) == serial(0x0)
 
   def testIncr(self):
     s = serial(0)
@@ -44,7 +44,7 @@ class SerialTest(TestCase):
   def testIn(self):
     l = [serial(1), serial(2), serial(3), serial(4)]
     assert serial(1) in l
-    assert serial(0xFFFFFFFF + 2) in l
+    assert serial(0xFFFFFFFFL + 2) in l
     assert 4 in l
 
   def testNone(self):

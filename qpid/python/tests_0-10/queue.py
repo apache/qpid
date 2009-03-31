@@ -49,8 +49,8 @@ class QueueTests(TestBase010):
         #send a further message and consume it, ensuring that the other messages are really gone
         session.message_transfer(message=Message(session.delivery_properties(routing_key="test-queue"), "four"))
         session.message_subscribe(queue="test-queue", destination="tag")
-        session.message_flow(destination="tag", unit=session.credit_unit.message, value=0xFFFFFFFF)
-        session.message_flow(destination="tag", unit=session.credit_unit.byte, value=0xFFFFFFFF)
+        session.message_flow(destination="tag", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="tag", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
         queue = session.incoming("tag")
         msg = queue.get(timeout=1)
         self.assertEqual("four", msg.body)
@@ -182,11 +182,11 @@ class QueueTests(TestBase010):
         session.queue_declare(queue="queue-2", exclusive=True, auto_delete=True)
 
         session.message_subscribe(queue="queue-1", destination="queue-1")
-        session.message_flow(destination="queue-1", unit=session.credit_unit.message, value=0xFFFFFFFF)
-        session.message_flow(destination="queue-1", unit=session.credit_unit.byte, value=0xFFFFFFFF)
+        session.message_flow(destination="queue-1", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="queue-1", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
         session.message_subscribe(queue="queue-2", destination="queue-2")
-        session.message_flow(destination="queue-2", unit=session.credit_unit.message, value=0xFFFFFFFF)
-        session.message_flow(destination="queue-2", unit=session.credit_unit.byte, value=0xFFFFFFFF)
+        session.message_flow(destination="queue-2", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="queue-2", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
 
         queue1 = session.incoming("queue-1")
         queue2 = session.incoming("queue-2")
@@ -283,8 +283,8 @@ class QueueTests(TestBase010):
 
         #empty queue:
         session.message_subscribe(destination="consumer_tag", queue="delete-me-2")
-        session.message_flow(destination="consumer_tag", unit=session.credit_unit.message, value=0xFFFFFFFF)
-        session.message_flow(destination="consumer_tag", unit=session.credit_unit.byte, value=0xFFFFFFFF)
+        session.message_flow(destination="consumer_tag", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="consumer_tag", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
         queue = session.incoming("consumer_tag")
         msg = queue.get(timeout=1)
         self.assertEqual("message", msg.body)
