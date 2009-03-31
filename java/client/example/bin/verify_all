@@ -18,7 +18,12 @@
 # under the License.
 #
 
-export QPID_SRC_HOME=$(cd "$(dirname $0)/../../../.."; pwd)
+echo $QPID_SRC_HOME
+
+if test "'x$QPID_SRC_HOME'" == "'x'"
+then
+    export QPID_SRC_HOME=$(cd "$(dirname $0)/../../../.."; pwd)
+fi
 export CPP=$QPID_SRC_HOME/cpp/examples
 export PYTHON=$QPID_SRC_HOME/python/examples
 export JAVA=$QPID_SRC_HOME/java/client/example/src/main/java/org/apache/qpid/example/jmsexample
