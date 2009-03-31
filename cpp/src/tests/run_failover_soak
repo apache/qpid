@@ -45,12 +45,10 @@ fi
 
 host=127.0.0.1
 
-src_root=..
-module_dir=$src_root/.libs
-
+MODULES=../.libs
 MESSAGES=${MESSAGES:-300000}
 REPORT_FREQUENCY=${REPORT_FREQUENCY:-`expr $MESSAGES / 20`}
 VERBOSITY=${VERBOSITY:-1}
 
-exec ./failover_soak $src_root $module_dir $host ./declare_queues ./replaying_sender ./resuming_receiver $MESSAGES $REPORT_FREQUENCY $VERBOSITY
+exec ./failover_soak $MODULES ./declare_queues ./replaying_sender ./resuming_receiver $MESSAGES $REPORT_FREQUENCY $VERBOSITY
 
