@@ -115,8 +115,8 @@ public class SyncWaitDelayTest extends QpidTestCase
             long end = System.nanoTime();
             long time = (end - start);
             // As we are using Nano time ensure to multiply up the millis.
-            assertTrue("Commit was quickier than the delay:" + time, time > 1000000L * POST_COMMIT_DELAY);
-            assertFalse("Commit was to slower than the build in default", time > 1000000L * 1000 * 30);
+            assertTrue("Commit was quickier than the built in delay:" + time, time > 1000000L * POST_COMMIT_DELAY);
+            assertFalse("Commit was slower than the built in default", time > 1000000L * 1000 * 30);
         }
         catch (JMSException e)
         {
