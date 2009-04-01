@@ -36,6 +36,7 @@ import org.apache.qpid.server.routing.RoutingTable;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.ArrayList;
 
 public class SlowMessageStore implements TransactionLog, RoutingTable
 {
@@ -50,7 +51,7 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";
 
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+    public Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         _logger.warn("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
         Configuration delays = config.getStoreConfiguration().subset(DELAYS);
@@ -81,7 +82,11 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
                 _realTransactionLog = (TransactionLog) o;
             }
         }
-        _realTransactionLog.configure(virtualHost, base , config);
+
+        // The call to configure may return a new transaction log 
+        _realTransactionLog = (TransactionLog) _realTransactionLog.configure(virtualHost, base , config);
+        
+        return this;
     }
 
     private void configureDelays(Configuration config)
@@ -205,10 +210,10 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
         doPostDelay("removeQueue");
     }
 
-    public void enqueueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, ArrayList<AMQQueue> queues, Long messageId) throws AMQException
     {
         doPreDelay("enqueueMessage");
-        _realTransactionLog.enqueueMessage(context, queue, messageId);
+        _realTransactionLog.enqueueMessage(context, queues, messageId);
         doPostDelay("enqueueMessage");
     }
 
@@ -216,6 +221,13 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
     {
         doPreDelay("dequeueMessage");
         _realTransactionLog.dequeueMessage(context, queue, messageId);
+        doPostDelay("dequeueMessage");
+    }
+
+    public void removeMessage(StoreContext context, Long messageId) throws AMQException
+    {
+        doPreDelay("dequeueMessage");
+        _realTransactionLog.removeMessage(context, messageId);
         doPostDelay("dequeueMessage");
     }
 
@@ -262,22 +274,22 @@ public class SlowMessageStore implements TransactionLog, RoutingTable
         doPostDelay("storeMessageMetaData");
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
-    {
-        doPreDelay("getMessageMetaData");
-        MessageMetaData mmd = _realTransactionLog.getMessageMetaData(context, messageId);
-        doPostDelay("getMessageMetaData");
-        return mmd;
-    }
-
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
-    {
-        doPreDelay("getContentBodyChunk");
-        ContentChunk c = _realTransactionLog.getContentBodyChunk(context, messageId, index);
-        doPostDelay("getContentBodyChunk");
-        return c;
-    }
-
+//    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
+//    {
+//        doPreDelay("getMessageMetaData");
+//        MessageMetaData mmd = _realTransactionLog.getMessageMetaData(context, messageId);
+//        doPostDelay("getMessageMetaData");
+//        return mmd;
+//    }
+//
+//    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
+//    {
+//        doPreDelay("getContentBodyChunk");
+//        ContentChunk c = _realTransactionLog.getContentBodyChunk(context, messageId, index);
+//        doPostDelay("getContentBodyChunk");
+//        return c;
+//    }
+//
     public boolean isPersistent()
     {
         return _realTransactionLog.isPersistent();

@@ -109,7 +109,7 @@ public class PersistentMessageTest extends TransientMessageTest
 
         // Check that it was not enqueued
         List<AMQQueue> queueList = _messageStore.getMessageReferenceMap(messageId);
-        assertNull("TransactionLog contains a queue reference for this messageID:" + messageId, queueList);
+        assertTrue("TransactionLog contains a queue reference for this messageID:" + messageId, queueList == null || queueList.isEmpty());
         checkMessageMetaDataRemoved(messageId);
 
         assertEquals("Return message count not correct", 1, _returnMessages.size());
@@ -152,8 +152,8 @@ public class PersistentMessageTest extends TransientMessageTest
         {
             assertNull("Message MetaData still exists for message:" + messageId,
                        _messageStore.getMessageMetaData(_messageDeliveryContext.getStoreContext(), messageId));
-            assertNull("Message still has values in the reference map:" + messageId,
-                       _messageStore.getMessageReferenceMap(messageId));
+            List ids = _messageStore.getMessageReferenceMap(messageId);
+            assertTrue("Message still has values in the reference map:" + messageId, ids == null || ids.isEmpty());
 
         }
         catch (AMQException e)

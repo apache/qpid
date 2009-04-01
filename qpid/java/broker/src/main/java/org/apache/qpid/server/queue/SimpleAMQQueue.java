@@ -849,7 +849,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 if (entry.isPersistent() && toQueue.isDurable())
                 {
-                    transactionLog.enqueueMessage(storeContext, toQueue, entry.getMessageId());
+                    //FIXME
+                    //fixme
+                    ArrayList list = new ArrayList();
+                    list.add(toQueue);
+                    transactionLog.enqueueMessage(storeContext, list, entry.getMessageId());
                 }
                 // dequeue will remove the messages from the queue
                 entry.dequeue(storeContext);
@@ -941,9 +945,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 if (!entry.isDeleted() && entry.isPersistent() && toQueue.isDurable())
                 {
-                    transactionLog.enqueueMessage(storeContext, toQueue, entry.getMessageId());
+                    //fixme
+                    //FIXME
+                    ArrayList list = new ArrayList();
+                    list.add(toQueue);
+                    transactionLog.enqueueMessage(storeContext, list, entry.getMessageId());
                 }
             }
+
 
             // Commit and flush the move transcations.
             try

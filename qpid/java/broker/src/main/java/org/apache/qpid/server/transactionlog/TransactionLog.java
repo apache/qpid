@@ -20,18 +20,15 @@
  */
 package org.apache.qpid.server.transactionlog;
 
-import org.apache.commons.configuration.Configuration;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.store.StoreContext;
+
+import java.util.ArrayList;
 
 /**
  * TransactionLog defines the interface for performing transactions.
@@ -68,7 +65,7 @@ public interface TransactionLog
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception;
+    Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
@@ -81,27 +78,33 @@ public interface TransactionLog
      * Places a message onto a specified queue, in a given transactional context.
      *
      * @param context   The transactional context for the operation.
-     * @param queue     The queue to place the message on.
-     * @param messageId The message to enqueue.
-     * @throws AMQException If the operation fails for any reason.
+     * @param queues
+     *@param messageId The message to enqueue.  @throws AMQException If the operation fails for any reason.  @throws org.apache.qpid.AMQException
      */
-    void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException;
+    void enqueueMessage(StoreContext context, final ArrayList<AMQQueue> queues, Long messageId) throws AMQException;
 
     /**
      * Extracts a message from a specified queue, in a given transactional context.
      *
      * @param context   The transactional context for the operation.
-     * @param queue     The queue to place the message on.
-     * @param messageId The message to dequeue.
-     * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
+     * @param queue
+     * @param messageId The message to dequeue.  @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
      */
     void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException;
+
+    /**
+     * Remove the specified message from the log
+     *
+     * @param context The transactional context for the operation
+     * @param messageId The message to remove
+     * @throws AMQException
+     */
+    void removeMessage(StoreContext context, Long messageId) throws AMQException;
 
     /**
      * Begins a transactional context.
      *
      * @param context The transactional context to begin.
-     *
      * @throws AMQException If the operation fails for any reason.
      */
     void beginTran(StoreContext context) throws AMQException;
@@ -158,31 +161,31 @@ public interface TransactionLog
      * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
      */
     void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException;
-
-    /**
-     * Retrieves message meta-data.
-     *
-     * @param context   The transactional context for the operation.
-     * @param messageId The message to get the meta-data for.
-     *
-     * @return The message meta data.
-     *
-     * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
-     */
-    MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException;
-
-    /**
-     * Retrieves a chunk of message data.
-     *
-     * @param context   The transactional context for the operation.
-     * @param messageId The message to get the data chunk for.
-     * @param index     The offset index of the data chunk within the message.
-     *
-     * @return A chunk of message data.
-     *
-     * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
-     */
-    ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
+//
+//    /**
+//     * Retrieves message meta-data.
+//     *
+//     * @param context   The transactional context for the operation.
+//     * @param messageId The message to get the meta-data for.
+//     *
+//     * @return The message meta data.
+//     *
+//     * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
+//     */
+//    MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException;
+//
+//    /**
+//     * Retrieves a chunk of message data.
+//     *
+//     * @param context   The transactional context for the operation.
+//     * @param messageId The message to get the data chunk for.
+//     * @param index     The offset index of the data chunk within the message.
+//     *
+//     * @return A chunk of message data.
+//     *
+//     * @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
+//     */
+//    ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
 
     /**
      * Is this store capable of persisting the data

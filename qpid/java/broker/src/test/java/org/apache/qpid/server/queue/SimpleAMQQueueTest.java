@@ -319,7 +319,7 @@ public class SimpleAMQQueueTest extends TestCase
     public void testEnqueueDequeueOfPersistentMessageToNonDurableQueue() throws AMQException
     {
         // Create IncomingMessage and nondurable queue
-        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, new StoreContext(), null, null);
         IncomingMessage msg = new IncomingMessage(info, txnContext, new MockProtocolSession(_transactionLog), _transactionLog);
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
@@ -351,17 +351,17 @@ public class SimpleAMQQueueTest extends TestCase
         MockQueueEntry entry = new MockQueueEntry(message, _queue);
         entry.getQueueEntryList().add(message);
         entry.acquire();
-        entry.dequeue(null);
+        entry.dequeue(new StoreContext());
 
         // Check that it is dequeued
         data = _transactionLog.getMessageReferenceMap(messageId);
-        assertNull(data);
+        assertTrue(data == null || data.isEmpty());
     }
 
     public void testMessagesFlowToDisk() throws AMQException, InterruptedException
     {
         // Create IncomingMessage and nondurable queue
-        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, new StoreContext(), null, null);
 
         MESSAGE_SIZE = 1;
         long MEMORY_MAX = 500;
@@ -431,7 +431,7 @@ public class SimpleAMQQueueTest extends TestCase
     public void testMessagesFlowToDiskPurger() throws AMQException, InterruptedException
     {
         // Create IncomingMessage and nondurable queue
-        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, new StoreContext(), null, null);
 
         MESSAGE_SIZE = 1;
         /** Set to larger than the purge batch size. Default 100.
