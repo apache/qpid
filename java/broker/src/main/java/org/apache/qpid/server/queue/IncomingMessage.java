@@ -136,11 +136,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
             if(_destinationQueues != null)
             {
-                for (int i = 0; i < _destinationQueues.size(); i++)
-                {
-                    transactionLog.enqueueMessage(_txnContext.getStoreContext(),
-                            _destinationQueues.get(i), getMessageId());
-                }
+                transactionLog.enqueueMessage(_txnContext.getStoreContext(), _destinationQueues, getMessageId());
             }
         }
     }

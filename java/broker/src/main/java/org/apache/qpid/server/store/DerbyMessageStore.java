@@ -34,6 +34,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.BaseTransactionLog;
 import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -41,7 +42,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
@@ -143,7 +143,7 @@ public class DerbyMessageStore implements TransactionLog, RoutingTable
     private State _state = State.INITIAL;
 
 
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+    public Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         //Only initialise when loaded with the old 'store' confing ignore the new 'RoutingTable' config
         if (base.equals("store"))
@@ -178,7 +178,9 @@ public class DerbyMessageStore implements TransactionLog, RoutingTable
             recover();
 
             stateTransition(State.RECOVERING, State.STARTED);
+            return new BaseTransactionLog(this);
         }
+        return null;
     }
 
     private static synchronized void initialiseDriver() throws ClassNotFoundException
@@ -825,7 +827,18 @@ public class DerbyMessageStore implements TransactionLog, RoutingTable
 
     }
 
-    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, ArrayList<AMQQueue> queues, Long messageId) throws AMQException
+    {
+        for (AMQQueue q : queues)
+        {
+            if (q.isDurable())
+            {
+                enqueueMessage(context,q,messageId);
+            }
+        }
+    }
+
+    void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
         AMQShortString name = queue.getName();
 

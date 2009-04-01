@@ -75,7 +75,7 @@ public class AckTest extends TestCase
         ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
 
         VirtualHost vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = new TestableMemoryMessageStore((MemoryMessageStore)vhost.getTransactionLog());
+        _messageStore = new TestableMemoryMessageStore(vhost.getTransactionLog());
         _protocolSession = new MockProtocolSession(_messageStore);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 

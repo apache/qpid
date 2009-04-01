@@ -34,6 +34,7 @@ import org.apache.qpid.server.transactionlog.TransactionLog;
 import org.apache.qpid.server.routing.RoutingTable;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -48,9 +49,9 @@ public class SkeletonMessageStore implements TransactionLog , RoutingTable
     {
     }
     
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+    public Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        return this;
     }
 
     public void close() throws Exception
@@ -146,7 +147,7 @@ public class SkeletonMessageStore implements TransactionLog , RoutingTable
 
     }
 
-    public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
+    public void enqueueMessage(StoreContext context, final ArrayList<AMQQueue> queues, Long messageId) throws AMQException
     {
 
     }

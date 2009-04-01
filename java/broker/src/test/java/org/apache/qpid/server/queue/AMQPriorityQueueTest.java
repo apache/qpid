@@ -26,6 +26,7 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.store.StoreContext;
 
 import java.util.ArrayList;
 
@@ -111,7 +112,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, PRIORITIES);
 
         // Create IncomingMessage and nondurable queue
-        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, null, null, null);
+        NonTransactionalContext txnContext = new NonTransactionalContext(_transactionLog, new StoreContext(), null, null);
 
         //Create a priorityQueue
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testMessagesFlowToDiskWithPriority"), false, _owner, false, _virtualHost, arguments);
