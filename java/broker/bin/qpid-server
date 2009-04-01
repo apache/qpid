@@ -34,4 +34,6 @@ export JAVA=java \
        QPID_CLASSPATH=$QPID_LIBS \
        QPID_RUN_LOG=2
 
+QPID_OPTS="$QPID_OPTS -Damqj.read_write_pool_size=32"
+
 . qpid-run org.apache.qpid.server.Main "$@"
