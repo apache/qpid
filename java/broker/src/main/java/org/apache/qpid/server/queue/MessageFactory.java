@@ -85,16 +85,12 @@ public class MessageFactory
             throw new RuntimeException("Unable to create message by ID when not recovering");
         }
 
-        long currentID = _messageId.get();
-        if (messageId <= currentID)
+        if (messageId < 0L)
         {
-            throw new RuntimeException("Message IDs can only increase current id is:"
-                                       + currentID + ". Requested:" + messageId);
+            throw new RuntimeException("Message IDs can only be positive. Requested:" + messageId);
         }
-        else
-        {
-            _messageId.set(messageId);
-        }
+
+        _messageId.set((int)Math.max(messageId, _messageId.get()));
 
         return createNextMessage(messageId, transactionLog, true);
     }

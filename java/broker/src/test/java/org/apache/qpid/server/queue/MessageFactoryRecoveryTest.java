@@ -41,29 +41,41 @@ public class MessageFactoryRecoveryTest extends TestCase
 
         try
         {
-            _factory.createMessage(messasgeID, null);
-            fail("Cannot recreate message with an existing id");
+            _factory.createMessage(-1L, null);
+            fail("Cannot recreate message with a negative id");
         }
         catch (RuntimeException re)
         {
             assertEquals("Incorrect exception thrown ",
-                         "Message IDs can only increase current id is:" + messasgeID + ". Requested:" + messasgeID, re.getMessage());
+                         "Message IDs can only be positive. Requested:-1", re.getMessage());
         }
 
-        //Check we cannot go backwords with ids.
+        //Check we CAN go backwords with ids.
         try
         {
-            _factory.createMessage(messasgeID - 1, null);
-            fail("Cannot recreate message with an old id");
+            _factory.createMessage(messasgeID - 1, null);            
         }
         catch (RuntimeException re)
         {
-            assertEquals("Incorrect exception thrown ",
-                         "Message IDs can only increase current id is:" + messasgeID + ". Requested:" + (messasgeID - 1), re.getMessage());
+            fail(re.getMessage());
         }
 
         //Check that we can jump forward in ids during recovery.
         messasgeID += 100;
+        Long highestID=messasgeID;
+        try
+        {
+            AMQMessage message = _factory.createMessage(messasgeID, null);
+            assertEquals("Factory assigned incorrect id.", messasgeID, message.getMessageId());            
+        }
+        catch (Exception re)
+        {
+            fail("Message with a much higher value should be created");
+        }
+
+
+        //Check that we can jump backwards in ids during recovery.
+        messasgeID -= 75;
         try
         {
             AMQMessage message = _factory.createMessage(messasgeID, null);
@@ -91,12 +103,12 @@ public class MessageFactoryRecoveryTest extends TestCase
 
         // Check that the next message created has the next available id
 
-        messasgeID++;
+        highestID++;
 
         try
         {
             AMQMessage message = _factory.createMessage(null, false);
-            assertEquals("Factory assigned incorrect id.", messasgeID, message.getMessageId());
+            assertEquals("Factory assigned incorrect id.", highestID, message.getMessageId());
         }
         catch (Exception re)
         {
