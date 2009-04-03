@@ -37,7 +37,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.TestIoSession;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -81,14 +81,12 @@ public class FirewallPluginTest extends TestCase
         }
     }
 
-    private TestableMemoryMessageStore _store;
     private VirtualHost _virtualHost;
     private AMQMinaProtocolSession _session;
 
     @Override
     public void setUp() throws Exception
     {
-        _store = new TestableMemoryMessageStore();
         PropertiesConfiguration env = new PropertiesConfiguration();
         _virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
         TestIoSession iosession = new TestIoSession();

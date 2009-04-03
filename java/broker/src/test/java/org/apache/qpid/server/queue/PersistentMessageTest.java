@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -31,10 +32,10 @@ import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -42,7 +43,7 @@ import java.util.List;
 
 public class PersistentMessageTest extends TransientMessageTest
 {
-    private TestableMemoryMessageStore _messageStore;
+    private TestableTransactionLog _transactionLog;
 
     protected SimpleAMQQueue _queue;
     protected AMQShortString _q1name = new AMQShortString("q1name");
@@ -54,22 +55,22 @@ public class PersistentMessageTest extends TransientMessageTest
 
     public void setUp() throws Exception
     {
-        _messageStore = new TestableMemoryMessageStore();
+        _transactionLog = new TestableTransactionLog(new TestableMemoryMessageStore().configure());
 
         _storeContext = new StoreContext();
         VirtualHost vhost = new VirtualHost(new VirtualHostConfiguration(PersistentMessageTest.class.getName(),
                                                                          new PropertiesConfiguration()),
-                                            _messageStore);
+                                            _transactionLog);
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_q1name, false, _owner, false, vhost, null);
         // Create IncomingMessage and nondurable queue
-        _messageDeliveryContext = new NonTransactionalContext(_messageStore, new StoreContext(), null, _returnMessages);
+        _messageDeliveryContext = new NonTransactionalContext(_transactionLog, new StoreContext(), null, _returnMessages);
 
     }
 
     @Override
     protected AMQMessage newMessage()
     {
-        return MessageFactory.getInstance().createMessage(_messageStore, true);
+        return MessageFactory.getInstance().createMessage(_transactionLog, true);
     }
 
     @Override
@@ -82,7 +83,7 @@ public class PersistentMessageTest extends TransientMessageTest
     /**
      * Tests the returning of a single persistent message to a queue. An immediate message is sent to the queue and
      * checked that it bounced. The transactionlog and returnMessasges are then checked to ensure they have the right
-     * contents. TransactionLog = Empty, returnMessages 1 item. 
+     * contents. TransactionLog = Empty, returnMessages 1 item.
      *
      * @throws Exception
      */
@@ -98,17 +99,16 @@ public class PersistentMessageTest extends TransientMessageTest
         // equivalent to amqChannel.routeMessage()
         msg.enqueue(qs);
 
-        msg.routingComplete(_messageStore);
+        msg.routingComplete(_transactionLog);
 
         // equivalent to amqChannel.deliverCurrentMessageIfComplete
         msg.deliverToQueues();
 
         // Check that data has been stored to disk
         long messageId = msg.getMessageId();
-        checkMessageMetaDataExists(messageId);
 
         // Check that it was not enqueued
-        List<AMQQueue> queueList = _messageStore.getMessageReferenceMap(messageId);
+        List<AMQQueue> queueList = _transactionLog.getMessageReferenceMap(messageId);
         assertTrue("TransactionLog contains a queue reference for this messageID:" + messageId, queueList == null || queueList.isEmpty());
         checkMessageMetaDataRemoved(messageId);
 
@@ -118,7 +118,7 @@ public class PersistentMessageTest extends TransientMessageTest
     protected IncomingMessage createMessage(MessagePublishInfo info) throws AMQException
     {
         IncomingMessage msg = new IncomingMessage(info, _messageDeliveryContext,
-                                                  new MockProtocolSession(_messageStore), _messageStore);
+                                                  new MockProtocolSession(_transactionLog), _transactionLog);
 
         // equivalent to amqChannel.publishContenHeader
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
@@ -138,7 +138,8 @@ public class PersistentMessageTest extends TransientMessageTest
     {
         try
         {
-            _messageStore.getMessageMetaData(_messageDeliveryContext.getStoreContext(), messageId);
+            assertNotNull("Message MetaData does not exist for message:" + messageId,
+                          _transactionLog.getMessageMetaData(_messageDeliveryContext.getStoreContext(), messageId));
         }
         catch (AMQException amqe)
         {
@@ -151,8 +152,8 @@ public class PersistentMessageTest extends TransientMessageTest
         try
         {
             assertNull("Message MetaData still exists for message:" + messageId,
-                       _messageStore.getMessageMetaData(_messageDeliveryContext.getStoreContext(), messageId));
-            List ids = _messageStore.getMessageReferenceMap(messageId);
+                       _transactionLog.getMessageMetaData(_messageDeliveryContext.getStoreContext(), messageId));
+            List ids = _transactionLog.getMessageReferenceMap(messageId);
             assertTrue("Message still has values in the reference map:" + messageId, ids == null || ids.isEmpty());
 
         }

@@ -30,6 +30,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
@@ -38,8 +39,6 @@ import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.util.NullApplicationRegistry;
@@ -47,6 +46,7 @@ import org.apache.qpid.server.util.NullApplicationRegistry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.List;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -59,7 +59,7 @@ public class AckTest extends TestCase
 
     private MockProtocolSession _protocolSession;
 
-    private TestableMemoryMessageStore _messageStore;
+    private TestableTransactionLog _transactionLog;
 
     private StoreContext _storeContext = new StoreContext();
 
@@ -75,9 +75,9 @@ public class AckTest extends TestCase
         ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
 
         VirtualHost vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
-        _messageStore = new TestableMemoryMessageStore(vhost.getTransactionLog());
-        _protocolSession = new MockProtocolSession(_messageStore);
-        _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
+        _transactionLog = new TestableTransactionLog(vhost.getTransactionLog());
+        _protocolSession = new MockProtocolSession(_transactionLog);
+        _channel = new AMQChannel(_protocolSession,5, _transactionLog /*dont need exchange registry*/);
 
         _protocolSession.addChannel(_channel);
 
@@ -95,13 +95,13 @@ public class AckTest extends TestCase
         publishMessages(count, false);
     }
 
-    private void publishMessages(int count, boolean persistent) throws AMQException
+    private List<AMQMessage> publishMessages(int count, boolean persistent) throws AMQException
     {
-        TransactionalContext txnContext = new NonTransactionalContext(_messageStore, _storeContext, null,
+        TransactionalContext txnContext = new NonTransactionalContext(_transactionLog, _storeContext, null,
                                                                       new LinkedList<RequiredDeliveryException>()
         );
         _queue.registerSubscription(_subscription,false);
-        MessageFactory factory = MessageFactory.getInstance();
+        List<AMQMessage> sentMessages = new LinkedList<AMQMessage>();
         for (int i = 1; i <= count; i++)
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
@@ -109,7 +109,7 @@ public class AckTest extends TestCase
             MessagePublishInfo publishBody = new MessagePublishInfoImpl(new AMQShortString("someExchange"), false,
                                                                         false, new AMQShortString("rk"));
 
-            IncomingMessage msg = new IncomingMessage(publishBody, txnContext,_protocolSession, _messageStore);
+            IncomingMessage msg = new IncomingMessage(publishBody, txnContext,_protocolSession, _transactionLog);
             //IncomingMessage msg2 = null;
             if (persistent)
             {
@@ -130,14 +130,16 @@ public class AckTest extends TestCase
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
             msg.enqueue(qs);
-            msg.routingComplete(_messageStore);
+            msg.routingComplete(_transactionLog);
             if(msg.allContentReceived())
             {
-                msg.deliverToQueues();
+               sentMessages.add(msg.deliverToQueues());
             }
             // we manually send the message to the subscription
             //_subscription.send(new QueueEntry(_queue,msg), _queue);
         }
+
+        return sentMessages;
     }
 
     /**
@@ -148,11 +150,16 @@ public class AckTest extends TestCase
     {
         _subscription = SubscriptionFactoryImpl.INSTANCE.createSubscription(5, _protocolSession, DEFAULT_CONSUMER_TAG, true, null, false, new LimitlessCreditManager());
         final int msgCount = 10;
-        publishMessages(msgCount, true);
+        List<AMQMessage> sentMessages = publishMessages(msgCount, true);
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount);
-        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
+        for (AMQMessage message : sentMessages)
+        {
+            List<AMQQueue> enqueuedQueues = _transactionLog.getMessageReferenceMap(message.getMessageId());
+            assertNotNull("Expected message to be enqueued",enqueuedQueues);
+            assertEquals("Message is not enqueued on expected number of queues.",1, enqueuedQueues.size());
+        }
 
         Set<Long> deliveryTagSet = map.getDeliveryTags();
         int i = 1;
@@ -165,7 +172,6 @@ public class AckTest extends TestCase
         }
 
         assertTrue(map.size() == msgCount);
-        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
     }
 
     /**
@@ -180,8 +186,8 @@ public class AckTest extends TestCase
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
-        assertTrue(_messageStore.getContentBodyMap().size() == 0);
+        assertEquals("There was more MetaData objects than expected", 0, _transactionLog.getMessageMetaDataSize());
+//        assertTrue(_messageStore.getContentBodyMap().size() == 0);to be
 
     }
 
@@ -197,8 +203,8 @@ public class AckTest extends TestCase
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue("Size:" + _messageStore.getMessageMetaDataMap().size(), _messageStore.getMessageMetaDataMap().size() == 0);
-        assertTrue(_messageStore.getContentBodyMap().size() == 0);
+        assertEquals("There was more MetaData objects than expected", 0, _transactionLog.getMessageMetaDataSize());
+//        assertTrue(_messageStore.getContentBodyMap().size() == 0);
 
     }
 

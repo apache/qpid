@@ -34,8 +34,10 @@ import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.TestTransactionLog;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -62,7 +64,11 @@ public class InternalBrokerBaseCase extends TestCase
     {
         super.setUp();
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        // This configuration is not used as TestApplicationRegistry just creates a single vhost 'test' with
+        // TransactionLog TestableTransactionLog(TestMemoryMessageStore)
+        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableTransactionLog.class.getName());
+        configuration.setProperty("virtualhosts.virtualhost.test.store.delegate", TestableMemoryMessageStore.class.getName());
+        
         _registry = new TestApplicationRegistry(new ServerConfiguration(configuration));
         ApplicationRegistry.initialise(_registry);
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");        
@@ -96,7 +102,7 @@ public class InternalBrokerBaseCase extends TestCase
 
     protected void checkStoreContents(int messageCount)
     {
-        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _transactionLog).getMessageMetaDataMap().size());
+        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestTransactionLog) _transactionLog).getMessageMetaDataSize());
 
         //The above publish message is sufficiently small not to fit in the header so no Body is required.
         //assertEquals("Message body count incorrect in the ContentBodyMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getContentBodyMap().size());

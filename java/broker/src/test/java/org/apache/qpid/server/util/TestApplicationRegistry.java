@@ -21,7 +21,6 @@
 package org.apache.qpid.server.util;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -38,9 +37,9 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
 
@@ -83,7 +82,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
 
-        _transactionLog = new TestableMemoryMessageStore();
+        _transactionLog = new TestableTransactionLog(new TestableMemoryMessageStore().configure());
 
         _virtualHostRegistry = new VirtualHostRegistry();
 

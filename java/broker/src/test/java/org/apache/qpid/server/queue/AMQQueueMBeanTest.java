@@ -32,6 +32,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
@@ -43,14 +44,13 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.mina.common.ByteBuffer;
 
 import javax.management.JMException;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Test class to test AMQQueueMBean attribtues and operations
@@ -70,7 +70,7 @@ public class AMQQueueMBeanTest extends TestCase
     public void testMessageCountTransient() throws Exception
     {
         int messageCount = 10;
-        sendMessages(messageCount, false);
+        List<AMQMessage> messages = sendMessages(messageCount, false);
         assertTrue(_queueMBean.getMessageCount() == messageCount);
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
         long queueDepth = (messageCount * MESSAGE_SIZE);
@@ -85,13 +85,13 @@ public class AMQQueueMBeanTest extends TestCase
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
 
         //Ensure that the data has been removed from the Store
-        verifyBrokerState();
+        verifyBrokerState(messages);
     }
 
     public void testMessageCountPersistent() throws Exception
     {
         int messageCount = 10;
-        sendMessages(messageCount, true);
+        List<AMQMessage> messages = sendMessages(messageCount, true);
         assertEquals("", messageCount, _queueMBean.getMessageCount().intValue());
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
         long queueDepth = (messageCount * MESSAGE_SIZE);
@@ -106,20 +106,38 @@ public class AMQQueueMBeanTest extends TestCase
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
 
         //Ensure that the data has been removed from the Store
-        verifyBrokerState();
+        verifyBrokerState(messages);
     }
 
     // todo: collect to a general testing class -duplicated from Systest/MessageReturntest
-    private void verifyBrokerState()
+    private void verifyBrokerState(List<AMQMessage> messages)
     {
 
-        TestableMemoryMessageStore store = new TestableMemoryMessageStore(_virtualHost.getTransactionLog());
+        TestableTransactionLog store = new TestableTransactionLog(_virtualHost.getTransactionLog());
 
-        // Unlike MessageReturnTest there is no need for a delay as there this thread does the clean up.
-        assertNotNull("ContentBodyMap should not be null", store.getContentBodyMap());       
-        assertEquals("Expected the store to have no content:" + store.getContentBodyMap(), 0, store.getContentBodyMap().size());
-        assertNotNull("MessageMetaDataMap should not be null", store.getMessageMetaDataMap());
-        assertEquals("Expected the store to have no metadata:" + store.getMessageMetaDataMap(), 0, store.getMessageMetaDataMap().size());
+        // We can only now check messageData and ConentBodyChunks by MessageID.
+        for (AMQMessage message : messages)
+        {
+            // Check we have no message metadata for the messages we sent 
+            try
+            {
+                assertNull(store.getMessageMetaData(new StoreContext(), message.getMessageId()));
+            }
+            catch (AMQException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+
+            try
+            {
+                assertNull(store.getContentBodyChunk(new StoreContext(), message.getMessageId(),0));
+            }
+            catch (AMQException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+
+        }
     }
 
     public void testConsumerCount() throws AMQException
@@ -297,8 +315,9 @@ public class AMQQueueMBeanTest extends TestCase
         ApplicationRegistry.remove(1);
     }
 
-    private void sendMessages(int messageCount, boolean persistent) throws AMQException
+    private List<AMQMessage> sendMessages(int messageCount, boolean persistent) throws AMQException
     {
+        List<AMQMessage> messages = new LinkedList<AMQMessage>();
         for (int i = 0; i < messageCount; i++)
         {
             IncomingMessage currentMessage = message(false, persistent);
@@ -316,9 +335,10 @@ public class AMQQueueMBeanTest extends TestCase
                                                        .convertToContentChunk(
                                                        new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),
                                                                        MESSAGE_SIZE)));
-            currentMessage.deliverToQueues();
+            messages.add(currentMessage.deliverToQueues());
 
 
         }
+        return messages;
     }
 }
