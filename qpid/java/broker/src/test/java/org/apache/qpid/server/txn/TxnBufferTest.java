@@ -69,7 +69,7 @@ public class TxnBufferTest extends TestCase
     public void testCommitWithFailureDuringPrepare() throws AMQException
     {
         MockStore store = new MockStore();
-        store.beginTran(null);
+        store.beginTran(new StoreContext());
 
         TxnBuffer buffer = new TxnBuffer();
         buffer.enlist(new StoreMessageOperation(store));
@@ -81,7 +81,7 @@ public class TxnBufferTest extends TestCase
 
         try
         {
-            buffer.commit(null);
+            buffer.commit(new StoreContext());
         }
         catch (NoSuchElementException e)
         {
@@ -95,7 +95,7 @@ public class TxnBufferTest extends TestCase
     public void testCommitWithPersistance() throws AMQException
     {
         MockStore store = new MockStore();
-        store.beginTran(null);
+        store.beginTran(new StoreContext());
         store.expectCommit();
 
         TxnBuffer buffer = new TxnBuffer();
@@ -105,7 +105,7 @@ public class TxnBufferTest extends TestCase
         buffer.enlist(new StoreMessageOperation(store));
         buffer.enlist(new TxnTester(store));
 
-        buffer.commit(null);
+        buffer.commit(new StoreContext());
         validateOps();
         store.validate();
     }

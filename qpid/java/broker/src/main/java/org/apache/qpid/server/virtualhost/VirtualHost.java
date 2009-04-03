@@ -51,6 +51,7 @@ import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.BaseTransactionLog;
 
 import javax.management.NotCompliantMBeanException;
 import java.util.Collections;
@@ -206,6 +207,14 @@ public class VirtualHost implements Accessable
             {
                 _routingTable = (RoutingTable) _transactionLog;
             }
+            else if (_transactionLog instanceof BaseTransactionLog)
+            {
+                TransactionLog delegate = ((BaseTransactionLog) _transactionLog).getDelegate();
+                if (delegate instanceof RoutingTable)
+                {
+                    _routingTable = (RoutingTable) delegate;
+                }
+            }
         }
         else
         {
@@ -292,7 +301,8 @@ public class VirtualHost implements Accessable
             _routingTable = (RoutingTable) _transactionLog;
         }
 
-        _transactionLog.configure(this, "store", config);
+        // If a TransactionLog uses the BaseTransactionLog then it will return this object.
+        _transactionLog = (TransactionLog) _transactionLog.configure(this, "store", config);
     }
 
     //todo we need to move from store.class to transactionlog.class
@@ -497,8 +507,9 @@ public class VirtualHost implements Accessable
         public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
         public List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
 
-        public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+        public Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
         {
+            return null;
         }
 
         public void close() throws Exception

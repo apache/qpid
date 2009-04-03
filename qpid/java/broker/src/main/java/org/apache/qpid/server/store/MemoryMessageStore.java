@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -30,17 +29,14 @@ import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.BaseTransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,16 +63,16 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
 
     private final AtomicLong _messageId = new AtomicLong(1);
     private AtomicBoolean _closed = new AtomicBoolean(false);
-    protected final Map<Long, List<AMQQueue>> _messageEnqueueMap = new HashMap<Long, List<AMQQueue>>();
 
-    public void configure()
+    public TransactionLog configure()
     {
         _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash tables");
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(DEFAULT_HASHTABLE_CAPACITY);
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(DEFAULT_HASHTABLE_CAPACITY);
+        return new BaseTransactionLog(this);
     }
 
-    public void configure(String base, VirtualHostConfiguration config)
+    public TransactionLog configure(String base, VirtualHostConfiguration config)
     {
         //Only initialise when called with current 'store' configs i.e. don't reinit when used as a 'RoutingTable'
         if (base.equals("store"))
@@ -85,12 +81,14 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
             _log.info("Using capacity " + hashtableCapacity + " for hash tables");
             _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
             _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
+            return new BaseTransactionLog(this);
         }
+        return null;
     }
 
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+    public Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
-        configure(base, config);
+        return configure(base, config);
     }
 
     public void close() throws Exception
@@ -108,7 +106,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         }
     }
 
-    private void removeMessage(StoreContext context, Long messageId) throws AMQException
+    public void removeMessage(StoreContext context, Long messageId) throws AMQException
     {
         checkNotClosed();
         if (_log.isDebugEnabled())
@@ -117,7 +115,6 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         }
         _metaDataMap.remove(messageId);
         _contentBodyMap.remove(messageId);
-        _messageEnqueueMap.remove(messageId);
     }
 
     public void createExchange(Exchange exchange) throws AMQException
@@ -155,41 +152,25 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         // Not required to do anything
     }
 
+    public void enqueueMessage(StoreContext context, final ArrayList<AMQQueue> queues, Long messageId) throws AMQException
+    {
+        for (AMQQueue q : queues)
+        {
+            if (q.isDurable())
+            {
+                enqueueMessage(context,q,messageId);
+            }
+        }
+    }
+
     public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
-        synchronized (_messageEnqueueMap)
-        {
-            List<AMQQueue> queues = _messageEnqueueMap.get(messageId);
-            if (queues == null)
-            {
-                queues = new LinkedList<AMQQueue>();
-                _messageEnqueueMap.put(messageId, queues);
-            }
-
-            queues.add(queue);
-        }
+        // Not required to do anything
     }
 
     public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
     {
-        synchronized (_messageEnqueueMap)
-        {
-            List<AMQQueue> queues = _messageEnqueueMap.get(messageId);
-            if (queues == null || !queues.contains(queue))
-            {
-                throw new RuntimeException("Attempt to dequeue messageID:" + messageId + " from queue:" + queue.getName()
-                                           + " but it is not enqueued on that queue.");
-            }
-            else
-            {
-                queues.remove(queue);
-                if (queues.isEmpty())
-                {
-                    removeMessage(context,messageId);
-                }
-            }
-        }
-
+        // Not required to do anything
     }
 
     public void beginTran(StoreContext context) throws AMQException

@@ -113,7 +113,7 @@ public class AMQQueueMBeanTest extends TestCase
     private void verifyBrokerState()
     {
 
-        TestableMemoryMessageStore store = new TestableMemoryMessageStore((MemoryMessageStore) _virtualHost.getTransactionLog());
+        TestableMemoryMessageStore store = new TestableMemoryMessageStore(_virtualHost.getTransactionLog());
 
         // Unlike MessageReturnTest there is no need for a delay as there this thread does the clean up.
         assertNotNull("ContentBodyMap should not be null", store.getContentBodyMap());       

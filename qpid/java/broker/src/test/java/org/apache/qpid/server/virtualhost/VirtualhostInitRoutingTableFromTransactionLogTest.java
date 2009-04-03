@@ -39,8 +39,7 @@ public class VirtualhostInitRoutingTableFromTransactionLogTest extends TestCase
             _virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
 
             assertNotNull(_virtualHost.getTransactionLog());
-            assertNotNull(_virtualHost.getRoutingTable());
-            assertEquals(_virtualHost.getTransactionLog(),_virtualHost.getRoutingTable());
+            assertNotNull(_virtualHost.getRoutingTable());            
         }
         catch (Exception e)
         {

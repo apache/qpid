@@ -42,7 +42,7 @@ public interface RoutingTable
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception;
+    Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
