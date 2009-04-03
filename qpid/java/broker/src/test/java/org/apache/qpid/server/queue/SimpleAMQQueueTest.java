@@ -390,6 +390,7 @@ public class SimpleAMQQueueTest extends TestCase
         {
             sendMessage(txnContext);
 
+            // This check may be too soon as a purging thread may be required to bring the queue back under quota.
             long usage = _queue.getMemoryUsageCurrent();
             assertTrue("Queue has gone over quota:" + usage,
                        usage <= _queue.getMemoryUsageMaximum());

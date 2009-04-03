@@ -39,7 +39,7 @@ public class BaseTransactionLog implements TransactionLog
     private static final Logger _logger = Logger.getLogger(BaseTransactionLog.class);
 
     TransactionLog _delegate;
-    private Map<Long, ArrayList<AMQQueue>> _idToQueues = new HashMap<Long, ArrayList<AMQQueue>>();
+    protected Map<Long, ArrayList<AMQQueue>> _idToQueues = new HashMap<Long, ArrayList<AMQQueue>>();
 
     public BaseTransactionLog(TransactionLog delegate)
     {
@@ -60,7 +60,7 @@ public class BaseTransactionLog implements TransactionLog
     {
         context.enqueueMessage(queues, messageId);
 
-        if (queues.size() > 0)
+        if (queues.size() > 1)
         {
             _logger.info("Recording Enqueue of (" + messageId + ") on queue:" + queues);
 
@@ -73,10 +73,10 @@ public class BaseTransactionLog implements TransactionLog
 
     public void dequeueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
     {
+        context.dequeueMessage(queue, messageId);
+
         if (context.inTransaction())
         {
-            context.dequeueMessage(queue, messageId);
-
             Map<Long, ArrayList<AMQQueue>> messageMap = context.getDequeueMap();
 
             //For each Message ID that is in the map check
@@ -97,11 +97,7 @@ public class BaseTransactionLog implements TransactionLog
 
         if (!context.inTransaction())
         {
-            HashMap<Long, ArrayList<AMQQueue>> dequeue = new HashMap<Long, ArrayList<AMQQueue>>();
-            ArrayList list = new ArrayList();
-            list.add(queue);
-            dequeue.put(messageId, list);
-            processDequeues(dequeue);
+            processDequeues(context.getDequeueMap());
         }
     }
 
@@ -128,11 +124,7 @@ public class BaseTransactionLog implements TransactionLog
         //Perform real commit of current data
         _delegate.commitTran(context);
 
-        // If we have dequeues to process then process them
-        if (context.getDequeueMap() != null)
-        {
-            processDequeues(context.getDequeueMap());
-        }
+        processDequeues(context.getDequeueMap());
 
         //Commit the recorded state for this transaction.
         context.commitTransaction();
@@ -141,10 +133,8 @@ public class BaseTransactionLog implements TransactionLog
     public void abortTran(StoreContext context) throws AMQException
     {
         // If we have enqueues to rollback
-        if (context.getEnqueueMap() != null)
-        {
-            processDequeues(context.getEnqueueMap());
-        }
+        processDequeues(context.getEnqueueMap());
+
         //Abort the recorded state for this transaction.
         context.abortTransaction();
 
@@ -154,6 +144,12 @@ public class BaseTransactionLog implements TransactionLog
     private void processDequeues(Map<Long, ArrayList<AMQQueue>> messageMap)
             throws AMQException
     {
+        // Check we have dequeues to process then process them
+        if (messageMap == null || messageMap.isEmpty())
+        {
+             return;
+        }
+
         // Process any enqueues to bring our model up to date.
         Set<Long> messageIDs = messageMap.keySet();
 
@@ -190,6 +186,8 @@ public class BaseTransactionLog implements TransactionLog
                         if (enqueuedList.isEmpty())
                         {
                             _delegate.removeMessage(removeContext, messageID);
+                            //Remove references list
+                            _idToQueues.remove(messageID);
                         }
                     }
                 }
