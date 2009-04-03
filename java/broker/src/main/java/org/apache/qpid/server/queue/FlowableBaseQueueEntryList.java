@@ -428,7 +428,7 @@ public abstract class FlowableBaseQueueEntryList implements QueueEntryList
         }
 
         //If we have become flowed or have more capacity since we stopped then schedule the thread to run again.
-        if (!finshedInhaling _flowed.get() && _atomicQueueInMemory.get() < _memoryUsageMaximum)
+        if (!finshedInhaling && _flowed.get() && _atomicQueueInMemory.get() < _memoryUsageMaximum)
         {
             if (_log.isInfoEnabled())
             {
