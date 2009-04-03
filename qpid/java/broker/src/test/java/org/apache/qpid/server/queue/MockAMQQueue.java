@@ -24,6 +24,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -356,6 +357,11 @@ public class MockAMQQueue implements AMQQueue
     public void setMinimumAlertRepeatGap(long value)
     {
 
+    }
+
+    public void configure(QueueConfiguration config)
+    {
+        
     }
 
 }

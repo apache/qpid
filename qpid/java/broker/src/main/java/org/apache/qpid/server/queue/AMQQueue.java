@@ -215,4 +215,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     {
         public void doTask(AMQQueue queue) throws AMQException;
     }
+
+    void configure(QueueConfiguration config);
 }
