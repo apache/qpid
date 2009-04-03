@@ -44,6 +44,7 @@ public class StoreContext
     private HashMap<Long, ArrayList<AMQQueue>> _enqueueMap;
     private HashMap<Long, ArrayList<AMQQueue>> _dequeueMap;
     private boolean _async;
+    private boolean _inTransaction;
 
     public StoreContext()
     {
@@ -64,6 +65,9 @@ public class StoreContext
     {
         _name = name;
         _async = asynchrouous;
+        _inTransaction = false;
+        _enqueueMap = new HashMap<Long, ArrayList<AMQQueue>>();
+        _dequeueMap = new HashMap<Long, ArrayList<AMQQueue>>();        
     }
 
     public StoreContext(boolean asynchronous)
@@ -82,7 +86,7 @@ public class StoreContext
         {
             _logger.debug("public void setPayload(Object payload = " + payload + "): called");
         }
-        _payload = payload;
+        _payload = payload;        
     }
 
     /**
@@ -137,7 +141,7 @@ public class StoreContext
     }
 
     /**
-     * Record the dequeue for processing on commit
+     * Record the dequeue for processing after the commit 
      *
      * @param queue
      * @param messageId
@@ -146,39 +150,37 @@ public class StoreContext
      */
     public void dequeueMessage(AMQQueue queue, Long messageId) throws AMQException
     {
-        if (inTransaction())
+        ArrayList<AMQQueue> dequeues = _dequeueMap.get(messageId);
+
+        if (dequeues == null)
         {
-            ArrayList<AMQQueue> dequeues = _dequeueMap.get(messageId);
-
-            if (dequeues == null)
-            {
-                dequeues = new ArrayList<AMQQueue>();
-                _dequeueMap.put(messageId, dequeues);
-            }
-
-            dequeues.add(queue);
+            dequeues = new ArrayList<AMQQueue>();
+            _dequeueMap.put(messageId, dequeues);
         }
+
+        dequeues.add(queue);
     }
 
     public void beginTransaction() throws AMQException
     {
-        _enqueueMap = new HashMap<Long, ArrayList<AMQQueue>>();
-        _dequeueMap = new HashMap<Long, ArrayList<AMQQueue>>();
+        _inTransaction = true;
     }
 
     public void commitTransaction() throws AMQException
     {
         _dequeueMap.clear();
+        _inTransaction = false;
     }
 
     public void abortTransaction() throws AMQException
     {
         _enqueueMap.clear();
+        _inTransaction = false;
     }
 
     public boolean inTransaction()
     {
-        return _payload != null;
+        return _inTransaction; //  _payload != null;
     }
 
     public boolean isAsync()
