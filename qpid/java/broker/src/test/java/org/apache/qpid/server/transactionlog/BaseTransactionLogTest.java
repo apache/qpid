@@ -37,6 +37,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BaseTransactionLogTest extends TestCase implements TransactionLog
@@ -46,14 +47,14 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
     final private Map<Long, ArrayList<ContentChunk>> _storeChunks = new HashMap<Long, ArrayList<ContentChunk>>();
     final private Map<Long, MessageMetaData> _storeMetaData = new HashMap<Long, MessageMetaData>();
 
-    BaseTransactionLog _transactionLog;
+    TestableTransactionLog _transactionLog;
     private ArrayList<AMQQueue> _queues;
     private MockPersistentAMQMessage _message;
 
     public void setUp() throws Exception
     {
         super.setUp();
-        _transactionLog = new BaseTransactionLog(this);
+        _transactionLog = new TestableTransactionLog(this);
     }
 
     public void testSingleEnqueueNoTransactional() throws AMQException
@@ -87,11 +88,9 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testSingleEnqueueNoTransactional();
 
-        _transactionLog.dequeueMessage(new StoreContext(),_queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
 
-        assertNull("Message enqueued", _enqueues.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeMetaData.get(_message.getMessageId()));
+        verifyMessageRemoved(_message.getMessageId());
     }
 
     public void testSingleEnqueueTransactional() throws AMQException
@@ -137,15 +136,12 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
         _transactionLog.beginTran(context);
 
-        _transactionLog.dequeueMessage(context,_queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(context, _queues.get(0), _message.getMessageId());
 
         _transactionLog.commitTran(context);
 
-        assertNull("Message enqueued", _enqueues.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeMetaData.get(_message.getMessageId()));
+        verifyMessageRemoved(_message.getMessageId());
     }
-
 
     public void testMultipleEnqueueNoTransactional() throws AMQException
     {
@@ -185,34 +181,54 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testMultipleEnqueueNoTransactional();
 
-        _transactionLog.dequeueMessage(new StoreContext(),_queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
 
         ArrayList<AMQQueue> enqueued = _enqueues.get(_message.getMessageId());
-        assertNotNull("Message not enqueued", enqueued);
-        assertFalse("Message still enqueued on the first queue,",enqueued.contains(_queues.get(0)));
-        assertEquals("Message should still be enqueued on 2 queues", 2, enqueued.size());
 
-        assertNotNull("Message not enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNotNull("Message not enqueued", _storeMetaData.get(_message.getMessageId()));
+        assertFalse("Message still enqueued on the first queue,", enqueued.contains(_queues.get(0)));
+        _queues.remove(0);
 
+        verifyEnqueuedOnQueues(_message.getMessageId(), _queues);
+        verifyMessageStored(_message.getMessageId());
 
-        _transactionLog.dequeueMessage(new StoreContext(),_queues.get(1), _message.getMessageId());
+        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
 
-        enqueued = _enqueues.get(_message.getMessageId());
-        assertNotNull("Message not enqueued", enqueued);
-        assertFalse("Message still enqueued on the second queue,",enqueued.contains(_queues.get(1)));
-        assertEquals("Message should still be enqueued on 2 queues", 1, enqueued.size());
-        
-        assertNotNull("Message not enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNotNull("Message not enqueued", _storeMetaData.get(_message.getMessageId()));
+        assertFalse("Message still enqueued on the first queue,", enqueued.contains(_queues.get(0)));
+        _queues.remove(0);
 
-        _transactionLog.dequeueMessage(new StoreContext(),_queues.get(2), _message.getMessageId());
+        ArrayList<AMQQueue> enqueues = _enqueues.get(_message.getMessageId());
 
-        assertNull("Message enqueued", _enqueues.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeMetaData.get(_message.getMessageId()));
+        assertNotNull("Message not enqueued", enqueues);
+        assertEquals("Message is not enqueued on the right number of queues", _queues.size(), enqueues.size());
+        for (AMQQueue queue : _queues)
+        {
+            assertTrue("Message not enqueued on:" + queue, enqueues.contains(queue));
+        }
+
+        //Use the reference map to ensure that we are enqueuing the right number of messages
+        List<AMQQueue> references = _transactionLog.getMessageReferenceMap(_message.getMessageId());
+
+        assertNotNull("Message not enqueued", references);
+        assertEquals("Message is not enqueued on the right number of queues", _queues.size(), references.size());
+        for (AMQQueue queue : references)
+        {
+            assertTrue("Message not enqueued on:" + queue, references.contains(queue));
+        }
+
+        verifyMessageStored(_message.getMessageId());
+
+        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
+
+        verifyMessageRemoved(_message.getMessageId());
     }
 
+    private void verifyMessageRemoved(Long messageID)
+    {
+        assertNull("Message references exist", _transactionLog.getMessageReferenceMap(messageID));
+        assertNull("Message enqueued", _enqueues.get(messageID));
+        assertNull("Message chunks enqueued", _storeChunks.get(messageID));
+        assertNull("Message meta data enqueued", _storeMetaData.get(messageID));
+    }
 
     public void testMultipleEnqueueTransactional() throws AMQException
     {
@@ -294,12 +310,10 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
         _transactionLog.commitTran(context);
 
-        assertNull("Message enqueued", _enqueues.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeMetaData.get(_message.getMessageId()));
+        verifyMessageRemoved(_message.getMessageId());
     }
 
-     public void testMultipleDequeueSingleTransaction() throws AMQException
+    public void testMultipleDequeueSingleTransaction() throws AMQException
     {
         // Enqueue a message to dequeue
         testMultipleEnqueueTransactional();
@@ -318,9 +332,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         assertNotNull("Message not enqueued", _storeChunks.get(_message.getMessageId()));
         assertNotNull("Message not enqueued", _storeMetaData.get(_message.getMessageId()));
 
-
         _transactionLog.dequeueMessage(context, _queues.get(1), _message.getMessageId());
-
 
         enqueued = _enqueues.get(_message.getMessageId());
         assertNotNull("Message not enqueued", enqueued);
@@ -330,14 +342,11 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         assertNotNull("Message not enqueued", _storeChunks.get(_message.getMessageId()));
         assertNotNull("Message not enqueued", _storeMetaData.get(_message.getMessageId()));
 
-
         _transactionLog.dequeueMessage(context, _queues.get(2), _message.getMessageId());
 
         _transactionLog.commitTran(context);
 
-        assertNull("Message enqueued", _enqueues.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeChunks.get(_message.getMessageId()));
-        assertNull("Message enqueued", _storeMetaData.get(_message.getMessageId()));
+        verifyMessageRemoved(_message.getMessageId());
     }
 
     private void verifyMessageStored(Long messageId)
@@ -355,6 +364,23 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         for (AMQQueue queue : queues)
         {
             assertTrue("Message not enqueued on:" + queue, enqueues.contains(queue));
+        }
+
+        //Use the reference map to ensure that we are enqueuing the right number of messages
+        List<AMQQueue> references = _transactionLog.getMessageReferenceMap(messageId);
+
+        if (queues.size() == 1)
+        {
+            assertNull("Message has an enqueued list", references);
+        }
+        else
+        {
+            assertNotNull("Message not enqueued", references);
+            assertEquals("Message is not enqueued on the right number of queues", queues.size(), references.size());
+            for (AMQQueue queue : references)
+            {
+                assertTrue("Message not enqueued on:" + queue, references.contains(queue));
+            }
         }
     }
 
@@ -419,19 +445,42 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
         if (queues == null)
         {
-            throw new RuntimeException("Attempt to dequeue message(" + messageId + ") from " +
-                                       "queue(" + queue + ") but no enqueue data available");
-        }
+            boolean found = false;
+            // If we are in a transaction we may have already done the dequeue.
+            if (context.inTransaction())
+            {
 
-        synchronized (queues)
-        {
-            if (!queues.contains(queue))
+                for (Object record : (ArrayList) context.getPayload())
+                {
+                    if (record instanceof RemoveRecord)
+                    {
+                        if (((RemoveRecord) record)._messageId.equals(messageId))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!found)
             {
                 throw new RuntimeException("Attempt to dequeue message(" + messageId + ") from " +
-                                           "queue(" + queue + ") but no message not enqueued on queue");
+                                           "queue(" + queue + ") but no enqueue data available");
             }
-                       
-            queues.remove(queue);
+        }
+        else
+        {
+            synchronized (queues)
+            {
+                if (!queues.contains(queue))
+                {
+                    throw new RuntimeException("Attempt to dequeue message(" + messageId + ") from " +
+                                               "queue(" + queue + ") but no message not enqueued on queue");
+                }
+
+                queues.remove(queue);
+            }
         }
     }
 
@@ -450,21 +499,29 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
                                        "no enqueue data available");
         }
 
-        if (!queues.isEmpty())
+        if (queues.size() > 1)
         {
             throw new RuntimeException("Removed a message(" + messageId + ") that still had references.");
         }
 
+        MessageMetaData mmd;
         synchronized (_storeMetaData)
         {
-            _storeMetaData.remove(messageId);
+            mmd = _storeMetaData.remove(messageId);
         }
 
+        ArrayList<ContentChunk> chunks;
         synchronized (_storeChunks)
         {
-            _storeChunks.remove(messageId);
+            chunks = _storeChunks.remove(messageId);
         }
 
+        //Record the remove for part of the transaction
+        if (context.inTransaction())
+        {
+            ArrayList transactionData = (ArrayList) context.getPayload();
+            transactionData.add(new RemoveRecord(messageId, queues, mmd, chunks));
+        }
     }
 
     //
@@ -474,7 +531,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
     public void beginTran(StoreContext context) throws AMQException
     {
-        context.setPayload(new Object());
+        context.setPayload(new ArrayList());
     }
 
     public void commitTran(StoreContext context) throws AMQException
@@ -531,5 +588,21 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
     public boolean isPersistent()
     {
         return false;
+    }
+
+    class RemoveRecord
+    {
+        MessageMetaData _mmd;
+        ArrayList<AMQQueue> _queues;
+        ArrayList<ContentChunk> _chunks;
+        Long _messageId;
+
+        RemoveRecord(Long messageId, ArrayList<AMQQueue> queues, MessageMetaData mmd, ArrayList<ContentChunk> chunks)
+        {
+            _messageId = messageId;
+            _queues = queues;
+            _mmd = mmd;
+            _chunks = chunks;
+        }
     }
 }

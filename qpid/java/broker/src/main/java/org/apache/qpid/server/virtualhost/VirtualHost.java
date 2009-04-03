@@ -295,14 +295,23 @@ public class VirtualHost implements Accessable
         }
         _transactionLog = (TransactionLog) o;
 
+        // If a TransactionLog uses the BaseTransactionLog then it will return this object.
+        _transactionLog = (TransactionLog) _transactionLog.configure(this, "store", config);
+
         //Assign RoutingTable as old MessageStores converted to TransactionLog will require the _routingTable.
         if (_transactionLog instanceof RoutingTable)
         {
             _routingTable = (RoutingTable) _transactionLog;
         }
+        else if (_transactionLog instanceof BaseTransactionLog)
+        {
+            TransactionLog delegate = ((BaseTransactionLog) _transactionLog).getDelegate();
+            if (delegate instanceof RoutingTable)
+            {
+                _routingTable = (RoutingTable) delegate;
+            }
+        }
 
-        // If a TransactionLog uses the BaseTransactionLog then it will return this object.
-        _transactionLog = (TransactionLog) _transactionLog.configure(this, "store", config);
     }
 
     //todo we need to move from store.class to transactionlog.class

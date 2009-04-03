@@ -21,11 +21,12 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.transactionlog.TransactionLog;
 
 import java.util.Map;
 import java.util.List;
 
-public interface TestTransactionLog
+public interface TestTransactionLog extends TransactionLog
 {
     public List<AMQQueue> getMessageReferenceMap(Long messageID);
 }
