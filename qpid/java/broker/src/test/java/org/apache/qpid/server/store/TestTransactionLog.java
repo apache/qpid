@@ -21,12 +21,23 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.transactionlog.TransactionLog;
+import org.apache.qpid.server.transactionlog.BaseTransactionLog;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.AMQException;
 
 import java.util.Map;
 import java.util.List;
 
 public interface TestTransactionLog extends TransactionLog
 {
+    public void setBaseTransactionLog(BaseTransactionLog base);
+
     public List<AMQQueue> getMessageReferenceMap(Long messageID);
+    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException;
+    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException;
+    public long getMessageMetaDataSize();
+    public TransactionLog getDelegate();
 }

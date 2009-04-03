@@ -33,6 +33,7 @@ import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.MockContentChunk;
 import org.apache.qpid.server.queue.MockPersistentAMQMessage;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.TestTransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
@@ -47,14 +48,14 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
     final private Map<Long, ArrayList<ContentChunk>> _storeChunks = new HashMap<Long, ArrayList<ContentChunk>>();
     final private Map<Long, MessageMetaData> _storeMetaData = new HashMap<Long, MessageMetaData>();
 
-    TestableTransactionLog _transactionLog;
+    TestTransactionLog _transactionLog;
     private ArrayList<AMQQueue> _queues;
     private MockPersistentAMQMessage _message;
 
     public void setUp() throws Exception
     {
         super.setUp();
-        _transactionLog = new TestableTransactionLog(this);
+        _transactionLog = new TestableBaseTransactionLog(this);
     }
 
     public void testSingleEnqueueNoTransactional() throws AMQException

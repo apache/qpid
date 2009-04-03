@@ -35,12 +35,13 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestTransactionLog;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +51,7 @@ public class SimpleAMQQueueTest extends TestCase
 
     protected SimpleAMQQueue _queue;
     protected VirtualHost _virtualHost;
-    protected TestableMemoryMessageStore _transactionLog = new TestableMemoryMessageStore();
+    protected TestableTransactionLog _transactionLog;
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
     protected AMQShortString _routingKey = new AMQShortString("routing key");
@@ -68,6 +69,7 @@ public class SimpleAMQQueueTest extends TestCase
         //Create Application Registry for test
         ApplicationRegistry applicationRegistry = (ApplicationRegistry) ApplicationRegistry.getInstance(1);
 
+        _transactionLog = new TestableTransactionLog(new MemoryMessageStore().configure());
         PropertiesConfiguration env = new PropertiesConfiguration();
         _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getSimpleName(), env), _transactionLog);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
@@ -340,7 +342,9 @@ public class SimpleAMQQueueTest extends TestCase
 
         // Check that it is enqueued
         List<AMQQueue> data = _transactionLog.getMessageReferenceMap(messageId);
-        assertNotNull(data);
+        assertNotNull("Message has no enqueued information.", data);
+        assertTrue("Message is not enqueued on correct queue.", data.contains(_queue));
+        assertEquals("Message not enqueued on the right queues.", 1, data.size());
 
         // Dequeue message
         ContentHeaderBody header = new ContentHeaderBody();
@@ -355,7 +359,7 @@ public class SimpleAMQQueueTest extends TestCase
 
         // Check that it is dequeued
         data = _transactionLog.getMessageReferenceMap(messageId);
-        assertTrue(data == null || data.isEmpty());
+        assertNull("Message still has enqueue data.", data);
     }
 
     public void testMessagesFlowToDisk() throws AMQException, InterruptedException
@@ -509,7 +513,9 @@ public class SimpleAMQQueueTest extends TestCase
 
         //Check message was correctly enqueued
         List<AMQQueue> data = _transactionLog.getMessageReferenceMap(messageId);
-        assertNotNull(data);
+        assertNotNull("Message has no enqueued information.", data);
+        assertTrue("Message is not enqueued on correct queue.", data.contains(_queue));
+        assertEquals("Message not enqueued on the right queues.", 1, data.size());             
     }
 
 

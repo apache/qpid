@@ -29,21 +29,17 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestTransactionLog;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class TestableTransactionLog extends BaseTransactionLog implements TestTransactionLog
+public class TestableBaseTransactionLog extends BaseTransactionLog implements TestTransactionLog
 {
-    protected Map<Long, List<AMQQueue>> _singleEnqueuedIDstoQueue = new HashMap<Long, List<AMQQueue>>();
 
-    public TestableTransactionLog()
+    public TestableBaseTransactionLog()
     {
         super(null);
     }
 
-    public TestableTransactionLog(TransactionLog delegate)
+    public TestableBaseTransactionLog(TransactionLog delegate)
     {
         super(delegate);
         if (delegate instanceof BaseTransactionLog)
@@ -51,46 +47,6 @@ public class TestableTransactionLog extends BaseTransactionLog implements TestTr
             _delegate = ((BaseTransactionLog) delegate).getDelegate();
         }
 
-    }
-
-    /**
-     * Override the BaseTranasactionLog to record the single enqueues of a message so we can perform references counting
-     *
-     * @param context   The transactional context for the operation.
-     * @param queues
-     * @param messageId The message to enqueue.  @throws AMQException If the operation fails for any reason.  @throws org.apache.qpid.AMQException
-     *
-     * @throws AMQException
-     */
-    @Override
-    public void enqueueMessage(StoreContext context, ArrayList<AMQQueue> queues, Long messageId) throws AMQException
-    {
-        if (queues.size() == 1)
-        {
-            _singleEnqueuedIDstoQueue.put(messageId, queues);
-        }
-
-        super.enqueueMessage(context, queues, messageId);
-    }
-
-    /**
-     * Override the BaseTranasactionLog to record the single enqueues of a message so we can perform references counting
-     *
-     * @param context   The transactional context for the operation.
-     * @param queue
-     * @param messageId The message to enqueue.  @throws AMQException If the operation fails for any reason.  @throws org.apache.qpid.AMQException
-     *
-     * @throws AMQException
-     */
-    @Override
-    public void dequeueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
-    {
-        if (_singleEnqueuedIDstoQueue.containsKey(messageId))
-        {
-            _singleEnqueuedIDstoQueue.remove(messageId);
-        }
-
-        super.dequeueMessage(context, queue, messageId);
     }
 
     @Override
@@ -132,14 +88,7 @@ public class TestableTransactionLog extends BaseTransactionLog implements TestTr
 
     public List<AMQQueue> getMessageReferenceMap(Long messageID)
     {
-        List<AMQQueue> result = _idToQueues.get(messageID);
-
-        if (result == null)
-        {
-            result = _singleEnqueuedIDstoQueue.get(messageID);
-        }
-
-        return result;
+        return _idToQueues.get(messageID);
     }
 
     public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException

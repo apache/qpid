@@ -26,28 +26,24 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
-import org.apache.qpid.server.queue.MessageFactory;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.MessageFactory;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 
-/**
- * Tests that reference counting works correctly with AMQMessage and the message store
- */
+/** Tests that reference counting works correctly with AMQMessage and the message store */
 public class TestReferenceCounting extends TestCase
 {
-    private TestableMemoryMessageStore _store;
+    private TestableTransactionLog _store;
 
     private StoreContext _storeContext = new StoreContext();
-
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        _store = new TestableMemoryMessageStore();
+        _store = new TestableTransactionLog(new TestableMemoryMessageStore().configure());
     }
 
-    /**
-     * Check that when the reference count is decremented the message removes itself from the store
-     */
+    /** Check that when the reference count is decremented the message removes itself from the store */
     public void testMessageGetsRemoved() throws AMQException
     {
         ContentHeaderBody chb = createPersistentContentHeader();
@@ -57,14 +53,15 @@ public class TestReferenceCounting extends TestCase
         AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
 
-        assertEquals(1, _store.getMessageMetaDataMap().size());
+        assertNotNull("Message Metadata did not exist for new message",
+                      _store.getMessageMetaData(new StoreContext(), message.getMessageId()));
     }
 
     private ContentHeaderBody createPersistentContentHeader()
     {
         ContentHeaderBody chb = new ContentHeaderBody();
         BasicContentHeaderProperties bchp = new BasicContentHeaderProperties();
-        bchp.setDeliveryMode((byte)2);
+        bchp.setDeliveryMode((byte) 2);
         chb.properties = bchp;
         return chb;
     }
@@ -77,8 +74,9 @@ public class TestReferenceCounting extends TestCase
         final ContentHeaderBody chb = createPersistentContentHeader();
         AMQMessage message = (MessageFactory.getInstance()).createMessage(_store, true);
         message.setPublishAndContentHeaderBody(_storeContext, info, chb);
-        
-        assertEquals(1, _store.getMessageMetaDataMap().size());
+
+        assertNotNull("Message Metadata did not exist for new message",
+                      _store.getMessageMetaData(new StoreContext(), message.getMessageId()));
     }
 
     public static junit.framework.Test suite()
