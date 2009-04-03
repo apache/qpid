@@ -215,7 +215,8 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             duration = (end - start);
 
             // Notification of the connection failure should be very quick as we are denying the ability to failover.
-            assertTrue("Notification of the connection failure took was : 100 >:(" + duration + ")", duration < 100);
+            // It may not be as quick for Java profile tests so lets just make sure it is less than the connectiondelay
+            assertTrue("Notification of the connection failure took was : 100 >:(" + duration + ")", duration < 500);
         }
         catch (AMQException e)
         {
