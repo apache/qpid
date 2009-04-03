@@ -20,192 +20,80 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
-import org.apache.qpid.server.routing.RoutingTable;
 import org.apache.qpid.server.transactionlog.BaseTransactionLog;
+import org.apache.qpid.server.transactionlog.TestableTransactionLog;
 import org.apache.qpid.server.transactionlog.TransactionLog;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 
 /** Adds some extra methods to the memory message store for testing purposes. */
-public class TestableMemoryMessageStore implements TestTransactionLog, TransactionLog, RoutingTable
+public class TestableMemoryMessageStore extends MemoryMessageStore implements TestTransactionLog
 {
-    private TransactionLog _transactionLog;
-    private RoutingTable _routingTable;
-    private MemoryMessageStore _mms;
+    private TestableTransactionLog _base;
 
-    public TestableMemoryMessageStore(TransactionLog log)
+    public void setBaseTransactionLog(BaseTransactionLog base)
     {
-        _transactionLog = log;
-        if (log instanceof BaseTransactionLog)
+        if (!(base instanceof TestableTransactionLog))
         {
-            TransactionLog delegate = ((BaseTransactionLog) log).getDelegate();
-            if (delegate instanceof RoutingTable)
-            {
-                _routingTable = (RoutingTable) delegate;
-            }
-            else
-            {
-                throw new RuntimeException("Specified BaseTransactionLog does not delegate to a RoutingTable:" + log);
-            }
-
-            if (delegate instanceof MemoryMessageStore)
-            {
-                _mms = (MemoryMessageStore) delegate;
-            }
-
-        }
-        else
-        {
-            throw new RuntimeException("Specified BaseTransactionLog is not testable:" + log);
+            throw new RuntimeException("base must be a TestableTransactionLog for correct operation in a TestMemoryMessageStore");
         }
 
+        _base = (TestableTransactionLog) base;
     }
 
-    public TestableMemoryMessageStore(MemoryMessageStore mms)
+    @Override
+    public TransactionLog configure()
     {
-        _routingTable = mms;
-        _transactionLog = mms.configure();
+        BaseTransactionLog base = (BaseTransactionLog) super.configure();
+
+        _base = new TestableTransactionLog(base.getDelegate());
+
+        return _base;
     }
 
-    public TestableMemoryMessageStore()
+    @Override
+    public TransactionLog configure(String base, VirtualHostConfiguration config)
     {
-        _mms = new MemoryMessageStore();
-        _transactionLog = _mms.configure();
-        _routingTable = _mms;        
-    }
+        //Only initialise when called with current 'store' configs i.e. don't reinit when used as a 'RoutingTable'
+        if (base.equals("store"))
+        {
+            super.configure();
 
-    public ConcurrentMap<Long, MessageMetaData> getMessageMetaDataMap()
-    {
-        return ((MemoryMessageStore) _routingTable)._metaDataMap;
-    }
+            _base = new TestableTransactionLog(this);
 
-    public ConcurrentMap<Long, List<ContentChunk>> getContentBodyMap()
-    {
-        return ((MemoryMessageStore) _routingTable)._contentBodyMap;
+            return _base;
+        }
+
+        return super.configure();
     }
 
     public List<AMQQueue> getMessageReferenceMap(Long messageId)
     {
-//        return _mms._messageEnqueueMap.get(messageId);
-//        ((BaseTransactionLog)_transactionLog).
-        return new ArrayList<AMQQueue>();
+        return _base.getMessageReferenceMap(messageId);
     }
 
-    public Object configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId)
     {
-        _transactionLog  = (TransactionLog) _transactionLog.configure(virtualHost, base, config);
-        return _transactionLog;
+        return _metaDataMap.get(messageId);
     }
 
-    public void close() throws Exception
+    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index)
     {
-        _transactionLog.close();
-        _routingTable.close();
+        List<ContentChunk> bodyList = _contentBodyMap.get(messageId);
+        return bodyList.get(index);
     }
 
-    public void createExchange(Exchange exchange) throws AMQException
+    public long getMessageMetaDataSize()
     {
-        _routingTable.createExchange(exchange);
+        return _metaDataMap.size();
     }
 
-    public void removeExchange(Exchange exchange) throws AMQException
+    public TransactionLog getDelegate()
     {
-        _routingTable.removeExchange(exchange);
-    }
-
-    public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        _routingTable.bindQueue(exchange, routingKey, queue, args);
-    }
-
-    public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
-    {
-        _routingTable.unbindQueue(exchange, routingKey, queue, args);
-    }
-
-    public void createQueue(AMQQueue queue) throws AMQException
-    {
-        _routingTable.createQueue(queue);
-    }
-
-    public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQException
-    {
-        _routingTable.createQueue(queue, arguments);
-    }
-
-    public void removeQueue(AMQQueue queue) throws AMQException
-    {
-        _routingTable.removeQueue(queue);
-    }
-
-    public void enqueueMessage(StoreContext context, ArrayList<AMQQueue> queues, Long messageId) throws AMQException
-    {
-        _transactionLog.enqueueMessage(context, queues, messageId);
-    }
-
-    public void dequeueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
-    {
-        _transactionLog.dequeueMessage(context, queue, messageId);
-    }
-
-    public void removeMessage(StoreContext context, Long messageId) throws AMQException
-    {
-        _transactionLog.removeMessage(context, messageId);
-    }
-
-    public void beginTran(StoreContext context) throws AMQException
-    {
-        _transactionLog.beginTran(context);
-    }
-
-    public void commitTran(StoreContext context) throws AMQException
-    {
-        _transactionLog.commitTran(context);
-    }
-
-    public void abortTran(StoreContext context) throws AMQException
-    {
-        _transactionLog.abortTran(context);
-    }
-
-    public boolean inTran(StoreContext context)
-    {
-        return _transactionLog.inTran(context);
-    }
-
-    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
-    {
-        _transactionLog.storeContentBodyChunk(context, messageId, index, contentBody, lastContentBody);
-    }
-
-    public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException
-    {
-        _transactionLog.storeMessageMetaData(context, messageId, messageMetaData);
-    }
-
-    public boolean isPersistent()
-    {
-        return _transactionLog.isPersistent();
-    }
-
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
-    {
-        return _mms.getMessageMetaData(context, messageId);
-    }
-
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
-    {
-        return _mms.getContentBodyChunk(context, messageId, index);
+        return _base;
     }
 }

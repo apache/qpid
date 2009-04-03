@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MemoryMessageStore implements TransactionLog, RoutingTable
 {
-    private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
+    protected static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
 
     private static final int DEFAULT_HASHTABLE_CAPACITY = 50000;
 
@@ -154,13 +154,7 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
 
     public void enqueueMessage(StoreContext context, final ArrayList<AMQQueue> queues, Long messageId) throws AMQException
     {
-        for (AMQQueue q : queues)
-        {
-            if (q.isDurable())
-            {
-                enqueueMessage(context,q,messageId);
-            }
-        }
+        // Not required to do anything
     }
 
     public void enqueueMessage(StoreContext context, final AMQQueue queue, Long messageId) throws AMQException
@@ -232,25 +226,13 @@ public class MemoryMessageStore implements TransactionLog, RoutingTable
         _metaDataMap.put(messageId, messageMetaData);
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
-    {
-        checkNotClosed();
-        return _metaDataMap.get(messageId);
-    }
-
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
-    {
-        checkNotClosed();
-        List<ContentChunk> bodyList = _contentBodyMap.get(messageId);
-        return bodyList.get(index);
-    }
 
     public boolean isPersistent()
     {
         return false;
     }
 
-    private void checkNotClosed() throws MessageStoreClosedException
+    protected void checkNotClosed() throws MessageStoreClosedException
     {
         if (_closed.get())
         {

@@ -103,7 +103,7 @@ public class TxAckTest extends TestCase
         private final List<Long> _unacked;
         private StoreContext _storeContext = new StoreContext();
 		private AMQQueue _queue;
-        private TransactionLog _transactionLog = new TestableMemoryMessageStore();
+        private TransactionLog _transactionLog = new TestableMemoryMessageStore().configure();
 
         private static final int MESSAGE_SIZE=100;
 

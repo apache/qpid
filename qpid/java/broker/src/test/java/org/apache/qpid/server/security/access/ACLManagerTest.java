@@ -39,7 +39,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.MockProtocolSession;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class ACLManagerTest extends TestCase
@@ -66,7 +66,7 @@ public class ACLManagerTest extends TestCase
         _pluginManager = new MockPluginManager("");
         _authzManager = new ACLManager(_conf, _pluginManager);
         
-        _session = new MockProtocolSession(new TestableMemoryMessageStore());
+        _session = new MockProtocolSession(new MemoryMessageStore().configure());
     }
 
     public void tearDown() throws Exception
