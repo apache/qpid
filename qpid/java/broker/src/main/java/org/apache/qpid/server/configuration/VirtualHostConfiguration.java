@@ -142,7 +142,16 @@ public class VirtualHostConfiguration
 
     public QueueConfiguration getQueueConfiguration(String queueName)
     {
-        return _queues.get(queueName);
+        // We might be asked for the config for a queue we don't know about,
+        // such as one that's been dynamically created. Those get the defaults by default.
+        if (_queues.containsKey(queueName)) 
+        {
+            return _queues.get(queueName);
+        } 
+        else
+        {
+            return new QueueConfiguration(queueName, new PropertiesConfiguration(), this);
+        }
     }
 
     public long getMemoryUsageMaximum()
@@ -164,6 +173,31 @@ public class VirtualHostConfiguration
     public String getFlowToDiskLocation()
     {
         return _config.getString(FLOW_TO_DISK_PATH, getServerConfiguration().getQpidWork());
+    }
+
+    public int getMaximumMessageAge()
+    {
+        return _config.getInt("queues.maximumMessageAge", 0);
+    }
+
+    public Long getMaximumQueueDepth()
+    {
+        return _config.getLong("queues.maximumQueueDepth", 0);
+    }
+
+    public Long getMaximumMessageSize()
+    {
+        return _config.getLong("queues.maximumMessageSize", 0);
+    }
+
+    public Long getMaximumMessageCount()
+    {
+        return _config.getLong("queues.maximumMessageCount", 0);
+    }
+
+    public Long getMinimumAlertRepeatGap()
+    {
+        return _config.getLong("queues.minimumAlertRepeatGap", 0);
     }
 
 }

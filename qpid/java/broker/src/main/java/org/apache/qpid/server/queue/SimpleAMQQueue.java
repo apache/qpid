@@ -19,6 +19,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -1626,5 +1627,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public String toString()
     {
         return getType() + "[Owner:" + _owner + "][Durable:" + _durable + "]";
+    }
+
+    public void configure(QueueConfiguration config)
+    {
+        if (config != null)
+        {
+            setMaximumMessageAge(config.getMaximumMessageAge());
+            setMaximumQueueDepth(config.getMaximumQueueDepth());
+            setMaximumMessageSize(config.getMaximumMessageSize());
+            setMaximumMessageCount(config.getMaximumMessageCount());
+            setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
+            setMemoryUsageMaximum(config.getMemoryUsageMaximum());
+            setMemoryUsageMinimum(config.getMemoryUsageMinimum());
+        }
     }
 }
