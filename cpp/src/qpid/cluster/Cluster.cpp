@@ -316,11 +316,11 @@ ostream& operator<<(ostream& o, const AddrList& a) {
     for (const cpg_address* p = a.addrs; p < a.addrs+a.count; ++p) {
         const char* reasonString;
         switch (p->reason) {
-          case CPG_REASON_JOIN: reasonString =  " (joined) "; break;
-          case CPG_REASON_LEAVE: reasonString =  " (left) "; break;
-          case CPG_REASON_NODEDOWN: reasonString =  " (node-down) "; break;
-          case CPG_REASON_NODEUP: reasonString =  " (node-up) "; break;
-          case CPG_REASON_PROCDOWN: reasonString =  " (process-down) "; break;
+          case CPG_REASON_JOIN: reasonString =  "(joined) "; break;
+          case CPG_REASON_LEAVE: reasonString =  "(left) "; break;
+          case CPG_REASON_NODEDOWN: reasonString =  "(node-down) "; break;
+          case CPG_REASON_NODEUP: reasonString =  "(node-up) "; break;
+          case CPG_REASON_PROCDOWN: reasonString =  "(process-down) "; break;
           default: reasonString = " ";
         }
         qpid::cluster::MemberId member(*p);
@@ -342,8 +342,8 @@ void Cluster::configChange (
         broker.setRecovery(nCurrent == 1);
         initialized = true;
     }
-    QPID_LOG(debug, *this << " config change: " << AddrList(current, nCurrent) 
-             << AddrList(left, nLeft, "( ", ")"));
+    QPID_LOG(debug, *this << " config change: " << AddrList(current, nCurrent)
+             << AddrList(left, nLeft, "left: "));
     std::string addresses;
     for (cpg_address* p = current; p < current+nCurrent; ++p) 
         addresses.append(MemberId(*p).str());

@@ -98,10 +98,7 @@ UpdateClient::UpdateClient(const MemberId& updater, const MemberId& updatee, con
       expiry(expiry_), connections(cons), decoder(decoder_),
       connection(catchUpConnection()), shadowConnection(catchUpConnection()),
       done(ok), failed(fail), connectionSettings(cs)
-{
-    connection.open(url, cs);
-    session = connection.newSession(UPDATE);
-}
+{}
 
 UpdateClient::~UpdateClient() {}
 
@@ -110,6 +107,8 @@ const std::string UpdateClient::UPDATE("qpid.cluster-update");
 
 void UpdateClient::run() {
     try {
+        connection.open(updateeUrl, connectionSettings);
+        session = connection.newSession(UPDATE);
         update();
         done();
     } catch (const std::exception& e) {
