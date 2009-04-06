@@ -509,10 +509,24 @@ public class AttributesTabControl extends TabControl
         {
             if (!isSimpleType(attribute.getValue()))
             {
-                Composite composite = new Composite(parent, SWT.BORDER);
-                composite.setLayout(new GridLayout());
-                composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-                ViewUtility.populateCompositeWithData(_toolkit, composite, attribute.getValue());
+                if (attribute.getValue() instanceof String[])
+                {
+                    String result = new String("");
+                    for(String val : (String[]) attribute.getValue()){
+                        result = result.concat(val+ "; ");
+                    }
+                    value = _toolkit.createText(parent, "", textStyle);
+                    
+                    value.setText(result);
+                    value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+                }
+                else
+                {
+                    Composite composite = new Composite(parent, SWT.BORDER);
+                    composite.setLayout(new GridLayout());
+                    composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+                    ViewUtility.populateCompositeWithData(_toolkit, composite, attribute.getValue());
+                }
             }
             else
             {
@@ -877,7 +891,16 @@ public class AttributesTabControl extends TabControl
                     break;
                 case 1 : // attribute value column 
                     if (attribute.getValue() != null)
-                        result = String.valueOf(attribute.getValue());
+                        if (attribute.getValue() instanceof String[])
+                        {
+                            for(String val : (String[]) attribute.getValue()){
+                                result = result.concat(val+ "; ");
+                            }
+                        }
+                        else
+                        {
+                            result = String.valueOf(attribute.getValue());
+                        }
                     break;
                 default :
                     result = "";
