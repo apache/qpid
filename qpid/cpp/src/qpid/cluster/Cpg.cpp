@@ -77,7 +77,7 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     callbacks.cpg_confchg_fn = &globalConfigChange;
     cpg_error_t err = cpg_initialize(&handle, &callbacks);
     if (err == CPG_ERR_TRY_AGAIN) {
-        QPID_LOG(notice, "Waiting for CPG initialization.");
+        QPID_LOG(notice, "Re-trying CPG initialization.");
         while (CPG_ERR_TRY_AGAIN == (err = cpg_initialize(&handle, &callbacks)))
             sys::sleep(5);
     }
