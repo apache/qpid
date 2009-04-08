@@ -467,7 +467,15 @@ public class AMQChannel
         {
             if (_log.isInfoEnabled())
             {
-                _log.info("Requeuing " + messagesToBeDelivered.size() + " unacked messages. for " + toString());
+                // Requeue only occurs on connection close so this extra processing should not be a bottleneck
+                List ids=new LinkedList();
+                for (QueueEntry entry: messagesToBeDelivered)
+                {
+                    ids.add(entry.getMessageId());
+                }
+
+                _log.info("Requeuing " + messagesToBeDelivered.size() + " unacked messages(" + ids + "). " +
+                          "for " + toString());               
             }
 
             if (!(_txnContext instanceof NonTransactionalContext))
