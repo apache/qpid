@@ -51,11 +51,13 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
     TestTransactionLog _transactionLog;
     private ArrayList<AMQQueue> _queues;
     private MockPersistentAMQMessage _message;
+    StoreContext _context;
 
     public void setUp() throws Exception
     {
         super.setUp();
         _transactionLog = new TestableBaseTransactionLog(this);
+        _context = new StoreContext();
     }
 
     public void testSingleEnqueueNoTransactional() throws AMQException
@@ -64,13 +66,13 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
         _message = new MockPersistentAMQMessage(1L, this);
 
-        _message.addContentBodyFrame(new StoreContext(), new MockContentChunk(100), true);
+        _message.addContentBodyFrame(_context, new MockContentChunk(100), true);
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl();
 
         ContentHeaderBody chb = new ContentHeaderBody();
 
-        _message.setPublishAndContentHeaderBody(new StoreContext(), mpi, chb);
+        _message.setPublishAndContentHeaderBody(_context, mpi, chb);
 
         verifyMessageStored(_message.getMessageId());
         // Enqueue
@@ -79,7 +81,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         MockAMQQueue queue = new MockAMQQueue(this.getName());
         _queues.add(queue);
 
-        _transactionLog.enqueueMessage(new StoreContext(), _queues, _message.getMessageId());
+        _transactionLog.enqueueMessage(_context, _queues, _message.getMessageId());
 
         verifyEnqueuedOnQueues(_message.getMessageId(), _queues);
     }
@@ -89,14 +91,14 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testSingleEnqueueNoTransactional();
 
-        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(_context, _queues.get(0), _message.getMessageId());
 
         verifyMessageRemoved(_message.getMessageId());
     }
 
     public void testSingleEnqueueTransactional() throws AMQException
     {
-        StoreContext context = new StoreContext();
+        StoreContext context = _context;
 
         _transactionLog.beginTran(context);
 
@@ -133,7 +135,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testSingleEnqueueTransactional();
 
-        StoreContext context = new StoreContext();
+        StoreContext context = _context;
 
         _transactionLog.beginTran(context);
 
@@ -150,13 +152,13 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
         _message = new MockPersistentAMQMessage(1L, this);
 
-        _message.addContentBodyFrame(new StoreContext(), new MockContentChunk(100), true);
+        _message.addContentBodyFrame(_context, new MockContentChunk(100), true);
 
         MessagePublishInfo mpi = new MessagePublishInfoImpl();
 
         ContentHeaderBody chb = new ContentHeaderBody();
 
-        _message.setPublishAndContentHeaderBody(new StoreContext(), mpi, chb);
+        _message.setPublishAndContentHeaderBody(_context, mpi, chb);
 
         verifyMessageStored(_message.getMessageId());
         // Enqueue
@@ -172,7 +174,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         queue = new MockAMQQueue(this.getName() + "3");
         _queues.add(queue);
 
-        _transactionLog.enqueueMessage(new StoreContext(), _queues, _message.getMessageId());
+        _transactionLog.enqueueMessage(_context, _queues, _message.getMessageId());
 
         verifyEnqueuedOnQueues(_message.getMessageId(), _queues);
     }
@@ -182,7 +184,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testMultipleEnqueueNoTransactional();
 
-        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(_context, _queues.get(0), _message.getMessageId());
 
         ArrayList<AMQQueue> enqueued = _enqueues.get(_message.getMessageId());
 
@@ -192,7 +194,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         verifyEnqueuedOnQueues(_message.getMessageId(), _queues);
         verifyMessageStored(_message.getMessageId());
 
-        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(_context, _queues.get(0), _message.getMessageId());
 
         assertFalse("Message still enqueued on the first queue,", enqueued.contains(_queues.get(0)));
         _queues.remove(0);
@@ -218,7 +220,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
         verifyMessageStored(_message.getMessageId());
 
-        _transactionLog.dequeueMessage(new StoreContext(), _queues.get(0), _message.getMessageId());
+        _transactionLog.dequeueMessage(_context, _queues.get(0), _message.getMessageId());
 
         verifyMessageRemoved(_message.getMessageId());
     }
@@ -233,7 +235,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
 
     public void testMultipleEnqueueTransactional() throws AMQException
     {
-        StoreContext context = new StoreContext();
+        StoreContext context = _context;
 
         _transactionLog.beginTran(context);
 
@@ -276,7 +278,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testMultipleEnqueueTransactional();
 
-        StoreContext context = new StoreContext();
+        StoreContext context = _context;
 
         _transactionLog.beginTran(context);
 
@@ -319,7 +321,7 @@ public class BaseTransactionLogTest extends TestCase implements TransactionLog
         // Enqueue a message to dequeue
         testMultipleEnqueueTransactional();
 
-        StoreContext context = new StoreContext();
+        StoreContext context = _context;
 
         _transactionLog.beginTran(context);
 

@@ -27,6 +27,8 @@ import org.apache.qpid.server.queue.AMQQueue;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * A context that the store can use to associate with a transactional context. For example, it could store
@@ -41,8 +43,7 @@ public class StoreContext
     private static final String DEFAULT_NAME = "StoreContext";
     private String _name;
     private Object _payload;
-    private HashMap<Long, ArrayList<AMQQueue>> _enqueueMap;
-    private HashMap<Long, ArrayList<AMQQueue>> _dequeueMap;
+    private Map<Long, List<AMQQueue>> _dequeueMap;
     private boolean _async;
     private boolean _inTransaction;
 
@@ -53,12 +54,11 @@ public class StoreContext
 
     public StoreContext(String name)
     {
-        this(name,false);
+        this(name, false);
     }
 
     /**
-     *
-     * @param name The name of this Transaction
+     * @param name         The name of this Transaction
      * @param asynchrouous Is this Transaction Asynchronous
      */
     public StoreContext(String name, boolean asynchrouous)
@@ -66,8 +66,7 @@ public class StoreContext
         _name = name;
         _async = asynchrouous;
         _inTransaction = false;
-        _enqueueMap = new HashMap<Long, ArrayList<AMQQueue>>();
-        _dequeueMap = new HashMap<Long, ArrayList<AMQQueue>>();        
+        _dequeueMap = Collections.synchronizedMap(new HashMap<Long, List<AMQQueue>>());
     }
 
     public StoreContext(boolean asynchronous)
@@ -86,7 +85,7 @@ public class StoreContext
         {
             _logger.debug("public void setPayload(Object payload = " + payload + "): called");
         }
-        _payload = payload;        
+        _payload = payload;
     }
 
     /**
@@ -99,49 +98,13 @@ public class StoreContext
         return "<_name = " + _name + ", _payload = " + _payload + ">";
     }
 
-    public Map<Long, ArrayList<AMQQueue>> getEnqueueMap()
-    {
-        return _enqueueMap;
-    }
-
-    public Map<Long, ArrayList<AMQQueue>> getDequeueMap()
+    public Map<Long, List<AMQQueue>> getDequeueMap()
     {
         return _dequeueMap;
     }
 
     /**
-     * Record the enqueues for processing if we abort
-     *
-     * @param queues
-     * @param messageId
-     *
-     * @throws AMQException
-     */
-    public void enqueueMessage(ArrayList<AMQQueue> queues, Long messageId) throws AMQException
-    {
-        if (inTransaction())
-        {
-            ArrayList<AMQQueue> enqueues = _enqueueMap.get(messageId);
-
-            if (enqueues == null)
-            {
-                enqueues = new ArrayList<AMQQueue>();
-                _enqueueMap.put(messageId, enqueues);
-            }
-
-            for (AMQQueue q : queues)
-            {
-                if (!enqueues.contains(q))
-                {
-                    enqueues.add(q);
-                }
-            }
-
-        }
-    }
-
-    /**
-     * Record the dequeue for processing after the commit 
+     * Record the dequeue for processing after the commit
      *
      * @param queue
      * @param messageId
@@ -150,15 +113,22 @@ public class StoreContext
      */
     public void dequeueMessage(AMQQueue queue, Long messageId) throws AMQException
     {
-        ArrayList<AMQQueue> dequeues = _dequeueMap.get(messageId);
+        List<AMQQueue> dequeues = _dequeueMap.get(messageId);
 
-        if (dequeues == null)
+        synchronized (_dequeueMap)
         {
-            dequeues = new ArrayList<AMQQueue>();
-            _dequeueMap.put(messageId, dequeues);
+            if (dequeues == null)
+            {
+                dequeues = Collections.synchronizedList(new ArrayList<AMQQueue>());
+                _dequeueMap.put(messageId, dequeues);
+            }
         }
 
         dequeues.add(queue);
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Added (" + messageId + ") to dequeues:" + dequeues);
+        }
     }
 
     public void beginTransaction() throws AMQException
@@ -174,13 +144,13 @@ public class StoreContext
 
     public void abortTransaction() throws AMQException
     {
-        _enqueueMap.clear();
+        _dequeueMap.clear();
         _inTransaction = false;
     }
 
     public boolean inTransaction()
     {
-        return _inTransaction; //  _payload != null;
+        return _inTransaction;
     }
 
     public boolean isAsync()

@@ -31,16 +31,18 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.List;
 
 public class BaseTransactionLog implements TransactionLog
 {
     private static final Logger _logger = Logger.getLogger(BaseTransactionLog.class);
 
     TransactionLog _delegate;
-    protected Map<Long, ArrayList<AMQQueue>> _idToQueues = new HashMap<Long, ArrayList<AMQQueue>>();
+    protected Map<Long, List<AMQQueue>> _idToQueues = Collections.synchronizedMap(new HashMap<Long, List<AMQQueue>>());
 
     public BaseTransactionLog(TransactionLog delegate)
     {
@@ -59,14 +61,15 @@ public class BaseTransactionLog implements TransactionLog
 
     public void enqueueMessage(StoreContext context, ArrayList<AMQQueue> queues, Long messageId) throws AMQException
     {
-        context.enqueueMessage(queues, messageId);
-
         if (queues.size() > 1)
         {
-            _logger.info("Recording Enqueue of (" + messageId + ") on queue:" + queues);
+            if (_logger.isInfoEnabled())
+            {
+                _logger.info("Recording Enqueue of (" + messageId + ") on queue:" + queues);
+            }
 
             //Clone the list incase someone else changes it.
-            _idToQueues.put(messageId, (ArrayList) queues.clone());
+            _idToQueues.put(messageId, (List<AMQQueue>)Collections.synchronizedList((ArrayList<AMQQueue>)queues.clone()));
         }
 
         _delegate.enqueueMessage(context, queues, messageId);
@@ -78,21 +81,33 @@ public class BaseTransactionLog implements TransactionLog
 
         if (context.inTransaction())
         {
-            Map<Long, ArrayList<AMQQueue>> messageMap = context.getDequeueMap();
+
+            Map<Long, List<AMQQueue>> messageMap = context.getDequeueMap();
 
             //For each Message ID that is in the map check
-            Iterator iterator = messageMap.keySet().iterator();
+            Set<Long> messageIDs = messageMap.keySet();
 
-            while (iterator.hasNext())
+            synchronized (messageMap)
             {
-                Long messageID = (Long) iterator.next();
-                //If we don't have a gloabl reference for this message then there is only a single enqueue
-                if (_idToQueues.get(messageID) == null)
+                if (_logger.isInfoEnabled())
                 {
-                    // Add the removal of the message to this transaction
-                    _delegate.removeMessage(context,messageID);
-                    // Remove this message ID as we have processed it so we don't reprocess after the main commmit
-                    iterator.remove();
+                    _logger.info("Pre-Processing single dequeue of:" + messageIDs);
+                }
+
+                Iterator iterator = messageIDs.iterator();
+        
+                while (iterator.hasNext())
+                {
+                    Long messageID = (Long) iterator.next();
+                    //If we don't have a gloabl reference for this message then there is only a single enqueue
+                    //can check here to see if this is the last reference?
+                    if (_idToQueues.get(messageID) == null)
+                    {
+                        // Add the removal of the message to this transaction
+                        _delegate.removeMessage(context, messageID);
+                        // Remove this message ID as we have processed it so we don't reprocess after the main commmit
+                        iterator.remove();
+                    }
                 }
             }
         }
@@ -136,22 +151,19 @@ public class BaseTransactionLog implements TransactionLog
 
     public void abortTran(StoreContext context) throws AMQException
     {
-        // If we have enqueues to rollback
-        processDequeues(context.getEnqueueMap());
-
         //Abort the recorded state for this transaction.
         context.abortTransaction();
 
         _delegate.abortTran(context);
     }
 
-    private void processDequeues(Map<Long, ArrayList<AMQQueue>> messageMap)
+    private void processDequeues(Map<Long, List<AMQQueue>> messageMap)
             throws AMQException
     {
         // Check we have dequeues to process then process them
         if (messageMap == null || messageMap.isEmpty())
         {
-             return;
+            return;
         }
 
         // Process any enqueues to bring our model up to date.
@@ -162,50 +174,77 @@ public class BaseTransactionLog implements TransactionLog
 
         //Batch Process the Dequeues on the delegate
         _delegate.beginTran(removeContext);
+        removeContext.beginTransaction();
 
         try
         {
             //For each Message ID Decrement the reference for each of the queues it was on.
-            for (Long messageID : messageIDs)
+
+            synchronized (messageMap)
             {
-                ArrayList<AMQQueue> queueList = messageMap.get(messageID);
-
-                // For each of the queues decrement the reference
-                for (AMQQueue queue : queueList)
+                if (_logger.isInfoEnabled())
                 {
-                    ArrayList<AMQQueue> enqueuedList = _idToQueues.get(messageID);
+                    _logger.info("Processing Dequeue for:" + messageIDs);
+                }
 
-                    // If we have no mapping then this message was only enqueued on a single queue
-                    // This will be the case when we are not in a larger transaction
-                    if (enqueuedList == null)
+                Iterator<Long> messageIDIterator = messageIDs.iterator();
+
+                while(messageIDIterator.hasNext())
+                {
+                    Long messageID = messageIDIterator.next();
+                    List<AMQQueue> queueList = messageMap.get(messageID);
+
+                   //Remove this message from our DequeueMap as we are processing it.
+                    messageIDIterator.remove();
+
+                    // For each of the queues decrement the reference
+                    for (AMQQueue queue : queueList)
                     {
-                        _delegate.removeMessage(removeContext, messageID);
-                    }
-                    else
-                    {
-                        //When a message is on more than one queue it is possible that this code section is exectuted
-                        // by one thread per enqueue.
-                        // It is however, thread safe because there is only removes being performed and so the
-                        // last thread that does the remove will see the empty queue and remove the message
-                        // At this stage there is nothing that is going to cause this operation to abort. So we don't
-                        // need to worry about any potential adds.
-                        // The message will no longer be enqueued as that operation has been committed before now so
-                        // this is clean up of the data.                        
+                        List<AMQQueue> enqueuedList = _idToQueues.get(messageID);
 
-                        // Update the enqueued list
-                        enqueuedList.remove(queue);
+                        if (_logger.isInfoEnabled())
+                        {
+                            _logger.info("Dequeue message:" + messageID + " from :" + queue);
+                        }
 
-                        // If the list is now empty then remove the message
-                        if (enqueuedList.isEmpty())
+
+                        // If we have no mapping then this message was only enqueued on a single queue
+                        // This will be the case when we are not in a larger transaction
+                        if (enqueuedList == null)
                         {
                             _delegate.removeMessage(removeContext, messageID);
-                            //Remove references list
-                            _idToQueues.remove(messageID);
+                        }
+                        else
+                        {
+                            //When a message is on more than one queue it is possible that this code section is exectuted
+                            // by one thread per enqueue.
+                            // It is however, thread safe because there is only removes being performed and so the
+                            // last thread that does the remove will see the empty queue and remove the message
+                            // At this stage there is nothing that is going to cause this operation to abort. So we don't
+                            // need to worry about any potential adds.
+                            // The message will no longer be enqueued as that operation has been committed before now so
+                            // this is clean up of the data.
+                            synchronized (enqueuedList)
+                            {
+                                // Update the enqueued list but if the queue is not in the list then we are trying
+                                // to dequeue something that is not there anymore, or was never there.
+                                if (!enqueuedList.remove(queue))
+                                {
+                                    throw new UnableToDequeueException(messageID, queue);
+                                }
+
+                                // If the list is now empty then remove the message
+                                if (enqueuedList.isEmpty())
+                                {
+                                    _delegate.removeMessage(removeContext, messageID);
+                                    //Remove references list
+                                    _idToQueues.remove(messageID);
+                                }
+                            }
                         }
                     }
                 }
             }
-
             //Commit the removes on the delegate.
             _delegate.commitTran(removeContext);
             // Mark this context as committed.
@@ -243,5 +282,19 @@ public class BaseTransactionLog implements TransactionLog
     public TransactionLog getDelegate()
     {
         return _delegate;
+    }
+
+    private class UnableToDequeueException extends RuntimeException
+    {
+        Long _messageID;
+        AMQQueue _queue;
+
+        public UnableToDequeueException(Long messageID, AMQQueue queue)
+        {
+            super("Unable to dequeue message(" + messageID + ") from queue " +
+                  "(" + queue + ") it is not/nolonger enqueued on it.");
+            _messageID = messageID;
+            _queue = queue;
+        }
     }
 }

@@ -77,6 +77,8 @@ public interface TransactionLog
     /**
      * Places a message onto a specified queue, in a given transactional context.
      *
+     * This method need not be thread safe as it is only called by the message delivery thread
+     *
      * @param context   The transactional context for the operation.
      * @param queues
      *@param messageId The message to enqueue.  @throws AMQException If the operation fails for any reason.  @throws org.apache.qpid.AMQException
@@ -86,6 +88,8 @@ public interface TransactionLog
     /**
      * Extracts a message from a specified queue, in a given transactional context.
      *
+     * This method MUST be thread safe as dequeue will be called by multiple threads, ack, requeue, delivery thread
+     *
      * @param context   The transactional context for the operation.
      * @param queue
      * @param messageId The message to dequeue.  @throws AMQException If the operation fails for any reason, or if the specified message does not exist.
@@ -94,6 +98,8 @@ public interface TransactionLog
 
     /**
      * Remove the specified message from the log
+     *
+     * This method MUST be thread safe as dequeue will be called by multiple threads, ack, requeue, delivery thread 
      *
      * @param context The transactional context for the operation
      * @param messageId The message to remove
