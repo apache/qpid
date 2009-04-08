@@ -1039,7 +1039,7 @@ def addPatchVersions(source, filename):
 	    url = getValue(patch.getElementsByTagName(URL)[0])
 	    substitution += "\n" + ECHO_BIN + " \"\t\tURL:" + url + "\" >> "+filename
 	    if (type == SVN):
-		    if (source.getElementsByTagName(REVISION).length > 0):
+		    if (patch.getElementsByTagName(REVISION).length > 0):
                         substitution += "\n" + ECHO_BIN + " \"\t\tREVISION:"+ \
 			         getValue(patch.getElementsByTagName(REVISION)[0])  + "\" >> " + filename	    
 		    else:			
@@ -1112,7 +1112,7 @@ def downloadSource(source, destination):
             command = SVN_BIN+" co "+url+" "+targetdir
             if (source.getElementsByTagName(REVISION).length > 0):
                 revision =  getValue(source.getElementsByTagName(REVISION)[0])
-                command = command+" -r"+revision
+		command = SVN_BIN+" co "+url+"@"+revision+" "+targetdir
         else:
             if (type == HTTP):
                 command = WGET_BIN+" --no-directories -P "+targetdir+" "+url
