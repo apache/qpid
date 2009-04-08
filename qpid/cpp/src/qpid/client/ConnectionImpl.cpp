@@ -111,9 +111,11 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
         Mutex::ScopedLock l(lock);
         s = sessions[frame.getChannel()].lock();
     }
-    if (!s)
-        throw NotAttachedException(QPID_MSG("Invalid channel: " << frame.getChannel()));
-    s->in(frame);
+    if (!s) {
+        QPID_LOG(info, "Dropping frame received on invalid channel: " << frame);
+    } else {
+        s->in(frame);
+    }
 }
 
 bool ConnectionImpl::isOpen() const 
