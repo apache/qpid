@@ -370,7 +370,8 @@ void
 startNewBroker ( brokerVector & brokers,
                  char const * moduleOrDir,
                  string const clusterName,
-                 int verbosity ) 
+                 int verbosity,
+                 int durable ) 
 {
     static int brokerId = 0;
     stringstream path, prefix;
@@ -394,6 +395,9 @@ startNewBroker ( brokerVector & brokers,
         // Module path specified, load only that module.
         argv.push_back(string("--load-module=")+moduleOrDir);
         argv.push_back("--no-module-dir");
+        if ( durable ) {
+          std::cerr << "failover_soak warning: durable arg hass no effect.  Use \"dir\" option of \"moduleOrDir\".\n";
+        }
     }
     else {
         // Module directory specified, load all modules in dir.
@@ -483,7 +487,8 @@ pid_t
 runDeclareQueuesClient ( brokerVector brokers, 
                             char const *  host,
                             char const *  path,
-                            int verbosity
+                            int verbosity,
+                            int durable
                           ) 
 {
     string name("declareQueues");
@@ -502,6 +507,10 @@ runDeclareQueuesClient ( brokerVector brokers,
     argv.push_back ( "declareQueues" );
     argv.push_back ( host );
     argv.push_back ( portSs.str().c_str() );
+    if ( durable )
+      argv.push_back ( "1" );
+    else
+      argv.push_back ( "0" );
     argv.push_back ( 0 );
     pid_t pid = fork();
 
@@ -572,7 +581,8 @@ startSendingClient ( brokerVector brokers,
                        char const *  senderPath,
                        char const *  nMessages,
                        char const *  reportFrequency,
-                       int verbosity
+                       int verbosity,
+                       int durability
                      ) 
 {
     string name("sender");
@@ -596,6 +606,10 @@ startSendingClient ( brokerVector brokers,
     argv.push_back ( nMessages );
     argv.push_back ( reportFrequency );
     argv.push_back ( verbosityStr );
+    if ( durability )
+      argv.push_back ( "1" );
+    else
+      argv.push_back ( "0" );
     argv.push_back ( 0 );
 
     pid_t pid = fork();
@@ -623,14 +637,18 @@ startSendingClient ( brokerVector brokers,
 #define ERROR_KILLING_BROKER  8
 
 
+// If you want durability, use the "dir" option of "moduleOrDir" .
+
+
 int
 main ( int argc, char const ** argv ) 
 {    
-    if ( argc != 8 ) {
+    if ( argc != 9 ) {
         cerr << "Usage: "
              << argv[0]
-             << "moduleOrDir declareQueuesPath senderPath receiverPath nMessages reportFrequency verbosity"
+             << "moduleOrDir declareQueuesPath senderPath receiverPath nMessages reportFrequency verbosity durable"
              << endl;
+        cerr << "\tverbosity is an integer, durable is 0 or 1\n";
         return BAD_ARGS;
     }
     signal ( SIGCHLD, childExit );
@@ -643,6 +661,7 @@ main ( int argc, char const ** argv )
     char const * nMessages          = argv[i++];
     char const * reportFrequency    = argv[i++];
     int          verbosity          = atoi(argv[i++]);
+    int          durable            = atoi(argv[i++]);
 
     char const * host               = "127.0.0.1";
     int maxBrokers = 50;
@@ -665,7 +684,8 @@ main ( int argc, char const ** argv )
         startNewBroker ( brokers,
                          moduleOrDir, 
                          clusterName,
-                         verbosity ); 
+                         verbosity,
+                         durable ); 
     }
 
 
@@ -675,7 +695,7 @@ main ( int argc, char const ** argv )
      // Run the declareQueues child.
      int childStatus;
      pid_t dqClientPid = 
-     runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity );
+     runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity, durable );
      if ( -1 == dqClientPid ) {
          cerr << "END_OF_TEST ERROR_START_DECLARE_1\n";
          return CANT_FORK_DQ;
@@ -711,7 +731,8 @@ main ( int argc, char const ** argv )
                             senderPath, 
                             nMessages,
                             reportFrequency,
-                            verbosity );
+                            verbosity,
+                            durable );
      if ( -1 == sendingClientPid ) {
          cerr << "END_OF_TEST ERROR_START_SENDER\n";
          return CANT_FORK_SENDER;
@@ -757,7 +778,8 @@ main ( int argc, char const ** argv )
          startNewBroker ( brokers,
                           moduleOrDir, 
                           clusterName,
-                          verbosity ); 
+                          verbosity,
+                          durable ); 
        
          if ( verbosity > 1 )
              printBrokers ( brokers );

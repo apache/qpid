@@ -33,14 +33,15 @@ using namespace std;
 int main(int argc, char ** argv) 
 {
     ConnectionSettings settings;
-    if ( argc != 3 )
+    if ( argc != 4 )
     {
-      cerr << "Usage: declare_queues host port\n";
+      cerr << "Usage: declare_queues host port durability\n";
       return 1;
     }
 
     settings.host = argv[1];
     settings.port = atoi(argv[2]);
+    int durability = atoi(argv[3]);
     
     FailoverManager connection(settings);
     try {
@@ -48,7 +49,10 @@ int main(int argc, char ** argv)
         while (!complete) {
             Session session = connection.connect().newSession();
             try {
-                session.queueDeclare(arg::queue="message_queue");
+                if ( durability )
+                  session.queueDeclare(arg::queue="message_queue", arg::durable=true);
+                else
+                  session.queueDeclare(arg::queue="message_queue");
                 complete = true;
             } catch (const qpid::TransportFailure&) {}
         }

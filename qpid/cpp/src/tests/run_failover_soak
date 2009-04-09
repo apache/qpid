@@ -49,6 +49,7 @@ MODULES=../.libs
 MESSAGES=${MESSAGES:-300000}
 REPORT_FREQUENCY=${REPORT_FREQUENCY:-`expr $MESSAGES / 20`}
 VERBOSITY=${VERBOSITY:-1}
+DURABILITY=${DURABILITY:-0}
 
-exec ./failover_soak $MODULES ./declare_queues ./replaying_sender ./resuming_receiver $MESSAGES $REPORT_FREQUENCY $VERBOSITY
+exec ./failover_soak $MODULES ./declare_queues ./replaying_sender ./resuming_receiver $MESSAGES $REPORT_FREQUENCY $VERBOSITY $DURABILITY
 
