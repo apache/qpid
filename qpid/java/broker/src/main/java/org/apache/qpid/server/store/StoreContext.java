@@ -66,7 +66,7 @@ public class StoreContext
         _name = name;
         _async = asynchrouous;
         _inTransaction = false;
-        _dequeueMap = Collections.synchronizedMap(new HashMap<Long, List<AMQQueue>>());
+        _dequeueMap = new HashMap<Long, List<AMQQueue>>();
     }
 
     public StoreContext(boolean asynchronous)
@@ -115,13 +115,10 @@ public class StoreContext
     {
         List<AMQQueue> dequeues = _dequeueMap.get(messageId);
 
-        synchronized (_dequeueMap)
+        if (dequeues == null)
         {
-            if (dequeues == null)
-            {
-                dequeues = Collections.synchronizedList(new ArrayList<AMQQueue>());
-                _dequeueMap.put(messageId, dequeues);
-            }
+            dequeues = new ArrayList<AMQQueue>();
+            _dequeueMap.put(messageId, dequeues);
         }
 
         dequeues.add(queue);
