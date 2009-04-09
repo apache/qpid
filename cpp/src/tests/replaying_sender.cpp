@@ -40,9 +40,10 @@ class Sender : public FailoverManager::Command
   public:
     Sender(const std::string& queue, uint count, uint reportFreq);
     void execute(AsyncSession& session, bool isRetry);
-    uint getSent();
+    uint getSent(); 
 
-    int verbosity;
+    void setVerbosity   ( int v ) { verbosity   = v; }
+    void setPersistence ( int p ) { persistence = p; }
 
   private:
     MessageReplayTracker sender;
@@ -51,9 +52,11 @@ class Sender : public FailoverManager::Command
     const uint reportFrequency;
     Message message;
     
+    int verbosity;
+    int persistence;
 };
 
-Sender::Sender(const std::string& queue, uint count_, uint reportFreq ) : sender(10), count(count_), sent(0), reportFrequency(reportFreq)
+Sender::Sender(const std::string& queue, uint count_, uint reportFreq ) : sender(10), count(count_), sent(0), reportFrequency(reportFreq), verbosity(0), persistence(0)
 {
     message.getDeliveryProperties().setRoutingKey(queue);
 }
@@ -69,6 +72,9 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         message_data << ++sent;
         message.setData(message_data.str());
         message.getHeaders().setInt("sn", sent);
+        if ( persistence )
+          message.getDeliveryProperties().setDeliveryMode(PERSISTENT);
+
         sender.send(message);
         if (count > reportFrequency && !(sent % reportFrequency)) {
             if ( verbosity > 0 )
@@ -91,9 +97,9 @@ int main(int argc, char ** argv)
 {
     ConnectionSettings settings;
 
-    if ( argc != 6 )
+    if ( argc != 7 )
     {
-      std::cerr << "Usage: replaying_sender host port n_messages report_frequency verbosity\n";
+      std::cerr << "Usage: replaying_sender host port n_messages report_frequency verbosity persistence\n";
       return 1;
     }
 
@@ -102,10 +108,12 @@ int main(int argc, char ** argv)
     int n_messages      = atoi(argv[3]);
     int reportFrequency = atoi(argv[4]);
     int verbosity       = atoi(argv[5]);
+    int persistence     = atoi(argv[6]);
 
     FailoverManager connection(settings);
     Sender sender("message_queue", n_messages, reportFrequency );
-    sender.verbosity = verbosity;
+    sender.setVerbosity   ( verbosity   );
+    sender.setPersistence ( persistence );
     try {
         connection.execute ( sender );
         if ( verbosity > 0 )
