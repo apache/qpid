@@ -47,6 +47,13 @@ public interface LoggingManagement
                     description = "The log4j xml configuration file LogWatch interval (in seconds). 0 indicates not being checked.")
     Integer getLog4jLogWatchInterval();
     
+    /**
+     * Attribute to represent the available log4j logger output levels.
+     * @return The logging level names.
+     */
+    @MBeanAttribute(name="AvailableLoggerLevels", description = "The values to which log output level can be set.")
+    String[] getAvailableLoggerLevels();
+    
     
     //****** log4j runtime operations ****** //
 
