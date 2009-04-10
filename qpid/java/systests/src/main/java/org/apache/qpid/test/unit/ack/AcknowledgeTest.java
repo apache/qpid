@@ -31,14 +31,15 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AcknowledgeTest extends QpidTestCase
 {
-    private static final int NUM_MESSAGES = 50;
-    private Connection _con;
-    private Queue _queue;
+    protected static int NUM_MESSAGES = 100;
+    protected Connection _con;
+    protected Queue _queue;
     private MessageProducer _producer;
     private Session _producerSession;
 	private Session _consumerSession;
