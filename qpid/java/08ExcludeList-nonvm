@@ -30,7 +30,7 @@ org.apache.qpid.test.unit.message.UTF8Test#*
 org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait
 
 // This test currently does not pick up the runtime location of the nonVm queueBacking store.
-org.apache.qpid.test.unit.client.close.FlowToDiskBackingQueueDeleteTest#*
+org.apache.qpid.test.unit.close.FlowToDiskBackingQueueDeleteTest#*
 
 // This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
 org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
