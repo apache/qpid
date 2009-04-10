@@ -68,13 +68,16 @@ public class BaseTransactionLog implements TransactionLog
                 _logger.info("Recording Enqueue of (" + messageId + ") on queue:" + queues);
             }
             
-            //list to hold which new queues to enqueue the message on
-            ArrayList<AMQQueue> toEnqueueList = new ArrayList<AMQQueue>();
+            //variable to hold which new queues to enqueue the message on
+            ArrayList<AMQQueue> toEnqueueList = null;
             
             List<AMQQueue> enqueuedList = _idToQueues.get(messageId);
             if (enqueuedList != null)
             {
                 //There are previous enqueues for this messageId
+                //create new empty list to hold additions
+                toEnqueueList = new ArrayList<AMQQueue>();
+                
                 synchronized (enqueuedList)
                 {
                     for(AMQQueue queue : queues)
