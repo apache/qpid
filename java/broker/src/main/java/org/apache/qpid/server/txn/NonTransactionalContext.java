@@ -158,7 +158,7 @@ public class NonTransactionalContext implements TransactionalContext
         else
         {
             QueueEntry queueEntry;
-            queueEntry = unacknowledgedMessageMap.get(deliveryTag);
+            queueEntry = unacknowledgedMessageMap.remove(deliveryTag);
 
             if (debug)
             {
@@ -186,9 +186,6 @@ public class NonTransactionalContext implements TransactionalContext
             // If the message is persistent and this is the last QueueEntry that uses it then the data will be removed
             // from the transaciton log
             queueEntry.dequeueAndDelete(_storeContext);
-
-            unacknowledgedMessageMap.remove(deliveryTag);
-
 
         }
         if(_inTran)
