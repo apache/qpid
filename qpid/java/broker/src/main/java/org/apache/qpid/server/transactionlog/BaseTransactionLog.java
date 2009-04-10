@@ -98,7 +98,7 @@ public class BaseTransactionLog implements TransactionLog
             else
             {
                 //No existing list, add all provided queues (cloning toEnqueueList in case someone else changes original).
-                toEnqueueList.addAll(queues);
+                toEnqueueList = queues;
                 _idToQueues.put(messageId, Collections.synchronizedList((ArrayList<AMQQueue>)toEnqueueList.clone()));
             }
 
