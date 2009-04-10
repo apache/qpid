@@ -138,16 +138,39 @@ public class FileQueueBackingStoreFactory implements QueueBackingStoreFactory
         return createStore(name, 0);
     }
 
+    /**
+     * Returns a hash code for non-null Object x.
+     * Uses the same hash code spreader as most other java.util hash tables.
+     *
+     * Borrowed from the Apache Harmony project
+     * @param x the object serving as a key
+     * @return the hash code
+     */
+    public static int hash(Object x) {
+        int h = x.hashCode();
+        h += ~(h << 9);
+        h ^=  (h >>> 14);
+        h +=  (h << 4);
+        h ^=  (h >>> 10);
+        return h;
+    }
+
     private String createStore(String name, int index)
     {
 
-        String store = _flowToDiskLocation + File.separator + name;
+        int hash = hash(name);
+
+        long bin = hash & 0xFFL;
+
+        String store = _flowToDiskLocation + File.separator + bin + File.separator + name;
+
         if (index > 0)
         {
             store += "-" + index;
         }
 
-        //TODO ensure store is safe for the OS
+        //TODO ensure name is safe for the OS i.e. on OSX you can't have any ':'
+        // Does java take care of this?
 
         File storeFile = new File(store);
 
@@ -156,7 +179,12 @@ public class FileQueueBackingStoreFactory implements QueueBackingStoreFactory
             return createStore(name, index + 1);
         }
 
-        storeFile.mkdirs();
+        // Ensure we report an error if we cannot create the backing store.
+        if (!storeFile.mkdirs())
+        {
+            _log.error("Unable to create queue backing directory for queue:" + name);
+            throw new RuntimeException("Unable to create queue backing directory for queue:" + name);
+        }
 
         storeFile.deleteOnExit();
 
