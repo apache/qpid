@@ -24,7 +24,6 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
@@ -53,22 +52,26 @@ import java.util.Hashtable;
  */
 public class QueueDepthWithSelectorTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(QueueDepthWithSelectorTest.class);
+    protected static final Logger _logger = Logger.getLogger(QueueDepthWithSelectorTest.class);
 
     protected final String BROKER = "vm://:1";
     protected final String VHOST = "test";
     protected final String QUEUE = this.getClass().getName();
 
-    private Context _context;
+    protected Context _context;
 
-    private Connection _clientConnection, _producerConnection;
-    private Session _clientSession, _producerSession;
-    private MessageProducer _producer;
+    protected Connection _clientConnection;
+    protected Connection _producerConnection;
+    private Session _clientSession;
+    protected Session _producerSession;
+    protected MessageProducer _producer;
     private MessageConsumer _consumer;
 
-    private static final int MSG_COUNT = 50;
+    protected static int MSG_COUNT = 50;
 
-    private Message[] _messages = new Message[MSG_COUNT];
+    protected Message[] _messages = new Message[MSG_COUNT];
+
+    protected Queue _queue;
 
     protected void setUp() throws Exception
     {
@@ -96,6 +99,9 @@ public class QueueDepthWithSelectorTest extends TestCase
 
         _context = factory.getInitialContext(env);
 
+        _messages = new Message[MSG_COUNT];
+        _queue = (Queue) _context.lookup("queue");
+        init();
     }
 
     protected void tearDown() throws Exception
@@ -120,8 +126,6 @@ public class QueueDepthWithSelectorTest extends TestCase
 
     public void test() throws Exception
     {
-
-        init();
         //Send messages
         _logger.info("Starting to send messages");
         for (int msg = 0; msg < MSG_COUNT; msg++)
@@ -134,34 +138,32 @@ public class QueueDepthWithSelectorTest extends TestCase
 
         //Verify we get all the messages.
         _logger.info("Verifying messages");
-        verifyAllMessagesRecevied();
+        verifyAllMessagesRecevied(0);
 
         //Close the connection.. .giving the broker time to clean up its state.
         _clientConnection.close();
 
         //Verify Broker state
         _logger.info("Verifying broker state");
-        verifyBrokerState();
+        verifyBrokerState(0);
     }
 
-    private void init() throws NamingException, JMSException
+    protected void init() throws NamingException, JMSException, AMQException
     {
-        _messages = new Message[MSG_COUNT];
-
         //Create Producer
         _producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
         _producerConnection.start();
         _producerSession = _producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _producer = _producerSession.createProducer((Queue) _context.lookup("queue"));
+        _producer = _producerSession.createProducer(_queue);
 
         // Create consumer
         _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
         _clientConnection.start();
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        _consumer = _clientSession.createConsumer((Queue) _context.lookup("queue"), "key = 23");
+        _consumer = _clientSession.createConsumer(_queue, "key = 23");
     }
 
-    private void verifyBrokerState()
+    protected void verifyBrokerState(int expectedDepth)
     {
         try
         {
@@ -177,14 +179,10 @@ public class QueueDepthWithSelectorTest extends TestCase
         try
         {
             Thread.sleep(2000);
-            long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _context.lookup("queue"));
-            assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
+            long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _queue);
+            assertEquals("Session reports Queue depth not as expected", expectedDepth, queueDepth);
         }
         catch (InterruptedException e)
-        {
-            fail(e.getMessage());
-        }
-        catch (NamingException e)
         {
             fail(e.getMessage());
         }
@@ -206,7 +204,7 @@ public class QueueDepthWithSelectorTest extends TestCase
 
     }
 
-    private void verifyAllMessagesRecevied() throws Exception
+    protected void verifyAllMessagesRecevied(int expectedDepth) throws Exception
     {
 
         boolean[] msgIdRecevied = new boolean[MSG_COUNT];
@@ -216,8 +214,9 @@ public class QueueDepthWithSelectorTest extends TestCase
             _messages[i] = _consumer.receive(1000);
             assertNotNull("should have received a message but didn't", _messages[i]);
         }
-        long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _context.lookup("queue"));
-        assertEquals("Session reports Queue depth not as expected", 0, queueDepth);
+
+        long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _queue);
+        assertEquals("Session reports Queue depth not as expected", expectedDepth, queueDepth);
 
         //Check received messages
         int msgId = 0;
@@ -246,8 +245,7 @@ public class QueueDepthWithSelectorTest extends TestCase
      *
      * @throws JMSException
      */
-
-    private Message nextMessage(int msgNo) throws JMSException
+    protected Message nextMessage(int msgNo) throws JMSException
     {
         Message send = _producerSession.createTextMessage("MessageReturnTest");
         send.setIntProperty("ID", msgNo);
