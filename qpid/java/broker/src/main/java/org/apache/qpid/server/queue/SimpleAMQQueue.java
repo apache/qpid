@@ -823,6 +823,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
         TransactionLog transactionLog = getVirtualHost().getTransactionLog();
+        
+        if (toQueue.equals(this))
+        {
+            //nothing to do here, message is already at the requested destination
+            return;
+        }
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -848,19 +854,24 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Move the messages in the transaction log.
             for (QueueEntry entry : entries)
             {
-                if (entry.isPersistent() && toQueue.isDurable())
+                if (entry.isPersistent())
                 {
                     //FIXME
                     //fixme
-                    ArrayList list = new ArrayList();
+                    
+                    // Creating a list with the destination queue AND the current queue.
+                    // This is a hack to ensure a reference is kept in the TLog to the new destination when dequeing 
+                    // the old destination below, thus preventing incorrect removal of the message from the store
+                    ArrayList<AMQQueue> list = new ArrayList<AMQQueue>();
                     list.add(toQueue);
+                    list.add(this);
                     transactionLog.enqueueMessage(storeContext, list, entry.getMessageId());
                 }
                 // dequeue will remove the messages from the queue
                 entry.dequeue(storeContext);
             }
 
-            // Commit and flush the move transcations.
+            // Commit and flush the move transactions.
             try
             {
                 transactionLog.commitTran(storeContext);
@@ -891,7 +902,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 toQueue.enqueue(storeContext, entry.getMessage());
                 // As we only did a dequeue above now that we have moved the message we should perform a delete.
                 // We cannot do this earlier as the message will be lost if flowed.
-                //entry.delete();
+                entry.delete();
             }
         }
         catch (MessageCleanupException e)
@@ -913,6 +924,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
         TransactionLog transactionLog = getVirtualHost().getTransactionLog();
 
+        if (toQueue.equals(this))
+        {
+            //nothing to do here, message is already at the requested destination
+            return;
+        }
+        
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
 
@@ -944,11 +961,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Move the messages in on the transaction log.
             for (QueueEntry entry : entries)
             {
-                if (!entry.isDeleted() && entry.isPersistent() && toQueue.isDurable())
+                if (!entry.isDeleted() && entry.isPersistent())
                 {
                     //fixme
                     //FIXME
+                    
+                    // Creating a list with the destination queue AND the current queue.
+                    // This is a hack to ensure a reference is kept in the TLog to the old destination when enqueing 
                     ArrayList list = new ArrayList();
+                    list.add(this);
                     list.add(toQueue);
                     transactionLog.enqueueMessage(storeContext, list, entry.getMessageId());
                 }

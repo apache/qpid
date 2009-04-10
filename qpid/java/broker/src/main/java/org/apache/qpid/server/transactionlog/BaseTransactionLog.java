@@ -67,12 +67,47 @@ public class BaseTransactionLog implements TransactionLog
             {
                 _logger.info("Recording Enqueue of (" + messageId + ") on queue:" + queues);
             }
+            
+            //list to hold which new queues to enqueue the message on
+            ArrayList<AMQQueue> toEnqueueList = new ArrayList<AMQQueue>();
+            
+            List<AMQQueue> enqueuedList = _idToQueues.get(messageId);
+            if (enqueuedList != null)
+            {
+                //There are previous enqueues for this messageId
+                synchronized (enqueuedList)
+                {
+                    for(AMQQueue queue : queues)
+                    {
+                        if(!enqueuedList.contains(queue))
+                        {
+                            //update the old list.
+                            enqueuedList.add(queue);
+                            //keep track of new enqueues to be made
+                            toEnqueueList.add(queue);
+                        }
+                    }
+                }
+                
+                if(toEnqueueList.isEmpty())
+                {
+                    //no new queues to enqueue message on
+                    return;
+                }
+            }
+            else
+            {
+                //No existing list, add all provided queues (cloning toEnqueueList in case someone else changes original).
+                toEnqueueList.addAll(queues);
+                _idToQueues.put(messageId, Collections.synchronizedList((ArrayList<AMQQueue>)toEnqueueList.clone()));
+            }
 
-            //Clone the list incase someone else changes it.
-            _idToQueues.put(messageId, Collections.synchronizedList((ArrayList<AMQQueue>)queues.clone()));
+            _delegate.enqueueMessage(context, toEnqueueList, messageId);
         }
-
-        _delegate.enqueueMessage(context, queues, messageId);
+        else
+        {
+            _delegate.enqueueMessage(context, queues, messageId);
+        }
     }
 
     public void dequeueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
