@@ -64,3 +64,6 @@ org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
 // This test currently does not pick up the runtime location of the nonVm queueBacking store.
 org.apache.qpid.test.unit.client.close.FlowToDiskBackingQueueDeleteTest#*
 
+// This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
+org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
+
