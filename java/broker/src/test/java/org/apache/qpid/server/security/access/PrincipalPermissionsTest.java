@@ -107,7 +107,16 @@ public class PrincipalPermissionsTest extends TestCase
         _perms.grant(Permission.CREATEQUEUE, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
     }
-    
+
+     public void testQueueCreateWithNullRoutingKey()
+    {
+        Object[] grantArgs = new Object[]{_temporary , _queueName, _exchangeName, null};
+        Object[] authArgs = new Object[]{_autoDelete, _queueName};
+
+        assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
+        _perms.grant(Permission.CREATEQUEUE, grantArgs);
+        assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
+    }
     
     // FIXME disabled, this fails due to grant putting the grant into the wrong map QPID-1598
     public void disableTestExchangeCreate()
