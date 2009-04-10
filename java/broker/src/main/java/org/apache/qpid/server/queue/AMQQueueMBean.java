@@ -443,7 +443,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         list.add("JMSCorrelationID = " + headerProperties.getCorrelationIdAsString());
 
         int delMode = headerProperties.getDeliveryMode();
-        list.add("JMSDeliveryMode = " + ((delMode == 1) ? "Persistent" : "Non_Persistent"));
+        list.add("JMSDeliveryMode = " +
+                ((delMode == BasicContentHeaderProperties.PERSISTENT) ? "Persistent" : "Non_Persistent"));
 
         list.add("JMSPriority = " + headerProperties.getPriority());
         list.add("JMSType = " + headerProperties.getType());

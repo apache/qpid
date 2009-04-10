@@ -120,8 +120,8 @@ public class TransientMessageData
 
     public boolean isPersistent()
     {
-        //todo remove literal values to a constant file such as AMQConstants in common
         return _contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+             ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 
+                                                         BasicContentHeaderProperties.PERSISTENT;
     }
 }

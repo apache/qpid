@@ -116,7 +116,8 @@ public class FileQueueBackingStore implements QueueBackingStore
             mmd.setArrivalTime(arrivaltime);
 
             AMQMessage message;
-            if (((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 2)
+            if (((BasicContentHeaderProperties) chb.properties).getDeliveryMode() == 
+                                                BasicContentHeaderProperties.PERSISTENT)
             {
                 message = new PersistentAMQMessage(messageId, null);
             }
