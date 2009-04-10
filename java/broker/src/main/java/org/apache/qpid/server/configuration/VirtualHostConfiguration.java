@@ -156,7 +156,7 @@ public class VirtualHostConfiguration
 
     public long getMemoryUsageMaximum()
     {
-        return _config.getLong("queues.maximumMemoryUsage", 0);
+        return _config.getLong("queues.maximumMemoryUsage", 100 * 1024 * 1024);
     }
 
     public long getMemoryUsageMinimum()

@@ -110,11 +110,11 @@ public class QueueConfiguration
 
     public long getMemoryUsageMaximum()
     {
-        return _config.getLong("maximumMemoryUsage", 100 * 1024 * 1024); //100Meg
+        return _config.getLong("maximumMemoryUsage", _vHostConfig.getMemoryUsageMaximum());
     }
 
     public long getMemoryUsageMinimum()
     {
-        return _config.getLong("minimumMemoryUsage", 0);
+        return _config.getLong("minimumMemoryUsage", _vHostConfig.getMemoryUsageMinimum());
     }
 }
