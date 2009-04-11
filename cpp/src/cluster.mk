@@ -56,6 +56,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/Dispatchable.h			\
   qpid/cluster/UpdateClient.cpp			\
   qpid/cluster/UpdateClient.h			\
+  qpid/cluster/ErrorCheck.cpp			\
+  qpid/cluster/ErrorCheck.h			\
   qpid/cluster/Event.cpp			\
   qpid/cluster/Event.h				\
   qpid/cluster/EventFrame.h			\
@@ -70,6 +72,7 @@ cluster_la_SOURCES =				\
   qpid/cluster/Multicaster.h			\
   qpid/cluster/McastFrameHandler.h		\
   qpid/cluster/NoOpConnectionOutputHandler.h	\
+  qpid/cluster/StallConnectionOutputHandler.h	\
   qpid/cluster/OutputInterceptor.cpp		\
   qpid/cluster/OutputInterceptor.h		\
   qpid/cluster/PollerDispatch.cpp		\

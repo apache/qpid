@@ -23,6 +23,7 @@
 #include "ClusterSettings.h"
 #include "Cpg.h"
 #include "Decoder.h"
+#include "ErrorCheck.h"
 #include "Event.h"
 #include "EventFrame.h"
 #include "ExpiryPolicy.h"
@@ -105,6 +106,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     void deliverFrame(const EventFrame&);
 
+    // Called in deliverFrame thread to indicate an error from the broker.
+    void flagError(Connection&, ErrorCheck::ErrorType);
+    void connectionError();
+
     // Called only during update by Connection::shadowReady
     Decoder& getDecoder() { return decoder; }
 
@@ -132,13 +137,15 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // == Called in deliverFrameQueue thread
     void deliveredFrame(const EventFrame&); 
+    void processFrame(const EventFrame&, Lock&); 
 
     // Cluster controls implement XML methods from cluster.xml.
     void updateRequest(const MemberId&, const std::string&, Lock&);
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
-    void configChange(const MemberId&, const std::string& addresses, Lock& l);
+    void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
+    void errorCheck(const MemberId&, uint8_t, uint64_t, Lock&);
     void shutdown(const MemberId&, Lock&);
 
     // Helper functions
@@ -216,11 +223,13 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Decoder decoder;
     bool discarding;
     
+
     // Remaining members are protected by lock.
-    // FIXME aconway 2009-03-06: Most of these members are also only used in
+
+    // TODO aconway 2009-03-06: Most of these members are also only used in
     // deliverFrameQueue thread or during stall. Review and separate members
     // that require a lock, drop lock when not needed.
-    // 
+
     mutable sys::Monitor lock;
 
 
@@ -243,7 +252,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     bool lastBroker;
     sys::Thread updateThread;
     boost::optional<ClusterMap> updatedMap;
-
+    ErrorCheck error;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;

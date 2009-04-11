@@ -32,8 +32,9 @@ namespace cluster {
 
 using namespace framing;
 
-OutputInterceptor::OutputInterceptor(
-    cluster::Connection& p, sys::ConnectionOutputHandler& h)
+NoOpConnectionOutputHandler OutputInterceptor::discardHandler;
+
+OutputInterceptor::OutputInterceptor(Connection& p, sys::ConnectionOutputHandler& h)
     : parent(p), closing(false), next(&h), sent(),
       writeEstimate(p.getCluster().getWriteEstimate()),
       moreOutput(), doingOutput()
@@ -111,10 +112,10 @@ void OutputInterceptor::sendDoOutput() {
     QPID_LOG(trace, parent << "Send doOutput request for " << request);
 }
 
-void OutputInterceptor::closeOutput(sys::ConnectionOutputHandler& h) {
+void OutputInterceptor::closeOutput() {
     sys::Mutex::ScopedLock l(lock);
     closing = true;
-    next = &h;
+    next = &discardHandler;
 }
 
 void OutputInterceptor::close() {

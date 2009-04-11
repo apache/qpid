@@ -220,61 +220,11 @@ struct children : public vector<child *>
         cout << "\n\n\n\n";
     }
 
-
-    /* 
-       Only call this if you already know there is at least 
-       one child still running.  Supply a time in seconds.
-       If it has been at least that long since a shild stopped
-       running, we judge the system to have hung.
-    */
-    int
-    hanging ( int hangTime )
-    {
-        struct timeval now,
-                       duration;
-        gettimeofday ( &now, 0 );
-
-        int how_many_hanging = 0;
-
-        vector<child *>::iterator i;
-        for ( i = begin(); i != end(); ++ i )
-        {
-            //Not in POSIX
-            //timersub ( & now, &((*i)->startTime), & duration );
-            duration.tv_sec = now.tv_sec - (*i)->startTime.tv_sec;
-            duration.tv_usec = now.tv_usec - (*i)->startTime.tv_usec;
-            if (duration.tv_usec < 0) {
-                --duration.tv_sec;
-                duration.tv_usec += 1000000;
-            }
-
-            if ( (COMPLETED != (*i)->status)     // child isn't done running
-                  &&
-                 ( duration.tv_sec >= hangTime ) // it's been too long
-               )
-            {
-                std::cerr << "Child of type " 
-                          << (*i)->type 
-                          << " hanging.   "
-                          << "PID is "
-                          << (*i)->pid
-                          << endl;
-                ++ how_many_hanging;
-            }
-        }
-        
-        return how_many_hanging;
-    }
-    
-
     int verbosity;
 };
 
 
-
 children allMyChildren;
-
-
 
 
 void 
@@ -389,6 +339,7 @@ startNewBroker ( brokerVector & brokers,
         ("--log-prefix")
         (prefix.str())
         ("--log-to-file")
+        ("--log-enable=error+")
         (prefix.str()+".log");
 
     if (endsWith(moduleOrDir, "cluster.so")) {
@@ -816,16 +767,6 @@ main ( int argc, char const ** argv )
              killAllBrokers ( brokers, 5 );
              std::cerr << "END_OF_TEST ERROR_CLIENT\n";
              return ERROR_ON_CHILD;
-         }
-
-         // If one is hanging, quit.
-         if ( allMyChildren.hanging ( 120 ) )
-         {
-             /*
-              * Don't kill any processes.  Leave alive for questioning.
-              * */
-             std::cerr << "END_OF_TEST ERROR_HANGING\n";
-             return HANGING;
          }
 
          if ( verbosity > 1 ) {

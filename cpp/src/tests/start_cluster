@@ -28,15 +28,17 @@ with_ais_group() {
     echo $* | newgrp ais
 }
 
-rm -f cluster*.log
-SIZE=${1:-1}; shift
+rm -f cluster*.log cluster.ports qpidd.port
+
+SIZE=${1:-3}; shift
 CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.
-OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --no-data-dir --auth=no $@"
+OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --auth=no $@"
 
 for (( i=0; i<SIZE; ++i )); do
-    PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS`  || exit 1
+    DDIR=`mktemp -d /tmp/start_cluster.XXXXXXXXXX`
+    PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS  --data-dir=$DDIR`  || exit 1
     echo $PORT >> cluster.ports
 done
 
-head cluster.ports > qpidd.port	# First member's port for tests.
+head -n 1 cluster.ports > qpidd.port	# First member's port for tests.
 

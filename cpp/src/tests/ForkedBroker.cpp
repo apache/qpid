@@ -20,11 +20,16 @@
  */
 
 #include "ForkedBroker.h"
+#include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <signal.h>
+
+using namespace std;
+using qpid::ErrnoException;
 
 ForkedBroker::ForkedBroker(const Args& args) { init(args); }
 
@@ -42,14 +47,25 @@ void ForkedBroker::kill(int sig) {
     pid = 0;                // Reset pid here in case of an exception.
     using qpid::ErrnoException;
     if (::kill(savePid, sig) < 0) 
-        throw ErrnoException("kill failed");
+            throw ErrnoException("kill failed");
     int status;
     if (::waitpid(savePid, &status, 0) < 0 && sig != 9) 
         throw ErrnoException("wait for forked process failed");
     if (WEXITSTATUS(status) != 0 && sig != 9) 
         throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
 }
+        
+namespace std {
+static ostream& operator<<(ostream& o, const ForkedBroker::Args& a) {
+    copy(a.begin(), a.end(), ostream_iterator<string>(o, " "));
+    return o;
+}
 
+bool isLogOption(const std::string& s) {
+    return boost::starts_with(s, "--log-enable") || boost::starts_with(s, "--trace");
+}
+
+}
         
 void ForkedBroker::init(const Args& userArgs) {
     using qpid::ErrnoException;
@@ -70,17 +86,19 @@ void ForkedBroker::init(const Args& userArgs) {
     }
     else {                  // child
         ::close(pipeFds[0]);
-        // FIXME aconway 2009-02-12: 
         int fd = ::dup2(pipeFds[1], 1); // pipe stdout to the parent.
         if (fd < 0) throw ErrnoException("dup2 failed");
         const char* prog = "../qpidd";
         Args args(userArgs);
         args.push_back("--port=0");
-        if (!::getenv("QPID_TRACE") && !::getenv("QPID_LOG_ENABLE"))
-            args.push_back("--log-enable=error+"); // Keep quiet except for errors.
+        // Keep quiet except for errors.
+        if (!::getenv("QPID_TRACE") && !::getenv("QPID_LOG_ENABLE")
+            && find_if(userArgs.begin(), userArgs.end(), isLogOption) == userArgs.end())
+            args.push_back("--log-enable=error+"); 
         std::vector<const char*> argv(args.size());
         std::transform(args.begin(), args.end(), argv.begin(), boost::bind(&std::string::c_str, _1));
         argv.push_back(0);
+        QPID_LOG(debug, "ForkedBroker exec " << prog << ": " << args);
         execv(prog, const_cast<char* const*>(&argv[0]));
         throw ErrnoException("execv failed");
     }

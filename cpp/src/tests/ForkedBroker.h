@@ -53,6 +53,7 @@ class ForkedBroker {
     ~ForkedBroker();
 
     void kill(int sig=SIGINT);
+    int wait();                 // Wait for exit, return exit status.
     uint16_t getPort() { return port; }
     pid_t getPID() { return pid; }
 

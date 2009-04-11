@@ -48,6 +48,19 @@
       <field name="id" type="uint64"/>
     </control>
     
+    <domain name="error-type" type="uint8" label="Types of error">
+      <enum>
+	<choice name="none" value="0"/>
+	<choice name="session" value="1"/>
+	<choice name="connection" value="2"/>
+      </enum>
+    </domain>
+	
+    <control name="error-check" code="0x13">
+      <field name="type" type="error-type"/>
+      <field name="frame-seq" type="uint64"/>
+    </control>
+    
     <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
 
   </class>
@@ -132,6 +145,7 @@
     <control name="membership" code="0x21" label="Cluster membership details.">
       <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
+      <field name="frame-seq" type="uint64"/>	 <!-- frame sequence number -->
     </control>
 
     <!-- Set the position of a replicated queue. -->
@@ -146,5 +160,6 @@
 
     <!-- Set expiry-id for subsequent messages. -->
     <control name="expiry-id" code="0x33"><field name="expiry-id" type="uint64"/></control>
+
   </class>
 </amqp>

@@ -23,6 +23,7 @@
 # failures:
 srcdir=`dirname $0`
 PYTHON_DIR=$srcdir/../../../python
+export PYTHONPATH=$PYTHON_DIR
 
 trap stop_brokers INT EXIT
 
