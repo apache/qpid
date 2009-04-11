@@ -633,6 +633,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         // Ensure we only try and close an open session.
         if (!_closed.getAndSet(true))
         {
+            _closing.set(true);
             synchronized (getFailoverMutex())
             {
                 // We must close down all producers and consumers in an orderly fashion. This is the only method
@@ -644,8 +645,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
                     try
                     {
-                        // IF we are closing then send the close.
-                        if (_connection.isClosing())
+                        // If the connection is open or we are in the process
+                        // of closing the connection then send a cance
+                        // no point otherwise as the connection will be gone
+                        if (!_connection.isClosed() || _connection.isClosing())                        
                         {
                             sendClose(timeout);
                         }
