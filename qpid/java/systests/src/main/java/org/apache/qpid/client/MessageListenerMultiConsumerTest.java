@@ -197,13 +197,15 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
         {
             _logger.info("Performing Receive only with two consumers on one session ");
 
-            MessageConsumer consumer2 = _clientSession1.createConsumer(_queue);
+            //Create a new consumer on session one that we don't use
+            _clientSession1.createConsumer(_queue);
 
             int msg;
             for (msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-
+                // Attempt to receive up to half the messages
+                // The other half may have gone to the consumer above
                 final Message message = _consumer1.receive(1000);
                 if(message == null)
                 {
@@ -213,8 +215,12 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
             }
 
             _consumer1.close();
+            // This will close the unused consumer above.
             _clientSession1.close();
 
+
+            // msg will now have recorded the number received on session 1
+            // attempt to retrieve the rest on session 2
             for (; msg < MSG_COUNT ; msg++)
             {
                 assertTrue("Failed at msg id" + msg, _consumer2.receive(1000) != null);
