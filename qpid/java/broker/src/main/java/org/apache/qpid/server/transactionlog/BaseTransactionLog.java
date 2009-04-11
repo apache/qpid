@@ -79,36 +79,6 @@ public class BaseTransactionLog implements TransactionLog
     {
         context.dequeueMessage(queue, messageId);
 
-        if (context.inTransaction())
-        {
-
-            Map<Long, List<AMQQueue>> messageMap = context.getDequeueMap();
-
-            //For each Message ID that is in the map check
-            Set<Long> messageIDs = messageMap.keySet();
-
-            if (_logger.isInfoEnabled())
-            {
-                _logger.info("Pre-Processing single dequeue of:" + messageIDs);
-            }
-
-            Iterator iterator = messageIDs.iterator();
-
-            while (iterator.hasNext())
-            {
-                Long messageID = (Long) iterator.next();
-                //If we don't have a gloabl reference for this message then there is only a single enqueue
-                //can check here to see if this is the last reference?
-                if (_idToQueues.get(messageID) == null)
-                {
-                    // Add the removal of the message to this transaction
-                    _delegate.removeMessage(context, messageID);
-                    // Remove this message ID as we have processed it so we don't reprocess after the main commmit
-                    iterator.remove();
-                }
-            }
-        }
-
         _delegate.dequeueMessage(context, queue, messageId);
 
         if (!context.inTransaction())
@@ -137,6 +107,35 @@ public class BaseTransactionLog implements TransactionLog
 
     public void commitTran(StoreContext context) throws AMQException
     {
+
+        Map<Long, List<AMQQueue>> messageMap = context.getDequeueMap();
+
+        //For each Message ID that is in the map check
+        Set<Long> messageIDs = messageMap.keySet();
+
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Pre-Processing single dequeue of:" + messageIDs);
+        }
+
+        Iterator iterator = messageIDs.iterator();
+
+        while (iterator.hasNext())
+        {
+            Long messageID = (Long) iterator.next();
+            //If we don't have a gloabl reference for this message then there
+            // is only a single enqueue can check here to see if this is the
+            // last reference?
+            if (_idToQueues.get(messageID) == null)
+            {
+                // Add the removal of the message to this transaction
+                _delegate.removeMessage(context, messageID);
+                // Remove this message ID as we have processed it so we don't
+                // reprocess after the main commmit
+                iterator.remove();
+            }
+        }
+
         //Perform real commit of current data
         _delegate.commitTran(context);
 
