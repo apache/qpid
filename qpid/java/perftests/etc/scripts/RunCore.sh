@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-./RunCore.sh
-./Connections.sh 
-./JobQueue.sh
-./MessageSize.sh
+./Throughput.sh
+./Latency.sh
+./Reliability.sh 
