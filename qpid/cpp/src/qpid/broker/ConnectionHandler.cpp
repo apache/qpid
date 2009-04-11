@@ -64,13 +64,16 @@ void ConnectionHandler::heartbeat()
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
+    Connection::ErrorListener* errorListener = handler->connection.getErrorListener();
     try{
         if (!invoke(static_cast<AMQP_AllOperations::ConnectionHandler&>(*handler.get()), *method)) {
             handler->connection.getChannel(frame.getChannel()).in(frame);
         }
     }catch(ConnectionException& e){
+        if (errorListener) errorListener->connectionError(e.what());
         handler->proxy.close(e.code, e.what());
     }catch(std::exception& e){
+        if (errorListener) errorListener->connectionError(e.what());
         handler->proxy.close(541/*internal error*/, e.what());
     }
 }

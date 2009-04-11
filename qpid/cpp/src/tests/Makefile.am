@@ -110,10 +110,16 @@ endif
 # 	amqp_0_10/Map.cpp \
 # 	amqp_0_10/handlers.cpp 
 
+TESTLIBFLAGS = -module -rpath $(abs_builddir)
 
 check_LTLIBRARIES += libshlibtest.la
-libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
+libshlibtest_la_LDFLAGS = $(TESTLIBFLAGS)
 libshlibtest_la_SOURCES = shlibtest.cpp
+
+check_LTLIBRARIES += test_store.la
+test_store_la_SOURCES = test_store.cpp
+test_store_la_LIBADD = $(lib_broker) # FIXME aconway 2009-04-03: required?
+test_store_la_LDFLAGS = $(TESTLIBFLAGS)
 
 include cluster.mk
 if SSL

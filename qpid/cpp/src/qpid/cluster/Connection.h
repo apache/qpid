@@ -25,7 +25,6 @@
 #include "types.h"
 #include "WriteEstimate.h"
 #include "OutputInterceptor.h"
-#include "NoOpConnectionOutputHandler.h"
 #include "EventFrame.h"
 #include "McastFrameHandler.h"
 
@@ -58,7 +57,8 @@ class Event;
 class Connection :
         public RefCounted,
         public sys::ConnectionInputHandler,
-        public framing::AMQP_AllOperations::ClusterConnectionHandler
+        public framing::AMQP_AllOperations::ClusterConnectionHandler,
+        private broker::Connection::ErrorListener
         
 {
   public:
@@ -120,7 +120,7 @@ class Connection :
     
     void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment);
 
-    void membership(const framing::FieldTable&, const framing::FieldTable&);
+    void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameSeq);
 
     void deliveryRecord(const std::string& queue,
                         const framing::SequenceNumber& position,
@@ -156,6 +156,13 @@ class Connection :
         void handle(framing::AMQFrame&) {}
     };
     
+
+    static NullFrameHandler nullFrameHandler;
+
+    // Error listener functions
+    void connectionError(const std::string&);
+    void sessionError(uint16_t channel, const std::string&);
+    
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverClose();
@@ -166,8 +173,6 @@ class Connection :
     broker::SessionState& sessionState();
     broker::SemanticState& semanticState();
     broker::QueuedMessage getUpdateMessage();
-
-    static NoOpConnectionOutputHandler discardHandler;
 
     Cluster& cluster;
     ConnectionId self;
@@ -181,7 +186,6 @@ class Connection :
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     bool expectProtocolHeader;
     McastFrameHandler mcastFrameHandler;
-    NullFrameHandler nullFrameHandler;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
     

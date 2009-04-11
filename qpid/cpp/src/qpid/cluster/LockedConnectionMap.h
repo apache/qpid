@@ -52,6 +52,8 @@ class LockedConnectionMap
             return 0;
     }
 
+    void clear() { sys::Mutex::ScopedLock l(lock); map.clear(); }
+
   private:
     typedef std::map<ConnectionId, ConnectionPtr> Map;
     mutable sys::Mutex lock;

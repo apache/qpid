@@ -33,6 +33,13 @@ using namespace framing;
 
 namespace cluster {
 
+ClusterMap::Set ClusterMap::decode(const std::string& s) {
+    Set set;
+    for (std::string::const_iterator i = s.begin(); i < s.end(); i += 8)  
+        set.insert(MemberId(std::string(i, i+8)));
+    return set;
+}
+
 namespace {
 
 void addFieldTableValue(FieldTable::ValueMap::value_type vt, ClusterMap::Map& map, ClusterMap::Set& set) {
@@ -54,9 +61,9 @@ void assignFieldTable(FieldTable& ft, const ClusterMap::Map& map) {
 
 }
 
-ClusterMap::ClusterMap() {}
+ClusterMap::ClusterMap() : frameSeq(0) {}
 
-ClusterMap::ClusterMap(const MemberId& id, const Url& url , bool isMember) {
+ClusterMap::ClusterMap(const MemberId& id, const Url& url , bool isMember) : frameSeq(0) {
     alive.insert(id);
     if (isMember)
         members[id] = url;
@@ -64,7 +71,9 @@ ClusterMap::ClusterMap(const MemberId& id, const Url& url , bool isMember) {
         joiners[id] = url;
 }
 
-ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt) {
+ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt, uint64_t frameSeq_)
+  : frameSeq(frameSeq_)
+{
     std::for_each(joinersFt.begin(), joinersFt.end(), boost::bind(&addFieldTableValue, _1, boost::ref(joiners), boost::ref(alive)));
     std::for_each(membersFt.begin(), membersFt.end(), boost::bind(&addFieldTableValue, _1, boost::ref(members), boost::ref(alive)));
 }
@@ -78,22 +87,7 @@ void ClusterMap::toMethodBody(framing::ClusterConnectionMembershipBody& b) const
     }
     b.getMembers().clear();
     std::for_each(members.begin(), members.end(), boost::bind(&insertFieldTableFromMapValue, boost::ref(b.getMembers()), _1));
-}
-
-bool ClusterMap::configChange(
-    cpg_address *current, int nCurrent,
-    cpg_address *left, int nLeft,
-    cpg_address */*joined*/, int /*nJoined*/)
-{
-    cpg_address* a;
-    bool memberChange=false;
-    for (a = left; a != left+nLeft; ++a) {
-        memberChange = memberChange || members.erase(*a);
-        joiners.erase(*a);
-    }
-    alive.clear();
-    std::copy(current, current+nCurrent, std::inserter(alive, alive.end()));
-    return memberChange;
+    b.setFrameSeq(frameSeq);
 }
 
 Url ClusterMap::getUrl(const Map& map, const  MemberId& id) {
@@ -123,8 +117,13 @@ std::vector<Url> ClusterMap::memberUrls() const {
     return urls;
 }
 
-ClusterMap::Set ClusterMap::getAlive() const {
-    return alive;
+ClusterMap::Set ClusterMap::getAlive() const { return alive; }
+
+ClusterMap::Set ClusterMap::getMembers() const {
+    Set s;
+    std::transform(members.begin(), members.end(), std::inserter(s, s.begin()),
+                   boost::bind(&Map::value_type::first, _1));
+    return s;
 }
 
 std::ostream& operator<<(std::ostream& o, const ClusterMap::Map& m) {
@@ -158,7 +157,7 @@ bool ClusterMap::ready(const MemberId& id, const Url& url) {
 
 bool ClusterMap::configChange(const std::string& addresses) {
     bool memberChange = false;
-    Set update;
+    Set update = decode(addresses);
     for (std::string::const_iterator i = addresses.begin(); i < addresses.end(); i += 8)  
         update.insert(MemberId(std::string(i, i+8)));
     Set removed;
