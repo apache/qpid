@@ -563,7 +563,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                 {
                     try
                     {
-                        sendCancel();
+                        if (!_connection.isClosing())
+                        {
+                            sendCancel();
+                        }
                     }
                     catch (AMQException e)
                     {
