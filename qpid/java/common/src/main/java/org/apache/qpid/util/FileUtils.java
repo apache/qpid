@@ -250,9 +250,17 @@ public class FileUtils
          {
              if (recursive)
              {
-                 for (File subFile : file.listFiles())
+                 File[] files = file.listFiles();
+
+                 // This can occur if the file is deleted outside the JVM
+                 if (files == null)
                  {
-                     success = delete(subFile, true) && success;
+                     return false;
+                 }
+
+                 for (int i = 0; i < files.length; i++)
+                 {
+                     success = delete(files[i], true) && success;
                  }
 
                  return success && file.delete();
