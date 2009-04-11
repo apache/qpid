@@ -33,7 +33,7 @@ public class FileQueueBackingStoreFactory implements QueueBackingStoreFactory
     private static final Logger _log = Logger.getLogger(FileQueueBackingStoreFactory.class);
 
     private String _flowToDiskLocation;
-    private static final String QUEUE_BACKING_DIR = "queueBacking";
+    public static final String QUEUE_BACKING_DIR = "queueBacking";
 
     public void configure(VirtualHost virtualHost, VirtualHostConfiguration config) throws ConfigurationException
     {

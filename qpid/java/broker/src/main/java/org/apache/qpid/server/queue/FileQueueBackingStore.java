@@ -344,7 +344,11 @@ public class FileQueueBackingStore implements QueueBackingStore
         _log.info("Closing Backing store at:" + _flowToDiskLocation);
         if (!FileUtils.delete(new File(_flowToDiskLocation), true))
         {
-            _log.error("Unable to fully delete backing store location");
+            // Attempting a second time appears to ensure that it is deleted.
+            if (!FileUtils.delete(new File(_flowToDiskLocation), true))
+            {
+                _log.error("Unable to fully delete backing store location");
+            }
         }
     }
 

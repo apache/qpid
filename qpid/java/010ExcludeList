@@ -60,3 +60,7 @@ org.apache.qpid.server.queue.PriorityTest#*
 org.apache.qpid.server.queue.TimeToLiveTest#*
 // QPID-1727 , QPID-1726 :c++ broker does not support flow to disk on transient queues. Also it requries a persistent store impl. for Apache
 org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
+
+// This test currently does not pick up the runtime location of the nonVm queueBacking store.
+org.apache.qpid.test.unit.client.close.FlowToDiskBackingQueueDeleteTest#*
+
