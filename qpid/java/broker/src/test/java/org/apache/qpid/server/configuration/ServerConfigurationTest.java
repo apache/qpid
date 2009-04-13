@@ -174,18 +174,6 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(23, serverConfig.getFrameSize());
     }
 
-    public void testGetManagementSecurityEnabled() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        assertEquals(false, serverConfig.getManagementSecurityEnabled());
-
-        // Check value we set 
-        _config.setProperty("management.security-enabled", true);
-        serverConfig = new ServerConfiguration(_config);
-        assertEquals(true, serverConfig.getManagementSecurityEnabled());
-    }
-
     public void testGetProtectIOEnabled() throws ConfigurationException
     {
         // Check default
