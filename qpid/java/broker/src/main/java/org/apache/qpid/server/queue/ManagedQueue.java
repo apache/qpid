@@ -41,6 +41,7 @@ import org.apache.qpid.server.management.MBeanOperationParameter;
 public interface ManagedQueue
 {
     static final String TYPE = "Queue";
+    static final int VERSION = 1;
 
     /**
      * Returns the Name of the ManagedQueue.

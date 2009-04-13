@@ -31,6 +31,7 @@ import org.apache.qpid.server.management.MBeanAttribute;
 public interface ManagedVirtualHost
 {
     static final String TYPE = "VirtualHost";
+    static final int VERSION = 1;
 
     /**
      * Returns the name of the managed virtualHost.

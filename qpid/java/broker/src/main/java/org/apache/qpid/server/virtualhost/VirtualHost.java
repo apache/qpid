@@ -109,7 +109,7 @@ public class VirtualHost implements Accessable
     {
         public VirtualHostMBean() throws NotCompliantMBeanException
         {
-            super(ManagedVirtualHost.class, "VirtualHost");
+            super(ManagedVirtualHost.class, ManagedVirtualHost.TYPE, ManagedVirtualHost.VERSION);
         }
 
         public String getObjectInstanceName()
