@@ -83,7 +83,8 @@ class TestStore : public NullMessageStore {
         string data = polymorphic_downcast<Message*>(msg.get())->getFrames().getContent();
 
         // Check the message for special instructions.
-        size_t i, j; 
+        size_t i = string::npos;
+        size_t j = string::npos; 
         if (starts_with(data, TEST_STORE_DO)
             && (i = data.find(name+"[")) != string::npos
             && (j = data.find("]", i)) != string::npos)
