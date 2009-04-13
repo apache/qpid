@@ -39,7 +39,7 @@ public class ApplicationRegistryShutdownTest extends TestCase
 
     ApplicationRegistry _registry;
 
-    public void setUp()
+    public void setUp() throws Exception
     {
         _registry = new TestApplicationRegistry();
     }

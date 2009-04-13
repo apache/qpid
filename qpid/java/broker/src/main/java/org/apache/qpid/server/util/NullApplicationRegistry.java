@@ -26,7 +26,11 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.MapConfiguration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -39,17 +43,16 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
-    public NullApplicationRegistry()
+    public NullApplicationRegistry() throws ConfigurationException
     {
-        super(new MapConfiguration(new HashMap()));
+        super(new ServerConfiguration(new PropertiesConfiguration()));
     }
 
     public void initialise() throws Exception
     {
         _logger.info("Initialising NullApplicationRegistry");
         
-        _configuration.addProperty("store.class", "org.apache.qpid.server.store.MemoryMessageStore");
-        _configuration.addProperty("housekeeping.expiredMessageCheckPeriod", "200");
+        _configuration.setHousekeepingExpiredMessageCheckPeriod(200);
         
         Properties users = new Properties();
 
@@ -57,17 +60,18 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
         _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
 
-        _accessManager = new ACLManager(_configuration, _pluginManager, AllowAll.FACTORY);
+        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager, AllowAll.FACTORY);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry();
-        VirtualHost dummyHost = new VirtualHost("test", _configuration);
+        PropertiesConfiguration vhostProps = new PropertiesConfiguration();
+        VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
+        VirtualHost dummyHost = new VirtualHost(hostConfig);
         _virtualHostRegistry.registerVirtualHost(dummyHost);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
         _pluginManager = new PluginManager("");
-        _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
 
     }
 

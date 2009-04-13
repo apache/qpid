@@ -44,7 +44,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private static final Logger _logger = Logger.getLogger(IncomingMessage.class);
 
     private static final boolean SYNCHED_CLOCKS =
-            ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false);
+            ApplicationRegistry.getInstance().getConfiguration().getSynchedClocks();
 
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
@@ -53,7 +53,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private final TransactionalContext _txnContext;
 
     private static final boolean MSG_AUTH = 
-        ApplicationRegistry.getInstance().getConfiguration().getBoolean("security.msg-auth", false);
+        ApplicationRegistry.getInstance().getConfiguration().getMsgAuth();
 
 
     /**

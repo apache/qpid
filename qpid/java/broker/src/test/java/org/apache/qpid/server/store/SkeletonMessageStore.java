@@ -28,6 +28,7 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 
 import java.util.List;
@@ -45,7 +46,7 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
     
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }

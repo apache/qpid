@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.manager;
 import org.apache.log4j.Logger;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
@@ -60,7 +61,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     /** The name for the required SASL Server mechanisms */
     public static final String PROVIDER_NAME= "AMQSASLProvider-Server";
 
-    public PrincipalDatabaseAuthenticationManager(String name, Configuration hostConfig) throws Exception
+    public PrincipalDatabaseAuthenticationManager(String name, VirtualHostConfiguration hostConfig) throws Exception
     {
         _logger.info("Initialising " + (name == null ? "Default" : "'" + name + "'")
                      + " PrincipleDatabase authentication manager.");
@@ -77,7 +78,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
         else
         {
-            String databaseName = hostConfig.getString("security.authentication.name");
+            String databaseName = hostConfig.getAuthenticationDatabase();
 
             if (databaseName == null)
             {
@@ -121,14 +122,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, Map<String, PrincipalDatabase> databases) throws Exception
     {
-//        Configuration config = ApplicationRegistry.getInstance().getConfiguration();
-//        List<String> mechanisms = config.getList("security.sasl.mechanisms.mechanism.initialiser.class");
-//
-//        // Maps from the mechanism to the properties used to initialise the server. See the method
-//        // Sasl.createSaslServer for details of the use of these properties. This map is populated during initialisation
-//        // of each provider.
-
-
         if (databases.size() > 1)
         {
             _logger.warn("More than one principle database provided currently authentication mechanism will override each other.");
@@ -136,13 +129,11 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
         for (Map.Entry<String, PrincipalDatabase> entry : databases.entrySet())
         {
-
             // fixme As the database now provide the mechanisms they support, they will ...
             // overwrite each other in the map. There should only be one database per vhost.
             // But currently we must have authentication before vhost definition.
             initialiseAuthenticationMechanisms(providerMap, entry.getValue());
         }
-
     }
 
     private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database) throws Exception

@@ -30,8 +30,10 @@ import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.codec.AMQCodecFactory;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.TestIoSession;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
@@ -87,7 +89,8 @@ public class FirewallPluginTest extends TestCase
     public void setUp() throws Exception
     {
         _store = new TestableMemoryMessageStore();
-        _virtualHost = new VirtualHost("vhost", _store);
+        PropertiesConfiguration env = new PropertiesConfiguration();
+        _virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
         TestIoSession iosession = new TestIoSession();
         iosession.setAddress("127.0.0.1");
         VirtualHostRegistry virtualHostRegistry = null;

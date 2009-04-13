@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.server;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,7 +37,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.flow.FlowCreditManager;
@@ -50,14 +57,6 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQChannel
 {
@@ -117,9 +116,6 @@ public class AMQChannel
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
     {
-        //Set values from configuration
-        Configurator.configure(this);
-
         _session = session;
         _channelId = channelId;
         _storeContext = new StoreContext("Session: " + session.getClientIdentifier() + "; channel: " + channelId);

@@ -20,7 +20,11 @@
  */
 package org.apache.qpid.server.util;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.MapConfiguration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
@@ -54,9 +58,17 @@ public class TestApplicationRegistry extends ApplicationRegistry
     private VirtualHost _vHost;
 
 
-    public TestApplicationRegistry()
+    private ServerConfiguration _config;
+    
+    public TestApplicationRegistry() throws ConfigurationException
     {
-        super(new MapConfiguration(new HashMap()));
+    	super(new ServerConfiguration(new PropertiesConfiguration()));
+    }
+
+    public TestApplicationRegistry(ServerConfiguration config) throws ConfigurationException
+    {
+    	super(config);
+    	_config = config;
     }
 
     public void initialise() throws Exception
@@ -67,7 +79,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
 
-        _accessManager = new ACLManager(_configuration, _pluginManager, AllowAll.FACTORY);
+        _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager, AllowAll.FACTORY);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
@@ -76,8 +88,10 @@ public class TestApplicationRegistry extends ApplicationRegistry
         _messageStore = new TestableMemoryMessageStore();
 
         _virtualHostRegistry = new VirtualHostRegistry();
-
-        _vHost = new VirtualHost("test", _messageStore);
+        
+        PropertiesConfiguration vhostProps = new PropertiesConfiguration();
+        VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
+        _vHost = new VirtualHost(hostConfig, _messageStore);
 
         _virtualHostRegistry.registerVirtualHost(_vHost);
 
@@ -85,7 +99,6 @@ public class TestApplicationRegistry extends ApplicationRegistry
         _exchangeFactory = _vHost.getExchangeFactory();
         _exchangeRegistry = _vHost.getExchangeRegistry();
 
-        _configuration.addProperty("heartbeat.delay", 10 * 60); // 10 minutes
     }
 
     public QueueRegistry getQueueRegistry()

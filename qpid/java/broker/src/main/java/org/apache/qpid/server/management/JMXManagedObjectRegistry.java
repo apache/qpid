@@ -32,9 +32,12 @@ import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
@@ -85,7 +88,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
 
         // Retrieve the config parameters
-        boolean platformServer = appRegistry.getConfiguration().getBoolean("management.platform-mbeanserver", true);
+        boolean platformServer = appRegistry.getConfiguration().getPlatformMbeanserver();
 
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
@@ -105,11 +108,11 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
 
-        boolean jmxmpSecurity = appRegistry.getConfiguration().getBoolean("management.security-enabled", false);
-        int port = appRegistry.getConfiguration().getInt(MANAGEMENT_PORT_CONFIG_PATH, MANAGEMENT_PORT_DEFAULT);
+        boolean jmxmpSecurity = appRegistry.getConfiguration().getManagementSecurityEnabled();
+        int port = appRegistry.getConfiguration().getJMXManagementPort();
 
         //retrieve the Principal Database assigned to JMX authentication duties
-        String jmxDatabaseName = appRegistry.getConfiguration().getString("security.jmx.principal-database");
+        String jmxDatabaseName = appRegistry.getConfiguration().getJMXPrincipalDatabase();
         Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();        
         PrincipalDatabase db = map.get(jmxDatabaseName);
 
@@ -154,7 +157,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             RMIServerSocketFactory ssf;
             
             //check ssl enabled option in config, default to true if option is not set
-            boolean sslEnabled = appRegistry.getConfiguration().getBoolean("management.ssl.enabled", true);
+            boolean sslEnabled = appRegistry.getConfiguration().getManagementSSLEnabled();
 
             if (sslEnabled)
             {
@@ -167,7 +170,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                     keyStorePath = System.getProperty("javax.net.ssl.keyStore");
                 }
                 else{
-                    keyStorePath = appRegistry.getConfiguration().getString("management.ssl.keyStorePath", null);
+                    keyStorePath = appRegistry.getConfiguration().getManagementKeyStorePath();
                 }
                 
                 //check the keystore path value is valid
@@ -202,7 +205,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 if (System.getProperty("javax.net.ssl.keyStorePassword") == null)
                 {
                 
-                    if (appRegistry.getConfiguration().getString("management.ssl.keyStorePassword") == null)
+                    if (appRegistry.getConfiguration().getManagementKeyStorePassword() == null)
                     {
                         throw new ConfigurationException("JMX management SSL keystore password not defined, " +
                         		                         "unable to start requested SSL protected JMX server");
@@ -210,7 +213,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                     else
                     {
                         System.setProperty("javax.net.ssl.keyStorePassword",
-                                appRegistry.getConfiguration().getString("management.ssl.keyStorePassword"));
+                                appRegistry.getConfiguration().getManagementKeyStorePassword());
                     }
                 }
 
@@ -378,6 +381,17 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             // Stopping the RMI registry
             UnicastRemoteObject.unexportObject(_rmiRegistry, true);
+        }
+        for (ObjectName name : _mbeanServer.queryNames(null, null))
+        {
+            try
+            {
+                _mbeanServer.unregisterMBean(name);
+            }
+            catch (JMException e)
+            {
+                // Really shouldn't happen, but we'll ignore that...
+            }
         }
     }
 

@@ -21,10 +21,13 @@
 package org.apache.qpid.server.util;
 
 import junit.framework.TestCase;
+
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.AMQChannel;
@@ -57,7 +60,9 @@ public class InternalBrokerBaseCase extends TestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _registry = new TestApplicationRegistry();
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        _registry = new TestApplicationRegistry(new ServerConfiguration(configuration));
         ApplicationRegistry.initialise(_registry);
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");        
 

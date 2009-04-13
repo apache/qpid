@@ -20,24 +20,20 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.mina.common.IoAcceptor;
-
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.net.InetSocketAddress;
+
+import org.apache.log4j.Logger;
+import org.apache.mina.common.IoAcceptor;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -53,7 +49,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private final Map<Class<?>, Object> _configuredObjects = new HashMap<Class<?>, Object>();
 
-    protected final Configuration _configuration;
+    protected final ServerConfiguration _configuration;
 
     public static final int DEFAULT_INSTANCE = 1;
     public static final String DEFAULT_APPLICATION_REGISTRY = "org.apache.qpid.server.util.NullApplicationRegistry";
@@ -154,7 +150,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    protected ApplicationRegistry(Configuration configuration)
+    protected ApplicationRegistry(ServerConfiguration configuration)
     {
         _configuration = configuration;
     }
@@ -242,7 +238,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    public Configuration getConfiguration()
+    public ServerConfiguration getConfiguration()
     {
         return _configuration;
     }
@@ -253,26 +249,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             _acceptors.put(bindAddress, acceptor);
         }
-    }
-
-    public <T> T getConfiguredObject(Class<T> instanceType)
-    {
-        T instance = (T) _configuredObjects.get(instanceType);
-        if (instance == null)
-        {
-            try
-            {
-                instance = instanceType.newInstance();
-            }
-            catch (Exception e)
-            {
-                _logger.error("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
-                throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor", e);
-            }
-            Configurator.configure(instance);
-            _configuredObjects.put(instanceType, instance);
-        }
-        return instance;
     }
 
     public static void setDefaultApplicationRegistry(String clazz)
@@ -287,7 +263,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public ACLManager getAccessManager()
     {
-        return new ACLManager(_configuration, _pluginManager);
+        return new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
     }
 
     public ManagedObjectRegistry getManagedObjectRegistry()

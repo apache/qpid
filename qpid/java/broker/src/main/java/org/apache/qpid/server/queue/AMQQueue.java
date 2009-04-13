@@ -144,6 +144,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     long getMinimumAlertRepeatGap();
 
+    void setMinimumAlertRepeatGap(long value);
+
 
     void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
 
@@ -164,7 +166,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void deliverAsync();
 
     void stop();
-
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
@@ -213,6 +214,4 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     {
         public void doTask(AMQQueue queue) throws AMQException;
     }
-
-    void configure(Configuration virtualHostDefaultQueueConfiguration);
 }

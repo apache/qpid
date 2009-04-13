@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -61,11 +62,11 @@ public interface MessageStore
      * @param virtualHost The virtual host using by this store
      * @param base        The base element identifier from which all configuration items are relative. For example, if
      *                    the base element is "store", the all elements used by concrete classes will be "store.foo" etc.
-     * @param config      The apache commons configuration object.
+     * @param hostConfig      The apache commons configuration object.
      *
      * @throws Exception If any error occurs that means the store is unable to configure itself.
      */
-    void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception;
+    void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration hostConfig) throws Exception;
 
     /**
      * Called to close and cleanup any resources used by the message store.
