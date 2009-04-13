@@ -22,6 +22,7 @@ package org.apache.qpid.test.client.timeouts;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -67,16 +68,17 @@ public class SyncWaitDelayTest extends QpidTestCase
             fail("Unable to test without config file:" + _configFile);
         }
 
-        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(_configFile);
-
-        //Disable management on broker.
-        config.getConfiguration().setProperty("management.enabled", "false");
-
-        Configuration testVirtualhost = config.getConfiguration().subset("virtualhosts.virtualhost." + VIRTUALHOST);
-        testVirtualhost.setProperty("store.class", "org.apache.qpid.server.store.SlowMessageStore");
-        testVirtualhost.setProperty("store.delays.commitTran.post", POST_COMMIT_DELAY);
-
-        startBroker(1, config);
+        XMLConfiguration configuration = new XMLConfiguration(_configFile); 
+        configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.class", "org.apache.qpid.server.store.SlowMessageStore");
+        configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.delays.commitTran.post", POST_COMMIT_DELAY);
+        configuration.setProperty("management.enabled", "false");
+        
+        File tmpFile = File.createTempFile("configFile", "test");
+        tmpFile.deleteOnExit();
+        configuration.save(tmpFile);
+        
+        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(tmpFile);
+        startBroker(1, reg);
 
         //Set the syncWrite timeout to be just larger than the delay on the commitTran.
         setSystemProperty("amqj.default_syncwrite_timeout", String.valueOf(SYNC_WRITE_TIMEOUT));

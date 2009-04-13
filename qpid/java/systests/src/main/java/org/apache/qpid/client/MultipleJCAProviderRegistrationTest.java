@@ -61,7 +61,7 @@ public class MultipleJCAProviderRegistrationTest extends QpidTestCase
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
 
         // This is a bit evil it should be updated with QPID-1103
-        config.getConfiguration().setProperty("management.enabled", "false");
+        config.getConfiguration().setManagementEnabled(false);
 
         startBroker();
     }

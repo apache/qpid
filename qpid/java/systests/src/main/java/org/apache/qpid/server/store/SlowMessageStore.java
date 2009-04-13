@@ -27,6 +27,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
@@ -46,14 +47,14 @@ public class SlowMessageStore implements MessageStore
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";
 
-    public void configure(VirtualHost virtualHost, String base, Configuration config) throws Exception
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
         _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
-        Configuration delays = config.subset(base + "." + DELAYS);
+        Configuration delays = config.getStoreConfiguration().subset(DELAYS);
 
         configureDelays(delays);
 
-        String messageStoreClass = config.getString(base + ".store.class");
+        String messageStoreClass = config.getMessageStoreClass();
 
         if (delays.containsKey(DEFAULT_DELAY))
         {
