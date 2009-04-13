@@ -139,7 +139,7 @@ public class ServerConfiguration implements SignalHandler
                         String key = (String) k.next();
                         conf.setProperty("virtualhosts.virtualhost."+name+"."+key, myConf.getProperty(key));
                     }
-                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, conf.subset("virtualhosts.virtualhost."+name), this);
+                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, conf.subset("virtualhosts.virtualhost."+name));
                     _virtualHosts.put(vhostConfig.getName(), vhostConfig);
                 }
             }

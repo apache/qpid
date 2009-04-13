@@ -31,7 +31,7 @@ public class QueueConfiguration
     private String _name;
     private VirtualHostConfiguration _vHostConfig;
 
-    public QueueConfiguration(String name, Configuration config)
+    public QueueConfiguration(String name, Configuration config, VirtualHostConfiguration virtualHostConfiguration)
     {
         _vHostConfig = virtualHostConfiguration;
         _config = config;

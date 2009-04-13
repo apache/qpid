@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 
@@ -50,7 +51,7 @@ public class VirtualHostConfiguration
 			CompositeConfiguration mungedConf = new CompositeConfiguration();
 			mungedConf.addConfiguration(_config.subset("queues.queue." + queueName));
 			mungedConf.addConfiguration(_config.subset("queues"));
-			_queues.put(queueName, new QueueConfiguration(queueName, mungedConf));
+			_queues.put(queueName, new QueueConfiguration(queueName, mungedConf, this));
         }
 
 		i = _config.getList("exchanges.exchange.name").iterator();
@@ -106,29 +107,14 @@ public class VirtualHostConfiguration
 		return _config.getList("exchanges.exchange.name");
 	}
 
-	public ExchangeConfiguration getExchangeConfiguration(String exchangeName)
-	{
-		return _exchanges.get(exchangeName);
-	}
-
 	public String[] getQueueNames()
 	{
 		return _queues.keySet().toArray(new String[_queues.size()]);
 	}
 
-    public List getExchanges()
-    {
-        return _config.getList("exchanges.exchange.name");
-    }
-
     public ExchangeConfiguration getExchangeConfiguration(String exchangeName)
     {
         return _exchanges.get(exchangeName);
-    }
-
-    public String[] getQueueNames()
-    {
-        return _queues.keySet().toArray(new String[_queues.size()]);
     }
 
     public QueueConfiguration getQueueConfiguration(String queueName)
@@ -154,18 +140,7 @@ public class VirtualHostConfiguration
     {
         return _config.getLong("queues.minimumMemoryUsage", 0);
     }
-
-    public ServerConfiguration getServerConfiguration()
-    {
-        return _serverConfiguration;
-    }
-
-    public static final String FLOW_TO_DISK_PATH = "flowToDiskPath";
-    public String getFlowToDiskLocation()
-    {
-        return _config.getString(FLOW_TO_DISK_PATH, getServerConfiguration().getQpidWork());
-    }
-
+    
     public int getMaximumMessageAge()
     {
         return _config.getInt("queues.maximumMessageAge", 0);

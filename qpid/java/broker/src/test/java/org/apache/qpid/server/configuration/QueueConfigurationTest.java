@@ -35,9 +35,7 @@ public class QueueConfigurationTest extends TestCase
     public void setUp() throws Exception
     {
         _env = new PropertiesConfiguration();
-        ServerConfiguration emptyServerConfig;
-        emptyServerConfig = new ServerConfiguration(_env);
-        _emptyConf = new VirtualHostConfiguration("test", _env, emptyServerConfig);
+        _emptyConf = new VirtualHostConfiguration("test", _env);
         
         PropertiesConfiguration fullEnv = new PropertiesConfiguration();
         fullEnv.setProperty("queues.maximumMessageAge", 1);
@@ -46,8 +44,7 @@ public class QueueConfigurationTest extends TestCase
         fullEnv.setProperty("queues.maximumMessageCount", 1);
         fullEnv.setProperty("queues.minimumAlertRepeatGap", 1);
 
-        _fullServerConf = new ServerConfiguration(fullEnv);
-        _fullHostConf = new VirtualHostConfiguration("test", fullEnv, _fullServerConf);
+        _fullHostConf = new VirtualHostConfiguration("test", fullEnv);
         
     }
 

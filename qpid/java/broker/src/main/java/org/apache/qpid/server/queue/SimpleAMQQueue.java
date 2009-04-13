@@ -1595,8 +1595,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             setMaximumMessageSize(config.getMaximumMessageSize());
             setMaximumMessageCount(config.getMaximumMessageCount());
             setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
-            setMemoryUsageMaximum(config.getMemoryUsageMaximum());
-            setMemoryUsageMinimum(config.getMemoryUsageMinimum());
         }
     }
 }
