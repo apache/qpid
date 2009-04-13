@@ -73,7 +73,7 @@ public class VirtualHostConfiguration
 
 	public long getHousekeepingExpiredMessageCheckPeriod()
 	{
-		return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingExpiredMessageCheckPeriod());
+		return _config.getLong("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
 	}
 
 	public String getAuthenticationDatabase()
