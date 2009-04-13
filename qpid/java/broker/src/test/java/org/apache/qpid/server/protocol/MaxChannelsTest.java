@@ -38,7 +38,7 @@ public class MaxChannelsTest extends TestCase
 
     public void testChannels() throws Exception
     {
-        _session = new AMQMinaProtocolSession(new MockIoSession(), _appRegistry
+        _session = new AMQMinaProtocolSession(new TestIoSession(), _appRegistry
 				.getVirtualHostRegistry(), new AMQCodecFactory(true), null);
         _session.setVirtualHost(_appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
 

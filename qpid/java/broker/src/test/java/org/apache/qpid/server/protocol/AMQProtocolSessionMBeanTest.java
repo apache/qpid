@@ -114,7 +114,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         _protocolSession =
-            new AMQMinaProtocolSession(new MockIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
+            new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
                 null);
         _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
         _channel = new AMQChannel(_protocolSession, 1, _messageStore);
