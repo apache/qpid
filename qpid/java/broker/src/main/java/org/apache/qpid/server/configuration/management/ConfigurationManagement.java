@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.server.configuration.management;
 
+import javax.management.MBeanOperationInfo;
+
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.management.MBeanAttribute;
+import org.apache.qpid.server.management.MBeanOperation;
 
 public interface ConfigurationManagement
 {
@@ -33,8 +35,9 @@ public interface ConfigurationManagement
      * Reload the 
      * @throws ConfigurationException 
      */
-    @MBeanAttribute(name="reloadSecurityConfiguration", 
-                    description = "Force a reload of the security configuration sections")
+    @MBeanOperation(name="reloadSecurityConfiguration", 
+                    description = "Force a reload of the security configuration sections",
+                    impact = MBeanOperationInfo.ACTION)
     void reloadSecurityConfiguration() throws ConfigurationException;
     
 }

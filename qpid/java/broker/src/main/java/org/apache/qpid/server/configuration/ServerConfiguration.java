@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.management.NotCompliantMBeanException;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -39,6 +37,9 @@ import org.apache.qpid.server.configuration.management.ConfigurationManagementMB
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.tools.messagestore.MessageStoreTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -62,8 +63,11 @@ public class ServerConfiguration implements SignalHandler
     private SecurityConfiguration _securityConfiguration = null;
 
     private File _configFile;
+    
+    private Logger _log = LoggerFactory.getLogger(this.getClass());
 
     private ConfigurationManagementMBean _mbean;
+    
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -206,7 +210,7 @@ public class ServerConfiguration implements SignalHandler
         }
         catch (ConfigurationException e)
         {
-            // Not much we can do about it really. 
+             _log.error("Could not reload configuration file", e);
         }        
     }
 
