@@ -191,7 +191,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     public String toString()
     {
-        return getClass().getName() + "[" + getName() +"]";
+        return getClass().getSimpleName() + "[" + getName() +"]";
     }
 
     public ManagedObject getManagedObject()
