@@ -25,15 +25,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.mina.common.IoSession;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.TestIoSession;
@@ -261,6 +258,34 @@ public class FirewallPluginTest extends TestCase
         
         // Set session IP so that we're connected from the right address
         ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+    }
+    
+    public void testCommaSeperatedNetmask() throws Exception
+    {
+        RuleInfo firstRule = new RuleInfo();
+        firstRule.setAccess("allow");
+        firstRule.setNetwork("10.1.1.1/8, 192.168.23.0/24");
+        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
+
+        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        
+        // Set session IP so that we're connected from the right address
+        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
+    }
+    
+    public void testCommaSeperatedHostnames() throws Exception
+    {
+        RuleInfo firstRule = new RuleInfo();
+        firstRule.setAccess("allow");
+        firstRule.setHostname("foo, bar, "+new InetSocketAddress("127.0.0.1", 5672).getHostName());
+        FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
+        ((TestIoSession) _session.getIOSession()).setAddress("10.0.0.1");
+        assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
+        
+        // Set session IP so that we're connected from the right address
+        ((TestIoSession) _session.getIOSession()).setAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     

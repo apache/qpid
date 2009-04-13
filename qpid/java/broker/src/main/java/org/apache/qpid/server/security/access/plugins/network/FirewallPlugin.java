@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.access.plugins.network;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.configuration.Configuration;
@@ -32,8 +33,6 @@ import org.apache.qpid.server.security.access.plugins.AbstractACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.NetMatcher;
 
-import sun.net.util.IPAddressUtil;
-
 public class FirewallPlugin extends AbstractACLPlugin
 {
 
@@ -42,20 +41,54 @@ public class FirewallPlugin extends AbstractACLPlugin
 
         private AuthzResult _access;
         private NetMatcher _network;
-        private Pattern _hostnamePattern;
+        private Pattern[] _hostnamePatterns;
 
-        public FirewallRule(String access, String network, String hostname)
+        public FirewallRule(String access, List networks, List hostnames)
         {
             _access = (access.equals("allow")) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
-            _network = (network != null) ? new NetMatcher(new String[]{network}) : null;
-            _hostnamePattern = (hostname != null) ? Pattern.compile(hostname) : null;
+            
+            if (networks != null && networks.size() > 0)
+            {
+                String[] networkStrings = objListToStringArray(networks);
+                _network = new NetMatcher(networkStrings);
+            }
+            
+            if (hostnames != null && hostnames.size() > 0)
+            {
+                int i = 0;
+                _hostnamePatterns = new Pattern[hostnames.size()];
+                for (String hostname : objListToStringArray(hostnames))
+                {
+                    _hostnamePatterns[i++] = Pattern.compile(hostname);
+                }
+            }
+            
+        }
+
+        private String[] objListToStringArray(List objList)
+        {
+            String[] networkStrings = new String[objList.size()];
+            int i = 0;
+            for (Object network : objList)
+            {
+                networkStrings[i++] = (String) network;
+            }
+            return networkStrings;
         }
 
         public boolean match(InetAddress remote)
         {
-            if (_hostnamePattern != null)
+            if (_hostnamePatterns != null)
             {
-                return _hostnamePattern.matcher(remote.getCanonicalHostName()).matches();
+                String hostname = remote.getCanonicalHostName();
+                for (Pattern pattern : _hostnamePatterns)
+                {
+                    if (pattern.matcher(hostname).matches())
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
             else
             {
@@ -78,16 +111,17 @@ public class FirewallPlugin extends AbstractACLPlugin
     {
         if (!(session instanceof AMQMinaProtocolSession))
         {
-            return AuthzResult.ABSTAIN; // We only deal with tcp sessions, which mean MINA right now
+            return AuthzResult.ABSTAIN; // We only deal with tcp sessions, which
+                                        // mean MINA right now
         }
 
         InetAddress addr = getInetAdressFromMinaSession((AMQMinaProtocolSession) session);
-        
+
         if (addr == null)
         {
             return AuthzResult.ABSTAIN; // Not an Inet socket on the other end
         }
-        
+
         boolean match = false;
         for (FirewallRule rule : _rules)
         {
@@ -107,7 +141,7 @@ public class FirewallPlugin extends AbstractACLPlugin
         if (remote instanceof InetSocketAddress)
         {
             return ((InetSocketAddress) remote).getAddress();
-        } 
+        }
         else
         {
             return null;
@@ -119,27 +153,27 @@ public class FirewallPlugin extends AbstractACLPlugin
     {
         // Get default action
         String defaultAction = config.getString("[@default-action]");
-        if (defaultAction == null) {
+        if (defaultAction == null)
+        {
             _default = AuthzResult.ABSTAIN;
-        } 
+        }
         else if (defaultAction.toLowerCase().equals("allow"))
         {
             _default = AuthzResult.ALLOWED;
         }
-        else 
+        else
         {
             _default = AuthzResult.DENIED;
         }
-        
+
         int numRules = config.getList("rule[@access]").size(); // all rules must
-                                                               // have an access
-                                                               // attribute
+        // have an access
+        // attribute
         _rules = new FirewallRule[numRules];
         for (int i = 0; i < numRules; i++)
         {
-            FirewallRule rule = new FirewallRule((String) config.getProperty("rule(" + i + ")[@access]"),
-                    (String) config.getProperty("rule(" + i + ")[@network]"), (String) config.getProperty("rule(" + i
-                            + ")[@hostname]"));
+            FirewallRule rule = new FirewallRule(config.getString("rule(" + i + ")[@access]"), config.getList("rule("
+                    + i + ")[@network]"), config.getList("rule(" + i + ")[@hostname]"));
             _rules[i] = rule;
         }
     }
