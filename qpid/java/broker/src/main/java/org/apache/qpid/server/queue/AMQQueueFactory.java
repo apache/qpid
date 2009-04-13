@@ -80,11 +80,7 @@ public class AMQQueueFactory
         }
 
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);
-        q.setMaximumMessageAge(config.getMaximumMessageAge());
-        q.setMaximumQueueDepth(config.getMaximumQueueDepth());
-        q.setMaximumMessageSize(config.getMaximumMessageSize());
-        q.setMaximumMessageCount(config.getMaximumMessageCount());
-        q.setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
+        q.configure(config);
         return q;
     }
 }

@@ -26,16 +26,21 @@ import org.apache.commons.configuration.Configuration;
 
 public class QueueConfiguration
 {
-
-    // FIXME AIDAN XXX -- deal with defaults
     
     private Configuration _config;
     private String _name;
+    private VirtualHostConfiguration _vHostConfig;
 
     public QueueConfiguration(String name, Configuration config)
     {
+        _vHostConfig = virtualHostConfiguration;
         _config = config;
         _name = name;
+    }
+
+    public VirtualHostConfiguration getVirtualHostConfiguration()
+    {
+        return _vHostConfig;
     }
 
     public boolean getDurable()
@@ -78,29 +83,29 @@ public class QueueConfiguration
         return _name;
     }
 
-    public long getMaximumMessageAge()
+    public int getMaximumMessageAge()
     {
-        return _config.getLong("maximumMessageAge", 0);
+        return _config.getInt("maximumMessageAge", _vHostConfig.getMaximumMessageAge());
     }
 
     public long getMaximumQueueDepth()
     {
-        return _config.getLong("maximumQueueDepth", 0);
+        return _config.getLong("maximumQueueDepth", _vHostConfig.getMaximumQueueDepth());
     }
 
     public long getMaximumMessageSize()
     {
-        return _config.getLong("maximumMessageSize", 0);
+        return _config.getLong("maximumMessageSize", _vHostConfig.getMaximumMessageSize());
     }
 
     public long getMaximumMessageCount()
     {
-        return _config.getLong("maximumMessageCount", 0);
+        return _config.getLong("maximumMessageCount", _vHostConfig.getMaximumMessageCount());
     }
 
     public long getMinimumAlertRepeatGap()
     {
-        return _config.getLong("minimumAlertRepeatGap", 0);
+        return _config.getLong("minimumAlertRepeatGap", _vHostConfig.getMinimumAlertRepeatGap());
     }
 
 }

@@ -22,8 +22,9 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.store.StoreContext;
@@ -321,6 +322,11 @@ public class MockAMQQueue implements AMQQueue
 
     @Override
     public void setMinimumAlertRepeatGap(long value)
+    {
+        
+    }
+
+    public void configure(QueueConfiguration config)
     {
         
     }
