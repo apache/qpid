@@ -42,10 +42,12 @@ import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.NewThreadExecutor;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -232,16 +234,29 @@ public class Main
 
         String logConfig = commandLine.getOptionValue("l");
         String logWatchConfig = commandLine.getOptionValue("w", "0");
+        
+        int logWatchTime = 0;
+        try
+        {
+            logWatchTime = Integer.parseInt(logWatchConfig);
+        }
+        catch (NumberFormatException e)
+        {
+            System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
+                               + "a non-negative integer. Using default of zero (no watching configured");
+        }
+        
+        File logConfigFile;
         if (logConfig != null)
         {
-            File logConfigFile = new File(logConfig);
-            configureLogging(logConfigFile, logWatchConfig);
+            logConfigFile = new File(logConfig);
+            configureLogging(logConfigFile, logWatchTime);
         }
         else
         {
             File configFileDirectory = configFile.getParentFile();
-            File logConfigFile = new File(configFileDirectory, DEFAULT_LOG_CONFIG_FILENAME);
-            configureLogging(logConfigFile, logWatchConfig);
+            logConfigFile = new File(configFileDirectory, DEFAULT_LOG_CONFIG_FILENAME);
+            configureLogging(logConfigFile, logWatchTime);
         }
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile);
@@ -249,6 +264,8 @@ public class Main
         updateManagementPort(serverConfig, commandLine.getOptionValue("m"));
 
         ApplicationRegistry.initialise(config);
+        
+        configureLoggingManagementMBean(logConfigFile, logWatchTime);
 
         //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
         // that are causing the broker build to pick up the wrong properties file and hence say
@@ -445,19 +462,8 @@ public class Main
         return ip;
     }
 
-    private void configureLogging(File logConfigFile, String logWatchConfig)
+    private void configureLogging(File logConfigFile, int logWatchTime)
     {
-        int logWatchTime = 0;
-        try
-        {
-            logWatchTime = Integer.parseInt(logWatchConfig);
-        }
-        catch (NumberFormatException e)
-        {
-            System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
-                               + "a non-negative integer. Using default of zero (no watching configured");
-        }
-
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
@@ -481,4 +487,17 @@ public class Main
         }
     }
 
+    private void configureLoggingManagementMBean(File logConfigFile, int logWatchTime) throws Exception
+    {
+        LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
+        
+        try
+        {
+            blm.register();
+        }
+        catch (AMQException e)
+        {
+            throw new InitException("Unable to initialise the Logging Management MBean: ", e);
+        }
+    }
 }

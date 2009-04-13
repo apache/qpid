@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.server.logging.management.LoggingManagement;
 import org.apache.qpid.server.security.access.management.UserManagement;
 import org.apache.log4j.Logger;
 
@@ -153,7 +154,12 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         if (args[0] instanceof ObjectName)
         {
             ObjectName object = (ObjectName) args[0];
-            return UserManagement.TYPE.equals(object.getKeyProperty("type"));
+            
+            if (UserManagement.TYPE.equals(object.getKeyProperty("type"))
+                    || LoggingManagement.TYPE.equals(object.getKeyProperty("type")))
+            {
+                return true;
+            }
         }
 
         return false;
