@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -41,6 +42,8 @@ import org.apache.qpid.util.NetMatcher;
 
 public class FirewallPlugin extends AbstractACLPlugin
 {
+
+    public class FirewallPluginException extends Exception {}
 
     public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
     {
@@ -60,6 +63,7 @@ public class FirewallPlugin extends AbstractACLPlugin
     public class FirewallRule
     {
 
+        private static final long DNS_TIMEOUT = 30000;
         private AuthzResult _access;
         private NetMatcher _network;
         private Pattern[] _hostnamePatterns;
@@ -97,11 +101,15 @@ public class FirewallPlugin extends AbstractACLPlugin
             return networkStrings;
         }
 
-        public boolean match(InetAddress remote)
+        public boolean match(InetAddress remote) throws FirewallPluginException
         {
             if (_hostnamePatterns != null)
             {
-                String hostname = remote.getCanonicalHostName();
+                String hostname = getHostname(remote);
+                if (hostname == null)
+                {
+                    throw new FirewallPluginException();
+                }
                 for (Pattern pattern : _hostnamePatterns)
                 {
                     if (pattern.matcher(hostname).matches())
@@ -115,6 +123,48 @@ public class FirewallPlugin extends AbstractACLPlugin
             {
                 return _network.matchInetNetwork(remote);
             }
+        }
+
+        /**
+         * @param remote the InetAddress to look up
+         * @return the hostname, null if not found or takes longer than 30s to find
+         */
+        private String getHostname(final InetAddress remote)
+        {
+            final String[] hostname = new String[]{null};
+            final AtomicBoolean done = new AtomicBoolean(false);
+            // Spawn thread
+            Thread thread = new Thread(new Runnable()
+            {
+               public void run()
+               {
+                   hostname[0] = remote.getCanonicalHostName();
+                   done.getAndSet(true);
+                   synchronized (done)
+                   {
+                       done.notifyAll();
+                   }
+               }
+            });
+
+            thread.run();
+            long endTime = System.currentTimeMillis() + DNS_TIMEOUT;
+            
+            while (System.currentTimeMillis() < endTime && !done.get())
+            {
+                try
+                {
+                    synchronized (done)
+                    {
+                        done.wait(endTime - System.currentTimeMillis());
+                    }
+                }
+                catch (InterruptedException e)
+                {
+                    // Check the time and if necessary sleep for a bit longer
+                }
+            }
+            return hostname[0];
         }
 
         public AuthzResult getAccess()
@@ -146,7 +196,14 @@ public class FirewallPlugin extends AbstractACLPlugin
         boolean match = false;
         for (FirewallRule rule : _rules)
         {
-            match = rule.match(addr);
+            try
+            {
+                match = rule.match(addr);
+            }
+            catch (FirewallPluginException e)
+            {
+                return AuthzResult.DENIED;
+            }
             if (match)
             {
                 return rule.getAccess();
