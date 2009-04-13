@@ -40,10 +40,21 @@ import java.util.LinkedList;
 public class MockAMQQueue implements AMQQueue
 {
     private boolean _deleted = false;
+    private AMQShortString _name;
+
+    public MockAMQQueue(String name)
+    {
+       _name = new AMQShortString(name);
+    }
+
+    public MockAMQQueue()
+    {
+       
+    }
 
     public AMQShortString getName()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _name;
     }
 
     public boolean isDurable()

@@ -33,12 +33,12 @@ public class AccessResult
     public AccessResult(ACLPlugin authorizer, AccessStatus status)
     {
         _status = status;
-        _authorizer = authorizer.getPluginName();
+        _authorizer = authorizer.getClass().getSimpleName();
     }
 
     public void setAuthorizer(ACLPlugin authorizer)
     {
-        _authorizer += authorizer.getPluginName();
+        _authorizer += authorizer.getClass().getSimpleName();
     }
 
     public String getAuthorizer()
@@ -58,7 +58,7 @@ public class AccessResult
 
     public void addAuthorizer(ACLPlugin accessManager)
     {
-        _authorizer = accessManager.getPluginName() + "->" + _authorizer;
+        _authorizer = accessManager.getClass().getSimpleName() + "->" + _authorizer;
     }
 
 

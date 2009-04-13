@@ -105,7 +105,6 @@
                     <access>
                         <class>org.apache.qpid.server.security.access.plugins.SimpleXML</class>
                     </access>
-
                     <access_control_list>
                         <!-- This section grants pubish rights to an exchange + routing key pair -->
                         <publish>

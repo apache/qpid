@@ -14,62 +14,49 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.
+ *  under the License.    
  *
- *
+ * 
  */
-package org.apache.qpid.server.security.access.plugins;
+package org.apache.qpid.server.security.access;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
-import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.Permission;
+import org.apache.qpid.server.security.access.plugins.AllowAll;
 
-public class DenyAll extends BasicACLPlugin
+public class ExchangeDenier extends AllowAll
 {
+
     public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
     {
         public boolean supportsTag(String name)
         {
-            return false;
+            return name.startsWith("exchangeDenier");
         }
 
         public ACLPlugin newInstance(Configuration config)
         {
-            return new DenyAll();
+            return new ExchangeDenier();
         }
     };
     
-    public AccessResult authorise(AMQProtocolSession session,
-            Permission permission, AMQMethodBody body, Object... parameters)
-            throws AMQConnectionException
+    @Override
+    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
     {
-
-        if (ACLManager.getLogger().isInfoEnabled())
-        {
-            ACLManager.getLogger().info(
-                    "Denying user:" + session.getAuthorizedID());
-        }
-        throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
-                "DenyAll Plugin");
+        return AuthzResult.DENIED;
     }
 
+    @Override
     public String getPluginName()
     {
         return getClass().getSimpleName();
     }
 
-    @Override 
-    protected AuthzResult getResult()
+    @Override
+    public boolean supportsTag(String name)
     {
-        // Always deny
-        return AuthzResult.DENIED;
+        return name.equals("exchangeDenier");
     }
 
 }

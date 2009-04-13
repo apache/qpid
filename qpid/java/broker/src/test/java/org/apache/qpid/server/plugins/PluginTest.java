@@ -48,7 +48,6 @@ public class PluginTest extends TestCase
     {
         PluginManager manager = new PluginManager("/path/to/nowhere");
         Map<String, ExchangeType<?>> exchanges = manager.getExchanges();
-        assertNull("Exchanges found", exchanges);
-    } 
-    
+        assertEquals("Exchanges found", 0, exchanges.size());
+    }
 }

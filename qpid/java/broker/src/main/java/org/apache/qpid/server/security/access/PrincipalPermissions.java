@@ -25,6 +25,7 @@ import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.exchange.Exchange;
 
 import java.util.*;
@@ -336,13 +337,13 @@ public class PrincipalPermissions
      *  PURGE: none
      *  UNBIND: none
      */
-    public boolean authorise(Permission permission, Object... parameters)
+    public AuthzResult authorise(Permission permission, Object... parameters)
     {
 
         switch (permission)
         {
             case ACCESS:
-                return true; // This is here for completeness but the SimpleXML ACLManager never calls it.
+                return AuthzResult.ALLOWED; // This is here for completeness but the SimpleXML ACLManager never calls it.
                 // The existence of this user specific PP can be validated in the map SimpleXML maintains.
             case BIND: // Parameters : QueueBindMethod , Exchange , AMQQueue, AMQShortString routingKey
 
@@ -368,7 +369,7 @@ public class PrincipalPermissions
 
                     if (exchangeDetails == null) //Then all queue can be bound to all exchanges.
                     {
-                        return true;
+                        return AuthzResult.ALLOWED;
                     }
 
                     // Check to see if we have a white list of routingkeys to check
@@ -378,7 +379,7 @@ public class PrincipalPermissions
                     if (rkeys == null)
                     {
                         // There is no routingkey white list
-                        return true;
+                        return AuthzResult.ALLOWED;
                     }
                     else
                     {
@@ -400,7 +401,7 @@ public class PrincipalPermissions
                         }
 
 
-                        return matched;
+                        return (matched) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                     }
 
 
@@ -425,14 +426,14 @@ public class PrincipalPermissions
                             // Check to see if the requested exchange is allowed.
                             Map exchangeDetails = (Map) bind_exchanges.get(exchange.getName());
 
-                            return (Boolean) exchangeDetails.get(CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY);
+                            return ((Boolean) exchangeDetails.get(CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                         }
 
                         //no white list so all allowed, drop through to return true below.
                     }
 
                     // not a temporary queue and no white list so all allowed.
-                    return true;
+                    return AuthzResult.ALLOWED;
                 }
 
             case CREATEQUEUE:// Parameters : boolean autodelete, AMQShortString name
@@ -442,7 +443,7 @@ public class PrincipalPermissions
                 // If there are no create rights then deny request
                 if (createRights == null)
                 {
-                    return false;
+                    return AuthzResult.DENIED;
                 }
 
                 //Look up the Queue Creation Rights
@@ -457,12 +458,20 @@ public class PrincipalPermissions
 
                 if (autoDelete)// we have a temporary queue
                 {
-                    return (Boolean) create_queues.get(CREATE_QUEUE_TEMPORARY_KEY);
+                    return ((Boolean) create_queues.get(CREATE_QUEUE_TEMPORARY_KEY)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                 }
                 else
                 {
                     // If there is a white list then check
-                    return create_queues_queues == null || create_queues_queues.containsKey(queueName);
+                    if (create_queues_queues == null || create_queues_queues.containsKey(queueName))
+                    {
+                        return AuthzResult.ALLOWED; 
+                    }
+                    else
+                    {
+                        return AuthzResult.DENIED;
+                    }
+                        
                 }
             case CREATEEXCHANGE:
                 Map rights = (Map) _permissions.get(permission);
@@ -471,7 +480,14 @@ public class PrincipalPermissions
 
                 // If the exchange list is doesn't exist then all is allowed else
                 // check the valid exchanges
-                return rights == null || rights.containsKey(exchangeName);
+                if (rights == null || rights.containsKey(exchangeName))
+                {
+                    return AuthzResult.ALLOWED; 
+                }
+                else
+                {
+                    return AuthzResult.DENIED;
+                }
             case CONSUME: // Parameters :  AMQQueue
 
                 if (parameters.length == 1 && parameters[0] instanceof AMQQueue)
@@ -492,11 +508,11 @@ public class PrincipalPermissions
                         // Of course the exclusivity will not be broken.
                         {
                             // if not limited to ownQueuesOnly then ok else check queue Owner.
-                            return !ownQueuesOnly || queue.getOwner().equals(_user);
+                            return (!ownQueuesOnly || queue.getOwner().equals(_user)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                         }
                         else
                         {
-                            return false;
+                            return AuthzResult.DENIED;
                         }
                     }
 
@@ -508,21 +524,21 @@ public class PrincipalPermissions
                         {
                             if (queue.getOwner().equals(_user))
                             {
-                                return queues.size() == 0 || queues.contains(queue.getName());
+                                return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                             }
                             else
                             {
-                                return false;
+                                return AuthzResult.DENIED;
                             }
                         }
 
                         // If we are
-                        return queues.size() == 0 || queues.contains(queue.getName());
+                        return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                     }
                 }
 
                 // Can't authenticate without the right parameters
-                return false;
+                return AuthzResult.DENIED;
             case DELETE:
                 break;
 
@@ -531,7 +547,7 @@ public class PrincipalPermissions
 
                 if (publishRights == null)
                 {
-                    return false;
+                    return AuthzResult.DENIED;
                 }
 
                 Map exchanges = (Map) publishRights.get(PUBLISH_EXCHANGES_KEY);
@@ -539,14 +555,14 @@ public class PrincipalPermissions
                 // Having no exchanges listed gives full publish rights to all exchanges
                 if (exchanges == null)
                 {
-                    return true;
+                    return AuthzResult.ALLOWED;
                 }
                 // Otherwise exchange must be listed in the white list
 
                 // If the map doesn't have the exchange then it isn't allowed
                 if (!exchanges.containsKey(((Exchange) parameters[0]).getName()))
                 {
-                    return false;
+                    return AuthzResult.DENIED;
                 }
                 else
                 {
@@ -557,7 +573,7 @@ public class PrincipalPermissions
                     // Having no routingKeys in the map then all are allowed.
                     if (routingKeys == null)
                     {
-                        return true;
+                        return AuthzResult.ALLOWED;
                     }
                     else
                     {
@@ -581,7 +597,7 @@ public class PrincipalPermissions
                                 matched = publishRKey.equals(rkey);
                             }
                         }
-                        return matched;
+                        return (matched) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                     }
                 }
             case PURGE:
@@ -591,6 +607,6 @@ public class PrincipalPermissions
 
         }
 
-        return false;
+        return AuthzResult.DENIED;
     }
 }

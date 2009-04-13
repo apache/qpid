@@ -29,36 +29,41 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public interface ACLPlugin
 {
-    String getPluginName();
+    public enum AuthzResult
+    {
+        ALLOWED,
+        DENIED,
+        ABSTAIN        
+    }
 
-    void setConfiguaration(Configuration config);
+    void setConfiguration(Configuration config);
 
     // These return true if the plugin thinks the action should be allowed, and false if not. 
     
-    boolean authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue, AMQShortString routingKey);
+    AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue, AMQShortString routingKey);
 
-    boolean authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
+    AuthzResult authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
             AMQShortString exchangeName, boolean internal, boolean nowait, boolean passive, AMQShortString exchangeType);
 
-    boolean authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable, boolean exclusive,
+    AuthzResult authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable, boolean exclusive,
             boolean nowait, boolean passive, AMQShortString queue);
 
-    boolean authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost);
+    AuthzResult authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost);
 
-    boolean authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue);
+    AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue);
 
-    boolean authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
+    AuthzResult authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
             boolean nowait, AMQQueue queue);
 
-    boolean authoriseDelete(AMQProtocolSession session, AMQQueue queue);
+    AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue);
 
-    boolean authoriseDelete(AMQProtocolSession session, Exchange exchange);
+    AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange);
 
-    boolean authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
+    AuthzResult authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
             AMQShortString routingKey, Exchange e);
 
-    boolean authorisePurge(AMQProtocolSession session, AMQQueue queue);
+    AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue);
 
-    boolean authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey, AMQQueue queue);
+    AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey, AMQQueue queue);
 
 }

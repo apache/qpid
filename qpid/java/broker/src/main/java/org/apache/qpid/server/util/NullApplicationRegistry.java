@@ -27,16 +27,13 @@ import java.util.Properties;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -59,13 +56,13 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
         _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
 
-        _accessManager = new AllowAll();
+        _accessManager = new ACLManager(_configuration, _pluginManager, AllowAll.FACTORY);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry();
-        VirtualHost dummyHost = new VirtualHost("test", getConfiguration());
+        VirtualHost dummyHost = new VirtualHost("test", _configuration);
         _virtualHostRegistry.registerVirtualHost(dummyHost);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
         _pluginManager = new PluginManager("");

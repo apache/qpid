@@ -67,7 +67,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected VirtualHostRegistry _virtualHostRegistry;
 
-    protected ACLPlugin _accessManager;
+    protected ACLManager _accessManager;
 
     protected PrincipalDatabaseManager _databaseManager;
 
@@ -285,9 +285,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _virtualHostRegistry;
     }
 
-    public ACLPlugin getAccessManager()
+    public ACLManager getAccessManager()
     {
-        return _accessManager;
+        return new ACLManager(_configuration, _pluginManager);
     }
 
     public ManagedObjectRegistry getManagedObjectRegistry()

@@ -26,6 +26,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
@@ -66,7 +67,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         _databaseManager = new PropertiesPrincipalDatabaseManager("default", users);
 
-        _accessManager = new AllowAll();
+        _accessManager = new ACLManager(_configuration, _pluginManager, AllowAll.FACTORY);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
@@ -108,7 +109,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
         return Arrays.asList(hosts);
     }
 
-    public void setAccessManager(ACLPlugin newManager)
+    public void setAccessManager(ACLManager newManager)
     {
         _accessManager = newManager;
     }

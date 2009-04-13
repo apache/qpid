@@ -20,35 +20,35 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import javax.management.NotCompliantMBeanException;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.connection.ConnectionRegistry;
 import org.apache.qpid.server.connection.IConnectionRegistry;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.Accessable;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.exchange.DefaultExchangeFactory;
 import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.access.Accessable;
+import org.apache.qpid.server.security.access.plugins.SimpleXML;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.AMQException;
-
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class VirtualHost implements Accessable
 {
@@ -73,7 +73,7 @@ public class VirtualHost implements Accessable
 
     private AuthenticationManager _authenticationManager;
 
-    private ACLPlugin _accessManager;
+    private ACLManager _accessManager;
 
     private final Timer _houseKeepingTimer;
      
@@ -183,8 +183,9 @@ public class VirtualHost implements Accessable
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
 
-        _accessManager = ACLManager.loadACLManager(name, hostConfig);
-
+        _accessManager = ApplicationRegistry.getInstance().getAccessManager();
+        _accessManager.configureHostPlugins(hostConfig);
+        
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
         initialiseHouseKeeping(hostConfig);
@@ -258,7 +259,6 @@ public class VirtualHost implements Accessable
         return instance;
     }
 
-
     public String getName()
     {
         return _name;
@@ -294,7 +294,7 @@ public class VirtualHost implements Accessable
         return _authenticationManager;
     }
 
-    public ACLPlugin getAccessManager()
+    public ACLManager getAccessManager()
     {
         return _accessManager;
     }                                                                   

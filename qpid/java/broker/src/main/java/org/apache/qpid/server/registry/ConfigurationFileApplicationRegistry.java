@@ -94,8 +94,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _virtualHostRegistry = new VirtualHostRegistry();
 
-        _accessManager = ACLManager.loadACLManager("default", _configuration);
+        _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
 
+        _accessManager = new ACLManager(_configuration, _pluginManager);
+        
         _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
@@ -103,8 +105,6 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         _databaseManager.initialiseManagement(_configuration);
 
         _managedObjectRegistry.start();
-
-        _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
 
         initialiseVirtualHosts();
 
