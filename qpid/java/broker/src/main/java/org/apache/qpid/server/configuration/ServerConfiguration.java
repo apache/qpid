@@ -27,14 +27,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.management.NotCompliantMBeanException;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationFactory;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public class ServerConfiguration
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
+public class ServerConfiguration implements SignalHandler
 {
 
     private static Configuration _config;
@@ -51,6 +60,10 @@ public class ServerConfiguration
 
     private Map<String, VirtualHostConfiguration> _virtualHosts = new HashMap<String, VirtualHostConfiguration>();
     private SecurityConfiguration _securityConfiguration = null;
+
+    private File _configFile;
+
+    private ConfigurationManagementMBean _mbean;
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -82,6 +95,8 @@ public class ServerConfiguration
     public ServerConfiguration(File configurationURL) throws ConfigurationException
     {
         this(parseConfig(configurationURL));
+        _configFile = configurationURL;
+        sun.misc.Signal.handle(new sun.misc.Signal("HUP"), this);
     }
 
     public ServerConfiguration(Configuration conf) throws ConfigurationException
@@ -94,8 +109,9 @@ public class ServerConfiguration
         _securityConfiguration = new SecurityConfiguration(conf.subset("security"));
 
         setupVirtualHosts(conf);
+        
     }
-
+    
     private void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
         List vhosts = conf.getList("virtualhosts");
@@ -179,6 +195,42 @@ public class ServerConfiguration
             }
         });
         return conf;
+    }
+
+    @Override
+    public void handle(Signal arg0)
+    {
+        try
+        {
+            reparseConfigFile();
+        }
+        catch (ConfigurationException e)
+        {
+            // Not much we can do about it really. 
+        }        
+    }
+
+    public void reparseConfigFile() throws ConfigurationException
+    {
+        if (_configFile != null)
+        {
+            Configuration newConfig = parseConfig(_configFile);
+            _securityConfiguration = new SecurityConfiguration(newConfig.subset("security"));
+            ApplicationRegistry.getInstance().getAccessManager().configurePlugins(_securityConfiguration);
+            
+            VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
+            for (String hostname : _virtualHosts.keySet())
+            {
+                VirtualHost vhost = vhostRegistry.getVirtualHost(hostname);
+                SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newConfig.subset("virtualhosts.virtualhost."+hostname+".security"));
+                vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
+            }
+        }
+    }
+
+    public String getQpidWork()
+    {
+        return System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir"));
     }
 
     public void setJMXManagementPort(int mport)

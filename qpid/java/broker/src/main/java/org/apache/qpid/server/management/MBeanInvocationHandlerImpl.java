@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.server.configuration.management.ConfigurationManagement;
 import org.apache.qpid.server.logging.management.LoggingManagement;
 import org.apache.qpid.server.security.access.management.UserManagement;
 import org.apache.log4j.Logger;
@@ -38,6 +39,8 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.AccessControlContext;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Properties;
 
@@ -57,6 +60,13 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private MBeanServer _mbs;
     private static Properties _userRoles = new Properties();
 
+    private static HashSet<String> _adminOnlyMethods = new HashSet<String>();
+    {
+        _adminOnlyMethods.add(UserManagement.TYPE); 
+        _adminOnlyMethods.add(LoggingManagement.TYPE);
+        _adminOnlyMethods.add(ConfigurationManagement.TYPE);
+    }
+    
     public static MBeanServerForwarder newProxyInstance()
     {
         final InvocationHandler handler = new MBeanInvocationHandlerImpl();
@@ -155,13 +165,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             ObjectName object = (ObjectName) args[0];
             
-            if (UserManagement.TYPE.equals(object.getKeyProperty("type"))
-                    || LoggingManagement.TYPE.equals(object.getKeyProperty("type")))
-            {
-                return true;
-            }
+            return _adminOnlyMethods.contains(object.getKeyProperty("type"));
         }
-
         return false;
     }
 
