@@ -84,6 +84,8 @@ public class VirtualHost implements Accessable
     private ACLManager _accessManager;
 
     private final Timer _houseKeepingTimer;
+
+    private VirtualHostConfiguration _configuration;
      
     public void setAccessableName(String name)
     {
@@ -99,6 +101,11 @@ public class VirtualHost implements Accessable
     public IConnectionRegistry getConnectionRegistry()
     {
         return _connectionRegistry;
+    }
+
+    public VirtualHostConfiguration getConfiguration()
+    {
+        return _configuration;
     }
 
     /**
@@ -133,6 +140,7 @@ public class VirtualHost implements Accessable
 
     public VirtualHost(VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
     {
+        _configuration = hostConfig;
     	_name = hostConfig.getName();
     	if (_name == null || _name.length() == 0)
         {
