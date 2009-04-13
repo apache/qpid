@@ -34,7 +34,7 @@ public class HashedUserTest extends TestCase
 
     String USERNAME = "username";
     String PASSWORD = "password";
-    String HASHED_PASSWORD = "cGFzc3dvcmQ=";
+    String B64_ENCODED_PASSWORD = "cGFzc3dvcmQ=";
 
     public void testToLongArrayConstructor()
     {
@@ -57,11 +57,11 @@ public class HashedUserTest extends TestCase
     {
         try
         {
-            HashedUser user = new HashedUser(new String[]{USERNAME, HASHED_PASSWORD});
+            HashedUser user = new HashedUser(new String[]{USERNAME, B64_ENCODED_PASSWORD});
             assertEquals("Username incorrect", USERNAME, user.getName());
             int index = 0;
 
-            char[] hash = HASHED_PASSWORD.toCharArray();
+            char[] hash = B64_ENCODED_PASSWORD.toCharArray();
 
             try
             {
