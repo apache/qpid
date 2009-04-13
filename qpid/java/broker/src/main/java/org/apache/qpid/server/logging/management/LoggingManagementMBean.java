@@ -69,7 +69,10 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     private static final Logger _logger = Logger.getLogger(LoggingManagementMBean.class);
     private String _log4jConfigFileName;
     private int _log4jLogWatchInterval;
-    
+    private static final String[] LEVELS = new String[]{Level.ALL.toString(), Level.TRACE.toString(), 
+                                                        Level.DEBUG.toString(), Level.INFO.toString(), 
+                                                        Level.WARN.toString(), Level.ERROR.toString(), 
+                                                        Level.FATAL.toString(),Level.OFF.toString()};   
     static TabularType _loggerLevelTabularType;
     static CompositeType _loggerLevelCompositeType;
 
@@ -108,7 +111,11 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     {
         return _log4jLogWatchInterval;
     }
-
+    
+    public String[] getAvailableLoggerLevels()
+    {
+        return LEVELS;
+    }
     @SuppressWarnings("unchecked")
     public synchronized boolean setRuntimeLoggerLevel(String logger, String level)
     {   
