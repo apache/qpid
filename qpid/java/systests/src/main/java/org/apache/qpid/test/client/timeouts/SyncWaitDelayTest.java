@@ -70,6 +70,7 @@ public class SyncWaitDelayTest extends QpidTestCase
 
         XMLConfiguration configuration = new XMLConfiguration(_configFile); 
         configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.class", "org.apache.qpid.server.store.SlowMessageStore");
+        configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.realStore", "org.apache.qpid.server.store.MemoryMessageStore");
         configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.delays.commitTran.post", POST_COMMIT_DELAY);
         configuration.setProperty("management.enabled", "false");
         

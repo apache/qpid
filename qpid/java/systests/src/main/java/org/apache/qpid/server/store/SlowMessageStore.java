@@ -54,7 +54,7 @@ public class SlowMessageStore implements MessageStore
 
         configureDelays(delays);
 
-        String messageStoreClass = config.getMessageStoreClass();
+        String messageStoreClass = config.getStoreConfiguration().getString("realStore");
 
         if (delays.containsKey(DEFAULT_DELAY))
         {
