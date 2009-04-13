@@ -25,21 +25,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
-import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
-import javax.management.InstanceNotFoundException;
 import javax.management.JMException;
-import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
 import javax.management.remote.rmi.RMIConnectorServer;
@@ -342,7 +335,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         return false;
     }
 
-    // stops the RMIRegistry, if it was running and bound to a port
+    // stops the RMIRegistry and unregisters the MBeans from the MBeanServer
     public void close() throws RemoteException
     {
         if (_rmiRegistry != null)
@@ -350,7 +343,19 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             // Stopping the RMI registry
             UnicastRemoteObject.unexportObject(_rmiRegistry, true);
         }
-        for (ObjectName name : _mbeanServer.queryNames(null, null))
+        
+        //ObjectName query to gather all Qpid related MBeans
+        ObjectName mbeanNameQuery = null;
+        try
+        {
+            mbeanNameQuery = new ObjectName(ManagedObject.DOMAIN + ":*");
+        }
+        catch (Exception e1)
+        {
+            _log.warn("Unable to generate MBean ObjectName query for close operation");
+        }
+
+        for (ObjectName name : _mbeanServer.queryNames(mbeanNameQuery, null))
         {
             try
             {
@@ -358,7 +363,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             }
             catch (JMException e)
             {
-                // Really shouldn't happen, but we'll ignore that...
+                _log.error("Exception unregistering MBean '"+ name +"': " + e.getMessage());
             }
         }
     }
