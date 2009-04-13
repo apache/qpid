@@ -41,7 +41,7 @@ import org.apache.qpid.server.management.MBeanOperationParameter;
 public interface ManagedQueue
 {
     static final String TYPE = "Queue";
-    static final int VERSION = 1;
+    static final int VERSION = 2;
 
     /**
      * Returns the Name of the ManagedQueue.
@@ -72,7 +72,7 @@ public interface ManagedQueue
      * @return
      * @throws IOException
      */
-    @MBeanAttribute(name="QueueDepth", description="Size of messages(KB) in the queue")
+    @MBeanAttribute(name="QueueDepth", description="The total size(Bytes) of messages in the queue")
     Long getQueueDepth() throws IOException, JMException;
 
     /**
@@ -181,7 +181,7 @@ public interface ManagedQueue
      * @param value
      * @throws IOException
      */
-    @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(KB) for Queue Depth")
+    @MBeanAttribute(name="MaximumQueueDepth", description="The threshold high value(Bytes) for Queue Depth")
     void setMaximumQueueDepth(Long value) throws IOException;
 
 

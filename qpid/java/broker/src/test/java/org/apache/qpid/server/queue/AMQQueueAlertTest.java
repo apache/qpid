@@ -202,7 +202,7 @@ public class AMQQueueAlertTest extends TestCase
 
         // Send messages(no of message to be little more than what can cause a Queue_Depth alert)
         int messageCount = Math.round(MAX_QUEUE_DEPTH / MAX_MESSAGE_SIZE) + 10;
-        long totalSize = (messageCount * MAX_MESSAGE_SIZE) >> 10;
+        long totalSize = (messageCount * MAX_MESSAGE_SIZE);
         sendMessages(messageCount, MAX_MESSAGE_SIZE);
 
         // Check queueDepth. There should be no messages on the queue and as the subscriber is listening

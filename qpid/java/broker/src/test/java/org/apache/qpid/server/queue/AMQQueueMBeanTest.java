@@ -73,7 +73,7 @@ public class AMQQueueMBeanTest extends TestCase
         sendMessages(messageCount, false);
         assertTrue(_queueMBean.getMessageCount() == messageCount);
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
-        long queueDepth = (messageCount * MESSAGE_SIZE) >> 10;
+        long queueDepth = (messageCount * MESSAGE_SIZE);
         assertTrue(_queueMBean.getQueueDepth() == queueDepth);
 
         _queueMBean.deleteMessageFromTop();
@@ -94,7 +94,7 @@ public class AMQQueueMBeanTest extends TestCase
         sendMessages(messageCount, true);
         assertEquals("", messageCount, _queueMBean.getMessageCount().intValue());
         assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
-        long queueDepth = (messageCount * MESSAGE_SIZE) >> 10;
+        long queueDepth = (messageCount * MESSAGE_SIZE);
         assertTrue(_queueMBean.getQueueDepth() == queueDepth);
 
         _queueMBean.deleteMessageFromTop();
@@ -175,7 +175,7 @@ public class AMQQueueMBeanTest extends TestCase
 
         assertTrue(_queueMBean.getMaximumMessageCount() == 50000);
         assertTrue(_queueMBean.getMaximumMessageSize() == 2000);
-        assertTrue(_queueMBean.getMaximumQueueDepth() == (maxQueueDepth >> 10));
+        assertTrue(_queueMBean.getMaximumQueueDepth() == (maxQueueDepth));
 
         assertTrue(_queueMBean.getName().equals("testQueue"));
         assertTrue(_queueMBean.getOwner().equals("AMQueueMBeanTest"));
