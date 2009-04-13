@@ -423,17 +423,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             deliverAsync();
         }
 
-        try
-        {
-            _managedObject.checkForNotification(entry.getMessage());
-        }
-        catch (JMException e)
-        {
-            throw new AMQException("Unable to get notification from manage queue: " + e, e);
-        }
-
+        _managedObject.checkForNotification(entry.getMessage());
+        
         return entry;
-
     }
 
     private void deliverToSubscription(final Subscription sub, final QueueEntry entry)
@@ -1431,7 +1423,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    public void removeExpiredIfNoSubscribers() throws AMQException
+    @Override
+    public void checkMessageStatus() throws AMQException
     {
 
         final StoreContext storeContext = new StoreContext();
@@ -1443,10 +1436,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = queueListIterator.getNode();
             if (!node.isDeleted() && node.expired() && node.acquire())
             {
-
                 node.discard(storeContext);
+            } 
+            else 
+            {
+                _managedObject.checkForNotification(node.getMessage());
             }
-
         }
 
     }

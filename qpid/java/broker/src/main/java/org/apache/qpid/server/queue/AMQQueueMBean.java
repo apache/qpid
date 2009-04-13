@@ -246,7 +246,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     /**
      * Checks if there is any notification to be send to the listeners
      */
-    public void checkForNotification(AMQMessage msg) throws AMQException, JMException
+    public void checkForNotification(AMQMessage msg) throws AMQException
     {
 
         final Set<NotificationCheck> notificationChecks = _queue.getNotificationChecks();
