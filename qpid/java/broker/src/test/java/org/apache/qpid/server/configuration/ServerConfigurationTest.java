@@ -20,20 +20,10 @@
  */
 package org.apache.qpid.server.configuration;
 
-<<<<<<< HEAD:qpid/java/broker/src/test/java/org/apache/qpid/server/configuration/ServerConfigurationTest.java
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.SystemConfiguration;
-=======
 import java.util.List;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
->>>>>>> QPID-1612: add test class for ServerConfiguration:qpid/java/broker/src/test/java/org/apache/qpid/server/configuration/ServerConfigurationTest.java
 import org.apache.commons.configuration.XMLConfiguration;
 
 import junit.framework.TestCase;
