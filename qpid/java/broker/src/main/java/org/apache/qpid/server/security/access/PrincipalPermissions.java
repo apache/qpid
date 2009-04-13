@@ -157,7 +157,7 @@ public class PrincipalPermissions
                 AMQShortString queueName = parameters.length > 1 ? (AMQShortString) parameters[1] : null;
                 AMQShortString exchangeName = parameters.length > 2 ? (AMQShortString) parameters[2] : null;
                 //Set the routingkey to the specified value or the queueName if present
-                AMQShortString routingKey = parameters.length > 3 ? (AMQShortString) parameters[3] : queueName;
+                AMQShortString routingKey = (parameters.length > 3 && null != parameters[3]) ? (AMQShortString) parameters[3] : queueName;
 
                 // Get the queues map
                 Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
