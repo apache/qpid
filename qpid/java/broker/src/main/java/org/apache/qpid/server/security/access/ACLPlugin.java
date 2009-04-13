@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.access;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -36,7 +37,7 @@ public interface ACLPlugin
         ABSTAIN        
     }
 
-    void setConfiguration(Configuration config);
+    void setConfiguration(Configuration config) throws ConfigurationException;
 
     // These return true if the plugin thinks the action should be allowed, and false if not. 
     

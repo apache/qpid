@@ -21,12 +21,13 @@
 package org.apache.qpid.server.security.access;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 
 public interface ACLPluginFactory
 {
 
     public boolean supportsTag(String name);
     
-    public ACLPlugin newInstance(Configuration config);
+    public ACLPlugin newInstance(Configuration config) throws ConfigurationException;
     
 }

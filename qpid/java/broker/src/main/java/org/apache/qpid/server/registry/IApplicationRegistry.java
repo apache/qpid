@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.net.InetSocketAddress;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -64,7 +65,7 @@ public interface IApplicationRegistry
 
     VirtualHostRegistry getVirtualHostRegistry();
 
-    ACLManager getAccessManager();
+    ACLManager getAccessManager() throws ConfigurationException;
 
     PluginManager getPluginManager();
 

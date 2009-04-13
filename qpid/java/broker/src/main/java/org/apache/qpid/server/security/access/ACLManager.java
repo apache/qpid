@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.SecurityConfiguration;
@@ -49,12 +50,12 @@ public class ACLManager
     private Map<String, ACLPlugin> _globalPlugins = new HashMap<String, ACLPlugin>();
     private Map<String, ACLPlugin> _hostPlugins = new HashMap<String, ACLPlugin>();
 
-    public ACLManager(SecurityConfiguration configuration, PluginManager manager)
+    public ACLManager(SecurityConfiguration configuration, PluginManager manager) throws ConfigurationException
     {
         this(configuration, manager, null);
     }
 
-    public ACLManager(SecurityConfiguration configuration, PluginManager manager, ACLPluginFactory securityPlugin)
+    public ACLManager(SecurityConfiguration configuration, PluginManager manager, ACLPluginFactory securityPlugin) throws ConfigurationException
     {
         _pluginManager = manager;
 
@@ -73,12 +74,12 @@ public class ACLManager
     }
 
 
-    public void configureHostPlugins(SecurityConfiguration hostConfig)
+    public void configureHostPlugins(SecurityConfiguration hostConfig) throws ConfigurationException
     {
         _hostPlugins = configurePlugins(hostConfig);
     }
     
-    public Map<String, ACLPlugin> configurePlugins(SecurityConfiguration hostConfig)
+    public Map<String, ACLPlugin> configurePlugins(SecurityConfiguration hostConfig) throws ConfigurationException
     {
         Configuration securityConfig = hostConfig.getConfiguration();
         Map<String, ACLPlugin> plugins = new HashMap<String, ACLPlugin>();

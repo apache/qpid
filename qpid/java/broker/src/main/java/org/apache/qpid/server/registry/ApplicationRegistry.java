@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -261,7 +262,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _virtualHostRegistry;
     }
 
-    public ACLManager getAccessManager()
+    public ACLManager getAccessManager() throws ConfigurationException
     {
         return new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
     }

@@ -27,6 +27,7 @@ import java.io.FileWriter;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.SecurityConfiguration;
@@ -79,7 +80,7 @@ public class ACLManagerTest extends TestCase
         assertTrue(_authzManager.authorisePurge(_session, queue));
     }
 
-    public void testACLManagerConfigurationPluginManagerACLPlugin()
+    public void testACLManagerConfigurationPluginManagerACLPlugin() throws ConfigurationException
     {
         _authzManager = new ACLManager(_conf, _pluginManager, ExchangeDenier.FACTORY);
         
@@ -87,7 +88,7 @@ public class ACLManagerTest extends TestCase
         assertFalse(_authzManager.authoriseDelete(_session, exchange));
     }
     
-    public void testConfigurePlugins()
+    public void testConfigurePlugins() throws ConfigurationException
     {
         Configuration hostConfig = new PropertiesConfiguration();
         hostConfig.setProperty("queueDenier", "thisoneneither");
