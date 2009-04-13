@@ -54,6 +54,12 @@ public class ServerConfigurationTest extends TestCase
     {
         _config = new XMLConfiguration();
     }
+    
+    @Override
+    public void tearDown()
+    {
+        ApplicationRegistry.removeAll();
+    }
 
     public void testSetJMXManagementPort() throws ConfigurationException
     {
@@ -743,7 +749,7 @@ public class ServerConfigurationTest extends TestCase
 
     public void testCombinedConfigurationFirewallReload() throws Exception
     {
-     // Write out config
+        // Write out config
         File mainFile = File.createTempFile(getClass().getName(), null);
         File fileA = File.createTempFile(getClass().getName(), null);
         File fileB = File.createTempFile(getClass().getName(), null);
@@ -838,7 +844,6 @@ public class ServerConfigurationTest extends TestCase
         reg.getConfiguration().reparseConfigFile();
         
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
-
     }
 
 }
