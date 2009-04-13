@@ -38,8 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TestIoSession implements IoSession
 {
     private final ConcurrentMap attributes = new ConcurrentHashMap();
-    private String _address;
-    private int _port;
+    private String _address = "127.0.0.1";
+    private int _port = 1;
 
     public TestIoSession()
     {
