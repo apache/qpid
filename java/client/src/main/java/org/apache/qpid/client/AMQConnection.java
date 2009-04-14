@@ -1326,6 +1326,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // handling sequence
         if (cause instanceof IOException || cause instanceof AMQDisconnectedException)
         {
+            // If we have an IOE/AMQDisconnect there is no connection to close on.
+            _closing.set(false);
             closer = !_closed.getAndSet(true);
 
             _protocolHandler.getProtocolSession().notifyError(je);
