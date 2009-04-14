@@ -72,7 +72,6 @@ cluster_la_SOURCES =				\
   qpid/cluster/Multicaster.h			\
   qpid/cluster/McastFrameHandler.h		\
   qpid/cluster/NoOpConnectionOutputHandler.h	\
-  qpid/cluster/StallConnectionOutputHandler.h	\
   qpid/cluster/OutputInterceptor.cpp		\
   qpid/cluster/OutputInterceptor.h		\
   qpid/cluster/PollerDispatch.cpp		\
