@@ -151,6 +151,8 @@ class Connection :
 
     void giveReadCredit(int credit);
 
+    void deliverClose();
+
   private:
     struct NullFrameHandler : public framing::FrameHandler {
         void handle(framing::AMQFrame&) {}
@@ -165,7 +167,6 @@ class Connection :
     
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
-    void deliverClose();
     void deliverDoOutput(uint32_t requested);
     void sendDoOutput();
 

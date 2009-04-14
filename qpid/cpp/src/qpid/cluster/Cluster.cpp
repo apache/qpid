@@ -611,13 +611,13 @@ void Cluster::memberUpdate(Lock& l) {
         mgmtObject->set_memberIDs(idstr);
     }
 
-    // Erase connections belonging to members that have left the cluster.
+    // Close connections belonging to members that have left the cluster.
     ConnectionMap::iterator i = connections.begin();
     while (i != connections.end()) {
         ConnectionMap::iterator j = i++;
         MemberId m = j->second->getId().getMember();
         if (m != self && !map.isMember(m))
-            connections.erase(j);
+            j->second->deliverClose();
     }
 }
 
