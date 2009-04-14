@@ -52,6 +52,13 @@ public abstract class Closeable
     protected final AtomicBoolean _closed = new AtomicBoolean(false);
 
     /**
+     * Are we in the process of closing. We have this distinction so we can
+     * still signal we are in the process of closing so other objects can tell
+     * the difference and tidy up.
+     */
+    protected final AtomicBoolean _closing = new AtomicBoolean(false);
+
+    /**
      * Checks if this is closed, and raises a JMSException if it is.
      *
      * @throws JMSException If this is closed.
@@ -73,6 +80,17 @@ public abstract class Closeable
     {
         return _closed.get();
     }
+
+    /**
+     * Checks if this is closis.
+     *
+     * @return <tt>true</tt> if we are closing, <tt>false</tt> otherwise.
+     */
+    public boolean isClosing()
+    {
+        return _closing.get();
+    }
+
 
     /**
      * Closes this object.

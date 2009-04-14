@@ -27,3 +27,7 @@ org.apache.qpid.server.security.acl.SimpleACLTest#*
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
+org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait
+
+// This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
+org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*

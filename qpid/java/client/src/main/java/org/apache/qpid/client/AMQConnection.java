@@ -58,6 +58,7 @@ import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -889,7 +890,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         if (!_closed.getAndSet(true))
         {
-            doClose(sessions, timeout);
+            _closing.set(true);
+            try{
+                doClose(sessions, timeout);
+            }finally{
+                _closing.set(false);
+            }
         }
     }
 
@@ -1283,8 +1289,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         // in the case of an IOException, MINA has closed the protocol session so we set _closed to true
         // so that any generic client code that tries to close the connection will not mess up this error
         // handling sequence
-        if (cause instanceof IOException)
+        if (cause instanceof IOException || cause instanceof AMQDisconnectedException)
         {
+            // If we have an IOE/AMQDisconnect there is no connection to close on.
+            _closing.set(false);
             closer = !_closed.getAndSet(true);
 
             _protocolHandler.getProtocolSession().notifyError(je);

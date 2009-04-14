@@ -541,6 +541,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
         if (!_closed.getAndSet(true))
         {
+            _closing.set(true);
             if (_logger.isDebugEnabled())
             {
                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -561,7 +562,13 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                 {
                     try
                     {
-                        sendCancel();
+                        // If the session is open or we are in the process
+                        // of closing the session then send a cance
+                        // no point otherwise as the connection will be gone
+                        if (!_session.isClosed() || _session.isClosing())
+                        {
+                            sendCancel();
+                        }
                     }
                     catch (AMQException e)
                     {

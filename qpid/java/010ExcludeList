@@ -59,3 +59,5 @@ org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
 org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
 org.apache.qpid.server.queue.PriorityTest#*
 org.apache.qpid.server.queue.TimeToLiveTest#*
+// This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
+org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
