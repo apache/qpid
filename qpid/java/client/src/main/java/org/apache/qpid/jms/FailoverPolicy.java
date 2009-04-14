@@ -23,6 +23,7 @@ package org.apache.qpid.jms;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
+import org.apache.qpid.jms.failover.NoFailover;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +88,10 @@ public class FailoverPolicy
                 if (failoverMethod.equals(FailoverMethod.ROUND_ROBIN))
                 {
                     method = new FailoverRoundRobinServers(connectionDetails);
+                }
+                else if (failoverMethod.equals(FailoverMethod.NO_FAILOVER))
+                {
+                    method = new NoFailover(connectionDetails);
                 }
                 else
                 {
