@@ -42,6 +42,7 @@ public class CloseAfterConnectionFailureTest extends QpidTestCase implements Exc
     Session session;
     MessageConsumer consumer;
     private CountDownLatch _latch = new CountDownLatch(1);
+    private JMSException _fail;
 
     public void testNoFailover() throws URLSyntaxException, AMQVMBrokerCreationException,
                                         InterruptedException, JMSException
@@ -63,6 +64,12 @@ public class CloseAfterConnectionFailureTest extends QpidTestCase implements Exc
             //Kill connection
             TransportConnection.killAllVMBrokers();
             _latch.await();
+
+            if (_fail != null)
+            {
+                _fail.printStackTrace(System.out);
+                fail("Exception thrown:" + _fail.getMessage());
+            }
         }
         catch (AMQException e)
         {
@@ -72,39 +79,43 @@ public class CloseAfterConnectionFailureTest extends QpidTestCase implements Exc
 
     public void onException(JMSException e)
     {
-        System.err.println("Connection isClosed after connection Falure?:" + connection.isClosed());
+        System.out.println("Connection isClosed after connection Falure?:" + connection.isClosed());
         try
         {
             consumer.close();
         }
-        catch (JMSException jsme)
+        catch (JMSException jmse)
         {
-            System.err.println("Consumer close failed with:" + jsme.getMessage());
+            System.out.println("Consumer close failed with:" + jmse.getMessage());
+            _fail = jmse;
         }
-        System.err.println("Connection isClosed after connection Falure?:" + connection.isClosed());
+        System.out.println("Connection isClosed after connection Falure?:" + connection.isClosed());
         try
         {
             //Note that if we actually do session.close() we will lock up as the session will never receive a frame
             // from the
-            ((AMQSession)session).close(10);
+            ((AMQSession) session).close(10);
         }
-        catch (JMSException jsme)
+        catch (JMSException jmse)
         {
-            System.err.println("Session close failed with:" + jsme.getMessage());
+            System.out.println("Session close failed with:" + jmse.getMessage());
+            _fail = jmse;
         }
-        System.err.println("Connection isClosed after connection Falure?:" + connection.isClosed());
+        System.out.println("Connection isClosed after connection Falure?:" + connection.isClosed());
 
         try
         {
             connection.close();
         }
-        catch (JMSException jsme)
+        catch (JMSException jmse)
         {
-            System.err.println("Session close failed with:" + jsme.getMessage());
+            System.out.println("Session close failed with:" + jmse.getMessage());
+            _fail = jmse;
         }
-        System.err.println("Connection isClosed after connection Falure?:" + connection.isClosed());
+        System.out.println("Connection isClosed after connection Falure?:" + connection.isClosed());
 
         _latch.countDown();
+
     }
 
 }

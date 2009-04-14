@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import java.io.Serializable;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -698,7 +699,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 // Failover failed and ain't coming back. Knife the dispatcher.
                 _dispatcherThread.interrupt();
             }
-        }
+
+       }
+
+        //if we don't have an exception then we can perform closing operations  
+        _closing.set(e == null);
 
         if (!_closed.getAndSet(true))
         {
@@ -3000,5 +3005,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 _logger.warn("Unable to suspend channel");
             }
         }
+    }
+
+    /**
+     * Checks if the Session and its parent connection are closed
+     *
+     * @return <tt>true</tt> if this is closed, <tt>false</tt> otherwise.
+     */
+    @Override
+    public boolean isClosed()
+    {
+        return _closed.get() || _connection.isClosed();
+    }
+
+    /**
+     * Checks if the Session and its parent connection are capable of performing
+     * closing operations
+     *
+     * @return <tt>true</tt> if we are closing, <tt>false</tt> otherwise.
+     */
+    @Override
+    public boolean isClosing()
+    {
+        return _closing.get()|| _connection.isClosing();
     }
 }
