@@ -101,11 +101,11 @@ class SocketProxy : private qpid::sys::Runnable
         std::auto_ptr<LowSocket> server;
         try {
             fd_set socks;
-            FD_ZERO(&socks);
             FdType maxFd = listener.getFd();
-            FD_SET(maxFd, &socks);
             struct timeval tmo;
             for (;;) {
+                FD_ZERO(&socks);
+                FD_SET(maxFd, &socks);
                 tmo.tv_sec = 0;
                 tmo.tv_usec = 500 * 1000;
                 if (select(maxFd+1, &socks, 0, 0, &tmo) == 0) {
