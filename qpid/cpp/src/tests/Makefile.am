@@ -242,24 +242,6 @@ libdlclose_noop_la_SOURCES = dlclose_noop.c
 
 CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 
-# FIXME aconway 2008-05-23: Disabled interop_runner because it uses
-# the obsolete Channel class.  Convert to Session and re-enable.
-# 
-# check_PROGRAMS += interop_runner
-
-# interop_runner_SOURCES = 	\
-#   interop_runner.cpp	 	\
-#   SimpleTestCaseBase.cpp	\
-#   BasicP2PTest.cpp		\
-#   BasicPubSubTest.cpp		\
-#   SimpleTestCaseBase.h		\
-#   BasicP2PTest.h		\
-#   BasicPubSubTest.h		\
-#   TestCase.h			\
-#   TestOptions.h ConnectionOptions.h
-# interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
-
-
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
 
