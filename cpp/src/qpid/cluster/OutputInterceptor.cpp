@@ -48,7 +48,6 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
     }
     if (!parent.isCatchUp())
         sent += f.encodedSize();
-    QPID_LATENCY_RECORD("up to write queue", f);
 }
 
 void OutputInterceptor::activateOutput() {
@@ -99,7 +98,6 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
 // Send a doOutput request if one is not already in flight.
 void OutputInterceptor::sendDoOutput() {
     if (!parent.isLocal()) return;
-    QPID_LATENCY_INIT(*this);
     doingOutput = true;
     size_t request = writeEstimate.sending(getBuffered());
     
