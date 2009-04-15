@@ -326,21 +326,15 @@ startNewBroker ( brokerVector & brokers,
     static int brokerId = 0;
     stringstream path, prefix;
     prefix << "soak-" << brokerId;
-    string dataDir("/tmp/failover_soak.XXXXXX");
-    if (!mkdtemp(const_cast<char*>(dataDir.c_str())))
-        throw qpid::ErrnoException("Can't create data dir");
-
     std::vector<std::string> argv = list_of<string>
         ("qpidd")
         ("--cluster-name")(clusterName)
         ("--auth=no")
-        ("--data-dir")(dataDir)
         ("--mgmt-enable=no")
-        ("--log-prefix")
-        (prefix.str())
-        ("--log-to-file")
+        ("--log-prefix")(prefix.str())
+        ("--log-to-file")(prefix.str()+".log")
         ("--log-enable=error+")
-        (prefix.str()+".log");
+        ("TMP_DATA_DIR");
 
     if (endsWith(moduleOrDir, "cluster.so")) {
         // Module path specified, load only that module.
@@ -355,7 +349,7 @@ startNewBroker ( brokerVector & brokers,
         argv.push_back(string("--module-dir=")+moduleOrDir);
     }
 
-    newbie = new ForkedBroker ( argv );
+    newbie = new ForkedBroker (argv);
     newbie_port = newbie->getPort();
     ForkedBroker * broker = newbie;
 

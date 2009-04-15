@@ -31,14 +31,28 @@
 using namespace std;
 using qpid::ErrnoException;
 
-ForkedBroker::ForkedBroker(const Args& args) { init(args); }
-
-ForkedBroker::ForkedBroker(int argc, const char* const argv[]) { init(Args(argv, argc+argv)); }
+ForkedBroker::ForkedBroker(const Args& constArgs) {
+    Args args(constArgs);
+    Args::iterator i = find(args.begin(), args.end(), string("TMP_DATA_DIR"));
+    if (i != args.end()) {
+        args.erase(i);
+        char dd[] = "/tmp/ForkedBroker.XXXXXX";
+        if (!mkdtemp(dd))
+            throw qpid::ErrnoException("Can't create data dir");
+        dataDir = dd;
+        args.push_back("--data-dir");
+        args.push_back(dataDir);
+    }
+    init(args);
+}
 
 ForkedBroker::~ForkedBroker() {
-    try { kill(); } catch(const std::exception& e) {
+    try { kill(); }
+    catch (const std::exception& e) {
         QPID_LOG(error, QPID_MSG("Killing forked broker: " << e.what()));
     }
+    if (!dataDir.empty()) 
+        ::system(("rm -rf "+dataDir).c_str());
 }
 
 void ForkedBroker::kill(int sig) {

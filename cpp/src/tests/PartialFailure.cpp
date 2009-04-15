@@ -53,11 +53,8 @@ void updateArgs(ClusterFixture::Args& args, size_t index) {
     os << "--test-store-name=s" << index;
     args.push_back(os.str());
     args.push_back("--load-module=.libs/test_store.so");
-    string dataDir("/tmp/PartialFailure.XXXXXX");
-    if (!mkdtemp(const_cast<char*>(dataDir.c_str())))
-        throw ErrnoException("Can't create data dir");
-    args.push_back("--data-dir="+dataDir);
     args.push_back("--auth=no");
+    args.push_back("TMP_DATA_DIR");
 
     // These tests generate errors deliberately, disable error logging unless a log env var is set.
     if (!::getenv("QPID_TRACE") && !::getenv("QPID_LOG_ENABLE")) {
