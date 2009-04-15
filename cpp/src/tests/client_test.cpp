@@ -32,8 +32,8 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Session.h"
-#include "qpid/framing/FrameSet.h"
-#include "qpid/framing/all_method_bodies.h"
+#include "qpid/client/SubscriptionManager.h"
+
 
 using namespace qpid;
 using namespace qpid::client;
@@ -113,35 +113,18 @@ int main(int argc, char** argv)
         session.messageTransfer(arg::destination="MyExchange", arg::content=msgOut, arg::acceptMode=1);
 	if (opts.verbose) print("Published message: ", msgOut);
 
-        //subscribe to the queue, add sufficient credit and then get
-        //incoming 'frameset', check that its a message transfer and
-        //then convert it to a message (see Dispatcher and
-        //SubscriptionManager utilties for common reusable patterns at
-        //a higher level)
-        session.messageSubscribe(arg::queue="MyQueue", arg::destination="MyId");
-        session.messageFlow(arg::destination="MyId", arg::unit=0, arg::value=1); //credit for one message
-        session.messageFlow(arg::destination="MyId", arg::unit=1, arg::value=0xFFFFFFFF); //credit for infinite bytes
-	if (opts.verbose) std::cout << "Subscribed to queue." << std::endl;
-        FrameSet::shared_ptr incoming = session.get();
-        if (incoming->isA<MessageTransferBody>()) {
-            Message msgIn(*incoming);
-            if (msgIn.getData() == msgOut.getData()) {
-                if (opts.verbose) std::cout << "Received the exepected message." << std::endl;
-                session.messageAccept(SequenceSet(msgIn.getId()));
-                session.markCompleted(msgIn.getId(), true, true);
-            } else {
-                print("Received an unexepected message: ", msgIn);
-            }
-        } else {
-            throw Exception("Unexpected command received");
-        }
-        
+        // Using the SubscriptionManager, get the message from the queue.
+        SubscriptionManager subs(session);
+        Message msgIn = subs.get("MyQueue");
+        if (msgIn.getData() == msgOut.getData()) 
+            if (opts.verbose) std::cout << "Received the exepected message." << std::endl;
+
         //close the session & connection
 	session.close();
 	if (opts.verbose) std::cout << "Closed session." << std::endl;
 	connection.close();	
 	if (opts.verbose) std::cout << "Closed connection." << std::endl;
-    return 0;
+        return 0;
     } catch(const std::exception& e) {
 	std::cout << e.what() << std::endl;
     }
