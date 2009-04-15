@@ -49,6 +49,9 @@ Dispatcher::Dispatcher(const Session& s, const std::string& q)
         session.getExecution().getDemux().get(q); 
 }
 
+Dispatcher::~Dispatcher() {}
+    
+
 void Dispatcher::start()
 {
     worker = Thread(this);

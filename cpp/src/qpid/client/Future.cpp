@@ -20,6 +20,7 @@
  */
 
 #include "Future.h"
+#include "SessionImpl.h"
 
 namespace qpid {
 namespace client {

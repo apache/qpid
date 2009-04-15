@@ -24,6 +24,7 @@
 
 #include "ClusterMap.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/sys/Runnable.h"

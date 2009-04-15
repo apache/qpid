@@ -25,7 +25,6 @@
 #include "types.h"
 #include "qpid/RefCountedBuffer.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/sys/LatencyMetric.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
 
@@ -42,7 +41,7 @@ class Buffer;
 namespace cluster {
 
 /** Header data for a multicast event */
-class EventHeader : public ::qpid::sys::LatencyMetricTimestamp {
+class EventHeader {
   public:
     EventHeader(EventType t=DATA, const ConnectionId& c=ConnectionId(), size_t size=0);
     void decode(const MemberId& m, framing::Buffer&);

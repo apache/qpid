@@ -25,7 +25,6 @@
 #include "types.h"
 #include "Event.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
 #include <iosfwd>
 
