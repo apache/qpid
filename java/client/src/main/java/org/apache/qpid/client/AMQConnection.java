@@ -1310,6 +1310,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             else
             {
                 //Should never get here as all AMQEs are required to have an ErrorCode!
+                // Other than AMQDisconnectedEx!
+
+                if (cause instanceof AMQDisconnectedException)
+                {
+                    Exception last = _protocolHandler.getStateManager().getLastException();
+                    if (last != null)
+                    {
+                        _logger.info("StateManager had an exception for us to use a cause of our Disconnected Exception");
+                        cause = last;
+                    }
+                }
                 je = new JMSException("Exception thrown against " + toString() + ": " + cause);
             }
 
