@@ -55,7 +55,7 @@ public class FirewallPlugin extends AbstractACLPlugin
         public ACLPlugin newInstance(Configuration config) throws ConfigurationException
         {
             FirewallPlugin plugin = new FirewallPlugin();
-            plugin.setConfiguration(config);
+            plugin.setConfiguration(config.subset("firewall"));
             return plugin;
         }
     };
@@ -245,7 +245,7 @@ public class FirewallPlugin extends AbstractACLPlugin
         }
         CompositeConfiguration finalConfig = new CompositeConfiguration(config);
         
-        List subFiles = config.getList("firewall.xml[@fileName]");
+        List subFiles = config.getList("xml[@fileName]");
         for (Object subFile : subFiles)
         {
             finalConfig.addConfiguration(new XMLConfiguration((String) subFile));

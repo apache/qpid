@@ -696,6 +696,64 @@ public class ServerConfigurationTest extends TestCase
                 "foo", config.getManagementKeyStorePath());
     }
 
+    public void testFirewallConfiguration() throws Exception
+    {
+     // Write out config
+        File mainFile = File.createTempFile(getClass().getName(), null);
+        mainFile.deleteOnExit();
+        FileWriter out = new FileWriter(mainFile);
+
+        out.write("<broker>\n");
+        out.write("\t<management><enabled>false</enabled></management>\n");
+        out.write("\t<security>\n");
+        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t\t<principal-database>\n");
+        out.write("\t\t\t\t<name>passwordfile</name>\n");
+        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
+        out.write("\t\t\t\t<attributes>\n");
+        out.write("\t\t\t\t\t<attribute>\n");
+        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
+        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
+        out.write("\t\t\t\t\t</attribute>\n");
+        out.write("\t\t\t\t</attributes>\n");
+        out.write("\t\t\t</principal-database>\n");
+        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t<jmx>\n");
+        out.write("\t\t\t<access>/dev/null</access>\n");
+        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
+        out.write("\t\t</jmx>\n");
+        out.write("\t\t<firewall>\n");
+        out.write("\t\t\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
+        out.write("\t\t</firewall>\n");
+        out.write("\t</security>\n");
+        out.write("\t<virtualhosts>\n");
+        out.write("\t\t<virtualhost>\n");
+        out.write("\t\t\t<name>test</name>\n");
+        out.write("\t\t</virtualhost>\n");
+        out.write("\t</virtualhosts>\n");
+        out.write("</broker>\n");
+        out.close();
+        
+        // Load config
+        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+        ApplicationRegistry.initialise(reg, 1);
+
+        // Test config
+        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+        AMQCodecFactory codecFactory = new AMQCodecFactory(true);
+
+        TestIoSession iosession = new TestIoSession();
+        iosession.setAddress("127.0.0.1");
+        
+        AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
+        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+        
+        iosession.setAddress("127.1.2.3");
+        session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
+        assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+    }
+    
     public void testCombinedConfigurationFirewall() throws Exception
     {
         // Write out config
@@ -756,11 +814,13 @@ public class ServerConfigurationTest extends TestCase
         ApplicationRegistry.initialise(reg, 1);
 
         // Test config
-        TestIoSession iosession = new TestIoSession();
-        iosession.setAddress("127.0.0.1");
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         AMQCodecFactory codecFactory = new AMQCodecFactory(true);
+
+        TestIoSession iosession = new TestIoSession();
+        iosession.setAddress("127.0.0.1");
+        
         AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
