@@ -20,6 +20,9 @@
  */
 #include "FailoverListener.h"
 #include "SessionBase_0_10Access.h"
+#include "qpid/client/SessionImpl.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/SubscriptionImpl.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"

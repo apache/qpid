@@ -47,7 +47,6 @@
 #include "qpid/management/ManagementBroker.h"
 #include "qpid/memory.h"
 #include "qpid/shared_ptr.h"
-#include "qpid/sys/LatencyMetric.h"
 #include "qpid/sys/Thread.h"
 
 #include <boost/bind.hpp>
@@ -227,8 +226,6 @@ void Cluster::deliver(
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     Event e(Event::decodeCopy(from, buf));
-    if (from == self)  // Record self-deliveries for flow control.
-        mcast.selfDeliver(e);
     deliverEvent(e);
 }
 

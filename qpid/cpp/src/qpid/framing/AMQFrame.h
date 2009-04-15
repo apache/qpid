@@ -26,7 +26,6 @@
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
 #include "ProtocolVersion.h"
-#include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
 #include "qpid/CommonImportExport.h"
@@ -34,7 +33,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQFrame : public AMQDataBlock, public sys::LatencyMetricTimestamp
+class AMQFrame : public AMQDataBlock
 {
   public:
     QPID_COMMON_EXTERN AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);

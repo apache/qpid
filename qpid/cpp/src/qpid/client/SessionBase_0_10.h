@@ -28,9 +28,7 @@
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/TransferContent.h"
 #include "qpid/client/Completion.h"
-#include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Execution.h"
-#include "qpid/client/SessionImpl.h"
 #include "qpid/client/TypedResult.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/client/ClientImportExport.h"
@@ -62,7 +60,7 @@ enum CreditUnit { MESSAGE_CREDIT=0, BYTE_CREDIT=1, UNLIMITED_CREDIT=0xFFFFFFFF }
  */
 class SessionBase_0_10 {
   public:
-    
+
     typedef framing::TransferContent DefaultContent;
 
     ///@internal

@@ -22,7 +22,6 @@
 #include "Multicaster.h"
 #include "Cpg.h"
 #include "qpid/log/Statement.h"
-#include "qpid/sys/LatencyMetric.h"
 #include "qpid/framing/AMQBody.h"
 #include "qpid/framing/AMQFrame.h"
 
@@ -64,7 +63,6 @@ void Multicaster::mcast(const Event& e) {
             return;
         }
     }
-    QPID_LATENCY_INIT(e);
     queue.push(e);
 }
 
@@ -73,7 +71,6 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
     try {
         PollableEventQueue::Queue::iterator i = values.begin();
         while( i != values.end()) {
-            QPID_LATENCY_RECORD("mcast send queue", *i);
             iovec iov = i->toIovec();
             if (!cpg.mcast(&iov, 1)) {
                 // cpg didn't send because of CPG flow control.
@@ -95,11 +92,6 @@ void Multicaster::release() {
     holding = false;
     std::for_each(holdingQueue.begin(), holdingQueue.end(), boost::bind(&Multicaster::mcast, this, _1));
     holdingQueue.clear();
-}
-
-void Multicaster::selfDeliver(const Event& e) {
-    sys::Mutex::ScopedLock l(lock);
-    QPID_LATENCY_RECORD("cpg self deliver", e);
 }
 
 }} // namespace qpid::cluster

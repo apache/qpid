@@ -24,10 +24,11 @@
 
 #include <boost/shared_ptr.hpp>
 #include "Future.h"
-#include "SessionImpl.h"
 
 namespace qpid {
 namespace client {
+
+class SessionImpl;
 
 /** 
  * Asynchronous commands that do not return a result will return a

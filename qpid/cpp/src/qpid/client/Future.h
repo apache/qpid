@@ -29,7 +29,6 @@
 #include "qpid/framing/StructHelper.h"
 #include "FutureCompletion.h"
 #include "FutureResult.h"
-#include "SessionImpl.h"
 #include "ClientImportExport.h"
 
 namespace qpid {

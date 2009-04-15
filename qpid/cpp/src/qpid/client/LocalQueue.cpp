@@ -21,6 +21,7 @@
 #include "LocalQueue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FrameSet.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "HandlePrivate.h"
 #include "SubscriptionImpl.h"
