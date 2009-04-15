@@ -28,9 +28,7 @@ EventFrame::EventFrame() {}
 
 EventFrame::EventFrame(const EventHeader& e, const framing::AMQFrame& f, int rc)
     : connectionId(e.getConnectionId()), frame(f), readCredit(rc), type(e.getType())
-{
-    QPID_LATENCY_INIT(frame);
-}
+{}
 
 std::ostream& operator<<(std::ostream& o, const EventFrame& e) {
     if (e.frame.getBody()) o << e.frame;
