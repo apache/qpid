@@ -21,7 +21,7 @@
  */
 
 #if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
-#if defined(COMMON_EXPORT)
+#if defined(COMMON_EXPORT) || defined (qpidcommon_EXPORTS)
 #define QPID_COMMON_EXTERN __declspec(dllexport)
 #else
 #define QPID_COMMON_EXTERN __declspec(dllimport)
