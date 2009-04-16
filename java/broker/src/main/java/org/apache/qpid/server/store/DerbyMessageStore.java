@@ -356,9 +356,16 @@ public class DerbyMessageStore implements MessageStore
             String queueName = rs.getString(1);
             String owner = rs.getString(2);
             AMQShortString queueNameShortString = new AMQShortString(queueName);
-            AMQQueue q =  AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
-                                                             null);
-            _virtualHost.getQueueRegistry().registerQueue(q);
+
+            AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueNameShortString);
+
+            if (q == null)
+            {
+                q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, _virtualHost,
+                                                       null);
+                _virtualHost.getQueueRegistry().registerQueue(q);
+            }
+            
             queueMap.put(queueNameShortString,q);
 
         }
@@ -394,8 +401,13 @@ public class DerbyMessageStore implements MessageStore
                 String type = rs.getString(2);
                 boolean autoDelete = rs.getShort(3) != 0;
 
-                exchange = _virtualHost.getExchangeFactory().createExchange(new AMQShortString(exchangeName), new AMQShortString(type), true, autoDelete, 0);
-                _virtualHost.getExchangeRegistry().registerExchange(exchange);
+                AMQShortString exchangeNameSS = new AMQShortString(exchangeName);
+                exchange = _virtualHost.getExchangeRegistry().getExchange(exchangeNameSS);
+                if (exchange == null)
+                {
+                    exchange = _virtualHost.getExchangeFactory().createExchange(exchangeNameSS, new AMQShortString(type), true, autoDelete, 0);
+                    _virtualHost.getExchangeRegistry().registerExchange(exchange);
+                }
                 exchanges.add(exchange);
 
             }
