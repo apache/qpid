@@ -457,12 +457,32 @@ public class AMQMessage implements Filterable<AMQException>
 
     public Object getPublisherClientInstance()
     {
-        return _sessionIdentifier.getSessionInstance();
+        //todo store sessionIdentifier/client id with message in store
+        //Currently the _sessionIdentifier will be null if the message has been
+        // restored from a message Store
+        if (_sessionIdentifier == null)
+        {
+            return null;
+        }
+        else
+        {
+            return _sessionIdentifier.getSessionInstance();
+        }
     }
                                                                                           
     public Object getPublisherIdentifier()
     {
-        return _sessionIdentifier.getSessionIdentifier();
+        //todo store sessionIdentifier/client id with message in store
+        //Currently the _sessionIdentifier will be null if the message has been
+        // restored from a message Store
+        if (_sessionIdentifier == null)
+        {
+            return null;
+        }
+        else
+        {
+            return _sessionIdentifier.getSessionIdentifier();
+        }
     }
 
     public void setClientIdentifier(final AMQProtocolSession.ProtocolSessionIdentifier sessionIdentifier)

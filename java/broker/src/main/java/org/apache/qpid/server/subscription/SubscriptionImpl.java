@@ -382,11 +382,10 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 //            return false;
         }
 
-
-
-        //todo - client id should be recoreded and this test removed but handled below
         if (_noLocal)
         {
+            //todo - client id should be recoreded so we don't have to handle
+            // the case where this is null.
             final Object publisherId = entry.getMessage().getPublisherClientInstance();
 
             // We don't want local messages so check to see if message is one we sent
@@ -404,9 +403,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             {
 
                 localInstance = getProtocolSession().getClientIdentifier();
-                //todo - client id should be recoreded and this test removed but handled here
 
-
+                //todo - client id should be recoreded so we don't have to do the null check
                 if (localInstance != null && localInstance.equals(entry.getMessage().getPublisherIdentifier()))
                 {
                     return false;
