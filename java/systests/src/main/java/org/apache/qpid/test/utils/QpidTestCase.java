@@ -25,6 +25,7 @@ import javax.jms.Destination;
 import javax.jms.Session;
 import javax.jms.MessageProducer;
 import javax.jms.Message;
+import javax.jms.JMSException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.*;
@@ -42,6 +43,8 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -584,6 +587,15 @@ public class QpidTestCase extends TestCase
         return getConnection("guest", "guest");
     }
 
+    public Connection getConnection(ConnectionURL url) throws JMSException
+    {
+        Connection connection = new AMQConnectionFactory(url).createConnection("guest", "guest");
+
+        _connections.add(connection);
+
+        return connection;
+    }
+
     /**
      * Get a connection (remote or in-VM)
      *
@@ -647,6 +659,34 @@ public class QpidTestCase extends TestCase
             messages.add(next);
         }
         return messages;
+    }
+
+    public ConnectionURL getConnectionURL() throws NamingException
+    {
+        return getConnectionFactory().getConnectionURL();
+    }
+
+
+    public BrokerDetails getBroker()
+    {
+        try
+        {
+            if (getConnectionFactory().getConnectionURL().getBrokerCount() > 0)
+            {
+                return getConnectionFactory().getConnectionURL().getBrokerDetails(0);
+            }
+            else
+            {
+                fail("No broker details are available.");
+            }
+        }
+        catch (NamingException e)
+        {
+            fail(e.getMessage());
+        }
+
+        //keep compiler happy
+        return null;
     }
 
 }

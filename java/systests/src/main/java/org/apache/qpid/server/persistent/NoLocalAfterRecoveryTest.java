@@ -24,8 +24,11 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.commons.configuration.XMLConfiguration;
 
 import javax.jms.Connection;
@@ -55,25 +58,49 @@ public class NoLocalAfterRecoveryTest extends QpidTestCase implements Connection
     protected static final int SEND_COUNT = 10;
     private CountDownLatch _failoverComplete = new CountDownLatch(1);
 
+    protected ConnectionURL _connectionURL;
+
     @Override
     protected void setUp() throws Exception
     {
+
         XMLConfiguration configuration = new XMLConfiguration(_configFile);
         configuration.setProperty("virtualhosts.virtualhost.test.store.class", "org.apache.qpid.server.store.DerbyMessageStore");
+        configuration.setProperty("virtualhosts.virtualhost.test.store."+ DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
+                                  System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir")) + File.separator + "derbyDB-NoLocalAfterRecoveryTest");
 
         File tmpFile = File.createTempFile("configFile", "test");
         tmpFile.deleteOnExit();
         configuration.save(tmpFile);
 
         _configFile = tmpFile;
+        _connectionURL = getConnectionURL();
+
+        BrokerDetails details = _connectionURL.getBrokerDetails(0);
+
+        // Due to the problem with SingleServer delaying on all connection
+        // attempts. So using a high retry value.
+        if (_broker.equals(VM))
+        {
+            // Local testing suggests InVM restart takes under a second
+            details.setProperty(BrokerDetails.OPTIONS_RETRY, "5");
+            details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "200");
+        }
+        else
+        {
+            // This will attempt to failover for 3 seconds.
+            // Local testing suggests failover takes 2 seconds
+            details.setProperty(BrokerDetails.OPTIONS_RETRY, "10");
+            details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "500");
+        }
+
         super.setUp();        
     }
 
     public void test() throws Exception
     {
 
-
-        Connection connection = getConnection();
+        Connection connection = getConnection(_connectionURL);
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
         Topic topic = (Topic) getInitialContext().lookup("topic");
