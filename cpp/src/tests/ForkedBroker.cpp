@@ -102,7 +102,8 @@ void ForkedBroker::init(const Args& userArgs) {
         ::close(pipeFds[0]);
         int fd = ::dup2(pipeFds[1], 1); // pipe stdout to the parent.
         if (fd < 0) throw ErrnoException("dup2 failed");
-        const char* prog = "../qpidd";
+        const char* prog = ::getenv("QPID_FORKED_BROKER");
+        if (!prog) prog = "../qpidd";
         Args args(userArgs);
         args.push_back("--port=0");
         // Keep quiet except for errors.
