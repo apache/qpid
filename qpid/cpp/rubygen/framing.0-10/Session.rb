@@ -160,6 +160,7 @@ class SessionNoKeywordGen < CppGen
     cpp_file(@file) { 
       include @classname
       include "qpid/framing/all_method_bodies.h"
+      include "qpid/client/SessionImpl.h"
       namespace(@namespace) {
         genl "using namespace framing;"
         session_methods(sync_default).each { |m|
