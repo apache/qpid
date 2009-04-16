@@ -21,6 +21,10 @@ import junit.framework.TestCase;
 import junit.framework.TestResult;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.Session;
+import javax.jms.MessageProducer;
+import javax.jms.Message;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.*;
@@ -47,6 +51,8 @@ import org.slf4j.LoggerFactory;
  */
 public class QpidTestCase extends TestCase
 {
+    protected final String QpidHome = System.getProperty("QPID_HOME");
+    protected File _configFile = new File(QpidHome, "etc/config-systests.xml");
 
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
@@ -182,7 +188,6 @@ public class QpidTestCase extends TestCase
         }
 
         _logger.info("========== start " + _testName + " ==========");
-        startBroker();
         try
         {
             super.runBare();
@@ -207,6 +212,17 @@ public class QpidTestCase extends TestCase
                 out.close();
             }
         }
+    }
+
+    @Override
+    protected void setUp() throws Exception
+    {
+        if (!_configFile.exists())
+        {
+            fail("Unable to test without config file:" + _configFile);
+        }
+        
+        startBroker();
     }
 
     public void run(TestResult testResult)
@@ -294,12 +310,6 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public void startBroker(int port, ApplicationRegistry config) throws Exception
-    {
-        ApplicationRegistry.initialise(config, port);
-        startBroker(port);
-    }
-
     public void startBroker() throws Exception
     {
         startBroker(0);
@@ -336,6 +346,7 @@ public class QpidTestCase extends TestCase
         if (_broker.equals(VM))
         {
             // create an in_VM broker
+            ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(_configFile), port);
             TransportConnection.createVMBroker(port);
         }
         else if (!_broker.equals(EXTERNAL))
@@ -603,6 +614,24 @@ public class QpidTestCase extends TestCase
         }
 
         revertSystemProperties();
+    }
+
+    public List<Message> sendMessage(Session session, Destination destination,
+                                     int count) throws Exception
+    {
+        List<Message> messages = new ArrayList<Message>(count);
+        
+        MessageProducer producer = session.createProducer(destination);
+
+        for (int i = 0; i < count; i++)
+        {
+            Message next = session.createMessage();
+
+            producer.send(next);
+
+            messages.add(next);
+        }
+        return messages;
     }
 
 }

@@ -189,6 +189,7 @@ public class FrameworkBaseCase extends QpidTestCase implements FrameworkTestCont
      */
     protected void setUp() throws Exception
     {
+        super.setUp();
         NDC.push(getName());
 
         testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
