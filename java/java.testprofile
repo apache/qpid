@@ -1,4 +1,5 @@
-broker=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT
+broker.language=java
+broker=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT -c @CONFIG_FILE
 broker.clean=${project.root}/clean-dir ${build.data}
 broker.ready=Qpid Broker Ready
 
