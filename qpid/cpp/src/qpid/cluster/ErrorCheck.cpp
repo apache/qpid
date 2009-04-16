@@ -71,7 +71,7 @@ void ErrorCheck::delivered(const EventFrame& e) {
                 throw Exception("Aborted by local failure that did not occur on all replicas");
             }
             else {              // his error is worse/same as mine.
-                QPID_LOG(critical, cluster << " Error " << frameSeq << " outcome agrees with " << e.getMemberId());
+                QPID_LOG(debug, cluster << " Error " << frameSeq << " outcome agrees with " << e.getMemberId());
                 unresolved.erase(e.getMemberId());
                 checkResolved();
             }
