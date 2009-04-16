@@ -40,26 +40,9 @@ public class MultipleJCAProviderRegistrationTest extends QpidTestCase
 
     public void setUp() throws Exception
     {
-        super.setUp();
-
-        stopBroker();
-
         _broker = VM;
 
-        final String QpidHome = System.getProperty("QPID_HOME");
-
-        assertNotNull("QPID_HOME not set",QpidHome);
-
-        final File defaultaclConfigFile = new File(QpidHome, "etc/config.xml");
-
-        if (!defaultaclConfigFile.exists())
-        {
-            System.err.println("Configuration file not found:" + defaultaclConfigFile);
-            fail("Configuration file not found:" + defaultaclConfigFile);
-        }
-
-        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
-        startBroker();
+        super.setUp();
     }
 
     public void test() throws Exception

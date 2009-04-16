@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.net.MalformedURLException;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
@@ -127,6 +128,7 @@ public class QpidTestCase extends TestCase
     private static List<String> _exclusionList;
 
     // system properties
+    private static final String BROKER_LANGUAGE = "broker.language";
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION = "broker.version";
@@ -134,6 +136,8 @@ public class QpidTestCase extends TestCase
     private static final String TEST_OUTPUT = "test.output";
 
     // values
+    protected static final String JAVA = "java";
+    protected static final String CPP = "cpp";
     protected static final String VM = "vm";
     protected static final String EXTERNAL = "external";
     private static final String VERSION_08 = "0-8";
@@ -144,6 +148,7 @@ public class QpidTestCase extends TestCase
     protected int DEFAULT_VM_PORT = 1;
     protected int DEFAULT_PORT = 5672;
 
+    protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
@@ -331,11 +336,21 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    private String getBrokerCommand(int port)
+    private String getBrokerCommand(int port) throws MalformedURLException
     {
-        return _broker
-            .replace("@PORT", "" + port)
-            .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)));
+        if (_brokerLanguage.equals(JAVA))
+        {
+            return _broker
+                .replace("@PORT", "" + port)
+                .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)))
+                .replace("@CONFIG_FILE", _configFile.toString());
+        }
+        else
+        {
+            return _broker
+                .replace("@PORT", "" + port)
+                .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)));
+        }
     }
 
     public void startBroker(int port) throws Exception
