@@ -30,9 +30,12 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.BrokerDetails;
 
 import javax.jms.Connection;
 import javax.jms.QueueSession;
@@ -45,13 +48,13 @@ public class ConnectionTest extends QpidTestCase
     String _broker_NotRunning = "vm://:2";
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
-    public String getBroker()
+    public BrokerDetails getBroker()
     {
         try
         {
             if (getConnectionFactory().getConnectionURL().getBrokerCount() > 0)
             {
-                return getConnectionFactory().getConnectionURL().getBrokerDetails(0).toString();
+                return getConnectionFactory().getConnectionURL().getBrokerDetails(0);
             }
             else
             {
@@ -72,7 +75,7 @@ public class ConnectionTest extends QpidTestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection(getBroker(), "guest", "guest", "fred", "test");
+            conn = new AMQConnection(getBroker().toString(), "guest", "guest", "fred", "test");
         }
         catch (Exception e)
         {
@@ -89,12 +92,17 @@ public class ConnectionTest extends QpidTestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection("amqp://guest:guest@clientid/test?brokerlist='"
-                                     + getBroker()
-                                     + "?retries='1''&defaultQueueExchange='test.direct'"
+            BrokerDetails broker = getBroker();
+            broker.setProperty("retries","1");
+            ConnectionURL url = new AMQConnectionURL("amqp://guest:guest@clientid/test?brokerlist='"
+                                     + broker
+                                     + "'&defaultQueueExchange='test.direct'"
                                      + "&defaultTopicExchange='test.topic'"
                                      + "&temporaryQueueExchange='tmp.direct'"
                                      + "&temporaryTopicExchange='tmp.topic'");
+
+            System.err.println(url.toString());
+            conn = new AMQConnection(url, null);
 
 
             AMQSession sess = (AMQSession) conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -151,7 +159,9 @@ public class ConnectionTest extends QpidTestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + getBroker() + "?retries='0''");
+            BrokerDetails broker = getBroker();
+            broker.setProperty("retries", "0");
+            conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + broker + "'");
             fail("Connection should not be established password is wrong.");
         }
         catch (AMQConnectionFailureException amqe)
@@ -223,7 +233,9 @@ public class ConnectionTest extends QpidTestCase
         AMQConnection conn = null;
         try
         {
-            conn = new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + getBroker() + "?retries='0''");
+            BrokerDetails broker = getBroker();
+            broker.setProperty("retries", "0");            
+            conn = new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + broker + "'");
             fail("Connection should not be established");
         }
         catch (AMQException amqe)
@@ -244,7 +256,7 @@ public class ConnectionTest extends QpidTestCase
 
     public void testClientIdCannotBeChanged() throws Exception
     {
-        Connection connection = new AMQConnection(getBroker(), "guest", "guest",
+        Connection connection = new AMQConnection(getBroker().toString(), "guest", "guest",
                                                   "fred", "test");
         try
         {
@@ -266,7 +278,7 @@ public class ConnectionTest extends QpidTestCase
 
     public void testClientIdIsPopulatedAutomatically() throws Exception
     {
-        Connection connection = new AMQConnection(getBroker(), "guest", "guest",
+        Connection connection = new AMQConnection(getBroker().toString(), "guest", "guest",
                                                   null, "test");
         try
         {
