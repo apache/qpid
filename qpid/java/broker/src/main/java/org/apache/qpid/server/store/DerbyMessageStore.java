@@ -67,7 +67,7 @@ public class DerbyMessageStore implements MessageStore
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
 
-    private static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
+    public static final String ENVIRONMENT_PATH_PROPERTY = "environment-path";
 
 
     private static final String SQL_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
@@ -155,7 +155,7 @@ public class DerbyMessageStore implements MessageStore
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
         //Update to pick up QPID_WORK and use that as the default location not just derbyDB
-        final String databasePath = config.getStoreConfiguration().getString(base + "." + ENVIRONMENT_PATH_PROPERTY, "derbyDB");
+        final String databasePath = config.getStoreConfiguration().getString(ENVIRONMENT_PATH_PROPERTY, "derbyDB");
 
         File environmentPath = new File(databasePath);
         if (!environmentPath.exists())
