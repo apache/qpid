@@ -154,8 +154,9 @@ public class DerbyMessageStore implements MessageStore
         _logger.info("Configuring Derby message store for virtual host " + virtualHost.getName());
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
+        //Update to pick up QPID_WORK and use that as the default location not just derbyDB
         final String databasePath = config.getStoreConfiguration().getString(base + "." + ENVIRONMENT_PATH_PROPERTY, "derbyDB");
-        
+
         File environmentPath = new File(databasePath);
         if (!environmentPath.exists())
         {

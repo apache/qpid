@@ -10,6 +10,8 @@ commons-lang=lib/commons-lang-2.2.jar
 commons-logging=lib/commons-logging-1.0.4.jar
 commons-pool=lib/commons-pool-1.4.jar
 
+derby-db=lib/derby-10.3.2.1.jar
+
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
 
 junit=lib/junit-3.8.1.jar
@@ -78,7 +80,8 @@ common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
 client.libs=${common.libs}  ${geronimo-jms}
 tools.libs=${client.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
-    ${slf4j-log4j} ${xalan} ${felix.libs} ${build.lib}/${project.name}-common-${project.version}.jar
+    ${slf4j-log4j} ${xalan} ${felix.libs} ${derby-db} \
+    ${build.lib}/${project.name}-common-${project.version}.jar
 
 broker-plugins.libs=${common.libs} ${felix.libs} 
 management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
