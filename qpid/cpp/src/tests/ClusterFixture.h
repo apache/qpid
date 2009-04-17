@@ -60,32 +60,32 @@ using qpid::broker::Broker;
 using boost::shared_ptr;
 using qpid::cluster::Cluster;
 
-
+#define DEFAULT_CLUSTER_LIB "../.libs/cluster.so"
 
 /** Cluster fixture is a vector of ports for the replicas.
- * 
+ *
  * At most one replica (by default replica 0) is in the current
  * process, all others are forked as children.
  */
 class ClusterFixture : public vector<uint16_t>  {
   public:
     typedef std::vector<std::string> Args;
-    static const Args DEFAULT_ARGS; 
+    static const Args DEFAULT_ARGS;
 
     /** @param localIndex can be -1 meaning don't automatically start a local broker.
      * A local broker can be started with addLocal().
      */
-    ClusterFixture(size_t n, int localIndex=0, const Args& args=DEFAULT_ARGS);
+    ClusterFixture(size_t n, int localIndex=0, const Args& args=DEFAULT_ARGS, const string& clusterLib = DEFAULT_CLUSTER_LIB);
 
     /**@param updateArgs function is passed the index of the cluster member and can update the arguments. */
-    ClusterFixture(size_t n, int localIndex, boost::function<void (Args&, size_t)> updateArgs);
+    ClusterFixture(size_t n, int localIndex, boost::function<void (Args&, size_t)> updateArgs, const string& clusterLib = DEFAULT_CLUSTER_LIB);
 
     void add(size_t n) { for (size_t i=0; i < n; ++i) add(); }
     void add();                 // Add a broker.
     void setup();
 
     bool hasLocal() const;
-    
+
     /** Kill a forked broker with sig, or shutdown localBroker. */
     void kill(size_t n, int sig=SIGINT);
 
@@ -93,7 +93,7 @@ class ClusterFixture : public vector<uint16_t>  {
     void killWithSilencer(size_t n, client::Connection& c, int sig=SIGINT);
 
   private:
-    
+
     void addLocal();            // Add a local broker.
     Args makeArgs(const std::string& prefix, size_t index);
     string name;
@@ -102,6 +102,7 @@ class ClusterFixture : public vector<uint16_t>  {
     std::vector<shared_ptr<ForkedBroker> > forkedBrokers;
     Args userArgs;
     boost::function<void (Args&, size_t)> updateArgs;
+    string clusterLib;
 };
 
 /**
