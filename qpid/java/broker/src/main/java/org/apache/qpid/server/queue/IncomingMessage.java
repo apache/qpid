@@ -282,9 +282,9 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
     public boolean isPersistent()
     {
-        //todo remove literal values to a constant file such as AMQConstants in common
         return getContentHeaderBody().properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) getContentHeaderBody().properties).getDeliveryMode() == 2;
+             ((BasicContentHeaderProperties) getContentHeaderBody().properties).getDeliveryMode() == 
+                                                             BasicContentHeaderProperties.PERSISTENT;
     }
     
     public boolean isRedelivered()
