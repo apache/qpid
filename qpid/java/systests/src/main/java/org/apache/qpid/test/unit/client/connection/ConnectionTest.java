@@ -48,28 +48,6 @@ public class ConnectionTest extends QpidTestCase
     String _broker_NotRunning = "vm://:2";
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
-    public BrokerDetails getBroker()
-    {
-        try
-        {
-            if (getConnectionFactory().getConnectionURL().getBrokerCount() > 0)
-            {
-                return getConnectionFactory().getConnectionURL().getBrokerDetails(0);
-            }
-            else
-            {
-                fail("No broker details are available.");
-            }
-        }
-        catch (NamingException e)
-        {
-            fail(e.getMessage());
-        }
-
-        //keep compiler happy 
-        return null;
-    }
-
     public void testSimpleConnection() throws Exception
     {
         AMQConnection conn = null;
@@ -93,7 +71,7 @@ public class ConnectionTest extends QpidTestCase
         try
         {
             BrokerDetails broker = getBroker();
-            broker.setProperty("retries","1");
+            broker.setProperty(BrokerDetails.OPTIONS_RETRY, "1");
             ConnectionURL url = new AMQConnectionURL("amqp://guest:guest@clientid/test?brokerlist='"
                                      + broker
                                      + "'&defaultQueueExchange='test.direct'"
@@ -160,7 +138,7 @@ public class ConnectionTest extends QpidTestCase
         try
         {
             BrokerDetails broker = getBroker();
-            broker.setProperty("retries", "0");
+            broker.setProperty(BrokerDetails.OPTIONS_RETRY, "0");
             conn = new AMQConnection("amqp://guest:rubbishpassword@clientid/test?brokerlist='" + broker + "'");
             fail("Connection should not be established password is wrong.");
         }
@@ -234,7 +212,7 @@ public class ConnectionTest extends QpidTestCase
         try
         {
             BrokerDetails broker = getBroker();
-            broker.setProperty("retries", "0");            
+            broker.setProperty(BrokerDetails.OPTIONS_RETRY, "0");
             conn = new AMQConnection("amqp://guest:guest@clientid/rubbishhost?brokerlist='" + broker + "'");
             fail("Connection should not be established");
         }

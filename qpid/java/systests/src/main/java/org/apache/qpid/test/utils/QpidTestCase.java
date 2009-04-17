@@ -25,6 +25,7 @@ import javax.jms.Destination;
 import javax.jms.Session;
 import javax.jms.MessageProducer;
 import javax.jms.Message;
+import javax.jms.JMSException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.*;
@@ -35,12 +36,15 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.net.MalformedURLException;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,6 +131,7 @@ public class QpidTestCase extends TestCase
     private static List<String> _exclusionList;
 
     // system properties
+    private static final String BROKER_LANGUAGE = "broker.language";
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION = "broker.version";
@@ -134,6 +139,8 @@ public class QpidTestCase extends TestCase
     private static final String TEST_OUTPUT = "test.output";
 
     // values
+    protected static final String JAVA = "java";
+    protected static final String CPP = "cpp";
     protected static final String VM = "vm";
     protected static final String EXTERNAL = "external";
     private static final String VERSION_08 = "0-8";
@@ -144,6 +151,7 @@ public class QpidTestCase extends TestCase
     protected int DEFAULT_VM_PORT = 1;
     protected int DEFAULT_PORT = 5672;
 
+    protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
@@ -331,11 +339,21 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    private String getBrokerCommand(int port)
+    private String getBrokerCommand(int port) throws MalformedURLException
     {
-        return _broker
-            .replace("@PORT", "" + port)
-            .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)));
+        if (_brokerLanguage.equals(JAVA))
+        {
+            return _broker
+                .replace("@PORT", "" + port)
+                .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)))
+                .replace("@CONFIG_FILE", _configFile.toString());
+        }
+        else
+        {
+            return _broker
+                .replace("@PORT", "" + port)
+                .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)));
+        }
     }
 
     public void startBroker(int port) throws Exception
@@ -569,6 +587,15 @@ public class QpidTestCase extends TestCase
         return getConnection("guest", "guest");
     }
 
+    public Connection getConnection(ConnectionURL url) throws JMSException
+    {
+        Connection connection = new AMQConnectionFactory(url).createConnection("guest", "guest");
+
+        _connections.add(connection);
+
+        return connection;
+    }
+
     /**
      * Get a connection (remote or in-VM)
      *
@@ -632,6 +659,34 @@ public class QpidTestCase extends TestCase
             messages.add(next);
         }
         return messages;
+    }
+
+    public ConnectionURL getConnectionURL() throws NamingException
+    {
+        return getConnectionFactory().getConnectionURL();
+    }
+
+
+    public BrokerDetails getBroker()
+    {
+        try
+        {
+            if (getConnectionFactory().getConnectionURL().getBrokerCount() > 0)
+            {
+                return getConnectionFactory().getConnectionURL().getBrokerDetails(0);
+            }
+            else
+            {
+                fail("No broker details are available.");
+            }
+        }
+        catch (NamingException e)
+        {
+            fail(e.getMessage());
+        }
+
+        //keep compiler happy
+        return null;
     }
 
 }
