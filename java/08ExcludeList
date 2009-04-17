@@ -7,3 +7,6 @@ org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
 org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait
+
+//QPID-1818 : Client code path does not correctly restore a transacted session after failover.
+org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
