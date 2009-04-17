@@ -27,6 +27,10 @@
     <!-- module.manifest property to invoke use of 'jar.manifest' jar target when building -->
     <property name="module.manifest" value="${module.classes}/META-INF/MANIFEST.MF"/>
 
+    <!-- override module.xml 'libs' target, avoids cluttering the 'build/lib' dir as the 
+         MC build/packaging process does not use the libs from there -->
+    <target name="libs"/>
+
     <target name="copy-plugin-files" description="copy eclipse management plugin files into build tree">
         <copy todir="${module.classes}/icons" failonerror="true">
             <fileset dir="icons/"/>
