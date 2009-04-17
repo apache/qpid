@@ -975,9 +975,6 @@
 				RelativePath="qpid\sys\Dispatcher.cpp">
 			</File>
 			<File
-				RelativePath="qpid\sys\LatencyMetric.cpp">
-			</File>
-			<File
 				RelativePath="qpid\sys\Runnable.cpp">
 			</File>
 			<File
@@ -1814,9 +1811,6 @@
 			</File>
 			<File
 				RelativePath="qpid\sys\IOHandle.h">
-			</File>
-			<File
-				RelativePath="qpid\sys\LatencyMetric.h">
 			</File>
 			<File
 				RelativePath="qpid\sys\LockFile.h">
