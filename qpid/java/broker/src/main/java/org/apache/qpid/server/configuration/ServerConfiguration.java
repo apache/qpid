@@ -100,7 +100,15 @@ public class ServerConfiguration implements SignalHandler
     {
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
-        sun.misc.Signal.handle(new sun.misc.Signal("HUP"), this);
+        try 
+        {
+            Signal sig = new sun.misc.Signal("HUP");
+            sun.misc.Signal.handle(sig, this);
+        } 
+        catch (IllegalArgumentException e)
+        {
+            // We're on something that doesn't handle SIGHUP, how sad, Windows. 
+        }
     }
 
     public ServerConfiguration(Configuration conf) throws ConfigurationException
