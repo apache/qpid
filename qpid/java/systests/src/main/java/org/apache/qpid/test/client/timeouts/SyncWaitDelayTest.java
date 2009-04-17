@@ -46,9 +46,6 @@ public class SyncWaitDelayTest extends QpidTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(SyncWaitDelayTest.class);
 
-    final String QpidHome = System.getProperty("QPID_HOME");
-    final File _configFile = new File(QpidHome, "etc/config.xml");
-
     private String VIRTUALHOST = "test";
     protected long POST_COMMIT_DELAY = 1000L;
     protected long SYNC_WRITE_TIMEOUT = POST_COMMIT_DELAY + 1000;
@@ -77,9 +74,9 @@ public class SyncWaitDelayTest extends QpidTestCase
         tmpFile.deleteOnExit();
         configuration.save(tmpFile);
         
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(tmpFile);
-        
-        startBroker(1, reg);
+        _configFile = tmpFile;
+
+        startBroker(1);
 
         //Set the syncWrite timeout to be just larger than the delay on the commitTran.
         setSystemProperty("amqj.default_syncwrite_timeout", String.valueOf(SYNC_WRITE_TIMEOUT));
