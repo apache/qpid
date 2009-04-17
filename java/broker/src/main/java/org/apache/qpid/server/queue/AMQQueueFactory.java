@@ -38,7 +38,6 @@ public class AMQQueueFactory
                                               VirtualHost virtualHost, final FieldTable arguments)
             throws AMQException
     {
-
         final int priorities = arguments == null ? 1 : arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
 
         AMQQueue q = null;
@@ -53,6 +52,7 @@ public class AMQQueueFactory
 
         //Register the new queue
         virtualHost.getQueueRegistry().registerQueue(q);
+        q.configure(virtualHost.getConfiguration().getQueueConfiguration(name.asString()));
         return q;
     }
 
