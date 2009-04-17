@@ -61,14 +61,14 @@ using boost::assign::list_of;
 
 #include "ClusterFixture.h"
 
-ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_)
-    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_)
+ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_, const string& clusterLib_)
+    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_), clusterLib(clusterLib_)
 {
     add(n);
 }
 
-ClusterFixture::ClusterFixture(size_t n, int localIndex_, boost::function<void (Args&, size_t)> updateArgs_)
-    : name(Uuid(true).str()), localIndex(localIndex_), updateArgs(updateArgs_)
+ClusterFixture::ClusterFixture(size_t n, int localIndex_, boost::function<void (Args&, size_t)> updateArgs_, const string& clusterLib_)
+    : name(Uuid(true).str()), localIndex(localIndex_), updateArgs(updateArgs_), clusterLib(clusterLib_)
 {
     add(n);
 }
@@ -77,10 +77,10 @@ const ClusterFixture::Args ClusterFixture::DEFAULT_ARGS =
     list_of<string>("--auth=no")("--no-data-dir");
 
 ClusterFixture::Args ClusterFixture::makeArgs(const std::string& prefix, size_t index) {
-    Args args = list_of<string>("qpidd " __FILE__)
+    Args args = list_of<string>("qpidd ")
         ("--no-module-dir")
-        ("--load-module=../.libs/cluster.so")
-        ("--cluster-name")(name) 
+        ("--load-module")(clusterLib)
+        ("--cluster-name")(name)
         ("--log-prefix")(prefix);
     args.insert(args.end(), userArgs.begin(), userArgs.end());
     if (updateArgs) updateArgs(args, index);
@@ -123,7 +123,7 @@ void ClusterFixture::addLocal() {
 }
 
 bool ClusterFixture::hasLocal() const { return localIndex >= 0 && size_t(localIndex) < size(); }
-    
+
 /** Kill a forked broker with sig, or shutdown localBroker if n==0. */
 void ClusterFixture::kill(size_t n, int sig) {
     if (n == size_t(localIndex))
@@ -153,7 +153,7 @@ std::set<int> knownBrokerPorts(qpid::client::Connection& source, int n) {
         }
     }
     std::set<int> s;
-    for (std::vector<qpid::Url>::const_iterator i = urls.begin(); i != urls.end(); ++i) 
+    for (std::vector<qpid::Url>::const_iterator i = urls.begin(); i != urls.end(); ++i)
         s.insert((*i)[0].get<qpid::TcpAddress>()->port);
     return s;
 }
