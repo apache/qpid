@@ -50,7 +50,9 @@ def wait(condition, predicate, timeout=None):
     start = time.time()
     while not predicate():
       if timeout is None:
-        condition.wait()
+        # using the timed wait prevents keyboard interrupts from being
+        # blocked while waiting
+        condition.wait(3)
       elif passed < timeout:
         condition.wait(timeout - passed)
       else:
