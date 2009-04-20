@@ -20,52 +20,37 @@
  */
 
 #include "Message.h"
+#include "PrivateImplPrivate.h"
+#include "MessageImpl.h"
 
 namespace qpid {
 namespace client {
 
-Message::Message(const std::string& data, const std::string& routingKey) : TransferContent(data, routingKey) {}
+template class PrivateImpl<MessageImpl>;
 
-std::string Message::getDestination() const 
-{ 
-    return method.getDestination(); 
-}
+Message::Message(const std::string& data, const std::string& routingKey) : PrivateImpl<MessageImpl>(new MessageImpl(data, routingKey)) {}
+Message::Message(MessageImpl* i) : PrivateImpl<MessageImpl>(i) {}
+Message::~Message() {}
 
-bool Message::isRedelivered() const 
-{ 
-    return hasDeliveryProperties() && getDeliveryProperties().getRedelivered(); 
-}
+std::string Message::getDestination() const { return impl->getDestination(); }
+bool Message::isRedelivered() const { return impl->isRedelivered(); }
+void Message::setRedelivered(bool redelivered) { impl->setRedelivered(redelivered); }
+framing::FieldTable& Message::getHeaders() { return impl->getHeaders(); }
+const framing::FieldTable& Message::getHeaders() const { return impl->getHeaders(); }
+const framing::SequenceNumber& Message::getId() const { return impl->getId(); }
 
-void Message::setRedelivered(bool redelivered) 
-{ 
-    getDeliveryProperties().setRedelivered(redelivered); 
-}
+void Message::setData(const std::string& s) { impl->setData(s); }
+const std::string& Message::getData() const { return impl->getData(); }
+std::string& Message::getData() { return impl->getData(); }
 
-framing::FieldTable& Message::getHeaders() 
-{ 
-    return getMessageProperties().getApplicationHeaders(); 
-}
+void Message::appendData(const std::string& s) { impl->appendData(s); }
 
-const framing::FieldTable& Message::getHeaders() const
-{ 
-    return getMessageProperties().getApplicationHeaders(); 
-}
+bool Message::hasMessageProperties() const { return impl->hasMessageProperties(); }
+framing::MessageProperties& Message::getMessageProperties() { return impl->getMessageProperties(); }
+const framing::MessageProperties& Message::getMessageProperties() const { return impl->getMessageProperties(); }
 
-const framing::MessageTransferBody& Message::getMethod() const
-{
-    return method;
-}
-
-const framing::SequenceNumber& Message::getId() const
-{
-    return id;
-}
-
-/**@internal for incoming messages */
-Message::Message(const framing::FrameSet& frameset) :
-    method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
-{
-    populate(frameset);
-}
+bool Message::hasDeliveryProperties() const { return impl->hasDeliveryProperties(); }
+framing::DeliveryProperties& Message::getDeliveryProperties() { return impl->getDeliveryProperties(); }
+const framing::DeliveryProperties& Message::getDeliveryProperties() const { return impl->getDeliveryProperties(); }
 
 }}
