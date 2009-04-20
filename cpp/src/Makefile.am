@@ -436,21 +436,24 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Bounds.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/ConnectionHandler.cpp		\
-  qpid/client/ConnectionImpl.cpp                \
+  qpid/client/ConnectionImpl.cpp		\
   qpid/client/ConnectionSettings.cpp		\
-  qpid/client/Connector.cpp	                \
+  qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
-  qpid/client/FailoverManager.cpp            \
+  qpid/client/FailoverManager.cpp		\
   qpid/client/FailoverListener.h		\
   qpid/client/FailoverListener.cpp		\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResult.cpp			\
   qpid/client/HandlePrivate.h			\
+  qpid/client/PrivateImplPrivate.h		\
   qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
+  qpid/client/MessageImpl.cpp			\
+  qpid/client/MessageImpl.h			\
   qpid/client/MessageListener.cpp		\
   qpid/client/MessageReplayTracker.cpp		\
   qpid/client/QueueOptions.cpp			\
@@ -596,6 +599,7 @@ nobase_include_HEADERS = \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
   qpid/client/Handle.h \
+  qpid/client/PrivateImpl.h \
   qpid/client/LocalQueue.h \
   qpid/client/QueueOptions.h \
   qpid/client/Message.h \

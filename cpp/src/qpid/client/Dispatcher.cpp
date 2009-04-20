@@ -26,6 +26,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/sys/BlockingQueue.h"
 #include "Message.h"
+#include "MessageImpl.h"
 
 #include <boost/state_saver.hpp>
 
@@ -74,7 +75,7 @@ void Dispatcher::run()
             Mutex::ScopedUnlock u(lock);
             FrameSet::shared_ptr content = queue->pop();
             if (content->isA<MessageTransferBody>()) {
-                Message msg(*content);
+                Message msg(new MessageImpl(*content));
                 boost::intrusive_ptr<SubscriptionImpl> listener = find(msg.getDestination());
                 if (!listener) {
                     QPID_LOG(error, "No listener found for destination " << msg.getDestination());

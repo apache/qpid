@@ -28,7 +28,7 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Time.h"
 #include "qpid/client/Session.h"
-#include "qpid/framing/TransferContent.h"
+#include "qpid/client/Message.h"
 #include "qpid/framing/reply_exceptions.h"
 
 #include <boost/optional.hpp>
@@ -121,7 +121,7 @@ QPID_AUTO_TEST_CASE(testDispatcher)
     fix.session =fix.connection.newSession();
     size_t count = 100;
     for (size_t i = 0; i < count; ++i) 
-        fix.session.messageTransfer(arg::content=TransferContent(boost::lexical_cast<string>(i), "my-queue"));
+        fix.session.messageTransfer(arg::content=Message(boost::lexical_cast<string>(i), "my-queue"));
     DummyListener listener(fix.session, "my-queue", count);
     listener.run();
     BOOST_CHECK_EQUAL(count, listener.messages.size());        
@@ -137,7 +137,7 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
     DummyListener listener(fix.session, "my-queue", count);
     sys::Thread t(listener);
     for (size_t i = 0; i < count; ++i) {
-        fix.session.messageTransfer(arg::content=TransferContent(boost::lexical_cast<string>(i), "my-queue"));
+        fix.session.messageTransfer(arg::content=Message(boost::lexical_cast<string>(i), "my-queue"));
     }
     t.join();
     BOOST_CHECK_EQUAL(count, listener.messages.size());        
@@ -173,7 +173,7 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
     fix.session.suspend();
     // Make sure we are still subscribed after resume.
     fix.connection.resume(fix.session);
-    fix.session.messageTransfer(arg::content=TransferContent("my-message", "my-queue"));
+    fix.session.messageTransfer(arg::content=Message("my-message", "my-queue"));
     FrameSet::shared_ptr msg = fix.session.get();
     BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
 }

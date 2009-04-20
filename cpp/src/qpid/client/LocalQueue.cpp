@@ -19,6 +19,7 @@
  *
  */
 #include "LocalQueue.h"
+#include "MessageImpl.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -50,7 +51,7 @@ bool LocalQueue::get(Message& result, sys::Duration timeout) {
     bool ok = queue->pop(content, timeout);
     if (!ok) return false;
     if (content->isA<MessageTransferBody>()) {
-        result = Message(*content);
+        result = Message(new MessageImpl(*content));
         boost::intrusive_ptr<SubscriptionImpl> si = HandlePrivate<SubscriptionImpl>::get(subscription);
         assert(si);
         if (si) si->received(result);

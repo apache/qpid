@@ -35,6 +35,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/enum.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"

@@ -21,14 +21,16 @@
  * under the License.
  *
  */
+#include "Handle.h"
+#include "qpid/RefCounted.h"
 #include <algorithm>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace client {
 
 /** @file
- * Private implementation of handle, include in .cpp file of handle
- * subclasses _after_ including the declaration of class T.
+ * Implementation of handle, include in .cpp file of handle subclasses.
  * T can be any class that can be used with boost::intrusive_ptr.
  */
 
@@ -52,9 +54,13 @@ void Handle<T>::swap(Handle<T>& h) { std::swap(impl, h.impl); }
 template <class T>
 class HandlePrivate {
   public:
-    static boost::intrusive_ptr<T> get(Handle<T>& h) { return boost::intrusive_ptr<T>(h.impl); }
+    static boost::intrusive_ptr<T> get(const Handle<T>& h) { return boost::intrusive_ptr<T>(h.impl); }
+    static void set(Handle<T>& h, const boost::intrusive_ptr<T>& p) { Handle<T>(p.get()).swap(h); }
 };
 
+template<class T> boost::intrusive_ptr<T> handleGetPtr(Handle<T>& h) { return HandlePrivate<T>::get(h); }
+template<class T> boost::intrusive_ptr<const T> handleGetPtr(const Handle<T>& h) { return HandlePrivate<T>::get(h); }
+template<class T> void handleSetPtr(Handle<T>& h, const boost::intrusive_ptr<T>& p) { HandlePrivate<T>::set(h, p); }
 
 }} // namespace qpid::client
 
