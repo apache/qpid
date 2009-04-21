@@ -541,6 +541,98 @@ set (qpidd_SOURCES
 add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon)
 
+# QMF agent library
+#module_hdr += \
+#  qpid/agent/ManagementAgent.h \
+#  qpid/agent/ManagementAgentImpl.h
+set (qmfagent_SOURCES
+     qpid/agent/ManagementAgent.h
+     qpid/agent/ManagementAgentImpl.cpp
+     qpid/agent/ManagementAgentImpl.h
+    )
+add_library (qmfagent SHARED ${qmfagent_SOURCES})
+target_link_libraries (qmfagent qpidclient)
+set_target_properties (qmfagent PROPERTIES
+                       VERSION ${qpidc_version})
+
+# QMF console library
+#module_hdr += \
+#  qpid/console/Agent.h \
+#  qpid/console/Broker.h \
+#  qpid/console/ClassKey.h \
+#  qpid/console/ConsoleImportExport.h \
+#  qpid/console/ConsoleListener.h \
+#  qpid/console/Event.h \
+#  qpid/console/Object.h \
+#  qpid/console/ObjectId.h \
+#  qpid/console/Package.h \
+#  qpid/console/Schema.h \
+#  qpid/console/SequenceManager.h \
+#  qpid/console/SessionManager.h \
+#  qpid/console/Value.h
+set (qmfconsole_SOURCES
+     qpid/console/Agent.h
+     qpid/console/Agent.cpp
+     qpid/console/Broker.h
+     qpid/console/Broker.cpp
+     qpid/console/ClassKey.h
+     qpid/console/ClassKey.cpp
+     qpid/console/ConsoleImportExport.h
+     qpid/console/ConsoleListener.h
+     qpid/console/Event.h
+     qpid/console/Event.cpp
+     qpid/console/Object.h
+     qpid/console/Object.cpp
+     qpid/console/ObjectId.h
+     qpid/console/ObjectId.cpp
+     qpid/console/Package.h
+     qpid/console/Package.cpp
+     qpid/console/Schema.h
+     qpid/console/Schema.cpp
+     qpid/console/SequenceManager.h
+     qpid/console/SequenceManager.cpp
+     qpid/console/SessionManager.h
+     qpid/console/SessionManager.cpp
+     qpid/console/Value.h
+     qpid/console/Value.cpp
+    )
+add_library (qmfconsole SHARED ${qmfconsole_SOURCES})
+target_link_libraries (qmfconsole qpidclient)
+set_target_properties (qmfconsole PROPERTIES
+                       VERSION ${qpidc_version})
+
+# A queue event listener plugin that creates messages on a replication
+# queue corresponding to enqueue and dequeue events:
+add_library (replicating_listener SHARED
+             qpid/replication/constants.h
+             qpid/replication/ReplicatingEventListener.cpp
+             qpid/replication/ReplicatingEventListener.h
+            )
+target_link_libraries (replicating_listener qpidbroker)
+set_target_properties (replicating_listener PROPERTIES
+                       VERSION ${qpidc_version})
+if (CMAKE_COMPILER_IS_GNUCXX)
+  set_target_properties(replicating_listener PROPERTIES
+                        LINK_FLAGS -Wl,--no-undefined)
+endif (CMAKE_COMPILER_IS_GNUCXX)
+
+# A custom exchange plugin that allows an exchange to be created that
+# can process the messages from a replication queue (populated on the
+# source system by the replicating listener plugin above) and take the
+# corresponding action on the local queues
+add_library (replicating_exchange SHARED
+             qpid/replication/constants.h
+             qpid/replication/ReplicationExchange.cpp
+             qpid/replication/ReplicationExchange.h
+            )
+target_link_libraries (replicating_exchange qpidbroker)
+set_target_properties (replicating_exchange PROPERTIES
+                       VERSION ${qpidc_version})
+if (CMAKE_COMPILER_IS_GNUCXX)
+  set_target_properties(replicating_exchange PROPERTIES
+                        LINK_FLAGS -Wl,--no-undefined)
+endif (CMAKE_COMPILER_IS_GNUCXX)
+
 # add_subdirectory(tests)
 
 # Now create the config file from all the info learned above.
