@@ -224,7 +224,7 @@
       description="run JMS examples against the corresponding c++ and python examples">
       <property name="qpid.src.home" location=".."/> 
       <echo-prop name="qpid.src.home"/>
-      <exec executable="/bin/sh">
+      <exec executable="/bin/sh" failonerror="true">
          <env key="QPID_SRC_HOME" value="${qpid.src.home}"/>
          <arg value="-c"/>
          <arg value="${project.root}/client/example/bin/verify_all"/>
