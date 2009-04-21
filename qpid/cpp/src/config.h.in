@@ -30,4 +30,12 @@
 #cmakedefine QPIDC_MODULE_DIR "${QPIDC_MODULE_DIR}"
 #cmakedefine QPIDD_MODULE_DIR "${QPIDD_MODULE_DIR}"
 
+#cmakedefine QPID_HAS_CLOCK_GETTIME
+
+#cmakedefine QPID_HAS_SASL
+#cmakedefine BROKER_SASL_NAME "${BROKER_SASL_NAME}"
+
+#cmakedefine HAVE_LOG_AUTHPRIV
+#cmakedefine HAVE_LOG_FTP
+
 #endif /* QPID_CONFIG_H */

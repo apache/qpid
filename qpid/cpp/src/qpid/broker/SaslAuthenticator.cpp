@@ -19,16 +19,14 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include "Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <boost/format.hpp>
 
-#if HAVE_SASL
+#ifdef QPID_HAS_SASL
 #include <sasl/sasl.h>
 #include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 using qpid::sys::cyrus::CyrusSecurityLayer;
@@ -57,7 +55,7 @@ public:
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
 
-#if HAVE_SASL
+#ifdef QPID_HAS_SASL
 
 class CyrusAuthenticator : public SaslAuthenticator
 {
@@ -181,7 +179,7 @@ std::auto_ptr<SecurityLayer> NullAuthenticator::getSecurityLayer(uint16_t)
 }
 
 
-#if HAVE_SASL
+#ifdef QPID_HAS_SASL
 
 
 CyrusAuthenticator::CyrusAuthenticator(Connection& c, bool _encrypt) : 

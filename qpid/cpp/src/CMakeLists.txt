@@ -17,11 +17,12 @@
 # under the License.
 #
 
+include(CheckFunctionExists)
+include(CheckIncludeFiles)
+include(CheckLibraryExists)
+include(CheckSymbolExists)
 include(FindBoost)
 include(FindDoxygen)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-               ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 set (CMAKE_VERBOSE_MAKEFILE ON)  # for dubugging
 
@@ -73,8 +74,6 @@ if (EXISTS ${AMQP_SPEC})
     if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake)
       message(STATUS "${spec_file} is newer")
       set(regen_mgmt ON)
-    else (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake)
-      message(STATUS "${spec_file} is not newer")
     endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake)
   endforeach (spec_file ${mgmt_specs})
   if (regen_mgmt)
@@ -145,7 +144,7 @@ if (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
-find_package(Boost 1.34 REQUIRED
+find_package(Boost 1.33 REQUIRED
              COMPONENTS date_time program_options thread unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
@@ -161,6 +160,80 @@ include_directories( gen )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
 link_directories( ${Boost_LIBRARY_DIRS} )
+
+CHECK_LIBRARY_EXISTS (rt clock_gettime "" CLOCK_GETTIME_IN_RT)
+if (NOT CLOCK_GETTIME_IN_RT)
+  CHECK_FUNCTION_EXISTS (clock_gettime QPID_HAS_CLOCK_GETTIME)
+else (NOT CLOCK_GETTIME_IN_RT)
+  set(CMAKE_REQUIRED_LIBS ${CMAKE_REQUIRED_LIBS} rt)
+  set(QPID_HAS_CLOCK_GETTIME YES CACHE BOOL "Platform has clock_gettime")
+endif (NOT CLOCK_GETTIME_IN_RT)
+
+# See if Cyrus SASL is desired and available
+option(QPID_HAS_SASL "Build with Cyrus SASL support" ON)
+if (QPID_HAS_SASL)
+  CHECK_LIBRARY_EXISTS (sasl2 sasl_checkpass "" HAVE_SASL2)
+  CHECK_INCLUDE_FILES (sasl/sasl.h HAVE_SASL_H)
+  if (NOT HAVE_SASL2)
+    message(FATAL_ERROR "Cyrus SASL support requested but libsasl2 not found")
+  endif (NOT HAVE_SASL2)
+  if (NOT HAVE_SASL_H)
+    message(FATAL_ERROR "Cyrus SASL support requested but sasl.h not found")
+  endif (NOT HAVE_SASL_H)
+
+  set(BROKER_SASL_NAME "qpidd" CACHE STRING "SASL app name for the qpid broker")
+  set(qpidcommon_sasl_source
+      qpid/sys/cyrus/CyrusSecurityLayer.h
+      qpid/sys/cyrus/CyrusSecurityLayer.cpp
+     )
+  set(qpidcommon_sasl_lib sasl2)
+
+endif (QPID_HAS_SASL)
+
+# See if XML Exchange is desired and prerequisites are available
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (xml_default OFF)
+else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (xml_default ON)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+option(QPID_HAS_XML "Build with XML Exchange" ${xml_default})
+if (QPID_HAS_XML)
+  CHECK_LIBRARY_EXISTS (xerces-c _init "" HAVE_XERCES)
+  CHECK_INCLUDE_FILES (xercesc/framework/MemBufInputSource.hpp HAVE_XERCES_H)
+  CHECK_INCLUDE_FILES (xqilla/xqilla-simple.hpp HAVE_XQILLA_H)
+  if (NOT HAVE_XERCES)
+    message(FATAL_ERROR "XML Exchange support requested but xerces-c library not found")
+  endif (NOT HAVE_XERCES)
+  if (NOT HAVE_XERCES_H)
+    message(FATAL_ERROR "XML Exchange support requested but Xerces-C headers not found")
+  endif (NOT HAVE_XERCES_H)
+  if (NOT HAVE_XQILLA_H)
+    message(FATAL_ERROR "XML Exchange support requested but XQilla headers not found")
+  endif (NOT HAVE_XQILLA_H)
+
+  add_library (xml SHARED
+               qpid/xml/XmlExchange.cpp
+               qpid/xml/XmlExchange.h
+               qpid/xml/XmlExchangePlugin.cpp)
+  target_link_libraries (xml xerces-c xqilla qpidbroker)
+  set_target_properties (xml PROPERTIES
+                         VERSION ${qpidc_version}
+                         LINK_FLAGS -no-undefined)
+endif (QPID_HAS_XML)
+
+# Check for optional cluster support requirements
+include (cluster.cmake)
+
+# Check for optional RDMA support requirements
+include (rdma.cmake)
+
+# Check for optional SSL support requirements
+include (ssl.cmake)
+
+# Check for syslog capabilities not present on all systems
+check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
+check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (MSVC)
@@ -213,6 +286,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   # major difference is the poller module.
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
     set (qpid_poller_module qpid/sys/epoll/EpollPoller.cpp)
+    add_definitions(-pthread)
+    set (CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pthread)
   endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
     set (qpid_poller_module qpid/sys/solaris/ECFPoller.cpp)
@@ -237,6 +312,9 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${qpid_poller_module}
   )
   set (libqpidcommon_platform_LIBS
+    boost_program_options
+    boost_filesystem
+    uuid
     ${CMAKE_DL_LIBS}
   )
 
@@ -260,6 +338,7 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 set (libqpidcommon_SOURCES
      ${rgen_framing_srcs}
      ${libqpidcommon_platform_SOURCES}
+     ${qpidcommon_sasl_source}
      qpid/assert.cpp
      qpid/Address.cpp
      qpid/DataDir.cpp
@@ -314,7 +393,12 @@ set (libqpidcommon_SOURCES
      qpid/sys/Timer.cpp
 )
 add_library (qpidcommon SHARED ${libqpidcommon_SOURCES})
-target_link_libraries (qpidcommon ${libqpidcommon_platform_LIBS})
+if (CLOCK_GETTIME_IN_RT)
+  set (libqpidcommon_platform_LIBS ${libqpidcommon_platform_LIBS} rt)
+endif (CLOCK_GETTIME_IN_RT)
+target_link_libraries (qpidcommon
+                       ${libqpidcommon_platform_LIBS}
+                       ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
                        VERSION ${qpidc_version})
 
@@ -443,4 +527,6 @@ target_link_libraries (qpidd qpidbroker qpidcommon)
 
 # add_subdirectory(tests)
 
-message (STATUS end)
+# Now create the config file from all the info learned above.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/config.h)
