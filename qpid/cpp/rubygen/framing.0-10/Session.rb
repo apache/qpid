@@ -77,9 +77,9 @@ end
 
 class ContentField               # For extra content parameters
   def cppname() "content"  end
-  def signature() "const MethodContent& content" end
-  def sig_default() signature+"="+"DefaultContent(std::string())" end
-  def unpack() "p[arg::content|DefaultContent(std::string())]"; end
+  def signature() "const Message& content" end
+  def sig_default() signature+"="+"Message(std::string())" end
+  def unpack() "p[arg::content|Message(std::string())]"; end
   def doc() "Message content"; end
 end
 
@@ -161,6 +161,8 @@ class SessionNoKeywordGen < CppGen
       include @classname
       include "qpid/framing/all_method_bodies.h"
       include "qpid/client/SessionImpl.h"
+      include "qpid/client/MessageImpl.h"
+      include "qpid/client/PrivateImplPrivate.h"
       namespace(@namespace) {
         genl "using namespace framing;"
         session_methods(sync_default).each { |m|
@@ -172,7 +174,7 @@ class SessionNoKeywordGen < CppGen
             genl "#{m.body_name} body(#{args});";
             genl "body.setSync(sync);"
             sendargs="body"
-            sendargs << ", content" if m.content
+            sendargs << ", *privateImplGetPtr(content)" if m.content
             async_retval="#{m.return_type(true)}(impl->send(#{sendargs}), impl)"
             if @async then
               genl "return #{async_retval};"
