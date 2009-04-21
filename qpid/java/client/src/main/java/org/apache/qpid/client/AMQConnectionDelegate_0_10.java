@@ -79,7 +79,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             throws JMSException
     {
         _conn.checkNotClosed();
-        int channelId = _conn._idFactory.incrementAndGet();
+        int channelId = _conn.getNextChannelID();
         AMQSession session;
         try
         {
@@ -105,7 +105,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException
     {
         _conn.checkNotClosed();
-        int channelId = _conn._idFactory.incrementAndGet();
+        int channelId = _conn.getNextChannelID();
         XASessionImpl session;
         try
         {
@@ -283,5 +283,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public void setIdleTimeout(long l)
     {
         _qpidConnection.setIdleTimeout(l);
+    }
+
+    @Override
+    public int getMaxChannelID()
+    {
+       return Integer.MAX_VALUE;
     }
 }
