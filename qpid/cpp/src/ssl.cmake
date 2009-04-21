@@ -41,15 +41,23 @@ if (BUILD_SSL)
     message(FATAL_ERROR "libnss not found, required for SSL support")
   endif (NSS_CONFIG STREQUAL NSS_CONFIG-NOTFOUND)
   # Output from nss/snpr-config ends with newline, so strip it
+  # Also, sometimes there's no need for additional -I options (or -L) but
+  # the -I is included anyway; in these cases, ignore it.
   execute_process (COMMAND ${NSPR_CONFIG} --cflags
                    OUTPUT_VARIABLE get_flags)
   string (STRIP ${get_flags} NSPR_CFLAGS)
+  if (NSPR_CFLAGS STREQUAL -I)
+    set (NSPR_CFLAGS )
+  endif (NSPR_CFLAGS STREQUAL -I)
   execute_process (COMMAND ${NSPR_CONFIG} --libs
                    OUTPUT_VARIABLE get_flags)
   string (STRIP ${get_flags} NSPR_LIBS)
   execute_process (COMMAND ${NSS_CONFIG} --cflags
                    OUTPUT_VARIABLE get_flags)
   string (STRIP ${get_flags} NSS_CFLAGS)
+  if (NSS_CFLAGS STREQUAL -I)
+    set (NSS_CFLAGS )
+  endif (NSS_CFLAGS STREQUAL -I)
   execute_process (COMMAND ${NSS_CONFIG} --libs
                    OUTPUT_VARIABLE get_flags)
   string (STRIP ${get_flags} NSS_LIBS)
@@ -83,7 +91,7 @@ if (BUILD_SSL)
                          COMPILE_FLAGS "${NSPR_CFLAGS} ${NSS_CFLAGS}")
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(ssl PROPERTIES
-                          LINK_FLAGS -no-undefined)
+                          LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
   add_library (sslconnector SHARED qpid/client/SslConnector.cpp)
@@ -91,7 +99,7 @@ if (BUILD_SSL)
   set_target_properties (sslconnector PROPERTIES VERSION ${qpidc_version})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(sslconnector PROPERTIES
-                          LINK_FLAGS -no-undefined)
+                          LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
 endif (BUILD_SSL)

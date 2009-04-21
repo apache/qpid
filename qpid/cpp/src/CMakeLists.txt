@@ -219,7 +219,7 @@ if (QPID_HAS_XML)
   target_link_libraries (xml xerces-c xqilla qpidbroker)
   set_target_properties (xml PROPERTIES
                          VERSION ${qpidc_version}
-                         LINK_FLAGS -no-undefined)
+                         LINK_FLAGS -Wl,--no-undefined)
 endif (QPID_HAS_XML)
 
 # Check for optional cluster support requirements

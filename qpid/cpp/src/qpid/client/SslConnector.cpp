@@ -20,6 +20,7 @@
  */
 #include "Connector.h"
 
+#include "config.h"
 #include "Bounds.h"
 #include "ConnectionImpl.h"
 #include "ConnectionSettings.h"
@@ -146,7 +147,7 @@ namespace {
         StaticInit() {
             try {
                 SslOptions options;
-                options.parse (0, 0, CONF_FILE, true);
+                options.parse (0, 0, QPIDC_CONF_FILE, true);
                 if (options.certDbPath.empty()) {
                     QPID_LOG(info, "SSL connector not enabled, you must set QPID_SSL_CERT_DB to enable it.");                    
                 } else {
