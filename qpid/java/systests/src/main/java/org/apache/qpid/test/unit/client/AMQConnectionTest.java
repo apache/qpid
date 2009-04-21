@@ -30,6 +30,7 @@ import javax.jms.TextMessage;
 import javax.jms.TopicSession;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionDelegate_0_10;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
@@ -241,6 +242,24 @@ public class AMQConnectionTest extends QpidTestCase
                 oldPrefetch = ClientProperties.MAX_PREFETCH_DEFAULT;
             }
             System.setProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, oldPrefetch);
+        }
+    }
+    
+    public void testGetChannelID()
+    {
+        int maxChannelID = 65536;
+        if (isBroker010())
+        {
+            maxChannelID = Integer.MAX_VALUE+1;
+        }
+        for (int j = 0; j < 3; j++)
+        {
+            for (int i = 1; i < maxChannelID; i++)
+            {
+                int id = _connection.getNextChannelID();
+                assertEquals("On iterartion "+j, i, id);
+                _connection.deregisterSession(id);
+            }
         }
     }
     

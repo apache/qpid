@@ -90,6 +90,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         private final LinkedHashMap<Integer, AMQSession> _slowAccessSessions = new LinkedHashMap<Integer, AMQSession>();
         private int _size = 0;
         private static final int FAST_CHANNEL_ACCESS_MASK = 0xFFFFFFF0;
+        private AtomicInteger _idFactory = new AtomicInteger(0);
+        private int _maxChannelID;
+        private boolean _cycledIds;
 
         public AMQSession get(int channelId)
         {
@@ -179,11 +182,57 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 _fastAccessSessions[i] = null;
             }
         }
+
+        /*
+         * Synchronized on whole method so that we don't need to consider the
+         * increment-then-reset path in too much detail
+         */
+        public synchronized int getNextChannelId()
+        {
+            int id = 0;
+            if (!_cycledIds)
+            {
+                id = _idFactory.incrementAndGet();
+                if (id == _maxChannelID)
+                {
+                    _cycledIds = true;
+                    _idFactory.set(0); // Go back to the start
+                }
+            }
+            else
+            {
+                boolean done = false;
+                while (!done)
+                {
+                    // Needs to work second time through
+                    id = _idFactory.incrementAndGet();
+                    if (id > _maxChannelID)
+                    {
+                        _idFactory.set(0);
+                        id = _idFactory.incrementAndGet();
+                    }
+                    if ((id & FAST_CHANNEL_ACCESS_MASK) == 0)
+                    {
+                        done = (_fastAccessSessions[id] == null);
+                    } 
+                    else
+                    {
+                        done = (!_slowAccessSessions.keySet().contains(id));
+                    }
+                }
+            }
+             
+            return id;
+        }
+
+        public void setMaxChannelID(int maxChannelID)
+        {
+            _maxChannelID = maxChannelID;
+        }
     }
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
-    protected AtomicInteger _idFactory = new AtomicInteger(0);
 
     /**
      * This is the "root" mutex that must be held when doing anything that could be impacted by failover. This must be
@@ -415,6 +464,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
+        _sessions.setMaxChannelID(_delegate.getMaxChannelID());
 
         if (_logger.isInfoEnabled())
         {
@@ -567,6 +617,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             Class partypes[] = new Class[1];
             partypes[0] = AMQConnection.class;
             _delegate = (AMQConnectionDelegate) c.getConstructor(partypes).newInstance(this);
+            _sessions.setMaxChannelID(_delegate.getMaxChannelID());
         }
         catch (ClassNotFoundException e)
         {
@@ -1395,7 +1446,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _sessions.put(channelId, session);
     }
 
-    void deregisterSession(int channelId)
+    public void deregisterSession(int channelId)
     {
         _sessions.remove(channelId);
     }
@@ -1539,5 +1590,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void setIdleTimeout(long l)
     {
         _delegate.setIdleTimeout(l);
+    }
+
+    public int getNextChannelID()
+    {
+        return _sessions.getNextChannelId();
     }
 }

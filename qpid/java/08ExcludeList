@@ -10,3 +10,6 @@ org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait
 
 //QPID-1818 : Client code path does not correctly restore a transacted session after failover.
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
+
+// QPID-1823: this takes ages to run
+org.apache.qpid.client.SessionCreateTest#*

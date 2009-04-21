@@ -69,3 +69,7 @@ org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
 
 //QPID-1818 : 0-10 Client code path does not correctly restore a transacted session after failover.
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
+
+// QPID-1823: this takes ages to run
+org.apache.qpid.client.SessionCreateTest#*
+
