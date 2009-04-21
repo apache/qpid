@@ -222,6 +222,22 @@ if (QPID_HAS_XML)
                          LINK_FLAGS -Wl,--no-undefined)
 endif (QPID_HAS_XML)
 
+# Build the ACL plugin
+set (acl_SOURCES
+     qpid/acl/Acl.cpp
+     qpid/acl/Acl.h
+     qpid/acl/AclData.cpp
+     qpid/acl/AclData.h
+     qpid/acl/AclPlugin.cpp
+     qpid/acl/AclReader.cpp
+     qpid/acl/AclReader.h
+    )
+  add_library (acl SHARED ${acl_SOURCES})
+  target_link_libraries (acl qpidbroker)
+  set_target_properties (acl PROPERTIES
+                         VERSION ${qpidc_version}
+                         LINK_FLAGS -Wl,--no-undefined)
+
 # Check for optional cluster support requirements
 include (cluster.cmake)
 
