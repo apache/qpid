@@ -97,7 +97,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	RateFlowcontrolTest.cpp \
 	FrameDecoder.cpp \
 	ReplicationTest.cpp \
-	ClientMessageTest.cpp
+	ClientMessageTest.cpp \
+	PollableCondition.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
