@@ -40,7 +40,7 @@ class  Callback {
   public:    
     enum Action { NONE, DISARM, CLEAR, DISARM_CLEAR };
 
-    Callback() : count() {}
+    Callback() : count(), action(NONE) {}
 
     void call(PollableCondition& pc) {
         Mutex::ScopedLock l(lock);
