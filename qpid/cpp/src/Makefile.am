@@ -106,8 +106,8 @@ AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -Igen -I$(srcdir)/gen
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DMODULE_DIR=\"$(dmoduledir)\" -DCONF_FILE=\"$(sysconfdir)/qpidd.conf\"
-libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DMODULE_DIR=\"$(cmoduledir)\" -DCONF_FILE=\"$(confdir)/qpidc.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduledir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
+libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduledir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
