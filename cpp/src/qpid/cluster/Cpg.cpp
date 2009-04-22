@@ -75,11 +75,14 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     ::memset(&callbacks, sizeof(callbacks), 0);
     callbacks.cpg_deliver_fn = &globalDeliver;
     callbacks.cpg_confchg_fn = &globalConfigChange;
+
+    QPID_LOG(info, "Initializing CPG");
     cpg_error_t err = cpg_initialize(&handle, &callbacks);
-    if (err == CPG_ERR_TRY_AGAIN) {
+    int retries = 6;
+    while (err == CPG_ERR_TRY_AGAIN && --retries) {
         QPID_LOG(notice, "Re-trying CPG initialization.");
-        while (CPG_ERR_TRY_AGAIN == (err = cpg_initialize(&handle, &callbacks)))
-            sys::sleep(5);
+        sys::sleep(5);
+        err = cpg_initialize(&handle, &callbacks);
     }
     check(err, "Failed to initialize CPG.");
     check(cpg_context_set(handle, this), "Cannot set CPG context");
@@ -87,7 +90,6 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     // windows then this needs to be refactored into
     // qpid::sys::<platform>
     IOHandle::impl->fd = getFd();
-    QPID_LOG(debug, "Initialized CPG handle 0x" << std::hex << handle);
 }
 
 Cpg::~Cpg() {
