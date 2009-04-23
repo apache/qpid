@@ -21,6 +21,7 @@
 #include "SessionBase_0_10.h"
 #include "Connection.h"
 #include "qpid/client/SessionImpl.h"
+#include "qpid/client/Future.h"
 #include "qpid/framing/all_method_bodies.h"
 
 namespace qpid {

@@ -24,6 +24,8 @@
 #include "qpid/sys/BlockingQueue.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/sys/Time.h"
+#include "qpid/framing/QueueQueryResult.h"
+#include "qpid/client/TypedResult.h"
 
 using namespace std;
 using namespace qpid;
@@ -95,6 +97,17 @@ QPID_AUTO_TEST_CASE(testWaitTillComplete) {
         enqueued[k]->enqueueComplete();
     }
     sync.wait();                // Should complete now, all messages are completed.
+}
+
+QPID_AUTO_TEST_CASE(testGetResult) {
+    SessionFixture fix;
+    AsyncSession s = fix.session;
+
+    s.queueDeclare("q", arg::durable=true);
+    TypedResult<QueueQueryResult> tr = s.queueQuery("q");
+    QueueQueryResult qq = tr.get();
+    BOOST_CHECK_EQUAL(qq.getQueue(), "q");
+    BOOST_CHECK_EQUAL(qq.getMessageCount(), 0);
 }
 
 QPID_AUTO_TEST_SUITE_END()

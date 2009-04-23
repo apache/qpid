@@ -26,7 +26,6 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/Exception.h"
 #include "qpid/framing/SequenceNumber.h"
-#include "qpid/framing/StructHelper.h"
 #include "FutureCompletion.h"
 #include "FutureResult.h"
 #include "ClientImportExport.h"
@@ -35,7 +34,7 @@ namespace qpid {
 namespace client {
 
 /**@internal */
-class Future : private framing::StructHelper
+class Future
 {
     framing::SequenceNumber command;
     boost::shared_ptr<FutureResult> result;
@@ -45,13 +44,9 @@ public:
     Future() : complete(false) {}    
     Future(const framing::SequenceNumber& id) : command(id), complete(false) {}    
 
-    template <class T> void decodeResult(T& value, SessionImpl& session) 
-    {
-        if (result) {
-            decode(value, result->getResult(session));
-        } else {
-            throw Exception("Result not expected");
-        }
+    std::string getResult(SessionImpl& session) {
+        if (result) return result->getResult(session);
+        else throw Exception("Result not expected");
     }
 
     QPID_CLIENT_EXTERN void wait(SessionImpl& session);

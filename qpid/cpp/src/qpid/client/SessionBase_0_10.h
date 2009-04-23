@@ -23,6 +23,7 @@
  */
 
 #include "qpid/SessionId.h"
+#include "qpid/client/SessionImpl.h"
 #include "qpid/framing/amqp_structs.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Completion.h"

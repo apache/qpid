@@ -163,6 +163,7 @@ class SessionNoKeywordGen < CppGen
       include "qpid/client/SessionImpl.h"
       include "qpid/client/MessageImpl.h"
       include "qpid/client/PrivateImplPrivate.h"
+      include "qpid/client/CompletionImpl.h"
       namespace(@namespace) {
         genl "using namespace framing;"
         session_methods(sync_default).each { |m|
@@ -175,7 +176,7 @@ class SessionNoKeywordGen < CppGen
             genl "body.setSync(sync);"
             sendargs="body"
             sendargs << ", *privateImplGetPtr(content)" if m.content
-            async_retval="#{m.return_type(true)}(impl->send(#{sendargs}), impl)"
+            async_retval="#{m.return_type(true)}(new CompletionImpl(impl->send(#{sendargs}), impl))"
             if @async then
               genl "return #{async_retval};"
             else
