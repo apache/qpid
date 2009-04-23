@@ -88,6 +88,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
     catch(const SessionException& e) {
         QPID_LOG(error, "Execution exception: " << e.what());
+        executionException(e.code, e.what()); // Let subclass handle this first.
         framing::AMQP_AllProxy::Execution  execution(channel);
         AMQMethodBody* m = f.getMethod();
         SequenceNumber commandId;
@@ -98,6 +99,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
     }
     catch(const ChannelException& e){
         QPID_LOG(error, "Channel exception: " << e.what());
+        channelException(e.code, e.what()); // Let subclass handle this first.
         peer.detached(name, e.code);
     }
     catch(const ConnectionException& e) {

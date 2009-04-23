@@ -25,6 +25,7 @@
 #include <string>
 #include "qpid/client/Session.h"
 #include "qpid/client/ClientImportExport.h"
+#include "qpid/client/ConnectionSettings.h"
 
 namespace qpid {
 
@@ -32,7 +33,6 @@ struct Url;
 
 namespace client {
 
-struct ConnectionSettings;
 class ConnectionImpl;
 
 /**

@@ -23,6 +23,7 @@
  */
 
 #include "AsynchIoResult.h"
+#include "qpid/CommonImportExport.h"
 
 #include <winsock2.h>
 
@@ -49,7 +50,7 @@ public:
     AsynchIO::RequestCallback cbRequest;
 };
 
-SOCKET toFd(const IOHandlePrivate* h);
+QPID_COMMON_EXTERN SOCKET toFd(const IOHandlePrivate* h);
 
 }}
 

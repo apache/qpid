@@ -26,7 +26,7 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
-#include "qpid/framing/TransferContent.h"
+#include "qpid/client/Message.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/SubscriptionManager.h"

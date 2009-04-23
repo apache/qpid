@@ -57,7 +57,8 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
     mgmtObject(0),
     links(broker_.getLinks()),
     agent(0),
-    timer(broker_.getTimer())
+    timer(broker_.getTimer()),
+    errorListener(0)
 {
     Manageable* parent = broker.GetVhostObject();
 

@@ -35,6 +35,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/enum.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
@@ -73,7 +74,7 @@ const sys::Duration TIMEOUT=sys::TIME_SEC/4;
 
 
 ostream& operator<<(ostream& o, const cpg_name* n) {
-    return o << cluster::Cpg::str(*n);
+    return o << Cpg::str(*n);
 }
 
 ostream& operator<<(ostream& o, const cpg_address& a) {
@@ -89,26 +90,9 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     return o;
 }
 
-template <class C> set<uint16_t> makeSet(const C& c) {
-    set<uint16_t> s;
+template <class C> set<int> makeSet(const C& c) {
+    set<int> s;
     copy(c.begin(), c.end(), inserter(s, s.begin()));
-    return s;
-}
-
-template <class T>  set<uint16_t> knownBrokerPorts(T& source, int n=-1) {
-    vector<Url> urls = source.getKnownBrokers();
-    if (n >= 0 && unsigned(n) != urls.size()) {
-        BOOST_MESSAGE("knownBrokerPorts waiting for " << n << ": " << urls);
-        // Retry up to 10 secs in .1 second intervals.
-        for (size_t retry=100; urls.size() != unsigned(n) && retry != 0; --retry) {
-            sys::usleep(1000*100); // 0.1 secs
-            urls = source.getKnownBrokers();
-        }
-    }
-    BOOST_MESSAGE("knownBrokerPorts expecting " << n << ": " << urls);
-    set<uint16_t> s;
-    for (vector<Url>::const_iterator i = urls.begin(); i != urls.end(); ++i) 
-        s.insert((*i)[0].get<TcpAddress>()->port);
     return s;
 }
 
@@ -175,7 +159,6 @@ ConnectionSettings aclSettings(int port, const std::string& id) {
 
 QPID_AUTO_TEST_CASE(testAcl) {
     ofstream policyFile("cluster_test.acl");
-    // FIXME aconway 2009-02-12: guest -> qpidd?
     policyFile << "acl allow foo@QPID create queue name=foo" << endl
                << "acl allow foo@QPID create queue name=foo2" << endl
                << "acl deny foo@QPID create queue name=bar" << endl
@@ -446,13 +429,13 @@ QPID_AUTO_TEST_CASE(testUpdateMessageBuilder) {
 QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
     ClusterFixture cluster(1);
     Client c0(cluster[0], "c0");
-    set<uint16_t> kb0 = knownBrokerPorts(c0.connection);
+    set<int> kb0 = knownBrokerPorts(c0.connection);
     BOOST_CHECK_EQUAL(kb0.size(), 1u);
     BOOST_CHECK_EQUAL(kb0, makeSet(cluster));
 
     cluster.add();
     Client c1(cluster[1], "c1");
-    set<uint16_t> kb1 = knownBrokerPorts(c1.connection);
+    set<int> kb1 = knownBrokerPorts(c1.connection);
     kb0 = knownBrokerPorts(c0.connection, 2);
     BOOST_CHECK_EQUAL(kb1.size(), 2u);
     BOOST_CHECK_EQUAL(kb1, makeSet(cluster));
@@ -460,7 +443,7 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
 
     cluster.add();
     Client c2(cluster[2], "c2");
-    set<uint16_t> kb2 = knownBrokerPorts(c2.connection);
+    set<int> kb2 = knownBrokerPorts(c2.connection);
     kb1 = knownBrokerPorts(c1.connection, 3);
     kb0 = knownBrokerPorts(c0.connection, 3);
     BOOST_CHECK_EQUAL(kb2.size(), 3u);

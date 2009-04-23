@@ -50,6 +50,13 @@ void ExpiryPolicy::willExpire(broker::Message& m) {
     timer.add(new ExpiryTask(this, id, m.getExpiration()));
 }
 
+void ExpiryPolicy::forget(broker::Message& m) {
+    MessageIdMap::iterator i = unexpiredByMessage.find(&m);
+    assert(i != unexpiredByMessage.end());
+    unexpiredById.erase(i->second);
+    unexpiredByMessage.erase(i);
+}
+
 bool ExpiryPolicy::hasExpired(broker::Message& m) {
     return unexpiredByMessage.find(&m) == unexpiredByMessage.end();
 }

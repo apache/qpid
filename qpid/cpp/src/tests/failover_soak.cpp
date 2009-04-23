@@ -220,61 +220,11 @@ struct children : public vector<child *>
         cout << "\n\n\n\n";
     }
 
-
-    /* 
-       Only call this if you already know there is at least 
-       one child still running.  Supply a time in seconds.
-       If it has been at least that long since a shild stopped
-       running, we judge the system to have hung.
-    */
-    int
-    hanging ( int hangTime )
-    {
-        struct timeval now,
-                       duration;
-        gettimeofday ( &now, 0 );
-
-        int how_many_hanging = 0;
-
-        vector<child *>::iterator i;
-        for ( i = begin(); i != end(); ++ i )
-        {
-            //Not in POSIX
-            //timersub ( & now, &((*i)->startTime), & duration );
-            duration.tv_sec = now.tv_sec - (*i)->startTime.tv_sec;
-            duration.tv_usec = now.tv_usec - (*i)->startTime.tv_usec;
-            if (duration.tv_usec < 0) {
-                --duration.tv_sec;
-                duration.tv_usec += 1000000;
-            }
-
-            if ( (COMPLETED != (*i)->status)     // child isn't done running
-                  &&
-                 ( duration.tv_sec >= hangTime ) // it's been too long
-               )
-            {
-                std::cerr << "Child of type " 
-                          << (*i)->type 
-                          << " hanging.   "
-                          << "PID is "
-                          << (*i)->pid
-                          << endl;
-                ++ how_many_hanging;
-            }
-        }
-        
-        return how_many_hanging;
-    }
-    
-
     int verbosity;
 };
 
 
-
 children allMyChildren;
-
-
 
 
 void 
@@ -361,36 +311,45 @@ wait_for_newbie ( )
   }
 }
 
-
+bool endsWith(const char* str, const char* suffix) {
+    return (strlen(suffix) < strlen(str) && 0 == strcmp(str+strlen(str)-strlen(suffix), suffix));
+}
 
 
 void
 startNewBroker ( brokerVector & brokers,
-                 char const * srcRoot,
-                 char const * moduleDir,
+                 char const * moduleOrDir,
                  string const clusterName,
-                 int verbosity ) 
+                 int verbosity,
+                 int durable ) 
 {
     static int brokerId = 0;
-    stringstream path, prefix, module;
-    module << moduleDir << "/cluster.so";
-    path << srcRoot << "/qpidd";
+    stringstream path, prefix;
     prefix << "soak-" << brokerId;
     std::vector<std::string> argv = list_of<string>
         ("qpidd")
-        ("--no-module-dir")
-        ("--load-module=cluster.so")
-        ("--cluster-name")
-        (clusterName)
+        ("--cluster-name")(clusterName)
         ("--auth=no")
-        ("--no-data-dir")
         ("--mgmt-enable=no")
-        ("--log-prefix")
-        (prefix.str())
-        ("--log-to-file")
-        (prefix.str()+".log");
+        ("--log-prefix")(prefix.str())
+        ("--log-to-file")(prefix.str()+".log")
+        ("--log-enable=error+")
+        ("TMP_DATA_DIR");
 
-    newbie = new ForkedBroker ( argv );
+    if (endsWith(moduleOrDir, "cluster.so")) {
+        // Module path specified, load only that module.
+        argv.push_back(string("--load-module=")+moduleOrDir);
+        argv.push_back("--no-module-dir");
+        if ( durable ) {
+          std::cerr << "failover_soak warning: durable arg hass no effect.  Use \"dir\" option of \"moduleOrDir\".\n";
+        }
+    }
+    else {
+        // Module directory specified, load all modules in dir.
+        argv.push_back(string("--module-dir=")+moduleOrDir);
+    }
+
+    newbie = new ForkedBroker (argv);
     newbie_port = newbie->getPort();
     ForkedBroker * broker = newbie;
 
@@ -473,7 +432,8 @@ pid_t
 runDeclareQueuesClient ( brokerVector brokers, 
                             char const *  host,
                             char const *  path,
-                            int verbosity
+                            int verbosity,
+                            int durable
                           ) 
 {
     string name("declareQueues");
@@ -492,6 +452,10 @@ runDeclareQueuesClient ( brokerVector brokers,
     argv.push_back ( "declareQueues" );
     argv.push_back ( host );
     argv.push_back ( portSs.str().c_str() );
+    if ( durable )
+      argv.push_back ( "1" );
+    else
+      argv.push_back ( "0" );
     argv.push_back ( 0 );
     pid_t pid = fork();
 
@@ -562,7 +526,8 @@ startSendingClient ( brokerVector brokers,
                        char const *  senderPath,
                        char const *  nMessages,
                        char const *  reportFrequency,
-                       int verbosity
+                       int verbosity,
+                       int durability
                      ) 
 {
     string name("sender");
@@ -586,6 +551,10 @@ startSendingClient ( brokerVector brokers,
     argv.push_back ( nMessages );
     argv.push_back ( reportFrequency );
     argv.push_back ( verbosityStr );
+    if ( durability )
+      argv.push_back ( "1" );
+    else
+      argv.push_back ( "0" );
     argv.push_back ( 0 );
 
     pid_t pid = fork();
@@ -613,27 +582,33 @@ startSendingClient ( brokerVector brokers,
 #define ERROR_KILLING_BROKER  8
 
 
+// If you want durability, use the "dir" option of "moduleOrDir" .
+
+
 int
 main ( int argc, char const ** argv ) 
 {    
-    if ( argc < 9 ) {
-        cerr << "Usage: failoverSoak srcRoot moduleDir host senderPath receiverPath nMessages verbosity\n";
-        cerr << "    ( argc was " << argc << " )\n";
+    if ( argc != 9 ) {
+        cerr << "Usage: "
+             << argv[0]
+             << "moduleOrDir declareQueuesPath senderPath receiverPath nMessages reportFrequency verbosity durable"
+             << endl;
+        cerr << "\tverbosity is an integer, durable is 0 or 1\n";
         return BAD_ARGS;
     }
-
     signal ( SIGCHLD, childExit );
 
-    char const * srcRoot            = argv[1];
-    char const * moduleDir          = argv[2];
-    char const * host               = argv[3];
-    char const * declareQueuesPath  = argv[4];
-    char const * senderPath         = argv[5];
-    char const * receiverPath       = argv[6];
-    char const * nMessages          = argv[7];
-    char const * reportFrequency    = argv[8];
-    int          verbosity          = atoi(argv[9]);
+    int i = 1;
+    char const * moduleOrDir        = argv[i++];
+    char const * declareQueuesPath  = argv[i++];
+    char const * senderPath         = argv[i++];
+    char const * receiverPath       = argv[i++];
+    char const * nMessages          = argv[i++];
+    char const * reportFrequency    = argv[i++];
+    int          verbosity          = atoi(argv[i++]);
+    int          durable            = atoi(argv[i++]);
 
+    char const * host               = "127.0.0.1";
     int maxBrokers = 50;
 
     allMyChildren.verbosity = verbosity;
@@ -652,10 +627,10 @@ main ( int argc, char const ** argv )
     int nBrokers = 3;
     for ( int i = 0; i < nBrokers; ++ i ) {
         startNewBroker ( brokers,
-                         srcRoot,
-                         moduleDir, 
+                         moduleOrDir, 
                          clusterName,
-                         verbosity ); 
+                         verbosity,
+                         durable ); 
     }
 
 
@@ -665,7 +640,7 @@ main ( int argc, char const ** argv )
      // Run the declareQueues child.
      int childStatus;
      pid_t dqClientPid = 
-     runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity );
+     runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity, durable );
      if ( -1 == dqClientPid ) {
          cerr << "END_OF_TEST ERROR_START_DECLARE_1\n";
          return CANT_FORK_DQ;
@@ -701,7 +676,8 @@ main ( int argc, char const ** argv )
                             senderPath, 
                             nMessages,
                             reportFrequency,
-                            verbosity );
+                            verbosity,
+                            durable );
      if ( -1 == sendingClientPid ) {
          cerr << "END_OF_TEST ERROR_START_SENDER\n";
          return CANT_FORK_SENDER;
@@ -745,10 +721,10 @@ main ( int argc, char const ** argv )
              cout << "Starting new broker.\n\n";
 
          startNewBroker ( brokers,
-                          srcRoot,
-                          moduleDir, 
+                          moduleOrDir, 
                           clusterName,
-                          verbosity ); 
+                          verbosity,
+                          durable ); 
        
          if ( verbosity > 1 )
              printBrokers ( brokers );
@@ -785,16 +761,6 @@ main ( int argc, char const ** argv )
              killAllBrokers ( brokers, 5 );
              std::cerr << "END_OF_TEST ERROR_CLIENT\n";
              return ERROR_ON_CHILD;
-         }
-
-         // If one is hanging, quit.
-         if ( allMyChildren.hanging ( 120 ) )
-         {
-             /*
-              * Don't kill any processes.  Leave alive for questioning.
-              * */
-             std::cerr << "END_OF_TEST ERROR_HANGING\n";
-             return HANGING;
          }
 
          if ( verbosity > 1 ) {

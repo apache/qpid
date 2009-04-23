@@ -22,12 +22,13 @@
 #ifndef _Completion_
 #define _Completion_
 
-#include <boost/shared_ptr.hpp>
-#include "Future.h"
-#include "SessionImpl.h"
+#include "Handle.h"
+#include <string>
 
 namespace qpid {
 namespace client {
+
+class CompletionImpl;
 
 /** 
  * Asynchronous commands that do not return a result will return a
@@ -38,32 +39,26 @@ namespace client {
  *
  *\ingroup clientapi
  */
-class Completion
+class Completion : public Handle<CompletionImpl>
 {
-protected:
-    Future future;
-    shared_ptr<SessionImpl> session;
-
 public:
     ///@internal
-    Completion() {}
-
-    ///@internal
-    Completion(Future f, shared_ptr<SessionImpl> s) : future(f), session(s) {}
+    QPID_CLIENT_EXTERN Completion(CompletionImpl* =0);
+    QPID_CLIENT_EXTERN ~Completion();
+    QPID_CLIENT_EXTERN Completion(const Completion&);
+    QPID_CLIENT_EXTERN Completion& operator=(const Completion&);
 
     /** Wait for the asynchronous command that returned this
      *Completion to complete.
      *
-     *@exception If the command returns an error, get() throws an exception.
+     *@exception If the command returns an error.
      */
-    void wait()
-    {
-        future.wait(*session);
-    }
+    QPID_CLIENT_EXTERN void wait();
 
-    bool isComplete() {
-        return future.isComplete(*session);
-    }
+    QPID_CLIENT_EXTERN bool isComplete();
+
+  protected:
+    QPID_CLIENT_EXTERN std::string getResult();
 };
 
 }}

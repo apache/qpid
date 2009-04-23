@@ -73,8 +73,9 @@ class SessionHandler : public amqp_0_10::SessionHandler {
     virtual void setState(const std::string& sessionName, bool force);
     virtual qpid::SessionState* getState();
     virtual framing::FrameHandler* getInHandler();
-    virtual void channelException(framing::session::DetachCode code, const std::string& msg);
     virtual void connectionException(framing::connection::CloseCode code, const std::string& msg);
+    virtual void channelException(framing::session::DetachCode, const std::string& msg);
+    virtual void executionException(framing::execution::ErrorCode, const std::string& msg);
     virtual void detaching();
     virtual void readyToSend();
 

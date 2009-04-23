@@ -21,6 +21,7 @@
 
 #include "Subscription.h"
 #include "SubscriptionImpl.h"
+#include "CompletionImpl.h"
 #include "HandlePrivate.h"
 #include "qpid/framing/enum.h"
 

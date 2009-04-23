@@ -20,20 +20,39 @@
  */
 
 #include "ForkedBroker.h"
+#include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <signal.h>
 
-ForkedBroker::ForkedBroker(const Args& args) { init(args); }
+using namespace std;
+using qpid::ErrnoException;
 
-ForkedBroker::ForkedBroker(int argc, const char* const argv[]) { init(Args(argv, argc+argv)); }
+ForkedBroker::ForkedBroker(const Args& constArgs) {
+    Args args(constArgs);
+    Args::iterator i = find(args.begin(), args.end(), string("TMP_DATA_DIR"));
+    if (i != args.end()) {
+        args.erase(i);
+        char dd[] = "/tmp/ForkedBroker.XXXXXX";
+        if (!mkdtemp(dd))
+            throw qpid::ErrnoException("Can't create data dir");
+        dataDir = dd;
+        args.push_back("--data-dir");
+        args.push_back(dataDir);
+    }
+    init(args);
+}
 
 ForkedBroker::~ForkedBroker() {
-    try { kill(); } catch(const std::exception& e) {
+    try { kill(); }
+    catch (const std::exception& e) {
         QPID_LOG(error, QPID_MSG("Killing forked broker: " << e.what()));
     }
+    if (!dataDir.empty()) 
+        ::system(("rm -rf "+dataDir).c_str());
 }
 
 void ForkedBroker::kill(int sig) {
@@ -42,14 +61,25 @@ void ForkedBroker::kill(int sig) {
     pid = 0;                // Reset pid here in case of an exception.
     using qpid::ErrnoException;
     if (::kill(savePid, sig) < 0) 
-        throw ErrnoException("kill failed");
+            throw ErrnoException("kill failed");
     int status;
     if (::waitpid(savePid, &status, 0) < 0 && sig != 9) 
         throw ErrnoException("wait for forked process failed");
     if (WEXITSTATUS(status) != 0 && sig != 9) 
         throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
 }
+        
+namespace std {
+static ostream& operator<<(ostream& o, const ForkedBroker::Args& a) {
+    copy(a.begin(), a.end(), ostream_iterator<string>(o, " "));
+    return o;
+}
 
+bool isLogOption(const std::string& s) {
+    return boost::starts_with(s, "--log-enable") || boost::starts_with(s, "--trace");
+}
+
+}
         
 void ForkedBroker::init(const Args& userArgs) {
     using qpid::ErrnoException;
@@ -70,17 +100,20 @@ void ForkedBroker::init(const Args& userArgs) {
     }
     else {                  // child
         ::close(pipeFds[0]);
-        // FIXME aconway 2009-02-12: 
         int fd = ::dup2(pipeFds[1], 1); // pipe stdout to the parent.
         if (fd < 0) throw ErrnoException("dup2 failed");
-        const char* prog = "../qpidd";
+        const char* prog = ::getenv("QPID_FORKED_BROKER");
+        if (!prog) prog = "../qpidd";
         Args args(userArgs);
         args.push_back("--port=0");
-        if (!::getenv("QPID_TRACE") && !::getenv("QPID_LOG_ENABLE"))
-            args.push_back("--log-enable=error+"); // Keep quiet except for errors.
+        // Keep quiet except for errors.
+        if (!::getenv("QPID_TRACE") && !::getenv("QPID_LOG_ENABLE")
+            && find_if(userArgs.begin(), userArgs.end(), isLogOption) == userArgs.end())
+            args.push_back("--log-enable=error+"); 
         std::vector<const char*> argv(args.size());
         std::transform(args.begin(), args.end(), argv.begin(), boost::bind(&std::string::c_str, _1));
         argv.push_back(0);
+        QPID_LOG(debug, "ForkedBroker exec " << prog << ": " << args);
         execv(prog, const_cast<char* const*>(&argv[0]));
         throw ErrnoException("execv failed");
     }

@@ -20,8 +20,12 @@
  */
 
 #include "SubscriptionImpl.h"
+#include "MessageImpl.h"
+#include "CompletionImpl.h"
 #include "SubscriptionManager.h"
 #include "SubscriptionSettings.h"
+#include "HandlePrivate.h"
+#include "PrivateImplPrivate.h"
 
 namespace qpid {
 namespace client {
@@ -114,9 +118,9 @@ void SubscriptionImpl::cancel() { manager.cancel(name); }
 
 void SubscriptionImpl::received(Message& m) {
     Mutex::ScopedLock l(lock);
-    if (m.getMethod().getAcquireMode() == ACQUIRE_MODE_NOT_ACQUIRED) 
+    if (privateImplGetPtr(m)->getMethod().getAcquireMode() == ACQUIRE_MODE_NOT_ACQUIRED) 
         unacquired.add(m.getId());
-    else if (m.getMethod().getAcceptMode() == ACCEPT_MODE_EXPLICIT)
+    else if (privateImplGetPtr(m)->getMethod().getAcceptMode() == ACCEPT_MODE_EXPLICIT)
         unaccepted.add(m.getId());
 
     if (listener) {

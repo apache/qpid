@@ -1,5 +1,5 @@
-#ifndef _client_Message_h
-#define _client_Message_h
+#ifndef QPID_CLIENT_MESSAGE_H
+#define QPID_CLIENT_MESSAGE_H
 
 /*
  *
@@ -21,14 +21,23 @@
  * under the License.
  *
  */
-#include <string>
-#include "qpid/client/Session.h"
-#include "qpid/framing/MessageTransferBody.h"
-#include "qpid/framing/TransferContent.h"
+
+#include "qpid/client/PrivateImpl.h"
 #include "qpid/client/ClientImportExport.h"
+#include "qpid/framing/MessageProperties.h"
+#include "qpid/framing/DeliveryProperties.h"
+#include <string>
 
 namespace qpid {
+
+namespace framing {
+class FieldTable;
+class SequenceNumber;           // FIXME aconway 2009-04-17: remove with getID?
+}
+
 namespace client {
+
+class MessageImpl;
 
 /**
  * A message sent to or received from the broker.
@@ -104,8 +113,7 @@ namespace client {
  * 
  * 
  */
-
-class Message : public framing::TransferContent 
+class Message : public PrivateImpl<MessageImpl>
 {
 public:
     /** Create a Message.
@@ -115,6 +123,23 @@ public:
     QPID_CLIENT_EXTERN Message(const std::string& data=std::string(),
             const std::string& routingKey=std::string());
 
+    QPID_CLIENT_EXTERN ~Message();
+
+    QPID_CLIENT_EXTERN void setData(const std::string&);
+    QPID_CLIENT_EXTERN const std::string& getData() const;
+    QPID_CLIENT_EXTERN std::string& getData();
+
+    QPID_CLIENT_EXTERN void appendData(const std::string&);
+
+    QPID_CLIENT_EXTERN bool hasMessageProperties() const;
+    QPID_CLIENT_EXTERN framing::MessageProperties& getMessageProperties();
+    QPID_CLIENT_EXTERN const framing::MessageProperties& getMessageProperties() const;
+
+    QPID_CLIENT_EXTERN bool hasDeliveryProperties() const;
+    QPID_CLIENT_EXTERN framing::DeliveryProperties& getDeliveryProperties();
+    QPID_CLIENT_EXTERN const framing::DeliveryProperties& getDeliveryProperties() const;
+
+    
     /** The destination of messages sent to the broker is the exchange
      * name.  The destination of messages received from the broker is
      * the delivery tag identifyig the local subscription (often this
@@ -133,20 +158,14 @@ public:
     /** Get a non-modifyable reference to the message headers. */
     QPID_CLIENT_EXTERN const framing::FieldTable& getHeaders() const;
 
-    ///@internal
-    QPID_CLIENT_EXTERN const framing::MessageTransferBody& getMethod() const;
+    // FIXME aconway 2009-04-17: does this need to be in public API?
     ///@internal
     QPID_CLIENT_EXTERN const framing::SequenceNumber& getId() const;
 
-    /**@internal for incoming messages */
-    QPID_CLIENT_EXTERN Message(const framing::FrameSet& frameset);
-    
-private:
-    //method and id are only set for received messages:
-    framing::MessageTransferBody method;
-    framing::SequenceNumber id;
+    ///@internal
+    Message(MessageImpl*);
 };
 
 }}
 
-#endif  /*!_client_Message_h*/
+#endif  /*!QPID_CLIENT_MESSAGE_H*/

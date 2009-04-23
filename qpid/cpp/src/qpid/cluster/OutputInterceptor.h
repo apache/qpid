@@ -23,9 +23,9 @@
  */
 
 #include "WriteEstimate.h"
+#include "NoOpConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/broker/ConnectionFactory.h"
-#include "qpid/sys/LatencyMetric.h"
 #include <boost/function.hpp>
 
 namespace qpid {
@@ -37,7 +37,7 @@ class Connection;
 /**
  * Interceptor for connection OutputHandler, manages outgoing message replication.
  */
-class OutputInterceptor : public sys::ConnectionOutputHandler, sys::LatencyMetricTimestamp {
+class OutputInterceptor : public sys::ConnectionOutputHandler {
   public:
     OutputInterceptor(cluster::Connection& p, sys::ConnectionOutputHandler& h);
 
@@ -53,7 +53,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler, sys::LatencyMetri
     // Intercept doOutput requests on Connection.
     bool doOutput();
 
-    void closeOutput(sys::ConnectionOutputHandler& h);
+    void closeOutput();
 
     cluster::Connection& parent;
     
@@ -70,6 +70,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler, sys::LatencyMetri
     WriteEstimate writeEstimate;
     bool moreOutput;
     bool doingOutput;
+    static NoOpConnectionOutputHandler discardHandler;
 };
 
 }} // namespace qpid::cluster

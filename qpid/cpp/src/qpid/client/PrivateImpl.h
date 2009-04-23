@@ -1,5 +1,6 @@
-#ifndef _BasicP2PTest_
-#define _BasicP2PTest_
+#ifndef QPID_CLIENT_PRIVATEIMPL_H
+#define QPID_CLIENT_PRIVATEIMPL_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,26 +22,33 @@
  *
  */
 
-#include <memory>
-#include <sstream>
-
-#include "qpid/Exception.h"
-#include "qpid/client/Channel.h"
-#include "qpid/client/Message.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/MessageListener.h"
-#include "SimpleTestCaseBase.h"
-
+#include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
+namespace client {
 
-class BasicP2PTest : public SimpleTestCaseBase
-{
-    class Receiver;
-public:
-    void assign(const std::string& role, framing::FieldTable& params, ConnectionOptions& options);
+template <class T> class PrivateImplPrivate;
+
+/**
+ * Base classes for objects with a private implementation.
+ * 
+ * PrivateImpl objects have value semantics: copying the object also
+ * makes a copy of the implementation.
+ */
+template <class T> class PrivateImpl {
+  public:
+    QPID_CLIENT_EXTERN ~PrivateImpl();
+    QPID_CLIENT_EXTERN PrivateImpl(const PrivateImpl&);
+    QPID_CLIENT_EXTERN PrivateImpl& operator=(const PrivateImpl&);
+    QPID_CLIENT_EXTERN void swap(PrivateImpl<T>&);
+
+  protected:
+    QPID_CLIENT_EXTERN PrivateImpl(T*);
+    T* impl;
+
+  friend class PrivateImplPrivate<T>;
 };
 
-}
+}} // namespace qpid::client
 
-#endif
+#endif  /*!QPID_CLIENT_PRIVATEIMPL_H*/

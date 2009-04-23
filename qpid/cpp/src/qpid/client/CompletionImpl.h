@@ -1,5 +1,6 @@
-#ifndef _BasicPubSubTest_
-#define _BasicPubSubTest_
+#ifndef QPID_CLIENT_COMPLETIONIMPL_H
+#define QPID_CLIENT_COMPLETIONIMPL_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,31 +22,29 @@
  *
  */
 
-#include <memory>
-#include <sstream>
-
-#include "qpid/Exception.h"
-#include "qpid/client/Channel.h"
-#include "qpid/client/Message.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/MessageListener.h"
-#include "SimpleTestCaseBase.h"
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/format.hpp>
-
+#include "qpid/RefCounted.h"
+#include "Future.h"
 
 namespace qpid {
+namespace client {
 
-using namespace qpid::client;
-
-class BasicPubSubTest : public SimpleTestCaseBase
+///@internal
+class CompletionImpl : public RefCounted
 {
-    class Receiver;
-    class MultiReceiver;
 public:
-    void assign(const std::string& role, framing::FieldTable& params, ConnectionOptions& options);
+    CompletionImpl() {}
+    CompletionImpl(Future f, shared_ptr<SessionImpl> s) : future(f), session(s) {}
+
+    bool isComplete() { return future.isComplete(*session); }
+    void wait() { future.wait(*session); }
+    std::string getResult() { return future.getResult(*session); }
+
+protected:
+    Future future;
+    shared_ptr<SessionImpl> session;
 };
 
-}
+}} // namespace qpid::client
 
-#endif
+
+#endif  /*!QPID_CLIENT_COMPLETIONIMPL_H*/

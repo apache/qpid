@@ -32,8 +32,9 @@ namespace cluster {
 
 using namespace framing;
 
-OutputInterceptor::OutputInterceptor(
-    cluster::Connection& p, sys::ConnectionOutputHandler& h)
+NoOpConnectionOutputHandler OutputInterceptor::discardHandler;
+
+OutputInterceptor::OutputInterceptor(Connection& p, sys::ConnectionOutputHandler& h)
     : parent(p), closing(false), next(&h), sent(),
       writeEstimate(p.getCluster().getWriteEstimate()),
       moreOutput(), doingOutput()
@@ -47,7 +48,6 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
     }
     if (!parent.isCatchUp())
         sent += f.encodedSize();
-    QPID_LATENCY_RECORD("up to write queue", f);
 }
 
 void OutputInterceptor::activateOutput() {
@@ -98,7 +98,6 @@ void OutputInterceptor::deliverDoOutput(size_t requested) {
 // Send a doOutput request if one is not already in flight.
 void OutputInterceptor::sendDoOutput() {
     if (!parent.isLocal()) return;
-    QPID_LATENCY_INIT(*this);
     doingOutput = true;
     size_t request = writeEstimate.sending(getBuffered());
     
@@ -111,10 +110,10 @@ void OutputInterceptor::sendDoOutput() {
     QPID_LOG(trace, parent << "Send doOutput request for " << request);
 }
 
-void OutputInterceptor::closeOutput(sys::ConnectionOutputHandler& h) {
+void OutputInterceptor::closeOutput() {
     sys::Mutex::ScopedLock l(lock);
     closing = true;
-    next = &h;
+    next = &discardHandler;
 }
 
 void OutputInterceptor::close() {

@@ -33,6 +33,7 @@ namespace qpid {
 namespace client {
 
 class SubscriptionManager;
+class ConnectionImpl;
 
 /**
  * @internal Listen for failover updates from the amq.failover exchange.

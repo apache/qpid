@@ -25,7 +25,6 @@
 #include "types.h"
 #include "Event.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/sys/LatencyMetric.h"
 #include <boost/intrusive_ptr.hpp>
 #include <iosfwd>
 
@@ -45,6 +44,7 @@ struct EventFrame
     bool isCluster() const { return connectionId.getNumber() == 0; }
     bool isConnection() const { return connectionId.getNumber() != 0; }
     bool isLastInEvent() const { return readCredit; }
+    MemberId getMemberId() const { return connectionId.getMember(); }
 
 
     ConnectionId connectionId;

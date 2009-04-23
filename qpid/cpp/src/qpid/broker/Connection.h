@@ -66,6 +66,17 @@ class Connection : public sys::ConnectionInputHandler,
                    public RefCounted
 {
   public:
+    /**
+     * Listener that can be registered with a Connection to be informed of errors.
+     */
+    class ErrorListener
+    {
+      public:
+        virtual ~ErrorListener() {}
+        virtual void sessionError(uint16_t channel, const std::string&) = 0;
+        virtual void connectionError(const std::string&) = 0;
+    };
+
     Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false, uint64_t objectId = 0);
     ~Connection ();
 
@@ -101,6 +112,9 @@ class Connection : public sys::ConnectionInputHandler,
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
     void setFederationLink(bool b);
+    /** Connection does not delete the listener. 0 resets. */
+    void setErrorListener(ErrorListener* l) { errorListener=l; }
+    ErrorListener* getErrorListener() { return errorListener; }
     
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
@@ -112,6 +126,7 @@ class Connection : public sys::ConnectionInputHandler,
 
     void sendClose();
     void setSecureConnection(SecureConnection* secured);
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -128,6 +143,8 @@ class Connection : public sys::ConnectionInputHandler,
     management::ManagementAgent* agent;
     Timer& timer;
     boost::intrusive_ptr<TimerTask> heartbeatTimer;
+    ErrorListener* errorListener;
+
   public:
     qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
 };

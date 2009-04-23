@@ -23,14 +23,11 @@
  */
 
 #include "qpid/SessionId.h"
-#include "qpid/framing/amqp_structs.h"
-#include "qpid/framing/ProtocolVersion.h"
-#include "qpid/framing/MethodContent.h"
-#include "qpid/framing/TransferContent.h"
-#include "qpid/client/Completion.h"
-#include "qpid/client/ConnectionImpl.h"
-#include "qpid/client/Execution.h"
 #include "qpid/client/SessionImpl.h"
+#include "qpid/framing/amqp_structs.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/Completion.h"
+#include "qpid/client/Execution.h"
 #include "qpid/client/TypedResult.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/client/ClientImportExport.h"
@@ -44,7 +41,6 @@ class Connection;
 using std::string;
 using framing::Content;
 using framing::FieldTable;
-using framing::MethodContent;
 using framing::SequenceNumber;
 using framing::SequenceSet;
 using framing::SequenceNumberSet;
@@ -62,8 +58,6 @@ enum CreditUnit { MESSAGE_CREDIT=0, BYTE_CREDIT=1, UNLIMITED_CREDIT=0xFFFFFFFF }
  */
 class SessionBase_0_10 {
   public:
-    
-    typedef framing::TransferContent DefaultContent;
 
     ///@internal
     QPID_CLIENT_EXTERN SessionBase_0_10();

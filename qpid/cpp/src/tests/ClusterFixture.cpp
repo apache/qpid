@@ -61,8 +61,14 @@ using boost::assign::list_of;
 
 #include "ClusterFixture.h"
 
-ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_)
-    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_)
+ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_, const string& clusterLib_)
+    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_), clusterLib(clusterLib_)
+{
+    add(n);
+}
+
+ClusterFixture::ClusterFixture(size_t n, int localIndex_, boost::function<void (Args&, size_t)> updateArgs_, const string& clusterLib_)
+    : name(Uuid(true).str()), localIndex(localIndex_), updateArgs(updateArgs_), clusterLib(clusterLib_)
 {
     add(n);
 }
@@ -70,13 +76,14 @@ ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_)
 const ClusterFixture::Args ClusterFixture::DEFAULT_ARGS =
     list_of<string>("--auth=no")("--no-data-dir");
 
-ClusterFixture::Args ClusterFixture::makeArgs(const std::string& prefix) {
-    Args args = list_of<string>("qpidd " __FILE__)
+ClusterFixture::Args ClusterFixture::makeArgs(const std::string& prefix, size_t index) {
+    Args args = list_of<string>("qpidd ")
         ("--no-module-dir")
-        ("--load-module=../.libs/cluster.so")
-        ("--cluster-name")(name) 
+        ("--load-module")(clusterLib)
+        ("--cluster-name")(name)
         ("--log-prefix")(prefix);
     args.insert(args.end(), userArgs.begin(), userArgs.end());
+    if (updateArgs) updateArgs(args, index);
     return args;
 }
 
@@ -84,7 +91,7 @@ void ClusterFixture::add() {
     if (size() != size_t(localIndex))  { // fork a broker process.
         std::ostringstream os; os << "fork" << size();
         std::string prefix = os.str();
-        forkedBrokers.push_back(shared_ptr<ForkedBroker>(new ForkedBroker(makeArgs(prefix))));
+        forkedBrokers.push_back(shared_ptr<ForkedBroker>(new ForkedBroker(makeArgs(prefix, size()))));
         push_back(forkedBrokers.back()->getPort());
     }
     else {                      // Run in this process
@@ -106,7 +113,7 @@ void ClusterFixture::addLocal() {
     assert(int(size()) == localIndex);
     ostringstream os; os << "local" << localIndex;
     string prefix = os.str();
-    Args args(makeArgs(prefix));
+    Args args(makeArgs(prefix, localIndex));
     vector<const char*> argv(args.size());
     transform(args.begin(), args.end(), argv.begin(), boost::bind(&string::c_str, _1));
     qpid::log::Logger::instance().setPrefix(prefix);
@@ -116,7 +123,7 @@ void ClusterFixture::addLocal() {
 }
 
 bool ClusterFixture::hasLocal() const { return localIndex >= 0 && size_t(localIndex) < size(); }
-    
+
 /** Kill a forked broker with sig, or shutdown localBroker if n==0. */
 void ClusterFixture::kill(size_t n, int sig) {
     if (n == size_t(localIndex))
@@ -130,4 +137,23 @@ void ClusterFixture::killWithSilencer(size_t n, client::Connection& c, int sig) 
     ScopedSuppressLogging sl;
     kill(n,sig);
     try { c.close(); } catch(...) {}
+}
+
+/**
+ * Get the known broker ports from a Connection.
+ *@param n if specified wait for the cluster size to be n, up to a timeout.
+ */
+std::set<int> knownBrokerPorts(qpid::client::Connection& source, int n) {
+    std::vector<qpid::Url> urls = source.getKnownBrokers();
+    if (n >= 0 && unsigned(n) != urls.size()) {
+        // Retry up to 10 secs in .1 second intervals.
+        for (size_t retry=100; urls.size() != unsigned(n) && retry != 0; --retry) {
+            qpid::sys::usleep(1000*100); // 0.1 secs
+            urls = source.getKnownBrokers();
+        }
+    }
+    std::set<int> s;
+    for (std::vector<qpid::Url>::const_iterator i = urls.begin(); i != urls.end(); ++i)
+        s.insert((*i)[0].get<qpid::TcpAddress>()->port);
+    return s;
 }

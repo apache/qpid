@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="receiver"
-	ProjectGUID="{7D314A98-FECA-1BAD-2431-8A11DB0D67CE}"
+	ProjectGUID="{7D314A98-FECA-1BAD-2431-8A11CDC7409E}"
 	RootNamespace="receiver"
 	Keyword="Win32Proj"
 	SignManifests="true"

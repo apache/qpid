@@ -48,19 +48,26 @@ class ForkedBroker {
   public:
     typedef std::vector<std::string> Args;
 
+    // argv args are passed to broker.
+    // 
+    // Special value "TMP_DATA_DIR" is substituted with a temporary
+    // data directory for the broker.
+    // 
     ForkedBroker(const Args& argv);
-    ForkedBroker(int argc, const char* const argv[]);
     ~ForkedBroker();
 
     void kill(int sig=SIGINT);
+    int wait();                 // Wait for exit, return exit status.
     uint16_t getPort() { return port; }
     pid_t getPID() { return pid; }
 
   private:
+
     void init(const Args& args);
 
     pid_t pid;
     int port;
+    std::string dataDir;
 };
 
 #endif  /*!TESTS_FORKEDBROKER_H*/

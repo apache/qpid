@@ -19,6 +19,7 @@
  *
  */
 #include "Connection.h"
+#include "ConnectionImpl.h"
 #include "ConnectionSettings.h"
 #include "Message.h"
 #include "SessionImpl.h"

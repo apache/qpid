@@ -38,6 +38,7 @@
 #include "qpid/log/Logger.h"
 
 #include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <string>
@@ -59,43 +60,55 @@ using qpid::broker::Broker;
 using boost::shared_ptr;
 using qpid::cluster::Cluster;
 
-
+#define DEFAULT_CLUSTER_LIB "../.libs/cluster.so"
 
 /** Cluster fixture is a vector of ports for the replicas.
- * 
+ *
  * At most one replica (by default replica 0) is in the current
  * process, all others are forked as children.
  */
 class ClusterFixture : public vector<uint16_t>  {
   public:
     typedef std::vector<std::string> Args;
+    static const Args DEFAULT_ARGS;
+
     /** @param localIndex can be -1 meaning don't automatically start a local broker.
      * A local broker can be started with addLocal().
      */
-    ClusterFixture(size_t n, int localIndex=0, const Args& args=DEFAULT_ARGS);
+    ClusterFixture(size_t n, int localIndex=0, const Args& args=DEFAULT_ARGS, const string& clusterLib = DEFAULT_CLUSTER_LIB);
+
+    /**@param updateArgs function is passed the index of the cluster member and can update the arguments. */
+    ClusterFixture(size_t n, int localIndex, boost::function<void (Args&, size_t)> updateArgs, const string& clusterLib = DEFAULT_CLUSTER_LIB);
+
     void add(size_t n) { for (size_t i=0; i < n; ++i) add(); }
     void add();                 // Add a broker.
     void setup();
 
     bool hasLocal() const;
-    
-    /** Kill a forked broker with sig, or shutdown localBroker if n==0. */
+
+    /** Kill a forked broker with sig, or shutdown localBroker. */
     void kill(size_t n, int sig=SIGINT);
 
     /** Kill a broker and suppressing errors from closing connection c. */
     void killWithSilencer(size_t n, client::Connection& c, int sig=SIGINT);
 
   private:
-    static const Args DEFAULT_ARGS;
-    
+
     void addLocal();            // Add a local broker.
-    Args makeArgs(const std::string& prefix);
+    Args makeArgs(const std::string& prefix, size_t index);
     string name;
     std::auto_ptr<BrokerFixture> localBroker;
     int localIndex;
     std::vector<shared_ptr<ForkedBroker> > forkedBrokers;
     Args userArgs;
+    boost::function<void (Args&, size_t)> updateArgs;
+    string clusterLib;
 };
 
+/**
+ * Get the known broker ports from a Connection.
+ *@param n if specified wait for the cluster size to be n, up to a timeout.
+ */
+std::set<int> knownBrokerPorts(qpid::client::Connection& source, int n=-1);
 
 #endif  /*!CLUSTER_FIXTURE_H*/

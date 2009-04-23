@@ -343,7 +343,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AsynchIOHandler.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/DispatchHandle.cpp \
-  qpid/sys/LatencyMetric.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.cpp \
   qpid/sys/Timer.cpp
@@ -437,21 +436,26 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Bounds.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/ConnectionHandler.cpp		\
-  qpid/client/ConnectionImpl.cpp                \
+  qpid/client/ConnectionImpl.cpp		\
   qpid/client/ConnectionSettings.cpp		\
-  qpid/client/Connector.cpp	                \
+  qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
-  qpid/client/FailoverManager.cpp            \
+  qpid/client/FailoverManager.cpp		\
   qpid/client/FailoverListener.h		\
   qpid/client/FailoverListener.cpp		\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
+  qpid/client/Completion.cpp			\
+  qpid/client/CompletionImpl.h			\
   qpid/client/FutureResult.cpp			\
   qpid/client/HandlePrivate.h			\
+  qpid/client/PrivateImplPrivate.h		\
   qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
+  qpid/client/MessageImpl.cpp			\
+  qpid/client/MessageImpl.h			\
   qpid/client/MessageListener.cpp		\
   qpid/client/MessageReplayTracker.cpp		\
   qpid/client/QueueOptions.cpp			\
@@ -597,6 +601,7 @@ nobase_include_HEADERS = \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
   qpid/client/Handle.h \
+  qpid/client/PrivateImpl.h \
   qpid/client/LocalQueue.h \
   qpid/client/QueueOptions.h \
   qpid/client/Message.h \
@@ -697,7 +702,6 @@ nobase_include_HEADERS = \
   qpid/sys/FileSysDir.h \
   qpid/sys/IntegerTypes.h \
   qpid/sys/IOHandle.h \
-  qpid/sys/LatencyMetric.h \
   qpid/sys/LockFile.h \
   qpid/sys/LockPtr.h \
   qpid/sys/Monitor.h \

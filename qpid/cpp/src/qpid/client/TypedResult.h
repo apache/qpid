@@ -23,6 +23,7 @@
 #define _TypedResult_
 
 #include "Completion.h"
+#include "qpid/framing/StructHelper.h"
 
 namespace qpid {
 namespace client {
@@ -39,7 +40,7 @@ template <class T> class TypedResult : public Completion
 
 public:
     ///@internal
-    TypedResult(Future f, shared_ptr<SessionImpl> s) : Completion(f, s), decoded(false) {}
+    TypedResult(CompletionImpl* c) : Completion(c), decoded(false) {}
 
     /**
      * Wait for the asynchronous command that returned this TypedResult to complete
@@ -49,13 +50,12 @@ public:
      *@exception If the command returns an error, get() throws an exception.
      *
      */
-    T& get() 
-    {
+    T& get() {
         if (!decoded) {
-            future.decodeResult(result, *session);
+            framing::StructHelper helper;
+            helper.decode(result, getResult());
             decoded = true;
         }
-        
         return result;
     }
 };

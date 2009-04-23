@@ -456,6 +456,9 @@
 				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.cpp">
 			</File>
 			<File
+				RelativePath="gen\qpid\framing\ClusterErrorCheckBody.cpp">
+			</File>
+			<File
 				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.cpp">
 			</File>
 			<File
@@ -972,9 +975,6 @@
 				RelativePath="qpid\sys\Dispatcher.cpp">
 			</File>
 			<File
-				RelativePath="qpid\sys\LatencyMetric.cpp">
-			</File>
-			<File
 				RelativePath="qpid\sys\Runnable.cpp">
 			</File>
 			<File
@@ -1163,6 +1163,9 @@
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterConnectionTxStartBody.h">
+			</File>
+			<File
+				RelativePath="gen\qpid\framing\ClusterErrorCheckBody.h">
 			</File>
 			<File
 				RelativePath="gen\qpid\framing\ClusterMessageExpiredBody.h">
@@ -1808,9 +1811,6 @@
 			</File>
 			<File
 				RelativePath="qpid\sys\IOHandle.h">
-			</File>
-			<File
-				RelativePath="qpid\sys\LatencyMetric.h">
 			</File>
 			<File
 				RelativePath="qpid\sys\LockFile.h">

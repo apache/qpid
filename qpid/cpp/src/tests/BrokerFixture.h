@@ -114,10 +114,12 @@ struct ClientT {
     SessionType session;
     qpid::client::SubscriptionManager subs;
     qpid::client::LocalQueue lq;
-    ClientT(uint16_t port, const std::string& name=std::string())
-        : connection(port), session(connection.newSession(name)), subs(session) {}
-    ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name=std::string())
-        : connection(settings), session(connection.newSession(name)), subs(session) {}
+    std::string name;
+
+    ClientT(uint16_t port, const std::string& name_=std::string())
+        : connection(port), session(connection.newSession(name_)), subs(session), name(name_) {}
+    ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name_=std::string())
+        : connection(settings), session(connection.newSession(name_)), subs(session), name(name_) {}
 
     ~ClientT() { connection.close(); }
 };

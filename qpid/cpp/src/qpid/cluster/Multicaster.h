@@ -55,8 +55,6 @@ class Multicaster
     void mcast(const Event& e);
     /** End holding mode, held events are mcast */
     void release();
-    /** Call when events are self-delivered to manage flow control. */
-    void selfDeliver(const Event&);
     
   private:
     typedef sys::PollableQueue<Event> PollableEventQueue;
