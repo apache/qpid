@@ -28,6 +28,7 @@
 #include "qpid/client/ConnectionAccess.h" 
 #include "qpid/client/SessionImpl.h" 
 #include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/Future.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"

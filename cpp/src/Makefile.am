@@ -446,6 +446,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/FailoverListener.cpp		\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
+  qpid/client/Completion.cpp			\
+  qpid/client/CompletionImpl.h			\
   qpid/client/FutureResult.cpp			\
   qpid/client/HandlePrivate.h			\
   qpid/client/PrivateImplPrivate.h		\
