@@ -21,7 +21,7 @@
  */
 
 #if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
-#if defined(CLIENT_EXPORT)
+#if defined(CLIENT_EXPORT) || defined (qpidclient_EXPORTS)
 #define QPID_CLIENT_EXTERN __declspec(dllexport)
 #else
 #define QPID_CLIENT_EXTERN __declspec(dllimport)

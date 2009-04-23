@@ -19,6 +19,7 @@
  *
  */
 
+#include "config.h"
 #include "qpid/Modules.h"
 #include "qpid/sys/Shlib.h"
 #include <string>
@@ -30,9 +31,9 @@ namespace {
 
 struct LoadtimeInitialise {
     LoadtimeInitialise() {
-        qpid::ModuleOptions moduleOptions(MODULE_DIR);
+        qpid::ModuleOptions moduleOptions(QPIDC_MODULE_DIR);
         string              defaultPath (moduleOptions.loadDir);
-        moduleOptions.parse (0, 0, CONF_FILE, true);
+        moduleOptions.parse (0, 0, QPIDC_CONF_FILE, true);
     
         for (vector<string>::iterator iter = moduleOptions.load.begin();
              iter != moduleOptions.load.end();

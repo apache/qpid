@@ -56,7 +56,7 @@ sslconnector_la_LIBADD = \
   libqpidclient.la \
   libsslcommon.la
 
-sslconnector_la_CXXFLAGS = $(AM_CXXFLAGS) -DCONF_FILE=\"$(confdir)/qpidc.conf\"
+sslconnector_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 
