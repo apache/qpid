@@ -30,6 +30,7 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "MessageListener.h"
+#include "SubscriptionImpl.h"
 
 namespace qpid {
 namespace client {
@@ -60,7 +61,7 @@ class Dispatcher : public sys::Runnable
 
 public:
     Dispatcher(const Session& session, const std::string& queue = "");
-    ~Dispatcher();
+    ~Dispatcher() {}
 
     void start();
     void wait();
