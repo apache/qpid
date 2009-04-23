@@ -123,7 +123,7 @@ public:
     QPID_CLIENT_EXTERN Message(const std::string& data=std::string(),
             const std::string& routingKey=std::string());
 
-    ~Message();
+    QPID_CLIENT_EXTERN ~Message();
 
     QPID_CLIENT_EXTERN void setData(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getData() const;

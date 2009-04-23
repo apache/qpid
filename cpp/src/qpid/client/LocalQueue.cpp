@@ -26,6 +26,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "HandlePrivate.h"
 #include "SubscriptionImpl.h"
+#include "CompletionImpl.h"
 
 namespace qpid {
 namespace client {

@@ -21,6 +21,7 @@
 
 #include "SubscriptionImpl.h"
 #include "MessageImpl.h"
+#include "CompletionImpl.h"
 #include "SubscriptionManager.h"
 #include "SubscriptionSettings.h"
 #include "HandlePrivate.h"
