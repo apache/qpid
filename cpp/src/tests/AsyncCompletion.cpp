@@ -107,7 +107,7 @@ QPID_AUTO_TEST_CASE(testGetResult) {
     TypedResult<QueueQueryResult> tr = s.queueQuery("q");
     QueueQueryResult qq = tr.get();
     BOOST_CHECK_EQUAL(qq.getQueue(), "q");
-    BOOST_CHECK_EQUAL(qq.getMessageCount(), 0);
+    BOOST_CHECK_EQUAL(qq.getMessageCount(), 0U);
 }
 
 QPID_AUTO_TEST_SUITE_END()
