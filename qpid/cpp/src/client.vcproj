@@ -393,6 +393,9 @@
 				RelativePath="qpid\client\Bounds.cpp">
 			</File>
 			<File
+				RelativePath="qpid\client\Completion.cpp">
+			</File>
+			<File
 				RelativePath="qpid\client\Connection.cpp">
 			</File>
 			<File
@@ -442,6 +445,9 @@
 			</File>
 			<File
 				RelativePath="qpid\client\Message.cpp">
+			</File>
+			<File
+				RelativePath="qpid\client\MessageImpl.cpp">
 			</File>
 			<File
 				RelativePath="qpid\client\MessageListener.cpp">
@@ -569,6 +575,9 @@
 			</File>
 			<File
 				RelativePath="qpid\client\Message.h">
+			</File>
+			<File
+				RelativePath="qpid\client\MessageImpl.h">
 			</File>
 			<File
 				RelativePath="qpid\client\MessageListener.h">
