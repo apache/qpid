@@ -21,7 +21,7 @@
  */
 
 #if defined(WIN32) && !defined(QPID_BROKER_STATIC)
-#if defined(BROKER_EXPORT)
+#if defined(BROKER_EXPORT) || defined (qpidbroker_EXPORTS)
 #define QPID_BROKER_EXTERN __declspec(dllexport)
 #else
 #define QPID_BROKER_EXTERN __declspec(dllimport)

@@ -33,6 +33,8 @@ usage  = "usage: %prog [options] schema-document..."
 parser = OptionParser(usage=usage)
 parser.add_option("-o", "--outputdir", dest="outputdir", metavar="DIR", default="./",
                   help="Output directory")
+parser.add_option("-c", "--cmakelists", dest="cmakelists", metavar="FILE",
+                  help="CMakeLists fragment")
 parser.add_option("-m", "--makefile", dest="makefile", metavar="FILE",
                   help="Makefile fragment")
 parser.add_option("-t", "--typefile", dest="typefile", metavar="FILE", default=defaultTypeFile,
@@ -72,3 +74,9 @@ if opts.makefile != None:
   args["qpidbroker"] = opts.qpidbroker
   args["genprefix"]  = opts.genprefix
   gen.makeSingleFile("Makefile.mk", opts.makefile, force=True, vars=args)
+
+if opts.cmakelists != None:
+  args = {}
+  args["qpidbroker"] = opts.qpidbroker
+  args["genprefix"]  = opts.genprefix
+  gen.makeSingleFile("CMakeLists.cmake", opts.cmakelists, force=True, vars=args)

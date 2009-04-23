@@ -19,6 +19,16 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#else
+// These need to be made something sensible, like reading a value from
+// the registry. But for now, get things going with a local definition.
+namespace {
+const char *QPIDD_CONF_FILE = "qpid_broker.conf";
+const char *QPIDD_MODULE_DIR = ".";
+}
+#endif
 #include "qpidd.h"
 #include "qpid/Exception.h"
 #include "qpid/Options.h"
@@ -29,19 +39,12 @@
 
 #include <iostream>
 
-// These need to be made something sensible, like reading a value from
-// the registry. But for now, get things going with a local definition.
-namespace {
-const char *CONF_FILE = "qpid_broker.conf";
-const char *MODULE_DIR = ".";
-}
-
 using namespace qpid::broker;
 
 BootstrapOptions::BootstrapOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", CONF_FILE),
-    module(MODULE_DIR),
+    common("", QPIDD_CONF_FILE),
+    module(QPIDD_MODULE_DIR),
     log(argv0)
 {
     add(common);
@@ -56,8 +59,8 @@ struct QpiddWindowsOptions : public QpiddOptionsPrivate {
 
 QpiddOptions::QpiddOptions(const char* argv0)
   : qpid::Options("Options"),
-    common("", CONF_FILE),
-    module(MODULE_DIR),
+    common("", QPIDD_CONF_FILE),
+    module(QPIDD_MODULE_DIR),
     log(argv0)
 {
     add(common);
