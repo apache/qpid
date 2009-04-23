@@ -155,7 +155,7 @@ public class ServerConfiguration implements SignalHandler
                 while (keys.hasNext())
                 {
                     String key = (String) keys.next();
-                    conf.setProperty(key, vhostConfiguration.getProperty(key));
+                    conf.setProperty("virtualhosts."+key, vhostConfiguration.getProperty(key));
                 }
             }
         }
