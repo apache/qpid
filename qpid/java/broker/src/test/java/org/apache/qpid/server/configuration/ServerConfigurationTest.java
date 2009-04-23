@@ -24,8 +24,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
@@ -924,4 +926,20 @@ public class ServerConfigurationTest extends TestCase
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
 
+    public void testnewParserOutputVsOldParserOutput() throws ConfigurationException
+    {
+        String configDir = System.getProperty("QPID_HOME")+"/etc";
+        
+        XMLConfiguration oldConfig = new XMLConfiguration(configDir +"/sample-parsed-config.xml");
+        Configuration newConfig = new ServerConfiguration(new File(configDir+"/persistent_config-config-test.xml")).getConfig();
+        
+        Iterator xmlKeys = oldConfig.getKeys();
+        while (xmlKeys.hasNext())
+        {
+            String key = (String) xmlKeys.next();
+            assertEquals("Incorrect value for "+key, oldConfig.getProperty(key), newConfig.getProperty(key));
+        }
+    }
+    
+    
 }
