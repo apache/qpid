@@ -114,7 +114,7 @@ void Buffer::putDouble(double f){
     putLongLong (val.i);
 }
 
-void Buffer::putBin128(uint8_t* b){
+void Buffer::putBin128(const uint8_t* b){
     memcpy (data + position, b, 16);
     position += 16;
 }
