@@ -89,7 +89,7 @@ class Buffer
     QPID_COMMON_EXTERN void putInt64(int64_t i);
     QPID_COMMON_EXTERN void putFloat(float f);
     QPID_COMMON_EXTERN void putDouble(double f);
-    QPID_COMMON_EXTERN void putBin128(uint8_t* b);
+    QPID_COMMON_EXTERN void putBin128(const uint8_t* b);
 
     QPID_COMMON_EXTERN uint8_t  getOctet();
     QPID_COMMON_EXTERN uint16_t getShort(); 
