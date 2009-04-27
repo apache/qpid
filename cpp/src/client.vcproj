@@ -73,7 +73,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="CLIENT_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
+                                PreprocessorDefinitions="CLIENT_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -88,7 +88,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
+				PreprocessorDefinitions="_DEBUG;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -157,7 +157,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="CLIENT_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
+                                PreprocessorDefinitions="CLIENT_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -169,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
+				PreprocessorDefinitions="NDEBUG;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -240,7 +240,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="CLIENT_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
+                                PreprocessorDefinitions="CLIENT_EXPORT;_DEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -255,7 +255,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK;_WIN64"
+				PreprocessorDefinitions="_DEBUG;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
@@ -325,7 +325,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
-                                PreprocessorDefinitions="CLIENT_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
+                                PreprocessorDefinitions="CLIENT_EXPORT;NDEBUG;WIN32;_WINDOWS;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -337,7 +337,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;CONF_FILE=\&quot;qpidc.conf\&quot;;MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK;_WIN64"
+				PreprocessorDefinitions="NDEBUG;QPIDC_CONF_FILE=\&quot;qpidc.conf\&quot;;QPIDC_MODULE_DIR=\&quot;.\&quot;;NOMINMAX;WIN32_LEAN_AND_MEAN;BOOST_ALL_DYN_LINK;_WIN64"
 				Culture="1033"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,.,gen"
 			/>
