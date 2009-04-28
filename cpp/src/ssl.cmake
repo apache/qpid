@@ -32,35 +32,19 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_SSL "Build with support for SSL" ${ssl_default})
 if (BUILD_SSL)
-  find_program (NSPR_CONFIG nspr-config)
-  if (NSPR_CONFIG STREQUAL NSPR_CONFIG-NOTFOUND)
-    message(FATAL_ERROR "libnspr not found, required for SSL support")
-  endif (NSPR_CONFIG STREQUAL NSPR_CONFIG-NOTFOUND)
-  find_program (NSS_CONFIG nss-config)
-  if (NSS_CONFIG STREQUAL NSS_CONFIG-NOTFOUND)
-    message(FATAL_ERROR "libnss not found, required for SSL support")
-  endif (NSS_CONFIG STREQUAL NSS_CONFIG-NOTFOUND)
-  # Output from nss/snpr-config ends with newline, so strip it
-  # Also, sometimes there's no need for additional -I options (or -L) but
-  # the -I is included anyway; in these cases, ignore it.
-  execute_process (COMMAND ${NSPR_CONFIG} --cflags
-                   OUTPUT_VARIABLE get_flags)
-  string (STRIP ${get_flags} NSPR_CFLAGS)
-  if (NSPR_CFLAGS STREQUAL -I)
-    set (NSPR_CFLAGS )
-  endif (NSPR_CFLAGS STREQUAL -I)
-  execute_process (COMMAND ${NSPR_CONFIG} --libs
-                   OUTPUT_VARIABLE get_flags)
-  string (STRIP ${get_flags} NSPR_LIBS)
-  execute_process (COMMAND ${NSS_CONFIG} --cflags
-                   OUTPUT_VARIABLE get_flags)
-  string (STRIP ${get_flags} NSS_CFLAGS)
-  if (NSS_CFLAGS STREQUAL -I)
-    set (NSS_CFLAGS )
-  endif (NSS_CFLAGS STREQUAL -I)
-  execute_process (COMMAND ${NSS_CONFIG} --libs
-                   OUTPUT_VARIABLE get_flags)
-  string (STRIP ${get_flags} NSS_LIBS)
+
+  # According to some cmake docs this is not a reliable way to detect
+  # pkg-configed libraries, but it's no worse than what we did under
+  # autotools
+  pkg_check_modules(NSS REQUIRED nss)
+
+  foreach(f ${NSS_CFLAGS})
+    set (NSS_COMPILE_FLAGS "${NSS_COMPILE_FLAGS} ${f}")
+  endforeach(f)
+
+  foreach(f ${NSS_LDFLAGS})
+    set (NSS_LINK_FLAGS "${NSS_LINK_FLAGS} ${f}")
+  endforeach(f)
 
   set (sslcommon_SOURCES
        qpid/sys/ssl/check.h
@@ -74,29 +58,31 @@ if (BUILD_SSL)
       )
 
   add_library (sslcommon SHARED ${sslcommon_SOURCES})
-  target_link_libraries (sslcommon qpidcommon nss3 ssl3 nspr4)
+  target_link_libraries (sslcommon qpidcommon)
   set_target_properties (sslcommon PROPERTIES
                          VERSION ${qpidc_version}
-                         COMPILE_FLAGS "${NSPR_CFLAGS} ${NSS_CFLAGS}")
+                         COMPILE_FLAGS ${NSS_COMPILE_FLAGS}
+                         LINK_FLAGS ${NSS_LINK_FLAGS})
 
   set (ssl_SOURCES
        qpid/sys/SslPlugin.cpp
        qpid/sys/ssl/SslHandler.h
        qpid/sys/ssl/SslHandler.cpp
       )
-  add_library (ssl SHARED ${ssl_SOURCES})
+  add_library (ssl MODULE ${ssl_SOURCES})
   target_link_libraries (ssl qpidbroker sslcommon)
   set_target_properties (ssl PROPERTIES
-                         VERSION ${qpidc_version}
-                         COMPILE_FLAGS "${NSPR_CFLAGS} ${NSS_CFLAGS}")
+                         PREFIX ""
+                         COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(ssl PROPERTIES
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
-  add_library (sslconnector SHARED qpid/client/SslConnector.cpp)
+  add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
   target_link_libraries (sslconnector qpidclient sslcommon)
-  set_target_properties (sslconnector PROPERTIES VERSION ${qpidc_version})
+  set_target_properties (sslconnector PROPERTIES
+                         PREFIX "")
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(sslconnector PROPERTIES
                           LINK_FLAGS -Wl,--no-undefined)

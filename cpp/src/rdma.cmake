@@ -63,18 +63,22 @@ if (BUILD_RDMA)
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
-  add_library (rdma SHARED qpid/sys/RdmaIOPlugin.cpp)
+  add_library (rdma MODULE qpid/sys/RdmaIOPlugin.cpp)
   target_link_libraries (rdma qpidbroker rdmawrap)
-  set_target_properties (rdma PROPERTIES VERSION ${qpidc_version})
+  set_target_properties (rdma PROPERTIES
+                         PREFIX "")
+
   if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(rdmawrap PROPERTIES
+    set_target_properties(rdma PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
-  add_library (rdmaconnector SHARED qpid/client/RdmaConnector.cpp)
+  add_library (rdmaconnector MODULE qpid/client/RdmaConnector.cpp)
   target_link_libraries (rdmaconnector qpidclient rdmawrap)
-  set_target_properties (rdmaconnector PROPERTIES VERSION ${qpidc_version})
+  set_target_properties (rdmaconnector PROPERTIES
+                         PREFIX "")
+
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(rdmaconnector PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers
