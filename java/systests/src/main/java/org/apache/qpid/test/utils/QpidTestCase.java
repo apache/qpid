@@ -157,6 +157,8 @@ public class QpidTestCase extends TestCase
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
 
+    protected File _outputFile;
+
     private Map<Integer,Process> _brokers = new HashMap<Integer,Process>();
 
     private InitialContext _initialContext;
@@ -189,7 +191,8 @@ public class QpidTestCase extends TestCase
         boolean redirected = _output != null && _output.length() > 0;
         if (redirected)
         {
-            out = new PrintStream(String.format("%s/TEST-%s.out", _output, qname));
+            _outputFile = new File (String.format("%s/TEST-%s.out", _output, qname));
+            out = new PrintStream(_outputFile);
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
             System.setOut(out);
             System.setErr(err);
