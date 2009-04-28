@@ -391,11 +391,13 @@ void TCPConnector::run() {
 
         aio->start(poller);
         d.run();
-        socket.close();
     } catch (const std::exception& e) {
         QPID_LOG(error, QPID_MSG("FAIL " << identifier << ": " << e.what()));
         handleClosed();
     }
+    try {
+        socket.close();
+    } catch (const std::exception& e) {}
 }
 
 void TCPConnector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer> sl)
