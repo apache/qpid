@@ -20,6 +20,7 @@
 include(CheckFunctionExists)
 include(CheckIncludeFileCXX)
 include(CheckIncludeFiles)
+include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(FindBoost)
@@ -203,13 +204,13 @@ if (QPID_HAS_XML)
     message(FATAL_ERROR "XML Exchange support requested but XQilla headers not found")
   endif (NOT HAVE_XQILLA_H)
 
-  add_library (xml SHARED
+  add_library (xml MODULE
                qpid/xml/XmlExchange.cpp
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
-  target_link_libraries (xml xerces-c xqilla qpidbroker)
+  target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
   set_target_properties (xml PROPERTIES
-                         VERSION ${qpidc_version}
+                         PREFIX ""
                          LINK_FLAGS -Wl,--no-undefined)
 endif (QPID_HAS_XML)
 
@@ -223,10 +224,10 @@ set (acl_SOURCES
      qpid/acl/AclReader.cpp
      qpid/acl/AclReader.h
     )
-  add_library (acl SHARED ${acl_SOURCES})
+  add_library (acl MODULE ${acl_SOURCES})
   target_link_libraries (acl qpidbroker)
   set_target_properties (acl PROPERTIES
-                         VERSION ${qpidc_version}
+                         PREFIX ""
                          LINK_FLAGS -Wl,--no-undefined)
 
 # Check for optional cluster support requirements
@@ -596,14 +597,14 @@ set_target_properties (qmfconsole PROPERTIES
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
-add_library (replicating_listener SHARED
+add_library (replicating_listener MODULE
              qpid/replication/constants.h
              qpid/replication/ReplicatingEventListener.cpp
              qpid/replication/ReplicatingEventListener.h
             )
 target_link_libraries (replicating_listener qpidbroker)
 set_target_properties (replicating_listener PROPERTIES
-                       VERSION ${qpidc_version})
+                       PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_listener PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)
@@ -613,14 +614,14 @@ endif (CMAKE_COMPILER_IS_GNUCXX)
 # can process the messages from a replication queue (populated on the
 # source system by the replicating listener plugin above) and take the
 # corresponding action on the local queues
-add_library (replicating_exchange SHARED
+add_library (replicating_exchange MODULE
              qpid/replication/constants.h
              qpid/replication/ReplicationExchange.cpp
              qpid/replication/ReplicationExchange.h
             )
 target_link_libraries (replicating_exchange qpidbroker)
 set_target_properties (replicating_exchange PROPERTIES
-                       VERSION ${qpidc_version})
+                       PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_exchange PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)

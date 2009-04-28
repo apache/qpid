@@ -34,9 +34,8 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_CPG "Build with CPG support for clustering" ${cluster_default})
 if (BUILD_CPG)
-  CHECK_LIBRARY_EXISTS (cpg cpg_local_get
-                        "-L/usr/lib/openais -L/usr/lib64/openais -L/usr/lib/corosync -L/usr/lib64/corosync"
-                        HAVE_LIBCPG)
+  find_library(LIBCPG cpg /usr/lib/openais /usr/lib64/openais /usr/lib/corosync /usr/lib64/corosync)
+  CHECK_LIBRARY_EXISTS (${LIBCPG} cpg_local_get "" HAVE_LIBCPG)
   CHECK_INCLUDE_FILES (openais/cpg.h HAVE_OPENAIS_CPG_H)
   CHECK_INCLUDE_FILES (corosync/cpg.h HAVE_COROSYNC_CPG_H)
   if (NOT HAVE_LIBCPG)
@@ -108,10 +107,11 @@ if (BUILD_CPG)
        qpid/cluster/types.h
       )
 
-  add_library (cluster SHARED ${cluster_SOURCES})
-  target_link_libraries (cluster cpg ${CMAN_LIB} qpidbroker qpidclient)
+  add_library (cluster MODULE ${cluster_SOURCES})
+  target_link_libraries (cluster ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient)
 #cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
-  set_target_properties (cluster PROPERTIES VERSION ${qpidc_version})
+  set_target_properties (cluster PROPERTIES
+                         PREFIX "")
 
 endif (BUILD_CPG)
 

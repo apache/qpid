@@ -45,6 +45,9 @@
 #  define HAVE_SASL 1
 #endif
 
+#cmakedefine HAVE_OPENAIS_CPG_H ${HAVE_OPENAIS_CPG_H}
+#cmakedefine HAVE_COROSYNC_CPG_H ${HAVE_COROSYNC_CPG_H}
+#cmakedefine HAVE_LIBCMAN_H ${HAVE_LIBCMAN_H}
 #cmakedefine HAVE_LOG_AUTHPRIV
 #cmakedefine HAVE_LOG_FTP
 
