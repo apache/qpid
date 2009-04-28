@@ -24,13 +24,37 @@
 
 #include "unit_test.h"
 
+#ifndef WIN32
+#  include <sys/stat.h>
+#endif
+
 QPID_AUTO_TEST_SUITE(ShlibTestSuite)
 
 using namespace qpid::sys;
 typedef void (*CallMe)(int*);
 
+// Figure out the correct combination of tokens to use for a loadable
+// library.
+namespace {
+  const char *assemble_name (const char *base)
+  {
+    static char full_name[1024];
+#   if defined (WIN32)
+    sprintf (full_name, "%s.dll", base);
+#   else
+    // If we're in a libtool environment, use that; else look here.
+    struct stat s;
+    if (stat(".libs", &s) == 0)
+        sprintf (full_name, ".libs/lib%s.so", base);
+    else
+        sprintf (full_name, "./lib%s.so", base);
+#   endif /* WIN32 */
+    return full_name;
+  }
+}
+
 QPID_AUTO_TEST_CASE(testShlib) {
-    Shlib sh(".libs/libshlibtest.so");
+    Shlib sh(assemble_name("shlibtest"));
     // Double cast to avoid ISO warning.
     CallMe callMe=sh.getSymbol<CallMe>("callMe");
     BOOST_REQUIRE(callMe != 0);
@@ -48,7 +72,7 @@ QPID_AUTO_TEST_CASE(testShlib) {
 QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
-        AutoShlib sh(".libs/libshlibtest.so");
+        AutoShlib sh(assemble_name("shlibtest"));
         CallMe callMe=sh.getSymbol<CallMe>("callMe");
         BOOST_REQUIRE(callMe != 0);
         callMe(&unloaded);

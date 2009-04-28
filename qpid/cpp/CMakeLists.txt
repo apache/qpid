@@ -20,8 +20,11 @@ project(qpidc)
 cmake_minimum_required(VERSION 2.6.0 FATAL_ERROR)
 set (qpidc_version 0.5)
 
-# enable_testing()
+enable_testing()
 # set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Emulate "make check" behavior of the autoconf world.
+add_custom_target(check COMMAND ${CMAKE_TEST_COMMAND})
 
 add_subdirectory(managementgen)
 # add_subdirectory(etc)
