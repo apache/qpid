@@ -18,6 +18,7 @@
 #
 
 include(CheckFunctionExists)
+include(CheckIncludeFileCXX)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
@@ -128,19 +129,9 @@ if (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
    # The following warnings are deliberately omitted, they warn on valid code.
    # -Wunreachable-code -Wpadded -Winline
    # -Wshadow - warns about boost headers.
-   add_definitions(-Werror
-                   -pedantic
-                   -Wall
-                   -Wextra
-                   -Wno-shadow
-                   -Wpointer-arith
-                   -Wcast-qual
-                   -Wcast-align
-                   -Wno-long-long
-                   -Wvolatile-register-var
-                   -Winvalid-pch
-                   -Wno-system-headers
-                   -Woverloaded-virtual)
+   set (WARNING_FLAGS
+        " -Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
+   set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}${WARNING_FLAGS})
 endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
@@ -200,8 +191,8 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 option(QPID_HAS_XML "Build with XML Exchange" ${xml_default})
 if (QPID_HAS_XML)
   CHECK_LIBRARY_EXISTS (xerces-c _init "" HAVE_XERCES)
-  CHECK_INCLUDE_FILES (xercesc/framework/MemBufInputSource.hpp HAVE_XERCES_H)
-  CHECK_INCLUDE_FILES (xqilla/xqilla-simple.hpp HAVE_XQILLA_H)
+  CHECK_INCLUDE_FILE_CXX (xercesc/framework/MemBufInputSource.hpp HAVE_XERCES_H)
+  CHECK_INCLUDE_FILE_CXX (xqilla/xqilla-simple.hpp HAVE_XQILLA_H)
   if (NOT HAVE_XERCES)
     message(FATAL_ERROR "XML Exchange support requested but xerces-c library not found")
   endif (NOT HAVE_XERCES)
@@ -644,4 +635,7 @@ add_definitions(-DHAVE_CONFIG_H)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-# add_subdirectory(tests)
+# tests has EXCLUDE_FROM_ALL to avoid building and running tests during
+# "make all". Top-level CMakeLists has a "check" target that runs the tests
+# and all the tests are dependencies of "check" so they'll get built then.
+add_subdirectory(tests EXCLUDE_FROM_ALL)
