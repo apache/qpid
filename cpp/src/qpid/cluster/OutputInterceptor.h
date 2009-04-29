@@ -22,9 +22,9 @@
  *
  */
 
-#include "WriteEstimate.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/broker/ConnectionFactory.h"
 #include <boost/function.hpp>
 
@@ -60,14 +60,14 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
   private:
     typedef sys::Mutex::ScopedLock Locker;
 
-    void sendDoOutput();
+    void sendDoOutput(size_t);
 
     mutable sys::Mutex lock;
     bool closing;
     sys::ConnectionOutputHandler* next;
     size_t sent;
-    size_t lastDoOutput;
-    WriteEstimate writeEstimate;
+    size_t estimate;
+    size_t minimum;
     bool moreOutput;
     bool doingOutput;
     static NoOpConnectionOutputHandler discardHandler;

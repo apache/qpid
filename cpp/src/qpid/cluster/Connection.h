@@ -23,7 +23,6 @@
  */
 
 #include "types.h"
-#include "WriteEstimate.h"
 #include "OutputInterceptor.h"
 #include "EventFrame.h"
 #include "McastFrameHandler.h"
@@ -178,7 +177,6 @@ class Connection :
     Cluster& cluster;
     ConnectionId self;
     bool catchUp;
-    WriteEstimate writeEstimate;
     OutputInterceptor output;
     framing::FrameDecoder localDecoder;
     broker::Connection connection;

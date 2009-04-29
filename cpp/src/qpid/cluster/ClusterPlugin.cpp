@@ -74,7 +74,9 @@ struct ClusterOptions : public Options {
             ("cluster-read-max", optValue(settings.readMax,"N"),
              "Experimental: Limit per-client-connection queue of read buffers. 0=no limit.")
             ("cluster-write-estimate", optValue(settings.writeEstimate, "Kb"),
-             "Experimental: initial estimate for connection write rate per multicast cycle")
+             "Experimental: initial estimate for write rate per multicast cycle")
+            ("cluster-write-min", optValue(settings.writeMin, "Kb"),
+             "Experimental: minimum estimate for write rate per multicast cycle")
             ;
     }
 };
