@@ -34,13 +34,12 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_CPG "Build with CPG support for clustering" ${cluster_default})
 if (BUILD_CPG)
-  find_library(LIBCPG cpg /usr/lib/openais /usr/lib64/openais /usr/lib/corosync /usr/lib64/corosync)
-  CHECK_LIBRARY_EXISTS (${LIBCPG} cpg_local_get "" HAVE_LIBCPG)
+  FIND_LIBRARY(LIBCPG cpg /usr/lib/openais /usr/lib64/openais /usr/lib/corosync /usr/lib64/corosync)
+  if (LIBCPG MATCHES ".*-NOTFOUND$")
+    message(FATAL_ERROR "cpg library not found, install openais-devel or corosync-devel")
+  endif (LIBCPG MATCHES ".*-NOTFOUND$")
   CHECK_INCLUDE_FILES (openais/cpg.h HAVE_OPENAIS_CPG_H)
   CHECK_INCLUDE_FILES (corosync/cpg.h HAVE_COROSYNC_CPG_H)
-  if (NOT HAVE_LIBCPG)
-    message(FATAL_ERROR "libcpg not found, install openais-devel or corosync-devel")
-  endif (NOT HAVE_LIBCPG)
   if (NOT HAVE_OPENAIS_CPG_H AND NOT HAVE_COROSYNC_CPG_H)
     message(FATAL_ERROR "cpg.h not found, install openais-devel or corosync-devel")
   endif (NOT HAVE_OPENAIS_CPG_H AND NOT HAVE_COROSYNC_CPG_H)
@@ -102,8 +101,6 @@ if (BUILD_CPG)
        qpid/cluster/PollerDispatch.h
        qpid/cluster/ProxyInputHandler.h
        qpid/cluster/Quorum.h
-       qpid/cluster/WriteEstimate.cpp
-       qpid/cluster/WriteEstimate.h
        qpid/cluster/types.h
       )
 
