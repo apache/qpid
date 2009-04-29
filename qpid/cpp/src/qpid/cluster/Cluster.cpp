@@ -96,8 +96,6 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     name(settings.name),
     myUrl(settings.url.empty() ? Url() : Url(settings.url)),
     self(cpg.self()),
-    readMax(settings.readMax),
-    writeEstimate(settings.writeEstimate),
     expiryPolicy(new ExpiryPolicy(mcast, self, broker.getTimer())),
     mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),

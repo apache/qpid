@@ -89,7 +89,7 @@ void Connection::init() {
     if (isLocalClient()) {  
         connection.setClusterOrderOutput(mcastFrameHandler); // Actively send cluster-order frames from local node
         cluster.addLocalConnection(this);
-        giveReadCredit(cluster.getReadMax());
+        giveReadCredit(cluster.getSettings().readMax);
     }
     else {                                                  // Shadow or catch-up connection
         connection.setClusterOrderOutput(nullFrameHandler); // Passive, discard cluster-order frames
@@ -100,7 +100,7 @@ void Connection::init() {
 }
 
 void Connection::giveReadCredit(int credit) {
-    if (cluster.getReadMax() && credit) 
+    if (cluster.getSettings().readMax && credit) 
         output.giveReadCredit(credit);
 }
 

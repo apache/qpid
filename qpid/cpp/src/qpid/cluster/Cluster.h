@@ -101,8 +101,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     void checkQuorum();
 
-    size_t getReadMax() { return readMax; }
-    size_t getWriteEstimate() { return writeEstimate; }
+    const ClusterSettings& getSettings() const { return settings; }
 
     void deliverFrame(const EventFrame&);
 
@@ -192,7 +191,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void updateOutDone(Lock&);
 
     // Immutable members set on construction, never changed.
-    ClusterSettings settings;
+    const ClusterSettings settings;
     broker::Broker& broker;
     qmf::org::apache::qpid::cluster::Cluster* mgmtObject; // mgnt owns lifecycle
     boost::shared_ptr<sys::Poller> poller;
@@ -200,8 +199,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     const std::string name;
     Url myUrl;
     const MemberId self;
-    const size_t readMax;
-    const size_t writeEstimate;
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
     qpid::management::ManagementAgent* mAgent;
