@@ -24,37 +24,20 @@
 
 #include "unit_test.h"
 
-#ifndef WIN32
-#  include <sys/stat.h>
-#endif
-
 QPID_AUTO_TEST_SUITE(ShlibTestSuite)
 
 using namespace qpid::sys;
 typedef void (*CallMe)(int*);
 
-// Figure out the correct combination of tokens to use for a loadable
-// library.
-namespace {
-  const char *assemble_name (const char *base)
-  {
-    static char full_name[1024];
-#   if defined (WIN32)
-    sprintf (full_name, "%s.dll", base);
-#   else
-    // If we're in a libtool environment, use that; else look here.
-    struct stat s;
-    if (stat(".libs", &s) == 0)
-        sprintf (full_name, ".libs/lib%s.so", base);
-    else
-        sprintf (full_name, "./lib%s.so", base);
-#   endif /* WIN32 */
-    return full_name;
-  }
-}
 
 QPID_AUTO_TEST_CASE(testShlib) {
-    Shlib sh(assemble_name("shlibtest"));
+    // The CMake-based build passes in the module suffix; if it's not there,
+    // this is a Linux/UNIX libtool-based build.
+#if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
+    Shlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_SUFFIX);
+#else
+    Shlib sh(".lib/libshlibtest.so");
+#endif
     // Double cast to avoid ISO warning.
     CallMe callMe=sh.getSymbol<CallMe>("callMe");
     BOOST_REQUIRE(callMe != 0);
@@ -72,7 +55,11 @@ QPID_AUTO_TEST_CASE(testShlib) {
 QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
-        AutoShlib sh(assemble_name("shlibtest"));
+#if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
+        AutoShlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_SUFFIX);
+#else
+        AutoShlib sh(".lib/libshlibtest.so");
+#endif
         CallMe callMe=sh.getSymbol<CallMe>("callMe");
         BOOST_REQUIRE(callMe != 0);
         callMe(&unloaded);

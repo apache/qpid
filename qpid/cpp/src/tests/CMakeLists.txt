@@ -118,6 +118,13 @@ mark_as_advanced(unit_tests_to_build)
 # 	amqp_0_10/handlers.cpp 
 
 add_executable (unit_test ${unit_tests_to_build})
+# The generally recommended way to add macro settings is to use
+# COMPILE_DEFINITIONS, but it's a rough go to add more than one definition
+# with a value; in this case, assuming that -D works everywhere is easier.
+set_source_files_properties (ReplicationTest.cpp Shlib.cpp
+                             PROPERTIES
+                             COMPILE_FLAGS
+                             "-DQPID_MODULE_SUFFIX=\\\"${CMAKE_SHARED_MODULE_SUFFIX}\\\" -DQPID_MODULE_PREFIX=\\\"${CMAKE_SHARED_MODULE_PREFIX}\\\"")
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidclient qpidbroker qmfconsole)
