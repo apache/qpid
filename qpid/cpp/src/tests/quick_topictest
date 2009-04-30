@@ -21,7 +21,7 @@
 
 
 # Quick and quiet topic test for make check.
-test -z "$srcdir" && srcdir=.
+test -z "$srcdir" && srcdir=`dirname $0`
 $srcdir/topictest -s2 -m2 -b1 > topictest.log 2>&1 || {
     echo $0 FAILED:
     cat topictest.log
