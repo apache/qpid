@@ -51,7 +51,7 @@ cd qpid-${VER}/cpp
 make dist -j2
 
 cd ../java
-ant build release
+ant build release release-bin
 
 cd ../dotnet
 cd Qpid.Common
@@ -66,6 +66,10 @@ nant -t:mono-2.0 release-pkg
 
 cd ../../../
 cp qpid-${VER}/java/release/*.tar.gz  artifacts/qpid-java-${VER}.tar.gz
+cp qpid-${VER}/java/broker/release/*.tar.gz artifact/qpid-java-broker-${VER}.tar.gz
+cp qpid-${VER}/java/client/release/*.tar.gz artifact/qpid-java-client-${VER}.tar.gz 
+#cp qpid-${VER}/java/client/example/release/*.tar.gz 
+cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
 cp qpid-${VER}/cpp/*.tar.gz artifacts/qpid-cpp-${VER}.tar.gz
 cp qpid-${VER}/dotnet/bin/mono-2.0/release/*.zip artifacts/qpid-dotnet-0-8-${VER}.zip
 cp qpid-${VER}/dotnet/client-010/bin/mono-2.0/debug/*.zip artifacts/qpid-dotnet-0-10-${VER}.zip
