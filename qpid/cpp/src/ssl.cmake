@@ -24,19 +24,25 @@
 
 include(FindPkgConfig)
 
+# According to some cmake docs this is not a reliable way to detect
+# pkg-configed libraries, but it's no worse than what we did under
+# autotools
+pkg_check_modules(NSS nss)
+
+set (ssl_default ${ssl_force})
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (ssl_default OFF)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (ssl_default ON)
+  if (NSS_FOUND)
+    set (ssl_default ON)
+  endif (NSS_FOUND)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_SSL "Build with support for SSL" ${ssl_default})
 if (BUILD_SSL)
 
-  # According to some cmake docs this is not a reliable way to detect
-  # pkg-configed libraries, but it's no worse than what we did under
-  # autotools
-  pkg_check_modules(NSS REQUIRED nss)
+  if (NOT NSS_FOUND)
+    message(FATAL_ERROR "nss/nspr not found, required for ssl support")
+  endif (NOT NSS_FOUND)
 
   foreach(f ${NSS_CFLAGS})
     set (NSS_COMPILE_FLAGS "${NSS_COMPILE_FLAGS} ${f}")

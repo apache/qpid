@@ -17,6 +17,12 @@
 # under the License.
 #
 
+# Option to require building optional plugins
+foreach (r ${REQUIRE})
+  set(${r}_force ON)
+  message(STATUS "Forcing ${r} to ${${r}_force}")
+endforeach(r)
+
 include(CheckFunctionExists)
 include(CheckIncludeFileCXX)
 include(CheckIncludeFiles)
@@ -159,10 +165,16 @@ else (NOT CLOCK_GETTIME_IN_RT)
 endif (NOT CLOCK_GETTIME_IN_RT)
 
 # See if Cyrus SASL is desired and available
-option(QPID_HAS_SASL "Build with Cyrus SASL support" ON)
-if (QPID_HAS_SASL)
-  CHECK_LIBRARY_EXISTS (sasl2 sasl_checkpass "" HAVE_SASL2)
-  CHECK_INCLUDE_FILES (sasl/sasl.h HAVE_SASL_H)
+CHECK_LIBRARY_EXISTS (sasl2 sasl_checkpass "" HAVE_SASL2)
+CHECK_INCLUDE_FILES (sasl/sasl.h HAVE_SASL_H)
+
+set (sasl_default ${sasl_force})
+if (HAVE_SASL2 AND HAVE_SASL_H)
+  set (sasl_default ON)
+endif (HAVE_SASL2 AND HAVE_SASL_H)
+
+option(BUILD_SASL "Build with Cyrus SASL support" ${sasl_default})
+if (BUILD_SASL)
   if (NOT HAVE_SASL2)
     message(FATAL_ERROR "Cyrus SASL support requested but libsasl2 not found")
   endif (NOT HAVE_SASL2)
@@ -176,21 +188,25 @@ if (QPID_HAS_SASL)
       qpid/sys/cyrus/CyrusSecurityLayer.cpp
      )
   set(qpidcommon_sasl_lib sasl2)
-
-endif (QPID_HAS_SASL)
+endif (BUILD_SASL)
 
 # See if XML Exchange is desired and prerequisites are available
+CHECK_LIBRARY_EXISTS (xerces-c _init "" HAVE_XERCES)
+CHECK_INCLUDE_FILE_CXX (xercesc/framework/MemBufInputSource.hpp HAVE_XERCES_H)
+CHECK_INCLUDE_FILE_CXX (xqilla/xqilla-simple.hpp HAVE_XQILLA_H)
+
+set (xml_default ${xml_force})
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (xml_default OFF)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (xml_default ON)
+  if (HAVE_XERCES AND HAVE_XERCES_H)
+    if (HAVE_XQILLA_H)
+      set (xml_default ON)
+    endif (HAVE_XQILLA_H)
+  endif (HAVE_XERCES AND HAVE_XERCES_H)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-option(QPID_HAS_XML "Build with XML Exchange" ${xml_default})
-if (QPID_HAS_XML)
-  CHECK_LIBRARY_EXISTS (xerces-c _init "" HAVE_XERCES)
-  CHECK_INCLUDE_FILE_CXX (xercesc/framework/MemBufInputSource.hpp HAVE_XERCES_H)
-  CHECK_INCLUDE_FILE_CXX (xqilla/xqilla-simple.hpp HAVE_XQILLA_H)
+option(BUILD_XML "Build with XML Exchange" ${xml_default})
+if (BUILD_XML)
   if (NOT HAVE_XERCES)
     message(FATAL_ERROR "XML Exchange support requested but xerces-c library not found")
   endif (NOT HAVE_XERCES)
@@ -209,7 +225,7 @@ if (QPID_HAS_XML)
   set_target_properties (xml PROPERTIES
                          PREFIX ""
                          LINK_FLAGS -Wl,--no-undefined)
-endif (QPID_HAS_XML)
+endif (BUILD_XML)
 
 # Build the ACL plugin
 set (acl_SOURCES

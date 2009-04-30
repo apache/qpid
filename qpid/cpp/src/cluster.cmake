@@ -26,28 +26,44 @@
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
 
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (cluster_default OFF)
-else (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (cluster_default ON)
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-
-option(BUILD_CPG "Build with CPG support for clustering" ${cluster_default})
-if (BUILD_CPG)
-  FIND_LIBRARY(LIBCPG cpg /usr/lib/openais /usr/lib64/openais /usr/lib/corosync /usr/lib64/corosync)
-  if (LIBCPG MATCHES ".*-NOTFOUND$")
-    message(FATAL_ERROR "cpg library not found, install openais-devel or corosync-devel")
-  endif (LIBCPG MATCHES ".*-NOTFOUND$")
+set(LIBCPG_PATH /usr/lib/openais /usr/lib64/openais /usr/lib/corosync /usr/lib64/corosync CACHE STRING "Default locations for libcpg (cluster library)" )
+find_library(LIBCPG cpg ${LIBCPG_PATH})
+if (LIBCPG)
+  CHECK_LIBRARY_EXISTS (${LIBCPG} cpg_local_get "" HAVE_LIBCPG)
   CHECK_INCLUDE_FILES (openais/cpg.h HAVE_OPENAIS_CPG_H)
   CHECK_INCLUDE_FILES (corosync/cpg.h HAVE_COROSYNC_CPG_H)
+endif (LIBCPG)
+
+set (cluster_default ${cluster_force})
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  if (HAVE_LIBCPG)
+    if (HAVE_OPENAIS_CPG_H OR HAVE_COROSYNC_CPG_H)
+      set (cluster_default ON)
+    endif (HAVE_OPENAIS_CPG_H OR HAVE_COROSYNC_CPG_H)
+  endif (HAVE_LIBCPG)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+option(BUILD_CLUSTER "Build with CPG support for clustering" ${cluster_default})
+if (BUILD_CLUSTER)
+
+  if (NOT HAVE_LIBCPG)
+    message(FATAL_ERROR "libcpg not found, install openais-devel or corosync-devel")
+  endif (NOT HAVE_LIBCPG)
   if (NOT HAVE_OPENAIS_CPG_H AND NOT HAVE_COROSYNC_CPG_H)
     message(FATAL_ERROR "cpg.h not found, install openais-devel or corosync-devel")
   endif (NOT HAVE_OPENAIS_CPG_H AND NOT HAVE_COROSYNC_CPG_H)
 
-  option(CPG_INCLUDE_CMAN "Include libcman quorum service integration" ON)
-  if (CPG_INCLUDE_CMAN)
-    CHECK_LIBRARY_EXISTS (cman cman_is_quorate "" HAVE_LIBCMAN)
-    CHECK_INCLUDE_FILES (libcman.h HAVE_LIBCMAN_H)
+  CHECK_LIBRARY_EXISTS (cman cman_is_quorate "" HAVE_LIBCMAN)
+  CHECK_INCLUDE_FILES (libcman.h HAVE_LIBCMAN_H)
+
+  set(cluster_quorum_default ${cluster_quorum_force})
+  if (HAVE_LIBCMAN AND HAVE_LIBCMAN_H)
+    set(cluster_quorum_default ON)
+  endif (HAVE_LIBCMAN AND HAVE_LIBCMAN_H)
+
+  option(BUILD_CLUSTER_QUORUM "Include libcman quorum service integration" ${cluster_quorum_default})
+  if (BUILD_CLUSTER_QUORUM)
     if (NOT HAVE_LIBCMAN)
       message(FATAL_ERROR "libcman not found, install cman-devel or cmanlib-devel")
     endif (NOT HAVE_LIBCMAN)
@@ -57,9 +73,9 @@ if (BUILD_CPG)
 
     set (CMAN_SOURCES qpid/cluster/Quorum_cman.h qpid/cluster/Quorum_cman.cpp)
     set (CMAN_LIB cman)
-  else (CPG_INCLUDE_CMAN)
+  else (BUILD_CLUSTER_QUORUM)
     set (CMAN_SOURCES qpid/cluster/Quorum_null.h)
-  endif (CPG_INCLUDE_CMAN)
+  endif (BUILD_CLUSTER_QUORUM)
 
   set (cluster_SOURCES
        ${CMAN_SOURCES}
@@ -110,7 +126,7 @@ if (BUILD_CPG)
   set_target_properties (cluster PROPERTIES
                          PREFIX "")
 
-endif (BUILD_CPG)
+endif (BUILD_CLUSTER)
 
 # Distribute all sources.
 #EXTRA_DIST += qpid/cluster/Quorum_cman.h qpid/cluster/Quorum_cman.cpp qpid/cluster/Quorum_null.h
