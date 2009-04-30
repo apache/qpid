@@ -114,7 +114,7 @@
         <!-- Copy the rcp module libs -->
         <copy todir="${release.subdir}/plugins" failonerror="true">
             <fileset dir="${project.root}" includes="${rcp.libs}"/>
-            <globmapper from="lib/*" to="*"/>
+            <globmapper from="lib${file.separator}*" to="*"/>
         </copy>
 
         <!-- Copy the relevant configuration dir -->
