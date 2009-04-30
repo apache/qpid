@@ -20,21 +20,8 @@
 add_definitions(-DBOOST_TEST_DYN_LINK)
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-#lib_client = $(abs_builddir)/../libqpidclient.la
-#lib_common = $(abs_builddir)/../libqpidcommon.la
-#lib_broker = $(abs_builddir)/../libqpidbroker.la
-#lib_console = $(abs_builddir)/../libqmfconsole.la
-## lib_amqp_0_10 = $(abs_builddir)/../libqpidamqp_0_10.la
-#
-##
-## Initialize variables that are incremented with +=
-## 
-#check_PROGRAMS=
-#check_LTLIBRARIES=
-#TESTS=
-#EXTRA_DIST=
-#CLEANFILES=
-#
+include (FindPythonInterp)
+
 #
 # Unit test program
 #
@@ -128,10 +115,10 @@ set_source_files_properties (ReplicationTest.cpp Shlib.cpp
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidclient qpidbroker qmfconsole)
-add_test (unit_test unit_test)
 add_dependencies (check unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
+add_dependencies (check shlibtest)
 #libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
 
 #include cluster.mk
@@ -145,114 +132,110 @@ add_library (shlibtest MODULE shlibtest.cpp)
 add_executable (perftest perftest.cpp)
 target_link_libraries (perftest qpidclient)
 #perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
-add_test (perftest perftest)
 add_dependencies (check perftest)
 
 add_executable (txtest txtest.cpp)
 target_link_libraries (txtest qpidclient)
 #txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
-add_test (txtest txtest)
 add_dependencies (check txtest)
 
 add_executable (latencytest latencytest.cpp)
 target_link_libraries (latencytest qpidclient)
 #latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
-add_test (latencytest latencytest)
 add_dependencies (check latencytest)
 
 add_executable (echotest echotest.cpp)
 target_link_libraries (echotest qpidclient)
 #echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
-add_test (echotest echotest)
 add_dependencies (check echotest)
 
 add_executable (client_test client_test.cpp)
 target_link_libraries (client_test qpidclient)
 #client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
-add_test (client_test client_test)
 add_dependencies (check client_test)
 
 add_executable (topic_listener topic_listener.cpp)
 target_link_libraries (topic_listener qpidclient)
 #topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
-add_test (topic_listener topic_listener)
 add_dependencies (check topic_listener)
 
 add_executable (topic_publisher topic_publisher.cpp)
 target_link_libraries (topic_publisher qpidclient)
 #topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
-add_test (topic_publisher topic_publisher)
 add_dependencies (check topic_publisher)
 
 add_executable (publish publish.cpp)
 target_link_libraries (publish qpidclient)
 #publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
-add_test (publish publish)
 add_dependencies (check publish)
 
 add_executable (consume consume.cpp)
 target_link_libraries (consume qpidclient)
 #consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
-add_test (consume consume)
 add_dependencies (check consume)
 
 add_executable (header_test header_test.cpp)
 target_link_libraries (header_test qpidclient)
 #header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
-add_test (header_test header_test)
 add_dependencies (check header_test)
 
 add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp)
 target_link_libraries (failover_soak qpidclient)
 #failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
-add_test (failover_soak failover_soak)
 add_dependencies (check failover_soak)
 
 add_executable (declare_queues declare_queues.cpp)
 target_link_libraries (declare_queues qpidclient)
-add_test (declare_queues declare_queues)
 add_dependencies (check declare_queues)
 
 add_executable (replaying_sender replaying_sender.cpp)
 target_link_libraries (replaying_sender qpidclient)
-add_test (replaying_sender replaying_sender)
 add_dependencies (check replaying_sender)
 
 add_executable (resuming_receiver resuming_receiver.cpp)
 target_link_libraries (resuming_receiver qpidclient)
-add_test (resuming_receiver resuming_receiver)
 add_dependencies (check resuming_receiver)
 
 add_executable (txshift txshift.cpp)
 target_link_libraries (txshift qpidclient)
 #txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
-add_test (txshift txshift)
 add_dependencies (check txshift)
 
 add_executable (txjob txjob.cpp)
 target_link_libraries (txjob qpidclient)
 #txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
-add_test (txjob txjob)
 add_dependencies (check txjob)
 
 add_executable (receiver receiver.cpp)
 target_link_libraries (receiver qpidclient)
 #receiver_SOURCES=receiver.cpp  TestOptions.h ConnectionOptions.h
-add_test (receiver receiver)
 add_dependencies (check receiver)
 
 add_executable (sender sender.cpp)
 target_link_libraries (sender qpidclient)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
-add_test (sender sender)
 add_dependencies (check sender)
 
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (test_script_suffix ".w32")
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-#TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
-#
-#system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
-#TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests 
-#
+add_test (unit_test unit_test)
+add_test (start_broker ${CMAKE_CURRENT_SOURCE_DIR}/start_broker${test_script_suffix})
+add_test (client_test client_test)
+add_test (quick_perftest perftest --summary --count 100)
+add_test (quick_topictest ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
+add_test (quick_txtest txtest --queues 4 --tx-count 10 --quiet)
+if (${PYTHONINTERP_FOUND})
+  add_test (run_header_test run_header_test${test_script_suffix})
+  add_test (python_tests python_tests${test_script_suffix})
+endif (${PYTHONINTERP_FOUND})
+add_test (stop_broker ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
+if (${PYTHONINTERP_FOUND})
+  add_test (federation_tests run_federation_tests${test_script_suffix})
+  add_test (acl_tests run_acl_tests${test_script_suffix})
+endif (${PYTHONINTERP_FOUND})
+
 #EXTRA_DIST +=								\
 #  run_test vg_check							\
 #  run-unit-tests start_broker python_tests stop_broker 			\
