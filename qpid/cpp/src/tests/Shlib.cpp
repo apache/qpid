@@ -36,7 +36,7 @@ QPID_AUTO_TEST_CASE(testShlib) {
 #if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
     Shlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_SUFFIX);
 #else
-    Shlib sh(".lib/libshlibtest.so");
+    Shlib sh(".libs/libshlibtest.so");
 #endif
     // Double cast to avoid ISO warning.
     CallMe callMe=sh.getSymbol<CallMe>("callMe");
@@ -58,7 +58,7 @@ QPID_AUTO_TEST_CASE(testAutoShlib) {
 #if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)
         AutoShlib sh("./" QPID_MODULE_PREFIX "shlibtest" QPID_MODULE_SUFFIX);
 #else
-        AutoShlib sh(".lib/libshlibtest.so");
+        AutoShlib sh(".libs/libshlibtest.so");
 #endif
         CallMe callMe=sh.getSymbol<CallMe>("callMe");
         BOOST_REQUIRE(callMe != 0);
