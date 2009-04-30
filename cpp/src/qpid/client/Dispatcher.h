@@ -29,6 +29,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
+#include "ClientImportExport.h"
 #include "MessageListener.h"
 #include "SubscriptionImpl.h"
 
@@ -65,7 +66,9 @@ public:
 
     void start();
     void wait();
-    void run();
+    // As this class is marked 'internal', no extern should be made here;
+    // however, some test programs rely on it.
+    QPID_CLIENT_EXTERN void run();
     void stop();
     void setAutoStop(bool b);
 
