@@ -27,6 +27,7 @@ windows_dist = \
   broker.vcproj \
   common.vcproj \
   client.vcproj \
+  qpidbroker.vcproj \
   qmfconsole.vcproj \
   protocol_gen.mak \
   qpid/client/windows/SaslFactory.cpp \
