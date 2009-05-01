@@ -43,3 +43,8 @@ examples_DATA= \
 	queuestats.cpp \
 	$(MAKEDIST)
 
+EXTRA_DIST=                  \
+	qmf_console_console.vcproj \
+	qmf_console_ping.vcproj \
+	qmf_console_printevents.vcproj \
+	qmf_console_queuestats.vcproj

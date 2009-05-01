@@ -257,7 +257,24 @@ LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_p
  reliable_replication_test federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test \
-  federated_cluster_test_with_node_failure
+  federated_cluster_test_with_node_failure \
+  tests.sln \
+  client_test.vcproj \
+  consume.vcproj \
+  echotest.vcproj \
+  header_test.vcproj \
+  latencytest.vcproj \
+  perftest.vcproj \
+  publish.vcproj \
+  receiver.vcproj \
+  sender.vcproj \
+  shlibtest.vcproj \
+  topic_listener.vcproj \
+  topic_publisher.vcproj \
+  txjob.vcproj \
+  txshift.vcproj \
+  txtest.vcproj \
+  unit_test.vcproj
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
