@@ -32,7 +32,7 @@ include(CheckSymbolExists)
 include(FindBoost)
 include(FindDoxygen)
 
-set (CMAKE_VERBOSE_MAKEFILE ON)  # for dubugging
+#set (CMAKE_VERBOSE_MAKEFILE ON)  # for dubugging
 
 # check if we generate source as part of the build
 #   - rubygen generates the amqp spec and clustering
@@ -441,9 +441,9 @@ set (libqpidclient_SOURCES
      qpid/client/Future.cpp
      qpid/client/FutureCompletion.cpp
      qpid/client/FutureResult.cpp
-     qpid/client/HandlePrivate.h
      qpid/client/LoadPlugins.cpp
      qpid/client/LocalQueue.cpp
+     qpid/client/LocalQueueImpl.cpp
      qpid/client/Message.cpp
      qpid/client/MessageImpl.cpp
      qpid/client/MessageListener.cpp
