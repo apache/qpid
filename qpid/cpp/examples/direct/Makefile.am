@@ -44,5 +44,7 @@ EXTRA_DIST=	             \
 	verify_cpp_python    \
 	verify_cpp_python.in \
 	verify_python_cpp    \
-	verify_python_cpp.in 
-
+	verify_python_cpp.in \
+	direct_declare_queues.vcproj \
+	direct_direct_producer.vcproj \
+	direct_listener.vcproj

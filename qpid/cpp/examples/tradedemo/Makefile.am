@@ -39,7 +39,7 @@ examples_DATA=               \
 	declare_queues.cpp  \
 	$(MAKEDIST)
 
-
-
-
-
+EXTRA_DIST=                  \
+	tradedemo_declare_queues.vcproj \
+	tradedemo_topic_listener.vcproj \
+	tradedemo_topic_publisher.vcproj

@@ -37,7 +37,7 @@ $(MAKEDIST): Makefile
 examplesdir=$(pkgdatadir)/examples
 dist_examples_DATA = README $(MAKEDIST)
 
-EXTRA_DIST = README.verify verify verify_all
+EXTRA_DIST = README.verify verify verify_all examples.sln
 
 # For older versions of automake
 abs_top_srcdir = @abs_top_srcdir@
