@@ -33,7 +33,7 @@
 
 QPID_AUTO_TEST_SUITE(PartialFailureTestSuite)
 
-    using namespace std;
+using namespace std;
 using namespace qpid;
 using namespace qpid::cluster;
 using namespace qpid::framing;
@@ -49,11 +49,19 @@ const sys::Duration TIMEOUT=sys::TIME_SEC/4;
 static bool isLogOption(const std::string& s) { return boost::starts_with(s, "--log-enable"); }
 
 void updateArgs(ClusterFixture::Args& args, size_t index) {
-    ostringstream os;
-    os << "--test-store-name=s" << index;
-    args.push_back(os.str());
-    args.push_back("--load-module=.libs/test_store.so");
-    args.push_back("--auth=no");
+    ostringstream clusterLib, testStoreLib, storeName;
+    clusterLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/cluster.so";
+    testStoreLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/../tests/.libs/test_store.so";
+    storeName << "s" << index;
+    args.push_back("--auth");
+    args.push_back("no");
+    args.push_back("--no-module-dir");
+    args.push_back("--load-module");
+    args.push_back(clusterLib.str());
+    args.push_back("--load-module");
+    args.push_back(testStoreLib.str());
+    args.push_back("--test-store-name");
+    args.push_back(storeName.str());
     args.push_back("TMP_DATA_DIR");
 
     // These tests generate errors deliberately, disable error logging unless a log env var is set.
@@ -82,7 +90,7 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
     // Connection thread.
     ScopedSuppressLogging allQuiet; 
 
-    ClusterFixture cluster(3, -1, updateArgs);    
+    ClusterFixture cluster(3, updateArgs, -1);    
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
     Client c2(cluster[2], "c2");
@@ -113,7 +121,7 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
 QPID_AUTO_TEST_CASE(testErrorAfterJoin) {
     ScopedSuppressLogging allQuiet;
 
-    ClusterFixture cluster(1, -1, updateArgs);
+    ClusterFixture cluster(1, updateArgs, -1);
     Client c0(cluster[0]);
     c0.session.queueDeclare("q", durable=true);
     c0.session.messageTransfer(content=pMessage("a", "q"));
@@ -138,7 +146,7 @@ QPID_AUTO_TEST_CASE(testErrorAfterJoin) {
 QPID_AUTO_TEST_CASE(testSinglePartialFailure) {
     ScopedSuppressLogging allQuiet;
 
-    ClusterFixture cluster(3, -1, updateArgs);
+    ClusterFixture cluster(3, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
     Client c2(cluster[2], "c2");
@@ -166,7 +174,7 @@ QPID_AUTO_TEST_CASE(testSinglePartialFailure) {
 QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
     ScopedSuppressLogging allQuiet;
 
-    ClusterFixture cluster(4, -1, updateArgs);
+    ClusterFixture cluster(4, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
     Client c2(cluster[2], "c2");
@@ -195,7 +203,7 @@ QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
 QPID_AUTO_TEST_CASE(testPartialFailureMemberLeaves) {
     ScopedSuppressLogging allQuiet;
 
-    ClusterFixture cluster(2, -1, updateArgs);
+    ClusterFixture cluster(2, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
 

@@ -89,6 +89,15 @@ struct ScopedSuppressLogging {
     qpid::log::Options opts;
 };
 
+inline std::string getLibPath(const char* envName, const char* defaultPath = 0) {
+    const char* p = std::getenv(envName);
+    if (p != 0)
+        return p;
+    if (defaultPath == 0)
+        BOOST_FAIL("Environment variable " << envName << " not set.");
+    return defaultPath;
+}
+
 
 #endif  /*!TEST_TOOLS_H*/
 

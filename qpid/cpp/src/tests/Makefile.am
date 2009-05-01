@@ -211,7 +211,13 @@ check_PROGRAMS+=DispatcherTest
 DispatcherTest_SOURCES=DispatcherTest.cpp
 DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) QPID_DATA_DIR= BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test 
+TESTS_ENVIRONMENT = \
+    VALGRIND=$(VALGRIND) \
+    srcdir=$(srcdir) \
+    QPID_DATA_DIR= \
+    QPID_LIB_DIR=../.libs \
+    BOOST_TEST_SHOW_PROGRESS=yes \
+    $(srcdir)/run_test 
 
 system_tests = client_test quick_perftest quick_topictest run_header_test quick_txtest
 TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test
