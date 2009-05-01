@@ -6,7 +6,7 @@
 	ProjectGUID="{51E5F6B9-FECA-1BAD-2431-8A11DB0D67CE}"
 	RootNamespace="unit_test"
 	Keyword="Win32Proj"
-	SignManifests="true"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -25,7 +25,6 @@
 			IntermediateDirectory="Debug\unit_test\I386"
 			ConfigurationType="1"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -52,7 +51,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -76,7 +75,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qpidbrokerd.lib qmfconsoled.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qpidbrokerd.lib qmfconsoled.lib ws2_32.lib"
 				OutputFile="$(OutDir)\unit_test.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -89,85 +88,7 @@
 				Name="VCALinkTool"
 			/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release\unit_test\I386"
-			ConfigurationType="1"
-			CharacterSet="0"
-
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				AdditionalOptions=""
-				AdditionalIncludeDirectories=""
-				TypeLibraryName="$(InputName).tlb"
-				HeaderFileName="$(InputName).h"
-				InterfaceIdentifierFileName="$(InputName)_i.c"
-				ProxyFileName="$(InputName)_p.c"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
-				RuntimeLibrary="2"
-				RuntimeTypeInfo="true"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
-				DisableSpecificWarnings="4244;4800;4290;4355"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
-				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommon.lib qpidclient.lib qpidbroker.lib qmfconsole.lib"
-				OutputFile="$(OutDir)\unit_test.exe"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;.."
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
+				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -177,6 +98,9 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -188,7 +112,6 @@
 			IntermediateDirectory="Debug\unit_test\AMD64"
 			ConfigurationType="1"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -215,7 +138,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -253,6 +176,9 @@
 				Name="VCALinkTool"
 			/>
 			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
 				Name="VCXDCMakeTool"
 			/>
 			<Tool
@@ -262,16 +188,18 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|x64"
+			Name="Release|Win32"
 			OutputDirectory="Release"
-			IntermediateDirectory="Release\unit_test\AMD64"
+			IntermediateDirectory="Release\unit_test\I386"
 			ConfigurationType="1"
 			CharacterSet="0"
-
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -298,7 +226,93 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
-                                PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="false"
+				DisableSpecificWarnings="4244;4800;4290;4355"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qpidbroker.lib qmfconsole.lib"
+				OutputFile="$(OutDir)\unit_test.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;.."
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release\unit_test\AMD64"
+			ConfigurationType="1"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				AdditionalOptions=""
+				AdditionalIncludeDirectories=""
+				TypeLibraryName="$(InputName).tlb"
+				HeaderFileName="$(InputName).h"
+				InterfaceIdentifierFileName="$(InputName)_i.c"
+				ProxyFileName="$(InputName)_p.c"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..,..\gen"
+				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
 				WarningLevel="3"
@@ -335,6 +349,9 @@
 				Name="VCALinkTool"
 			/>
 			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
 				Name="VCXDCMakeTool"
 			/>
 			<Tool
@@ -342,6 +359,9 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -353,223 +373,291 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;cxx;cc;C;c">
+			Filter="cpp;cxx;cc;C;c"
+			>
 			<File
-				RelativePath="AccumulatedAckTest.cpp">
+				RelativePath="AccumulatedAckTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="Array.cpp">
+				RelativePath="Array.cpp"
+				>
 			</File>
 			<File
-				RelativePath="AsyncCompletion.cpp">
+				RelativePath="AsyncCompletion.cpp"
+				>
 			</File>
 			<File
-				RelativePath="AtomicValue.cpp">
+				RelativePath="AtomicValue.cpp"
+				>
 			</File>
 			<File
-				RelativePath="Blob.cpp">
+				RelativePath="ClientSessionTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="ClientSessionTest.cpp">
+				RelativePath="ConsoleTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="ConsoleTest.cpp">
+				RelativePath="DeliveryRecordTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="DeliveryRecordTest.cpp">
+				RelativePath="DtxWorkRecordTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="DtxWorkRecordTest.cpp">
+				RelativePath="exception_test.cpp"
+				>
 			</File>
 			<File
-				RelativePath="exception_test.cpp">
+				RelativePath="ExchangeTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="ExchangeTest.cpp">
+				RelativePath="FieldTable.cpp"
+				>
 			</File>
 			<File
-				RelativePath="FieldTable.cpp">
+				RelativePath="FieldValue.cpp"
+				>
 			</File>
 			<File
-				RelativePath="FieldValue.cpp">
+				RelativePath="FramingTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="FramingTest.cpp">
+				RelativePath="HeadersExchangeTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="HeadersExchangeTest.cpp">
+				RelativePath="HeaderTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="HeaderTest.cpp">
+				RelativePath="IncompleteMessageList.cpp"
+				>
 			</File>
 			<File
-				RelativePath="IncompleteMessageList.cpp">
+				RelativePath="InlineAllocator.cpp"
+				>
 			</File>
 			<File
-				RelativePath="InlineAllocator.cpp">
+				RelativePath="InlineVector.cpp"
+				>
 			</File>
 			<File
-				RelativePath="InlineVector.cpp">
+				RelativePath="logging.cpp"
+				>
 			</File>
 			<File
-				RelativePath="logging.cpp">
+				RelativePath="ManagementTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="ManagementTest.cpp">
+				RelativePath="MessageBuilderTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="MessageBuilderTest.cpp">
+				RelativePath="MessageReplayTracker.cpp"
+				>
 			</File>
 			<File
-				RelativePath="MessageReplayTracker.cpp">
+				RelativePath="MessageTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="MessageTest.cpp">
+				RelativePath="ProxyTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="ProxyTest.cpp">
+				RelativePath="QueueEvents.cpp"
+				>
 			</File>
 			<File
-				RelativePath="QueueEvents.cpp">
+				RelativePath="QueueOptionsTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="QueueOptionsTest.cpp">
+				RelativePath="QueuePolicyTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="QueuePolicyTest.cpp">
+				RelativePath="QueueRegistryTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="QueueRegistryTest.cpp">
+				RelativePath="QueueTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="QueueTest.cpp">
+				RelativePath="RangeSet.cpp"
+				>
 			</File>
 			<File
-				RelativePath="RangeSet.cpp">
+				RelativePath="RateFlowcontrolTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="RateFlowcontrolTest.cpp">
+				RelativePath="RefCounted.cpp"
+				>
 			</File>
 			<File
-				RelativePath="RefCounted.cpp">
+				RelativePath="RetryList.cpp"
+				>
 			</File>
 			<File
-				RelativePath="RetryList.cpp">
+				RelativePath="SequenceNumberTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="SequenceNumberTest.cpp">
+				RelativePath="SequenceSet.cpp"
+				>
 			</File>
 			<File
-				RelativePath="SequenceSet.cpp">
+				RelativePath="SessionState.cpp"
+				>
 			</File>
 			<File
-				RelativePath="SessionState.cpp">
+				RelativePath="Shlib.cpp"
+				>
 			</File>
 			<File
-				RelativePath="Shlib.cpp">
+				RelativePath="StringUtils.cpp"
+				>
 			</File>
 			<File
-				RelativePath="StringUtils.cpp">
+				RelativePath="TimerTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="TimerTest.cpp">
+				RelativePath="TopicExchangeTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="TopicExchangeTest.cpp">
+				RelativePath="TxBufferTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="TxBufferTest.cpp">
+				RelativePath="TxPublishTest.cpp"
+				>
 			</File>
 			<File
-				RelativePath="TxPublishTest.cpp">
+				RelativePath="unit_test.cpp"
+				>
 			</File>
 			<File
-				RelativePath="unit_test.cpp">
+				RelativePath="Url.cpp"
+				>
 			</File>
 			<File
-				RelativePath="Url.cpp">
-			</File>
-			<File
-				RelativePath="Uuid.cpp">
+				RelativePath="Uuid.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
-			Filter="h;hpp;hxx;hh">
+			Filter="h;hpp;hxx;hh"
+			>
 			<File
-				RelativePath="BrokerFixture.h">
+				RelativePath="BrokerFixture.h"
+				>
 			</File>
 			<File
-				RelativePath="ConnectionOptions.h">
+				RelativePath="ConnectionOptions.h"
+				>
 			</File>
 			<File
-				RelativePath="ForkedBroker.h">
+				RelativePath="ForkedBroker.h"
+				>
 			</File>
 			<File
-				RelativePath="SocketProxy.h">
+				RelativePath="SocketProxy.h"
+				>
 			</File>
 			<File
-				RelativePath="TestOptions.h">
+				RelativePath="TestOptions.h"
+				>
 			</File>
 			<File
-				RelativePath="unit_test.h">
+				RelativePath="unit_test.h"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Documentation"
-			Filter="">
+			>
 			<File
-				RelativePath="cluster_python_tests_failing.txt">
+				RelativePath="cluster_python_tests_failing.txt"
+				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|x64"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|x64"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="README">
+				RelativePath="README"
+				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|x64"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|x64"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>
