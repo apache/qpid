@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-#include "LocalQueue.h"
 #include "LocalQueueImpl.h"
 #include "MessageImpl.h"
 #include "qpid/Exception.h"
@@ -27,26 +26,53 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "PrivateImplRef.h"
 #include "SubscriptionImpl.h"
+#include "CompletionImpl.h"
 
 namespace qpid {
 namespace client {
 
 using namespace framing;
 
-typedef PrivateImplRef<LocalQueue> PI;
+Message LocalQueueImpl::pop(sys::Duration timeout) { return get(timeout); }
 
-LocalQueue::LocalQueue() { PI::ctor(*this, new LocalQueueImpl()); }
-LocalQueue::LocalQueue(const LocalQueue& x) : Handle<LocalQueueImpl>() { PI::copy(*this, x); }
-LocalQueue::~LocalQueue() { PI::dtor(*this); }
-LocalQueue& LocalQueue::operator=(const LocalQueue& x) { return PI::assign(*this, x); }
+Message LocalQueueImpl::get(sys::Duration timeout) {
+    Message result;
+    bool ok = get(result, timeout);
+    if (!ok) throw Exception("Timed out waiting for a message");
+    return result;
+}
 
-Message LocalQueue::pop(sys::Duration timeout) { return impl->pop(timeout); }
+bool LocalQueueImpl::get(Message& result, sys::Duration timeout) {
+    if (!queue)
+        throw ClosedException();
+    FrameSet::shared_ptr content;
+    bool ok = queue->pop(content, timeout);
+    if (!ok) return false;
+    if (content->isA<MessageTransferBody>()) {
 
-Message LocalQueue::get(sys::Duration timeout) { return impl->get(timeout); }
+        *MessageImpl::get(result) = MessageImpl(*content);
+        boost::intrusive_ptr<SubscriptionImpl> si = PrivateImplRef<Subscription>::get(subscription);
+        assert(si);
+        if (si) si->received(result);
+        return true;
+    }
+    else
+        throw CommandInvalidException(
+            QPID_MSG("Unexpected method: " << content->getMethod()));
+}
 
-bool LocalQueue::get(Message& result, sys::Duration timeout) { return impl->get(result, timeout); }
+bool LocalQueueImpl::empty() const
+{ 
+    if (!queue)
+        throw ClosedException();
+    return queue->empty(); 
+}
 
-bool LocalQueue::empty() const { return impl->empty(); }
-size_t LocalQueue::size() const { return impl->size(); }
+size_t LocalQueueImpl::size() const
+{ 
+    if (!queue)
+        throw ClosedException();
+    return queue->size(); 
+}
 
 }} // namespace qpid::client

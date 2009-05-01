@@ -451,6 +451,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/FutureResult.cpp			\
   qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
+  qpid/client/LocalQueueImpl.cpp		\
+  qpid/client/LocalQueueImpl.h			\
   qpid/client/Message.cpp			\
   qpid/client/MessageImpl.cpp			\
   qpid/client/MessageImpl.h			\
