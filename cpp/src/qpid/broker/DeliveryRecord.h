@@ -37,25 +37,23 @@ namespace broker {
 class SemanticState;
 class DeliveryRecord;
 
-typedef std::list<DeliveryRecord> DeliveryRecords; 
-typedef std::list<DeliveryRecord>::iterator ack_iterator; 
+typedef std::deque<DeliveryRecord> DeliveryRecords; 
 
 struct AckRange
 {
-    ack_iterator start;
-    ack_iterator end;    
-    AckRange(ack_iterator _start, ack_iterator _end) : start(_start), end(_end) {}
+    DeliveryRecords::iterator start;
+    DeliveryRecords::iterator end;    
+    AckRange(DeliveryRecords::iterator _start, DeliveryRecords::iterator _end) : start(_start), end(_end) {}
 };
 
 
 /**
  * Record of a delivery for which an ack is outstanding.
  */
-class DeliveryRecord
-{
+class DeliveryRecord {
     QueuedMessage msg;
     mutable Queue::shared_ptr queue;
-    const std::string tag;
+    std::string tag;
     DeliveryId id;
     bool acquired;
     bool acceptExpected;
@@ -63,7 +61,7 @@ class DeliveryRecord
 
     bool completed;
     bool ended;
-    const bool windowing;
+    bool windowing;
 
     /**
      * Record required credit on construction as the pointer to the
@@ -72,7 +70,7 @@ class DeliveryRecord
      * to reallocate credit when it is completed (which could happen
      * after that).
      */
-    const uint32_t credit;
+    uint32_t credit;
 
   public:
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,

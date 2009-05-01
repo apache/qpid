@@ -58,8 +58,8 @@ void TxAccept::RangeOps::commit()
     std::for_each(ranges.begin(), ranges.end(), bind(&RangeOp::commit, _1));
     //now remove if isRedundant():
     if (!ranges.empty()) {
-        ack_iterator i = ranges.front().range.start;
-        ack_iterator end = ranges.back().range.end;
+        DeliveryRecords::iterator i = ranges.front().range.start;
+        DeliveryRecords::iterator end = ranges.back().range.end;
         while (i != end) {
             if (i->isRedundant()) {
                 i = unacked.erase(i);
