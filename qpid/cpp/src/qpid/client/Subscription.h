@@ -22,15 +22,16 @@
  *
  */
 
+#include "qpid/client/Handle.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionSettings.h"
-#include "qpid/client/Handle.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
 namespace client {
 
+template <class> class PrivateImplRef;
 class SubscriptionImpl;
 class SubscriptionManager;
 
@@ -40,7 +41,11 @@ class SubscriptionManager;
  */
 class Subscription : public Handle<SubscriptionImpl> {
   public:
-    QPID_CLIENT_EXTERN Subscription(SubscriptionImpl* si=0) : Handle<SubscriptionImpl>(si) {}
+    QPID_CLIENT_EXTERN Subscription(SubscriptionImpl* = 0);
+    QPID_CLIENT_EXTERN Subscription(const Subscription&);
+    QPID_CLIENT_EXTERN ~Subscription();
+    QPID_CLIENT_EXTERN Subscription& operator=(const Subscription&);
+    
     
     /** The name of the subscription, used as the "destination" for messages from the broker.
      * Usually the same as the queue name but can be set differently.
@@ -109,6 +114,8 @@ class Subscription : public Handle<SubscriptionImpl> {
     /** Grant the specified amount of byte credit */
     QPID_CLIENT_EXTERN void grantByteCredit(uint32_t);
 
+  private:
+  friend class PrivateImplRef<Subscription>;
   friend class SubscriptionManager;
 };
 }} // namespace qpid::client

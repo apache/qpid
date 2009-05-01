@@ -449,8 +449,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Completion.cpp			\
   qpid/client/CompletionImpl.h			\
   qpid/client/FutureResult.cpp			\
-  qpid/client/HandlePrivate.h			\
-  qpid/client/PrivateImplPrivate.h		\
   qpid/client/LoadPlugins.cpp			\
   qpid/client/LocalQueue.cpp			\
   qpid/client/Message.cpp			\
@@ -601,7 +599,7 @@ nobase_include_HEADERS = \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResult.h \
   qpid/client/Handle.h \
-  qpid/client/PrivateImpl.h \
+  qpid/client/PrivateImplRef.h \
   qpid/client/LocalQueue.h \
   qpid/client/QueueOptions.h \
   qpid/client/Message.h \

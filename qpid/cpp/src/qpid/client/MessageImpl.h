@@ -21,10 +21,11 @@
  * under the License.
  *
  */
-#include <string>
+#include "Message.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TransferContent.h"
+#include <string>
 
 namespace qpid {
 namespace client {
@@ -64,6 +65,9 @@ public:
 
     /**@internal for incoming messages */
     MessageImpl(const framing::FrameSet& frameset);
+
+    static MessageImpl* get(Message& m) { return m.impl; }
+    static const MessageImpl* get(const Message& m) { return m.impl; }
     
 private:
     //method and id are only set for received messages:

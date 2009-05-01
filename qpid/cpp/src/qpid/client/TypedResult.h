@@ -40,7 +40,7 @@ template <class T> class TypedResult : public Completion
 
 public:
     ///@internal
-    TypedResult(CompletionImpl* c) : Completion(c), decoded(false) {}
+    TypedResult(const Completion& c) : Completion(c), decoded(false) {}
 
     /**
      * Wait for the asynchronous command that returned this TypedResult to complete

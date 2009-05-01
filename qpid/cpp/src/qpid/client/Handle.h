@@ -27,10 +27,10 @@
 namespace qpid {
 namespace client {
 
-template <class T> class HandlePrivate;
+template <class> class PrivateImplRef;
 
 /**
- * A handle is like a pointer: it points to some implementation object.
+ * A handle is like a pointer: refers to an underlying implementation object.
  * Copying the handle does not copy the object.
  * 
  * Handles can be null,  like a 0 pointer. Use isValid(), isNull() or the
@@ -38,9 +38,6 @@ template <class T> class HandlePrivate;
  */
 template <class T> class Handle {
   public:
-    QPID_CLIENT_EXTERN ~Handle();
-    QPID_CLIENT_EXTERN Handle(const Handle&);
-    QPID_CLIENT_EXTERN Handle& operator=(const Handle&);
 
     /**@return true if handle is valid,  i.e. not null. */
     QPID_CLIENT_EXTERN bool isValid() const { return impl; }
@@ -54,13 +51,19 @@ template <class T> class Handle {
     /** Operator ! supports idiom if (!handle) { do_if_handle_is_null(); } */
     QPID_CLIENT_EXTERN bool operator !() const { return !impl; }
 
-    QPID_CLIENT_EXTERN void swap(Handle<T>&);
-
+    void swap(Handle<T>& h) { T* t = h.impl; h.impl = impl; impl = t; }
+    
   protected:
-    QPID_CLIENT_EXTERN Handle(T* =0);
-    T* impl;
+    typedef T Impl;
+    QPID_CLIENT_EXTERN Handle() :impl() {}
 
-  friend class HandlePrivate<T>;
+    // Not implemented,subclasses must implement.
+    QPID_CLIENT_EXTERN Handle(const Handle&);
+    QPID_CLIENT_EXTERN Handle& operator=(const Handle&);
+
+    Impl* impl;
+
+  friend class PrivateImplRef<T>; // FIXME aconway 2009-04-30: Specify
 };
 
 }} // namespace qpid::client
