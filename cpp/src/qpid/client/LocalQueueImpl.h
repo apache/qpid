@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_LOCALQUEUE_H
-#define QPID_CLIENT_LOCALQUEUE_H
+#ifndef QPID_CLIENT_LOCALQUEUEIMPL_H
+#define QPID_CLIENT_LOCALQUEUEIMPL_H
 
 /*
  *
@@ -24,14 +24,14 @@
 
 #include "ClientImportExport.h"
 #include "Handle.h"
-#include "Message.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/Subscription.h"
+#include "qpid/client/Demux.h"
 #include "qpid/sys/Time.h"
+#include "qpid/RefCounted.h"
 
 namespace qpid {
 namespace client {
-
-class LocalQueueImpl;
-template <class T> class PrivateImplRef;
 
 /**
  * A local queue to collect messages retrieved from a remote broker
@@ -71,24 +71,14 @@ template <class T> class PrivateImplRef;
  * </ul>
  */
 
-class LocalQueue : public Handle<LocalQueueImpl> {
+class LocalQueueImpl : public RefCounted {
   public:
-    /** Create a local queue. Subscribe the local queue to a remote broker
-     * queue with a SubscriptionManager.
-     *
-     * LocalQueue is an alternative to implementing a MessageListener.
-     */
-    QPID_CLIENT_EXTERN LocalQueue();
-    QPID_CLIENT_EXTERN LocalQueue(const LocalQueue&);
-    QPID_CLIENT_EXTERN ~LocalQueue();
-    QPID_CLIENT_EXTERN LocalQueue& operator=(const LocalQueue&);
-
     /** Wait up to timeout for the next message from the local queue.
      *@param result Set to the message from the queue.
      *@param timeout wait up this timeout for a message to appear. 
      *@return true if result was set, false if queue was empty after timeout.
      */
-    QPID_CLIENT_EXTERN bool get(Message& result, sys::Duration timeout=0);
+     bool get(Message& result, sys::Duration timeout=0);
 
     /** Get the next message off the local queue, or wait up to the timeout
      * for message from the broker queue.
@@ -96,25 +86,23 @@ class LocalQueue : public Handle<LocalQueueImpl> {
      *@return message from the queue.
      *@throw ClosedException if subscription is closed or timeout exceeded.
      */
-    QPID_CLIENT_EXTERN Message get(sys::Duration timeout=sys::TIME_INFINITE);
+     Message get(sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Synonym for get() */
-    QPID_CLIENT_EXTERN Message pop(sys::Duration timeout=sys::TIME_INFINITE);
+     Message pop(sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Return true if local queue is empty. */
-    QPID_CLIENT_EXTERN bool empty() const;
+     bool empty() const;
 
     /** Number of messages on the local queue */
-    QPID_CLIENT_EXTERN size_t size() const;
-
-    QPID_CLIENT_EXTERN LocalQueue(LocalQueueImpl*); ///<@internal
-
+     size_t size() const;
 
   private:
-    typedef LocalQueueImpl Impl;
-    friend class PrivateImplRef<LocalQueue>;
+    Demux::QueuePtr queue;
+    Subscription subscription;
+  friend class SubscriptionManager;
 };
 
 }} // namespace qpid::client
 
-#endif  /*!QPID_CLIENT_LOCALQUEUE_H*/
+#endif  /*!QPID_CLIENT_LOCALQUEUEIMPL_H*/

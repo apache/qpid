@@ -23,6 +23,8 @@
 
 #include "SubscriptionManager.h"
 #include "SubscriptionImpl.h"
+#include "LocalQueueImpl.h"
+#include "PrivateImplRef.h"
 #include <qpid/client/Dispatcher.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>
@@ -56,10 +58,11 @@ Subscription SubscriptionManager::subscribe(
     sys::Mutex::ScopedLock l(lock);
     std::string name=n.empty() ? q:n;
     boost::intrusive_ptr<SubscriptionImpl> si = new SubscriptionImpl(*this, q, ss, name, 0);
-    lq.queue=si->divert();
+    boost::intrusive_ptr<LocalQueueImpl> lqi = PrivateImplRef<LocalQueue>::get(lq);
+    lqi->queue=si->divert();
     si->subscribe();
-    lq.subscription = Subscription(si.get());
-    return subscriptions[name] = lq.subscription;
+    lqi->subscription = Subscription(si.get());
+    return subscriptions[name] = lqi->subscription;
 }
 
 Subscription SubscriptionManager::subscribe(

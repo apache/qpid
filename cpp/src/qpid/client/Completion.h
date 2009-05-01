@@ -62,7 +62,6 @@ public:
 
   private:
     typedef CompletionImpl Impl;
-    Impl* impl;
     friend class PrivateImplRef<Completion>;
 };
 
