@@ -22,7 +22,6 @@
  *
  */
 
-#include "qpid/client/PrivateImpl.h"
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/DeliveryProperties.h"
@@ -113,17 +112,21 @@ class MessageImpl;
  * 
  * 
  */
-class Message : public PrivateImpl<MessageImpl>
+class Message
 {
 public:
     /** Create a Message.
      *@param data Data for the message body.
      *@param routingKey Passed to the exchange that routes the message.
      */
-    QPID_CLIENT_EXTERN Message(const std::string& data=std::string(),
-            const std::string& routingKey=std::string());
-
+    QPID_CLIENT_EXTERN Message(
+        const std::string& data=std::string(),
+        const std::string& routingKey=std::string());
+    Message(MessageImpl*);    ///< @internal
+    QPID_CLIENT_EXTERN Message(const Message&);
     QPID_CLIENT_EXTERN ~Message();
+    QPID_CLIENT_EXTERN Message& operator=(const Message&);
+    QPID_CLIENT_EXTERN void swap(Message&);
 
     QPID_CLIENT_EXTERN void setData(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getData() const;
@@ -162,8 +165,9 @@ public:
     ///@internal
     QPID_CLIENT_EXTERN const framing::SequenceNumber& getId() const;
 
-    ///@internal
-    Message(MessageImpl*);
+  private:
+    MessageImpl* impl;
+    friend class MessageImpl; // Helper template for implementation
 };
 
 }}

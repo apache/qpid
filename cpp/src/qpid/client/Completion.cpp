@@ -21,15 +21,17 @@
 
 #include "Completion.h"
 #include "CompletionImpl.h"
-#include "HandlePrivate.h"
+#include "PrivateImplRef.h"
 
 namespace qpid {
 namespace client {
 
-Completion::Completion(CompletionImpl* i) : Handle<CompletionImpl>(i) {}
-Completion::~Completion() {}
-Completion::Completion(const Completion& c) : Handle<CompletionImpl>(c.impl) {}
-Completion& Completion::operator=(const Completion& c) { Handle<CompletionImpl>::operator=(c); return *this; }
+typedef PrivateImplRef<Completion> PI;
+Completion::Completion(CompletionImpl* p) { PI::ctor(*this, p); }
+Completion::Completion(const Completion& c) : Handle<CompletionImpl>() { PI::copy(*this, c); }
+Completion::~Completion() { PI::dtor(*this); }
+Completion& Completion::operator=(const Completion& c) { return PI::assign(*this, c); }
+
 
 void Completion::wait() { impl->wait(); }
 bool Completion::isComplete() { return impl->isComplete(); }

@@ -22,13 +22,17 @@
 #include "Subscription.h"
 #include "SubscriptionImpl.h"
 #include "CompletionImpl.h"
-#include "HandlePrivate.h"
+#include "PrivateImplRef.h"
 #include "qpid/framing/enum.h"
 
 namespace qpid {
 namespace client {
 
-template class Handle<SubscriptionImpl>;
+typedef PrivateImplRef<Subscription> PI;
+Subscription::Subscription(SubscriptionImpl* p) { PI::ctor(*this, p); }
+Subscription::~Subscription() { PI::dtor(*this); }
+Subscription::Subscription(const Subscription& c) : Handle<SubscriptionImpl>() { PI::copy(*this, c); }
+Subscription& Subscription::operator=(const Subscription& c) { return PI::assign(*this, c); }
 
 
 std::string Subscription::getName() const { return impl->getName(); }

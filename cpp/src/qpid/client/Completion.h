@@ -1,3 +1,6 @@
+#ifndef QPID_CLIENT_COMPLETION_H
+#define QPID_CLIENT_COMPLETION_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,16 +22,15 @@
  *
  */
 
-#ifndef _Completion_
-#define _Completion_
-
 #include "Handle.h"
+#include "ClientImportExport.h"
 #include <string>
 
 namespace qpid {
 namespace client {
 
 class CompletionImpl;
+template <class T> class PrivateImplRef;
 
 /** 
  * Asynchronous commands that do not return a result will return a
@@ -42,10 +44,9 @@ class CompletionImpl;
 class Completion : public Handle<CompletionImpl>
 {
 public:
-    ///@internal
-    QPID_CLIENT_EXTERN Completion(CompletionImpl* =0);
-    QPID_CLIENT_EXTERN ~Completion();
+    QPID_CLIENT_EXTERN Completion(CompletionImpl* = 0);
     QPID_CLIENT_EXTERN Completion(const Completion&);
+    QPID_CLIENT_EXTERN ~Completion();
     QPID_CLIENT_EXTERN Completion& operator=(const Completion&);
 
     /** Wait for the asynchronous command that returned this
@@ -54,13 +55,18 @@ public:
      *@exception If the command returns an error.
      */
     QPID_CLIENT_EXTERN void wait();
-
     QPID_CLIENT_EXTERN bool isComplete();
 
   protected:
     QPID_CLIENT_EXTERN std::string getResult();
+
+  private:
+    typedef CompletionImpl Impl;
+    Impl* impl;
+    friend class PrivateImplRef<Completion>;
 };
 
 }}
 
-#endif
+
+#endif  /*!QPID_CLIENT_COMPLETION_H*/

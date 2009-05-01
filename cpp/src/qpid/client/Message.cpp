@@ -20,17 +20,23 @@
  */
 
 #include "Message.h"
-#include "PrivateImplPrivate.h"
 #include "MessageImpl.h"
 
 namespace qpid {
 namespace client {
 
-template class PrivateImpl<MessageImpl>;
+Message::Message(MessageImpl* mi) : impl(mi) {}
 
-Message::Message(const std::string& data, const std::string& routingKey) : PrivateImpl<MessageImpl>(new MessageImpl(data, routingKey)) {}
-Message::Message(MessageImpl* i) : PrivateImpl<MessageImpl>(i) {}
-Message::~Message() {}
+Message::Message(const std::string& data, const std::string& routingKey)
+    : impl(new MessageImpl(data, routingKey)) {}
+
+Message::Message(const Message& m) : impl(new MessageImpl(*m.impl)) {}
+
+Message::~Message() { delete impl; }
+
+Message& Message::operator=(const Message& m) { *impl = *m.impl; return *this; }
+
+void Message::swap(Message& m) { std::swap(impl, m.impl); }
 
 std::string Message::getDestination() const { return impl->getDestination(); }
 bool Message::isRedelivered() const { return impl->isRedelivered(); }
