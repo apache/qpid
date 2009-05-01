@@ -61,25 +61,20 @@ using boost::assign::list_of;
 
 #include "ClusterFixture.h"
 
-ClusterFixture::ClusterFixture(size_t n, int localIndex_, const Args& args_, const string& clusterLib_)
-    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_), clusterLib(clusterLib_)
+ClusterFixture::ClusterFixture(size_t n, const Args& args_, int localIndex_)
+    : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_)
 {
     add(n);
 }
 
-ClusterFixture::ClusterFixture(size_t n, int localIndex_, boost::function<void (Args&, size_t)> updateArgs_, const string& clusterLib_)
-    : name(Uuid(true).str()), localIndex(localIndex_), updateArgs(updateArgs_), clusterLib(clusterLib_)
+ClusterFixture::ClusterFixture(size_t n, boost::function<void (Args&, size_t)> updateArgs_, int localIndex_)
+    : name(Uuid(true).str()), localIndex(localIndex_), updateArgs(updateArgs_)
 {
     add(n);
 }
-
-const ClusterFixture::Args ClusterFixture::DEFAULT_ARGS =
-    list_of<string>("--auth=no")("--no-data-dir");
 
 ClusterFixture::Args ClusterFixture::makeArgs(const std::string& prefix, size_t index) {
     Args args = list_of<string>("qpidd ")
-        ("--no-module-dir")
-        ("--load-module")(clusterLib)
         ("--cluster-name")(name)
         ("--log-prefix")(prefix);
     args.insert(args.end(), userArgs.begin(), userArgs.end());

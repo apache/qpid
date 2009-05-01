@@ -50,7 +50,10 @@ const sys::Duration TIMEOUT=sys::TIME_SEC/4;
 
 // Test re-connecting with same session name after a failure.
 QPID_AUTO_TEST_CASE(testReconnectSameSessionName) {
-    ClusterFixture cluster(2, -1);
+    ostringstream clusterLib;
+    clusterLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/cluster.so";
+    ClusterFixture::Args args = list_of<string>("--auth")("no")("--no-module-dir")("--no-data-dir")("--load-module")(clusterLib.str());
+    ClusterFixture cluster(2, args, -1);
     Client c0(cluster[0], "foo");
     cluster.kill(0, 9);
     Client c1(cluster[1], "foo"); // Using same name, should be cleaned up.
