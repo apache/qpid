@@ -31,10 +31,10 @@
 namespace qpid {
     namespace broker {
         class DtxAck : public TxOp{
-            std::list<DeliveryRecord> pending;
+            DeliveryRecords pending;
 
         public:
-            DtxAck(const framing::SequenceSet& acked, std::list<DeliveryRecord>& unacked);
+            DtxAck(const framing::SequenceSet& acked, DeliveryRecords& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

@@ -179,8 +179,8 @@ void DeliveryRecord::cancel(const std::string& cancelledTag)
 
 AckRange DeliveryRecord::findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last)
 {
-    ack_iterator start = find_if(records.begin(), records.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
-    ack_iterator end = start;
+    DeliveryRecords::iterator start = find_if(records.begin(), records.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
+    DeliveryRecords::iterator end = start;
      
     if (start != records.end()) {
         if (first == last) {
