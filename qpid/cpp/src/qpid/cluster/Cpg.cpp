@@ -150,13 +150,9 @@ void Cpg::dispatchBlocking() {
 string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
     std::ostringstream  os;
     os << msg << ": ";
-    // FIXME aconway 2009-03-11: The commented out cases below are
-    // because of mistakes in the latest corosync header files.
-    // The code should be re-instated when that is sorted out.
-    // 
     switch (err) {
       case CPG_OK: os << "ok"; break;
-        // case CPG_ERR_LIBRARY: os << "library"; break;
+      case CPG_ERR_LIBRARY: os << "library"; break;
       case CPG_ERR_TIMEOUT: os << "timeout"; break;
       case CPG_ERR_TRY_AGAIN: os << "try again"; break;
       case CPG_ERR_INVALID_PARAM: os << "invalid param"; break;
@@ -166,8 +162,8 @@ string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
       case CPG_ERR_NOT_EXIST: os << "not exist"; break;
       case CPG_ERR_EXIST: os << "exist"; break;
       case CPG_ERR_NOT_SUPPORTED: os << "not supported"; break;
-        // case CPG_ERR_SECURITY: os << "security"; break;
-        // case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
+      case CPG_ERR_SECURITY: os << "security"; break;
+      case CPG_ERR_TOO_MANY_GROUPS: os << "too many groups"; break;
       default: os << ": unknown cpg error " << err;
     };
     os << " (" << err << ")";
