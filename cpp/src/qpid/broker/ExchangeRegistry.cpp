@@ -32,15 +32,13 @@ using namespace qpid::sys;
 using std::pair;
 using qpid::framing::FieldTable;
 
-pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) 
-    throw(UnknownExchangeTypeException){
+pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type){
 
     return declare(name, type, false, FieldTable());
 }
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type, 
-                                                           bool durable, const FieldTable& args) 
-    throw(UnknownExchangeTypeException){
+                                                           bool durable, const FieldTable& args){
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) {
