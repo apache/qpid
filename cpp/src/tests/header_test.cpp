@@ -42,7 +42,7 @@ int main(int argc, char** argv)
         std::string q("header_interop_test_queue");
         session.queueDeclare(arg::queue=q);
         double pi = 3.14159265;
-        float e = 2.71828;
+        float e = 2.71828f;
         Message msg("", q);
         msg.getMessageProperties().getApplicationHeaders().setDouble("pi", pi);
         msg.getMessageProperties().getApplicationHeaders().setFloat("e", e);

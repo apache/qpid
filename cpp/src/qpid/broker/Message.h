@@ -138,7 +138,7 @@ public:
     void destroy();
 
     bool getContentFrame(const Queue& queue, framing::AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const;
-    void sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
+    QPID_BROKER_EXTERN void sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
     void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize) const;
 
     QPID_BROKER_EXTERN bool isContentLoaded() const;

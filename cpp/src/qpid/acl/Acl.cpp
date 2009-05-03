@@ -36,13 +36,14 @@
 
 using namespace std;
 using namespace qpid::acl;
+using qpid::broker::Broker;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::acl;
 
-Acl::Acl (AclValues& av, broker::Broker& b): aclValues(av), broker(&b), transferAcl(false)
+Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false)
 {
 	   
     agent = ManagementAgent::Singleton::getInstance();

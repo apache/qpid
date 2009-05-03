@@ -125,7 +125,7 @@ QPID_AUTO_TEST_CASE(testNestedValues)
 QPID_AUTO_TEST_CASE(testFloatAndDouble)
 {
     char buff[100];
-    float f = 5.672;
+    float f = 5.672f;
     double d = 56.720001;
     {
         FieldTable a;

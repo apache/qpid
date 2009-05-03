@@ -121,9 +121,9 @@ protected:
 public:
     typedef boost::shared_ptr<Exchange> shared_ptr;
 
-    explicit Exchange(const std::string& name, management::Manageable* parent = 0);
-    Exchange(const std::string& _name, bool _durable, const qpid::framing::FieldTable& _args,
-             management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN explicit Exchange(const std::string& name, management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN Exchange(const std::string& _name, bool _durable, const qpid::framing::FieldTable& _args,
+                                management::Manageable* parent = 0);
     QPID_BROKER_EXTERN virtual ~Exchange();
 
     const std::string& getName() const { return name; }
@@ -140,19 +140,19 @@ public:
     virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
-    virtual void setProperties(const boost::intrusive_ptr<Message>&);
+    QPID_BROKER_EXTERN virtual void setProperties(const boost::intrusive_ptr<Message>&);
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     
     //PersistableExchange:
-    void setPersistenceId(uint64_t id) const;
+    QPID_BROKER_EXTERN void setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }
-    uint32_t encodedSize() const;
+    QPID_BROKER_EXTERN uint32_t encodedSize() const;
     QPID_BROKER_EXTERN virtual void encode(framing::Buffer& buffer) const;
 
     static QPID_BROKER_EXTERN Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
     // Manageable entry points
-    management::ManagementObject* GetManagementObject(void) const;
+    QPID_BROKER_EXTERN management::ManagementObject* GetManagementObject(void) const;
 
     // Federation hooks
     class DynamicBridge {
@@ -172,7 +172,7 @@ protected:
     qpid::sys::Mutex bridgeLock;
     std::vector<DynamicBridge*> bridgeVector;
 
-    virtual void handleHelloRequest();
+    QPID_BROKER_EXTERN virtual void handleHelloRequest();
     void propagateFedOp(const std::string& routingKey, const std::string& tags,
                         const std::string& op,         const std::string& origin);
 };

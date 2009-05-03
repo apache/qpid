@@ -35,17 +35,7 @@
 namespace qpid {
 namespace broker {
 class SemanticState;
-class DeliveryRecord;
-
-typedef std::deque<DeliveryRecord> DeliveryRecords; 
-
-struct AckRange
-{
-    DeliveryRecords::iterator start;
-    DeliveryRecords::iterator end;    
-    AckRange(DeliveryRecords::iterator _start, DeliveryRecords::iterator _end) : start(_start), end(_end) {}
-};
-
+struct AckRange;
 
 /**
  * Record of a delivery for which an ack is outstanding.
@@ -113,6 +103,7 @@ class DeliveryRecord {
     void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
 
+	typedef std::deque<DeliveryRecord> DeliveryRecords;
     static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
@@ -132,6 +123,16 @@ struct AcquireFunctor
         record.acquire(results);
     }
 };
+
+typedef DeliveryRecord::DeliveryRecords DeliveryRecords;
+
+struct AckRange
+{
+    DeliveryRecords::iterator start;
+    DeliveryRecords::iterator end;    
+    AckRange(DeliveryRecords::iterator _start, DeliveryRecords::iterator _end) : start(_start), end(_end) {}
+};
+
 }
 }
 
