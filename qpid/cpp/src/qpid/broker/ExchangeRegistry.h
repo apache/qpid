@@ -47,14 +47,12 @@ class ExchangeRegistry{
 
     ExchangeRegistry () : parent(0) {}
     QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
-      (const std::string& name, const std::string& type)
-        throw(UnknownExchangeTypeException);
+      (const std::string& name, const std::string& type);
     QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
       (const std::string& name,
        const std::string& type, 
        bool durable,
-       const qpid::framing::FieldTable& args = framing::FieldTable())
-         throw(UnknownExchangeTypeException);
+       const qpid::framing::FieldTable& args = framing::FieldTable());
     QPID_BROKER_EXTERN void destroy(const std::string& name);
     QPID_BROKER_EXTERN Exchange::shared_ptr get(const std::string& name);
     Exchange::shared_ptr getDefault();
@@ -69,7 +67,7 @@ class ExchangeRegistry{
      */
     bool registerExchange(const Exchange::shared_ptr&);
 
-    void registerType(const std::string& type, FactoryFunction);
+    QPID_BROKER_EXTERN void registerType(const std::string& type, FactoryFunction);
 
     /** Call f for each exchange in the registry. */
     template <class F> void eachExchange(F f) const {

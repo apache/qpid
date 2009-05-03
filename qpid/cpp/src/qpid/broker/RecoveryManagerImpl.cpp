@@ -28,10 +28,11 @@
 #include "RecoveredDequeue.h"
 #include "qpid/framing/reply_exceptions.h"
 
-using namespace qpid;
-using namespace qpid::broker;
 using boost::dynamic_pointer_cast;
 using boost::intrusive_ptr;
+
+namespace qpid {
+namespace broker {
 
 RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, LinkRegistry& _links,
                                          DtxManager& _dtxMgr, uint64_t _stagingThreshold) 
@@ -252,3 +253,5 @@ void RecoverableTransactionImpl::enqueue(RecoverableQueue::shared_ptr queue, Rec
 {
     dynamic_pointer_cast<RecoverableQueueImpl>(queue)->enqueue(buffer, message);
 }
+
+}}

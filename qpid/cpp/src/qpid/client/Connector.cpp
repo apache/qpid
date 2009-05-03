@@ -397,7 +397,7 @@ void TCPConnector::run() {
     }
     try {
         socket.close();
-    } catch (const std::exception& e) {}
+    } catch (const std::exception&) {}
 }
 
 void TCPConnector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer> sl)

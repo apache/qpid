@@ -53,7 +53,7 @@ class Plugin : private boost::noncopyable {
         QPID_COMMON_EXTERN void finalize();
 
         /** Add a function to run when finalize() is called */
-        void addFinalizer(const boost::function<void()>&);
+        QPID_COMMON_EXTERN void addFinalizer(const boost::function<void()>&);
 
       private:
         std::vector<boost::function<void()> > finalizers;

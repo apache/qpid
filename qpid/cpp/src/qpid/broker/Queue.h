@@ -183,7 +183,7 @@ namespace qpid {
                                            Queue::shared_ptr shared_ref);
 
             QPID_BROKER_EXTERN bool acquire(const QueuedMessage& msg);
-            bool acquireMessageAt(const qpid::framing::SequenceNumber& position, QueuedMessage& message);
+            QPID_BROKER_EXTERN bool acquireMessageAt(const qpid::framing::SequenceNumber& position, QueuedMessage& message);
 
             /**
              * Delivers a message to the queue. Will record it as
@@ -241,7 +241,7 @@ namespace qpid {
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            bool dequeue(TransactionContext* ctxt, const QueuedMessage &msg);
+            QPID_BROKER_EXTERN bool dequeue(TransactionContext* ctxt, const QueuedMessage &msg);
             /**
              * Inform the queue that a previous transactional dequeue
              * committed.
@@ -301,7 +301,7 @@ namespace qpid {
             void setPosition(framing::SequenceNumber pos);
             int getEventMode();
             void setQueueEventManager(QueueEvents&);
-            void insertSequenceNumbers(const std::string& key);
+            QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
             /**
              * Notify queue that recovery has completed.
              */
