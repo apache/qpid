@@ -146,7 +146,7 @@ AsynchAcceptorPrivate::~AsynchAcceptorPrivate(void) {
 }
 
 void AsynchAcceptorPrivate::start(Poller::shared_ptr poller) {
-    poller->addFd(PollerHandle(socket), Poller::INPUT);
+    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     restart ();
 }
 
@@ -426,7 +426,7 @@ void AsynchIO::queueForDeletion() {
 
 void AsynchIO::start(Poller::shared_ptr poller0) {
     poller = poller0;
-    poller->addFd(PollerHandle(socket), Poller::INPUT);
+    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     if (writeQueue.size() > 0)  // Already have data queued for write
         notifyPendingWrite();
     startReading();
@@ -471,7 +471,7 @@ void AsynchIO::notifyPendingWrite() {
                              boost::bind(&AsynchIO::completion, this, _1));
     IOHandle h(hp);
     PollerHandle ph(h);
-    poller->addFd(ph, Poller::OUTPUT);
+    poller->monitorHandle(ph, Poller::OUTPUT);
 }
 
 void AsynchIO::queueWriteClose() {
@@ -559,7 +559,7 @@ void AsynchIO::requestCallback(RequestCallback callback) {
                              callback);
     IOHandle h(hp);
     PollerHandle ph(h);
-    poller->addFd(ph, Poller::INPUT);
+    poller->monitorHandle(ph, Poller::INPUT);
 }
 
 /**

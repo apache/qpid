@@ -37,6 +37,9 @@ class PollerDispatch  {
   public:
     PollerDispatch(Cpg&, boost::shared_ptr<sys::Poller> poller,
                    boost::function<void()> onError) ;
+
+    ~PollerDispatch();
+
     void start();
 
   private:
@@ -47,7 +50,7 @@ class PollerDispatch  {
     Cpg& cpg;
     boost::shared_ptr<sys::Poller> poller;
     boost::function<void()> onError;
-    sys::DispatchHandle dispatchHandle;
+    sys::DispatchHandleRef dispatchHandle;
 
 
 };

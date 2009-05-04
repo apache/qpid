@@ -111,7 +111,8 @@ int main(int /*argc*/, char** /*argv*/)
         PollerHandle h0(f0);
         PollerHandle h1(f1);
         
-        poller->addFd(h0, Poller::INOUT);
+        poller->registerHandle(h0);
+        poller->monitorHandle(h0, Poller::INOUT);
         
         // h0 should be writable
         Poller::Event event = poller->wait();
@@ -123,18 +124,15 @@ int main(int /*argc*/, char** /*argv*/)
         cout << "Wrote(0): " << bytesWritten << " bytes\n";
         
         // Wait for 500ms - h0 no longer writable
-        poller->rearmFd(h0);
         event = poller->wait(500000000);
         assert(event.handle == 0);
 
         // Test we can read it all now
-        poller->addFd(h1, Poller::INOUT);
+        poller->registerHandle(h1);
+        poller->monitorHandle(h1, Poller::INOUT);
         event = poller->wait();
         assert(event.handle == &h1);
         assert(event.type == Poller::READ_WRITABLE);
-        
-        // Can't interrupt, it's not active
-        assert(poller->interrupt(h1) == false);
         
         bytesRead = readALot(sv[1]);
         assert(bytesRead == bytesWritten);
@@ -145,38 +143,51 @@ int main(int /*argc*/, char** /*argv*/)
         event = poller->wait();
         assert(event.handle == &h0);
         assert(event.type == Poller::INTERRUPTED);
-        assert(poller->interrupt(h0) == false);
 
         // Test multiple interrupts
-        poller->rearmFd(h0);
-        poller->rearmFd(h1);
         assert(poller->interrupt(h0) == true);
         assert(poller->interrupt(h1) == true);
         
-        // Make sure we can't interrupt them again
-        assert(poller->interrupt(h0) == false);
-        assert(poller->interrupt(h1) == false);
+        // Make sure we can interrupt them again
+        assert(poller->interrupt(h0) == true);
+        assert(poller->interrupt(h1) == true);
         
-        // Make sure that they both come out in the correct order
+        // Make sure that they both come out
         event = poller->wait();
-        assert(event.handle == &h0);
         assert(event.type == Poller::INTERRUPTED);
-        assert(poller->interrupt(h0) == false);
-        event = poller->wait();
-        assert(event.handle == &h1);
-        assert(event.type == Poller::INTERRUPTED);
-        assert(poller->interrupt(h1) == false);
+        assert(event.handle == &h0 || event.handle == &h1);
+        if (event.handle == &h0) {
+            event = poller->wait();
+            assert(event.type == Poller::INTERRUPTED);
+            assert(event.handle == &h1);
+        } else {
+            event = poller->wait();
+            assert(event.type == Poller::INTERRUPTED);
+            assert(event.handle == &h0);
+        }
 
-        // At this point h1 should have been disabled from the poller
-        // (as it was just returned) and h0 can write again
-        poller->rearmFd(h0);
+        poller->unmonitorHandle(h1, Poller::INOUT);
+
         event = poller->wait();
         assert(event.handle == &h0);
         assert(event.type == Poller::WRITABLE);    
 
-        // Now both the handles should be disabled
+        // We didn't write anything so it should still be writable
+        event = poller->wait();
+        assert(event.handle == &h0);
+        assert(event.type == Poller::WRITABLE);    
+
+        poller->unmonitorHandle(h0, Poller::INOUT);
+
         event = poller->wait(500000000);
         assert(event.handle == 0);
+        
+        poller->unregisterHandle(h1);
+        poller->unregisterHandle(h0);
+        
+        // Make sure we can't interrupt them now
+        assert(poller->interrupt(h0) == false);
+        assert(poller->interrupt(h1) == false);
         
         // Test shutdown
         poller->shutdown();
@@ -188,9 +199,6 @@ int main(int /*argc*/, char** /*argv*/)
         assert(event.handle == 0);
         assert(event.type == Poller::SHUTDOWN);
 
-        poller->delFd(h1);
-        poller->delFd(h0);
-        
         return 0;
     } catch (exception& e) {
         cout << "Caught exception  " << e.what() << "\n";

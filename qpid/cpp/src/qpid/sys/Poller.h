@@ -94,10 +94,10 @@ public:
     // Poller run loop
     QPID_COMMON_EXTERN void run();
 
-    QPID_COMMON_EXTERN void addFd(PollerHandle& handle, Direction dir);
-    QPID_COMMON_EXTERN void delFd(PollerHandle& handle);
-    QPID_COMMON_EXTERN void modFd(PollerHandle& handle, Direction dir);
-    QPID_COMMON_EXTERN void rearmFd(PollerHandle& handle);
+    QPID_COMMON_EXTERN void registerHandle(PollerHandle& handle);
+    QPID_COMMON_EXTERN void unregisterHandle(PollerHandle& handle);
+    QPID_COMMON_EXTERN void monitorHandle(PollerHandle& handle, Direction dir);
+    QPID_COMMON_EXTERN void unmonitorHandle(PollerHandle& handle, Direction dir);
     QPID_COMMON_EXTERN Event wait(Duration timeout = TIME_INFINITE);
 };
 
@@ -108,6 +108,7 @@ class IOHandle;
 class PollerHandlePrivate;
 class PollerHandle {
     friend class Poller;
+    friend class PollerPrivate;
     friend struct Poller::Event;
 
     PollerHandlePrivate* const impl;

@@ -76,15 +76,15 @@ void PollableConditionPrivate::poke()
     if (!armed)
         return;
 
-    // addFd will queue a completion for the IOCP; when it's handled, a
+    // monitorHandle will queue a completion for the IOCP; when it's handled, a
     // poller thread will call back to dispatch() below.
     PollerHandle ph(*this);
-    poller->addFd(ph, Poller::INPUT);
+    poller->monitorHandle(ph, Poller::INPUT);
 }
 
 void PollableConditionPrivate::dispatch(AsynchIoResult *result)
 {
-    delete result;       // Poller::addFd() allocates this
+    delete result;       // Poller::monitorHandle() allocates this
     cb(parent);
 }
 
