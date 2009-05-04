@@ -78,7 +78,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/PollerDispatch.h			\
   qpid/cluster/ProxyInputHandler.h		\
   qpid/cluster/Quorum.h				\
-  qpid/cluster/types.h 
+  qpid/cluster/types.h 				\
+  qpid/sys/LatencyTracker.h
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
