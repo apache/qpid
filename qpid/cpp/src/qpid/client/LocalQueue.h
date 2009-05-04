@@ -107,7 +107,7 @@ class LocalQueue : public Handle<LocalQueueImpl> {
     /** Number of messages on the local queue */
     QPID_CLIENT_EXTERN size_t size() const;
 
-    QPID_CLIENT_EXTERN LocalQueue(LocalQueueImpl*); ///<@internal
+    LocalQueue(LocalQueueImpl*); ///<@internal
 
 
   private:

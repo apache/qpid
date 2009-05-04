@@ -444,6 +444,9 @@
 				RelativePath="qpid\client\LocalQueue.cpp">
 			</File>
 			<File
+				RelativePath="qpid\client\LocalQueueImpl.cpp">
+			</File>
+			<File
 				RelativePath="qpid\client\Message.cpp">
 			</File>
 			<File
@@ -484,6 +487,9 @@
 			</File>
 			<File
 				RelativePath="qpid\client\SubscriptionManager.cpp">
+			</File>
+			<File
+				RelativePath="qpid\client\SubscriptionManagerImpl.cpp">
 			</File>
 			<File
 				RelativePath="qpid\client\windows\SaslFactory.cpp">
@@ -574,6 +580,9 @@
 				RelativePath="qpid\client\LocalQueue.h">
 			</File>
 			<File
+				RelativePath="qpid\client\LocalQueueImpl.h">
+			</File>
+			<File
 				RelativePath="qpid\client\Message.h">
 			</File>
 			<File
@@ -620,6 +629,9 @@
 			</File>
 			<File
 				RelativePath="qpid\client\SubscriptionManager.h">
+			</File>
+			<File
+				RelativePath="qpid\client\SubscriptionManagerImpl.h">
 			</File>
 			<File
 				RelativePath="qpid\client\SubscriptionSettings.h">
