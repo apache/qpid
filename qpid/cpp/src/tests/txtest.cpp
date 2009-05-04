@@ -34,6 +34,7 @@
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/sys/uuid.h"
+#include "qpid/sys/Thread.h"
 
 using namespace qpid;
 using namespace qpid::client;

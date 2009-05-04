@@ -23,6 +23,7 @@
 #include "test_tools.h"
 #include "BrokerFixture.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/client/MessageListener.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/framing/reply_exceptions.h"

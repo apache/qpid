@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_SUBSCRIPTIONMANAGER_H
-#define QPID_CLIENT_SUBSCRIPTIONMANAGER_H
+#ifndef QPID_CLIENT_SUBSCRIPTIONMANAGERIMPL_H
+#define QPID_CLIENT_SUBSCRIPTIONMANAGERIMPL_H
 
 /*
  *
@@ -21,20 +21,21 @@
  * under the License.
  *
  */
-
+#include "qpid/sys/Mutex.h"
+#include <qpid/client/Dispatcher.h>
+#include <qpid/client/Completion.h>
 #include <qpid/client/Session.h>
+#include <qpid/client/AsyncSession.h>
+#include <qpid/client/MessageListener.h>
+#include <qpid/client/LocalQueue.h>
 #include <qpid/client/Subscription.h>
 #include <qpid/sys/Runnable.h>
-#include <qpid/client/ClientImportExport.h>
-#include "qpid/client/MessageListener.h"
-#include "qpid/client/LocalQueue.h"
-#include <qpid/client/Handle.h>
-#include <string>
+#include <qpid/RefCounted.h>
+#include <set>
+#include <sstream>
 
 namespace qpid {
 namespace client {
-
-class SubscriptionManagerImpl;
 
 /**
  * A class to help create and manage subscriptions.
@@ -93,14 +94,11 @@ class SubscriptionManagerImpl;
  * </ul>
  * 
  */
-class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionManagerImpl>
+class SubscriptionManagerImpl : public sys::Runnable, public RefCounted
 {
   public:
-    /** Create a new SubscriptionManager associated with a session */
-    QPID_CLIENT_EXTERN SubscriptionManager(const Session& session);
-    QPID_CLIENT_EXTERN SubscriptionManager(const SubscriptionManager&);
-    QPID_CLIENT_EXTERN ~SubscriptionManager();
-    QPID_CLIENT_EXTERN SubscriptionManager& operator=(const SubscriptionManager&);
+    /** Create a new SubscriptionManagerImpl associated with a session */
+    SubscriptionManagerImpl(const Session& session);
     
     /**
      * Subscribe a MessagesListener to receive messages from queue.
@@ -113,7 +111,7 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param settings settings for the subscription.
      *@param name unique destination name for the subscription, defaults to queue name.
      */
-    QPID_CLIENT_EXTERN Subscription subscribe(MessageListener& listener,
+    Subscription subscribe(MessageListener& listener,
                            const std::string& queue,
                            const SubscriptionSettings& settings,
                            const std::string& name=std::string());
@@ -128,7 +126,7 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param name unique destination name for the subscription, defaults to queue name.
      * If not specified, the queue name is used.
      */
-    QPID_CLIENT_EXTERN Subscription subscribe(LocalQueue& localQueue,
+    Subscription subscribe(LocalQueue& localQueue,
                            const std::string& queue,
                            const SubscriptionSettings& settings,
                            const std::string& name=std::string());
@@ -144,7 +142,7 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param name unique destination name for the subscription, defaults to queue name.
      * If not specified, the queue name is used.
      */
-    QPID_CLIENT_EXTERN Subscription subscribe(MessageListener& listener,
+    Subscription subscribe(MessageListener& listener,
                            const std::string& queue,
                            const std::string& name=std::string());
 
@@ -157,7 +155,7 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param name unique destination name for the subscription, defaults to queue name.
      * If not specified, the queue name is used.
      */
-    QPID_CLIENT_EXTERN Subscription subscribe(LocalQueue& localQueue,
+    Subscription subscribe(LocalQueue& localQueue,
                            const std::string& queue,
                            const std::string& name=std::string());
 
@@ -167,53 +165,53 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param timeout wait up this timeout for a message to appear. 
      *@return true if result was set, false if no message available after timeout.
      */
-    QPID_CLIENT_EXTERN bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
+    bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
 
     /** Get a single message from a queue.
      *@param timeout wait up this timeout for a message to appear. 
      *@return message from the queue.
      *@throw Exception if the timeout is exceeded.
      */
-    QPID_CLIENT_EXTERN Message get(const std::string& queue, sys::Duration timeout=sys::TIME_INFINITE);
+    Message get(const std::string& queue, sys::Duration timeout=sys::TIME_INFINITE);
 
     /** Get a subscription by name.
      *@throw Exception if not found.
      */
-    QPID_CLIENT_EXTERN Subscription getSubscription(const std::string& name) const;
+    Subscription getSubscription(const std::string& name) const;
     
     /** Cancel a subscription. See also: Subscription.cancel() */
-    QPID_CLIENT_EXTERN void cancel(const std::string& name);
+    void cancel(const std::string& name);
 
     /** Deliver messages in the current thread until stop() is called.
      * Only one thread may be running in a SubscriptionManager at a time.
      * @see run
      */
-    QPID_CLIENT_EXTERN void run();
+    void run();
 
     /** Start a new thread to deliver messages.
      * Only one thread may be running in a SubscriptionManager at a time.
      * @see start
      */
-    QPID_CLIENT_EXTERN void start();
+    void start();
 
     /**
      * Wait for the thread started by a call to start() to complete.
      */
-    QPID_CLIENT_EXTERN void wait();
+    void wait();
     
     /** If set true, run() will stop when all subscriptions
      * are cancelled. If false, run will only stop when stop()
      * is called. True by default.
      */
-    QPID_CLIENT_EXTERN void setAutoStop(bool set=true);
+    void setAutoStop(bool set=true);
 
     /** Stop delivery. Causes run() to return, or the thread started with start() to exit. */
-    QPID_CLIENT_EXTERN void stop();
+    void stop();
 
     static const uint32_t UNLIMITED=0xFFFFFFFF;
 
     /** Set the flow control for a subscription. */
-    QPID_CLIENT_EXTERN void setFlowControl(const std::string& name, const FlowControl& flow);
+    void setFlowControl(const std::string& name, const FlowControl& flow);
 
     /** Set the flow control for a subscription.
      *@param name: name of the subscription.
@@ -221,22 +219,22 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param bytes: byte credit.
      *@param window: if true use window-based flow control.
      */
-    QPID_CLIENT_EXTERN void setFlowControl(const std::string& name, uint32_t messages,  uint32_t bytes, bool window=true);
+    void setFlowControl(const std::string& name, uint32_t messages,  uint32_t bytes, bool window=true);
 
     /** Set the default settings for subscribe() calls that don't
      * include a SubscriptionSettings parameter.
      */
-    QPID_CLIENT_EXTERN void setDefaultSettings(const SubscriptionSettings& s);
+    void setDefaultSettings(const SubscriptionSettings& s) { defaultSettings = s; }
 
     /** Get the default settings for subscribe() calls that don't
      * include a SubscriptionSettings parameter.
      */
-    QPID_CLIENT_EXTERN const SubscriptionSettings& getDefaultSettings() const;
+    const SubscriptionSettings& getDefaultSettings() const { return defaultSettings; }
 
     /** Get the default settings for subscribe() calls that don't
      * include a SubscriptionSettings parameter.
      */
-    QPID_CLIENT_EXTERN SubscriptionSettings& getDefaultSettings();
+    SubscriptionSettings& getDefaultSettings() { return defaultSettings; }
 
     /**
      * Set the default flow control settings for subscribe() calls
@@ -246,40 +244,35 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
      *@param bytes: byte credit.
      *@param window: if true use window-based flow control.
      */
-    QPID_CLIENT_EXTERN void setFlowControl(uint32_t messages,  uint32_t bytes, bool window=true);
+    void setFlowControl(uint32_t messages,  uint32_t bytes, bool window=true) {
+        defaultSettings.flowControl = FlowControl(messages, bytes, window);
+    }
 
     /**
      *Set the default accept-mode for subscribe() calls that don't
      *include a SubscriptionSettings parameter.
      */
-    QPID_CLIENT_EXTERN void setAcceptMode(AcceptMode mode);
+    void setAcceptMode(AcceptMode mode) { defaultSettings.acceptMode = mode; }
 
     /**
      * Set the default acquire-mode subscribe()s that don't specify SubscriptionSettings.
      */
-    QPID_CLIENT_EXTERN void setAcquireMode(AcquireMode mode);
+    void setAcquireMode(AcquireMode mode) { defaultSettings.acquireMode = mode; }
 
-    QPID_CLIENT_EXTERN void registerFailoverHandler ( boost::function<void ()> fh );
+    void registerFailoverHandler ( boost::function<void ()> fh );
 
-    QPID_CLIENT_EXTERN Session getSession() const;
-
-    SubscriptionManager(SubscriptionManagerImpl*); ///<@internal
+    Session getSession() const;
 
   private:
-    typedef SubscriptionManagerImpl Impl;
-    friend class PrivateImplRef<SubscriptionManager>;
+    mutable sys::Mutex lock;
+    qpid::client::Dispatcher dispatcher;
+    qpid::client::AsyncSession session;
+    bool autoStop;
+    SubscriptionSettings defaultSettings;
+    std::map<std::string, Subscription> subscriptions;
 };
 
-/** AutoCancel cancels a subscription in its destructor */
-class AutoCancel {
-  public:
-    AutoCancel(SubscriptionManager& sm_, const std::string& tag_) : sm(sm_), tag(tag_) {}
-    ~AutoCancel() { sm.cancel(tag); }
-  private:
-    SubscriptionManager& sm;
-    std::string tag;
-};
 
 }} // namespace qpid::client
 
-#endif  /*!QPID_CLIENT_SUBSCRIPTIONMANAGER_H*/
+#endif  /*!QPID_CLIENT_SUBSCRIPTIONMANAGERIMPL_H*/

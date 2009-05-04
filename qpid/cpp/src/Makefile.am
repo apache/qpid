@@ -470,7 +470,10 @@ libqpidclient_la_SOURCES =			\
   qpid/client/StateManager.cpp			\
   qpid/client/Subscription.cpp			\
   qpid/client/SubscriptionImpl.cpp		\
-  qpid/client/SubscriptionManager.cpp
+  qpid/client/SubscriptionImpl.h 		\
+  qpid/client/SubscriptionManager.cpp		\
+  qpid/client/SubscriptionManagerImpl.cpp	\
+  qpid/client/SubscriptionManagerImpl.h
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
@@ -595,7 +598,6 @@ nobase_include_HEADERS = \
   qpid/client/Execution.h \
   qpid/client/FailoverManager.h \
   qpid/client/Subscription.h \
-  qpid/client/SubscriptionImpl.h \
   qpid/client/SubscriptionSettings.h \
   qpid/client/FlowControl.h \
   qpid/client/Future.h \
@@ -618,6 +620,29 @@ nobase_include_HEADERS = \
   qpid/client/StateManager.h \
   qpid/client/SubscriptionManager.h \
   qpid/client/TypedResult.h \
+  qpid/client/api/Connection.h \
+  qpid/client/api/ConnectionImpl.h \
+  qpid/client/api/Destination.h \
+  qpid/client/api/Message.h \
+  qpid/client/api/MessageImpl.h \
+  qpid/client/api/MessageListener.h \
+  qpid/client/api/MessageProducer.h \
+  qpid/client/api/MessageProducerImpl.h \
+  qpid/client/api/MessageReceiver.h \
+  qpid/client/api/MessageReceiverImpl.h \
+  qpid/client/api/MessageSink.h \
+  qpid/client/api/MessageSource.h \
+  qpid/client/api/Queue.h \
+  qpid/client/api/Session.h \
+  qpid/client/api/SessionImpl.h \
+  qpid/client/api/Subscription.h \
+  qpid/client/api/SubscriptionImpl.h \
+  qpid/client/api/Topic.h \
+  qpid/client/api/Variant.h \
+  qpid/client/amqp0_10/MessageAdapter.h \
+  qpid/client/amqp0_10/Sinks.h \
+  qpid/client/amqp0_10/Sources.h \
+  qpid/client/amqp0_10/SessionImpl.h \
   qpid/framing/AMQBody.h \
   qpid/framing/AMQCommandControlBody.h \
   qpid/framing/AMQContentBody.h \

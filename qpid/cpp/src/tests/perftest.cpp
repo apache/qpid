@@ -28,6 +28,7 @@
 #include "qpid/client/Message.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Thread.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>

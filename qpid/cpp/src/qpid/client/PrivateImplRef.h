@@ -76,14 +76,15 @@ template <class T> class PrivateImplRef {
     static intrusive_ptr get(const T& t) { return intrusive_ptr(t.impl); }
 
     static void set(T& t, const intrusive_ptr& p) {
-        if(t.impl) boost::intrusive_ptr_release(t.impl); 
+        if (t.impl == p) return;
+        if (t.impl) boost::intrusive_ptr_release(t.impl); 
         t.impl = p.get();
         if (t.impl) boost::intrusive_ptr_add_ref(t.impl); 
     }
 
     // Helper functions to implement the ctor, dtor, copy, assign
     static void ctor(T& t, Impl* p) { t.impl = p; if (p) boost::intrusive_ptr_add_ref(p); }
-    static void copy(T& t, const T& x) { t.impl = 0; assign(t, x); }
+    static void copy(T& t, const T& x) { if (&t == &x) return; t.impl = 0; assign(t, x); }
     static void dtor(T& t) { if(t.impl) boost::intrusive_ptr_release(t.impl); }
     static T& assign(T& t, const T& x) { set(t, get(x)); return t;}
 };

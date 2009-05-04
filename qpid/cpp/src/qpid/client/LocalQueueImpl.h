@@ -100,7 +100,7 @@ class LocalQueueImpl : public RefCounted {
   private:
     Demux::QueuePtr queue;
     Subscription subscription;
-  friend class SubscriptionManager;
+  friend class SubscriptionManagerImpl;
 };
 
 }} // namespace qpid::client
