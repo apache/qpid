@@ -64,10 +64,11 @@ private:
     Poller::shared_ptr poller;
     Mutex stateLock;
     enum {
-        IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW,
-        ACTIVE_DELETE,
-        DELAYED_IDLE, DELAYED_INACTIVE, DELAYED_R, DELAYED_W, DELAYED_RW,
-        DELAYED_DELETE
+        IDLE,
+        STOPPING,
+        WAITING,
+        CALLING,
+        DELETING
     } state;
 
 public:
@@ -83,14 +84,7 @@ public:
      *@param wCb Callback called when the handle is writable.
      *@param dCb Callback called when the handle is disconnected.
      */
-    QPID_COMMON_EXTERN DispatchHandle(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb) :
-      PollerHandle(h),
-      readableCallback(rCb),
-      writableCallback(wCb),
-      disconnectedCallback(dCb),
-      state(IDLE)
-    {}
-
+    QPID_COMMON_EXTERN DispatchHandle(const IOHandle& h, Callback rCb, Callback wCb, Callback dCb);
     QPID_COMMON_EXTERN ~DispatchHandle();
 
     /** Add this DispatchHandle to the poller to be watched. */
@@ -122,7 +116,6 @@ public:
     QPID_COMMON_EXTERN void call(Callback iCb);
 
 protected:
-    /** Override to get extra processing done when the DispatchHandle is deleted. */
     QPID_COMMON_EXTERN void doDelete();
 
 private:

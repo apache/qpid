@@ -122,7 +122,7 @@ void Poller::run() {
     } while (true);
 }
 
-void Poller::addFd(PollerHandle& handle, Direction dir) {
+void Poller::monitorHandle(PollerHandle& handle, Direction dir) {
     HANDLE h = (HANDLE)(handle.impl->fd);
     if (h != INVALID_HANDLE_VALUE) {
         HANDLE iocpHandle = ::CreateIoCompletionPort (h, impl->iocp, 0, 0);
@@ -146,9 +146,9 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
 }
 
 // All no-ops...
-void Poller::delFd(PollerHandle& handle) {}
-void Poller::modFd(PollerHandle& handle, Direction dir) {}
-void Poller::rearmFd(PollerHandle& handle) {}
+void Poller::unmonitorHandle(PollerHandle& handle, Direction dir) {}
+void Poller::registerHandle(PollerHandle& handle) {}
+void Poller::unregisterHandle(PollerHandle& handle) {}
 
 Poller::Event Poller::wait(Duration timeout) {
     DWORD timeoutMs = 0;

@@ -36,6 +36,10 @@ PollerDispatch::PollerDispatch(Cpg& c, boost::shared_ptr<sys::Poller> p,
       )
 {}
     
+PollerDispatch::~PollerDispatch() {
+    dispatchHandle.stopWatch();
+}
+
 void PollerDispatch::start() {
     dispatchHandle.startWatch(poller);
 }

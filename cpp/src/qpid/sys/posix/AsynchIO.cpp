@@ -75,6 +75,7 @@ namespace sys {
 class AsynchAcceptorPrivate {
 public:
     AsynchAcceptorPrivate(const Socket& s, AsynchAcceptor::Callback callback);
+    ~AsynchAcceptorPrivate();
     void start(Poller::shared_ptr poller);
 
 private:
@@ -107,6 +108,10 @@ AsynchAcceptorPrivate::AsynchAcceptorPrivate(const Socket& s,
     socket(s) {
 
     s.setNonblocking();
+}
+
+AsynchAcceptorPrivate::~AsynchAcceptorPrivate() {
+    handle.stopWatch();
 }
 
 void AsynchAcceptorPrivate::start(Poller::shared_ptr poller) {
