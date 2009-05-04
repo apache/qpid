@@ -23,6 +23,7 @@
  */
 
 #include "qpid/client/SubscriptionSettings.h"
+#include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Demux.h"
@@ -37,11 +38,12 @@ namespace qpid {
 namespace client {
 
 class SubscriptionManager;
+class SubscriptionManagerImpl;
 
 class SubscriptionImpl : public RefCounted, public MessageListener {
   public:
-    QPID_CLIENT_EXTERN SubscriptionImpl(SubscriptionManager&, const std::string& queue,
-                     const SubscriptionSettings&, const std::string& name, MessageListener* =0);
+    QPID_CLIENT_EXTERN SubscriptionImpl(SubscriptionManager, const std::string& queue,
+        const SubscriptionSettings&, const std::string& name, MessageListener* =0);
     
     /** The name of the subsctription, used as the "destination" for messages from the broker.
      * Usually the same as the queue name but can be set differently.
@@ -84,7 +86,7 @@ class SubscriptionImpl : public RefCounted, public MessageListener {
     QPID_CLIENT_EXTERN Session getSession() const;
 
     /** Get the subscription manager associated with this subscription */
-    QPID_CLIENT_EXTERN SubscriptionManager& getSubscriptionManager() const;
+    QPID_CLIENT_EXTERN SubscriptionManager getSubscriptionManager();
 
     /** Send subscription request and issue appropriate flow control commands. */
     QPID_CLIENT_EXTERN void subscribe();
@@ -110,7 +112,7 @@ class SubscriptionImpl : public RefCounted, public MessageListener {
   private:
 
     mutable sys::Mutex lock;
-    SubscriptionManager& manager;
+    SubscriptionManagerImpl& manager;
     std::string name, queue;
     SubscriptionSettings settings;
     framing::SequenceSet unacquired, unaccepted;

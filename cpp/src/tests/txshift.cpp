@@ -61,7 +61,7 @@ struct Transfer : MessageListener
 
     Transfer(const std::string control_) : control(control_), expected(0), transfered(0) {}
 
-    void subscribeToSource(SubscriptionManager& manager) 
+    void subscribeToSource(SubscriptionManager manager) 
     {
         sourceSettings.autoAck = 0;//will accept once at the end of the batch
         sourceSettings.flowControl = FlowControl::messageCredit(expected);
@@ -69,7 +69,7 @@ struct Transfer : MessageListener
         QPID_LOG(info, "Subscribed to source: " << source << " expecting: " << expected);
     }
 
-    void subscribeToControl(SubscriptionManager& manager) 
+    void subscribeToControl(SubscriptionManager manager) 
     {
         controlSettings.flowControl = FlowControl::messageCredit(1);
         controlSubscription = manager.subscribe(*this, control, controlSettings);

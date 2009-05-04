@@ -103,7 +103,7 @@ class Subscription : public Handle<SubscriptionImpl> {
     QPID_CLIENT_EXTERN Session getSession() const;
 
     /** Get the subscription manager associated with this subscription */
-    QPID_CLIENT_EXTERN SubscriptionManager& getSubscriptionManager() const;
+    QPID_CLIENT_EXTERN SubscriptionManager getSubscriptionManager();
 
     /** Cancel the subscription. */
     QPID_CLIENT_EXTERN void cancel();

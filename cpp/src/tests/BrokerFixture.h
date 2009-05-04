@@ -29,6 +29,7 @@
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/client/SubscriptionManager.h"
+#include "qpid/client/LocalQueue.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/sys/Thread.h"

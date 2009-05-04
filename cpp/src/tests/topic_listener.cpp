@@ -36,6 +36,7 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Session.h"
+#include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Time.h"

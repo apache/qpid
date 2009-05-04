@@ -46,7 +46,7 @@ void Subscription::acquire(const SequenceSet& messageIds) { impl->acquire(messag
 void Subscription::accept(const SequenceSet& messageIds) { impl->accept(messageIds); }
 void Subscription::release(const SequenceSet& messageIds) { impl->release(messageIds); }
 Session Subscription::getSession() const { return impl->getSession(); }
-SubscriptionManager&Subscription:: getSubscriptionManager() const { return impl->getSubscriptionManager(); }
+SubscriptionManager Subscription::getSubscriptionManager() { return impl->getSubscriptionManager(); }
 void Subscription::cancel() { impl->cancel(); }
 void Subscription::grantMessageCredit(uint32_t value) { impl->grantCredit(framing::message::CREDIT_UNIT_MESSAGE, value); }
 void Subscription::grantByteCredit(uint32_t value) { impl->grantCredit(framing::message::CREDIT_UNIT_BYTE, value); }

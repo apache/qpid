@@ -19,11 +19,14 @@
  *
  */
 
+#include "AsyncSession.h"
 #include "SubscriptionImpl.h"
+#include "SubscriptionManagerImpl.h"
 #include "MessageImpl.h"
 #include "CompletionImpl.h"
 #include "SubscriptionManager.h"
 #include "SubscriptionSettings.h"
+#include "PrivateImplRef.h"
 
 namespace qpid {
 namespace client {
@@ -31,8 +34,8 @@ namespace client {
 using sys::Mutex;
 using framing::MessageAcquireResult;
 
-SubscriptionImpl::SubscriptionImpl(SubscriptionManager& m, const std::string& q, const SubscriptionSettings& s, const std::string& n, MessageListener* l)
-    : manager(m), name(n), queue(q), settings(s), listener(l)
+SubscriptionImpl::SubscriptionImpl(SubscriptionManager m, const std::string& q, const SubscriptionSettings& s, const std::string& n, MessageListener* l)
+    : manager(*PrivateImplRef<SubscriptionManager>::get(m)), name(n), queue(q), settings(s), listener(l)
 {}
 
 void SubscriptionImpl::subscribe()
@@ -110,7 +113,7 @@ void SubscriptionImpl::release(const SequenceSet& messageIds) {
 
 Session SubscriptionImpl::getSession() const { return manager.getSession(); }
 
-SubscriptionManager& SubscriptionImpl::getSubscriptionManager() const { return manager; }
+SubscriptionManager SubscriptionImpl::getSubscriptionManager() { return SubscriptionManager(&manager); }
 
 void SubscriptionImpl::cancel() { manager.cancel(name); }
 

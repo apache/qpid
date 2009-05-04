@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "TestOptions.h"
+#include "qpid/sys/Thread.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/AsyncSession.h"
