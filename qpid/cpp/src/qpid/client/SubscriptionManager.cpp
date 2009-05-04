@@ -31,7 +31,7 @@ typedef PrivateImplRef<SubscriptionManager> PI;
 
 SubscriptionManager::SubscriptionManager(const Session& s) { PI::ctor(*this, new SubscriptionManagerImpl(s)); }
 SubscriptionManager::SubscriptionManager(SubscriptionManagerImpl* i) { PI::ctor(*this, i); }
-SubscriptionManager::SubscriptionManager(const SubscriptionManager& x) : Handle<SubscriptionManagerImpl>() { PI::copy(*this, x); }
+SubscriptionManager::SubscriptionManager(const SubscriptionManager& x) : Runnable(), Handle<SubscriptionManagerImpl>() { PI::copy(*this, x); }
 SubscriptionManager::~SubscriptionManager() { PI::dtor(*this); }
 SubscriptionManager& SubscriptionManager::operator=(const SubscriptionManager& x) { return PI::assign(*this, x); }
 
