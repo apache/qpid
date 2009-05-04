@@ -999,6 +999,9 @@
 				RelativePath="qpid\sys\windows\LockFile.cpp">
 			</File>
 			<File
+				RelativePath="qpid\sys\windows\PipeHandle.cpp">
+			</File>
+			<File
 				RelativePath="qpid\sys\windows\PollableCondition.cpp">
 			</File>
 			<File
