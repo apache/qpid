@@ -276,6 +276,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/IocpPoller.cpp
     qpid/sys/windows/IOHandle.cpp
     qpid/sys/windows/LockFile.cpp
+    qpid/sys/windows/PipeHandle.cpp
     qpid/sys/windows/PollableCondition.cpp
     qpid/sys/windows/Shlib.cpp
     qpid/sys/windows/Socket.cpp
@@ -321,6 +322,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/IOHandle.cpp
     qpid/sys/posix/LockFile.cpp
     qpid/sys/posix/Mutex.cpp
+    qpid/sys/posix/PipeHandle.cpp
     qpid/sys/posix/PollableCondition.cpp
     qpid/sys/posix/Shlib.cpp
     qpid/log/posix/SinkOptions.cpp

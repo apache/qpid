@@ -21,14 +21,12 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/PipeHandle.h"
 #include "ManagementAgentImpl.h"
 #include <list>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <iostream>
 #include <fstream>
 
@@ -80,7 +78,7 @@ ManagementAgent* ManagementAgent::Singleton::getInstance()
 const string ManagementAgentImpl::storeMagicNumber("MA02");
 
 ManagementAgentImpl::ManagementAgentImpl() :
-    extThread(false), writeFd(-1), readFd(-1),
+    extThread(false), 
     initialized(false), connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
@@ -112,6 +110,10 @@ ManagementAgentImpl::~ManagementAgentImpl()
         }
         managementObjects.clear();
     }
+    if (pipeHandle) {
+        delete pipeHandle;
+        pipeHandle = 0;
+    }
 }
 
 void ManagementAgentImpl::init(const string& brokerHost,
@@ -134,7 +136,7 @@ void ManagementAgentImpl::init(const string& brokerHost,
     init(settings, intervalSeconds, useExternalThread, _storeFile);
 }
 
-void ManagementAgentImpl::init(const client::ConnectionSettings& settings,
+void ManagementAgentImpl::init(const qpid::client::ConnectionSettings& settings,
                                uint16_t intervalSeconds,
                                bool useExternalThread,
                                const std::string& _storeFile)
@@ -149,18 +151,9 @@ void ManagementAgentImpl::init(const client::ConnectionSettings& settings,
     connectionSettings = settings;
 
     // TODO: Abstract the socket calls for portability
+    // qpid::sys::PipeHandle to create a pipe
     if (extThread) {
-        int pair[2];
-        int result = socketpair(PF_UNIX, SOCK_STREAM, 0, pair);
-        if (result == -1) {
-            return;
-        }
-        writeFd = pair[0];
-        readFd  = pair[1];
-
-        // Set the readFd to non-blocking
-        int flags = fcntl(readFd, F_GETFL);
-        fcntl(readFd, F_SETFL, flags | O_NONBLOCK);
+        pipeHandle = new PipeHandle(true);
     }
 
     retrieveData();
@@ -175,7 +168,7 @@ void ManagementAgentImpl::init(const client::ConnectionSettings& settings,
 void ManagementAgentImpl::registerClass(const string& packageName,
                                         const string& className,
                                         uint8_t*     md5Sum,
-                                        management::ManagementObject::writeSchemaCall_t schemaCall)
+                                        qpid::management::ManagementObject::writeSchemaCall_t schemaCall)
 { 
     Mutex::ScopedLock lock(agentLock);
     PackageMap::iterator pIter = findOrAddPackage(packageName);
@@ -185,7 +178,7 @@ void ManagementAgentImpl::registerClass(const string& packageName,
 void ManagementAgentImpl::registerEvent(const string& packageName,
                                         const string& eventName,
                                         uint8_t*     md5Sum,
-                                        management::ManagementObject::writeSchemaCall_t schemaCall)
+                                        qpid::management::ManagementObject::writeSchemaCall_t schemaCall)
 { 
     Mutex::ScopedLock lock(agentLock);
     PackageMap::iterator pIter = findOrAddPackage(packageName);
@@ -247,15 +240,15 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
             delete item;
         }
     }
-
-    uint8_t rbuf[100];
-    while (read(readFd, rbuf, 100) > 0) ; // Consume all signaling bytes
+    
+    char rbuf[100];
+    while (pipeHandle->read(rbuf, 100) > 0) ; // Consume all signaling bytes
     return methodQueue.size();
 }
 
 int ManagementAgentImpl::getSignalFd(void)
 {
-    return readFd;
+    return pipeHandle->getReadHandle();
 }
 
 void ManagementAgentImpl::startProtocol()
@@ -536,7 +529,7 @@ void ManagementAgentImpl::handleMethodRequest(Buffer& inBuffer, uint32_t sequenc
 
         inBuffer.getRawData(body, inBuffer.available());
         methodQueue.push_back(new QueuedMethod(sequence, replyTo, body));
-        write(writeFd, "X", 1);
+        pipeHandle->write("X", 1);
     } else {
         invokeMethodRequest(inBuffer, sequence, replyTo);
     }
@@ -631,7 +624,7 @@ void ManagementAgentImpl::addClassLocal(uint8_t               classKind,
                                         PackageMap::iterator  pIter,
                                         const string&         className,
                                         uint8_t*              md5Sum,
-                                        management::ManagementObject::writeSchemaCall_t schemaCall)
+                                        qpid::management::ManagementObject::writeSchemaCall_t schemaCall)
 {
     SchemaClassKey key;
     ClassMap&      cMap = pIter->second;
@@ -906,7 +899,7 @@ bool ManagementAgentImpl::ConnectionThread::isSleeping() const
 void ManagementAgentImpl::PublishThread::run()
 {
     while (true) {
-        ::sleep(agent.getInterval());
         agent.periodicProcessing();
+        ::sleep(agent.getInterval());
     }
 }

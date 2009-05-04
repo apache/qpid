@@ -20,6 +20,7 @@
 // under the License.
 //
 
+#include "QmfAgentImportExport.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"
@@ -35,9 +36,9 @@ class ManagementAgent
 
     class Singleton {
     public:
-        Singleton(bool disableManagement = false);
-        ~Singleton();
-        static ManagementAgent* getInstance();
+        QMF_AGENT_EXTERN Singleton(bool disableManagement = false);
+        QMF_AGENT_EXTERN ~Singleton();
+        QMF_AGENT_EXTERN static ManagementAgent* getInstance();
     private:
         static sys::Mutex lock;
         static bool disabled;

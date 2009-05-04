@@ -44,6 +44,7 @@ windows_dist = \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
   qpid/sys/windows/PollableCondition.cpp \
+  qpid/sys/windows/PipeHandle.cpp \
   qpid/sys/windows/Mutex.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/Socket.cpp \
@@ -132,7 +133,8 @@ posix_plat_src = \
   qpid/sys/posix/Mutex.cpp \
   qpid/sys/posix/Fork.cpp \
   qpid/sys/posix/StrError.cpp \
-  qpid/sys/posix/PollableCondition.cpp
+  qpid/sys/posix/PollableCondition.cpp \
+  qpid/sys/posix/PipeHandle.cpp
 
 posix_plat_hdr = \
   qpid/log/posix/SinkOptions.h \
@@ -711,6 +713,7 @@ nobase_include_HEADERS = \
   qpid/sys/Mutex.h \
   qpid/sys/OutputControl.h \
   qpid/sys/OutputTask.h \
+  qpid/sys/PipeHandle.h \
   qpid/sys/PollableCondition.h \
   qpid/sys/PollableQueue.h \
   qpid/sys/Poller.h \

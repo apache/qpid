@@ -111,4 +111,16 @@ On Linux:
   # ./server
   # ./client
 
+== QMF Agent ==
 
+This example demonstrates integration with the Qpid Management Framework (QMF).
+After launching a Qpid broker, the sample program will connect to it and 
+advertise a managed object (org.apache.qpid.agent.example:parent). Using 
+qpid-tool, you can monitor the object and also call a method (create_child) to 
+spawn managed child objects.
+
+To build this example, simply invoke make on Unix or Linux. On Windows, you 
+must invoke 
+	nmake /f example_gen.mak
+before building the sample to generate the supporting model classes 
+(e.g., Parent,Child,etc.).
