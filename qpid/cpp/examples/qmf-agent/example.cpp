@@ -23,6 +23,7 @@
 #include <qpid/management/ManagementObject.h>
 #include <qpid/agent/ManagementAgent.h>
 #include <qpid/sys/Mutex.h>
+#include <qpid/sys/Time.h>
 #include "qmf/org/apache/qpid/agent/example/Parent.h"
 #include "qmf/org/apache/qpid/agent/example/Child.h"
 #include "qmf/org/apache/qpid/agent/example/ArgsParentCreate_child.h"
@@ -30,7 +31,6 @@
 #include "qmf/org/apache/qpid/agent/example/Package.h"
 
 #include <signal.h>
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 
@@ -102,7 +102,7 @@ void CoreClass::doLoop()
 {
     // Periodically bump a counter to provide a changing statistical value
     while (1) {
-        sleep(1);
+        qpid::sys::sleep(1);
         mgmtObject->inc_count();
         mgmtObject->set_state("IN_LOOP");
 
@@ -187,6 +187,8 @@ int main_int(int argc, char** argv)
     CoreClass core3(agent, "Example Core Object #3");
 
     core1.doLoop();
+
+    return 0;
 }
 
 int main(int argc, char** argv)

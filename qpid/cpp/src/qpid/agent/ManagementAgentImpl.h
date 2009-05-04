@@ -31,6 +31,7 @@
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/PipeHandle.h"
 #include "qpid/framing/Uuid.h"
 #include <iostream>
 #include <sstream>
@@ -132,8 +133,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
 
     uint16_t          interval;
     bool              extThread;
-    int               writeFd;
-    int               readFd;
+    sys::PipeHandle*  pipeHandle;
     uint64_t          nextObjectId;
     std::string       storeFile;
     sys::Mutex        agentLock;
