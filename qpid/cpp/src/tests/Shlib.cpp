@@ -24,13 +24,21 @@
 
 #include "unit_test.h"
 
+namespace {
+#ifdef _WIN32
+  const char *libName = "shlibtestd.dll";
+#else
+  const char *libName = ".libs/libshlibtest.so";
+#endif
+}
+
 QPID_AUTO_TEST_SUITE(ShlibTestSuite)
 
 using namespace qpid::sys;
 typedef void (*CallMe)(int*);
 
 QPID_AUTO_TEST_CASE(testShlib) {
-    Shlib sh(".libs/libshlibtest.so");
+    Shlib sh(libName);
     // Double cast to avoid ISO warning.
     CallMe callMe=sh.getSymbol<CallMe>("callMe");
     BOOST_REQUIRE(callMe != 0);
@@ -48,7 +56,7 @@ QPID_AUTO_TEST_CASE(testShlib) {
 QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
-        AutoShlib sh(".libs/libshlibtest.so");
+        AutoShlib sh(libName);
         CallMe callMe=sh.getSymbol<CallMe>("callMe");
         BOOST_REQUIRE(callMe != 0);
         callMe(&unloaded);
