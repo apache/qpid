@@ -123,8 +123,7 @@ class Connection(Assembler):
       self.lock.release()
 
   def __channel(self):
-    # XXX: ch 0?
-    for i in xrange(self.channel_max):
+    for i in xrange(1, self.channel_max):
       if not self.attached.has_key(i):
         return i
     else:

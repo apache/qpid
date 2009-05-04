@@ -53,6 +53,8 @@ class ConnectionImpl : public Bounds,
 {
     typedef std::map<uint16_t, boost::weak_ptr<SessionImpl> > SessionMap;
 
+    static const uint16_t NEXT_CHANNEL;
+
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::scoped_ptr<Connector> connector;
@@ -80,8 +82,8 @@ class ConnectionImpl : public Bounds,
     void open();
     bool isOpen() const;
 
-    boost::shared_ptr<SessionImpl> newSession(const std::string& name, uint32_t timeout, uint16_t channel=0);
-    void addSession(const boost::shared_ptr<SessionImpl>&, uint16_t channel=0);
+    boost::shared_ptr<SessionImpl> newSession(const std::string& name, uint32_t timeout, uint16_t channel=NEXT_CHANNEL);
+    void addSession(const boost::shared_ptr<SessionImpl>&, uint16_t channel=NEXT_CHANNEL);
         
     void close();
     void handle(framing::AMQFrame& frame);

@@ -32,6 +32,7 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
+#include <limits>
 
 namespace qpid {
 namespace client {
@@ -81,6 +82,8 @@ ConnectionImpl::ConnectionImpl(framing::ProtocolVersion v, const ConnectionSetti
     handler.onError = boost::bind(&ConnectionImpl::closed, this, _1, _2);
 }
 
+const uint16_t ConnectionImpl::NEXT_CHANNEL = std::numeric_limits<uint16_t>::max();
+
 ConnectionImpl::~ConnectionImpl() {
     // Important to close the connector first, to ensure the
     // connector thread does not call on us while the destructor
@@ -92,7 +95,7 @@ ConnectionImpl::~ConnectionImpl() {
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, uint16_t channel)
 {
     Mutex::ScopedLock l(lock);
-    session->setChannel(channel ? channel : nextChannel++);
+    session->setChannel(channel == NEXT_CHANNEL ? nextChannel++ : channel);
     boost::weak_ptr<SessionImpl>& s = sessions[session->getChannel()];
     boost::shared_ptr<SessionImpl> ss = s.lock();
     if (ss) throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attached to " << ss->getId()));
