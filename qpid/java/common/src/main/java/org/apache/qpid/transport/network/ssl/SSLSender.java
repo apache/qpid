@@ -38,6 +38,7 @@ public class SSLSender implements Sender<ByteBuffer>
     private SSLEngine engine;
     private int sslBufSize;
     private ByteBuffer netData;
+    private long timeout = 30000;
     
     private final Object engineState = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -49,7 +50,8 @@ public class SSLSender implements Sender<ByteBuffer>
         this.engine = engine;
         this.delegate = delegate;        
         sslBufSize = engine.getSession().getPacketBufferSize();
-        netData = ByteBuffer.allocate(sslBufSize);      
+        netData = ByteBuffer.allocate(sslBufSize);    
+        timeout = Long.getLong("qpid.ssl_timeout", 60000);
     }
 
     public void close()
@@ -198,13 +200,21 @@ public class SSLSender implements Sender<ByteBuffer>
                     flush();
                     synchronized(engineState)
                     {
+                        long start = System.currentTimeMillis();
                         try
                         {
-                            engineState.wait();
+                            engineState.wait(timeout);
                         }
                         catch(InterruptedException e)
                         {
                             // pass
+                        }
+                        
+                        if (System.currentTimeMillis()- start >= timeout)
+                        {
+                            throw new SenderException(
+                                "SSL Engine timed out waiting for a response." +
+                                "To get more info,run with -Djavax.net.debug=ssl");
                         }
                     }
                     break;
