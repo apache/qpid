@@ -461,6 +461,7 @@ set (libqpidclient_SOURCES
      qpid/client/Subscription.cpp
      qpid/client/SubscriptionImpl.cpp
      qpid/client/SubscriptionManager.cpp
+     qpid/client/SubscriptionManagerImpl.cpp
 )
 add_library (qpidclient SHARED ${libqpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon)
