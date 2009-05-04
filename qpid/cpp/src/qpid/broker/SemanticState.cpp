@@ -440,7 +440,7 @@ void SemanticState::recover(bool requeue)
         //unconfirmed messages re redelivered and therefore have their
         //id adjusted, confirmed messages are not and so the ordering
         //w.r.t id is lost
-        std::sort(unacked.begin(), unacked.end());
+        unacked.sort();
     }
 }
 
@@ -642,12 +642,12 @@ void SemanticState::accepted(DeliveryId first, DeliveryId last)
 
             //if the messages are already completed, they can be
             //removed from the record
-            unacked.erase(std::remove_if(unacked.begin(), unacked.end(), mem_fun_ref(&DeliveryRecord::isRedundant)), unacked.end());
+            unacked.remove_if(mem_fun_ref(&DeliveryRecord::isRedundant));
 
         }
     } else {
         for_each(range.start, range.end, boost::bind(&DeliveryRecord::accept, _1, (TransactionContext*) 0));
-        unacked.erase(std::remove_if(unacked.begin(), unacked.end(), mem_fun_ref(&DeliveryRecord::isRedundant)), unacked.end());
+        unacked.remove_if(mem_fun_ref(&DeliveryRecord::isRedundant));
     }
 }
 
@@ -655,7 +655,7 @@ void SemanticState::completed(DeliveryId first, DeliveryId last)
 {
     AckRange range = findRange(first, last);
     for_each(range.start, range.end, boost::bind(&SemanticState::complete, this, _1));
-    unacked.erase(std::remove_if(unacked.begin(), unacked.end(), mem_fun_ref(&DeliveryRecord::isRedundant)), unacked.end());
+    unacked.remove_if(mem_fun_ref(&DeliveryRecord::isRedundant));
     requestDispatch();
 }
 

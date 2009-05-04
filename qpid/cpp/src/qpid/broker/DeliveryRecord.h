@@ -40,10 +40,11 @@ struct AckRange;
 /**
  * Record of a delivery for which an ack is outstanding.
  */
-class DeliveryRecord {
+class DeliveryRecord
+{
     QueuedMessage msg;
     mutable Queue::shared_ptr queue;
-    std::string tag;
+    const std::string tag;
     DeliveryId id;
     bool acquired;
     bool acceptExpected;
@@ -51,7 +52,7 @@ class DeliveryRecord {
 
     bool completed;
     bool ended;
-    bool windowing;
+    const bool windowing;
 
     /**
      * Record required credit on construction as the pointer to the
@@ -60,7 +61,7 @@ class DeliveryRecord {
      * to reallocate credit when it is completed (which could happen
      * after that).
      */
-    uint32_t credit;
+    const uint32_t credit;
 
   public:
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
@@ -103,7 +104,7 @@ class DeliveryRecord {
     void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
 
-	typedef std::deque<DeliveryRecord> DeliveryRecords;
+    typedef std::list<DeliveryRecord> DeliveryRecords;
     static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
