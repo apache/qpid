@@ -22,13 +22,14 @@
  *
  */
 
-#include <qpid/client/Session.h>
-#include <qpid/client/Subscription.h>
-#include <qpid/sys/Runnable.h>
-#include <qpid/client/ClientImportExport.h>
+#include "qpid/client/Session.h"
+#include "qpid/client/Subscription.h"
+#include "qpid/sys/Runnable.h"
+#include "qpid/sys/Thread.h"
+#include "qpid/client/ClientImportExport.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/LocalQueue.h"
-#include <qpid/client/Handle.h>
+#include "qpid/client/Handle.h"
 #include <string>
 
 namespace qpid {
