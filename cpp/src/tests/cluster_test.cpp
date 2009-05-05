@@ -69,7 +69,7 @@ using namespace boost::assign;
 using broker::Broker;
 using boost::shared_ptr;
 
-bool durableFlag = std::getenv("DURABLE_ENABLE") != 0;
+bool durableFlag = std::getenv("STORE_ENABLE") != 0;
 
 void prepareArgs(ClusterFixture::Args& args, const bool durableFlag = false) {
     ostringstream clusterLib;
@@ -230,7 +230,7 @@ QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     BOOST_CHECK_EQUAL(browse(c1, "p", 2), list_of<string>("x")("y"));
     BOOST_CHECK_EQUAL(browse(c2, "p", 2), list_of<string>("x")("y"));
 
-    sys::usleep(200*1000); 
+    sys::usleep(200*1000);
     BOOST_CHECK_EQUAL(browse(c0, "q", 1), list_of<string>("b"));
     BOOST_CHECK_EQUAL(browse(c1, "q", 1), list_of<string>("b"));
     BOOST_CHECK_EQUAL(browse(c2, "q", 1), list_of<string>("b"));
@@ -243,7 +243,7 @@ QPID_AUTO_TEST_CASE(testSequenceOptions) {
     ClusterFixture cluster(1, args, -1);
     Client c0(cluster[0], "c0");
     FieldTable ftargs;
-    ftargs.setInt("qpid.msg_sequence", 1); 
+    ftargs.setInt("qpid.msg_sequence", 1);
     c0.session.queueDeclare(arg::queue="q", arg::durable=durableFlag);
     c0.session.exchangeDeclare(arg::exchange="ex", arg::type="direct", arg::arguments=ftargs);
     c0.session.exchangeBind(arg::exchange="ex", arg::queue="q", arg::bindingKey="k");
@@ -254,7 +254,7 @@ QPID_AUTO_TEST_CASE(testSequenceOptions) {
 
     cluster.add();
     Client c1(cluster[1]);
-    c1.session.messageTransfer(arg::content=Message("3", "k"), arg::destination="ex", arg::durable=durableFlag);    
+    c1.session.messageTransfer(arg::content=Message("3", "k"), arg::destination="ex", arg::durable=durableFlag);
     BOOST_CHECK_EQUAL(3, getMsgSequence(c1.subs.get("q", TIMEOUT)));
 }
 
@@ -285,7 +285,7 @@ QPID_AUTO_TEST_CASE(testTxTransaction) {
 
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 0u);
     // Add new member mid transaction.
-    cluster.add();            
+    cluster.add();
     Client c1(cluster[1], "c1");
 
     // More transactional work
@@ -294,7 +294,7 @@ QPID_AUTO_TEST_CASE(testTxTransaction) {
     commitSession.messageTransfer(arg::content=Message("c", "q"), arg::durable=durableFlag);
     rollbackSession.messageTransfer(arg::content=Message("3", "q"), arg::durable=durableFlag);
 
-    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);    
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 0u);
 
     // Commit/roll back.
     commitSession.txCommit();
@@ -315,7 +315,7 @@ QPID_AUTO_TEST_CASE(testUnacked) {
     ClusterFixture::Args args;
     prepareArgs(args, durableFlag);
     ClusterFixture cluster(1, args, -1);
-    Client c0(cluster[0], "c0"); 
+    Client c0(cluster[0], "c0");
 
     Message m;
 
@@ -352,11 +352,11 @@ QPID_AUTO_TEST_CASE(testUnacked) {
     c0.subs.subscribe(q3, "q3", manualComplete);
     Message m31=q3.get(TIMEOUT);
     BOOST_CHECK_EQUAL(m31.getData(), "31"); // Automatically acquired & accepted but not completed.
-    BOOST_CHECK_EQUAL(c0.session.queueQuery("q3").getMessageCount(), 1u);    
+    BOOST_CHECK_EQUAL(c0.session.queueQuery("q3").getMessageCount(), 1u);
 
     // Add new member while there are unacked messages.
     cluster.add();
-    Client c1(cluster[1], "c1"); 
+    Client c1(cluster[1], "c1");
 
     // Check queue counts
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q1").getMessageCount(), 0u);
@@ -369,7 +369,7 @@ QPID_AUTO_TEST_CASE(testUnacked) {
     BOOST_CHECK_EQUAL(q3.get(TIMEOUT).getData(), "32");
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q3").getMessageCount(), 0u);
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q3").getMessageCount(), 0u);
-    
+
     // Close the original session - unacked messages should be requeued.
     c0.session.close();
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q1").getMessageCount(), 1u);
@@ -420,7 +420,7 @@ QPID_AUTO_TEST_CASE(testUpdateMessageBuilder) {
     // Verify that we update a partially recieved message to a new member.
     ClusterFixture::Args args;
     prepareArgs(args, durableFlag);
-    ClusterFixture cluster(1, args, -1);    
+    ClusterFixture cluster(1, args, -1);
     Client c0(cluster[0], "c0");
     c0.session.queueDeclare("q", arg::durable=durableFlag);
     Sender sender(ConnectionAccess::getImpl(c0.connection), c0.session.getChannel());
@@ -441,13 +441,13 @@ QPID_AUTO_TEST_CASE(testUpdateMessageBuilder) {
 
     // No reliable way to ensure the partial message has arrived
     // before we start the new broker, so we sleep.
-    sys::usleep(2500); 
+    sys::usleep(2500);
     cluster.add();
 
     // Send final 2 frames of message.
     sender.send(AMQContentBody("ab"), false, true, true, false);
     sender.send(AMQContentBody("cd"), false, true, false, true);
-    
+
     // Verify message is enqued correctly on second member.
     Message m;
     Client c1(cluster[1], "c1");
@@ -493,9 +493,9 @@ QPID_AUTO_TEST_CASE(testConnectionKnownHosts) {
 QPID_AUTO_TEST_CASE(testUpdateConsumers) {
     ClusterFixture::Args args;
     prepareArgs(args, durableFlag);
-    ClusterFixture cluster(1, args, -1);  
+    ClusterFixture cluster(1, args, -1);
 
-    Client c0(cluster[0], "c0"); 
+    Client c0(cluster[0], "c0");
     c0.session.queueDeclare("p", arg::durable=durableFlag);
     c0.session.queueDeclare("q", arg::durable=durableFlag);
     c0.subs.subscribe(c0.lq, "q", FlowControl::zero());
@@ -505,9 +505,9 @@ QPID_AUTO_TEST_CASE(testUpdateConsumers) {
 
     // Start new members
     cluster.add();              // Local
-    Client c1(cluster[1], "c1"); 
+    Client c1(cluster[1], "c1");
     cluster.add();
-    Client c2(cluster[2], "c2"); 
+    Client c2(cluster[2], "c2");
 
     // Transfer messages
     c0.session.messageTransfer(arg::content=Message("aaa", "q"), arg::durable=durableFlag);
@@ -515,7 +515,7 @@ QPID_AUTO_TEST_CASE(testUpdateConsumers) {
     c0.session.messageTransfer(arg::content=Message("bbb", "p"), arg::durable=durableFlag);
     c0.session.messageTransfer(arg::content=Message("ccc", "p"), arg::durable=durableFlag);
 
-    // Activate the subscription, ensure message removed on all queues. 
+    // Activate the subscription, ensure message removed on all queues.
     c0.subs.setFlowControl("q", FlowControl::unlimited());
     Message m;
     BOOST_CHECK(c0.lq.get(m, TIMEOUT));
@@ -533,7 +533,7 @@ QPID_AUTO_TEST_CASE(testUpdateConsumers) {
 
     BOOST_CHECK(c0.subs.get(m, "p", TIMEOUT));
     BOOST_CHECK_EQUAL(m.getData(), "ccc");
-    
+
     // Kill the subscribing member, ensure further messages are not removed.
     cluster.killWithSilencer(0,c0.connection,9);
     BOOST_REQUIRE_EQUAL(knownBrokerPorts(c1.connection, 2).size(), 2u);
@@ -597,7 +597,7 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
     ClusterFixture cluster(3, args, -1);
     Client c0(cluster[0]);
     BOOST_CHECK(c0.session.queueQuery("q").getQueue().empty());
-    BOOST_CHECK(c0.session.exchangeQuery("ex").getType().empty()); 
+    BOOST_CHECK(c0.session.exchangeQuery("ex").getType().empty());
     c0.session.queueDeclare("q", arg::durable=durableFlag);
     c0.session.exchangeDeclare("ex", arg::type="direct");
     c0.session.close();
@@ -608,7 +608,7 @@ QPID_AUTO_TEST_CASE(testWiringReplication) {
         Client c(cluster[i]);
         BOOST_CHECK_EQUAL("q", c.session.queueQuery("q").getQueue());
         BOOST_CHECK_EQUAL("direct", c.session.exchangeQuery("ex").getType());
-    }    
+    }
 }
 
 QPID_AUTO_TEST_CASE(testMessageEnqueue) {
@@ -645,7 +645,7 @@ QPID_AUTO_TEST_CASE(testMessageDequeue) {
     Client c1(cluster[1], "c1");
     BOOST_CHECK(c1.subs.get(msg, "q"));
     BOOST_CHECK_EQUAL("foo", msg.getData());
-    
+
     Client c2(cluster[2], "c2");
     BOOST_CHECK(c1.subs.get(msg, "q"));
     BOOST_CHECK_EQUAL("bar", msg.getData());
@@ -686,7 +686,7 @@ QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
     BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
 }
 
-QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover) 
+QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
 {
     struct Sender : FailoverManager::Command
     {
@@ -712,7 +712,7 @@ QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
 
         Receiver(FailoverManager& m, const std::string& q, const std::string& c) : mgr(m), queue(q), expectedContent(c), ready(false) {}
 
-        void received(Message& message) 
+        void received(Message& message)
         {
             BOOST_CHECK_EQUAL(expectedContent, message.getData());
             subscription.cancel();
