@@ -230,9 +230,9 @@ endif (BUILD_XML)
 # Build the ACL plugin
 set (acl_default ON)
 # Like this until we fix exporting symbols from the generated management code
-if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set(acl_default OFF)
-endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 option(BUILD_ACL "Build ACL enforcement broker plugin" ${acl_default})
 if (BUILD_ACL)
   set (acl_SOURCES
