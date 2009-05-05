@@ -22,13 +22,9 @@
  *
  */
 
-#include <Rpc.h>
 #include "qpid/CommonImportExport.h"
-
-#ifdef uuid_t   /*  Done in rpcdce.h */
-#  undef uuid_t
-#endif
 #include <qpid/sys/IntegerTypes.h>
+
 namespace qpid { namespace sys { const size_t UuidSize = 16; }}
 typedef uint8_t uuid_t[qpid::sys::UuidSize];
 

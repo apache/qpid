@@ -19,6 +19,11 @@
  *
  */
 
+#include <Rpc.h>
+#ifdef uuid_t   /*  Done in rpcdce.h */
+#  undef uuid_t
+#endif
+
 #include "uuid.h"
 
 #include <string.h>
