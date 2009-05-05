@@ -75,6 +75,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qmfagentd.lib"
 				OutputFile="$(OutDir)\qmf_agent.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -158,7 +159,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommon.lib qpidclient.lib qmfconsole.lib"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qmfagent.lib"
 				OutputFile="$(OutDir)\ping.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -248,7 +249,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qmfconsoled.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib qmfagentd.lib"
 				OutputFile="$(OutDir)\ping.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -327,7 +328,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/machine:AMD64"
-				AdditionalDependencies="qpidcommon.lib qpidclient.lib qmfconsole.lib"
+				AdditionalDependencies="qpidcommon.lib qpidclient.lib qmfagent.lib"
 				OutputFile="$(OutDir)\ping.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
