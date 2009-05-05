@@ -28,6 +28,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pub_sub_topic_listener", "p
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pub_sub_topic_publisher", "pub-sub\pub_sub_topic_publisher.vcproj", "{05158653-FECA-1BAD-A430-FD5330E23A2D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qmf_agent", "qmf-agent\qmf_agent.vcproj", "{771767FB-FECA-1BAD-2E13-3FFA2B8669C3}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qmf_console_console", "qmf-console\qmf_console_console.vcproj", "{490473E1-FECA-1BAD-2E13-3FFA2B8669C3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qmf_console_ping", "qmf-console\qmf_console_ping.vcproj", "{771767FB-FECA-1BAD-2E13-3FFA2B8669C3}"
