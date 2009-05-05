@@ -228,20 +228,28 @@ if (BUILD_XML)
 endif (BUILD_XML)
 
 # Build the ACL plugin
-set (acl_SOURCES
-     qpid/acl/Acl.cpp
-     qpid/acl/Acl.h
-     qpid/acl/AclData.cpp
-     qpid/acl/AclData.h
-     qpid/acl/AclPlugin.cpp
-     qpid/acl/AclReader.cpp
-     qpid/acl/AclReader.h
-    )
+set (acl_default ON)
+# Like this until we fix exporting symbols from the generated management code
+if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set(acl_default OFF)
+endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+option(BUILD_ACL "Build ACL enforcement broker plugin" ${acl_default})
+if (BUILD_ACL)
+  set (acl_SOURCES
+       qpid/acl/Acl.cpp
+       qpid/acl/Acl.h
+       qpid/acl/AclData.cpp
+       qpid/acl/AclData.h
+       qpid/acl/AclPlugin.cpp
+       qpid/acl/AclReader.cpp
+       qpid/acl/AclReader.h
+      )
   add_library (acl MODULE ${acl_SOURCES})
   target_link_libraries (acl qpidbroker)
   set_target_properties (acl PROPERTIES
                          PREFIX ""
                          LINK_FLAGS -Wl,--no-undefined)
+endif (BUILD_ACL)
 
 # Check for optional cluster support requirements
 include (cluster.cmake)

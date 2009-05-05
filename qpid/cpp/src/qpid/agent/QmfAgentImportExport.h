@@ -20,7 +20,7 @@
  * under the License.
  */
 
-#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
+#if defined(WIN32) && !defined(QPID_DECLARE_STATIC) && !defined(qpidbroker_EXPORTS)
 #if defined(QMF_AGENT_EXPORT) || defined (qmfagent_EXPORTS)
 #define QMF_AGENT_EXTERN __declspec(dllexport)
 #else
