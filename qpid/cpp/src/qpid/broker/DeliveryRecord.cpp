@@ -48,29 +48,13 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                   credit(msg.payload ? msg.payload->getRequiredCredit() : _credit)
 {}
 
-void DeliveryRecord::setEnded()
+bool DeliveryRecord::setEnded()
 {
     ended = true;
     //reset msg pointer, don't need to hold on to it anymore
     msg.payload = boost::intrusive_ptr<Message>();
-
     QPID_LOG(debug, "DeliveryRecord::setEnded() id=" << id);
-}
-
-bool DeliveryRecord::matches(DeliveryId tag) const{
-    return id == tag;
-}
-
-bool DeliveryRecord::matchOrAfter(DeliveryId tag) const{
-    return matches(tag) || after(tag);
-}
-
-bool DeliveryRecord::after(DeliveryId tag) const{
-    return id > tag;
-}
-
-bool DeliveryRecord::coveredBy(const framing::SequenceSet* const range) const{
-    return range->contains(id);
+    return isRedundant();
 }
 
 void DeliveryRecord::redeliver(SemanticState* const session) {
@@ -120,17 +104,17 @@ void DeliveryRecord::release(bool setRedelivered)
     }
 }
 
-void DeliveryRecord::complete() 
-{
+void DeliveryRecord::complete()  {
     completed = true; 
 }
 
-void DeliveryRecord::accept(TransactionContext* ctxt) {
+bool DeliveryRecord::accept(TransactionContext* ctxt) {
     if (acquired && !ended) {
         queue->dequeue(ctxt, msg);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
     }
+    return isRedundant();
 }
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
@@ -179,18 +163,10 @@ void DeliveryRecord::cancel(const std::string& cancelledTag)
 
 AckRange DeliveryRecord::findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last)
 {
-    DeliveryRecords::iterator start = find_if(records.begin(), records.end(), boost::bind(&DeliveryRecord::matchOrAfter, _1, first));
-    DeliveryRecords::iterator end = start;
-     
-    if (start != records.end()) {
-        if (first == last) {
-            //just acked single element (move end past it)
-            ++end;
-        } else {
-            //need to find end (position it just after the last record in range)
-            end = find_if(start, records.end(), boost::bind(&DeliveryRecord::after, _1, last));
-        }
-    }
+    DeliveryRecords::iterator start = lower_bound(records.begin(), records.end(), first);
+    // Find end - position it just after the last record in range
+    DeliveryRecords::iterator end = lower_bound(records.begin(), records.end(), last);
+    if (end != records.end() && end->getId() == last) ++end;
     return AckRange(start, end);
 }
 
@@ -206,9 +182,5 @@ std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r)
     return out;
 }
 
-bool operator<(const DeliveryRecord& a, const DeliveryRecord& b)
-{
-    return a.id < b.id;
-}
 
 }}

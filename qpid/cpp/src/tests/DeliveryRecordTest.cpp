@@ -53,7 +53,7 @@ QPID_AUTO_TEST_CASE(testSort)
 
     SequenceNumber expected(0);
     for (list<DeliveryRecord>::iterator i = records.begin(); i != records.end(); i++) {
-        BOOST_CHECK(i->matches(++expected));
+        BOOST_CHECK(i->getId() == ++expected);
     }
 }
 
