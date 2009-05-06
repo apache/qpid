@@ -28,7 +28,6 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/log/Statement.h"
 
@@ -39,6 +38,7 @@
 #include "qpid/broker/SessionState.h"
 #include "qpid/client/ConnectionSettings.h"
 
+#include <boost/shared_ptr.hpp>
 #include <boost/utility/in_place_factory.hpp>
 #include <boost/scoped_ptr.hpp>
 

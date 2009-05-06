@@ -28,8 +28,8 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
-#include "qpid/shared_ptr.h"
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
 

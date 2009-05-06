@@ -28,8 +28,6 @@
 
 #include "qpid/SessionId.h"
 #include "qpid/SessionState.h"
-#include "boost/shared_ptr.hpp"
-#include "boost/weak_ptr.hpp"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/SequenceNumber.h"
@@ -39,6 +37,8 @@
 #include "qpid/sys/StateMonitor.h"
 #include "qpid/sys/ExceptionHolder.h"
 
+#include <boost/weak_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 
 namespace qpid {
@@ -65,7 +65,7 @@ class SessionImpl : public framing::FrameHandler::InOutHandler,
                     private framing::AMQP_ClientOperations::MessageHandler
 {
 public:
-    SessionImpl(const std::string& name, shared_ptr<ConnectionImpl>);
+    SessionImpl(const std::string& name, boost::shared_ptr<ConnectionImpl>);
     ~SessionImpl();
 
 
@@ -79,7 +79,7 @@ public:
 
     void open(uint32_t detachedLifetime);
     void close();
-    void resume(shared_ptr<ConnectionImpl>);
+    void resume(boost::shared_ptr<ConnectionImpl>);
     void suspend();
 
     void assertOpen() const;
@@ -118,7 +118,7 @@ public:
     /** 
      * get the Connection associated with this connection
      */
-    shared_ptr<ConnectionImpl> getConnection();
+    boost::shared_ptr<ConnectionImpl> getConnection();
 
 private:
     enum State {
@@ -209,7 +209,7 @@ private:
     const uint64_t maxFrameSize;
     const SessionId id;
 
-    shared_ptr<ConnectionImpl> connectionShared;
+    boost::shared_ptr<ConnectionImpl> connectionShared;
     boost::weak_ptr<ConnectionImpl> connectionWeak;
     bool weakPtr;
 

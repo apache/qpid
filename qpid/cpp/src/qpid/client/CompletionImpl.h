@@ -24,6 +24,7 @@
 
 #include "qpid/RefCounted.h"
 #include "Future.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace client {
@@ -33,7 +34,7 @@ class CompletionImpl : public RefCounted
 {
 public:
     CompletionImpl() {}
-    CompletionImpl(Future f, shared_ptr<SessionImpl> s) : future(f), session(s) {}
+    CompletionImpl(Future f, boost::shared_ptr<SessionImpl> s) : future(f), session(s) {}
 
     bool isComplete() { return future.isComplete(*session); }
     void wait() { future.wait(*session); }
@@ -41,7 +42,7 @@ public:
 
 protected:
     Future future;
-    shared_ptr<SessionImpl> session;
+    boost::shared_ptr<SessionImpl> session;
 };
 
 }} // namespace qpid::client

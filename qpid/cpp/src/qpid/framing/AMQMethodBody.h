@@ -24,10 +24,10 @@
 #include "amqp_types.h"
 #include "AMQBody.h"
 #include "qpid/framing/ProtocolVersion.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/CommonImportExport.h"
-#include <ostream>
 
+#include <boost/shared_ptr.hpp>
+#include <ostream>
 #include <assert.h>
 
 namespace qpid {

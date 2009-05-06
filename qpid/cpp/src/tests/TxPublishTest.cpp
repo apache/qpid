@@ -63,7 +63,7 @@ QPID_AUTO_TEST_CASE(testPrepare)
 {
     TxPublishTest t;
 
-    intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(t.msg);
+    intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(t.msg);
     //ensure messages are enqueued in store
     t.op.prepare(0);
     BOOST_CHECK_EQUAL((size_t) 2, t.store.enqueued.size());
@@ -71,7 +71,7 @@ QPID_AUTO_TEST_CASE(testPrepare)
     BOOST_CHECK_EQUAL(pmsg, t.store.enqueued[0].second);
     BOOST_CHECK_EQUAL(string("queue2"), t.store.enqueued[1].first);
     BOOST_CHECK_EQUAL(pmsg, t.store.enqueued[1].second);
-    BOOST_CHECK_EQUAL( true, ( static_pointer_cast<PersistableMessage>(t.msg))->isEnqueueComplete());
+    BOOST_CHECK_EQUAL( true, ( boost::static_pointer_cast<PersistableMessage>(t.msg))->isEnqueueComplete());
 }
 
 QPID_AUTO_TEST_CASE(testCommit)
@@ -84,7 +84,7 @@ QPID_AUTO_TEST_CASE(testCommit)
     BOOST_CHECK_EQUAL((uint32_t) 1, t.queue1->getMessageCount());
     intrusive_ptr<Message> msg_dequeue = t.queue1->get().payload;
 
-    BOOST_CHECK_EQUAL( true, (static_pointer_cast<PersistableMessage>(msg_dequeue))->isEnqueueComplete());
+    BOOST_CHECK_EQUAL( true, (boost::static_pointer_cast<PersistableMessage>(msg_dequeue))->isEnqueueComplete());
     BOOST_CHECK_EQUAL(t.msg, msg_dequeue);
 
     BOOST_CHECK_EQUAL((uint32_t) 1, t.queue2->getMessageCount());

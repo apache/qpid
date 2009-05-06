@@ -237,7 +237,7 @@ Broker::Broker(const Broker::Options& conf) :
         Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get (amq_direct);
         ((ManagementBroker*) managementAgent)->setExchange (mExchange, dExchange);
-        dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent
+        boost::dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent
             ((ManagementBroker*) managementAgent);
     }
     else

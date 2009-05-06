@@ -46,10 +46,10 @@
 #include "qpid/management/IdAllocator.h"
 #include "qpid/management/ManagementBroker.h"
 #include "qpid/memory.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/LatencyTracker.h"
 
+#include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/cast.hpp>
 #include <boost/current_function.hpp>

@@ -27,7 +27,6 @@
 #include "qpid/client/Message.h"
 #include "qpid/client/Completion.h"
 #include "qpid/client/TypedResult.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/client/ClientImportExport.h"
 #include <string>
 

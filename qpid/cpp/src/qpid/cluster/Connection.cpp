@@ -308,14 +308,14 @@ bool Connection::isUpdated() const {
 }
 
 
-shared_ptr<broker::Queue> Connection::findQueue(const std::string& qname) {
-    shared_ptr<broker::Queue> queue = cluster.getBroker().getQueues().find(qname);
+boost::shared_ptr<broker::Queue> Connection::findQueue(const std::string& qname) {
+    boost::shared_ptr<broker::Queue> queue = cluster.getBroker().getQueues().find(qname);
     if (!queue) throw Exception(QPID_MSG(cluster << " can't find queue " << qname));
     return queue;
 }
 
 broker::QueuedMessage Connection::getUpdateMessage() {
-    shared_ptr<broker::Queue> updateq = findQueue(UpdateClient::UPDATE);
+    boost::shared_ptr<broker::Queue> updateq = findQueue(UpdateClient::UPDATE);
     assert(!updateq->isDurable());
     broker::QueuedMessage m = updateq->get();
     if (!m.payload) throw Exception(QPID_MSG(cluster << " empty update queue"));
@@ -359,7 +359,7 @@ void Connection::deliveryRecord(const string& qname,
 }
 
 void Connection::queuePosition(const string& qname, const SequenceNumber& position) {
-        shared_ptr<broker::Queue> q = cluster.getBroker().getQueues().find(qname);
+        boost::shared_ptr<broker::Queue> q = cluster.getBroker().getQueues().find(qname);
         if (!q) throw InvalidArgumentException(QPID_MSG("Invalid queue name " << qname));
         q->setPosition(position);
     }
@@ -377,18 +377,21 @@ std::ostream& operator<<(std::ostream& o, const Connection& c) {
 }
 
 void Connection::txStart() {
-    txBuffer = make_shared_ptr(new broker::TxBuffer());
+    txBuffer.reset(new broker::TxBuffer());
 }
 void Connection::txAccept(const framing::SequenceSet& acked) {
-    txBuffer->enlist(make_shared_ptr(new broker::TxAccept(acked, semanticState().getUnacked())));
+    txBuffer->enlist(boost::shared_ptr<broker::TxAccept>(
+                         new broker::TxAccept(acked, semanticState().getUnacked())));
 }
 
 void Connection::txDequeue(const std::string& queue) {
-    txBuffer->enlist(make_shared_ptr(new broker::RecoveredDequeue(findQueue(queue), getUpdateMessage().payload)));
+    txBuffer->enlist(boost::shared_ptr<broker::RecoveredDequeue>(
+                         new broker::RecoveredDequeue(findQueue(queue), getUpdateMessage().payload)));
 }
 
 void Connection::txEnqueue(const std::string& queue) {
-    txBuffer->enlist(make_shared_ptr(new broker::RecoveredEnqueue(findQueue(queue), getUpdateMessage().payload)));
+    txBuffer->enlist(boost::shared_ptr<broker::RecoveredEnqueue>(
+                         new broker::RecoveredEnqueue(findQueue(queue), getUpdateMessage().payload)));
 }
 
 void Connection::txPublish(const framing::Array& queues, bool delivered) {

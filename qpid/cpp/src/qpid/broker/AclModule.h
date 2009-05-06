@@ -21,9 +21,8 @@
  */
 
 
-
-#include "qpid/shared_ptr.h"
 #include "qpid/RefCounted.h"
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <set>
 #include <string>

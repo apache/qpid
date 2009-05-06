@@ -23,7 +23,6 @@
 
 
 #include "qpid/acl/AclReader.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/management/Manageable.h"
