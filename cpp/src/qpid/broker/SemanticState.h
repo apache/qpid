@@ -151,7 +151,7 @@ class SemanticState : public sys::OutputTask,
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);
     void checkDtxTimeout();
 
-    void complete(DeliveryRecord&);
+    bool complete(DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void requestDispatch(ConsumerImpl&);

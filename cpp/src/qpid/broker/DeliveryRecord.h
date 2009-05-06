@@ -1,3 +1,6 @@
+#ifndef QPID_BROKER_DELIVERYRECORD_H
+#define QPID_BROKER_DELIVERYRECORD_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,11 +21,9 @@
  * under the License.
  *
  */
-#ifndef _DeliveryRecord_
-#define _DeliveryRecord_
 
 #include <algorithm>
-#include <list>
+#include <deque>
 #include <vector>
 #include <ostream>
 #include "qpid/framing/SequenceSet.h"
@@ -44,15 +45,14 @@ class DeliveryRecord
 {
     QueuedMessage msg;
     mutable Queue::shared_ptr queue;
-    const std::string tag;
+    std::string tag;
     DeliveryId id;
-    bool acquired;
-    bool acceptExpected;
-    bool cancelled;
-
-    bool completed;
-    bool ended;
-    const bool windowing;
+    bool acquired : 1;
+    bool acceptExpected : 1;
+    bool cancelled : 1;
+    bool completed : 1;
+    bool ended : 1;
+    bool windowing : 1;
 
     /**
      * Record required credit on construction as the pointer to the
@@ -61,7 +61,7 @@ class DeliveryRecord
      * to reallocate credit when it is completed (which could happen
      * after that).
      */
-    const uint32_t credit;
+    uint32_t credit;
 
   public:
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
@@ -73,10 +73,7 @@ class DeliveryRecord
                                       uint32_t credit=0       // Only used if msg is empty.
     );
     
-    QPID_BROKER_EXTERN bool matches(DeliveryId tag) const;
-    bool matchOrAfter(DeliveryId tag) const;
-    bool after(DeliveryId tag) const;
-    bool coveredBy(const framing::SequenceSet* const range) const;
+    bool coveredBy(const framing::SequenceSet* const range) const { return range->contains(id); }
     
     void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
@@ -86,8 +83,8 @@ class DeliveryRecord
     void redeliver(SemanticState* const);
     void acquire(DeliveryIds& results);
     void complete();
-    void accept(TransactionContext* ctxt);
-    void setEnded();
+    bool accept(TransactionContext* ctxt); // Returns isRedundant()
+    bool setEnded();            // Returns isRedundant()
     void committed() const;
 
     bool isAcquired() const { return acquired; }
@@ -104,14 +101,18 @@ class DeliveryRecord
     void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
 
-    typedef std::list<DeliveryRecord> DeliveryRecords;
+    typedef std::deque<DeliveryRecord> DeliveryRecords;
     static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
     Queue::shared_ptr getQueue() const { return queue; }
-    friend QPID_BROKER_EXTERN bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
+
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };
+
+inline bool operator<(const DeliveryRecord& a, const DeliveryRecord& b) { return a.getId() < b.getId(); }
+inline bool operator<(const framing::SequenceNumber& a, const DeliveryRecord& b) { return a < b.getId(); }
+inline bool operator<(const DeliveryRecord& a, const framing::SequenceNumber& b) { return a.getId() < b; }
 
 struct AcquireFunctor
 {
@@ -138,4 +139,4 @@ struct AckRange
 }
 
 
-#endif
+#endif  /*!QPID_BROKER_DELIVERYRECORD_H*/
