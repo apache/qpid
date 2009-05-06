@@ -26,6 +26,7 @@
 #include "qpid/client/Session.h"
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/ConnectionSettings.h"
+#include "qpid/framing/ProtocolVersion.h"
 
 namespace qpid {
 

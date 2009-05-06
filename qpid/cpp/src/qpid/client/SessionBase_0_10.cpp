@@ -37,11 +37,6 @@ void SessionBase_0_10::close()
     if (impl) impl->close(); 
 }
 
-Execution& SessionBase_0_10::getExecution()
-{
-    return *impl;
-}
-
 void SessionBase_0_10::flush()
 {
     impl->sendFlush();
@@ -76,7 +71,5 @@ void SessionBase_0_10::resume(Connection c) { impl->resume(c.impl); }
 uint32_t SessionBase_0_10::timeout(uint32_t seconds) { return impl->setTimeout(seconds); }
 
 SessionId SessionBase_0_10::getId() const { return impl->getId(); }
-framing::FrameSet::shared_ptr SessionBase_0_10::get() { return impl->get(); }
-
 
 }} // namespace qpid::client

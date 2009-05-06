@@ -176,8 +176,7 @@ QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
     // Make sure we are still subscribed after resume.
     fix.connection.resume(fix.session);
     fix.session.messageTransfer(arg::content=Message("my-message", "my-queue"));
-    FrameSet::shared_ptr msg = fix.session.get();
-    BOOST_CHECK_EQUAL(string("my-message"), msg->getContent());
+    BOOST_CHECK_EQUAL("my-message", fix.subs.get("my-queue", TIME_SEC).getData());
 }
 
 

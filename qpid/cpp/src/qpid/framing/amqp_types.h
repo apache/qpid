@@ -59,5 +59,8 @@ class SequenceNumberSet;
 class SequenceSet;
 struct Uuid;
 
+// Enum types
+enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
+
 }} // namespace qpid::framing
 #endif

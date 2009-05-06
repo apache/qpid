@@ -26,6 +26,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "qpid/client/Session.h"
+#include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
