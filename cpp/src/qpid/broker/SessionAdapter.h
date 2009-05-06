@@ -102,10 +102,10 @@ class Queue;
                                            const std::string& routingKey,
                                            const framing::FieldTable& arguments);
       private:
-        void checkType(shared_ptr<Exchange> exchange, const std::string& type);
+        void checkType(boost::shared_ptr<Exchange> exchange, const std::string& type);
 
-        void checkAlternate(shared_ptr<Exchange> exchange,
-                            shared_ptr<Exchange> alternate);
+        void checkAlternate(boost::shared_ptr<Exchange> exchange,
+                            boost::shared_ptr<Exchange> alternate);
     };
 
     class QueueHandlerImpl : public QueueHandler,

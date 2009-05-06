@@ -28,7 +28,6 @@
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 
 #include <algorithm>
@@ -37,6 +36,7 @@
 #include <functional>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
 
 using namespace qpid::framing;
 using namespace qpid::sys;
@@ -47,7 +47,7 @@ namespace client {
 
 Connection::Connection() : version(framing::highestProtocolVersion) {}
 
-Connection::~Connection(){ }
+Connection::~Connection() {}
 
 void Connection::open(
     const Url& url,
@@ -119,7 +119,7 @@ void Connection::open(const ConnectionSettings& settings)
     if (isOpen())
         throw Exception(QPID_MSG("Connection::open() was already called"));
 
-    impl = shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
+    impl = boost::shared_ptr<ConnectionImpl>(new ConnectionImpl(version, settings));
     impl->open();
     if ( failureCallback )
         impl->registerFailureCallback ( failureCallback );

@@ -37,6 +37,7 @@
 #include "qpid/sys/IntegerTypes.h"
 
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace { const std::string EMPTY; }
 
@@ -51,7 +52,7 @@ typedef sys::Monitor::ScopedUnlock  UnLock;
 typedef sys::ScopedLock<sys::Semaphore>  Acquire;
 
 
-SessionImpl::SessionImpl(const std::string& name, shared_ptr<ConnectionImpl> conn)
+SessionImpl::SessionImpl(const std::string& name, boost::shared_ptr<ConnectionImpl> conn)
     : state(INACTIVE),
       detachedLifetime(0),
       maxFrameSize(conn->getNegotiatedSettings().maxFrameSize),
@@ -119,7 +120,7 @@ void SessionImpl::close() //user thread
     waitFor(DETACHED);
 }
 
-void SessionImpl::resume(shared_ptr<ConnectionImpl>) // user thread
+void SessionImpl::resume(boost::shared_ptr<ConnectionImpl>) // user thread
 {
     // weakPtr sessions should not be resumed.
     if (weakPtr) return;
@@ -770,7 +771,7 @@ void SessionImpl::setWeakPtr(bool weak) {
         connectionShared = connectionWeak.lock();
 }
 
-shared_ptr<ConnectionImpl> SessionImpl::getConnection()
+boost::shared_ptr<ConnectionImpl> SessionImpl::getConnection()
 {
     return connectionWeak.lock();
 }

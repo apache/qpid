@@ -502,7 +502,6 @@ nobase_include_HEADERS = \
   qpid/InlineVector.h \
   qpid/InlineAllocator.h \
   qpid/memory.h \
-  qpid/shared_ptr.h \
   qpid/Version.h \
   qpid/broker/Broker.h \
   qpid/broker/AclModule.h \

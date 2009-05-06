@@ -146,7 +146,7 @@ void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
         throw CommandInvalidException(QPID_MSG("Session has not been selected for use with dtx"));
     }
     dtxBuffer = DtxBuffer::shared_ptr(new DtxBuffer(xid));
-    txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
+    txBuffer = boost::static_pointer_cast<TxBuffer>(dtxBuffer);
     if (join) {
         mgr.join(xid, dtxBuffer);
     } else {
@@ -214,7 +214,7 @@ void SemanticState::resumeDtx(const std::string& xid)
 
     checkDtxTimeout();
     dtxBuffer->setSuspended(false);
-    txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
+    txBuffer = boost::static_pointer_cast<TxBuffer>(dtxBuffer);
 }
 
 void SemanticState::checkDtxTimeout()

@@ -36,7 +36,6 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/shared_ptr.h"
 #include "AclModule.h"
 
 #include <list>

@@ -21,7 +21,6 @@
  * under the License.
  *
  */
-#include "qpid/shared_ptr.h"
 
 namespace qpid {
 namespace broker {
@@ -71,8 +70,6 @@ struct TxOpConstVisitor
  * under the License.
  *
  */
-#include "qpid/shared_ptr.h"
-
 namespace qpid {
 namespace broker {
 

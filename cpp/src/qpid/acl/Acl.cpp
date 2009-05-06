@@ -22,7 +22,6 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include "qpid/shared_ptr.h"
 #include "qpid/log/Logger.h"
 #include "qmf/org/apache/qpid/acl/Package.h"
 #include "qmf/org/apache/qpid/acl/EventAllow.h"
@@ -32,6 +31,7 @@
 
 #include <map>
 
+#include <boost/shared_ptr.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
 using namespace std;

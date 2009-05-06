@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "qpid/shared_ptr.h"
+#include <boost/shared_ptr.hpp>
 #include <boost/type_traits/remove_reference.hpp>
 #include <assert.h>
 
