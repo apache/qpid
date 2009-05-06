@@ -35,8 +35,6 @@
 namespace qpid {
 namespace framing {
 
-enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
-
 class AMQHeaderBody :  public AMQBody
 {
     template <class T> struct OptProps { boost::optional<T> props; };

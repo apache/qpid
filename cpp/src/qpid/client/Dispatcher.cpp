@@ -20,6 +20,7 @@
  */
 #include "Dispatcher.h"
 #include "SubscriptionImpl.h"
+#include "SessionImpl.h"
 
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -45,9 +46,8 @@ Dispatcher::Dispatcher(const Session& s, const std::string& q)
       autoStop(true),
       failoverHandler(0)
 {
-    queue = q.empty() ? 
-        session.getExecution().getDemux().getDefault() : 
-        session.getExecution().getDemux().get(q); 
+    Demux& demux = SessionBase_0_10Access(session).get()->getDemux();
+    queue = q.empty() ? demux.getDefault() : demux.get(q); 
 }    
 
 void Dispatcher::start()

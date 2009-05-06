@@ -21,11 +21,13 @@
 
 #include "AsyncSession.h"
 #include "SubscriptionImpl.h"
+#include "SessionImpl.h"
 #include "SubscriptionManagerImpl.h"
 #include "MessageImpl.h"
 #include "CompletionImpl.h"
 #include "SubscriptionManager.h"
 #include "SubscriptionSettings.h"
+#include "SessionBase_0_10Access.h"
 #include "PrivateImplRef.h"
 
 namespace qpid {
@@ -153,7 +155,9 @@ void SubscriptionImpl::received(Message& m) {
 
 Demux::QueuePtr SubscriptionImpl::divert()
 {
-    demuxRule = std::auto_ptr<ScopedDivert>(new ScopedDivert(name, manager.getSession().getExecution().getDemux()));
+    Session session(manager.getSession());
+    Demux& demux = SessionBase_0_10Access(session).get()->getDemux();
+    demuxRule = std::auto_ptr<ScopedDivert>(new ScopedDivert(name, demux));
     return demuxRule->getQueue();
 }
 

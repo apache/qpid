@@ -23,11 +23,9 @@
  */
 
 #include "qpid/SessionId.h"
-#include "qpid/client/SessionImpl.h"
 #include "qpid/framing/amqp_structs.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Completion.h"
-#include "qpid/client/Execution.h"
 #include "qpid/client/TypedResult.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/client/ClientImportExport.h"
@@ -37,6 +35,7 @@ namespace qpid {
 namespace client {
 
 class Connection;
+class SessionImpl;
 
 using std::string;
 using framing::Content;
@@ -63,9 +62,6 @@ class SessionBase_0_10 {
     QPID_CLIENT_EXTERN SessionBase_0_10();
     QPID_CLIENT_EXTERN ~SessionBase_0_10();
 
-    /** Get the next message frame-set from the session. */
-    QPID_CLIENT_EXTERN framing::FrameSet::shared_ptr get();
-    
     /** Get the session ID */
     QPID_CLIENT_EXTERN SessionId getId() const;         
 
@@ -97,7 +93,6 @@ class SessionBase_0_10 {
     /** Get the channel associated with this session */
     QPID_CLIENT_EXTERN uint16_t getChannel() const;
 
-    QPID_CLIENT_EXTERN Execution& getExecution();  
     QPID_CLIENT_EXTERN void flush();
     QPID_CLIENT_EXTERN void markCompleted(const framing::SequenceSet& ids, bool notifyPeer);
     QPID_CLIENT_EXTERN void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);

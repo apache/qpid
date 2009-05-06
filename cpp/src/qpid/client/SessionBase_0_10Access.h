@@ -33,7 +33,7 @@ class SessionBase_0_10Access {
   public:
     SessionBase_0_10Access(SessionBase_0_10& sb_) : sb(sb_) {}
     void set(const boost::shared_ptr<SessionImpl>& si) { sb.impl = si; }
-    boost::shared_ptr<SessionImpl> get() { return sb.impl; }
+    boost::shared_ptr<SessionImpl> get() const { return sb.impl; }
   private:
     SessionBase_0_10& sb;
 };
