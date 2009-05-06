@@ -21,7 +21,7 @@
 # Support library for qpid python tests.
 #
 
-import sys, re, unittest, os, random, logging, traceback
+import sys, re, unittest, os, signal, random, logging, traceback
 import qpid.client, qpid.spec, qmf.console
 import Queue
 from fnmatch import fnmatch
