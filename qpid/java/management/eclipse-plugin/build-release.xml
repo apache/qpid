@@ -142,7 +142,7 @@
     </target>    		
 
     <target name="release-bin-gzip" if="release.tar.gz" description="build mc tar.gz archive">
-        <tar destfile="${release.tar.gz}" longfile="gnu">
+        <tar destfile="${release.tar.gz}" longfile="gnu" compression="gzip">
             <tarfileset dir="${release.subdir}" prefix="${release.name}" filemode="755">
                 <include name="qpidmc*"/>
                 <exclude name="qpidmc.ini"/>
@@ -158,8 +158,14 @@
         </tar>
     </target>
 
+    <target name="release-bin-resources" description="copy project resources into module release">
+        <copy todir="${release.subdir}" failonerror="false" flatten="true">
+            <fileset dir="${resources}" excludes="META-INF"/>
+        </copy>
+    </target>
     
-    <target name="release-bin" depends="check,release-bin-prepare,release-bin-rcp-deps,
+    <!-- override imported module.xml release-bin target -->
+    <target name="release-bin" depends="check,release-bin-prepare,release-bin-rcp-deps,release-bin-resources,
         release-bin-qpid-mc-plugin,release-bin-qpidmanagementcommon-plugin,release-bin-jmxremote-plugin,release-bin-zip,release-bin-gzip"/>
     
 </project>
