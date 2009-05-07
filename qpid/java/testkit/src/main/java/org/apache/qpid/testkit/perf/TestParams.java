@@ -64,7 +64,7 @@ public class TestParams
         transientDest = System.getProperty("transDest",transientDest);
         durableDest = System.getProperty("durableDest",durableDest);
 
-        msg_size  = Integer.getInteger("msg_size", 512);
+        msg_size  = Integer.getInteger("msg_size", 1024);
         msg_type = Integer.getInteger("msg_type",1);
         cacheMessage = Boolean.getBoolean("cache_msg");
         disableMessageID = Boolean.getBoolean("disableMessageID");
