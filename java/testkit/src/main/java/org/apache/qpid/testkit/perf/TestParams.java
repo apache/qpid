@@ -34,7 +34,7 @@ public class TestParams
 
     private String durableDest = "durableQueue";
 
-    private int msg_size = 512;
+    private int msg_size = 1024;
 
     private int msg_type = 1;   // not used yet
 
