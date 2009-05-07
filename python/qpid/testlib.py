@@ -435,7 +435,7 @@ class TestBaseCluster(unittest.TestCase):
     """
     Base class for cluster tests. Provides methods for starting and stopping clusters and cluster nodes.
     """
-    _tempDir = os.getenv("TMPDIR")
+    _tempStoreDir = os.getenv("TMP_STORE_DIR")
     _qpidd = os.getenv("QPIDD")
     _storeLib = os.getenv("LIBSTORE")
     _clusterLib = os.getenv("LIBCLUSTER")
@@ -476,14 +476,14 @@ class TestBaseCluster(unittest.TestCase):
     
     def createClusterNode(self, nodeNumber, clusterName):
         """Create a node and add it to the named cluster"""
-        if self._tempDir == None:
-            raise Exception("Environment variable TMPDIR is not set")
+        if self._tempStoreDir == None:
+            raise Exception("Environment variable TMP_STORE_DIR is not set")
         if self._storeLib == None:
             raise Exception("Environment variable LIBSTORE is not set")
         if self._clusterLib == None:
             raise Exception("Environment variable LIBCLUSTER is not set")
         name = "%s-%d" % (clusterName, nodeNumber)
-        dataDir = os.path.join(self._tempDir, "cluster", name)
+        dataDir = os.path.join(self._tempStoreDir, "cluster", name)
         logFile = "%s.log" % dataDir
         args = "--no-module-dir --load-module=%s --load-module=%s --data-dir=%s --cluster-name=%s --auth=no --log-enable=error+ --log-to-file=%s" % \
             (self._storeLib, self._clusterLib, dataDir, clusterName, logFile)
