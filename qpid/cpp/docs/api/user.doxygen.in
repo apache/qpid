@@ -457,7 +457,7 @@ WARN_LOGFILE           = doxygen.log
 # with spaces.
 
 # INPUT      		= ../../src/qpid ../../src/gen/qpid
-INPUT      		= ../../src/qpid/client  ../../src/qpid/framing ../../src/gen/qpid/client . ../../src/gen/qpid/framing
+INPUT      		= ../../src/qpid/client/  ../../src/gen/qpid/client/no_keyword/ ../../src/qpid/framing/  ../../src/gen/qpid/client/ . ../../src/gen/qpid/framing/
 
 
 # If the value of the INPUT tag contains directories, you can use the 
