@@ -88,7 +88,13 @@ class IpAddr:
 class Broker(object):
     def __init__(self, qmf, broker):
         self.broker = broker
-        bobj = qmf.getObjects(_class="broker", _package="org.apache.qpid.broker", _broker=broker)[0]
+
+        agents = qmf.getAgents()
+        for a in agents:
+            if a.getAgentBank() == 0:
+                self.brokerAgent = a
+
+        bobj = qmf.getObjects(_class="broker", _package="org.apache.qpid.broker", _agent=self.brokerAgent)[0]
         self.currentTime = bobj.getTimestamps()[0]
         try:
             self.uptime = bobj.uptime
@@ -100,21 +106,21 @@ class Broker(object):
         self.queues = {}
         package = "org.apache.qpid.broker"
 
-        list = qmf.getObjects(_class="connection", _package=package, _broker=broker)
+        list = qmf.getObjects(_class="connection", _package=package, _agent=self.brokerAgent)
         for conn in list:
             if pattern.match(conn.address):
                 self.connections[conn.getObjectId()] = conn
 
-        list = qmf.getObjects(_class="session", _package=package, _broker=broker)
+        list = qmf.getObjects(_class="session", _package=package, _agent=self.brokerAgent)
         for sess in list:
             if sess.connectionRef in self.connections:
                 self.sessions[sess.getObjectId()] = sess
 
-        list = qmf.getObjects(_class="exchange", _package=package, _broker=broker)
+        list = qmf.getObjects(_class="exchange", _package=package, _agent=self.brokerAgent)
         for exchange in list:
             self.exchanges[exchange.getObjectId()] = exchange
 
-        list = qmf.getObjects(_class="queue", _package=package, _broker=broker)
+        list = qmf.getObjects(_class="queue", _package=package, _agent=self.brokerAgent)
         for queue in list:
             self.queues[queue.getObjectId()] = queue
 
