@@ -28,7 +28,7 @@ enable_testing()
 # set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Emulate "make check" behavior of the autoconf world.
-add_custom_target(check COMMAND ${CMAKE_TEST_COMMAND})
+add_custom_target(check ctest -V)
 
 add_subdirectory(managementgen)
 # add_subdirectory(etc)
