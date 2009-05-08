@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,12 +36,12 @@ const std::string nullxid = "";
 
 class SimpleDummyCtxt : public TransactionContext {};
 
-class DummyCtxt : public TPCTransactionContext 
+class DummyCtxt : public TPCTransactionContext
 {
     const std::string xid;
 public:
     DummyCtxt(const std::string& _xid) : xid(_xid) {}
-    static std::string getXid(TransactionContext& ctxt) 
+    static std::string getXid(TransactionContext& ctxt)
     {
         DummyCtxt* c(dynamic_cast<DummyCtxt*>(&ctxt));
         return c ? c->xid : nullxid;
@@ -54,22 +54,21 @@ NullMessageStore::NullMessageStore() : nextPersistenceId(1) {
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
+void NullMessageStore::discardInit(const bool /*pushDownStoreFiles*/) {}
+
 void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable& /*args*/)
 {
     queue.setPersistenceId(nextPersistenceId++);
 }
 
-void NullMessageStore::destroy(PersistableQueue&)
-{
-}
+void NullMessageStore::destroy(PersistableQueue&) {}
 
 void NullMessageStore::create(const PersistableExchange& exchange, const framing::FieldTable& /*args*/)
 {
     exchange.setPersistenceId(nextPersistenceId++);
 }
 
-void NullMessageStore::destroy(const PersistableExchange& )
-{}
+void NullMessageStore::destroy(const PersistableExchange& ) {}
 
 void NullMessageStore::bind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&){}
 
@@ -92,7 +91,7 @@ void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessag
 
 void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&,
                                    const intrusive_ptr<const PersistableMessage>&,
-                                   string&, uint64_t, uint32_t) 
+                                   string&, uint64_t, uint32_t)
 {
     throw qpid::framing::InternalErrorException("Can't load content; persistence not enabled");
 }
@@ -101,7 +100,7 @@ void NullMessageStore::enqueue(TransactionContext*,
                                const intrusive_ptr<PersistableMessage>& msg,
                                const PersistableQueue&)
 {
-    msg->enqueueComplete(); 
+    msg->enqueueComplete();
 }
 
 void NullMessageStore::dequeue(TransactionContext*,

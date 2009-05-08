@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -114,11 +114,11 @@ Broker::Options::Options(const std::string& name) :
         ("staging-threshold", optValue(stagingThreshold, "N"), "Stages messages over N bytes to disk")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
-        ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"), 
+        ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"),
          "Interval between attempts to purge any expired messages from queues")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
-        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)") 
+        ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)")
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
@@ -176,7 +176,7 @@ Broker::Broker(const Broker::Options& conf) :
             mgmtObject->set_dataDir(dataDir.getPath());
         else
             mgmtObject->clr_dataDir();
-        
+
         managementAgent->addObject(mgmtObject, 0x1000000000000002LL);
 
         // Since there is currently no support for virtual hosts, a placeholder object
@@ -218,12 +218,14 @@ Broker::Broker(const Broker::Options& conf) :
         // The cluster plug-in will setRecovery(false) on all but the first
         // broker to join a cluster.
         if (getRecovery()) {
-            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager, 
+            RecoveryManagerImpl recoverer(queues, exchanges, links, dtxManager,
                                           conf.stagingThreshold);
             store->recover(recoverer);
         }
-        else
-            QPID_LOG(notice, "Recovering from cluster, no recovery from local journal");
+        else {
+            QPID_LOG(notice, "Cluster recovery: recovered journal data discarded and journal files pushed down");
+            store->discardInit(true);
+        }
     }
 
     //ensure standard exchanges exist (done after recovery from store)
@@ -266,11 +268,11 @@ Broker::Broker(const Broker::Options& conf) :
     //initialize known broker urls (TODO: add support for urls for other transports (SSL, RDMA)):
     if (conf.knownHosts.empty()) {
         boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
-        if (factory) { 
+        if (factory) {
             knownBrokers.push_back ( qpid::Url::getIpAddressesUrl ( factory->getPort() ) );
         }
     } else if (conf.knownHosts != knownHostsNone) {
-        knownBrokers.push_back(Url(conf.knownHosts));        
+        knownBrokers.push_back(Url(conf.knownHosts));
     }
 }
 
@@ -284,14 +286,14 @@ void Broker::declareStandardExchange(const std::string& name, const std::string&
 }
 
 
-boost::intrusive_ptr<Broker> Broker::create(int16_t port) 
+boost::intrusive_ptr<Broker> Broker::create(int16_t port)
 {
     Options config;
     config.port=port;
     return create(config);
 }
 
-boost::intrusive_ptr<Broker> Broker::create(const Options& opts) 
+boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
 {
     return boost::intrusive_ptr<Broker>(new Broker(opts));
 }
@@ -398,7 +400,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
 }
 
 boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string& name) const {
-    ProtocolFactoryMap::const_iterator i 
+    ProtocolFactoryMap::const_iterator i
         = name.empty() ? protocolFactories.begin() : protocolFactories.find(name);
     if (i == protocolFactories.end()) return boost::shared_ptr<ProtocolFactory>();
     else return i->second;
@@ -406,7 +408,7 @@ boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string&
 
 uint16_t Broker::getPort(const std::string& name) const  {
     boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(name);
-    if (factory) { 
+    if (factory) {
         return factory->getPort();
     } else {
         throw NoSuchTransportException(QPID_MSG("No such transport: '" << name << "'"));
@@ -443,8 +445,8 @@ void Broker::connect(
     connect(addr->host, addr->port, TCP_TRANSPORT, failed, f);
 }
 
-uint32_t Broker::queueMoveMessages( 
-     const std::string& srcQueue, 
+uint32_t Broker::queueMoveMessages(
+     const std::string& srcQueue,
      const std::string& destQueue,
      uint32_t  qty)
 {
@@ -461,7 +463,7 @@ uint32_t Broker::queueMoveMessages(
 
 boost::shared_ptr<sys::Poller> Broker::getPoller() { return poller; }
 
-std::vector<Url> 
+std::vector<Url>
 Broker::getKnownBrokersImpl()
 {
     return knownBrokers;
