@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,6 +41,11 @@ MessageStoreModule::~MessageStoreModule()
 
 bool MessageStoreModule::init(const Options*) { return true; }
 
+void MessageStoreModule::discardInit(const bool pushDownStoreFiles)
+{
+    TRANSFER_EXCEPTION(store->discardInit(pushDownStoreFiles));
+}
+
 void MessageStoreModule::create(PersistableQueue& queue, const FieldTable& args)
 {
     TRANSFER_EXCEPTION(store->create(queue, args));
@@ -61,13 +66,13 @@ void MessageStoreModule::destroy(const PersistableExchange& exchange)
     TRANSFER_EXCEPTION(store->destroy(exchange));
 }
 
-void MessageStoreModule::bind(const PersistableExchange& e, const PersistableQueue& q, 
+void MessageStoreModule::bind(const PersistableExchange& e, const PersistableQueue& q,
                               const std::string& k, const framing::FieldTable& a)
 {
     TRANSFER_EXCEPTION(store->bind(e, q, k, a));
 }
 
-void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQueue& q, 
+void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQueue& q,
                                 const std::string& k, const framing::FieldTable& a)
 {
     TRANSFER_EXCEPTION(store->unbind(e, q, k, a));
@@ -105,7 +110,7 @@ void MessageStoreModule::appendContent(const intrusive_ptr<const PersistableMess
 }
 
 void MessageStoreModule::loadContent(
-    const qpid::broker::PersistableQueue& queue, 
+    const qpid::broker::PersistableQueue& queue,
     const intrusive_ptr<const PersistableMessage>& msg,
     string& data, uint64_t offset, uint32_t length)
 {

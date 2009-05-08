@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,12 +46,24 @@ class MessageStore : public TransactionalStore, public Recoverable {
   public:
 
     /**
-     * init the store, call before any other call. If not called, store 
+     * init the store, call before any other call. If not called, store
      * is free to pick any defaults
-     * 
+     *
      * @param options Options object provided by concrete store plug in.
      */
     virtual bool init(const Options* options) = 0;
+
+    /**
+     * If called after init() but before recovery, will discard the database
+     * and reinitialize using an empty store dir. If the parameter pushDownStoreFiles
+     * is true, the content of the store dir will be moved to a backup dir inside the
+     * store dir. This is used when cluster nodes recover and must get thier content
+     * from a cluster sync rather than directly fromt the store.
+     *
+     * @param pushDownStoreFiles If true, will move content of the store dir into a
+     *                           subdir, leaving the store dir otherwise empty.
+     */
+    virtual void discardInit(const bool pushDownStoreFiles = false) = 0;
 
     /**
      * Record the existence of a durable queue
@@ -62,7 +74,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
      * Destroy a durable queue
      */
     virtual void destroy(PersistableQueue& queue) = 0;
-    
+
     /**
      * Record the existence of a durable exchange
      */
@@ -72,17 +84,17 @@ class MessageStore : public TransactionalStore, public Recoverable {
      * Destroy a durable exchange
      */
     virtual void destroy(const PersistableExchange& exchange) = 0;
-    
+
     /**
      * Record a binding
      */
-    virtual void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+    virtual void bind(const PersistableExchange& exchange, const PersistableQueue& queue,
                       const std::string& key, const framing::FieldTable& args) = 0;
 
     /**
      * Forget a binding
      */
-    virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+    virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue,
                         const std::string& key, const framing::FieldTable& args) = 0;
 
     /**
@@ -102,10 +114,10 @@ class MessageStore : public TransactionalStore, public Recoverable {
      * point). If the message has not yet been stored it will
      * store the headers as well as any content passed in. A
      * persistence id will be set on the message which can be
-     * used to load the content or to append to it. 
+     * used to load the content or to append to it.
      */
     virtual void stage(const boost::intrusive_ptr<PersistableMessage>& msg) = 0;
-            
+
     /**
      * Destroys a previously staged message. This only needs
      * to be called if the message is never enqueued. (Once
@@ -119,7 +131,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
      */
     virtual void appendContent(const boost::intrusive_ptr<const PersistableMessage>& msg,
                                const std::string& data) = 0;
-    
+
     /**
      * Loads (a section) of content data for the specified
      * message (previously stored through a call to stage or
@@ -128,18 +140,18 @@ class MessageStore : public TransactionalStore, public Recoverable {
      * content should be loaded, not the headers or related
      * meta-data).
      */
-    virtual void loadContent(const qpid::broker::PersistableQueue& queue, 
+    virtual void loadContent(const qpid::broker::PersistableQueue& queue,
                              const boost::intrusive_ptr<const PersistableMessage>& msg,
                              std::string& data, uint64_t offset, uint32_t length) = 0;
-    
+
     /**
      * Enqueues a message, storing the message if it has not
      * been previously stored and recording that the given
-     * message is on the given queue. 
+     * message is on the given queue.
      *
      * Note: that this is async so the return of the function does
      * not mean the opperation is complete.
-     * 
+     *
      * @param msg the message to enqueue
      * @param queue the name of the queue onto which it is to be enqueued
      * @param xid (a pointer to) an identifier of the
@@ -149,7 +161,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
     virtual void enqueue(TransactionContext* ctxt,
                          const boost::intrusive_ptr<PersistableMessage>& msg,
                          const PersistableQueue& queue) = 0;
-    
+
     /**
      * Dequeues a message, recording that the given message is
      * no longer on the given queue and deleting the message
@@ -157,7 +169,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
      *
      * Note: that this is async so the return of the function does
      * not mean the opperation is complete.
-     * 
+     *
      * @param msg the message to dequeue
      * @param queue the name of the queue from which it is to be dequeued
      * @param xid (a pointer to) an identifier of the
@@ -173,22 +185,22 @@ class MessageStore : public TransactionalStore, public Recoverable {
      *
      * Note: that this is async so the return of the function does
      * not mean the opperation is complete.
-     * 
+     *
      * @param queue the name of the queue from which it is to be dequeued
      */
     virtual void flush(const qpid::broker::PersistableQueue& queue)=0;
 
     /**
      * Returns the number of outstanding AIO's for a given queue
-     * 
-     * If 0, than all the enqueue / dequeues have been stored 
+     *
+     * If 0, than all the enqueue / dequeues have been stored
      * to disk
      *
      * @param queue the name of the queue to check for outstanding AIO
      */
     virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue) = 0;
 
-    
+
     virtual ~MessageStore(){}
 };
 

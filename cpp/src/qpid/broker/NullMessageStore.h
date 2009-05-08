@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,6 +42,7 @@ class NullMessageStore : public MessageStore
     QPID_BROKER_EXTERN NullMessageStore();
 
     QPID_BROKER_EXTERN virtual bool init(const Options* options);
+    QPID_BROKER_EXTERN virtual void discardInit(const bool pushDownStoreFiles = false);
     QPID_BROKER_EXTERN virtual std::auto_ptr<TransactionContext> begin();
     QPID_BROKER_EXTERN virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     QPID_BROKER_EXTERN virtual void prepare(TPCTransactionContext& txn);
@@ -57,11 +58,11 @@ class NullMessageStore : public MessageStore
     QPID_BROKER_EXTERN virtual void destroy(const PersistableExchange& exchange);
 
     QPID_BROKER_EXTERN virtual void bind(const PersistableExchange& exchange,
-                                         const PersistableQueue& queue, 
+                                         const PersistableQueue& queue,
                                          const std::string& key,
                                          const framing::FieldTable& args);
     QPID_BROKER_EXTERN virtual void unbind(const PersistableExchange& exchange,
-                                           const PersistableQueue& queue, 
+                                           const PersistableQueue& queue,
                                            const std::string& key,
                                            const framing::FieldTable& args);
     QPID_BROKER_EXTERN virtual void create(const PersistableConfig& config);
