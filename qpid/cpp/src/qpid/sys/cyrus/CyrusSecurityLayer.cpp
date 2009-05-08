@@ -46,7 +46,7 @@ size_t CyrusSecurityLayer::decode(const char* input, size_t size)
         size_t inSize = std::min(size - inStart, maxInputSize);
         int result = sasl_decode(conn, input + inStart, inSize, &decrypted, &decryptedSize);
         if (result != SASL_OK) {
-            throw framing::InternalErrorException(QPID_MSG("SASL encode error: " << sasl_errdetail(conn)));
+            throw framing::InternalErrorException(QPID_MSG("SASL decode error: " << sasl_errdetail(conn)));
         }
         inStart += inSize;
         size_t copied = 0;
