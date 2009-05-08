@@ -16,33 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-project(qpidc)
-cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
 
-set (qpidc_version 0.5)
-
-enable_testing()
-# set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# Emulate "make check" behavior of the autoconf world.
-add_custom_target(check ctest -V)
-
-add_subdirectory(managementgen)
-# add_subdirectory(etc)
-add_subdirectory(src)
-# add_subdirectory(docs/api)
-# add_subdirectory(docs/man)
-
-# if (WIN32)
-#    do something Microsoft specific
-# endif (WIN32)
-
-
-install(FILES  LICENSE NOTICE README SSL RELEASE_NOTES DESIGN
-               xml/cluster.xml INSTALL-WINDOWS
-        DESTINATION .)
-
-add_subdirectory(examples)
+add_example(request-response client)
+add_example(request-response server)
