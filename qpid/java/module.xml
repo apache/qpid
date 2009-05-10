@@ -36,7 +36,7 @@
 
   <property file="${project.root}/build.deps"/>
   
-  <property name="qpid.java.root"      location=".."/>
+  <property name="qpid.java.root"      value=".."/>
   <property name="module.build"        location="${build}/${module}"/>
   <property name="module.classes"      location="${module.build}/classes"/>
   <property name="module.instrumented" location="${module.build}/classes-instrumented"/>
