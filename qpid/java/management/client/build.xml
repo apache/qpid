@@ -37,6 +37,8 @@
 		<mkdir dir="${module.release}${file.separator}examples${file.separator}sample_messages"/>
 	
 	</target>
+
+	<target name="release-bin" depends="release-bin-tasks"/>
 	
 	<target name="resources-release" description="copy resources into module release">
 		<copy todir="${module.release}" failonerror="false" flatten="true">

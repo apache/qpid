@@ -32,10 +32,11 @@
     </filtermapper>
   </map>	
 	
-  <echo message="Running ant for module : ${module}" level="info"/>
+  <echo message="Running ant for module : ${module.name}" level="info"/>
 
   <property file="${project.root}/build.deps"/>
-
+  
+  <property name="qpid.java.root"      location=".."/>
   <property name="module.build"        location="${build}/${module}"/>
   <property name="module.classes"      location="${module.build}/classes"/>
   <property name="module.instrumented" location="${module.build}/classes-instrumented"/>
@@ -342,7 +343,7 @@
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
     <copy todir="${module.release}" failonerror="true">
-      <fileset dir="${basedir}${file.separator}.." includes="${module.libs}"/>
+      <fileset dir="${basedir}${file.separator}${qpid.java.root}" includes="${module.libs}"/>
     </copy>
     <!-- Copy the jar for this module -->
     <copy todir="${module.release}/lib" failonerror="true">
@@ -353,7 +354,7 @@
 
   <target name="resources" description="copy resources into build tree">
     <copy todir="${build}" failonerror="false" flatten="true">
-      <fileset dir="${basedir}${file.separator}.." includes="${resources}"/>
+      <fileset dir="${basedir}${qpid.java.root}" includes="${resources}"/>
     </copy>
   </target>
 

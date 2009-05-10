@@ -21,7 +21,11 @@
 <project name="AMQ Client" default="build">
 
   <property name="module.depends" value="common client"/>
+   
+  <property name="qpid.java.root" value="..${file.separator}.." />
 
   <import file="../../module.xml"/>
+
+  <target name="release-bin" depends="release-bin-tasks"/>
 
 </project>

@@ -20,12 +20,17 @@
  -->
 <project name="qpid-cli">
 
-  <property name="module.depends" value="common management/common" />
+  <property name="module.depends" value="common management-common" />
   <property name="module.test.depends" value="common client" />
   <property name="module.src" value="src" />
   <!-- Disable tests as per QPID-1342 -->
   <!--property name="module.test.src" value="test" /-->
+  
+  <property name="qpid.java.root" value="..${file.separator}..${file.separator}.." />
+
 
   <import file="../../../module.xml"/>
+
+  <target name="release-bin" depends="release-bin-tasks"/>
 
 </project>

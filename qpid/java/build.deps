@@ -1,3 +1,21 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 backport-util-concurrent=lib/backport-util-concurrent-2.2.jar
 
 commons-beanutils-core=lib/commons-beanutils-core-1.8.0.jar
@@ -92,7 +110,7 @@ systests.libs=${client.libs} ${test.libs} ${broker.libs}
 perftests.libs=${systests.libs}
 integrationtests.libs=${systests.libs}
 
-client-example.libs=${client.libs}
+client-example.libs=${client.libs} ${slf4j-log4j} ${log4j}
 testkit.libs=${client.libs}
 
 ibm-icu=lib/com.ibm.icu_3.8.1.v20080530.jar
@@ -154,13 +172,12 @@ management-eclipse-plugin.platform-libs=${ecl-equinox-launcher-win32-win32-x86} 
 
 management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${management-eclipse-plugin.platform-libs}
     
-
 management-tools-qpid-cli.libs=${common.libs} ${jline}
 
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
 client.test.libs=${broker.libs} ${test.libs}
-client-example.test.libs=${test.libs}
+client-example.test.libs=${test.libs} 
 tools.test.libs=${client.test.libs}
 testkit.test.libs=${test.libs}
 management-client.test.libs=${muse.libs} ${test.libs} ${log4j} ${javassist} ${geronimo-servlet} ${commons-pool}
