@@ -1,12 +1,21 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl This file is free software; as a special exception the author gives
-dnl unlimited permission to copy and/or distribute it, with or without
-dnl modifications, as long as this notice is preserved.
+dnl Licensed to the Apache Software Foundation (ASF) under one
+dnl or more contributor license agreements.  See the NOTICE file
+dnl distributed with this work for additional information
+dnl regarding copyright ownership.  The ASF licenses this file
+dnl to you under the Apache License, Version 2.0 (the
+dnl "License"); you may not use this file except in compliance
+dnl with the License.  You may obtain a copy of the License at
 dnl
-dnl This program is distributed in the hope that it will be useful, but
-dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
-dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+dnl   http://www.apache.org/licenses/LICENSE-2.0
+dnl
+dnl Unless required by applicable law or agreed to in writing,
+dnl software distributed under the License is distributed on an
+dnl "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+dnl KIND, either express or implied.  See the License for the
+dnl specific language governing permissions and limitations
+dnl under the License.
 dnl
 dnl When updating the name/version number here, also update it in
 dnl src/qpid/Version.h
