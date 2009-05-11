@@ -23,6 +23,7 @@
 #include <boost/shared_ptr.hpp>
 #include <string>
 
+#include "qpid/CommonImportExport.h"
 #include "IntegerTypes.h"
 
 namespace qpid {
@@ -48,8 +49,8 @@ class LockFile : private boost::noncopyable
     bool created;
 
 public:
-    LockFile(const std::string& path_, bool create);
-    ~LockFile();
+    QPID_COMMON_EXTERN LockFile(const std::string& path_, bool create);
+    QPID_COMMON_EXTERN ~LockFile();
 
     /**
      * Read the process ID from the lock file. This method assumes that
@@ -60,7 +61,7 @@ public:
      *
      * @returns The stored process ID. No validity check is done on it.
      */
-    pid_t readPid(void) const;
+    QPID_COMMON_EXTERN pid_t readPid(void) const;
 
     /**
      * Write the current process's ID to the lock file. It's written at
@@ -69,7 +70,7 @@ public:
      *
      * Throws an exception if the write fails.
      */
-    void writePid(void);
+    QPID_COMMON_EXTERN void writePid(void);
 };
  
 }}   /* namespace qpid::sys */
