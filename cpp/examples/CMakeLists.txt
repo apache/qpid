@@ -25,8 +25,14 @@ endif(COMMAND cmake_policy)
 # This will probably need some fiddling to get right for installed kits.
 get_directory_property(QPIDC_TOP PARENT_DIRECTORY)
 include_directories(${QPIDC_TOP}/src ${QPIDC_TOP}/src/gen)
+
+# Shouldn't need this... but there are still client header inclusions of Boost.
 include_directories( ${Boost_INCLUDE_DIR} )
 link_directories( ${Boost_LIBRARY_DIRS} )
+
+if (MSVC)
+  add_definitions( /D "NOMINMAX" /D "WIN32_LEAN_AND_MEAN" )
+endif (MSVC)
 
 # There are numerous duplicate names within the examples. Since all target
 # names must be unique, define a macro to prepend a prefix and manage the

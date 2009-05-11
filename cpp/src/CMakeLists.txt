@@ -143,7 +143,7 @@ endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 find_package(Boost 1.33 REQUIRED
-             COMPONENTS date_time program_options thread unit_test_framework)
+             COMPONENTS date_time program_options regex thread unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
@@ -222,9 +222,11 @@ if (BUILD_XML)
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
   target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
-  set_target_properties (xml PROPERTIES
-                         PREFIX ""
-                         LINK_FLAGS -Wl,--no-undefined)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties (xml PROPERTIES
+                           PREFIX ""
+                           LINK_FLAGS -Wl,--no-undefined)
+  endif (CMAKE_COMPILER_IS_GNUCXX)
 endif (BUILD_XML)
 
 # Build the ACL plugin
@@ -246,9 +248,11 @@ if (BUILD_ACL)
       )
   add_library (acl MODULE ${acl_SOURCES})
   target_link_libraries (acl qpidbroker)
-  set_target_properties (acl PROPERTIES
-                         PREFIX ""
-                         LINK_FLAGS -Wl,--no-undefined)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties (acl PROPERTIES
+                           PREFIX ""
+                           LINK_FLAGS -Wl,--no-undefined)
+  endif (CMAKE_COMPILER_IS_GNUCXX)
 endif (BUILD_ACL)
 
 # Check for optional cluster support requirements
