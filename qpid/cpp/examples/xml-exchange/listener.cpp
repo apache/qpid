@@ -48,7 +48,6 @@
 #include <qpid/client/Message.h>
 #include <qpid/client/SubscriptionManager.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 

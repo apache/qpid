@@ -179,10 +179,12 @@ target_link_libraries (header_test qpidclient)
 #header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 add_dependencies (check header_test)
 
-add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp)
-target_link_libraries (failover_soak qpidclient)
-#failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
-add_dependencies (check failover_soak)
+if (BUILD_CLUSTER)
+  add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp)
+  target_link_libraries (failover_soak qpidclient)
+  #failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
+  add_dependencies (check failover_soak)
+endif (BUILD_CLUSTER)
 
 add_executable (declare_queues declare_queues.cpp)
 target_link_libraries (declare_queues qpidclient)

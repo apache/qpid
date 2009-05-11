@@ -130,7 +130,7 @@ protected:
     QPID_COMMON_EXTERN void writeTimestamps(qpid::framing::Buffer& buf);
 
   public:
-    static int maxThreads;
+    QPID_COMMON_EXTERN static int maxThreads;
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
     ManagementObject(Manageable* _core) :
