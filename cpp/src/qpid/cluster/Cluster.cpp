@@ -172,6 +172,7 @@ void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
 // Called by Connection::deliverClose() in deliverFrameQueue thread.
 void Cluster::erase(const ConnectionId& id) {
     connections.erase(id);
+    decoder.erase(id);
 }
 
 std::vector<string> Cluster::getIds() const {

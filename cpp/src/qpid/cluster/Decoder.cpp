@@ -29,6 +29,7 @@ namespace qpid {
 namespace cluster {
 
 void Decoder::decode(const EventHeader& eh, const char* data) {
+    sys::Mutex::ScopedLock l(lock);
     assert(eh.getType() == DATA); // Only handle connection data events.
     const char* cp = static_cast<const char*>(data);
     framing::Buffer buf(const_cast<char*>(cp), eh.getSize());
@@ -36,26 +37,24 @@ void Decoder::decode(const EventHeader& eh, const char* data) {
     if (decoder.decode(buf)) {  // Decoded a frame
         framing::AMQFrame frame(decoder.getFrame());
         while (decoder.decode(buf)) {
-            process(EventFrame(eh, frame));
+            callback(EventFrame(eh, frame));
             frame = decoder.getFrame();
         }
         // Set read-credit on the last frame ending in this event.
         // Credit will be given when this frame is processed.
-        process(EventFrame(eh, frame, 1)); 
+        callback(EventFrame(eh, frame, 1)); 
     }
     else {
         // We must give 1 unit read credit per event.
         // This event does not complete any frames so 
         // send an empty frame with the read credit.
-        process(EventFrame(eh, framing::AMQFrame(), 1));
+        callback(EventFrame(eh, framing::AMQFrame(), 1));
     }    
 }
 
-void Decoder::process(const EventFrame& ef) {
-    //need to check that this is not the empty frame mentioned above
-    if (ef.frame.getBody() && ef.frame.getMethod() && ef.frame.getMethod()->isA<framing::ClusterConnectionDeliverCloseBody>())
-        map.erase(ef.connectionId);
-    callback(ef);
+void Decoder::erase(const ConnectionId& c) {
+    sys::Mutex::ScopedLock l(lock);
+    map.erase(c);
 }
 
 }} // namespace qpid::cluster
