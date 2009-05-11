@@ -335,11 +335,16 @@
     </copy>
   </target>
 
-  <map property="module.depends.jars" value="${module.depends}" join=",">
+  <map property="module.name.depends" value="${module.depends}">
+    <filtermapper>
+      <replacestring from="${file.separator}" to="-"/>
+    </filtermapper>
+  </map>
+
+  <map property="module.depends.jars" value="${module.name.depends}" join=",">
     <globmapper from="*" to="${project.name}-*-${project.version}.jar"/>
   </map>
 
- 
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
     <copy todir="${module.release}" failonerror="true">
