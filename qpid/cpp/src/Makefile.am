@@ -87,7 +87,7 @@ $(rgen_generator):
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -q -o gen/qmf \
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -q -b -o gen/qmf \
 	$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml
@@ -427,7 +427,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxBuffer.cpp \
   qpid/broker/TxPublish.cpp \
   qpid/broker/Vhost.cpp \
-  qpid/management/ManagementBroker.cpp \
+  qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementExchange.cpp \
   qpid/sys/TCPIOPlugin.cpp
 
@@ -679,7 +679,7 @@ nobase_include_HEADERS = \
   qpid/management/Args.h \
   qpid/management/IdAllocator.h \
   qpid/management/Manageable.h \
-  qpid/management/ManagementBroker.h \
+  qpid/management/ManagementAgent.h \
   qpid/management/ManagementEvent.h \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \

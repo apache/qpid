@@ -45,6 +45,8 @@ parser.add_option("-p", "--gen-prefix", dest="genprefix", default="",
                   help="Prefix for generated files in make dependencies")
 parser.add_option("-q", "--qpid-broker", dest="qpidbroker", default=False, action="store_true",
                   help="Generate makefile for Qpid broker")
+parser.add_option("-b", "--broker-plugin", dest="brokerplugin", default=False, action="store_true",
+                  help="Generate code for use in a qpid broker plugin")
 
 (opts, args) = parser.parse_args()
 
@@ -57,17 +59,23 @@ if len(args) == 0:
   print "no input files"
   parser.exit()
 
+vargs = {}
+if opts.brokerplugin:
+  vargs["agentHeaderDir"] = "management"
+else:
+  vargs["agentHeaderDir"] = "agent"
+
 for schemafile in args:
   package = SchemaPackage(typefile, schemafile, opts)
 
   gen.setPackage      (package.packageName)
-  gen.makeClassFiles  ("Class.h",     package)
-  gen.makeClassFiles  ("Class.cpp",   package)
-  gen.makeMethodFiles ("Args.h",      package)
-  gen.makeEventFiles  ("Event.h",     package)
-  gen.makeEventFiles  ("Event.cpp",   package)
-  gen.makePackageFile ("Package.h",   package)
-  gen.makePackageFile ("Package.cpp", package)
+  gen.makeClassFiles  ("Class.h",     package, vars=vargs)
+  gen.makeClassFiles  ("Class.cpp",   package, vars=vargs)
+  gen.makeMethodFiles ("Args.h",      package, vars=vargs)
+  gen.makeEventFiles  ("Event.h",     package, vars=vargs)
+  gen.makeEventFiles  ("Event.cpp",   package, vars=vargs)
+  gen.makePackageFile ("Package.h",   package, vars=vargs)
+  gen.makePackageFile ("Package.cpp", package, vars=vargs)
 
 if opts.makefile != None:
   args = {}

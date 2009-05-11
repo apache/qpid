@@ -137,15 +137,15 @@ bool TopicPattern::match(const Tokens& target)  const
     return do_match(begin(), end(), target.begin(), target.end());
 }
 
-TopicExchange::TopicExchange(const string& _name, Manageable* _parent) : Exchange(_name, _parent)
+TopicExchange::TopicExchange(const string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
 TopicExchange::TopicExchange(const std::string& _name, bool _durable,
-                             const FieldTable& _args, Manageable* _parent) :
-    Exchange(_name, _durable, _args, _parent)
+                             const FieldTable& _args, Manageable* _parent, Broker* b) :
+    Exchange(_name, _durable, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);

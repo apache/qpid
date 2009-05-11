@@ -26,7 +26,7 @@
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/acl/Acl.h"
 
 #include <map>

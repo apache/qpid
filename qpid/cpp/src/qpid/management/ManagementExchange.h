@@ -22,7 +22,7 @@
 #define _ManagementExchange_
 
 #include "qpid/broker/TopicExchange.h"
-#include "ManagementBroker.h"
+#include "ManagementAgent.h"
 
 namespace qpid {
 namespace broker {
@@ -30,15 +30,15 @@ namespace broker {
 class ManagementExchange : public virtual TopicExchange
 {
   private:
-    management::ManagementBroker* managementAgent;
+    management::ManagementAgent* managementAgent;
  
   public:
     static const std::string typeName;
 
-    ManagementExchange (const string& name, Manageable* _parent = 0);
+    ManagementExchange (const string& name, Manageable* _parent = 0, Broker* broker = 0);
     ManagementExchange (const string& _name, bool _durable, 
                         const qpid::framing::FieldTable& _args,
-                        Manageable* _parent = 0);
+                        Manageable* _parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }
 
@@ -50,7 +50,7 @@ class ManagementExchange : public virtual TopicExchange
                        const string& routingKey,
                        const qpid::framing::FieldTable* args);
 
-    void setManagmentAgent (management::ManagementBroker* agent);
+    void setManagmentAgent (management::ManagementAgent* agent);
 
     virtual ~ManagementExchange();
 };

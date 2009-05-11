@@ -43,16 +43,16 @@ namespace {
     const std::string empty;
 }
 
-HeadersExchange::HeadersExchange(const string& _name, Manageable* _parent) :
-    Exchange(_name, _parent)
+HeadersExchange::HeadersExchange(const string& _name, Manageable* _parent, Broker* b) :
+    Exchange(_name, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
 }
 
 HeadersExchange::HeadersExchange(const std::string& _name, bool _durable,
-                                 const FieldTable& _args, Manageable* _parent) :
-    Exchange(_name, _durable, _args, _parent)
+                                 const FieldTable& _args, Manageable* _parent, Broker* b) :
+    Exchange(_name, _durable, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);

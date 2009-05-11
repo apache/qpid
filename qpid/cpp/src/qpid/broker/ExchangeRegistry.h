@@ -45,7 +45,7 @@ class ExchangeRegistry{
     typedef boost::function4<Exchange::shared_ptr, const std::string&, 
                              bool, const qpid::framing::FieldTable&, qpid::management::Manageable*> FactoryFunction;
 
-    ExchangeRegistry () : parent(0) {}
+    ExchangeRegistry (Broker* b = 0) : parent(0), broker(b) {}
     QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
       (const std::string& name, const std::string& type);
     QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
@@ -84,7 +84,7 @@ class ExchangeRegistry{
     FunctionMap factory;
     mutable qpid::sys::RWlock lock;
     management::Manageable* parent;
-
+    Broker* broker;
 };
 
 }} // namespace qpid::broker

@@ -30,7 +30,7 @@
 
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
-#include "qpid/management/ManagementBroker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
@@ -48,7 +48,6 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace qpid::framing;
 using qpid::management::ManagementAgent;
-using qpid::management::ManagementBroker;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
@@ -80,7 +79,8 @@ const int ENQUEUE_AND_DEQUEUE=2;
 Queue::Queue(const string& _name, bool _autodelete, 
              MessageStore* const _store,
              const OwnershipToken* const _owner,
-             Manageable* parent) :
+             Manageable* parent,
+             Broker* b) :
 
     name(_name), 
     autodelete(_autodelete),
@@ -98,11 +98,12 @@ Queue::Queue(const string& _name, bool _autodelete,
     mgmtObject(0),
     eventMode(0),
     eventMgr(0),
-    insertSeqNo(0)
+    insertSeqNo(0),
+    broker(b)
 {
-    if (parent != 0)
+    if (parent != 0 && broker != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
 
         if (agent != 0)
         {
@@ -111,8 +112,7 @@ Queue::Queue(const string& _name, bool _autodelete,
             // Add the object to the management agent only if this queue is not durable.
             // If it's durable, we will add it later when the queue is assigned a persistenceId.
             if (store == 0) {
-                ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
-                agent->addObject (mgmtObject, mb ? mb->allocateId(this) : 0);
+                agent->addObject (mgmtObject, agent->allocateId(this));
             }
         }
     }
@@ -838,7 +838,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
 {
     if (mgmtObject != 0 && persistenceId == 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
         agent->addObject (mgmtObject, 0x3000000000000000LL + _persistenceId);
 
         if (externalQueueStore) {

@@ -21,7 +21,6 @@
  
 #include "Manageable.h"
 #include "ManagementObject.h"
-#include "qpid/agent/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Thread.h"
 
@@ -156,6 +155,7 @@ std::ostream& operator<<(std::ostream& out, const ObjectId& i)
 
 }}
 
+int ManagementObject::maxThreads = 1;
 int ManagementObject::nextThreadIndex = 0;
 
 void ManagementObject::writeTimestamps (framing::Buffer& buf)
@@ -176,7 +176,7 @@ int ManagementObject::getThreadIndex() {
     if (thisIndex == -1) {
         sys::Mutex::ScopedLock mutex(accessLock);
         thisIndex = nextThreadIndex;
-        if (nextThreadIndex < agent->getMaxThreads() - 1)
+        if (nextThreadIndex < maxThreads - 1)
             nextThreadIndex++;
     }
     return thisIndex;

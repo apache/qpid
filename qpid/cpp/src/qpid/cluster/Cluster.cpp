@@ -44,7 +44,7 @@
 #include "qpid/log/Helpers.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/IdAllocator.h"
-#include "qpid/management/ManagementBroker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/LatencyTracker.h"
@@ -116,7 +116,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     lastBroker(false),
     error(*this)
 {
-    mAgent = ManagementAgent::Singleton::getInstance();
+    mAgent = broker.getManagementAgent();
     if (mAgent != 0){
         _qmf::Package  packageInit(mAgent);
         mgmtObject = new _qmf::Cluster (mAgent, this, &broker,name,myUrl.str());

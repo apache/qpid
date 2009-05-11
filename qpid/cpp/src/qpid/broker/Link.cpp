@@ -68,9 +68,9 @@ Link::Link(LinkRegistry*  _links,
       connection(0),
       agent(0)
 {
-    if (parent != 0)
+    if (parent != 0 && broker != 0)
     {
-        agent = ManagementAgent::Singleton::getInstance();
+        agent = broker->getManagementAgent();
         if (agent != 0)
         {
             mgmtObject = new _qmf::Link(agent, this, parent, _host, _port, _transport, _durable);
@@ -347,7 +347,7 @@ void Link::notifyConnectionForced(const string text)
 void Link::setPersistenceId(uint64_t id) const
 {
     if (mgmtObject != 0 && persistenceId == 0) {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
         agent->addObject(mgmtObject, id);
     }
     persistenceId = id;

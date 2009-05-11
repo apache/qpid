@@ -67,7 +67,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
 
     if (parent != 0)
     {
-        agent = ManagementAgent::Singleton::getInstance();
+        agent = broker_.getManagementAgent();
 		
 		
         // TODO set last bool true if system connection

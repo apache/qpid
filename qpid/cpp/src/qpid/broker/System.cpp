@@ -18,7 +18,8 @@
 //
 
 #include "System.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "Broker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/SystemInfo.h"
 #include <iostream>
@@ -29,9 +30,9 @@ using namespace qpid::broker;
 using namespace std;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-System::System (string _dataDir) : mgmtObject(0)
+System::System (string _dataDir, Broker* broker) : mgmtObject(0)
 {
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = broker ? broker->getManagementAgent() : 0;
 
     if (agent != 0)
     {

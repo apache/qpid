@@ -24,7 +24,7 @@
 #include "LinkRegistry.h"
 #include "SessionState.h"
 
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
@@ -64,7 +64,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
     std::stringstream title;
     title << id << "_" << link->getBroker()->getFederationTag();
     queueName += title.str();
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = link->getBroker()->getManagementAgent();
     if (agent != 0) {
         mgmtObject = new _qmf::Bridge
             (agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
@@ -181,7 +181,7 @@ void Bridge::destroy()
 void Bridge::setPersistenceId(uint64_t pId) const
 {
     if (mgmtObject != 0 && persistenceId == 0) {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = link->getBroker()->getManagementAgent();
         agent->addObject (mgmtObject, pId);
     }
     persistenceId = pId;

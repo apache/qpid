@@ -45,15 +45,15 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
         Exchange::shared_ptr exchange;
 
         if(type == TopicExchange::typeName){
-            exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent, broker));
         }else if(type == DirectExchange::typeName){
-            exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent, broker));
         }else if(type == FanOutExchange::typeName){
-            exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args, parent, broker));
         }else if (type == HeadersExchange::typeName) {
-            exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args, parent, broker));
         }else if (type == ManagementExchange::typeName) {
-            exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent));
+            exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args, parent, broker));
         }
 	else{
             FunctionMap::iterator i =  factory.find(type);

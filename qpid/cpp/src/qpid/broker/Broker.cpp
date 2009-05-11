@@ -65,7 +65,7 @@ using qpid::sys::Dispatcher;
 using qpid::sys::Thread;
 using qpid::framing::FrameHandler;
 using qpid::framing::ChannelId;
-using qpid::management::ManagementBroker;
+using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
@@ -136,10 +136,11 @@ const std::string knownHostsNone("none");
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
-    managementAgentSingleton(!config.enableMgmt),
     store(0),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
+    queues(this),
+    exchanges(this),
     links(this),
     factory(new SecureConnectionFactory(*this)),
     dtxManager(timer),
@@ -148,6 +149,7 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
+    managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     queueCleaner(queues, timer),
     queueEvents(poller),
     recovery(true),
@@ -156,13 +158,11 @@ Broker::Broker(const Broker::Options& conf) :
 {
     if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
-        managementAgent = managementAgentSingleton.getInstance();
-        ((ManagementBroker*) managementAgent)->configure
-            (dataDir.isEnabled() ? dataDir.getPath() : string(),
-             conf.mgmtPubInterval, this, conf.workerThreads + 3);
+        managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(),
+                                   conf.mgmtPubInterval, this, conf.workerThreads + 3);
         _qmf::Package packageInitializer(managementAgent);
 
-        System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string());
+        System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);
         systemObject = System::shared_ptr(system);
 
         mgmtObject = new _qmf::Broker(managementAgent, this, system, conf.port);
@@ -182,9 +182,9 @@ Broker::Broker(const Broker::Options& conf) :
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the
         // management schema correct.
-        Vhost* vhost = new Vhost(this);
+        Vhost* vhost = new Vhost(this, this);
         vhostObject = Vhost::shared_ptr(vhost);
-        framing::Uuid uuid(((ManagementBroker*) managementAgent)->getUuid());
+        framing::Uuid uuid(managementAgent->getUuid());
         federationTag = uuid.str();
         vhostObject->setFederationTag(federationTag);
 
@@ -238,9 +238,8 @@ Broker::Broker(const Broker::Options& conf) :
         exchanges.declare(qpid_management, ManagementExchange::typeName);
         Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get (amq_direct);
-        ((ManagementBroker*) managementAgent)->setExchange (mExchange, dExchange);
-        boost::dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent
-            ((ManagementBroker*) managementAgent);
+        managementAgent->setExchange(mExchange, dExchange);
+        boost::dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent(managementAgent);
     }
     else
         QPID_LOG(info, "Management not enabled");

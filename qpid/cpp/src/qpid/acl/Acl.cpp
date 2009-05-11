@@ -46,7 +46,7 @@ namespace _qmf = qmf::org::apache::qpid::acl;
 Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(false)
 {
 	   
-    agent = ManagementAgent::Singleton::getInstance();
+    agent = broker->getManagementAgent();
 
     if (agent != 0){
         _qmf::Package  packageInit(agent);

@@ -388,30 +388,39 @@ class Generator:
   def setVariable (self, key, value):
     self.variables[key] = value
 
-  def makeClassFiles (self, templateFile, schema, force=False):
+  def makeClassFiles (self, templateFile, schema, force=False, vars=None):
     """ Generate an expanded template per schema class """
     classes  = schema.getClasses ()
     template = Template (self.input + templateFile, self)
+    if vars:
+      for arg in vars:
+        self.setVariable(arg, vars[arg])
     self.templateFiles.append (templateFile)
     for _class in classes:
       target = self.targetClassFile (_class, templateFile)
       stream = template.expand (_class)
       self.writeIfChanged (stream, target, force)
 
-  def makeEventFiles (self, templateFile, schema, force=False):
+  def makeEventFiles (self, templateFile, schema, force=False, vars=None):
     """ Generate an expanded template per schema event """
     events = schema.getEvents()
     template = Template (self.input + templateFile, self)
+    if vars:
+      for arg in vars:
+        self.setVariable(arg, vars[arg])
     self.templateFiles.append (templateFile)
     for event in events:
       target = self.targetEventFile(event, templateFile)
       stream = template.expand(event)
       self.writeIfChanged(stream, target, force)
 
-  def makeMethodFiles (self, templateFile, schema, force=False):
+  def makeMethodFiles (self, templateFile, schema, force=False, vars=None):
     """ Generate an expanded template per method-with-arguments """
     classes  = schema.getClasses ()
     template = Template (self.input + templateFile, self)
+    if vars:
+      for arg in vars:
+        self.setVariable(arg, vars[arg])
     self.templateFiles.append (templateFile)
     for _class in classes:
       methods = _class.getMethods ()
@@ -421,9 +430,12 @@ class Generator:
           stream = template.expand (method)
           self.writeIfChanged (stream, target, force)
 
-  def makePackageFile (self, templateFile, schema, force=False):
+  def makePackageFile (self, templateFile, schema, force=False, vars=None):
     """ Generate a package-specific file """
     template = Template (self.input + templateFile, self)
+    if vars:
+      for arg in vars:
+        self.setVariable(arg, vars[arg])
     self.templateFiles.append (templateFile)
     target = self.targetPackageFile (schema, templateFile)
     stream = template.expand (schema)

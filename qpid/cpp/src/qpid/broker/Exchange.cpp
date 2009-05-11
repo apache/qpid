@@ -21,8 +21,8 @@
 
 #include "Exchange.h"
 #include "ExchangeRegistry.h"
-#include "qpid/agent/ManagementAgent.h"
-#include "qpid/management/ManagementBroker.h"
+#include "Broker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/MessageProperties.h"
 #include "DeliverableMessage.h"
@@ -33,7 +33,6 @@ using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
 using qpid::sys::Mutex;
 using qpid::management::ManagementAgent;
-using qpid::management::ManagementBroker;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
@@ -83,13 +82,13 @@ void Exchange::routeIVE(){
 }
 
 
-Exchange::Exchange (const string& _name, Manageable* parent) :
-    name(_name), durable(false), persistenceId(0), sequence(false), 
-    sequenceNo(0), ive(false), mgmtExchange(0)
+Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
+    name(_name), durable(false), persistenceId(0), sequence(false),
+    sequenceNo(0), ive(false), mgmtExchange(0), broker(b)
 {
-    if (parent != 0)
+    if (parent != 0 && broker != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
         if (agent != 0)
         {
             mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
@@ -101,13 +100,13 @@ Exchange::Exchange (const string& _name, Manageable* parent) :
 static const std::string QPID_MANAGEMENT("qpid.management");
 
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
-                   Manageable* parent)
+                   Manageable* parent, Broker* b)
     : name(_name), durable(_durable), alternateUsers(0), persistenceId(0), 
-      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0)
+      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), broker(b)
 {
-    if (parent != 0)
+    if (parent != 0 && broker != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
         if (agent != 0)
         {
             mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
@@ -118,8 +117,7 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
                 } else if (name == QPID_MANAGEMENT) {
                     agent->addObject (mgmtExchange, 0x1000000000000005LL);  // Special management exchange ID
                 } else {
-                    ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
-                    agent->addObject (mgmtExchange, mb ? mb->allocateId(this) : 0);
+                    agent->addObject (mgmtExchange, agent->allocateId(this));
                 }
             }
         }
@@ -145,7 +143,7 @@ void Exchange::setPersistenceId(uint64_t id) const
 {
     if (mgmtExchange != 0 && persistenceId == 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
         agent->addObject (mgmtExchange, 0x2000000000000000LL + id);
     }
     persistenceId = id;
@@ -240,20 +238,22 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
 {
     if (parent != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
-        if (agent != 0)
-        {
-            ManagementObject* mo = queue->GetManagementObject();
-            if (mo != 0)
-            {
-                management::ObjectId queueId = mo->getObjectId();
-                mgmtBinding = new _qmf::Binding
-                    (agent, this, (Manageable*) parent, queueId, key, args);
-                if (!origin.empty())
-                    mgmtBinding->set_origin(origin);
-                ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
-                agent->addObject (mgmtBinding, mb ? mb->allocateId(this) : 0);
-            }
+        Broker* broker = parent->getBroker();
+        if (broker != 0) {
+            ManagementAgent* agent = broker->getManagementAgent();
+            if (agent != 0)
+                {
+                    ManagementObject* mo = queue->GetManagementObject();
+                    if (mo != 0)
+                        {
+                            management::ObjectId queueId = mo->getObjectId();
+                            mgmtBinding = new _qmf::Binding
+                                (agent, this, (Manageable*) parent, queueId, key, args);
+                            if (!origin.empty())
+                                mgmtBinding->set_origin(origin);
+                            agent->addObject (mgmtBinding, agent->allocateId(this));
+                        }
+                }
         }
     }
 }

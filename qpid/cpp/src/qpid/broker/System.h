@@ -28,6 +28,8 @@
 namespace qpid { 
 namespace broker {
 
+class Broker;
+
 class System : public management::Manageable
 {
   private:
@@ -38,7 +40,7 @@ class System : public management::Manageable
 
     typedef boost::shared_ptr<System> shared_ptr;
 
-    System (std::string _dataDir);
+    System (std::string _dataDir, Broker* broker = 0);
 
     management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }

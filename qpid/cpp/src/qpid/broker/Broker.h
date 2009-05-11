@@ -39,7 +39,7 @@
 #include "Timer.h"
 #include "ExpiryPolicy.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/management/ManagementBroker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerConnect.h"
 #include "qpid/Options.h"
@@ -120,7 +120,6 @@ public:
 
     boost::shared_ptr<sys::Poller> poller;
     Options config;
-    management::ManagementAgent::Singleton managementAgentSingleton;
     ProtocolFactoryMap protocolFactories;
     std::auto_ptr<MessageStore> store;
     AclModule* acl;
@@ -235,6 +234,8 @@ public:
 
     void setRecovery(bool set) { recovery = set; }
     bool getRecovery() const { return recovery; }
+
+    management::ManagementAgent* getManagementAgent() { return managementAgent; }
 };
 
 }}

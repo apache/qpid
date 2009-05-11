@@ -27,14 +27,14 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-ManagementExchange::ManagementExchange (const string& _name, Manageable* _parent) :
-    Exchange (_name, _parent), TopicExchange(_name, _parent) {}
+ManagementExchange::ManagementExchange (const string& _name, Manageable* _parent, Broker* b) :
+    Exchange (_name, _parent, b), TopicExchange(_name, _parent, b) {}
 ManagementExchange::ManagementExchange (const std::string& _name,
                                         bool               _durable,
                                         const FieldTable&  _args,
-                                        Manageable*        _parent) :
-    Exchange (_name, _durable, _args, _parent), 
-    TopicExchange(_name, _durable, _args, _parent) {}
+                                        Manageable*        _parent, Broker* b) :
+    Exchange (_name, _durable, _args, _parent, b), 
+    TopicExchange(_name, _durable, _args, _parent, b) {}
 
 void ManagementExchange::route (Deliverable&      msg,
                                 const string&     routingKey,
@@ -60,7 +60,7 @@ bool ManagementExchange::bind (Queue::shared_ptr queue,
     return TopicExchange::bind(queue, routingKey, args);
 }
 
-void ManagementExchange::setManagmentAgent (ManagementBroker* agent)
+void ManagementExchange::setManagmentAgent (ManagementAgent* agent)
 {
     managementAgent = agent;
 }
