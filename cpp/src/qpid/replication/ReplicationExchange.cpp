@@ -36,11 +36,13 @@ using namespace qpid::replication::constants;
 
 const std::string SEQUENCE_VALUE("qpid.replication-event.sequence");
 ReplicationExchange::ReplicationExchange(const std::string& name, bool durable, 
-                                         const FieldTable& args,
+                                         const FieldTable& _args,
                                          QueueRegistry& qr,
                                          Manageable* parent) 
-    : Exchange(name, durable, args, parent), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
- {}
+    : Exchange(name, durable, _args, parent), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
+{
+    args.setInt64(SEQUENCE_VALUE, sequence);
+}
 
 std::string ReplicationExchange::getType() const { return typeName; }            
 
