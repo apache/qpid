@@ -23,6 +23,7 @@
  */
 
 #include "AMQFrame.h"
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -34,7 +35,7 @@ namespace framing {
 class FrameDecoder
 {
   public:
-    bool decode(Buffer& buffer);
+    QPID_COMMON_EXTERN bool decode(Buffer& buffer);
     const AMQFrame& getFrame() const { return frame; }
     AMQFrame& getFrame() { return frame; }
 

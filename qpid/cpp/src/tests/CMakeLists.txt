@@ -22,19 +22,22 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include (FindPythonInterp)
 
+# Using the Boost DLLs triggers warning 4275 on Visual Studio
+# (non dll-interface class used as base for dll-interface class).
+# This is ok, so suppress the warning.
+if (MSVC)
+  add_definitions( /wd4275 )
+endif (MSVC)
+
+set (qpid_test_boost_libs ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY})
+
 #
 # Unit test program
 #
 # Unit tests are built as a single program to reduce valgrind overhead
-# when running the tests. If you want to build a subset of the tests do 
-#   rm -f unit_test; make unit_test unit_test_OBJECTS="unit_test.o SelectedTest.o"
-# 
-set (qpid_test_boost_libs boost_unit_test_framework boost_regex)
-#TESTS+=unit_test
-#check_PROGRAMS+=unit_test
-#unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
-#	$(lib_client) $(lib_broker) $(lib_console)
-#
+# when running the tests. If you want to build a subset of the tests run
+# ccmake and set unit_tests_to_build to the set you want to build.
+
 set(unit_tests_to_build
     unit_test
     exception_test
@@ -91,11 +94,6 @@ if (QPID_HAS_XML)
   set(unit_tests_to_build ${unit_tests_to_build} XmlClientSessionTest)
 endif (QPID_HAS_XML)
 mark_as_advanced(unit_tests_to_build)
-
-#message(DEBUG "unit_tests_to_build: ${unit_tests_to_build}")
-#string (REPLACE ";" ".cpp;"
-#        unit_test_SOURCES
-#        ${unit_tests_to_build})
 
 # Disabled till we move to amqp_0_10 codec.
 # 	amqp_0_10/serialize.cpp allSegmentTypes.h \
