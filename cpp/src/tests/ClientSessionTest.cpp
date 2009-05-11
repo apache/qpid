@@ -583,6 +583,13 @@ QPID_AUTO_TEST_CASE(testGetThenSubscribe) {
     }
 }
 
+QPID_AUTO_TEST_CASE(testSessionIsValid) {
+    ClientSessionFixture fix;
+    BOOST_CHECK(fix.session.isValid());
+    Session session;
+    BOOST_CHECK(!session.isValid());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 
