@@ -97,6 +97,8 @@ class SessionBase_0_10 {
     QPID_CLIENT_EXTERN void markCompleted(const framing::SequenceNumber& id, bool cumulative, bool notifyPeer);
     QPID_CLIENT_EXTERN void sendCompletion();
 
+    QPID_CLIENT_EXTERN bool isValid() const;
+
   protected:
     boost::shared_ptr<SessionImpl> impl;
   friend class SessionBase_0_10Access;
