@@ -27,8 +27,8 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-QueueRegistry::QueueRegistry() :
-    counter(1), store(0), events(0), parent(0), lastNode(false) {}
+QueueRegistry::QueueRegistry(Broker* b) :
+    counter(1), store(0), events(0), parent(0), lastNode(false), broker(b) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -42,7 +42,7 @@ QueueRegistry::declare(const string& declareName, bool durable,
     QueueMap::iterator i =  queues.find(name);
 
     if (i == queues.end()) {
-        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent));
+        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
         queues[name] = queue;
         if (lastNode) queue->setLastNodeFailure();
         if (events) queue->setQueueEventManager(*events);

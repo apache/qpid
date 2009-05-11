@@ -43,7 +43,7 @@ class QueueEvents;
  */
 class QueueRegistry {
   public:
-    QPID_BROKER_EXTERN QueueRegistry();
+    QPID_BROKER_EXTERN QueueRegistry(Broker* b = 0);
     QPID_BROKER_EXTERN ~QueueRegistry();
 
     /**
@@ -131,6 +131,7 @@ private:
     QueueEvents* events;
     management::Manageable* parent;
     bool lastNode; //used to set mode on queue declare
+    Broker* broker;
 
     //destroy impl that assumes lock is already held:
     void destroyLH (const string& name);

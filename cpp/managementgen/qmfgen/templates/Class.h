@@ -27,6 +27,12 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 
+namespace qpid {
+    namespace management {
+        class ManagementAgent;
+    }
+}
+
 namespace qmf {
 /*MGEN:Class.OpenNamespaces*/
 

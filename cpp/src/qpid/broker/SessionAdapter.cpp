@@ -23,7 +23,7 @@
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/SequenceSet.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
@@ -98,7 +98,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                 checkAlternate(response.first, alternate);
             }
 
-            ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+            ManagementAgent* agent = getBroker().getManagementAgent();
             if (agent)
                 agent->raiseEvent(_qmf::EventExchangeDeclare(getConnection().getUrl(), getConnection().getUserId(), exchange, type,
                                                              alternateExchange, durable, false, args,
@@ -140,7 +140,7 @@ void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifU
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
     getBroker().getExchanges().destroy(name);
 
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
         agent->raiseEvent(_qmf::EventExchangeDelete(getConnection().getUrl(), getConnection().getUserId(), name));
 }
@@ -181,7 +181,7 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
                 getBroker().getStore().bind(*exchange, *queue, routingKey, arguments);
             }
 
-            ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+            ManagementAgent* agent = getBroker().getManagementAgent();
             if (agent)
                 agent->raiseEvent(_qmf::EventBind(getConnection().getUrl(), getConnection().getUserId(), exchangeName, queueName, exchangeRoutingKey, arguments));
         }
@@ -214,7 +214,7 @@ void SessionAdapter::ExchangeHandlerImpl::unbind(const string& queueName,
         if (exchange->isDurable() && queue->isDurable())
             getBroker().getStore().unbind(*exchange, *queue, routingKey, FieldTable());
 
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent)
             agent->raiseEvent(_qmf::EventUnbind(getConnection().getUrl(), getConnection().getUserId(), exchangeName, queueName, routingKey));
     }
@@ -372,7 +372,7 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             }
         }
 
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent)
             agent->raiseEvent(_qmf::EventQueueDeclare(getConnection().getUrl(), getConnection().getUserId(),
                                                       name, durable, exclusive, autoDelete, arguments,
@@ -422,7 +422,7 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
         getBroker().getQueues().destroy(queue);
         q->unbind(getBroker().getExchanges(), q);
 
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent)
             agent->raiseEvent(_qmf::EventQueueDelete(getConnection().getUrl(), getConnection().getUserId(), queue));
     }
@@ -484,7 +484,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
                   acceptMode == 0, acquireMode == 0, exclusive, 
                   resumeId, resumeTtl, arguments);
 
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
         agent->raiseEvent(_qmf::EventSubscribe(getConnection().getUrl(), getConnection().getUserId(),
                                                queueName, destination, exclusive, arguments));
@@ -495,7 +495,7 @@ SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
 {
     state.cancel(destination);
 
-    ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+    ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)
         agent->raiseEvent(_qmf::EventUnsubscribe(getConnection().getUrl(), getConnection().getUserId(), destination));
 }

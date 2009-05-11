@@ -27,6 +27,7 @@
 namespace qpid { 
 namespace broker {
 
+class Broker;
 class Vhost : public management::Manageable
 {
   private:
@@ -37,7 +38,7 @@ class Vhost : public management::Manageable
 
     typedef boost::shared_ptr<Vhost> shared_ptr;
 
-    Vhost (management::Manageable* parentBroker);
+    Vhost (management::Manageable* parentBroker, Broker* broker = 0);
 
     management::ManagementObject* GetManagementObject (void) const
     { return mgmtObject; }

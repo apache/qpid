@@ -46,11 +46,11 @@ public:
     static const std::string typeName;
         
     QPID_BROKER_EXTERN DirectExchange(const std::string& name,
-                                      management::Manageable* parent = 0);
+                                      management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN DirectExchange(const string& _name,
                                       bool _durable, 
                                       const qpid::framing::FieldTable& _args,
-                                      management::Manageable* parent = 0);
+                                      management::Manageable* parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }            
         

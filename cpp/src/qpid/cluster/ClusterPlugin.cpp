@@ -31,7 +31,7 @@
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/log/Statement.h"
 
-#include "qpid/management/ManagementBroker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/management/IdAllocator.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Queue.h"
@@ -49,7 +49,6 @@ using namespace std;
 using broker::Broker;
 using management::IdAllocator;
 using management::ManagementAgent;
-using management::ManagementBroker;
 
 
 /** Note separating options from settings to work around boost version differences.
@@ -140,7 +139,7 @@ struct ClusterPlugin : public Plugin {
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
-        ManagementBroker* mgmt = dynamic_cast<ManagementBroker*>(ManagementAgent::Singleton::getInstance());
+        ManagementAgent* mgmt = broker->getManagementAgent();
         if (mgmt) {
             std::auto_ptr<IdAllocator> allocator(new UpdateClientIdAllocator());
             mgmt->setAllocator(allocator);

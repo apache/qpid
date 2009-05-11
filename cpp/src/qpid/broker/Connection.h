@@ -40,7 +40,7 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/ProtocolVersion.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/ptr_map.h"
 #include "qpid/sys/AggregateOutput.h"

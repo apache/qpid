@@ -1,5 +1,5 @@
-#ifndef _ManagementBroker_
-#define _ManagementBroker_
+#ifndef _ManagementAgent_
+#define _ManagementAgent_
 
 /*
  *
@@ -21,14 +21,15 @@
  * under the License.
  *
  */
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/Options.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Timer.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/broker/ConnectionToken.h"
-#include "qpid/agent/ManagementAgent.h"
 #include "ManagementObject.h"
+#include "ManagementEvent.h"
 #include "Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
 #include <qpid/framing/AMQFrame.h>
@@ -39,15 +40,27 @@ namespace management {
 
 struct IdAllocator;
 
-class ManagementBroker : public ManagementAgent
+class ManagementAgent
 {
 private:
 
     int threadPoolSize;
 
 public:
-    ManagementBroker ();
-    virtual ~ManagementBroker ();
+    typedef enum {
+    SEV_EMERG = 0,
+    SEV_ALERT = 1,
+    SEV_CRIT  = 2,
+    SEV_ERROR = 3,
+    SEV_WARN  = 4,
+    SEV_NOTE  = 5,
+    SEV_INFO  = 6,
+    SEV_DEBUG = 7,
+    SEV_DEFAULT = 8
+    } severity_t;
+
+    ManagementAgent ();
+    virtual ~ManagementAgent ();
 
     void configure       (const std::string& dataDir, uint16_t interval,
                           qpid::broker::Broker* broker, int threadPoolSize);
@@ -55,41 +68,34 @@ public:
     void setExchange     (qpid::broker::Exchange::shared_ptr mgmtExchange,
                           qpid::broker::Exchange::shared_ptr directExchange);
     int  getMaxThreads   () { return threadPoolSize; }
-    void registerClass   (const std::string& packageName,
-                          const std::string& className,
-                          uint8_t*    md5Sum,
-                          ManagementObject::writeSchemaCall_t schemaCall);
-    void registerEvent   (const std::string& packageName,
-                          const std::string& eventName,
-                          uint8_t*    md5Sum,
-                          ManagementObject::writeSchemaCall_t schemaCall);
-    ObjectId addObject   (ManagementObject* object,
-                          uint64_t          persistId = 0);
-    void raiseEvent(const ManagementEvent& event, severity_t severity = SEV_DEFAULT);
-    void clientAdded     (const std::string& routingKey);
+    QPID_BROKER_EXTERN void registerClass   (const std::string& packageName,
+                                             const std::string& className,
+                                             uint8_t*    md5Sum,
+                                             ManagementObject::writeSchemaCall_t schemaCall);
+    QPID_BROKER_EXTERN void registerEvent   (const std::string& packageName,
+                                             const std::string& eventName,
+                                             uint8_t*    md5Sum,
+                                             ManagementObject::writeSchemaCall_t schemaCall);
+    QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
+                                             uint64_t          persistId = 0);
+    QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
+                                       severity_t severity = SEV_DEFAULT);
+    QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);
+
     bool dispatchCommand (qpid::broker::Deliverable&       msg,
                           const std::string&         routingKey,
                           const framing::FieldTable* args);
-    const framing::Uuid& getUuid() const { return uuid; }
 
-    // Stubs for remote management agent calls
-    void init(const std::string&, uint16_t, uint16_t, bool,
-              const std::string&, const std::string&, const std::string&,
-              const std::string&, const std::string&) { assert(0); }
-    void init(const client::ConnectionSettings&, uint16_t, bool, const std::string&) { assert(0); }
-    uint32_t pollCallbacks (uint32_t) { assert(0); return 0; }
-    int getSignalFd () { assert(0); return -1; }
+    const framing::Uuid& getUuid() const { return uuid; }
 
     void setAllocator(std::auto_ptr<IdAllocator> allocator);
     uint64_t allocateId(Manageable* object);
 private:
-    friend class ManagementAgent;
-
     struct Periodic : public qpid::broker::TimerTask
     {
-        ManagementBroker& broker;
+        ManagementAgent& agent;
 
-        Periodic (ManagementBroker& broker, uint32_t seconds);
+        Periodic (ManagementAgent& agent, uint32_t seconds);
         virtual ~Periodic ();
         void fire ();
     };
@@ -239,4 +245,4 @@ private:
 
 }}
             
-#endif  /*!_ManagementBroker_*/
+#endif  /*!_ManagementAgent_*/

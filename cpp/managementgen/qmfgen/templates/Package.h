@@ -23,7 +23,7 @@
 
 /*MGEN:Root.Disclaimer*/
 
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 
 namespace qmf {
 /*MGEN:Class.OpenNamespaces*/

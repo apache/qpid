@@ -32,7 +32,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"
-#include "qpid/management/ManagementBroker.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 
 #include <boost/bind.hpp>
@@ -45,7 +45,6 @@ using namespace framing;
 using sys::Mutex;
 using boost::intrusive_ptr;
 using qpid::management::ManagementAgent;
-using qpid::management::ManagementBroker;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
@@ -73,7 +72,7 @@ SessionState::SessionState(
     }
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent != 0) {
             mgmtObject = new _qmf::Session
                 (agent, this, parent, getId().getName());
@@ -81,8 +80,7 @@ SessionState::SessionState(
             mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
             if (rateFlowcontrol) mgmtObject->set_maxClientRate(maxRate);
-            ManagementBroker* mb = dynamic_cast<ManagementBroker*>(agent);
-            agent->addObject (mgmtObject, mb ? mb->allocateId(this) : 0);
+            agent->addObject (mgmtObject, agent->allocateId(this));
         }
     }
     attach(h);

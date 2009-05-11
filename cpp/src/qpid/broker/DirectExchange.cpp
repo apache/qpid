@@ -41,15 +41,15 @@ const std::string fedOpReorigin("R");
 const std::string fedOpHello("H");
 }
 
-DirectExchange::DirectExchange(const string& _name, Manageable* _parent) : Exchange(_name, _parent)
+DirectExchange::DirectExchange(const string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type(typeName);
 }
 
 DirectExchange::DirectExchange(const string& _name, bool _durable,
-                               const FieldTable& _args, Manageable* _parent) :
-    Exchange(_name, _durable, _args, _parent)
+                               const FieldTable& _args, Manageable* _parent, Broker* b) :
+    Exchange(_name, _durable, _args, _parent, b)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type(typeName);

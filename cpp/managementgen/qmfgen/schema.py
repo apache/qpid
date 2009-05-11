@@ -754,6 +754,9 @@ class SchemaEvent:
   def getFullName (self):
     return capitalize(self.package + capitalize(self.name))
 
+  def genAgentHeaderLocation (self, stream, variables):
+    stream.write(variables["agentHeaderDir"])
+
   def getArgCount (self):
     return len (self.args)
 
@@ -953,6 +956,9 @@ class SchemaClass:
     for inst in self.statistics:
       if inst.assign == None:
         inst.genAccessor (stream)
+
+  def genAgentHeaderLocation (self, stream, variables):
+    stream.write(variables["agentHeaderDir"])
 
   def genCloseNamespaces (self, stream, variables):
     for item in self.packageName.split("."):
@@ -1257,6 +1263,9 @@ class SchemaPackage:
 
   def getEvents(self):
     return self.events
+
+  def genAgentHeaderLocation (self, stream, variables):
+    stream.write(variables["agentHeaderDir"])
 
   def genCloseNamespaces (self, stream, variables):
     for item in self.packageName.split("."):

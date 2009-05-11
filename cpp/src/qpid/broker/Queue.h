@@ -105,6 +105,7 @@ namespace qpid {
             QueueEvents* eventMgr;
             bool insertSeqNo;
             std::string seqNoKey;
+            Broker* broker;
 
             void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -158,7 +159,8 @@ namespace qpid {
                                      bool autodelete = false, 
                                      MessageStore* const store = 0, 
                                      const OwnershipToken* const owner = 0,
-                                     management::Manageable* parent = 0);
+                                     management::Manageable* parent = 0,
+                                     Broker* broker = 0);
             QPID_BROKER_EXTERN ~Queue();
 
             QPID_BROKER_EXTERN bool dispatch(Consumer::shared_ptr);

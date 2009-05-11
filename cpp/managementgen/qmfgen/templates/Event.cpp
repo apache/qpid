@@ -23,7 +23,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h" 
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid//*MGEN:Event.AgentHeaderLocation*//ManagementAgent.h"
 #include "Event/*MGEN:Event.NameCap*/.h"
 
 using namespace qmf::/*MGEN:Event.Namespace*/;

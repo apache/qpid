@@ -121,9 +121,10 @@ protected:
 public:
     typedef boost::shared_ptr<Exchange> shared_ptr;
 
-    QPID_BROKER_EXTERN explicit Exchange(const std::string& name, management::Manageable* parent = 0);
+    QPID_BROKER_EXTERN explicit Exchange(const std::string& name, management::Manageable* parent = 0,
+                                         Broker* broker = 0);
     QPID_BROKER_EXTERN Exchange(const std::string& _name, bool _durable, const qpid::framing::FieldTable& _args,
-                                management::Manageable* parent = 0);
+                                management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN virtual ~Exchange();
 
     const std::string& getName() const { return name; }
@@ -167,10 +168,12 @@ public:
     void registerDynamicBridge(DynamicBridge* db);
     void removeDynamicBridge(DynamicBridge* db);
     virtual bool supportsDynamicBinding() { return false; }
+    Broker* getBroker() const { return broker; }
 
 protected:
     qpid::sys::Mutex bridgeLock;
     std::vector<DynamicBridge*> bridgeVector;
+    Broker* broker;
 
     QPID_BROKER_EXTERN virtual void handleHelloRequest();
     void propagateFedOp(const std::string& routingKey, const std::string& tags,

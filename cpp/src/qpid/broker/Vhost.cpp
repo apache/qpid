@@ -18,7 +18,8 @@
 //
 
 #include "Vhost.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "Broker.h"
+#include "qpid/management/ManagementAgent.h"
 
 using namespace qpid::broker;
 using qpid::management::ManagementAgent;
@@ -28,11 +29,11 @@ namespace qpid { namespace management {
 class Manageable;
 }}
 
-Vhost::Vhost (qpid::management::Manageable* parentBroker) : mgmtObject(0)
+Vhost::Vhost (qpid::management::Manageable* parentBroker, Broker* broker) : mgmtObject(0)
 {
-    if (parentBroker != 0)
+    if (parentBroker != 0 && broker != 0)
     {
-        ManagementAgent* agent = ManagementAgent::Singleton::getInstance();
+        ManagementAgent* agent = broker->getManagementAgent();
 
         if (agent != 0)
         {

@@ -23,7 +23,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h" 
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid//*MGEN:Class.AgentHeaderLocation*//ManagementAgent.h"
 #include "/*MGEN:Class.NameCap*/.h"
 /*MGEN:Class.MethodArgIncludes*/
 
@@ -40,8 +40,8 @@ string  /*MGEN:Class.NameCap*/::className    = string ("/*MGEN:Class.NameLower*/
 uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
     {/*MGEN:Class.SchemaMD5*/};
 
-/*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (ManagementAgent* _agent, Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
-    ManagementObject(_agent, _core)/*MGEN:Class.ConstructorInits*/
+/*MGEN:Class.NameCap*/::/*MGEN:Class.NameCap*/ (ManagementAgent*, Manageable* _core/*MGEN:Class.ParentArg*//*MGEN:Class.ConstructorArgs*/) :
+    ManagementObject(_core)/*MGEN:Class.ConstructorInits*/
 {
     /*MGEN:Class.ParentRefAssignment*/
 /*MGEN:Class.InitializeElements*/
@@ -51,7 +51,6 @@ uint8_t /*MGEN:Class.NameCap*/::md5Sum[16]   =
         presenceMask[idx] = 0;
 /*MGEN:ENDIF*/
 /*MGEN:IF(Class.ExistPerThreadStats)*/
-    maxThreads = agent->getMaxThreads();
     perThreadStatsArray = new struct PerThreadStats*[maxThreads];
     for (int idx = 0; idx < maxThreads; idx++)
         perThreadStatsArray[idx] = 0;

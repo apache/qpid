@@ -30,7 +30,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
-#include "qpid/agent/ManagementAgent.h"
+#include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Link.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 

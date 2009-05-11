@@ -32,7 +32,6 @@ namespace qpid {
 namespace management {
 
 class Manageable;
-class ManagementAgent;
 class ObjectId;
 
 
@@ -111,7 +110,7 @@ public:
 
 class ManagementObject : public ManagementItem
 {
-  protected:
+protected:
     
     uint64_t         createTime;
     uint64_t         destroyTime;
@@ -122,8 +121,6 @@ class ManagementObject : public ManagementItem
     bool             deleted;
     Manageable*      coreObject;
     sys::Mutex       accessLock;
-    ManagementAgent* agent;
-    int              maxThreads;
     uint32_t         flags;
 
     static int nextThreadIndex;
@@ -133,13 +130,14 @@ class ManagementObject : public ManagementItem
     QPID_COMMON_EXTERN void writeTimestamps(qpid::framing::Buffer& buf);
 
   public:
+    static int maxThreads;
     typedef void (*writeSchemaCall_t) (qpid::framing::Buffer&);
 
-    ManagementObject(ManagementAgent* _agent, Manageable* _core) :
+    ManagementObject(Manageable* _core) :
         createTime(uint64_t(qpid::sys::Duration(qpid::sys::now()))),
         destroyTime(0), updateTime(createTime), configChanged(true),
         instChanged(true), deleted(false),
-        coreObject(_core), agent(_agent), forcePublish(false) {}
+        coreObject(_core), forcePublish(false) {}
     virtual ~ManagementObject() {}
 
     virtual writeSchemaCall_t getWriteSchemaCall() = 0;
