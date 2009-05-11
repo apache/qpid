@@ -33,4 +33,11 @@
 
   <target name="release-bin" depends="release-bin-tasks"/>
 
+  <target name="release-bin-other" >
+    <!-- Copy Common bin dir : to get qpid-run -->
+    <copy todir="${module.release}/bin" failonerror="true">
+      <fileset dir="${qpid.java.root}/common/bin/" includes="**"/>
+    </copy>
+  </target>
+
 </project>

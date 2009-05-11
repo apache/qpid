@@ -28,4 +28,17 @@
 
   <target name="release-bin" depends="release-bin-tasks"/>
 
+  <uptodate property="doc-release.done" targetfile="${module.release}/api/index.html">
+      <srcfiles dir="${module.src}" includes="**/*.java"/>
+  </uptodate>
+
+  <target name="doc-release" depends="build" unless="doc-release.done">
+        <!-- Copy Source files to include in release -->
+        <copy todir="${module.release}/src" failonerror="true">
+          <fileset dir="${module.src}" includes="**/*.java"/>
+        </copy>
+
+  </target>
+
+
 </project>
