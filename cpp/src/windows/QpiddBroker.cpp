@@ -34,6 +34,7 @@ const char *QPIDD_MODULE_DIR = ".";
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/sys/IntegerTypes.h"
+#include "qpid/sys/LockFile.h"
 #include "qpid/sys/windows/check.h"
 #include "qpid/broker/Broker.h"
 
@@ -52,8 +53,52 @@ BootstrapOptions::BootstrapOptions(const char* argv0)
     add(log);
 }
 
+// Local functions to set and get the pid via a LockFile.
+namespace {
+
+const std::string TCP = "tcp";
+
+std::string brokerPidFile(std::string piddir, uint16_t port)
+{
+    std::ostringstream path;
+    path << piddir << "\\broker_" << port << ".pid";
+    return path.str();
+}
+
+}
+
+struct ProcessControlOptions : public qpid::Options {
+    bool quit;
+    bool check;
+    std::string piddir;
+    //std::string transport;   No transport options yet - TCP is it.
+
+    ProcessControlOptions()
+        : qpid::Options("Process control options"),
+          quit(false),
+          check(false) //, transport(TCP)
+    {
+        char *tempDir = ::getenv("TEMP");
+
+        if (tempDir == 0)
+            piddir = "C:\\WINDOWS\\TEMP";
+        else
+            piddir = tempDir;
+        piddir += "\\qpidd";
+
+        // Only have TCP for now, so don't need this...
+          //            ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
+        addOptions()
+            ("pid-dir", qpid::optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
+            ("check,c", qpid::optValue(check), "Prints the broker's process ID to stdout and returns 0 if the broker is running, otherwise returns 1")
+            ("quit,q", qpid::optValue(quit), "Tells the broker to shut down");
+    }
+};
+
 struct QpiddWindowsOptions : public QpiddOptionsPrivate {
+    ProcessControlOptions control;
     QpiddWindowsOptions(QpiddOptions *parent) : QpiddOptionsPrivate(parent) {
+        parent->add(control);
     }
 };
 
@@ -84,9 +129,30 @@ int QpiddBroker::execute (QpiddOptions *options) {
     if (myOptions == 0)
         throw qpid::Exception("Internal error obtaining platform options");
 
+    if (myOptions->control.check || myOptions->control.quit) {
+        // Relies on port number being set via --port or QPID_PORT env variable.
+        qpid::sys::LockFile getPid (brokerPidFile(myOptions->control.piddir,
+                                                  options->broker.port),
+                                    false);
+        pid_t pid = getPid.readPid();
+        if (pid < 0) 
+            return 1;
+        if (myOptions->control.check)
+            std::cout << pid << std::endl;
+        if (myOptions->control.quit)
+          std::cout << "Need to stop pid " << pid << std::endl;
+        return 0;
+    }
+
     boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
     if (options->broker.port == 0)
-      std::cout << (uint16_t)(brokerPtr->getPort("")) << std::endl; 
+        options->broker.port = brokerPtr->getPort("");
+    std::cout << options->broker.port << std::endl;
+
+    qpid::sys::LockFile myPid(brokerPidFile(myOptions->control.piddir,
+                                            options->broker.port),
+                              true);
+    myPid.writePid();
     brokerPtr->run();
     return 0;
 }

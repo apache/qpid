@@ -37,10 +37,10 @@ LockFile::LockFile(const std::string& path_, bool create)
   : path(path_), created(create) {
 
     HANDLE h = CreateFile(path.c_str(),
-                          GENERIC_READ|GENERIC_WRITE,
-                          0, /* Disable opens by any other attempter */
+                          create ? (GENERIC_READ|GENERIC_WRITE) : GENERIC_READ,
+                          FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
                           0, /* Default security */
-                          OPEN_ALWAYS, /* Create if needed */
+                          create ? OPEN_ALWAYS : OPEN_EXISTING,
                           FILE_FLAG_DELETE_ON_CLOSE, /* Delete file when closed */
                           NULL);
     QPID_WINDOWS_CHECK_NOT(h, INVALID_HANDLE_VALUE);

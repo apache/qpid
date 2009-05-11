@@ -58,8 +58,9 @@ struct Uuid : public boost::array<uint8_t, 16> {
     void clear() { uuid_clear(c_array()); }
     
     /** Test for null (all zeros). */
+    // Force int 0/!0 to false/true; avoids compile warnings.
     bool isNull() {
-        return uuid_is_null(data());
+        return !!uuid_is_null(data());
     }
 
     // Default op= and copy ctor are fine.
