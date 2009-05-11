@@ -45,7 +45,6 @@
 #include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 

@@ -86,7 +86,7 @@ if (EXISTS ${AMQP_SPEC})
   endforeach (spec_file ${mgmt_specs})
   if (regen_mgmt)
     message(STATUS, "Regenerating Qpid Management Framework sources")
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake -q -o gen/qmf ${mgmt_specs}
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake -b -q -o gen/qmf ${mgmt_specs}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   else (regen_mgmt)
     message(STATUS "No need to generate Qpid Management Framework sources")
@@ -540,7 +540,7 @@ set (libqpidbroker_SOURCES
      qpid/broker/TxBuffer.cpp
      qpid/broker/TxPublish.cpp
      qpid/broker/Vhost.cpp
-     qpid/management/ManagementBroker.cpp
+     qpid/management/ManagementAgent.cpp
      qpid/management/ManagementExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
 )
