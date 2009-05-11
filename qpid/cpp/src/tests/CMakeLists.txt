@@ -25,8 +25,9 @@ include (FindPythonInterp)
 # Using the Boost DLLs triggers warning 4275 on Visual Studio
 # (non dll-interface class used as base for dll-interface class).
 # This is ok, so suppress the warning.
+# Also, boost lengthy names trigger warning 4503, decorated name length exceeded
 if (MSVC)
-  add_definitions( /wd4275 )
+  add_definitions( /wd4275 /wd4503 )
 endif (MSVC)
 
 set (qpid_test_boost_libs ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY})
@@ -217,7 +218,7 @@ target_link_libraries (sender qpidclient)
 add_dependencies (check sender)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (test_script_suffix ".w32")
+  set (test_script_suffix ".bat")
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 set(test_wrap ${CMAKE_CURRENT_SOURCE_DIR}/test_wrap${test_script_suffix})
