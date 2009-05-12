@@ -72,6 +72,7 @@ std::ostream& operator<<(std::ostream& o, const AbsTime& t) {
     return o << time_string;
 }
 
+
 void toPtime(ptime& pt, const AbsTime& t) {
     pt = t.getPrivate();
 }
@@ -87,4 +88,16 @@ void usleep(uint64_t usecs) {
     ::Sleep(msecs);
 }
 
+void outputFormattedNow(std::ostream& o) {
+    ::time_t rawtime;
+    ::tm timeinfo;
+    char time_string[100];
+
+    ::time( &rawtime );
+    ::localtime_s(&timeinfo, &rawtime);
+    ::strftime(time_string, 100,
+               "%Y-%m-%d %H:%M:%S",
+               &timeinfo);
+    o << time_string << " ";
+}
 }}

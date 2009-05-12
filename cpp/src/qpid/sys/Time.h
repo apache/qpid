@@ -165,6 +165,9 @@ QPID_COMMON_EXTERN void sleep(int secs);
 /** Portable sleep for a number of microseconds */
 QPID_COMMON_EXTERN void usleep(uint64_t usecs);
 
+/** Output formatted date/time for now*/
+void outputFormattedNow(std::ostream&);
+
 }}
 
 #endif  /*!_sys_Time_h*/

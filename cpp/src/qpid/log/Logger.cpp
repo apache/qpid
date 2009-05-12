@@ -21,6 +21,7 @@
 #include "SinkOptions.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/Time.h"
 #include <boost/pool/detail/singleton.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -73,25 +74,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
     if (!prefix.empty())
         os << prefix << ": ";
     if (flags&TIME) 
-    {
-        const char * month_abbrevs[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
-        time_t rawtime;
-        struct tm * timeinfo;
-
-        time ( & rawtime );
-        timeinfo = localtime ( &rawtime );
-        char time_string[100];
-        sprintf ( time_string,
-                  "%d-%s-%02d %02d:%02d:%02d",
-                  1900 + timeinfo->tm_year,
-                  month_abbrevs[timeinfo->tm_mon],
-                  timeinfo->tm_mday,
-                  timeinfo->tm_hour,
-                  timeinfo->tm_min,
-                  timeinfo->tm_sec
-                );
-        os << time_string << " ";
-    }
+		qpid::sys::outputFormattedNow(os);
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)
