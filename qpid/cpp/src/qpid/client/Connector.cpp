@@ -77,6 +77,10 @@ void Connector::registerFactory(const std::string& proto, Factory* connectorFact
     theProtocolRegistry()[proto] = connectorFactory;
 }
 
+void Connector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>)
+{
+}
+
 class TCPConnector : public Connector, public sys::Codec, private sys::Runnable
 {
     typedef std::deque<framing::AMQFrame> Frames;
