@@ -19,7 +19,10 @@
 
 import os, socket, time, textwrap, re
 
-ssl = socket.ssl
+try:
+  from ssl import wrap_socket as ssl
+except ImportError:
+  from socket import ssl
 
 def connect(host, port):
   sock = socket.socket()

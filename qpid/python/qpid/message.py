@@ -17,7 +17,6 @@
 # under the License.
 #
 from connection08 import Method, Request
-from sets import Set
 
 class Message:
 
