@@ -92,7 +92,7 @@ inline std::ostream& outputFormattedTime(std::ostream& o, const ::time_t* time) 
 
 std::ostream& operator<<(std::ostream& o, const AbsTime& t) {
     ::time_t rawtime(t.timepoint/TIME_SEC);
-    return outputFormattedTime(&rawtime);
+    return outputFormattedTime(o, &rawtime);
 }
 
 void outputFormattedNow(std::ostream& o) {
