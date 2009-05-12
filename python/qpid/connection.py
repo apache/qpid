@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import datatypes, session, socket
+import datatypes, session
 from threading import Thread, Condition, RLock
 from util import wait, notify
 from assembler import Assembler, Segment
@@ -54,10 +54,15 @@ class SSLWrapper:
   def send(self, s):
     return self.ssl.write(s)
 
-def sslwrap(sock):
-  if isinstance(sock, socket.SSLType):
-    return SSLWrapper(sock)
-  else:
+try:
+  from socket import SSLType
+  def sslwrap(sock):
+    if isinstance(sock, SSLType):
+      return SSLWrapper(sock)
+    else:
+      return sock
+except ImportError:
+  def sslwrap(sock):
     return sock
 
 class Connection(Assembler):
