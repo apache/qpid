@@ -149,6 +149,14 @@ final class IoReceiver implements Runnable
         finally
         {
             receiver.closed();
+            try
+            {
+                socket.close();
+            }
+            catch(Exception e)
+            {
+                log.warn(e, "Error closing socket");
+            }
         }
     }
 
