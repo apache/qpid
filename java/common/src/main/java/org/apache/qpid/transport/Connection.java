@@ -438,6 +438,7 @@ public class Connection extends ConnectionInvoker
                 ssn.closed();
             }
 
+            sender.close();
             sender = null;
             setState(CLOSED);
         }
