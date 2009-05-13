@@ -821,12 +821,14 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
             if (object->getConfigChanged() || object->getInstChanged())
                 object->setUpdateTime();
 
-            encodeHeader(outBuffer, 'g', sequence);
-            object->writeProperties(outBuffer);
-            object->writeStatistics(outBuffer, true);
-            outLen = MA_BUFFER_SIZE - outBuffer.available ();
-            outBuffer.reset ();
-            sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+            if (!object->isDeleted()) {
+                encodeHeader(outBuffer, 'g', sequence);
+                object->writeProperties(outBuffer);
+                object->writeStatistics(outBuffer, true);
+                outLen = MA_BUFFER_SIZE - outBuffer.available ();
+                outBuffer.reset ();
+                sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+            }
         }
         sendCommandComplete(replyToKey, sequence);
         return;
@@ -845,12 +847,14 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
             if (object->getConfigChanged() || object->getInstChanged())
                 object->setUpdateTime();
 
-            encodeHeader(outBuffer, 'g', sequence);
-            object->writeProperties(outBuffer);
-            object->writeStatistics(outBuffer, true);
-            outLen = MA_BUFFER_SIZE - outBuffer.available ();
-            outBuffer.reset ();
-            sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+            if (!object->isDeleted()) {
+                encodeHeader(outBuffer, 'g', sequence);
+                object->writeProperties(outBuffer);
+                object->writeStatistics(outBuffer, true);
+                outLen = MA_BUFFER_SIZE - outBuffer.available ();
+                outBuffer.reset ();
+                sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+            }
         }
     }
 
