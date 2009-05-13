@@ -48,7 +48,7 @@
         <ssl>
             <enabled>true</enabled>
             <!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  -->
-            <keyStorePath>${prefix}/../test_resources/ssl/keystore.jks</keyStorePath>
+            <keyStorePath>${conf}/qpid.keystore</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
     </management>
