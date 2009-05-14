@@ -118,13 +118,17 @@ if (ENABLE_VALGRIND AND NOT VALGRIND)
   message(STATUS "Can't locate the valgrind command; no run-time error detection")
 endif (ENABLE_VALGRIND AND NOT VALGRIND)
 
-set(QPIDC_MODULE_DIR "." CACHE STRING
+set(QPIDC_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib CACHE STRING
+    "Directory to install library files")
+set(QPIDC_INSTALL_CONFDIR ${CMAKE_INSTALL_PREFIX}/etc CACHE STRING
+    "Directory to install configuration files")
+set(QPIDC_MODULE_DIR ${QPIDC_INSTALL_LIBDIR}/qpid/client CACHE STRING
     "Directory to load client plug-in modules from")
-set(QPIDD_MODULE_DIR "." CACHE STRING
+set(QPIDD_MODULE_DIR ${QPIDC_INSTALL_LIBDIR}/qpid/daemon CACHE STRING
     "Directory to load broker plug-in modules from")
-set(QPIDC_CONF_FILE "qpidc.conf" CACHE STRING
+set(QPIDC_CONF_FILE ${QPIDC_INSTALL_CONFDIR}/qpid/qpidc.conf CACHE STRING
     "Name of the Qpid client configuration file")
-set(QPIDD_CONF_FILE "qpidd.conf" CACHE STRING
+set(QPIDD_CONF_FILE ${QPIDC_INSTALL_CONFDIR}/qpid/qpidd.conf CACHE STRING
     "Name of the Qpid broker configuration file")
 
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
@@ -227,6 +231,9 @@ if (BUILD_XML)
                            PREFIX ""
                            LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
+
+  set(xml_tests XmlClientSessionTest)
+
 endif (BUILD_XML)
 
 # Build the ACL plugin

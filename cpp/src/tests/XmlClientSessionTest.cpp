@@ -52,7 +52,11 @@ using std::string;
 using std::cout;
 using std::endl;
 
-Shlib shlib("../.libs/xml.so");
+#if defined (QPID_MODULE_SUFFIX)
+    Shlib shlib("../xml" QPID_MODULE_SUFFIX);
+#else
+    Shlib shlib("../.libs/xml.so");
+#endif
 
 class SubscribedLocalQueue : public LocalQueue {
   private:
