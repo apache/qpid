@@ -154,6 +154,7 @@ Broker::Broker(const Broker::Options& conf) :
     queueEvents(poller),
     recovery(true),
     expiryPolicy(new ExpiryPolicy),
+    clusterMessageHandler(0),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (conf.enableMgmt) {
@@ -264,7 +265,7 @@ Broker::Broker(const Broker::Options& conf) :
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
     }
 
-    //initialize known broker urls (TODO: add support for urls for other transports (SSL, RDMA)):
+    // Initialize known broker urls (TODO: add support for urls SSL, RDMA, etc.)
     if (conf.knownHosts.empty()) {
         boost::shared_ptr<ProtocolFactory> factory = getProtocolFactory(TCP_TRANSPORT);
         if (factory) {

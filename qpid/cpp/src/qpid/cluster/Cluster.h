@@ -38,6 +38,7 @@
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
 #include "qpid/Url.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/MessageHandler.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/sys/Monitor.h"
 
@@ -64,7 +65,7 @@ class EventFrame;
 /**
  * Connection to the cluster
  */
-class Cluster : private Cpg::Handler, public management::Manageable {
+class Cluster : private Cpg::Handler, public management::Manageable, public broker::MessageHandler {
   public:
     typedef boost::intrusive_ptr<Connection> ConnectionPtr;
     typedef std::vector<ConnectionPtr> ConnectionVector;
@@ -113,6 +114,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Decoder& getDecoder() { return decoder; }
 
     ExpiryPolicy& getExpiryPolicy() { return *expiryPolicy; }
+
+    // Called in timer threads by management to replicate messages.
+    void handle(const boost::intrusive_ptr<broker::Message>&);
     
   private:
     typedef sys::Monitor::ScopedLock Lock;
@@ -199,6 +203,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     const std::string name;
     Url myUrl;
     const MemberId self;
+    ConnectionId selfConnection;
     framing::Uuid clusterId;
     NoOpConnectionOutputHandler shadowOut;
     qpid::management::ManagementAgent* mAgent;

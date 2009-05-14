@@ -204,7 +204,8 @@ private:
     void sendBuffer         (framing::Buffer&             buf,
                              uint32_t                     length,
                              qpid::broker::Exchange::shared_ptr exchange,
-                             std::string                  routingKey);
+                             std::string                  routingKey,
+                             bool isPredictable=true);
     void moveNewObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
