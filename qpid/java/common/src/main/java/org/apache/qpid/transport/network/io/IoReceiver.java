@@ -134,7 +134,6 @@ final class IoReceiver implements Runnable
                     }
                 }
             }
-            socket.close();
         }
         catch (Throwable t)
         {
