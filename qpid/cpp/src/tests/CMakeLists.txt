@@ -17,6 +17,9 @@
 # under the License.
 #
 
+# Make sure that everything get built before the tests
+# Need to create a var with all the necessary top level targets
+
 add_definitions(-DBOOST_TEST_DYN_LINK)
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
@@ -30,7 +33,10 @@ if (MSVC)
   add_definitions( /wd4275 /wd4503 )
 endif (MSVC)
 
-set (qpid_test_boost_libs ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY})
+# Like this to work with cmake 2.4 on Unix
+set (qpid_test_boost_libs 
+     boost_regex
+     boost_unit_test_framework)
 
 #
 # Unit test program
@@ -40,7 +46,6 @@ set (qpid_test_boost_libs ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY
 # ccmake and set unit_tests_to_build to the set you want to build.
 
 set(unit_tests_to_build
-    unit_test
     exception_test
     RefCounted
     SessionState
@@ -89,11 +94,10 @@ set(unit_tests_to_build
     ReplicationTest
     ClientMessageTest
     PollableCondition
+    ${xml_tests}
     CACHE STRING "Which unit tests to build"
    )
-if (QPID_HAS_XML)
-  set(unit_tests_to_build ${unit_tests_to_build} XmlClientSessionTest)
-endif (QPID_HAS_XML)
+
 mark_as_advanced(unit_tests_to_build)
 
 # Disabled till we move to amqp_0_10 codec.
@@ -103,11 +107,11 @@ mark_as_advanced(unit_tests_to_build)
 # 	amqp_0_10/Map.cpp \
 # 	amqp_0_10/handlers.cpp 
 
-add_executable (unit_test ${unit_tests_to_build})
+add_executable (unit_test unit_test ${unit_tests_to_build})
 # The generally recommended way to add macro settings is to use
 # COMPILE_DEFINITIONS, but it's a rough go to add more than one definition
 # with a value; in this case, assuming that -D works everywhere is easier.
-set_source_files_properties (ReplicationTest.cpp Shlib.cpp
+set_source_files_properties (ReplicationTest.cpp Shlib.cpp ${xml_tests}
                              PROPERTIES
                              COMPILE_FLAGS
                              "-DQPID_MODULE_SUFFIX=\\\"${CMAKE_SHARED_MODULE_SUFFIX}\\\" -DQPID_MODULE_PREFIX=\\\"${CMAKE_SHARED_MODULE_PREFIX}\\\"")
