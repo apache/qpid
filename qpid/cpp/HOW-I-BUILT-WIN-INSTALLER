@@ -1,0 +1,78 @@
+How I built the Windows installer (Steve Huston, May 2009)
+
+This will mostly/all change when CMake is driving the packaging, so this
+is checked into the 0.5-release branch but won't be migrated back to trunk,
+at least not now.
+
+Tools:
+- WiX 3.0.4805 (http://wix.sourceforge.net/)
+  WiX builds the MSI install from an XML description.
+
+- Paraffin 3.0 (http://www.wintellect.com/CS/blogs/jrobbins/archive/2008/12/22/paraffin-3-0-now-with-full-wix-3-0-support.aspx)
+  Paraffin generates inputs to WiX from a directory.
+
+Plan:
+
+The plan is to build an installer with optional components:
+   - Broker (includes broker, lib, common; release; Boost)
+   - Client (includes client, common; debug and release; .lib, .dll, .pdb; Boost
+             client headers: qpid/[client sys], gen/qpid/[client sys])
+   - Client API docs (HTML via doxygen - can I do CHM for VS2008?)
+   - Examples (source, Makefiles, VC projects)
+   - Management framework (console; agent won't build on Windows yet)
+   - Full source
+
+How To Do It:
+
+1. Build qpid.sln (broker, client, common, qmfconsole, qpidbroker) debug,
+   clean qpidbroker, then build release to ensure the broker exe (same name
+   debug and release) is available in Release.
+
+2. Use Wordpad to make a RTF form of LICENSE; save as LICENSE.rtf
+
+3. Used paraffin to generate the source components:
+   cd src
+   paraffin -dir .\qpid -custom CLIENT -alias src\qpid -x .svn -x agent
+     -x broker -x cluster -x replication -x xml -x management -x posix
+     -x rmda -x apr -x cyrus -ext .cpp -dirref QpidInclude -g client.wxi
+   paraffin -dir .\gen\qpid -custom CLIENT_GEN -alias src\gen\qpid -x .svn
+     -ext .cpp -dirref QpidInclude -g client_gen.wxi
+
+4. Edit the client.wxi and client_gen.wxi files:
+   - Replace <Wix> with <Include> and </Wix> with </Include>
+   - Remove the <Fragment> and </Fragment> tags
+
+5. Used paraffin to bootstrap the examples component, then removed undesired
+   files manually:
+   cd ../examples (over to qpid\cpp\examples)
+   paraffin -dir . -custom EXAMPLES -alias examples -x .svn -x .libs
+     -x Debug -x Release -ext .am -ext .in -ext .mk -ext .cache -ext .ncb
+     -ext .suo -ext .exe -ext .ilk -ext .pdb -ext .user -ext .vcproj~
+     -dirref APPLICATIONFOLDER -g ..\examples.wxi
+
+6. Edit the examples.wxi file:
+   - Replace <Wix> with <Include> and </Wix> with </Include>
+   - Remove the <Fragment> and </Fragment> tags
+   - Take out undesired files: example/README.verify and the verify* scripts.
+     Don't forget to remove the group's ComponentRef entries for removed files.
+
+7. In each vcproj file under examples/* the lib and include paths need to
+   be changed to match the install locations:
+   - Change AdditionalIncludeDirectories ..\..\src, ..\src\gen to ..\..\include
+   - Change AdditionalLibraryDirectories ..\..\src to ..\..\bin
+
+8. Used paraffin to bootstrap the docs component:
+   cd .. (back up to qpid\cpp)
+   paraffin -dir docs\api\html -alias docs\api\html -custom DOC_HTML
+     -x .svn -ext .am -ext .in -ext .mk -ext .cache -ext .timestamp
+     -dirref QpidDocAPI -g docs.wxi
+
+9. Edit the docs.wxi file:
+   - Replace <Wix> with <Include> and </Wix> with </Include>
+   - Remove the <Fragment> and </Fragment> tags
+
+10. Make sure the actual source distro .zip (preferably) or tar.gz file
+    is in .. (qpid).
+
+11. qpidc.wxs is the main WiX source. Open qpidc-installer.sln in VS2008 to
+    load and allow it to be built.

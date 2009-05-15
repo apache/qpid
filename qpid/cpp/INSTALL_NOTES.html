@@ -1,0 +1,71 @@
+<html>
+<head>
+<title>Apache Qpid C++ 0.5 Release Notes</title>
+</head>
+<body>
+<H1>Apache Qpid C++ 0.5 Installation Notes</H1>
+
+<p>Thank you for installing the Apache Qpid version 0.5 C++ kit.
+If the requisite features were installed, you can now run a broker,
+use the example programs, and design your own messaging programs while
+reading the Qpid C++ API reference documentation.</p>
+
+<H2>Running a Message Broker</H2>
+<p>
+In AMQP, programs that send and receive messages are clients. The agents
+that route and queue messages to and from clients are brokers. In order to
+use any Qpid-based messaging program there must be at least one broker
+running which the client(s) can communicate with. The broker need not execute
+on the same system as the client, but it must be reachable using TCP/IP.</p>
+
+<p>The broker executable is installed in the <code>bin</code> subdirectory
+of your Qpid installation directory. The broker program is
+<code>qpidbroker.exe</code>. The simplest way to experiment with the
+broker is to open a command prompt window, cd to the installation
+directory, and execute the broker:
+<pre>
+cd "C:\Program Files\Apache\qpidc-0.5\bin"
+qpidbroker
+</pre>
+A small amount of information will be displayed to let you know the broker
+is running and listening for client connections.</p>
+<p>To stop the broker, you can simply type <code>^C</code> in the
+command prompt window where the broker is running.</p>
+
+<p>For a full list of options for the broker, you can use the
+<code>--help</code> option.</p>
+
+<H2>Using the Example Programs</H2>
+
+<p>The example programs are located in the <code>examples</code> subdirectory
+of the Qpid installation directory. There are a number of examples, each with
+its own subdirectory under <code>examples</code>. You can use the examples to
+<ul>
+<li>Study to learn Qpid programming techniques you may want to use</li>
+<li>Build and run to observe and test Qpid features</li>
+</ul>
+Each example's directory contains source code and Visual Studio 2008 project
+files you can use to build the examples.</p>
+
+<H2>Reading the C++ API Reference Documentation</H2>
+<p>The C++ API reference documentation is HTML and can be viewed using
+your web browser. It is located in the <code>docs\api\html</code> subdirectory
+of the installation directory, but there is also a shortcut to the
+documentation in <i>Start > All Programs > Apache Qpid > Qpid C++ Reference
+Documentation</i>. Selecting that menu item will launch the documentation's
+main page in your default web browser.</p>
+
+<H2>Complete Source Code is Available</H2>
+<p>If you installed the complete source code feature (which is disabled by
+default) you can explore all the source code for all of Apache Qpid. This
+includes the Visual Studio 2008 project files necessary for rebuilding Qpid
+should you wish to do so.</p>
+
+<H1>For More Information</H1>
+<p>For more information on Apache Qpid, please visit the web site
+<a href="http://qpid.apache.org/">http://qpid.apache.org/</a>.</p>
+
+<p>The Qpid site contains more information about Qpid and AMQP as well as
+directions for joining and reading the Qpid-related email lists.</p>
+</body>
+</html>

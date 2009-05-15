@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="818aca03-2bed-4baf-8408-361c29e8b6a4"
+           Name="Apache Qpid C++ 0.5"
+           Language="1033"
+           Version="0.5.0.0"
+           Manufacturer="Apache Software Foundation"
+           UpgradeCode="764658d7-45ea-462a-9ec9-dcc6895d7fb6">
+
+    <Package Description="Apache Qpid C++ version for Windows"
+             Manufacturer="Apache Software Foundation"
+             InstallerVersion="200"
+             Compressed="yes" />
+
+    <Media Id="1" Cabinet="qpidc.cab" EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="ApacheTop" Name="Apache">
+          <Directory Id="INSTALLLOCATION" Name="qpidc-0.5">
+            <Directory Id="QpidBin"      Name="bin"/>
+            <Directory Id="QpidInclude"  Name="include"/>
+            <Directory Id="QpidDoc"      Name="docs">
+              <Directory Id="QpidDocAPI" Name="api"/>
+            </Directory>
+            <Directory Id="QpidSrcDist"  Name="srcdist"/>
+          </Directory>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Apache Qpid"/>
+      </Directory>
+
+    </Directory>
+
+    <?include src\client.wxi ?>
+    <?include src\client_gen.wxi ?>
+    <?include docs.wxi ?>
+    <?include examples.wxi ?>
+
+    <DirectoryRef Id="INSTALLLOCATION">
+      <Component Id="InstallNotes" Guid="{10A64ABE-B3F7-40c0-88F1-E0AD71467A3E}">
+        <File Id="InstallNotesHTML" Source="INSTALL_NOTES.html"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="QpidBin">
+      <Component Id="Broker_Release" Guid="c65883b5-0119-4704-9770-1c3369a8acd7">
+        <File Id="BrokerEXE" Source="src\Release\qpidbroker.exe"/>
+        <File Id="BrokerDLL" Source="src\qpidbroker.dll"/>
+      </Component>
+      <Component Id="CommonLib_Debug" Guid="CE7DDC23-78F9-4DE3-A8BB-9E9652A413DC">
+        <File Id="CommonDebugLIB" Source="src\qpidcommond.lib"/>
+        <File Id="CommonDebugDLL" Source="src\qpidcommond.dll"/>
+        <File Id="CommonDebugPDB" Source="src\qpidcommond.pdb"/>
+
+        <Environment Id="envPath" Separator=";" Action="set" Permanent="no"
+                     Name="PATH" System="no" Part="last" Value="[QpidBin]"/>
+      </Component>
+      <Component Id="CommonLib_Release" Guid="BB2FA938-25CB-498e-A3D8-D6C475B82853">
+        <File Id="CommonReleaseLIB" Source="src\qpidcommon.lib"/>
+        <File Id="CommonReleaseDLL" Source="src\qpidcommon.dll"/>
+        <File Id="CommonReleasePDB" Source="src\qpidcommon.pdb"/>
+      </Component>
+      <Component Id="ClientLib_Debug" Guid="2AB8EA8C-8AD5-4A8E-8CB3-E525A59962A3">
+        <File Id="ClientDebugLIB" Source="src\qpidclientd.lib"/>
+        <File Id="ClientDebugDLL" Source="src\qpidclientd.dll"/>
+        <File Id="ClientDebugPDB" Source="src\qpidclientd.pdb"/>
+      </Component>
+      <Component Id="ClientLib_Release" Guid="7312671F-CE68-4fac-ACF1-E6D90EA5F070">
+        <File Id="ClientReleaseLIB" Source="src\qpidclient.lib"/>
+        <File Id="ClientReleaseDLL" Source="src\qpidclient.dll"/>
+        <File Id="ClientReleasePDB" Source="src\qpidclient.pdb"/>
+      </Component>
+      <Component Id="QMFConsoleLib_Debug" Guid="B5169DDE-B4E8-4c5e-A507-DDFA1DF8DDF8">
+        <File Id="QMFConsoleDebugLIB" Source="src\qmfconsoled.lib"/>
+        <File Id="QMFConsoleDebugDLL" Source="src\qmfconsoled.dll"/>
+        <File Id="QMFConsoleDebugPDB" Source="src\qmfconsoled.pdb"/>
+      </Component>
+      <Component Id="QMFConsoleLib_Release" Guid="5DD7ADAC-D944-4694-A4F2-0022B7A6931E">
+        <File Id="QMFConsoleReleaseLIB" Source="src\qmfconsole.lib"/>
+        <File Id="QMFConsoleReleaseDLL" Source="src\qmfconsole.dll"/>
+        <File Id="QMFConsoleReleasePDB" Source="src\qmfconsole.pdb"/>
+      </Component>
+
+      <!-- Qpid is built against Boost DLLs, so these need to go in too. -->
+      <Component Id="Boost_Date_Time"
+                 Guid="{E6DC9912-EB40-4fd2-BD67-D9187F5A06A4}">
+        <File Id="Boost_Date_Time_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_DATE_TIME-VC90-MT-1_35.DLL"/>
+        <File Id="Boost_Date_Time_Debug_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_DATE_TIME-VC90-MT-GD-1_35.DLL"/>
+      </Component>
+      <Component Id="Boost_Filesystem"
+                 Guid="{6FB4CE92-EF10-49d5-8991-A507E19D62FA}">
+        <File Id="Boost_Filesystem_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_FILESYSTEM-VC90-MT-1_35.DLL"/>
+        <File Id="Boost_Filesystem_Debug_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_FILESYSTEM-VC90-MT-GD-1_35.DLL"/>
+      </Component>
+      <Component Id="Boost_Program_Options"
+                 Guid="{68936FF1-32FA-4d76-B832-A5B03FF4E911}">
+        <File Id="Boost_Program_Options_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_PROGRAM_OPTIONS-VC90-MT-1_35.DLL"/>
+        <File Id="Boost_Program_Options_Debug_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_PROGRAM_OPTIONS-VC90-MT-GD-1_35.DLL"/>
+      </Component>
+      <Component Id="Boost_System"
+                 Guid="{0CCE37BE-0937-4683-9401-D3F140FA0931}">
+        <File Id="Boost_System_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_SYSTEM-VC90-MT-1_35.DLL"/>
+        <File Id="Boost_System_Debug_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_SYSTEM-VC90-MT-GD-1_35.DLL"/>
+      </Component>
+      <Component Id="Boost_Thread"
+                 Guid="{6E890249-DD3E-46a6-B60A-AFAC89EFC493}">
+        <File Id="Boost_Thread_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_THREAD-VC90-MT-1_35.DLL"/>
+        <File Id="Boost_Thread_Debug_DLL"
+              Source="$(env.BOOST_ROOT)\lib\BOOST_THREAD-VC90-MT-GD-1_35.DLL"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="QpidSrcDist">
+      <Component Id="DistroSrc" Guid="{0D2C11F3-B3B6-4d4b-9569-08097A4D0D1A}">
+        <File Id="DistroTAR" Source="..\qpid-cpp-0.5.tar.gz"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="APIDocShortcut" Guid="{B95A28E2-E2B5-4f31-93C3-24B010701F30}">
+        <Shortcut Id="APIDocsShortcut"
+                  Name="Qpid C++ Reference Documentation"
+                  Description="Shortcut to HTML reference documentation"
+                  Target="[INSTALLLOCATION]docs\api\html\index.html" />
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\Apache\qpidc" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="ProductFeature" Title="Apache Qpid C++" Level="1"
+             Display="expand" ConfigurableDirectory="INSTALLLOCATION"
+             TypicalDefault="install">
+      <ComponentRef Id="InstallNotes"/>
+
+      <Feature Id="Broker" Title="Broker: Routes and queues messages" Level="1">
+        <ComponentRef Id="Broker_Release"/>
+        <ComponentRef Id="CommonLib_Release"/>
+        <ComponentRef Id="Boost_Date_Time"/>
+        <ComponentRef Id="Boost_Filesystem"/>
+        <ComponentRef Id="Boost_Program_Options"/>
+        <ComponentRef Id="Boost_System"/>
+        <ComponentRef Id="Boost_Thread"/>
+      </Feature>
+
+      <Feature Id="ClientLib" Title="Client Libraries and Headers to develop and run programs" Level="1">
+        <ComponentRef Id="CommonLib_Debug"/>
+        <ComponentRef Id="CommonLib_Release"/>
+        <ComponentRef Id="ClientLib_Debug"/>
+        <ComponentRef Id="ClientLib_Release"/>
+        <ComponentRef Id="QMFConsoleLib_Debug"/>
+        <ComponentRef Id="QMFConsoleLib_Release"/>
+        <ComponentRef Id="Boost_Date_Time"/>
+        <ComponentRef Id="Boost_Filesystem"/>
+        <ComponentRef Id="Boost_Program_Options"/>
+        <ComponentRef Id="Boost_System"/>
+        <ComponentRef Id="Boost_Thread"/>
+
+        <ComponentGroupRef Id="group_CLIENT"/>
+        <ComponentGroupRef Id="group_CLIENT_GEN"/>
+
+        <Feature Id="Examples" Title="Client Programming Examples" Level="1">
+          <ComponentGroupRef Id="group_EXAMPLES"/>
+        </Feature>
+      </Feature>
+
+      <Feature Id="APIDocs" Title="Client C++ API Reference Documentation" Level="1">
+        <ComponentRef Id="APIDocShortcut"/>
+        <ComponentGroupRef Id="group_DOC_HTML"/>
+      </Feature>
+
+      <Feature Id="FullDistro" Title="Full C++ Source in a zip file" Level="3">
+        <ComponentRef Id="DistroSrc"/>
+      </Feature>
+    </Feature>
+
+    <UI>
+      <UIRef Id="WixUI_FeatureTree" />
+      <Publish Dialog="ExitDialog"
+               Control="Finish" 
+               Event="DoAction" 
+               Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+
+    </UI>
+
+    <WixVariable Id="WixUILicenseRtf" Value="LICENSE.rtf" />
+    <!-- WixVariable Id="WixUIBannerBmp" Value="qpid-asf-banner.bmp" / -->
+    <!-- WixVariable Id="WixUIDialogBmp" Value="qpid-asf-bkgrd.bmp" / -->
+
+    <!-- Launch the install notes optionally on finish -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="View the installation notes for more information"/>
+    <Property Id='WIXUI_EXITDIALOGOPTIONALCHECKBOX' Value='1' />
+    <Property Id="WixShellExecTarget" Value="[#InstallNotesHTML]" />
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA"
+                  DllEntry="WixShellExec" Impersonate="yes" />
+
+  </Product>
+</Wix>
