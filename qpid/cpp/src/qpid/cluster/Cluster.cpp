@@ -98,7 +98,6 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionState.h"
-#include "qpid/framing/frame_functors.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/framing/AllInvoker.h"
@@ -110,15 +109,6 @@
 #include "qpid/framing/ClusterShutdownBody.h"
 #include "qpid/framing/ClusterUpdateOfferBody.h"
 #include "qpid/framing/ClusterUpdateRequestBody.h"
-
-#include "qpid/framing/ConnectionStartOkBody.h"
-#include "qpid/framing/ConnectionTuneBody.h"
-#include "qpid/framing/ConnectionOpenBody.h"
-#include "qpid/framing/SessionAttachBody.h"
-#include "qpid/framing/SessionRequestTimeoutBody.h"
-#include "qpid/framing/SessionCommandPointBody.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-
 #include "qpid/log/Helpers.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/IdAllocator.h"
@@ -135,7 +125,6 @@
 #include <iterator>
 #include <map>
 #include <ostream>
-#include <sstream>
 
 namespace qpid {
 namespace cluster {
@@ -206,10 +195,11 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     // Failover exchange provides membership updates to clients.
     failoverExchange.reset(new FailoverExchange(this));
     broker.getExchanges().registerExchange(failoverExchange);
-    broker.getExchanges().registerExchange(boost::shared_ptr<broker::Exchange>(new UpdateExchange(this)));
-    broker.setClusterMessageHandler(*this);
-    if (settings.quorum) quorum.init();
 
+    // Update exchange is used during updates to replicate messages without modifying delivery-properties.exchange.
+    broker.getExchanges().registerExchange(boost::shared_ptr<broker::Exchange>(new UpdateExchange(this)));
+
+    if (settings.quorum) quorum.init();
     cpg.join(name);
     // pump the CPG dispatch manually till we get initialized. 
     while (!initialized)
@@ -744,62 +734,12 @@ void Cluster::messageExpired(const MemberId&, uint64_t id, Lock&) {
 }
 
 void Cluster::errorCheck(const MemberId& , uint8_t type, uint64_t frameSeq, Lock&) {
-    if (state == LEFT) return;
     // If we receive an errorCheck here, it's because we  have processed past the point
     // of the error so respond with ERROR_TYPE_NONE
     assert(map.getFrameSeq() >= frameSeq);
     if (type != framing::cluster::ERROR_TYPE_NONE) // Don't respond if its already NONE.
         mcast.mcastControl(
             ClusterErrorCheckBody(ProtocolVersion(), framing::cluster::ERROR_TYPE_NONE, frameSeq), self);
-}
-
-size_t accumulateEncodedSize(size_t total, const AMQFrame& f) { return total + f.encodedSize(); }
-
-//
-// If the broker needs to send messages to itself in an
-// unpredictable context (e.g. management messages generated when
-// a timer expires) it uses "selfConnection"
-//
-// selfConnection behaves as a local client connection, with
-// respect to replication. However instead of mcasting data from a
-// client, data for the selfConnection is mcast directly from
-// Cluster::handle.
-// 
-void Cluster::handle(const boost::intrusive_ptr<broker::Message>& msg) {
-    // NOTE: don't take the lock here. We don't need to as mcast is thread safe,
-    // and locking here can cause deadlock with management locks.
-    // 
-
-    // Create self-connection on demand
-    if (selfConnection == ConnectionId()) {
-        QPID_LOG(debug, "Initialize self-connection");
-        ostringstream name;
-        name << "qpid.cluster-self." << self;
-        ConnectionPtr selfc = new Connection(*this, shadowOut, name.str(), self, false, false);
-        selfConnection = selfc->getId();
-        vector<AMQFrame> frames;
-        frames.push_back(AMQFrame((ConnectionStartOkBody())));
-        frames.push_back(AMQFrame((ConnectionTuneBody(ProtocolVersion(),32767,65535,0,120))));
-        frames.push_back(AMQFrame((ConnectionOpenBody())));
-        frames.push_back(AMQFrame((SessionAttachBody(ProtocolVersion(), name.str(), false))));
-        frames.push_back(AMQFrame(SessionRequestTimeoutBody(ProtocolVersion(), 0)));
-        frames.push_back(AMQFrame(SessionCommandPointBody(ProtocolVersion(), 0, 0)));
-        size_t size = accumulate(frames.begin(), frames.end(), 0, accumulateEncodedSize);
-        vector<char> store(size);
-        Buffer buf(store.data(), size);
-        for_each(frames.begin(), frames.end(), boost::bind(&AMQFrame::encode, _1, boost::ref(buf)));
-        assert(buf.available() == 0);
-        selfc->decode(store.data(), size);         // Multicast
-    }
-
-    QPID_LOG(trace, "Message to self on " << selfConnection << ": " << *msg->getFrames().getMethod());
-    const FrameSet& frames = msg->getFrames();
-    size_t size = accumulate(frames.begin(), frames.end(), 0, accumulateEncodedSize);
-    Event e(DATA, selfConnection, size);
-    Buffer buf(e.getData(), e.getSize());
-    EncodeFrame encoder(buf);
-    msg->getFrames().map(encoder);
-    mcast.mcast(e);
 }
 
 }} // namespace qpid::cluster

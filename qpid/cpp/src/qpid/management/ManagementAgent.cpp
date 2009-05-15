@@ -25,7 +25,6 @@
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
-#include <qpid/broker/MessageHandler.h>
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/sys/Time.h"
 #include "qpid/broker/ConnectionState.h"
@@ -265,11 +264,9 @@ bool ManagementAgent::checkHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
 }
 
 void ManagementAgent::sendBuffer(Buffer&  buf,
-                                 uint32_t length,
-                                 qpid::broker::Exchange::shared_ptr exchange,
-                                 string   routingKey,
-                                 bool isPredictable)
-
+                                  uint32_t length,
+                                  qpid::broker::Exchange::shared_ptr exchange,
+                                  string   routingKey)
 {
     if (exchange.get() == 0)
         return;
@@ -289,21 +286,14 @@ void ManagementAgent::sendBuffer(Buffer&  buf,
     msg->getFrames().append(method);
     msg->getFrames().append(header);
 
-    DeliveryProperties* delivery = msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
-    delivery->setRoutingKey(routingKey);
-
-    MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
+    MessageProperties* props =
+        msg->getFrames().getHeaders()->get<MessageProperties>(true);
     props->setContentLength(length);
     msg->getFrames().append(content);
 
+    DeliverableMessage deliverable (msg);
     try {
-        if (!isPredictable && broker->getClusterMessageHandler()) {
-            broker->getClusterMessageHandler()->handle(msg);
-        }
-        else {
-            DeliverableMessage deliverable (msg);
-            exchange->route(deliverable, routingKey, 0);
-        }
+        exchange->route(deliverable, routingKey, 0);
     } catch(exception&) {}
 }
 
@@ -357,7 +347,7 @@ void ManagementAgent::periodicProcessing (void)
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
             routingKey = "console.obj.1.0." + object->getPackageName() + "." + object->getClassName();
-            sendBuffer (msgBuffer, contentSize, mExchange, routingKey, false);
+            sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
         
         if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
@@ -368,7 +358,7 @@ void ManagementAgent::periodicProcessing (void)
             contentSize = BUFSIZE - msgBuffer.available ();
             msgBuffer.reset ();
             routingKey = "console.obj.1.0." + object->getPackageName() + "." + object->getClassName();
-            sendBuffer (msgBuffer, contentSize, mExchange, routingKey, false);
+            sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
         if (object->isDeleted())
@@ -397,7 +387,7 @@ void ManagementAgent::periodicProcessing (void)
         contentSize = BUFSIZE - msgBuffer.available ();
         msgBuffer.reset ();
         routingKey = "console.heartbeat.1.0";
-        sendBuffer (msgBuffer, contentSize, mExchange, routingKey, false);
+        sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
     }
 }
 
