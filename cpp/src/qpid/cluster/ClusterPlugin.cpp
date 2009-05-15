@@ -146,8 +146,21 @@ struct ClusterPlugin : public Plugin {
         }
     }
 
+    void disallow(ManagementAgent* agent, const string& className, const string& methodName) {
+        string message = "Management method " + className + ":" + methodName + " is not allowed on a clustered broker.";
+        agent->disallow(className, methodName, message);
+    }
+    void disallowManagementMethods(ManagementAgent* agent) {
+        if (!agent) return;
+        disallow(agent, "queue", "purge");
+        disallow(agent, "session", "detach");
+        disallow(agent, "session", "close");
+        disallow(agent, "connection", "close");
+    }
+
     void initialize(Plugin::Target& target) {
         Broker* broker = dynamic_cast<Broker*>(&target);
+        disallowManagementMethods(broker->getManagementAgent());
         if (broker && cluster)
             cluster->initialize();
     }
