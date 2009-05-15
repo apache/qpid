@@ -43,7 +43,6 @@ struct EventFrame
 
     bool isCluster() const { return connectionId.getNumber() == 0; }
     bool isConnection() const { return connectionId.getNumber() != 0; }
-    bool isControl() const { return type == CONTROL; }
     bool isLastInEvent() const { return readCredit; }
     MemberId getMemberId() const { return connectionId.getMember(); }
 

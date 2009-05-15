@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_BROKER_H
-#define QPID_BROKER_BROKER_H
+#ifndef _Broker_
+#define _Broker_
 
 /*
  *
@@ -68,7 +68,6 @@ struct Url;
 namespace broker {
 
 class ExpiryPolicy;
-class MessageHandler;
 
 static const  uint16_t DEFAULT_PORT=5672;
 
@@ -144,7 +143,6 @@ public:
     std::string federationTag;
     bool recovery;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
-    MessageHandler* clusterMessageHandler;
 
   public:
 
@@ -238,19 +236,10 @@ public:
     bool getRecovery() const { return recovery; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent; }
-
-    /** Handler to route messages to queues with replication.
-     * Required for messages that are generated in a way the cluster
-     * cannot predict, e.g. as a result of a timer firing.
-     * 
-     * @return 0 if not in a cluster.
-     */
-    MessageHandler* getClusterMessageHandler() { return clusterMessageHandler; }
-    void setClusterMessageHandler(MessageHandler& h) { clusterMessageHandler = &h; }
 };
 
 }}
             
 
 
-#endif  /*!QPID_BROKER_BROKER_H*/
+#endif  /*!_Broker_*/

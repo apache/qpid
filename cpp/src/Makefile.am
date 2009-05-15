@@ -391,7 +391,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Link.cpp \
   qpid/broker/LinkRegistry.cpp \
   qpid/broker/Message.cpp \
-  qpid/broker/MessageHandler.h \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
   qpid/broker/MessageStoreModule.cpp \
