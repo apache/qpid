@@ -459,6 +459,16 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
     inBuffer.getShortString(methodName);
     encodeHeader(outBuffer, 'm', sequence);
 
+    DisallowedMethods::const_iterator i = disallowed.find(std::make_pair(className, methodName));
+    if (i != disallowed.end()) {
+        outBuffer.putLong(Manageable::STATUS_FORBIDDEN);
+        outBuffer.putMediumString(i->second);
+        outLen = MA_BUFFER_SIZE - outBuffer.available();
+        outBuffer.reset();
+        sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+        return;
+    }
+
     if (acl != 0) {
         string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
         map<acl::Property, string> params;
@@ -1132,4 +1142,8 @@ uint64_t ManagementAgent::allocateId(Manageable* object)
     Mutex::ScopedLock lock (addLock);
     if (allocator.get()) return allocator->getIdFor(object);
     return 0;
+}
+
+void ManagementAgent::disallow(const std::string& className, const std::string& methodName, const std::string& message) {
+    disallowed[std::make_pair(className, methodName)] = message;
 }
