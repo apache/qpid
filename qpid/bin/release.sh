@@ -176,11 +176,19 @@ if [ "CPP" == "$CPP" ] ; then
   popd
 
   cp qpid-${VER}/cpp/*.tar.gz artifacts/qpid-cpp-${VER}.tar.gz
+  pushd qpid-${VER}/cpp
+  make -j2
+  make check
+  if [ $? != 0 ] ; then
+    echo ERROR : make check failed removing cpp artifacts
+    rm -f artifacts/qpid-cpp-${VER}.tar.gz
+  fi
+  popd
 fi
 
 if [ "JAVA" == "$JAVA" ] ; then
   pushd qpid-${VER}/java
-  ant -Dproject.version=${VER} build release release-bin
+  ant -Dproject.version=${VER} build test release release-bin
   popd
 
   #Copy Full java dir
