@@ -24,3 +24,6 @@ scripts.
 This will require you using the verify script, and providing the necessary sub
 script(s) it will utilize in the process. Please note that it is your
 responsibility to setup the necessary environment for the verification process
+
+=== verify.in format ===
+Lines starting with # are comments and are removed prior to comparison with example output.

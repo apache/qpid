@@ -81,7 +81,7 @@ verify() {
     else dir=`dirname $1`; script=`basename $1`; fi
     cd $dir || return 1
     rm -f *.out
-    { source ./$script && diff -ac $script.out $script.in ; } || fail
+    { source ./$script && grep -v ^# $script.in | diff -ac $script.out - ; } || fail
     test -z "$FAIL" && rm -f *.out
     return $FAIL
 }
