@@ -1,7 +1,7 @@
-Apache Qpid Ruby M4 Release Notes
+Apache Qpid Ruby Release Notes
 ---------------------------------
 
-The Qpid M4 release of the ruby client contains support the for AMQP
+The Qpid release of the ruby client contains support the for AMQP
 0-10 & 0-8 specifications. See:
 
 http://jira.amqp.org/confluence/display/AMQP/Download
@@ -13,3 +13,10 @@ http://cwiki.apache.org/confluence/display/qpid/Index
 
 The README file provided contains some details on installing and using
 the ruby client that is included with this distribution.
+
+Known Issues/Outstanding Work
+-----------------------------
+
+You can view the outstanding task list for Qpid by visiting our JIRA:
+http://issues.apache.org/jira/browse/QPID
+
