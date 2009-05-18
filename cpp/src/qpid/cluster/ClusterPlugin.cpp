@@ -160,9 +160,10 @@ struct ClusterPlugin : public Plugin {
 
     void initialize(Plugin::Target& target) {
         Broker* broker = dynamic_cast<Broker*>(&target);
-        disallowManagementMethods(broker->getManagementAgent());
-        if (broker && cluster)
+        if (broker && cluster) {
+            disallowManagementMethods(broker->getManagementAgent());
             cluster->initialize();
+        }
     }
 };
 
