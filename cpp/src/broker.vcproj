@@ -909,7 +909,7 @@
 				RelativePath="qpid\broker\windows\SaslAuthenticator.cpp">
 			</File>
 			<File
-				RelativePath="qpid\management\ManagementBroker.cpp">
+				RelativePath="qpid\management\ManagementAgent.cpp">
 			</File>
 			<File
 				RelativePath="qpid\management\ManagementExchange.cpp">
@@ -1300,6 +1300,9 @@
 				RelativePath="qpid\management\Manageable.h">
 			</File>
 			<File
+				RelativePath="qpid\management\ManagementAgent.h">
+			</File>
+			<File
 				RelativePath="qpid\management\ManagementBroker.h">
 			</File>
 			<File
@@ -1307,6 +1310,37 @@
 			</File>
 			<File
 				RelativePath="qpid\management\ManagementObject.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Documentation"
+			Filter="">
+			<File
+				RelativePath="CMakeLists.txt">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>
