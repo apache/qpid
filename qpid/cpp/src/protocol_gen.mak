@@ -24,5 +24,5 @@ rubygen.mk: $(specs)
 # Management code generation... uses Python
 
 managementgen.mk:  $(mgmt_specs)
-  python $(mgen_dir)\qmf-gen -m managementgen.mk -o gen\qmf $(mgmt_specs)
+  python $(mgen_dir)\qmf-gen -m managementgen.mk -q -b -o gen\qmf $(mgmt_specs)
 
