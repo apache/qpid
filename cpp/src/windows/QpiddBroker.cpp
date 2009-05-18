@@ -65,6 +65,73 @@ std::string brokerPidFile(std::string piddir, uint16_t port)
     return path.str();
 }
 
+// ShutdownEvent maintains an event that can be used to ask the broker
+// to stop. Analogous to sending SIGTERM/SIGINT to the posix broker.
+// The signal() method signals the event.
+class ShutdownEvent {
+  public:
+    ShutdownEvent(pid_t other = 0);
+    ~ShutdownEvent();
+
+    void signal();
+
+  protected:
+    std::string eventName(pid_t pid);
+    HANDLE event;
+};
+
+class ShutdownHandler : public ShutdownEvent, public qpid::sys::Runnable {
+  public:
+    ShutdownHandler(const boost::intrusive_ptr<Broker>& b)
+      : ShutdownEvent()  { broker = b; }
+
+  private:
+    virtual void run();     // Inherited from Runnable
+    boost::intrusive_ptr<Broker> broker;
+};
+
+ShutdownEvent::ShutdownEvent(pid_t other) : event(NULL) {
+    // If given a pid, open an event assumedly created by that pid. If there's
+    // no pid, create a new event using the current process id.
+    if (other == 0) {
+         std::string name = eventName(GetCurrentProcessId());
+        // Auto-reset event in case multiple processes try to signal a
+        // broker that doesn't respond for some reason. Initially not signaled.
+        event = CreateEvent(NULL, false, false, name.c_str());
+    }
+    else {
+        std::string name = eventName(other);
+        event = OpenEvent(EVENT_MODIFY_STATE, false, name.c_str());
+    }
+    QPID_WINDOWS_CHECK_NULL(event);
+}
+
+ShutdownEvent::~ShutdownEvent() {
+    CloseHandle(event);
+    event = NULL;
+}
+
+void ShutdownEvent::signal() {
+    QPID_WINDOWS_CHECK_NOT(SetEvent(event), 0);
+}
+
+std::string ShutdownEvent::eventName(pid_t pid) {
+    std::ostringstream name;
+    name << "qpidd_" << pid << std::ends;
+    return name.str();
+}
+
+
+void ShutdownHandler::run() {
+    if (event == NULL)
+        return;
+    WaitForSingleObject(event, INFINITE);
+    if (broker.get()) {
+        broker->shutdown();
+        broker = 0;             // Release the broker reference
+    }
+}
+
 }
 
 struct ProcessControlOptions : public qpid::Options {
@@ -139,8 +206,14 @@ int QpiddBroker::execute (QpiddOptions *options) {
             return 1;
         if (myOptions->control.check)
             std::cout << pid << std::endl;
-        if (myOptions->control.quit)
-          std::cout << "Need to stop pid " << pid << std::endl;
+        if (myOptions->control.quit) {
+            ShutdownEvent shutter(pid);
+            HANDLE brokerHandle = OpenProcess(SYNCHRONIZE, false, pid);
+            QPID_WINDOWS_CHECK_NULL(brokerHandle);
+            shutter.signal();
+            WaitForSingleObject(brokerHandle, INFINITE);
+            CloseHandle(brokerHandle);
+        }
         return 0;
     }
 
@@ -153,6 +226,15 @@ int QpiddBroker::execute (QpiddOptions *options) {
                                             options->broker.port),
                               true);
     myPid.writePid();
+
+    // Allow the broker to receive a shutdown request via a qpidd --quit
+    // command. Note that when the broker is run as a service this operation
+    // should not be allowed.
+
+    ShutdownHandler waitShut(brokerPtr);
+    qpid::sys::Thread waitThr(waitShut);   // Wait for shutdown event
     brokerPtr->run();
+    waitShut.signal();   // In case we shut down some other way
+    waitThr.join();
     return 0;
 }
