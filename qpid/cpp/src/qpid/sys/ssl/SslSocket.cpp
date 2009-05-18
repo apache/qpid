@@ -37,11 +37,11 @@
 #include <string.h>
 #include <iostream>
 
-#include <nspr4/private/pprio.h>
-#include <nss3/nss.h>
-#include <nss3/pk11pub.h>
-#include <nss3/ssl.h>
-#include <nss3/key.h>
+#include <private/pprio.h>
+#include <nss.h>
+#include <pk11pub.h>
+#include <ssl.h>
+#include <key.h>
 
 #include <boost/format.hpp>
 

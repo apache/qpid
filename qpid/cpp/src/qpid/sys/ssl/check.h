@@ -23,8 +23,8 @@
  */
 #include <iostream>
 #include <string>
-#include <nspr4/nspr.h>
-#include <nss3/nss.h>
+#include <nspr.h>
+#include <nss.h>
 
 namespace qpid {
 namespace sys {
