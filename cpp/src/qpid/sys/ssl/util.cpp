@@ -24,10 +24,10 @@
 #include "qpid/sys/SystemInfo.h"
 
 #include <unistd.h>
-#include <nspr4/nspr.h>
-#include <nss3/nss.h>
-#include <nss3/pk11pub.h>
-#include <nss3/ssl.h>
+#include <nspr.h>
+#include <nss.h>
+#include <pk11pub.h>
+#include <ssl.h>
 
 #include <iostream>
 #include <fstream>

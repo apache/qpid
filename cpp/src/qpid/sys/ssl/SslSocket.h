@@ -23,7 +23,7 @@
  */
 
 #include "qpid/sys/IOHandle.h"
-#include <nspr4/nspr.h>
+#include <nspr.h>
 
 #include <string>
 
