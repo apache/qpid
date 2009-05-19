@@ -24,6 +24,7 @@
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/LatencyTracker.h"
 #include <boost/current_function.hpp>
 
 
@@ -41,7 +42,10 @@ OutputInterceptor::OutputInterceptor(Connection& p, sys::ConnectionOutputHandler
       moreOutput(), doingOutput()
 {}
 
+LATENCY_TRACK(extern sys::LatencyTracker<const AMQBody*> doOutputTracker;)
+
 void OutputInterceptor::send(framing::AMQFrame& f) {
+    LATENCY_TRACK(doOutputTracker.finish(f.getBody()));
     parent.getCluster().checkQuorum();
     {
         // FIXME aconway 2009-04-28: locking around next-> may be redundant
