@@ -23,82 +23,135 @@
  */
 
 #include "Time.h"
+#include <string>
+#include <limits>
+#include <map>
 
 namespace qpid {
 namespace sys {
 
-/**
- * Record latency between events in the lifecycle of an object.
- * For testing/debugging purposes: use the macros to declare
- * and #define QPID_LATENCY_TRACKER to enable in a build.
+/**@file Tools for measuring latency. NOT SUITABLE FOR PROUDCTION BUILDS.
+ * Uses should be compiled only if QPID_LATENCY_TRACKER is defined.
+ * See the convenience macros at the end of this file.
  */
-template <class T> class LatencyTracker
-{
+
+/** Used by LatencyCounter and LatencyTracker below */
+class LatencyStatistic {
   public:
-    static void start(const char* name, const void* p) {  instance.doStart(name, p); }
-    static void stage(const char* name, const void* p) { instance.doStage(name, p); }
-    static void end(const char* name, const void* p) { instance.doEnd(name, p); }
+    LatencyStatistic(std::string name_) : name(name_), count(0), total(0), min(std::numeric_limits<int64_t>::max()), max(0) {}
+    ~LatencyStatistic() { print(); }
 
-  private:
-    
-    LatencyTracker() : object(), times(), totals(), count(), names(), index(), maxIndex() { }
-    ~LatencyTracker() { print(); }
-
-    void doStart(const char* n, const void* p) { if (!object) { name(n); object=p; times[0] = now(); index = 1; } }
-    void doStage(const char* n, const void* p) { if (p == object) { name(n); times[index++] = now(); } }
-    void doEnd(const char* n, const void* p) { if (p == object) { name(n); times[index++] = now(); record(); object = 0; } }
-
-    void name(const char* n) {
-        if (names[index] == 0) names[index] = n;
-        assert(names[index] == n);
-    }
- 
-    void record() {
-        if (maxIndex == 0) maxIndex = index;
-        assert(maxIndex == index);
-        for (int i = 0; i < index-1; ++i) 
-            totals[i] += Duration(times[i], times[i+1]);
+    void record(Duration d) {
+        total += d;
         ++count;
+        if (d > max) max=d;
+        if (d < min) min=d;
     }
     
     void print() {
-        printf("\nLatency from %s (%lu samples, %d stages) :\n", names[0], count, maxIndex-1);
-        for (int i = 0; i < maxIndex-1; ++i) 
-            printf("to %s:\t%luus\n", names[i+1], (totals[i]/count)/TIME_USEC);
+        if (count) {
+            double meanMsec =  (double(total)/count)/TIME_MSEC;
+            printf("\n==== Latency metric %s: samples=%lu mean=%fms (%f-%f)\n", name.c_str(), count, meanMsec, double(min)/TIME_MSEC, double(max)/TIME_MSEC);
+        }
+        else 
+            printf("\n==== Latency metric %s: no samples.\n", name.c_str());
     }
 
-    static const int SIZE = 1024;
-    const void* object;
-    AbsTime times[SIZE];
-    unsigned long totals[SIZE];
+  private:
+    std::string name;
     unsigned long count;
-    const char* names[SIZE];
-    int index, maxIndex;
+    int64_t total, min, max;
+};
+    
+/** Measure delay between seeing the same value at start and finish. */
+template <class T> class LatencyTracker {
+  public:
+    LatencyTracker(std::string name) : measuring(false), stat(name) {}
 
-    static LatencyTracker instance;
+    void start(T value) {
+        sys::Mutex::ScopedLock l(lock);
+        if (!measuring) {
+            measureAt = value;
+            measuring = true;
+            startTime = AbsTime::now();
+        }
+    }
+    
+    void finish(T value) {
+        sys::Mutex::ScopedLock l(lock);
+        if(measuring && measureAt == value) {
+            stat.record(Duration(startTime, AbsTime::now()));
+            measuring = false;
+        }
+    }
+
+  private:
+    sys::Mutex lock;
+    bool measuring;
+    T measureAt;
+    AbsTime startTime;
+    LatencyStatistic stat;
 };
 
-template <class T> struct LatencyEndOnExit {
-    const char* name;
-    const void* ptr;
-    LatencyEndOnExit(const char* n, const void* p) : name(n), ptr(p) {}
-    ~LatencyEndOnExit() { LatencyTracker<T>::end(name, ptr); }
+
+/** Measures delay between the nth call to start and the nth call to finish.
+ * E.g. to measure latency between sending & receiving an ordered stream of messages.
+ */
+class LatencyCounter {
+  public:
+    LatencyCounter(std::string name) : measuring(false), startCount(0), finishCount(0), stat(name) {}
+
+    void start() {
+        sys::Mutex::ScopedLock l(lock);
+        if (!measuring) {
+            measureAt = startCount;
+            measuring = true;
+            startTime = AbsTime::now();
+        }
+        ++startCount;
+    }
+
+    void finish() {
+        sys::Mutex::ScopedLock l(lock);
+        if (measuring && measureAt == finishCount) {
+            stat.record(Duration(startTime, AbsTime::now()));
+            measuring = false;
+        }
+        ++finishCount;
+    }
+
+  private:
+    sys::Mutex lock;
+    bool measuring;
+    uint64_t startCount, finishCount, measureAt;
+    AbsTime startTime;
+    LatencyStatistic stat;
 };
 
-template <class T> LatencyTracker<T> LatencyTracker<T>::instance;
+/** Measures time spent in a scope. */
+class LatencyScope {
+  public:
+    LatencyScope(LatencyStatistic& s) : stat(s), startTime(AbsTime::now()) {}
+
+    ~LatencyScope() { 
+        sys::Mutex::ScopedLock l(lock);
+        stat.record(Duration(startTime, AbsTime::now()));
+    }
+
+  private:
+    sys::Mutex lock;
+    LatencyStatistic& stat;
+    AbsTime startTime;
+};
+
+    
+/** Macros to wrap latency tracking so disabled unless QPID_LATENCY_TRACKER is defined */
 
 #if defined(QPID_LATENCY_TRACKER)
-#define LATENCY_START(TAG, NAME, PTR) ::qpid::sys::LatencyTracker<TAG>::start(NAME, PTR)
-#define LATENCY_STAGE(TAG, NAME, PTR) ::qpid::sys::LatencyTracker<TAG>::stage(NAME, PTR)
-#define LATENCY_END(TAG, NAME, PTR) ::qpid::sys::LatencyTracker<TAG>::end(NAME, PTR)
-#define LATENCY_END_ON_EXIT(TAG, NAME, PTR) ::qpid::sys::LatencyEndOnExit<TAG>(NAME, PTR)
+#define LATENCY_TRACK(X) X
 #else
-#define LATENCY_START(TAG, NAME, PTR) void(0)
-#define LATENCY_STAGE(TAG, NAME, PTR) void(0)
-#define LATENCY_END(TAG, NAME, PTR) void(0)
-#define LATENCY_END_ON_EXIT(TAG, NAME, PTR) void(0) 
+#define LATENCY_TRACK(X)
 #endif
-
 }} // namespace qpid::sys
 
 #endif  /*!QPID_SYS_LATENCYTRACKER_H*/

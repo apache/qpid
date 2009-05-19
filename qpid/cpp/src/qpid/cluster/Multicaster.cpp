@@ -31,6 +31,9 @@ namespace cluster {
 Multicaster::Multicaster(Cpg& cpg_, 
                          const boost::shared_ptr<sys::Poller>& poller,
                          boost::function<void()> onError_) :
+#if defined (QPID_LATENCY_TRACKER)
+    cpgLatency("CPG"),
+#endif
     onError(onError_), cpg(cpg_), 
     queue(boost::bind(&Multicaster::sendMcast, this, _1), poller),
     holding(true)
@@ -58,6 +61,7 @@ void Multicaster::mcastBuffer(const char* data, size_t size, const ConnectionId&
 void Multicaster::mcast(const Event& e) {
     {
         sys::Mutex::ScopedLock l(lock);
+        LATENCY_TRACK(cpgLatency.start());
         if (e.getType() == DATA && e.isConnection() && holding) {
             holdingQueue.push_back(e); 
             return;
