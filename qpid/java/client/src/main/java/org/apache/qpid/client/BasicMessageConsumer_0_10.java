@@ -430,4 +430,31 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return receiveNoWait();
     }
 
+    @Override public void rollbackPendingMessages()
+    {
+        if (_synchronousQueue.size() > 0)
+        {
+            RangeSet ranges = new RangeSet();
+            Iterator iterator = _synchronousQueue.iterator();
+            while (iterator.hasNext())
+            {
+
+                Object o = iterator.next();
+                if (o instanceof AbstractJMSMessage)
+                {
+                    ranges.add((int) ((AbstractJMSMessage) o).getDeliveryTag());
+                    iterator.remove();
+                }
+                else
+                {
+                    _logger.error("Queue contained a :" + o.getClass()
+                                  + " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
+                    iterator.remove();
+                }
+            }
+
+            _0_10session.getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
+            clearReceiveQueue();
+        }
+    }
 }
