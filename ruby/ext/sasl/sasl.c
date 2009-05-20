@@ -41,6 +41,7 @@ typedef struct {
     sasl_callback_t callbacks[8];
     char* userName;
     char* password;
+    char* operUserName;
     unsigned int minSsf;
     unsigned int maxSsf;
     char mechanism[MECH_SIZE];
@@ -280,6 +281,8 @@ static VALUE qsasl_free(int argc, VALUE *argv, VALUE obj)
         free(context->userName);
     if (context->password)
         free(context->password);
+    if (context->operUserName)
+        free(context->operUserName);
     free(context);
 
     return Qnil;
@@ -294,10 +297,12 @@ static VALUE qsasl_client_start(int argc, VALUE *argv, VALUE obj)
     char* mechList;
     char* mechToUse;
     int result;
+    int propResult;
     const char* response;
     unsigned int len;
     sasl_interact_t* interact = 0;
     const char* chosen;
+    const char* operName;
 
     if (argc == 2) {
         context = (context_t*) argv[0];
@@ -322,6 +327,14 @@ static VALUE qsasl_client_start(int argc, VALUE *argv, VALUE obj)
         rb_raise(rb_eRuntimeError, "sasl_client_start failed: %d - %s",
                  result, sasl_errdetail(context->conn));
 
+    if (result == SASL_OK) {
+        propResult = sasl_getprop(context->conn, SASL_USERNAME, (const void**) &operName);
+        if (propResult == SASL_OK) {
+            context->operUserName = (char*) malloc(strlen(operName) + 1);
+            strcpy(context->operUserName, operName);
+        }
+    }
+
     return rb_ary_new3(3, INT2NUM(result), rb_str_new(response, len), rb_str_new2(chosen));
 }
 
@@ -333,7 +346,9 @@ static VALUE qsasl_client_step(int argc, VALUE *argv, VALUE obj)
     context_t* context;
     VALUE challenge;
     int result;
+    int propResult;
     const char* response;
+    const char* operName;
     unsigned int len;
     sasl_interact_t* interact = 0;
 
@@ -356,7 +371,31 @@ static VALUE qsasl_client_step(int argc, VALUE *argv, VALUE obj)
     if (result != SASL_OK && result != SASL_CONTINUE)
         return QSASL_FAILED;
 
+    if (result == SASL_OK) {
+        propResult = sasl_getprop(context->conn, SASL_USERNAME, (const void**) &operName);
+        if (propResult == SASL_OK) {
+            context->operUserName = (char*) malloc(strlen(operName) + 1);
+            strcpy(context->operUserName, operName);
+        }
+    }
+
     return rb_ary_new3(2, INT2NUM(result), rb_str_new(response, len));
+}
+
+static VALUE qsasl_user_id(int argc, VALUE *argv, VALUE obj)
+{
+    context_t* context;
+
+    if (argc == 1) {
+        context = (context_t*) argv[0];
+    } else {
+        rb_raise(rb_eRuntimeError, "Wrong Number of Arguments");
+    }
+
+    if (context->operUserName)
+        return rb_str_new2(context->operUserName);
+
+    return Qnil;
 }
 
 //
@@ -427,6 +466,7 @@ void Init_sasl()
     rb_define_module_function(mSasl, "free", qsasl_free, -1);
     rb_define_module_function(mSasl, "client_start", qsasl_client_start, -1);
     rb_define_module_function(mSasl, "client_step", qsasl_client_step, -1);
+    rb_define_module_function(mSasl, "user_id", qsasl_user_id, -1);
     rb_define_module_function(mSasl, "encode", qsasl_encode, -1);
     rb_define_module_function(mSasl, "decode", qsasl_decode, -1);
 }

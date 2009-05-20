@@ -36,7 +36,7 @@ module Qpid
     include MonitorMixin
 
     attr_reader :spec, :attached, :sessions, :thread
-    attr_accessor :opened, :failed, :close_code
+    attr_accessor :opened, :failed, :close_code, :user_id
 
     def initialize(sock, args={})
       super(sock)
@@ -58,6 +58,7 @@ module Qpid
       @thread = nil
 
       @channel_max = 65535
+      @user_id = nil
 
       @delegate = delegate.call(self, args)
     end
