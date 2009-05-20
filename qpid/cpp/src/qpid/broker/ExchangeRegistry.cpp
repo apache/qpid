@@ -71,6 +71,11 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 }
 
 void ExchangeRegistry::destroy(const string& name){
+    if (name.empty() ||
+        (name.find("amq.") == 0 &&
+         (name == "amq.direct" || name == "amq.fanout" || name == "amq.topic" || name == "amq.match")) ||
+        name == "qpid.management")
+        throw framing::NotAllowedException(QPID_MSG("Cannot delete default exchange: '" << name << "'"));
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i != exchanges.end()) {
