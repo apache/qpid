@@ -60,7 +60,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
             if (i == factory.end()) {
                 throw UnknownExchangeTypeException();    
             } else {
-                exchange = i->second(name, durable, args, parent);
+                exchange = i->second(name, durable, args, parent, broker);
             }
         }
         exchanges[name] = exchange;

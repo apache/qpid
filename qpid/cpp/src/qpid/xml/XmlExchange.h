@@ -37,6 +37,7 @@
 namespace qpid {
 namespace broker {
 
+class Broker;
 class XmlExchange : public virtual Exchange {
 
     typedef boost::shared_ptr<XQQuery> Query;
@@ -64,9 +65,9 @@ class XmlExchange : public virtual Exchange {
   public:
     static const std::string typeName;
         
-    XmlExchange(const std::string& name, management::Manageable* parent = 0);
+    XmlExchange(const std::string& name, management::Manageable* parent = 0, Broker* broker = 0);
     XmlExchange(const string& _name, bool _durable,
-		const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
+		const qpid::framing::FieldTable& _args, management::Manageable* parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }
         
