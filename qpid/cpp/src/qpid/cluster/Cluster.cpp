@@ -338,7 +338,8 @@ void Cluster::deliveredEvent(const Event& e) {
 
 void Cluster::flagError(Connection& connection, ErrorCheck::ErrorType type) {
     Mutex::ScopedLock l(lock);
-    error.error(connection, type, map.getFrameSeq(), map.getMembers());
+    if (settings.checkErrors)
+        error.error(connection, type, map.getFrameSeq(), map.getMembers());
 }
 
 LATENCY_TRACK(sys::LatencyTracker<const AMQBody*> doOutputTracker("DoOutput");)
@@ -350,9 +351,14 @@ void Cluster::deliveredFrame(const EventFrame& e) {
     LATENCY_TRACK(if (e.frame.getBody()->type() == CONTENT_BODY) doOutputTracker.start(e.frame.getBody()));
     Mutex::ScopedLock l(lock);
     // Process each frame through the error checker.
-    error.delivered(e);
-    while (error.canProcess())  // There is a frame ready to process.
-        processFrame(error.getNext(), l);
+    if (settings.checkErrors) {
+        error.delivered(e);
+        while (error.canProcess())  // There is a frame ready to process.
+            processFrame(error.getNext(), l);
+    }
+    else {
+        processFrame(e, l);
+    }
 }
 
 LATENCY_TRACK(sys::LatencyStatistic processLatency("Process");)
@@ -707,7 +713,7 @@ std::ostream& operator<<(std::ostream& o, const Cluster& cluster) {
     };
     assert(sizeof(STATE)/sizeof(*STATE) == Cluster::LEFT+1);
     o << cluster.self << "(" << STATE[cluster.state];
-    if (cluster.error.isUnresolved()) o << "/error";
+    if (cluster.settings.checkErrors && cluster.error.isUnresolved()) o << "/error";
     return o << ")";
 }
 

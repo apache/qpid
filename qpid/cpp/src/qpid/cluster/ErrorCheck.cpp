@@ -60,11 +60,9 @@ void ErrorCheck::error(Connection& c, ErrorType t, uint64_t seq, const MemberSet
 
 void ErrorCheck::delivered(const EventFrame& e) {
     if (isUnresolved()) {
-        const ClusterErrorCheckBody* errorCheck =
-            dynamic_cast<const ClusterErrorCheckBody*>(e.frame.getMethod());
-        const ClusterConfigChangeBody* configChange =
-            dynamic_cast<const ClusterConfigChangeBody*>(e.frame.getMethod());
-
+        const ClusterErrorCheckBody* errorCheck = 0;
+        if (e.frame.getBody())
+            errorCheck = dynamic_cast<const ClusterErrorCheckBody*>(e.frame.getMethod());
         if (errorCheck && errorCheck->getFrameSeq() == frameSeq) { // Same error
             if (errorCheck->getType() < type) { // my error is worse than his
                 QPID_LOG(critical, cluster << " Error " << frameSeq << " did not occur on " << e.getMemberId());
@@ -78,6 +76,9 @@ void ErrorCheck::delivered(const EventFrame& e) {
         }
         else {
             frames.push_back(e); // Only drop matching errorCheck controls.
+            const ClusterConfigChangeBody* configChange = 0;
+            if (e.frame.getBody())
+                configChange = dynamic_cast<const ClusterConfigChangeBody*>(e.frame.getMethod());
             if (configChange) {
                 MemberSet members(ClusterMap::decode(configChange->getCurrent()));
                 MemberSet result;
