@@ -44,7 +44,7 @@ class QmfTest < Test::Unit::TestCase
       @count = count
       for idx in 0...count
         synchronize do
-          seq = broker.echo(idx, "Echo Message", :_async => true)
+          seq = broker.echo(idx, "Echo Message", :async => true)
           @xmt_list[seq] = idx
         end
       end
@@ -109,7 +109,7 @@ class QmfTest < Test::Unit::TestCase
     start_qmf
     body = "Echo Message Body"
     for seq in 1..10
-      res = @broker.echo(seq, body, :_timeout => 10)
+      res = @broker.echo(seq, body, :timeout => 10)
       assert_equal(0, res.status)
       assert_equal("OK", res.text)
       assert_equal(seq, res.sequence)

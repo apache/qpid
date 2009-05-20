@@ -137,6 +137,8 @@ module Qpid
         @tx_buf = ""
         frm.debug("FLUSHED") if frm
       end
+    rescue
+      @sock.close unless @sock.closed?
     end
 
     def _write(buf)

@@ -252,7 +252,7 @@ module Qpid::Qmf
         args = { :exchange => "qpid.management",
           :queue => broker.topic_name,
           :binding_key => "console.obj.*.*.#{package_name}.#" }
-        broker.amqpSession.exchange_bind(args)
+        broker.amqp_session.exchange_bind(args)
       end
     end
 
@@ -264,7 +264,7 @@ module Qpid::Qmf
         args = { :exchange => "qpid.management",
           :queue => broker.topic_name,
           :binding_key=> "console.obj.*.*.#{package_name}.#{class_name}.#" }
-        broker.amqpSession.exchange_bind(args)
+        broker.amqp_session.exchange_bind(args)
       end
     end
 
@@ -277,7 +277,7 @@ module Qpid::Qmf
         args = { :exchange => "qpid.management",
           :queue => broker.topic_name,
           :binding_key => "console.obj.*.*.#{pname}.#{cname}.#" }
-        broker.amqpSession.exchange_bind(args)
+        broker.amqp_session.exchange_bind(args)
       end
     end
 
@@ -319,7 +319,7 @@ module Qpid::Qmf
     # The default timeout for this synchronous operation is 60 seconds.  To change the timeout,
     # use the following argument:
     #
-    # :_timeout = <time in seconds>
+    # :timeout = <time in seconds>
     #
     # If additional arguments are supplied, they are used as property
     # selectors, as long as their keys are strings.  For example, if
@@ -340,19 +340,21 @@ module Qpid::Qmf
         unless broker_list.include?(agent.broker)
           raise ArgumentError, "Supplied agent is not accessible through the supplied broker"
         end
-        agent_list << agent
+        agent_list << agent if agent.broker.connected?
       else
         if kwargs.include?(:object_id)
           oid = kwargs[:object_id]
           broker_list.each { |broker|
             broker.agents.each { |agent|
               if oid.broker_bank == agent.broker_bank && oid.agent_bank == agent.agent_bank
-                agent_list << agent
+                agent_list << agent if agent.broker.connected?
               end
             }
           }
         else
-          broker_list.each { |broker| agent_list += broker.agents }
+          broker_list.each { |broker|
+            agent_list += broker.agents if broker.connected?
+          }
         end
       end
 
@@ -400,8 +402,8 @@ module Qpid::Qmf
       end
 
       timeout = false
-      if kwargs.include?(:_timeout)
-        wait_time = kwargs[:_timeout]
+      if kwargs.include?(:timeout)
+        wait_time = kwargs[:timeout]
       else
         wait_time = DEFAULT_GET_WAIT_TIME
       end
@@ -616,8 +618,8 @@ module Qpid::Qmf
     def handle_broker_disconnect(broker); end
 
     def handle_error(error)
-      @error = error
       synchronize do
+        @error = error if @sync_sequence_list.length > 0
         @sync_sequence_list = []
         @cv.signal
       end
@@ -953,6 +955,8 @@ module Qpid::Qmf
 
   class Object
 
+    DEFAULT_METHOD_WAIT_TIME = 60
+
     attr_reader :object_id, :schema, :properties, :statistics,
     :current_time, :create_time, :delete_time, :broker
 
@@ -1110,12 +1114,14 @@ module Qpid::Qmf
       timeout = nil
 
       if kwargs.class == Hash
-        if kwargs.include?(:_timeout)
-          timeout = kwargs[:_timeout]
+        if kwargs.include?(:timeout)
+          timeout = kwargs[:timeout]
+        else
+          timeout = DEFAULT_METHOD_WAIT_TIME
         end
 
-        if kwargs.include?(:_async)
-          sync = !kwargs[:_async]
+        if kwargs.include?(:async)
+          sync = !kwargs[:async]
         end
         args.pop
       end
@@ -1212,7 +1218,7 @@ module Qpid::Qmf
               end
             end
 
-          rescue Qpid::Session::Closed, Qpid::Session::Detached, SystemCallError
+          rescue
             delay *= DELAY_FACTOR if delay < DELAY_MAX
           end
 
@@ -1247,6 +1253,7 @@ module Qpid::Qmf
   class Broker
 
     SYNC_TIME = 60
+    @@next_seq = 1
 
     include MonitorMixin
 
@@ -1267,20 +1274,17 @@ module Qpid::Qmf
       @port     = port
       @auth_name = auth_name
       @auth_pass = auth_pass
+      @user_id = nil
       @auth_mechanism = kwargs[:mechanism]
       @auth_service = kwargs[:service]
       @broker_bank = 1
-      @agents   = {}
-      @agents["1.0"] = Agent.new(self, 0, "BrokerAgent")
       @topic_bound = false
       @cv = new_cond
-      @sync_in_flight = false
-      @sync_request = 0
-      @sync_result = nil
-      @reqs_outstanding = 1
-      @error     = nil
-      @broker_id  = nil
+      @error = nil
+      @broker_id = nil
       @is_connected = false
+      @amqp_session_id = "%s.%d.%d" % [Socket.gethostname, Process::pid, @@next_seq]
+      @@next_seq += 1
       @conn = nil
       if @session.managedConnections?
         @thread = ManagedConnection.new(self)
@@ -1326,6 +1330,7 @@ module Qpid::Qmf
 
     def wait_for_stable
       synchronize do
+        return unless connected?
         return if @reqs_outstanding == 0
         @sync_in_flight = true
         unless @cv.wait_for(SYNC_TIME) { @reqs_outstanding == 0 }
@@ -1350,6 +1355,7 @@ module Qpid::Qmf
       mp = @amqp_session.message_properties
       mp.content_type = "x-application/qmf"
       mp.reply_to = amqp_session.reply_to("amq.direct", @reply_name)
+      #mp.user_id = @user_id if @user_id
       return Qpid::Message.new(dp, mp, body)
     end
 
@@ -1422,8 +1428,14 @@ module Qpid::Qmf
     end
 
     def try_to_connect
-      #begin
-      @amqp_session_id = "%s.%d" % [Socket.gethostname, Process::pid]
+      @agents = {}
+      @agents["1.0"] = Agent.new(self, 0, "BrokerAgent")
+      @topic_bound = false
+      @sync_in_flight = false
+      @sync_request = 0
+      @sync_result = nil
+      @reqs_outstanding = 1
+
       # FIXME: Need sth for Qpid::Util::connect
 
       @conn = Qpid::Connection.new(TCPSocket.new(@host, @port),
@@ -1433,6 +1445,7 @@ module Qpid::Qmf
                                    :host => @host,
                                    :service => @auth_service)
       @conn.start
+      @user_id = @conn.user_id
       @reply_name = "reply-%s" % amqp_session_id
       @amqp_session = @conn.session(@amqp_session_id)
       @amqp_session.auto_sync = true

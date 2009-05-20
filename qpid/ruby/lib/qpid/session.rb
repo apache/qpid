@@ -114,7 +114,7 @@ module Qpid
         end
       end
       if error?
-        raise Qpid::Session::Exception, exceptions
+        raise Qpid::Session::Exception, @exceptions
       end
     end
 
@@ -436,7 +436,7 @@ module Qpid
       end
 
       def execution_exception(ex)
-        @session.exceptions.append(ex)
+        @session.exceptions << ex
       end
     end
 

@@ -202,6 +202,7 @@ module Qpid
         end
         begin
           resp = Sasl.client_start(@saslConn, mech_list)
+          @connection.user_id = Sasl.user_id(@saslConn)
           ch.connection_start_ok(:client_properties => PROPERTIES,
                                  :mechanism => resp[2],
                                  :response => resp[1])
@@ -214,6 +215,7 @@ module Qpid
 
       def connection_secure(ch, secure)
         resp = Sasl.client_step(@saslConn, secure.challenge)
+        @connection.user_id = Sasl.user_id(@saslConn)
         ch.connection_secure_ok(:response => resp[1])
       end
 
