@@ -76,6 +76,8 @@ struct ClusterOptions : public Options {
              "Experimental: initial estimate for write rate per multicast cycle")
             ("cluster-write-min", optValue(settings.writeMin, "Kb"),
              "Experimental: minimum estimate for write rate per multicast cycle")
+            // FIXME aconway 2009-05-20: temporary
+            ("cluster-check-errors", optValue(settings.checkErrors, "yes|no"), "Enable/disable cluster error checks. Normally should be enabled.")
             ;
     }
 };

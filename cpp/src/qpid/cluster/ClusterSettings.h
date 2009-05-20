@@ -34,8 +34,11 @@ struct ClusterSettings {
     bool quorum;
     size_t readMax, writeEstimate, writeMin;
     std::string username, password, mechanism;
+    bool checkErrors;
 
-    ClusterSettings() : quorum(false), readMax(10), writeEstimate(1), writeMin(1) {}
+    ClusterSettings() : quorum(false), readMax(10), writeEstimate(1), writeMin(1),
+                        checkErrors(true) // FIXME aconway 2009-05-20: temporary
+    {}
   
     Url getUrl(uint16_t port) const {
         if (url.empty()) return Url::getIpAddressesUrl(port);
