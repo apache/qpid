@@ -13,3 +13,6 @@ org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 
 // QPID-1823: this takes ages to run
 org.apache.qpid.client.SessionCreateTest#*
+
+// QPID-1870 : AlertingTest doesn't consume all messages and is showing a ref count error on store recovery in CI
+org.apache.qpid.server.AlertingTest#*
