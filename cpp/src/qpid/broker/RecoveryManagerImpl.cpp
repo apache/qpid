@@ -103,7 +103,12 @@ public:
 
 RecoverableExchange::shared_ptr RecoveryManagerImpl::recoverExchange(framing::Buffer& buffer)
 {
-    return RecoverableExchange::shared_ptr(new RecoverableExchangeImpl(Exchange::decode(exchanges, buffer), queues));
+    Exchange::shared_ptr e = Exchange::decode(exchanges, buffer);
+    if (e) {
+        return RecoverableExchange::shared_ptr(new RecoverableExchangeImpl(e, queues));
+    } else {
+        return RecoverableExchange::shared_ptr();
+    }
 }
 
 RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& buffer)
