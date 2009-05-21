@@ -197,7 +197,6 @@ void TCPConnector::connect(const std::string& host, int port){
     }
 
     identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
-    closed = false;
     poller = Poller::shared_ptr(new Poller);
     aio = AsynchIO::create(socket,
                        boost::bind(&TCPConnector::readbuff, this, _1, _2),
@@ -206,6 +205,7 @@ void TCPConnector::connect(const std::string& host, int port){
                        0, // closed
                        0, // nobuffs
                        boost::bind(&TCPConnector::writebuff, this, _1));
+    closed = false;
 }
 
 void TCPConnector::init(){
