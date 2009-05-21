@@ -160,9 +160,14 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     buffer.getShortString(type);
     buffer.get(args);
 
-    Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
-    exch->sequenceNo = args.getAsInt64(qpidSequenceCounter);
-    return exch;
+    try {
+        Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
+        exch->sequenceNo = args.getAsInt64(qpidSequenceCounter);
+        return exch;
+    } catch (const UnknownExchangeTypeException&) {
+        QPID_LOG(warning, "Could not create exchange " << name << "; type " << type << " is not recognised");
+        return Exchange::shared_ptr();
+    }
 }
 
 void Exchange::encode(Buffer& buffer) const 
