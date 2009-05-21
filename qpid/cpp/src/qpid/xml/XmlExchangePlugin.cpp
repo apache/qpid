@@ -51,7 +51,7 @@ public:
 };
   
 
-void XmlExchangePlugin::initialize(Plugin::Target& target)
+void XmlExchangePlugin::earlyInitialize(Plugin::Target& target)
 {
       Broker* broker = dynamic_cast<broker::Broker*>(&target);
       if (broker) {
@@ -60,7 +60,7 @@ void XmlExchangePlugin::initialize(Plugin::Target& target)
       }
 }
 
-void XmlExchangePlugin::earlyInitialize(Target&) {}
+void XmlExchangePlugin::initialize(Target&) {}
 
 
 static XmlExchangePlugin matchingPlugin;

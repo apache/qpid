@@ -38,8 +38,8 @@ const std::string SEQUENCE_VALUE("qpid.replication-event.sequence");
 ReplicationExchange::ReplicationExchange(const std::string& name, bool durable, 
                                          const FieldTable& _args,
                                          QueueRegistry& qr,
-                                         Manageable* parent) 
-    : Exchange(name, durable, _args, parent), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
+                                         Manageable* parent, Broker* broker) 
+    : Exchange(name, durable, _args, parent, broker), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
 {
     args.setInt64(SEQUENCE_VALUE, sequence);
 }
@@ -156,31 +156,32 @@ struct ReplicationExchangePlugin : Plugin
     void initialize(Plugin::Target& target);
     Exchange::shared_ptr create(const std::string& name, bool durable,
                                 const framing::FieldTable& args, 
-                                management::Manageable* parent);
+                                management::Manageable* parent, 
+                                qpid::broker::Broker* broker);
 };
 
 ReplicationExchangePlugin::ReplicationExchangePlugin() : broker(0) {}
 
 Exchange::shared_ptr ReplicationExchangePlugin::create(const std::string& name, bool durable,
                                                        const framing::FieldTable& args, 
-                                                       management::Manageable* parent)
+                                                       management::Manageable* parent, qpid::broker::Broker* broker)
 {
-    Exchange::shared_ptr e(new ReplicationExchange(name, durable, args, broker->getQueues(), parent));
+    Exchange::shared_ptr e(new ReplicationExchange(name, durable, args, broker->getQueues(), parent, broker));
     return e;
 }
 
 
-void ReplicationExchangePlugin::initialize(Plugin::Target& target)
+void ReplicationExchangePlugin::earlyInitialize(Plugin::Target& target)
 {
     broker = dynamic_cast<broker::Broker*>(&target);
     if (broker) {
-        ExchangeRegistry::FactoryFunction f = boost::bind(&ReplicationExchangePlugin::create, this, _1, _2, _3, _4);
+        ExchangeRegistry::FactoryFunction f = boost::bind(&ReplicationExchangePlugin::create, this, _1, _2, _3, _4, _5);
         broker->getExchanges().registerType(ReplicationExchange::typeName, f);
         QPID_LOG(info, "Registered replication exchange");
     }
 }
 
-void ReplicationExchangePlugin::earlyInitialize(Target&) {}
+void ReplicationExchangePlugin::initialize(Target&) {}
 
 static ReplicationExchangePlugin exchangePlugin;
 

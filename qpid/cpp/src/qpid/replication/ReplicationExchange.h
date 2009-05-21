@@ -42,7 +42,8 @@ class ReplicationExchange : public qpid::broker::Exchange
     ReplicationExchange(const std::string& name, bool durable, 
                         const qpid::framing::FieldTable& args,
                         qpid::broker::QueueRegistry& queues,
-                        qpid::management::Manageable* parent = 0);
+                        qpid::management::Manageable* parent = 0,
+                        qpid::broker::Broker* broker = 0);
 
     std::string getType() const;
 
