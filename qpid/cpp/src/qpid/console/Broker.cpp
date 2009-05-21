@@ -92,25 +92,29 @@ bool Broker::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq) const
 
 void Broker::received(qpid::client::Message& msg)
 {
+#define QMF_HEADER_SIZE 8
     string   data = msg.getData();
     Buffer   inBuffer(const_cast<char*>(data.c_str()), data.size());
     uint8_t  opcode;
     uint32_t sequence;
 
-    if (checkHeader(inBuffer, &opcode, &sequence)) {
-        QPID_LOG(trace, "Broker::received: opcode=" << opcode << " seq=" << sequence);
+    while (inBuffer.available() >= QMF_HEADER_SIZE) {
+        if (checkHeader(inBuffer, &opcode, &sequence)) {
+            QPID_LOG(trace, "Broker::received: opcode=" << opcode << " seq=" << sequence);
 
-        if      (opcode == 'b') sessionManager.handleBrokerResp(this, inBuffer, sequence);
-        else if (opcode == 'p') sessionManager.handlePackageInd(this, inBuffer, sequence);
-        else if (opcode == 'z') sessionManager.handleCommandComplete(this, inBuffer, sequence);
-        else if (opcode == 'q') sessionManager.handleClassInd(this, inBuffer, sequence);
-        else if (opcode == 'm') sessionManager.handleMethodResp(this, inBuffer, sequence);
-        else if (opcode == 'h') sessionManager.handleHeartbeatInd(this, inBuffer, sequence);
-        else if (opcode == 'e') sessionManager.handleEventInd(this, inBuffer, sequence);
-        else if (opcode == 's') sessionManager.handleSchemaResp(this, inBuffer, sequence);
-        else if (opcode == 'c') sessionManager.handleContentInd(this, inBuffer, sequence, true, false);
-        else if (opcode == 'i') sessionManager.handleContentInd(this, inBuffer, sequence, false, true);
-        else if (opcode == 'g') sessionManager.handleContentInd(this, inBuffer, sequence, true, true);
+            if      (opcode == 'b') sessionManager.handleBrokerResp(this, inBuffer, sequence);
+            else if (opcode == 'p') sessionManager.handlePackageInd(this, inBuffer, sequence);
+            else if (opcode == 'z') sessionManager.handleCommandComplete(this, inBuffer, sequence);
+            else if (opcode == 'q') sessionManager.handleClassInd(this, inBuffer, sequence);
+            else if (opcode == 'm') sessionManager.handleMethodResp(this, inBuffer, sequence);
+            else if (opcode == 'h') sessionManager.handleHeartbeatInd(this, inBuffer, sequence);
+            else if (opcode == 'e') sessionManager.handleEventInd(this, inBuffer, sequence);
+            else if (opcode == 's') sessionManager.handleSchemaResp(this, inBuffer, sequence);
+            else if (opcode == 'c') sessionManager.handleContentInd(this, inBuffer, sequence, true, false);
+            else if (opcode == 'i') sessionManager.handleContentInd(this, inBuffer, sequence, false, true);
+            else if (opcode == 'g') sessionManager.handleContentInd(this, inBuffer, sequence, true, true);
+        } else
+            return;
     }
 }
 
