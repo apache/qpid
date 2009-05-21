@@ -311,7 +311,7 @@ class Generator:
   def writeIfChanged (self, stream, target, force=False):
     ext = self.fileExt (target)
     self.filelists[ext].append (target)
-    tempFile = self.packagePath + "gen.tmp"
+    tempFile = target + ".gen.tmp"
     fd = open (tempFile, "w")
     fd.write  (stream.getvalue ())
     fd.close  ()
