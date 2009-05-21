@@ -310,6 +310,7 @@ void ManagementAgent::moveNewObjectsLH()
 void ManagementAgent::periodicProcessing (void)
 {
 #define BUFSIZE   65536
+#define HEADROOM  4096
     Mutex::ScopedLock lock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
@@ -321,49 +322,75 @@ void ManagementAgent::periodicProcessing (void)
 
     moveNewObjectsLH();
 
-    if (clientWasAdded) {
-        clientWasAdded = false;
-        for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-             iter != managementObjects.end ();
-             iter++) {
-            ManagementObject* object = iter->second;
+    //
+    //  Clear the been-here flag on all objects in the map.
+    //
+    for (ManagementObjectMap::iterator iter = managementObjects.begin();
+         iter != managementObjects.end();
+         iter++) {
+        ManagementObject* object = iter->second;
+        object->setFlags(0);
+        if (clientWasAdded) {
             object->setForcePublish(true);
         }
     }
 
-    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++) {
-        ManagementObject* object = iter->second;
+    clientWasAdded = false;
 
-        if (object->getConfigChanged() || object->getInstChanged())
-            object->setUpdateTime();
+    //
+    //  Process the entire object map.
+    //
+    for (ManagementObjectMap::iterator baseIter = managementObjects.begin();
+         baseIter != managementObjects.end();
+         baseIter++) {
+        ManagementObject* baseObject = baseIter->second;
 
-        if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted()) {
-            Buffer msgBuffer (msgChars, BUFSIZE);
-            encodeHeader (msgBuffer, 'c');
-            object->writeProperties(msgBuffer);
+        //
+        //  Skip until we find a base object requiring a sent message.
+        //
+        if (baseObject->getFlags() == 1 ||
+            (!baseObject->getConfigChanged() &&
+             !baseObject->getInstChanged() &&
+             !baseObject->getForcePublish() &&
+             !baseObject->isDeleted()))
+            continue;
 
-            contentSize = BUFSIZE - msgBuffer.available ();
-            msgBuffer.reset ();
-            routingKey = "console.obj.1.0." + object->getPackageName() + "." + object->getClassName();
-            sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
-        }
+        Buffer msgBuffer(msgChars, BUFSIZE);
+        for (ManagementObjectMap::iterator iter = baseIter;
+             iter != managementObjects.end();
+             iter++) {
+            ManagementObject* object = iter->second;
+            if (baseObject->isSameClass(*object) && object->getFlags() == 0) {
+                object->setFlags(1);
+                if (object->getConfigChanged() || object->getInstChanged())
+                    object->setUpdateTime();
+
+                if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted()) {
+                    encodeHeader(msgBuffer, 'c');
+                    object->writeProperties(msgBuffer);
+                }
         
-        if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
-            Buffer msgBuffer (msgChars, BUFSIZE);
-            encodeHeader (msgBuffer, 'i');
-            object->writeStatistics(msgBuffer);
+                if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
+                    encodeHeader(msgBuffer, 'i');
+                    object->writeStatistics(msgBuffer);
+                }
 
-            contentSize = BUFSIZE - msgBuffer.available ();
-            msgBuffer.reset ();
-            routingKey = "console.obj.1.0." + object->getPackageName() + "." + object->getClassName();
-            sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+                if (object->isDeleted())
+                    deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
+                object->setForcePublish(false);
+
+                if (msgBuffer.available() < HEADROOM)
+                    break;
+            }
         }
 
-        if (object->isDeleted())
-            deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
-        object->setForcePublish(false);
+        contentSize = BUFSIZE - msgBuffer.available();
+        if (contentSize > 0) {
+            msgBuffer.reset();
+            stringstream key;
+            key << "console.obj.1.0." << baseObject->getPackageName() << "." << baseObject->getClassName();
+            sendBuffer(msgBuffer, contentSize, mExchange, key.str());
+        }
     }
 
     // Delete flagged objects
