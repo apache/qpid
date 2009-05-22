@@ -32,58 +32,22 @@
 namespace qpid {
 namespace broker {
 
-/** A vector of string tokens */
-class Tokens : public std::vector<std::string> {
-  public:
-    Tokens() {};
-    // Default copy, assign, dtor are sufficient.
-
-    /** Tokenize s, provides automatic conversion of string to Tokens */
-    Tokens(const std::string& s) { operator=(s); }
-    /** Tokenizing assignment operator s */
-    QPID_BROKER_EXTERN Tokens & operator=(const std::string& s);
-    void key(std::string& key) const;
-    
-  private:
-    size_t hash;
-};
-
-        
-/**
- * Tokens that have been normalized as a pattern and can be matched
- * with topic Tokens.  Normalized meands all sequences of mixed * and
- * # are reduced to a series of * followed by at most one #.
- */
-class TopicPattern : public Tokens
-{
-  public:
-    TopicPattern() {}
-    // Default copy, assign, dtor are sufficient.
-    TopicPattern(const Tokens& tokens) { operator=(tokens); }
-    TopicPattern(const std::string& str) { operator=(str); }
-    QPID_BROKER_EXTERN TopicPattern& operator=(const Tokens&);
-    TopicPattern& operator=(const std::string& str) { return operator=(Tokens(str)); }
-    
-    /** Match a topic */
-    bool match(const std::string& topic) { return match(Tokens(topic)); }
-    QPID_BROKER_EXTERN bool match(const Tokens& topic) const;
-
-  private:
-    void normalize();
-};
-
 class TopicExchange : public virtual Exchange {
     struct BoundKey {
         Binding::vector bindingVector;
         FedBinding fedBinding;
     };
-    typedef std::map<TopicPattern, BoundKey> BindingMap;
+    typedef std::map<std::string, BoundKey> BindingMap;
     BindingMap bindings;
     qpid::sys::RWlock lock;
 
-    bool isBound(Queue::shared_ptr queue, TopicPattern& pattern);
+    bool isBound(Queue::shared_ptr queue, const string& pattern);
+    
   public:
     static const std::string typeName;
+
+    static bool match(const std::string& pattern, const std::string& topic);
+    static std::string normalize(const std::string& pattern);
 
     QPID_BROKER_EXTERN TopicExchange(const string& name,
                                      management::Manageable* parent = 0, Broker* broker = 0);
