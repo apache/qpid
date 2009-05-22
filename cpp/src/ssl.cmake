@@ -88,7 +88,8 @@ if (BUILD_SSL)
   add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
   target_link_libraries (sslconnector qpidclient sslcommon)
   set_target_properties (sslconnector PROPERTIES
-                         PREFIX "")
+                         PREFIX ""
+                         COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(sslconnector PROPERTIES
                           LINK_FLAGS -Wl,--no-undefined)
