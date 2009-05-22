@@ -20,17 +20,49 @@
 #
 # qmf agent library makefile fragment, to be included in Makefile.am
 # 
-lib_LTLIBRARIES += libqmfagent.la
+lib_LTLIBRARIES += \
+  libqmfcommon.la \
+  libqmfagent.la
 
 module_hdr += \
   qpid/agent/ManagementAgent.h \
   qpid/agent/ManagementAgentImpl.h \
-  qpid/agent/QmfAgentImportExport.h
+  qpid/agent/QmfAgentImportExport.h \
+  qmf/Agent.h \
+  qmf/Console.h \
+  qmf/Event.h \
+  qmf/Message.h \
+  qmf/MessageImpl.h \
+  qmf/Object.h \
+  qmf/ObjectId.h \
+  qmf/ObjectIdImpl.h \
+  qmf/ObjectImpl.h \
+  qmf/Query.h \
+  qmf/QueryImpl.h \
+  qmf/ResilientConnection.h \
+  qmf/Schema.h \
+  qmf/SchemaImpl.h \
+  qmf/Typecode.h \
+  qmf/Value.h \
+  qmf/ValueImpl.h
+
+libqmfcommon_la_SOURCES = \
+  qmf/Agent.cpp \
+  qmf/ResilientConnection.cpp \
+  qmf/MessageImpl.cpp \
+  qmf/SchemaImpl.cpp \
+  qmf/ValueImpl.cpp \
+  qmf/ObjectIdImpl.cpp \
+  qmf/ObjectImpl.cpp \
+  qmf/QueryImpl.cpp
 
 libqmfagent_la_SOURCES = \
   qpid/agent/ManagementAgent.h \
   qpid/agent/ManagementAgentImpl.cpp \
-  qpid/agent/ManagementAgentImpl.h
+  qpid/agent/ManagementAgentImpl.h \
+  qmf/Agent.cpp
 
 libqmfagent_la_LIBADD = libqpidclient.la
 
+libqmfagent_ladir = $(includedir)/qmf
+libqmfagent_la_HEADERS = $(module_hdr)

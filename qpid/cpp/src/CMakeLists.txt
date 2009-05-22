@@ -578,10 +578,26 @@ set (qmfagent_SOURCES
      qpid/agent/ManagementAgent.h
      qpid/agent/ManagementAgentImpl.cpp
      qpid/agent/ManagementAgentImpl.h
+     qmf/Agent.cpp
     )
 add_library (qmfagent SHARED ${qmfagent_SOURCES})
-target_link_libraries (qmfagent qpidclient)
+target_link_libraries (qmfagent qmfcommon)
 set_target_properties (qmfagent PROPERTIES
+                       VERSION ${qpidc_version})
+
+set (qmfcommon_SOURCES
+    qmf/Agent.cpp
+    qmf/ResilientConnection.cpp
+    qmf/MessageImpl.cpp
+    qmf/SchemaImpl.cpp
+    qmf/ValueImpl.cpp
+    qmf/ObjectIdImpl.cpp
+    qmf/ObjectImpl.cpp
+    qmf/QueryImpl.cpp
+    )
+add_library (qmfcommon SHARED ${qmfcommon_SOURCES})
+target_link_libraries (qmfcommon qpidclient)
+set_target_properties (qmfcommon PROPERTIES
                        VERSION ${qpidc_version})
 
 # QMF console library
