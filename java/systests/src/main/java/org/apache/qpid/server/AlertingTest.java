@@ -46,6 +46,7 @@ public class AlertingTest extends QpidTestCase
     private MessageConsumer _consumer; // Never read, but does need to be here to create the destination.
     private File _logfile;
     private XMLConfiguration _configuration;
+    private int _numMessages;
     
     public void setUp() throws Exception
     {
@@ -63,12 +64,13 @@ public class AlertingTest extends QpidTestCase
         }
         
         _configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".store.class", storeClass.getName());
-        _configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", 2);
+        _numMessages = 5000;
         
         File tmpFile = File.createTempFile("configFile", "test");
         tmpFile.deleteOnExit();
         _configuration.save(tmpFile);
         _configFile = tmpFile;
+        
 
         if (_outputFile != null)  
         {
@@ -82,7 +84,7 @@ public class AlertingTest extends QpidTestCase
             appender.setFile(_logfile.getAbsolutePath());
             appender.setImmediateFlush(true);
             Logger.getRootLogger().addAppender(appender);
-            _logfile.deleteOnExit();
+            //_logfile.deleteOnExit();
         }
 
         // Then we do the normal setup stuff like starting the broker, getting a connection etc.
@@ -123,14 +125,14 @@ public class AlertingTest extends QpidTestCase
     public void testAlertingReallyWorks() throws Exception
     {
         // Send 5 messages, make sure that the alert was fired properly. 
-        sendMessage(_session, _destination, 4);
+        sendMessage(_session, _destination, _numMessages + 1);
         boolean found = wasAlertFired();
         assertTrue("no alert generated in "+_logfile.getAbsolutePath(), found);
     }
 
     public void testAlertingReallyWorksWithRestart() throws Exception
     {
-        sendMessage(_session, _destination, 4);
+        sendMessage(_session, _destination, _numMessages + 1);
         stopBroker();
         (new FileOutputStream(_logfile)).getChannel().truncate(0);
         startBroker();
