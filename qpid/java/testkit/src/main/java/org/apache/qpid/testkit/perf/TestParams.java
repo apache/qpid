@@ -38,7 +38,7 @@ public class TestParams
 
     private int msg_type = 1;   // not used yet
 
-    private boolean cacheMessage = true;
+    private boolean cacheMessage = false;
 
     private boolean disableMessageID = false;
 
@@ -55,6 +55,8 @@ public class TestParams
     private int msg_count = 10;
 
     private int warmup_count = 1;
+    
+    private boolean random_msg_size = false;
 
     public TestParams()
     {
@@ -75,6 +77,7 @@ public class TestParams
         ack_mode = Integer.getInteger("ack_mode",Session.AUTO_ACKNOWLEDGE);
         msg_count = Integer.getInteger("msg_count",msg_count);
         warmup_count = Integer.getInteger("warmup_count",warmup_count);
+        random_msg_size = Boolean.getBoolean("random_msg_size");
     }
 
     public int getAckMode()
@@ -155,6 +158,11 @@ public class TestParams
     public boolean isDisableTimestamp()
     {
         return disableTimestamp;
+    }
+    
+    public boolean isRandomMsgSize()
+    {
+        return random_msg_size;
     }
 
 }

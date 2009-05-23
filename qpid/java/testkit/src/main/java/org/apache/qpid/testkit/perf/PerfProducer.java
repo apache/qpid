@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.testkit.perf;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
@@ -54,7 +58,13 @@ public class PerfProducer extends PerfBase
     MessageProducer producer;
     Message msg;
     byte[] payload;
-
+    List<byte[]> payloads;
+    boolean cacheMsg = false;
+    boolean randomMsgSize = false;
+    boolean durable = false;
+    Random random;
+    int msgSizeRange = 1024;
+    
     public PerfProducer()
     {
         super();
@@ -65,16 +75,32 @@ public class PerfProducer extends PerfBase
         super.setUp();
         feedbackDest = session.createTemporaryQueue();
 
+        durable = params.isDurable();
+        
         // if message caching is enabled we pre create the message
         // else we pre create the payload
         if (params.isCacheMessage())
         {
+            cacheMsg = true;
+            
             msg = MessageFactory.createBytesMessage(session, params.getMsgSize());
-            msg.setJMSDeliveryMode(params.isDurable()?
+            msg.setJMSDeliveryMode(durable?
                                    DeliveryMode.PERSISTENT :
                                    DeliveryMode.NON_PERSISTENT
                                   );
         }
+        else if (params.isRandomMsgSize())
+        {
+            random = new Random(20080921);
+            randomMsgSize = true;
+            msgSizeRange = params.getMsgSize();
+            payloads = new ArrayList<byte[]>(msgSizeRange);
+            
+            for (int i=1; i < msgSizeRange; i++)
+            {
+                payloads.add(MessageFactory.createMessagePayload(i).getBytes());
+            }
+        }        
         else
         {
             payload = MessageFactory.createMessagePayload(params.getMsgSize()).getBytes();
@@ -87,14 +113,26 @@ public class PerfProducer extends PerfBase
 
     protected Message getNextMessage() throws Exception
     {
-        if (params.isCacheMessage())
+        if (cacheMsg)
         {
             return msg;
         }
         else
-        {
+        {            
             msg = session.createBytesMessage();
-            ((BytesMessage)msg).writeBytes(payload);
+            
+            if (!randomMsgSize)
+            {
+                ((BytesMessage)msg).writeBytes(payload);
+            }
+            else
+            {
+                ((BytesMessage)msg).writeBytes(payloads.get(random.nextInt(msgSizeRange)));
+            }
+            msg.setJMSDeliveryMode(durable?
+                    DeliveryMode.PERSISTENT :
+                    DeliveryMode.NON_PERSISTENT
+                   );
             return msg;
         }
     }
