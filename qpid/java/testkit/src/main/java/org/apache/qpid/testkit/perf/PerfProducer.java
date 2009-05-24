@@ -96,10 +96,14 @@ public class PerfProducer extends PerfBase
             msgSizeRange = params.getMsgSize();
             payloads = new ArrayList<byte[]>(msgSizeRange);
             
-            for (int i=1; i < msgSizeRange; i++)
+            for (int i=0; i < msgSizeRange; i++)
             {
                 payloads.add(MessageFactory.createMessagePayload(i).getBytes());
             }
+            
+            System.out.println("Payload size " + payloads.size());
+            System.out.println("Payload min size " + payloads.get(0).length);
+            System.out.println("Payload max size " + payloads.get(1023).length);
         }        
         else
         {
