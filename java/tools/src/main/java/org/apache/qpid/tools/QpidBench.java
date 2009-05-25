@@ -453,6 +453,7 @@ public class QpidBench
                     {
                         throw new RuntimeException(e);
                     }
+                    System.out.println("Consumer Completed");
                 }
             };
            
@@ -492,6 +493,7 @@ public class QpidBench
                     {
                         throw new RuntimeException(e);
                     }
+                    System.out.println("Producer Completed");
                 }
             };
             Thread t;
