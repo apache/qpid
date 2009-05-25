@@ -36,6 +36,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/AtomicValue.h"
 #include "AclModule.h"
 
 #include <list>
@@ -76,6 +77,8 @@ class SemanticState : public sys::OutputTask,
         uint32_t msgCredit;
         uint32_t byteCredit;
         bool notifyEnabled;
+        //        sys::AtomicValue<bool> queueHasMessages;
+        bool queueHasMessages;
         const int syncFrequency;
         int deliveryCount;
 
