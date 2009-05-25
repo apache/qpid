@@ -257,7 +257,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     msgCredit(0), 
     byteCredit(0),
     notifyEnabled(true),
-    queueHasMessages(true),
+    queueHasMessages(1),
     syncFrequency(_arguments.getAsInt("qpid.sync_frequency")),
     deliveryCount(0) {}
 
@@ -593,18 +593,11 @@ bool SemanticState::ConsumerImpl::hasOutput() {
 
 bool SemanticState::ConsumerImpl::doOutput()
 {
-    {
-        Mutex::ScopedLock l(lock);
-        if (!haveCredit() || !queueHasMessages) return false;
-        queueHasMessages = false;
-    }
-    bool moreMessages = queue->dispatch(shared_from_this());
-    {
-        Mutex::ScopedLock l(lock);
-        // queueHasMessages may have been set by a notify() during dispatch()
-        queueHasMessages = queueHasMessages || moreMessages;
-    }
-    return queueHasMessages;
+    if (!haveCredit() || !queueHasMessages.boolCompareAndSwap(1, 0))
+        return false;
+    if (queue->dispatch(shared_from_this()))
+        queueHasMessages.boolCompareAndSwap(0, 1);
+    return queueHasMessages.get();
 }
 
 void SemanticState::ConsumerImpl::enableNotify()
@@ -626,10 +619,8 @@ bool SemanticState::ConsumerImpl::isNotifyEnabled() const {
 
 void SemanticState::ConsumerImpl::notify()
 {
-    {
-        Mutex::ScopedLock l(lock);
-        queueHasMessages = true;
-    }
+    queueHasMessages.boolCompareAndSwap(0, 1);
+
     //TODO: alter this, don't want to hold locks across external
     //calls; for now its is required to protect the notify() from
     //having part of the object chain of the invocation being
