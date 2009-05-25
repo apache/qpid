@@ -66,15 +66,14 @@ void QueueEvents::unregisterListener(const std::string& id)
     }
 }
 
-void QueueEvents::handle(EventQueue::Queue& events)
-{
+QueueEvents::EventQueue::Batch::const_iterator
+QueueEvents::handle(const EventQueue::Batch& events) {
     qpid::sys::Mutex::ScopedLock l(lock);
-    while (!events.empty()) {
-        for (Listeners::iterator i = listeners.begin(); i != listeners.end(); i++) {
-            i->second(events.front());
-        }
-        events.pop_front();
+    for (EventQueue::Batch::const_iterator i = events.begin(); i != events.end(); ++i) {
+        for (Listeners::iterator j = listeners.begin(); j != listeners.end(); j++) 
+            j->second(*i);
     }
+    return events.end();
 }
 
 void QueueEvents::shutdown()

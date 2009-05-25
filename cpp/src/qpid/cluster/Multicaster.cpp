@@ -71,9 +71,9 @@ void Multicaster::mcast(const Event& e) {
 }
 
 
-void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
+Multicaster::PollableEventQueue::Batch::const_iterator Multicaster::sendMcast(const PollableEventQueue::Batch& values) {
     try {
-        PollableEventQueue::Queue::iterator i = values.begin();
+        PollableEventQueue::Batch::const_iterator i = values.begin();
         while( i != values.end()) {
             iovec iov = i->toIovec();
             if (!cpg.mcast(&iov, 1)) {
@@ -82,12 +82,13 @@ void Multicaster::sendMcast(PollableEventQueue::Queue& values) {
             }
             ++i;
         }
-        values.erase(values.begin(), i); // Erase sent events.
+        return i;
     }
     catch (const std::exception& e) {
         QPID_LOG(critical, "Multicast error: " << e.what());
         queue.stop();
         onError();
+        return values.end();
     }
 }
 

@@ -74,7 +74,7 @@ class QueueEvents
     volatile bool enabled;
     qpid::sys::Mutex lock;//protect listeners from concurrent access
     
-    void handle(EventQueue::Queue& e);
+    EventQueue::Batch::const_iterator handle(const EventQueue::Batch& e);
 
 };
 }} // namespace qpid::broker
