@@ -77,8 +77,9 @@ class SemanticState : public sys::OutputTask,
         uint32_t msgCredit;
         uint32_t byteCredit;
         bool notifyEnabled;
-        //        sys::AtomicValue<bool> queueHasMessages;
-        bool queueHasMessages;
+        // queueHasMessages is boolean but valgrind has trouble with
+        // AtomicValue<bool> so use an int with 1 or 0.
+        sys:: AtomicValue<int> queueHasMessages; 
         const int syncFrequency;
         int deliveryCount;
 
