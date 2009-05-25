@@ -54,7 +54,7 @@ class EventHeader {
     /** Size of payload data, excluding header. */
     size_t getSize() const { return size; }
     /** Size of header + payload. */ 
-    size_t getStoreSize() { return size + HEADER_SIZE; }
+    size_t getStoreSize() const { return size + HEADER_SIZE; }
 
     bool isCluster() const { return connectionId.getNumber() == 0; }
     bool isConnection() const { return connectionId.getNumber() != 0; }
@@ -99,10 +99,10 @@ class Event : public EventHeader {
     
     operator framing::Buffer() const;
 
-    iovec toIovec();
+    iovec toIovec() const;
     
   private:
-    void encodeHeader();
+    void encodeHeader() const;
 
     RefCountedBuffer::pointer store;
 };

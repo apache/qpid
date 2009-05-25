@@ -28,6 +28,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/LatencyTracker.h"
 #include <boost/shared_ptr.hpp>
+#include <deque>
 
 namespace qpid {
 
@@ -63,7 +64,7 @@ class Multicaster
     typedef sys::PollableQueue<Event> PollableEventQueue;
     typedef std::deque<Event> PlainEventQueue;
 
-    void sendMcast(PollableEventQueue::Queue& );
+    PollableEventQueue::Batch::const_iterator sendMcast(const PollableEventQueue::Batch& );
 
     sys::Mutex lock;
     boost::function<void()> onError;

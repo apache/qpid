@@ -37,24 +37,27 @@ template <class T> class PollableQueue : public sys::PollableQueue<T> {
     typedef boost::function<void (const T&)> Callback;
     typedef boost::function<void()> ErrorCallback;
 
-    PollableQueue(Callback f, ErrorCallback err, const std::string& msg, const boost::shared_ptr<sys::Poller>& poller)
-        : sys::PollableQueue<T>(boost::bind(&PollableQueue<T>::handleBatch, this, _1), poller),
+    PollableQueue(Callback f, ErrorCallback err, const std::string& msg,
+                  const boost::shared_ptr<sys::Poller>& poller)
+        : sys::PollableQueue<T>(boost::bind(&PollableQueue<T>::handleBatch, this, _1),
+                                poller),
           callback(f), error(err), message(msg) {}
 
-    void handleBatch(typename sys::PollableQueue<T>::Queue& values) {
+    typename sys::PollableQueue<T>::Batch::const_iterator
+    handleBatch(const typename sys::PollableQueue<T>::Batch& values) {
         try {
-            typename sys::PollableQueue<T>::Queue::iterator i = values.begin();
+            typename sys::PollableQueue<T>::Batch::const_iterator i = values.begin();
             while (i != values.end() && !this->isStopped()) {
                 callback(*i);
                 ++i;
             }
-            values.erase(values.begin(), i);
+            return i;
         }
         catch (const std::exception& e) {
             QPID_LOG(error, message << ": " << e.what());
-            values.clear();
             this->stop();
             error();
+            return values.end();
         }
     }
 

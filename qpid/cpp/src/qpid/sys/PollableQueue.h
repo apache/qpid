@@ -28,7 +28,7 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <algorithm>
-#include <deque>
+#include <vector>
 
 namespace qpid {
 namespace sys {
@@ -44,16 +44,18 @@ class Poller;
 template <class T>
 class PollableQueue {
   public:
-    typedef std::deque<T> Queue;
+    typedef std::vector<T> Batch;
     typedef T value_type;
 
     /**
      * Callback to process a batch of items from the queue.
      *
-     * @param values  Queue of values to process. Any items remaining
+     * @param batch  Queue of values to process. Any items remaining
      *                on return from Callback are put back on the queue.
+     * @return iterator pointing to the first un-processed item in batch.
+     * Items from this point up to batch.end() are put back on the queue.
      */
-    typedef boost::function<void (Queue&)> Callback;
+    typedef boost::function<typename Batch::const_iterator (const Batch& batch)> Callback;
 
     /**
      * Constructor; sets necessary parameters.
@@ -99,7 +101,7 @@ class PollableQueue {
     mutable sys::Monitor lock;
     Callback callback;
     PollableCondition condition;
-    Queue queue, batch;
+    Batch queue, batch;
     Thread dispatcher;
     bool stopped;
 };
@@ -141,17 +143,18 @@ template <class T> void PollableQueue<T>::dispatch(PollableCondition& cond) {
 }
 
 template <class T> void PollableQueue<T>::process() {
+    // Called with lock held
     while (!stopped && !queue.empty()) {
         assert(batch.empty());
         batch.swap(queue);
+        typename Batch::const_iterator putBack;
         {
             ScopedUnlock u(lock);   // Allow concurrent push to queue.
-            callback(batch);
+            putBack = callback(batch);
         }
-        if (!batch.empty()) {
-            queue.insert(queue.begin(), batch.begin(), batch.end()); // put back unprocessed items.
-            batch.clear();
-        }
+        // put back unprocessed items.
+        queue.insert(queue.begin(), putBack, typename Batch::const_iterator(batch.end())); 
+        batch.clear();
     }
 }
 

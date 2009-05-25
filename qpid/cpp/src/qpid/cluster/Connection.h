@@ -61,8 +61,6 @@ class Connection :
         
 {
   public:
-    typedef sys::PollableQueue<EventFrame> PollableFrameQueue;
-
     /** Local connection. */
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, MemberId, bool catchUp, bool isLink);
     /** Shadow connection. */
