@@ -33,7 +33,6 @@ if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
 
     Tests that depend on the openais library (used for clustering)
     will not be run because:
-
     $NOGROUP
     $NOAISEXEC
 

@@ -107,6 +107,16 @@ AM_CXXFLAGS = $(WARNING_CFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -Igen -I$(srcdir)/gen
 
+#
+# Destination for intalled programs and tests defined here
+#
+qpidexecdir = $(libexecdir)/qpid
+qpidexec_PROGRAMS =
+qpidexec_SCRIPTS =
+qpidtestdir = $(qpidexecdir)/test
+qpidtest_PROGRAMS =
+qpidtest_SCRIPTS =
+
 ## Automake macros to build libraries and executables.
 qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduledir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
 libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduledir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
