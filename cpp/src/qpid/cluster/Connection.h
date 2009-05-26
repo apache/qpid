@@ -115,7 +115,7 @@ class Connection :
                       const framing::SequenceNumber& received,
                       const framing::SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
     
-    void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment);
+    void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment, uint32_t sendMax);
 
     void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameSeq);
 
@@ -150,6 +150,8 @@ class Connection :
 
     void deliverClose();
 
+    OutputInterceptor& getOutput() { return output; }
+
   private:
     struct NullFrameHandler : public framing::FrameHandler {
         void handle(framing::AMQFrame&) {}
@@ -164,8 +166,7 @@ class Connection :
     
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
-    void deliverDoOutput(uint32_t requested);
-    void sendDoOutput();
+    void deliverDoOutput(uint32_t limit) { output.deliverDoOutput(limit); }
 
     boost::shared_ptr<broker::Queue> findQueue(const std::string& qname);
     broker::SessionState& sessionState();

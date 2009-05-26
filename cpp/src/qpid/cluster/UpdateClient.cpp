@@ -253,7 +253,8 @@ void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& upda
         updateConnection->getId().getMember(),
         updateConnection->getId().getNumber(),
         bc.getUserId(),
-        string(fragment.first, fragment.second)
+        string(fragment.first, fragment.second),
+        updateConnection->getOutput().getSendMax()
     );
     shadowConnection.close();
     QPID_LOG(debug, updaterId << " updated connection " << *updateConnection);

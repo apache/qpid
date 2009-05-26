@@ -41,7 +41,8 @@ template <class T> class PollableQueue : public sys::PollableQueue<T> {
                   const boost::shared_ptr<sys::Poller>& poller)
         : sys::PollableQueue<T>(boost::bind(&PollableQueue<T>::handleBatch, this, _1),
                                 poller),
-          callback(f), error(err), message(msg) {}
+          callback(f), error(err), message(msg)
+    {}
 
     typename sys::PollableQueue<T>::Batch::const_iterator
     handleBatch(const typename sys::PollableQueue<T>::Batch& values) {

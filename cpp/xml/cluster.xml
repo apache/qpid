@@ -74,7 +74,7 @@
     <control name="deliver-close" code="0x2"/>
 
     <control name="deliver-do-output" code="0x3">
-      <field name="bytes" type="uint32"/>
+      <field name="limit" type="uint32"/>
     </control>
 
     <!-- Update controls. Sent to a new broker in joining mode.
@@ -139,6 +139,7 @@
       <field name="connection-id" type="uint64"/>
       <field name="user-name" type="str8"/>
       <field name="fragment" type="str32"/>
+      <field name="send-max" type="uint32"/>
     </control>
 
     <!-- Complete a cluster state update. -->
