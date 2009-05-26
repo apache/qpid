@@ -20,7 +20,7 @@
  * under the License.
  */
 
-#include <string>
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qmf {
 
