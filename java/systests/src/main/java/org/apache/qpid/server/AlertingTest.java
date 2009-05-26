@@ -55,16 +55,21 @@ public class AlertingTest extends QpidTestCase
         _configuration = new XMLConfiguration(_configFile); 
         _configuration.setProperty("management.enabled", "false");
         Class storeClass = DerbyMessageStore.class;
+        Class bdb = null;
         try {
-            Class bdb = Class.forName("org.apache.qpid.store.berkleydb.BDBMessageStore");
+            bdb = Class.forName("org.apache.qpid.store.berkleydb.BDBMessageStore");
         }
         catch (ClassNotFoundException e)
         {
             // No BDB store, we'll use Derby instead. 
         }
+        if (bdb != null)
+        {
+            storeClass = bdb;
+        }
         
         _configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".store.class", storeClass.getName());
-        _numMessages = 5000;
+        _numMessages = 50;
         
         File tmpFile = File.createTempFile("configFile", "test");
         tmpFile.deleteOnExit();
@@ -105,14 +110,12 @@ public class AlertingTest extends QpidTestCase
         // just in case the logfile takes a while to flush. 
         BufferedReader reader = new BufferedReader(new FileReader(_logfile));
         boolean found = false;
-        int lineCount = 0;
         long endtime = System.currentTimeMillis()+5000; 
         while (!found && System.currentTimeMillis() < endtime)
         {
             while (reader.ready())
             {
                 String line = reader.readLine();
-                lineCount++;
                 if (line.contains("MESSAGE_COUNT_ALERT"))
                 {
                     found = true;

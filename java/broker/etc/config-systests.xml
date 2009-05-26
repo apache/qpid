@@ -132,7 +132,7 @@
         <auto_register>true</auto_register>
     </queue>
 
-    <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
+    <virtualhosts>${conf}/virtualhosts-systests.xml</virtualhosts>
 </broker>
 
 
