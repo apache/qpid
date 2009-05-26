@@ -1,0 +1,70 @@
+#!/bin/sh
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run the cluster tests.
+TEST_DIR=$srcdir
+
+# Check AIS requirements
+id -nG | grep '\<ais\>' >/dev/null || NOGROUP="You are not a member of the ais group."
+ps -u root | grep 'aisexec\|corosync' >/dev/null || NOAISEXEC="The aisexec or corosync daemon is not running as root"
+
+if test -n "${NOGROUP}" -o -n "${NOAISEXEC}"; then
+    cat <<EOF
+
+    ========= WARNING: CLUSTERING TESTS DISABLED ==============
+
+    Tests that depend on the openais library (used for clustering)
+    will not be run because:
+
+    ${NOGROUP}
+    ${NOAISEXEC}
+
+    ===========================================================
+
+EOF
+	exit 0
+fi
+
+export PYTHONPATH=$srcdir
+export RUN_CLUSTER_TESTS=1
+export QPIDD=$srcdir/../qpidd
+export LIBCLUSTER=$srcdir/../.libs/cluster.so
+export RECEIVER=$srcdir/receiver
+export SENDER=$srcdir/sender
+
+#Make sure temp dir exists if this is the first to use it
+TMP_STORE_DIR=${TEST_DIR}/test_tmp
+if ! test -d ${TMP_STORE_DIR} ; then
+    mkdir -p ${TMP_STORE_DIR}
+   	mkdir -p ${TMP_STORE_DIR}/cluster
+else
+	rm -rf "${TMP_STORE_DIR}/cluster"
+    mkdir -p "${TMP_STORE_DIR}/cluster"
+fi
+export TMP_STORE_DIR
+
+
+AMQP_SPEC=${TEST_DIR}/../../../specs/amqp.0-10-qpid-errata.xml
+sg ais -c "${TEST_DIR}/cluster.py -v"
+RETCODE=$?
+if test x$RETCODE != x0; then 
+    echo "FAIL cluster tests"; exit 1;
+fi

@@ -39,6 +39,16 @@ CLEANFILES=
 LONG_TESTS=
 
 #
+# Destination for intalled programs and tests defined here
+#
+qpidexecdir = $(libexecdir)/qpid
+qpidexec_PROGRAMS =
+qpidexec_SCRIPTS =
+qpidtestdir = $(qpidexecdir)/test
+qpidtest_PROGRAMS =
+qpidtest_SCRIPTS =
+
+#
 # Unit test program
 #
 # Unit tests are built as a single program to reduce valgrind overhead
@@ -128,6 +138,21 @@ if SSL
 include ssl.mk
 endif
 
+# receiver, sender are installed and therefore built as part of make, not make check
+qpidtest_PROGRAMS += receiver
+receiver_SOURCES = \
+  receiver.cpp \
+  TestOptions.h \
+  ConnectionOptions.h
+receiver_LDADD = $(lib_client)
+
+qpidtest_PROGRAMS += sender
+sender_SOURCES = \
+  sender.cpp \
+  TestOptions.h \
+  ConnectionOptions.h
+sender_LDADD = $(lib_client)
+
 #
 # Other test programs
 #
@@ -194,14 +219,6 @@ txshift_LDADD=$(lib_client)
 check_PROGRAMS+=txjob
 txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
 txjob_LDADD=$(lib_client) 
-
-check_PROGRAMS+=receiver
-receiver_SOURCES=receiver.cpp  TestOptions.h ConnectionOptions.h
-receiver_LDADD=$(lib_client) 
-
-check_PROGRAMS+=sender
-sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
-sender_LDADD=$(lib_client) 
 
 check_PROGRAMS+=PollerTest
 PollerTest_SOURCES=PollerTest.cpp

@@ -63,9 +63,15 @@ if test -d ${PYTHON_DIR}; then
 
     if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
         cat <<EOF
-Not running federation to cluster test because:
+
+    =========== WARNING: NOT RUNNING AIS TESTS ==============
+
+    Not running cluster replication test because:
     $NOGROUP
     $NOAISEXEC
+
+    ==========================================================
+
 EOF
         exit 0;
     fi
