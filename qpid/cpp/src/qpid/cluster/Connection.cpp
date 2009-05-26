@@ -113,14 +113,6 @@ bool Connection::doOutput() {
     return output.doOutput();
 }
 
-// Delivery of doOutput allows us to run the real connection doOutput()
-// which stocks up the write buffers with data.
-//
-void Connection::deliverDoOutput(uint32_t requested) {
-    assert(!catchUp);
-    output.deliverDoOutput(requested);
-}
-
 // Received from a directly connected client.
 void Connection::received(framing::AMQFrame& f) {
     QPID_LOG(trace, cluster << " RECV " << *this << ": " << f);
@@ -279,7 +271,7 @@ void Connection::sessionState(
     QPID_LOG(debug, cluster << " received session state update for " << sessionState().getId());
 }
     
-void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const string& username, const string& fragment) {
+void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const string& username, const string& fragment, uint32_t sendMax) {
     ConnectionId shadowId = ConnectionId(memberId, connectionId);
     QPID_LOG(debug, cluster << " catch-up connection " << *this << " becomes shadow " << shadowId);
     self = shadowId;
@@ -287,6 +279,7 @@ void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const str
     // OK to use decoder here because cluster is stalled for update.
     cluster.getDecoder().get(self).setFragment(fragment.data(), fragment.size());
     connection.setErrorListener(this);
+    output.setSendMax(sendMax);
 }
 
 void Connection::membership(const FieldTable& joiners, const FieldTable& members, uint64_t frameSeq) {
