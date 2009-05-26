@@ -107,14 +107,12 @@ uint32_t SystemInfo::getParentProcessId()
     return (uint32_t) ::getppid();
 }
 
+// Linux specific (Solaris has quite different stuff in /proc)
 string SystemInfo::getProcessName()
 {
-    uint32_t pid = getProcessId();
     string value;
 
-    stringstream pathStream;
-    pathStream << "/proc/" << pid << "/status";
-    ifstream input(pathStream.str().c_str());
+    ifstream input("/proc/self/status");
     if (input.good()) {
         while (!input.eof()) {
             string key;
