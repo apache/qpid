@@ -1,6 +1,6 @@
 broker.version=0-8
 broker=vm
-broker.clean=${project.root}/clean-dir ${build.data} ${project.root}/derbyDB ${project.root}/derby.log
+broker.clean=${project.root}/clean-dir ${build.data} ${project.root}/derbyDB 
 broker.ready=Listening on TCP port
 
 java.naming.provider.url=${project.root}/test-provider.properties
