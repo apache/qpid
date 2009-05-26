@@ -188,7 +188,7 @@ class TestBaseCluster(TestBase):
             args += " --load-module %s" % self._storeLib
         self._clusterDict[clusterName][nodeNumber] = self.startBroker(args, logFile)
     
-    def createCluster(self, clusterName, numberNodes):
+    def createCluster(self, clusterName, numberNodes = 0):
         """Create a cluster containing an initial number of nodes"""
         self._clusterDict[clusterName] = {}
         for n in range(0, numberNodes):
@@ -215,7 +215,9 @@ class TestBaseCluster(TestBase):
 
     def getClusterTupleList(self, clusterName):
         """Get list of (pid, port) tuples of all nodes in named cluster"""
-        return self._clusterDict[clusterName].values()
+        if clusterName in self._clusterDict:
+            return self._clusterDict[clusterName].values()
+        return []
     
     def getNumClusterBrokers(self, clusterName):
         """Get total number of brokers in named cluster"""
