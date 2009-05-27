@@ -330,10 +330,12 @@ void Connection::deliveryRecord(const string& qname,
     broker::QueuedMessage m;
     broker::Queue::shared_ptr queue = findQueue(qname);
     if (!ended) {               // Has a message
-        if (acquired)           // Message is on the update queue
+        if (acquired) {         // Message is on the update queue
             m = getUpdateMessage();
-        else                    // Message at original position in original queue
+            queue->enqueued(m); //inform queue of the message 
+        } else {                // Message at original position in original queue
             m = queue->find(position);
+        }
         if (!m.payload)
             throw Exception(QPID_MSG("deliveryRecord no update message"));
     }
@@ -344,11 +346,6 @@ void Connection::deliveryRecord(const string& qname,
     if (completed) dr.complete();
     if (ended) dr.setEnded();   // Exsitance of message
     semanticState().record(dr); // Part of the session's unacked list.
-
-    // If the message was unacked, the newbie broker must place
-    // it in its messageStore.
-    if ( m.payload && m.payload->isPersistent() && acquired && !ended)
-        queue->enqueue ( 0, m.payload );
 }
 
 void Connection::queuePosition(const string& qname, const SequenceNumber& position) {

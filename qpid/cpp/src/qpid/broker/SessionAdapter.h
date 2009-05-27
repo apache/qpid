@@ -28,6 +28,7 @@
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/StructHelper.h"
 
+#include <algorithm>
 #include <vector>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -67,6 +68,12 @@ class Queue;
     SessionHandler* getSessionHandler() { throw framing::NotImplementedException("Class not implemented"); }
     FileHandler* getFileHandler() { throw framing::NotImplementedException("Class not implemented"); }
     StreamHandler* getStreamHandler() { throw framing::NotImplementedException("Class not implemented"); }
+
+    template <class F> void eachExclusiveQueue(F f) 
+    { 
+        queueImpl.eachExclusiveQueue(f);
+    }
+
 
   private:
     //common base for utility methods etc that are specific to this adapter
@@ -130,6 +137,10 @@ class Queue;
         bool isLocal(const ConnectionToken* t) const; 
 
         void destroyExclusiveQueues();
+        template <class F> void eachExclusiveQueue(F f) 
+        { 
+            std::for_each(exclusiveQueues.begin(), exclusiveQueues.end(), f);
+        }
     };
 
     class MessageHandlerImpl :

@@ -81,11 +81,13 @@ class UpdateClient : public sys::Runnable {
     void updateUnacked(const broker::DeliveryRecord&);
 
   private:
-    void updateQueue(const boost::shared_ptr<broker::Queue>&);
+    void updateQueue(client::AsyncSession&, const boost::shared_ptr<broker::Queue>&);
+    void updateNonExclusiveQueue(const boost::shared_ptr<broker::Queue>&);
+    void updateExclusiveQueue(const boost::shared_ptr<broker::Queue>&);
     void updateExchange(const boost::shared_ptr<broker::Exchange>&);
     void updateMessage(const broker::QueuedMessage&);
     void updateMessageTo(const broker::QueuedMessage&, const std::string& queue, client::Session s);
-    void updateBinding(const std::string& queue, const broker::QueueBinding& binding);
+    void updateBinding(client::AsyncSession&, const std::string& queue, const broker::QueueBinding& binding);
     void updateConnection(const boost::intrusive_ptr<Connection>& connection);
     void updateSession(broker::SessionHandler& s);
     void updateTxState(broker::SemanticState& s);

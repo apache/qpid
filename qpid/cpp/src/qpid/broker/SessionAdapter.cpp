@@ -284,7 +284,6 @@ void SessionAdapter::QueueHandlerImpl::destroyExclusiveQueues()
         exclusiveQueues.erase(exclusiveQueues.begin());
     }
 }
-
     
 bool SessionAdapter::QueueHandlerImpl::isLocal(const ConnectionToken* t) const 
 { 

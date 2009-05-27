@@ -107,6 +107,7 @@ class SessionState : public qpid::SessionState,
     // Used by cluster to create replica sessions.
     SemanticState& getSemanticState() { return semanticState; }
     boost::intrusive_ptr<Message> getMessageInProgress() { return msgBuilder.getMessage(); }
+    SessionAdapter& getSessionAdapter() { return adapter; }
 
     bool processSendCredit(uint32_t msgs);
 
