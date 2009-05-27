@@ -28,6 +28,7 @@
 #include "qpid/client/Session.h"
 #include "qpid/client/FailoverListener.h"
 #include "qpid/client/FailoverManager.h"
+#include "qpid/client/QueueOptions.h"
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/UpdateClient.h"
@@ -768,6 +769,57 @@ QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
     fmgr.execute(sender);
     runner.join();
     fmgr.close();
+}
+
+QPID_AUTO_TEST_CASE(testPolicyUpdate) {
+    ScopedSuppressLogging allQuiet;
+    //tests that the policys internal state is accurate on newly
+    //joined nodes
+    ClusterFixture::Args args;
+    args += "--log-enable", "critical";
+    prepareArgs(args, durableFlag);
+    ClusterFixture cluster(1, args, -1);
+    Client c1(cluster[0], "c1");
+    QueueOptions options;
+    options.setSizePolicy(REJECT, 0, 2);
+    c1.session.queueDeclare("q", arg::arguments=options, arg::durable=durableFlag);
+    c1.session.messageTransfer(arg::content=Message("one", "q"));
+    cluster.add();
+    Client c2(cluster[1], "c2");
+    c2.session.messageTransfer(arg::content=Message("two", "q"));
+    
+    BOOST_CHECK_THROW(c2.session.messageTransfer(arg::content=Message("three", "q")), framing::ResourceLimitExceededException);
+
+    Message received;
+    BOOST_CHECK(c1.subs.get(received, "q"));
+    BOOST_CHECK_EQUAL(received.getData(), std::string("one"));
+    BOOST_CHECK(c1.subs.get(received, "q"));
+    BOOST_CHECK_EQUAL(received.getData(), std::string("two"));
+    BOOST_CHECK(!c1.subs.get(received, "q"));
+}
+
+QPID_AUTO_TEST_CASE(testExclusiveQueueUpdate) {
+    ScopedSuppressLogging allQuiet;
+    //tests that exclusive queues are accurately replicated on newly
+    //joined nodes
+    ClusterFixture::Args args;
+    args += "--log-enable", "critical";
+    prepareArgs(args, durableFlag);
+    ClusterFixture cluster(1, args, -1);
+    Client c1(cluster[0], "c1");
+    c1.session.queueDeclare("q", arg::exclusive=true, arg::autoDelete=true, arg::alternateExchange="amq.fanout");
+    cluster.add();
+    Client c2(cluster[1], "c2");
+    QueueQueryResult result = c2.session.queueQuery("q");
+    BOOST_CHECK_EQUAL(result.getQueue(), std::string("q"));
+    BOOST_CHECK(result.getExclusive());
+    BOOST_CHECK(result.getAutoDelete());
+    BOOST_CHECK(!result.getDurable());
+    BOOST_CHECK_EQUAL(result.getAlternateExchange(), std::string("amq.fanout"));
+    BOOST_CHECK_THROW(c2.session.queueDeclare(arg::queue="q", arg::exclusive=true, arg::passive=true), framing::ResourceLockedException);
+    c1.connection.close();
+    c2.session = c2.connection.newSession();
+    BOOST_CHECK_THROW(c2.session.queueDeclare(arg::queue="q", arg::passive=true), framing::NotFoundException);
 }
 
 QPID_AUTO_TEST_SUITE_END()

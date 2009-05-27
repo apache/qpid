@@ -124,7 +124,7 @@ namespace qpid {
             QueuedMessage getFront();
             QueuedMessage& checkLvqReplace(QueuedMessage& msg);
             void clearLVQIndex(const QueuedMessage& msg);
-            
+
             inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
             {
                 if (mgmtObject != 0) {
@@ -250,6 +250,14 @@ namespace qpid {
              */
             void dequeueCommitted(const QueuedMessage& msg);
 
+            /**
+             * Inform queue of messages that were enqueued, have since
+             * been acquired but not yet accepted or released (and
+             * thus are still logically on the queue) - used in
+             * clustered broker.  
+             */ 
+            void enqueued(const QueuedMessage& msg);
+            
             /**
              * Gets the next available message 
              */

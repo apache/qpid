@@ -124,7 +124,7 @@ void UpdateClient::update() {
     QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
     Broker& b = updaterBroker;
     b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
-    b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueue, this, _1));
+    b.getQueues().eachQueue(boost::bind(&UpdateClient::updateNonExclusiveQueue, this, _1));
     // Update queue is used to transfer acquired messages that are no longer on their original queue.
     session.queueDeclare(arg::queue=UPDATE, arg::autoDelete=true);
     session.sync();
@@ -225,18 +225,35 @@ class MessageUpdater {
     }
 };
 
-void UpdateClient::updateQueue(const boost::shared_ptr<Queue>& q) {
-    QPID_LOG(debug, updaterId << " updating queue " << q->getName());
-    ClusterConnectionProxy proxy(session);
-    proxy.queue(encode(*q));
-    MessageUpdater updater(q->getName(), session, expiry);
+void UpdateClient::updateQueue(client::AsyncSession& s, const boost::shared_ptr<Queue>& q) {
+    broker::Exchange::shared_ptr alternateExchange = q->getAlternateExchange();
+    s.queueDeclare(
+        arg::queue = q->getName(),
+        arg::durable = q->isDurable(),
+        arg::autoDelete = q->isAutoDelete(),
+        arg::alternateExchange = alternateExchange ? alternateExchange->getName() : "",
+        arg::arguments = q->getSettings(),
+        arg::exclusive = q->hasExclusiveOwner()
+    );
+    MessageUpdater updater(q->getName(), s, expiry);
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
-    q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, q->getName(), _1));
+    q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, s, q->getName(), _1));
 }
 
+void UpdateClient::updateExclusiveQueue(const boost::shared_ptr<broker::Queue>& q) {
+    QPID_LOG(debug, updaterId << " updating exclusive queue " << q->getName() << " on " << shadowSession.getId());
+    updateQueue(shadowSession, q);
+}
 
-void UpdateClient::updateBinding(const std::string& queue, const QueueBinding& binding) {
-    session.exchangeBind(queue, binding.exchange, binding.key, binding.args);
+void UpdateClient::updateNonExclusiveQueue(const boost::shared_ptr<broker::Queue>& q) {
+    if (!q->hasExclusiveOwner()) {
+        QPID_LOG(debug, updaterId << " updating queue " << q->getName());
+        updateQueue(session, q);
+    }//else queue will be updated as part of session state of owning session
+}
+
+void UpdateClient::updateBinding(client::AsyncSession& s, const std::string& queue, const QueueBinding& binding) {
+    s.exchangeBind(queue, binding.exchange, binding.key, binding.args);
 }
 
 void UpdateClient::updateConnection(const boost::intrusive_ptr<Connection>& updateConnection) {
@@ -273,6 +290,9 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     AMQP_AllProxy::ClusterConnection proxy(simpl->out);
 
     // Re-create session state on remote connection.
+
+    QPID_LOG(debug, updaterId << " updating exclusive queues.");
+    ss->getSessionAdapter().eachExclusiveQueue(boost::bind(&UpdateClient::updateExclusiveQueue, this, _1));
 
     // Update consumers. For reasons unknown, boost::bind does not work here with boost 1.33.
     QPID_LOG(debug, updaterId << " updating consumers.");

@@ -1006,3 +1006,16 @@ void Queue::insertSequenceNumbers(const std::string& key)
     insertSeqNo = !seqNoKey.empty();
     QPID_LOG(debug, "Inserting sequence numbers as " << key);
 }
+
+void Queue::enqueued(const QueuedMessage& m)
+{
+    if (m.payload) {
+        if (policy.get()) policy->tryEnqueue(m);
+        mgntEnqStats(m.payload);
+        if (m.payload->isPersistent()) {
+            enqueue ( 0, m.payload );
+        }
+    } else {
+        QPID_LOG(warning, "Queue informed of enqueued message that has no payload");
+    }
+}
