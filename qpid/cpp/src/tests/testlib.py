@@ -33,8 +33,8 @@ class TestBase(unittest.TestCase):
     executables/libs are to be found.
     """
     _storeEnable = os.getenv("STORE_ENABLE") != None # Must be True for durability to be enabled during the test
-    _storeLib = os.getenv("LIBSTORE")
-    _qpiddExec = os.getenv("QPIDD", "/usr/sbin/qpidd")
+    _storeLib = os.getenv("STORE_LIB")
+    _qpiddExec = os.getenv("QPIDD_EXEC", "/usr/sbin/qpidd")
     _tempStoreDir = os.path.abspath(os.getenv("TMP_STORE_DIR", "/tmp/qpid"))
     
     """Global message counter ensures unique messages"""
@@ -139,11 +139,11 @@ class TestBaseCluster(TestBase):
     executables/libs are to be found.
     """
     _runClusterTests = os.getenv("RUN_CLUSTER_TESTS") != None # Must be True for these cluster tests to run
-    _clusterLib = os.getenv("LIBCLUSTER")
-    _qpidConfigExec = os.getenv("QPID_CONFIG", "/usr/bin/qpid-config")
-    _qpidRouteExec = os.getenv("QPID_ROUTE", "/usr/bin/qpid-route")
-    _receiverExec = os.getenv("RECEIVER", "/usr/libexec/qpid/test/receiver")
-    _senderExec = os.getenv("SENDER", "/usr/libexec/qpid/test/sender")
+    _clusterLib = os.getenv("CLUSTER_LIB")
+    _qpidConfigExec = os.getenv("QPID_CONFIG_EXEC", "/usr/bin/qpid-config")
+    _qpidRouteExec = os.getenv("QPID_ROUTE_EXEC", "/usr/bin/qpid-route")
+    _receiverExec = os.getenv("RECEIVER_EXEC", "/usr/libexec/qpid/test/receiver")
+    _senderExec = os.getenv("SENDER_EXEC", "/usr/libexec/qpid/test/sender")
     
     
     """
@@ -486,3 +486,4 @@ class TestBaseCluster(TestBase):
         rxMsgs = self.receiveMsgs(nodeNumber, clusterName, queueName, numMsgs, wait)
         if txMsgs != rxMsgs:
             self.fail("Send - receive message mismatch")
+            
