@@ -333,7 +333,7 @@ startNewBroker ( brokerVector & brokers,
         ("--mgmt-enable=no")
         ("--log-prefix")(prefix.str())
         ("--log-to-file")(prefix.str()+".log")
-        ("--log-enable=error+")
+        ("--log-enable=notice+")
         ("TMP_DATA_DIR");
 
     if (endsWith(moduleOrDir, "cluster.so")) {
