@@ -694,8 +694,33 @@ QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
     BOOST_CHECK_EQUAL(0u, c2.session.queueQuery("q").getMessageCount());
 }
 
+QPID_AUTO_TEST_CASE(queueDurabilityPropagationToNewbie)
+{
+    /*
+      Start with a single broker.  
+      Set up two queues: one durable, and one not.
+      Add a new broker to the cluster.
+      Make sure it has one durable and one non-durable queue.
+    */
+    ClusterFixture::Args args;
+    prepareArgs(args, durableFlag);
+    ClusterFixture cluster(1, args);
+    Client c0(cluster[0]);
+    c0.session.queueDeclare("durable_queue",     arg::durable=true);
+    c0.session.queueDeclare("non_durable_queue", arg::durable=false);
+    cluster.add();
+    Client c1(cluster[1]);
+    QueueQueryResult durable_query     = c1.session.queueQuery ( "durable_queue" );
+    QueueQueryResult non_durable_query = c1.session.queueQuery ( "non_durable_queue" );
+    
+    BOOST_CHECK_EQUAL ( durable_query.getDurable(),     true  );
+    BOOST_CHECK_EQUAL ( non_durable_query.getDurable(), false );
+}
+
+
 QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
 {
+
     struct Sender : FailoverManager::Command
     {
         std::string queue;
