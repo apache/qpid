@@ -155,6 +155,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void setReady(Lock&);
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
+    void erase(const ConnectionId&, Lock&);       
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 

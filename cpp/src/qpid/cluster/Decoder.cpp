@@ -57,4 +57,9 @@ void Decoder::erase(const ConnectionId& c) {
     map.erase(c);
 }
 
+framing::FrameDecoder& Decoder::get(const ConnectionId& c) {
+    sys::Mutex::ScopedLock l(lock);
+    return map[c];
+}
+
 }} // namespace qpid::cluster
