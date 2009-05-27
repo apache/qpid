@@ -43,12 +43,14 @@ EOF
 	exit 0
 fi
 
-export PYTHONPATH=$srcdir
+export PYTHONPATH=$srcdir:$srcdir/../../../python
 export RUN_CLUSTER_TESTS=1
-export QPIDD=$srcdir/../qpidd
-export LIBCLUSTER=$srcdir/../.libs/cluster.so
-export RECEIVER=$srcdir/receiver
-export SENDER=$srcdir/sender
+export QPIDD_EXEC=$srcdir/../qpidd
+export CLUSTER_LIB=$srcdir/../.libs/cluster.so
+export QPID_CONFIG_EXEC=$srcdir/../../../python/commands/qpid-config
+export QPID_ROUTE_EXEC=$srcdir/../../../python/commands/qpid-config
+export RECEIVER_EXEC=$srcdir/receiver
+export SENDER_EXEC=$srcdir/sender
 
 #Make sure temp dir exists if this is the first to use it
 TMP_STORE_DIR=${TEST_DIR}/test_tmp
