@@ -100,10 +100,6 @@ public class PerfProducer extends PerfBase
             {
                 payloads.add(MessageFactory.createMessagePayload(i).getBytes());
             }
-            
-            System.out.println("Payload size " + payloads.size());
-            System.out.println("Payload min size " + payloads.get(0).length);
-            System.out.println("Payload max size " + payloads.get(1023).length);
         }        
         else
         {
