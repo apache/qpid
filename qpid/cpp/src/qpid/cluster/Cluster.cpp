@@ -238,8 +238,13 @@ void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
     connections.insert(ConnectionMap::value_type(c->getId(), c));
 }
 
-// Called by Connection::deliverClose() in deliverFrameQueue thread.
 void Cluster::erase(const ConnectionId& id) {
+    Lock l(lock);    
+    erase(id,l);
+}
+
+// Called by Connection::deliverClose() in deliverFrameQueue thread.
+void Cluster::erase(const ConnectionId& id, Lock&) {
     connections.erase(id);
     decoder.erase(id);
 }
@@ -702,8 +707,10 @@ void Cluster::memberUpdate(Lock& l) {
     while (i != connections.end()) {
         ConnectionMap::iterator j = i++;
         MemberId m = j->second->getId().getMember();
-        if (m != self && !map.isMember(m))
-            j->second->deliverClose();
+        if (m != self && !map.isMember(m)) {
+            j->second->getBrokerConnection().closed();
+            erase(j->second->getId(), l);
+        }
     }
 }
 

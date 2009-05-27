@@ -45,7 +45,7 @@ class Decoder
     Decoder(FrameHandler fh) : callback(fh) {}
     void decode(const EventHeader& eh, const char* data);
     void erase(const ConnectionId&);
-    framing::FrameDecoder& get(const ConnectionId& c) { return map[c]; }
+    framing::FrameDecoder& get(const ConnectionId& c);
 
   private:
     typedef std::map<ConnectionId, framing::FrameDecoder> Map;
