@@ -104,9 +104,14 @@ public class AlertingTest extends QpidTestCase
         _consumer = _session.createConsumer(_destination);
     }
 
-    private boolean wasAlertFired() throws Exception
+    /**
+     * Checks the log file for MESSAGE_COUNT_ALERT, fails() the test if it's not found and
+     * places the entire contents in the message to help debug cruise control failures.
+     * @throws Exception
+     */
+    private void wasAlertFired() throws Exception
     {
-        // Loop throught alerts until we're done or 5 seconds have passed, 
+        // Loop through alerts until we're done or 5 seconds have passed, 
         // just in case the logfile takes a while to flush. 
         BufferedReader reader = new BufferedReader(new FileReader(_logfile));
         boolean found = false;
@@ -122,15 +127,26 @@ public class AlertingTest extends QpidTestCase
                 }
             }
         }
-        return found;
+        if (!found)
+        {
+            StringBuffer message = new StringBuffer("Could not find alert in log file: "+_logfile.getAbsolutePath());
+            message.append("\n");
+            reader = new BufferedReader(new FileReader(_logfile));
+            for (int i = 0; i < 79; i++) { message.append("-"); };
+            message.append("\n");
+            while (reader.ready()) { message.append(reader.readLine() + "\n");}
+            message.append("\n");
+            for (int i = 0; i < 79; i++) { message.append("-"); };
+            message.append("\n");
+            fail(message.toString());
+        }
     }
     
     public void testAlertingReallyWorks() throws Exception
     {
         // Send 5 messages, make sure that the alert was fired properly. 
         sendMessage(_session, _destination, _numMessages + 1);
-        boolean found = wasAlertFired();
-        assertTrue("no alert generated in "+_logfile.getAbsolutePath(), found);
+        wasAlertFired();
     }
 
     public void testAlertingReallyWorksWithRestart() throws Exception
@@ -139,8 +155,7 @@ public class AlertingTest extends QpidTestCase
         stopBroker();
         (new FileOutputStream(_logfile)).getChannel().truncate(0);
         startBroker();
-        boolean found = wasAlertFired();
-        assertTrue("no alert generated in "+_logfile.getAbsolutePath(), found);
+        wasAlertFired();
     }
     
     public void testAlertingReallyWorksWithChanges() throws Exception
@@ -158,7 +173,6 @@ public class AlertingTest extends QpidTestCase
         
         // Trigger the new value
         sendMessage(_session, _destination, 3);
-        boolean found = wasAlertFired();
-        assertTrue("no alert generated in "+_logfile.getAbsolutePath(), found);
+        wasAlertFired();
     }
 }
