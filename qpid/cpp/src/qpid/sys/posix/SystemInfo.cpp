@@ -20,6 +20,8 @@
 
 #include "qpid/sys/SystemInfo.h"
 
+#include "check.h"
+
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
 #include <net/if.h>
@@ -30,6 +32,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <netdb.h>
 
 #ifndef HOST_NAME_MAX
 #  define HOST_NAME_MAX 256
@@ -60,17 +63,20 @@ static const string LOCALHOST("127.0.0.1");
 
 void SystemInfo::getLocalIpAddresses (uint16_t port,
                                       std::vector<Address> &addrList) {
-    int s = socket (PF_INET, SOCK_STREAM, 0);
+    int s = ::socket(PF_INET, SOCK_STREAM, 0);
     for (int i=1;;i++) {
-        struct ifreq ifr;
+        ::ifreq ifr;
         ifr.ifr_ifindex = i;
         if (::ioctl (s, SIOCGIFNAME, &ifr) < 0)
             break;
         /* now ifr.ifr_name is set */
         if (::ioctl (s, SIOCGIFADDR, &ifr) < 0)
             continue;
-        struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
-        string addr(inet_ntoa(sin->sin_addr));
+        ::sockaddr *saddr = (::sockaddr *) &ifr.ifr_addr;
+        char dispName[NI_MAXHOST];
+        if (int rc=::getnameinfo(saddr, sizeof(ifr.ifr_addr), dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
+            throw QPID_POSIX_ERROR(rc);
+        string addr(dispName);
         if (addr != LOCALHOST)
             addrList.push_back(TcpAddress(addr, port));
     }
