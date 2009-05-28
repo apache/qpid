@@ -40,7 +40,6 @@
 #include <deque>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/weak_ptr.hpp>
 
 namespace qpid {
 namespace client {
@@ -101,7 +100,6 @@ class TCPConnector : public Connector, public sys::Codec
     framing::ProtocolVersion version;
     bool initiated;
     bool closed;
-    bool joined;
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
@@ -124,8 +122,6 @@ class TCPConnector : public Connector, public sys::Codec
     void writebuff(qpid::sys::AsynchIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
     void eof(qpid::sys::AsynchIO&);
-
-    boost::weak_ptr<ConnectionImpl> impl;
 
     void connect(const std::string& host, int port);
     void init();
@@ -180,11 +176,9 @@ TCPConnector::TCPConnector(Poller::shared_ptr p,
       version(ver),
       initiated(false),
       closed(true),
-      joined(true),
       shutdownHandler(0),
       aio(0),
-      poller(p),
-      impl(cimpl->shared_from_this())
+      poller(p)
 {
     QPID_LOG(debug, "TCPConnector created for " << version.toString());
     settings.configureSocket(socket);
@@ -217,10 +211,8 @@ void TCPConnector::connect(const std::string& host, int port){
 
 void TCPConnector::init(){
     Mutex::ScopedLock l(lock);
-    assert(joined);
     ProtocolInitiation init(version);
     writeDataBlock(init);
-    joined = false;
     for (int i = 0; i < 32; i++) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }

@@ -89,7 +89,6 @@ class SslConnector : public Connector
 
     sys::Mutex closedLock;
     bool closed;
-    bool joined;
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
@@ -114,8 +113,6 @@ class SslConnector : public Connector
     void eof(qpid::sys::ssl::SslIO&);
 
     std::string identifier;
-
-    ConnectionImpl* impl;
 
     void connect(const std::string& host, int port);
     void init();
@@ -174,12 +171,10 @@ SslConnector::SslConnector(Poller::shared_ptr p,
       version(ver), 
       initiated(false),
       closed(true),
-      joined(true),
       shutdownHandler(0),
       writer(maxFrameSize, cimpl),
       aio(0),
-      poller(p),
-      impl(cimpl)
+      poller(p)
 {
     QPID_LOG(debug, "SslConnector created for " << version.toString());
     //TODO: how do we want to handle socket configuration with ssl?
@@ -214,10 +209,8 @@ void SslConnector::connect(const std::string& host, int port){
 
 void SslConnector::init(){
     Mutex::ScopedLock l(closedLock);
-    assert(joined);
     ProtocolInitiation init(version);
     writeDataBlock(init);
-    joined = false;
     for (int i = 0; i < 32; i++) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }
