@@ -177,6 +177,18 @@ public class DestinationURLTest extends TestCase
 
         assertTrue("Failed to throw an URISyntaxException when both the bindingkey and routingkey is specified",exceptionThrown);
     }
+    
+    public void testDestinationWithDurableTopic() throws URISyntaxException
+    {
+
+        String url = "topic://amq.topic//testTopicD?durable='true'&autodelete='true'&clientid='test'&subscription='testQueueD'";
+
+        AMQBindingURL dest = new AMQBindingURL(url);
+
+        assertTrue(dest.getExchangeClass().equals("topic"));
+        assertTrue(dest.getExchangeName().equals("amq.topic"));
+        assertTrue(dest.getQueueName().equals("test:testQueueD"));
+    }
 
     public static junit.framework.Test suite()
     {

@@ -417,7 +417,7 @@ public class BindingURLParser
             {
                 if (_bindingURL.containsOption(BindingURL.OPTION_CLIENTID) && _bindingURL.containsOption(BindingURL.OPTION_SUBSCRIPTION))
                 {
-                    queueName = _bindingURL.getOption(BindingURL.OPTION_CLIENTID + ":" + BindingURL.OPTION_SUBSCRIPTION);
+                    queueName = _bindingURL.getOption(BindingURL.OPTION_CLIENTID) + ":" + _bindingURL.getOption(BindingURL.OPTION_SUBSCRIPTION);
                 }
                 else
                 {
