@@ -184,6 +184,9 @@ class Session:
   def delBroker(self, broker):
     """ Disconnect from a broker.  The 'broker' argument is the object
     returned from the addBroker call """
+    if self.console:
+      for agent in broker.getAgents():
+        self.console.delAgent(agent)
     broker._shutdown()
     self.brokers.remove(broker)
     del broker
@@ -417,10 +420,14 @@ class Session:
 
   def _handleBrokerConnect(self, broker):
     if self.console:
+      for agent in broker.getAgents():
+        self.console.newAgent(agent)
       self.console.brokerConnected(broker)
 
   def _handleBrokerDisconnect(self, broker):
     if self.console:
+      for agent in broker.getAgents():
+        self.console.delAgent(agent)
       self.console.brokerDisconnected(broker)
 
   def _handleBrokerResp(self, broker, codec, seq):
