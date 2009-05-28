@@ -82,6 +82,7 @@ cluster_la_SOURCES =				\
   qpid/sys/LatencyTracker.h
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
+cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 endif				# HAVE_LIBCPG
