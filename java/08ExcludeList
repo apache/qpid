@@ -14,3 +14,4 @@ org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 // QPID-1823: this takes ages to run
 org.apache.qpid.client.SessionCreateTest#*
 
+org.apache.qpid.test.client.RollbackOrderTest#*
