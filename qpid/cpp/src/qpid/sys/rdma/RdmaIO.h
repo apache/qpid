@@ -111,7 +111,7 @@ namespace Rdma {
     inline bool AsynchIO::writable() const {
         return (!closed && outstandingWrites < xmitBufferCount && xmitCredit > 0);
     }
-    
+
     inline int AsynchIO::incompletedWrites() const {
         return outstandingWrites;
     }
@@ -125,7 +125,7 @@ namespace Rdma {
     struct ConnectionParams {
         int maxRecvBufferSize;
         int initialXmitCredit ;
-        
+
         ConnectionParams(int s, int c) :
             maxRecvBufferSize(s),
             initialXmitCredit(c)
@@ -142,7 +142,7 @@ namespace Rdma {
 
     typedef boost::function2<void, Rdma::Connection::intrusive_ptr&, ErrorType> ErrorCallback;
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr&> DisconnectedCallback;
-    
+
     class ConnectionManager {
         Connection::intrusive_ptr ci;
         qpid::sys::DispatchHandle handle;
@@ -150,13 +150,13 @@ namespace Rdma {
     protected:
         ErrorCallback errorCallback;
         DisconnectedCallback disconnectedCallback;
-   
+
    public:
         ConnectionManager(
             ErrorCallback errc,
             DisconnectedCallback dc
         );
-        
+
         virtual ~ConnectionManager() {}
 
         void start(qpid::sys::Poller::shared_ptr poller);
@@ -167,7 +167,7 @@ namespace Rdma {
         virtual void startConnection(Connection::intrusive_ptr ci) = 0;
         virtual void connectionEvent(Connection::intrusive_ptr ci) = 0;
     };
-    
+
     typedef boost::function2<bool, Rdma::Connection::intrusive_ptr&, const ConnectionParams&> ConnectionRequestCallback;
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr&> EstablishedCallback;
 
