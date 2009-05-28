@@ -68,7 +68,6 @@ using boost::str;
 
     sys::Mutex pollingLock;
     bool polling;
-    bool joined;
 
     sys::ShutdownHandler* shutdownHandler;
     framing::InputHandler* input;
@@ -148,7 +147,6 @@ RdmaConnector::RdmaConnector(Poller::shared_ptr p,
       version(ver), 
       initiated(false),
       polling(false),
-      joined(true),
       shutdownHandler(0),
       aio(0),
       poller(p),
@@ -164,7 +162,6 @@ RdmaConnector::~RdmaConnector() {
 void RdmaConnector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(pollingLock);
     assert(!polling);
-    assert(joined);
 
     // This stuff needs to abstracted out of here to a platform specific file
     ::addrinfo *res;
@@ -188,7 +185,6 @@ void RdmaConnector::connect(const std::string& host, int port){
     c->start(poller);
 
     polling = true;
-    joined = false;
 }
 
 // The following only gets run when connected
