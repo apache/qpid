@@ -11,9 +11,12 @@ each example.
 
  Ex:- ./declare_queues 127.0.0.1 5673
 
-The qpid C++ broker (known as qpidd) is found 
-- if installed, installed as /usr/sbin/qpidd
-- in /path-to-qpid-source/cpp/src/
+When the Qpid C++ broker is installed, it is located in:
+- Linux: /usr/sbin/qpidd
+- Windows: C:\Program Files\Apache\qpidc-0.5\bin\qpidd.exe
+
+In a C++ source distribution the broker is located in the src subdirectory
+(generally, from this examples directory, ../src).
 
 == Direct ==
 
@@ -40,6 +43,11 @@ On Linux:
   # ./direct_producer
   # ./listener
 
+On Windows:
+  C:\Program Files\Apache\qpidc-0.5\examples\direct> declare_queues
+  C:\Program Files\Apache\qpidc-0.5\examples\direct> direct_producer
+  C:\Program Files\Apache\qpidc-0.5\examples\direct> listener
+
 == Fanout ==
 
 This is an example on how to create Fanout exchange applications using Qpid.
@@ -63,6 +71,10 @@ In order to run this example,
 On Linux:
   # ./listener
   # ./fanout_producer
+
+On Windows:
+  C:\Program Files\Apache\qpidc-0.5\examples\fanout> listener
+  C:\Program Files\Apache\qpidc-0.5\examples\direct> fanout_producer
 
 == Publisher/Subscriber ==
 
@@ -91,6 +103,10 @@ On Linux:
   # ./topic_listener
   # ./topic_publisher
 
+On Windows:
+  C:\Program Files\Apache\qpidc-0.5\examples\pub-sub> topic_listener
+  C:\Program Files\Apache\qpidc-0.5\examples\pub-sub> topic_publisher
+
 == Request/Response ==
 
 This example shows a simple server that will accept string from a client and
@@ -110,6 +126,10 @@ In order to run this example,
 On Linux:
   # ./server
   # ./client
+
+On Windows:
+  C:\Program Files\Apache\qpidc-0.5\examples\request-response> server
+  C:\Program Files\Apache\qpidc-0.5\examples\request-response> client
 
 == QMF Agent ==
 
