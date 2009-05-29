@@ -48,7 +48,7 @@ export RUN_CLUSTER_TESTS=1
 export QPIDD_EXEC=$srcdir/../qpidd
 export CLUSTER_LIB=$srcdir/../.libs/cluster.so
 export QPID_CONFIG_EXEC=$srcdir/../../../python/commands/qpid-config
-export QPID_ROUTE_EXEC=$srcdir/../../../python/commands/qpid-config
+export QPID_ROUTE_EXEC=$srcdir/../../../python/commands/qpid-route
 export RECEIVER_EXEC=$srcdir/receiver
 export SENDER_EXEC=$srcdir/sender
 
