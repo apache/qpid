@@ -60,6 +60,8 @@ class CyrusSecurityLayer : public qpid::sys::SecurityLayer
     qpid::sys::Codec* codec;
     size_t maxInputSize;
     DataBuffer decodeBuffer;
+    DataBuffer encodeBuffer;
+    size_t encoded;
 };
 }}} // namespace qpid::sys::cyrus
 
