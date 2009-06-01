@@ -35,7 +35,7 @@ $(MAKEDIST): Makefile
 	) > $(MAKEDIST)
 
 examplesdir=$(pkgdatadir)/examples
-dist_examples_DATA = README $(MAKEDIST)
+dist_examples_DATA = README.txt $(MAKEDIST)
 
 EXTRA_DIST = README.verify verify verify_all examples.sln
 
