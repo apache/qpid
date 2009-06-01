@@ -258,7 +258,7 @@ class PollerPrivate {
         // Add always readable fd into our set (but not listening to it yet)
         ::epoll_event epe;
         epe.events = 0;
-        epe.data.u64 = 0;
+        epe.data.u64 = 1;
         QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_ADD, alwaysReadableFd, &epe));
     }
 
@@ -285,7 +285,7 @@ class PollerPrivate {
         ::epoll_event epe;
         // Not EPOLLONESHOT, so we eventually get all threads
         epe.events = ::EPOLLIN;
-        epe.data.u64 = 0; // Keep valgrind happy
+        epe.data.u64 = 2; // Keep valgrind happy
         QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, alwaysReadableFd, &epe));  
     }
 };
@@ -442,6 +442,7 @@ bool Poller::interrupt(PollerHandle& handle) {
         ::epoll_event epe;
         epe.events = 0;
         epe.data.u64 = 0; // Keep valgrind happy
+        epe.data.ptr = &eh;
         QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
 
         if (eh.isInactive()) {
