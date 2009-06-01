@@ -149,6 +149,10 @@ AC_CHECK_PROG([RUBY], [ruby], [ruby])
 test -n "$RUBY" && generate=yes
 test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
+# Swig binding generator is needed for the script (Ruby, Python, etc.) bindings.
+AC_CHECK_PROG([SWIG], [swig], [swig])
+AM_CONDITIONAL([HAVE_SWIG], [test -n "$SWIG"])
+
 # Ruby bindings: To build ruby wrappers, the ruby-devel files must be present.
 
 AC_PATH_PROGS(RUBY, [ruby1.8 ruby], [])
@@ -190,7 +194,7 @@ if test -n "$RUBY" ; then
    RUBY_DLEXT=`$RUBY -rrbconfig -e 'puts Config::CONFIG[["DLEXT"]]'`
    AC_SUBST(RUBY_DLEXT)
 fi
-AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h])
+AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h && test -n "$SWIG"])
 
 # Python bindings: To build python wrappers, the ruby-devel files must be present.
 
@@ -220,7 +224,7 @@ if test -n "$PYTHON" ; then
     AC_SUBST(PYTHON_LIBS)
     AC_MSG_RESULT([$PYTHON_LIBS])
 fi
-AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h])
+AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
 
 
 specdir=`pwd`/$srcdir/../specs  
