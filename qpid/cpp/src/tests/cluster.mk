@@ -49,8 +49,6 @@ EXTRA_DIST += \
   	cluster.py
   	
 
-unit_test_LDADD += ../cluster.la
-
 LONG_TESTS += \
 	start_cluster \
 	cluster_python_tests \
@@ -66,7 +64,7 @@ cluster_test_SOURCES = \
   	ForkedBroker.cpp \
   	PartialFailure.cpp \
   	ClusterFailover.cpp
-cluster_test_LDADD=$(lib_client) ../cluster.la test_store.la -lboost_unit_test_framework
+cluster_test_LDADD=$(lib_client) $(lib_broker) -lboost_unit_test_framework
 
 qpidtest_SCRIPTS += run_cluster_tests cluster.py testlib.py
 
