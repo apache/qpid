@@ -1,4 +1,24 @@
 {
+   Reported on FC5 and RHEL5 when md5 sasl libs are installed
+   Memcheck:Leak
+   fun:*
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_error
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:_sasl_get_plugin
+   fun:_sasl_load_plugins
+   fun:sasl_client_init
+}
+{
    Benign leak in CPG - patched version.
    Memcheck:Leak
    fun:*

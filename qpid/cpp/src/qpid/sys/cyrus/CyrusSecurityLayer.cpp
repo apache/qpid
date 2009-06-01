@@ -29,7 +29,8 @@ namespace sys {
 namespace cyrus {
 
 CyrusSecurityLayer::CyrusSecurityLayer(sasl_conn_t* c, uint16_t maxFrameSize) : 
-    conn(c), decrypted(0), decryptedSize(0), encrypted(0), encryptedSize(0), codec(0), maxInputSize(0), decodeBuffer(maxFrameSize)
+    conn(c), decrypted(0), decryptedSize(0), encrypted(0), encryptedSize(0), codec(0), maxInputSize(0), 
+    decodeBuffer(maxFrameSize), encodeBuffer(maxFrameSize), encoded(0)
 {
     const void* value(0);
     int result = sasl_getprop(conn, SASL_MAXOUTBUF, &value);
@@ -70,13 +71,19 @@ size_t CyrusSecurityLayer::encode(const char* buffer, size_t size)
     size_t processed = 0;//records how many bytes have been written to buffer
     do {
         if (!encrypted) {
-            DataBuffer encodeBuffer(maxInputSize);//make sure maxInputSize > maxFrameSize
-            size_t encoded = codec->encode(encodeBuffer.data, encodeBuffer.size);
-            if (!encoded) break;//nothing more to do
-            int result = sasl_encode(conn, encodeBuffer.data, encoded, &encrypted, &encryptedSize);
+            if (!encoded) {
+                encodeBuffer.position = 0;
+                encoded = codec->encode(encodeBuffer.data, encodeBuffer.size);
+                if (!encoded) break;//nothing more to do
+            }
+
+            size_t encryptable = std::min(encoded, maxInputSize); 
+            int result = sasl_encode(conn, encodeBuffer.data + encodeBuffer.position, encryptable, &encrypted, &encryptedSize);
             if (result != SASL_OK) {
                 throw framing::InternalErrorException(QPID_MSG("SASL encode error: " << sasl_errdetail(conn)));
             }
+            encodeBuffer.position += encryptable;
+            encoded -= encryptable;
         }
         size_t remaining = size - processed;
         if (remaining < encryptedSize) {
