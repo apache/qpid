@@ -149,6 +149,80 @@ AC_CHECK_PROG([RUBY], [ruby], [ruby])
 test -n "$RUBY" && generate=yes
 test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
+# Ruby bindings: To build ruby wrappers, the ruby-devel files must be present.
+
+AC_PATH_PROGS(RUBY, [ruby1.8 ruby], [])
+AC_ARG_VAR(RUBY, [Ruby interpreter])
+if test -n "$RUBY" ; then
+   AC_ARG_VAR(RUBY_INC, [Directory where ruby.h can be found])
+   if test -z "$RUBY_INC" ; then
+      [RUBY_INC=`$RUBY -rrbconfig -e 'puts Config::CONFIG["rubyhdrdir"] || Config::CONFIG["archdir"]'`]
+   fi
+   AC_SUBST(RUBY_INC)
+
+   AC_ARG_VAR(RUBY_INC_ARCH, [Directory where ruby/config.h can be found (needed from Ruby 1.9)])
+   if test -z "$RUBY_INC_ARCH" ; then
+      [RUBY_INC_ARCH=`$RUBY -rrbconfig -e 'd = Config::CONFIG["rubyhdrdir"];if d != nil; print d + "/" + Config::CONFIG["arch"]; end'`]
+      dnl For earlier versions, just make it the same as RUBY_INC.
+      test x"$RUBY_INC_ARCH" != x || RUBY_INC_ARCH=$RUBY_INC
+   fi
+   AC_SUBST(RUBY_INC_ARCH)
+   AC_ARG_VAR(RUBY_LIB, [Directory to install ruby files into])
+      if test -z "$RUBY_LIB" ; then
+      dnl Kludge to install ruby files under $prefix
+      [RUBY_LIB=`$RUBY -rrbconfig -e 'puts Config::CONFIG["sitelibdir"].gsub("/usr", "${prefix}")'`]
+   fi
+   AC_SUBST(RUBY_LIB)
+
+	AC_ARG_VAR(RUBY_LIB_ARCH, [Directory to install ruby binary modules into])
+	if test -z "$RUBY_LIB_ARCH" ; then
+      dnl Kludge to install ruby files under $prefix
+	  [RUBY_LIB_ARCH=`$RUBY -rrbconfig -e 'puts Config::CONFIG["sitearchdir"].gsub("/usr", "${prefix}")'`]
+	fi
+	AC_SUBST(RUBY_LIB_ARCH)
+
+	RUBY_LIBS=
+	case $host_os in
+	cygwin*) RUBY_LIBS=-lruby ;;
+	esac
+	AC_SUBST(RUBY_LIBS)
+
+   RUBY_DLEXT=`$RUBY -rrbconfig -e 'puts Config::CONFIG[["DLEXT"]]'`
+   AC_SUBST(RUBY_DLEXT)
+fi
+AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h])
+
+# Python bindings: To build python wrappers, the ruby-devel files must be present.
+
+AM_PATH_PYTHON()
+if test -n "$PYTHON" ; then
+    AC_MSG_CHECKING([$PYTHON include dir])
+    if $PYTHON -c 'import distutils.sysconfig' 2>/dev/null ; then
+        PYTHON_INC=`$PYTHON -c 'import os,distutils.sysconfig;print(distutils.sysconfig.get_python_inc().replace(os.sep,"/"))'`
+	AC_SUBST(PYTHON_INC)
+    else
+        if test yes = "$with_python" ; then
+	    AC_MSG_ERROR([Couldn't import Python module distutils.sysconfig - you probably need to install a python-dev or python-devel package])
+	else
+	    AC_MSG_WARN([Couldn't import Python module distutils.sysconfig - you probably don't have a python-dev or python-devel package installed])
+	fi
+    fi
+    AC_MSG_RESULT([$PYTHON_INC])
+    AC_MSG_CHECKING([for directory to install python bindings in])
+    if test -z "$PYTHON_LIB" ; then
+	  PYTHON_LIB=`$PYTHON -c 'import os,distutils.sysconfig;print(distutils.sysconfig.get_python_lib(1).replace(os.sep,"/"))'`
+    fi
+    AC_MSG_RESULT([$PYTHON_LIB])
+    AC_ARG_VAR(PYTHON_LIB, [Directory to install python bindings in])
+
+    AC_MSG_CHECKING([for python libraries to link against])
+	PYTHON_LIBS=`$PYTHON -c 'import os,sys;print("-L"+os.path.join(sys.path[[3]],"config")+" -lpython"+sys.version[[:3]])'`
+    AC_SUBST(PYTHON_LIBS)
+    AC_MSG_RESULT([$PYTHON_LIBS])
+fi
+AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h])
+
+
 specdir=`pwd`/$srcdir/../specs  
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 test -f $AMQP_FINAL_XML || test -d $srcdir/src/gen || AC_MSG_ERROR([Neither AMQP specs nor spec-generated code present; cannot build.])
@@ -424,6 +498,9 @@ AC_CONFIG_FILES([
   examples/xml-exchange/Makefile
   examples/qmf-console/Makefile
   examples/tradedemo/Makefile
+  bindings/qmf/Makefile
+  bindings/qmf/ruby/Makefile
+  bindings/qmf/python/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile
