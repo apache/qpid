@@ -615,7 +615,6 @@ class Receiver(Lockable):
     self.filter = filter
     self.started = started
     self.closed = False
-    self.incoming = []
     self.listener = None
     self._ssn = None
     self._queue = None
