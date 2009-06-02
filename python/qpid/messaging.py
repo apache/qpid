@@ -365,6 +365,14 @@ class Session(Lockable):
       receiver._link()
     return receiver
 
+  @synchronized
+  def _count(self, predicate):
+    result = 0
+    for msg in self.incoming:
+      if predicate(msg):
+        result += 1
+    return result
+
   def _peek(self, predicate):
     for msg in self.incoming:
       if predicate(msg):
@@ -647,6 +655,10 @@ class Receiver(Lockable):
     self._ssn = None
 
   @synchronized
+  def pending(self):
+    return self.session._count(self._pred)
+
+  @synchronized
   def listen(self, listener=None):
     """
     Sets the message listener for this receiver.
@@ -655,13 +667,6 @@ class Receiver(Lockable):
     @param listener: a callable object to be notified on message arrival
     """
     self.listener = listener
-    if self.listener is None:
-      self._ssn.message_stop(self.destination)
-      self._ssn.message_flow(self.destination, self._ssn.credit_unit.byte, 0xFFFFFFFFL,
-                             sync=True)
-      self._ssn.sync()
-    else:
-      self._ssn.message_flow(self.destination, self._ssn.credit_unit.message, 0xFFFFFFFFL)
 
   def _pred(self, msg):
     return msg._receiver == self
@@ -692,8 +697,7 @@ class Receiver(Lockable):
 
   def _start(self):
     self._ssn.message_flow(self.destination, self._ssn.credit_unit.byte, 0xFFFFFFFFL)
-    if self.listener is not None:
-      self._ssn.message_flow(self.destination, self._ssn.credit_unit.message, 0xFFFFFFFFL)
+    self._ssn.message_flow(self.destination, self._ssn.credit_unit.message, 0xFFFFFFFFL)
 
   @synchronized
   def start(self):
