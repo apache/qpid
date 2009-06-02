@@ -22,7 +22,7 @@
 
 import time
 from qpid.tests import Test
-from qpid.messaging import Connection, Disconnected, Empty, Message, uuid4
+from qpid.messaging import Connection, Disconnected, Empty, Message, UNLIMITED, uuid4
 from Queue import Queue, Empty as QueueEmpty
 
 class Base(Test):
@@ -69,6 +69,9 @@ class Base(Test):
       pass
     return msgs
 
+  def delay(self):
+    time.sleep(2)
+
 class SetupTests(Base):
 
   def testOpen(self):
@@ -107,7 +110,6 @@ class ConnectionTests(Base):
     ssn = self.conn.session()
     self.ping(ssn)
     self.conn.disconnect()
-    import socket
     try:
       self.ping(ssn)
       assert False, "ping succeeded"
@@ -296,10 +298,10 @@ class ReceiverTests(Base):
 
   def testStart(self):
     content = self.send("testStart")
-    time.sleep(2)
+    self.delay()
     assert self.rcv.pending() == 0
     self.rcv.start()
-    time.sleep(2)
+    self.delay()
     assert self.rcv.pending() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == content
@@ -309,7 +311,7 @@ class ReceiverTests(Base):
   def testStop(self):
     self.rcv.start()
     one = self.send("testStop", 1)
-    time.sleep(2)
+    self.delay()
     assert self.rcv.pending() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == one
@@ -317,7 +319,7 @@ class ReceiverTests(Base):
     self.rcv.stop()
 
     two = self.send("testStop", 2)
-    time.sleep(2)
+    self.delay()
     assert self.rcv.pending() == 0
     msg = self.rcv.fetch(0)
     assert msg.content == two
@@ -326,27 +328,56 @@ class ReceiverTests(Base):
 
   def testPending(self):
     self.rcv.start()
-
     assert self.rcv.pending() == 0
 
     for i in range(3):
       self.send("testPending", i)
-    time.sleep(2)
-
+    self.delay()
     assert self.rcv.pending() == 3
 
     for i in range(3, 10):
       self.send("testPending", i)
-    time.sleep(2)
-
+    self.delay()
     assert self.rcv.pending() == 10
 
     self.drain(self.rcv, limit=3)
-
     assert self.rcv.pending() == 7
 
     self.drain(self.rcv)
+    assert self.rcv.pending() == 0
 
+    self.ssn.acknowledge()
+
+  def testCapacity(self):
+    self.rcv.capacity = 5
+    self.rcv.start()
+    assert self.rcv.pending() == 0
+
+    for i in range(15):
+      self.send("testCapacity", i)
+    self.delay()
+    assert self.rcv.pending() == 5
+
+    self.drain(self.rcv, limit = 5)
+    self.delay()
+    assert self.rcv.pending() == 5
+
+    self.drain(self.rcv)
+    assert self.rcv.pending() == 0
+
+    self.ssn.acknowledge()
+
+  def testCapacityUNLIMITED(self):
+    self.rcv.capacity = UNLIMITED
+    self.rcv.start()
+    assert self.rcv.pending() == 0
+
+    for i in range(10):
+      self.send("testCapacityUNLIMITED", i)
+    self.delay()
+    assert self.rcv.pending() == 10
+
+    self.drain(self.rcv)
     assert self.rcv.pending() == 0
 
     self.ssn.acknowledge()
