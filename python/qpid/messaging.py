@@ -632,7 +632,10 @@ class Receiver(Lockable):
     else:
       self._queue = "%s.%s" % (self.session.name, self.destination)
       self._ssn.queue_declare(queue=self._queue, durable=False, exclusive=True, auto_delete=True)
-      f = FILTER_DEFAULTS[result.type] if self.filter is None else self.filter
+      if self.filter is None:
+        f = FILTER_DEFAULTS[result.type]
+      else:
+        f = self.filter
       f._bind(self._ssn, self.source, self._queue)
     self._ssn.message_subscribe(queue=self._queue, destination=self.destination,
                                 sync=True)
