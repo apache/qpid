@@ -18,6 +18,7 @@
 #
 
 import threading, struct, datetime, time
+from exceptions import Timeout
 
 class Struct:
 
@@ -253,9 +254,12 @@ class Future:
 
   def get(self, timeout=None):
     self._set.wait(timeout)
-    if self._error != None:
-      raise self.exception(self._error)
-    return self.value
+    if self._set.isSet():
+      if self._error != None:
+        raise self.exception(self._error)
+      return self.value
+    else:
+      raise Timeout()
 
   def is_set(self):
     return self._set.isSet()
