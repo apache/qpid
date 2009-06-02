@@ -110,6 +110,13 @@ def width():
 
 WIDTH = width()
 
+def resize(sig, frm):
+  global WIDTH
+  WIDTH = width()
+
+import signal
+signal.signal(signal.SIGWINCH, resize)
+
 def vt100_attrs(*attrs):
   return "\x1B[%sm" % ";".join(map(str, attrs))
 
