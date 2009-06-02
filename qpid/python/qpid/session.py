@@ -49,6 +49,7 @@ class Session(command_invoker(SPEC)):
   def __init__(self, name, auto_sync=True, timeout=10, delegate=client):
     self.name = name
     self.auto_sync = auto_sync
+    self.need_sync = True
     self.timeout = timeout
     self.channel = None
     self.invoke_lock = Lock()
@@ -94,7 +95,7 @@ class Session(command_invoker(SPEC)):
     ch = self.channel
     if ch is not None and currentThread() == ch.connection.thread:
       raise SessionException("deadlock detected")
-    if not self.auto_sync:
+    if self.need_sync:
       self.execution_sync(sync=True)
     last = self.sender.next_id - 1
     if not wait(self.condition, lambda:
@@ -162,6 +163,7 @@ class Session(command_invoker(SPEC)):
 
     hdr = Struct(self.spec["session.header"])
     hdr.sync = self.auto_sync or kwargs.pop("sync", False)
+    self.need_sync = not hdr.sync
 
     cmd = type.new(args, kwargs)
     sc = StringCodec(self.spec)
