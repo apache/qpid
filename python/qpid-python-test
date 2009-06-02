@@ -18,7 +18,7 @@
 # under the License.
 #
 
-import optparse, os, sys, logging, traceback, types
+import fcntl, logging, optparse, os, struct, sys, termios, traceback, types
 from fnmatch import fnmatchcase as match
 from getopt import GetoptError
 from logging import getLogger, StreamHandler, Formatter, Filter, \
@@ -98,6 +98,18 @@ def included(path):
       return True
   return False
 
+def width():
+  if sys.stdout.isatty():
+    s = struct.pack("HHHH", 0, 0, 0, 0)
+    fd_stdout = sys.stdout.fileno()
+    x = fcntl.ioctl(fd_stdout, termios.TIOCGWINSZ, s)
+    rows, cols, xpx, ypx = struct.unpack("HHHH", x)
+    return cols
+  else:
+    return 80
+
+WIDTH = width()
+
 def vt100_attrs(*attrs):
   return "\x1B[%sm" % ";".join(map(str, attrs))
 
@@ -155,6 +167,9 @@ class StreamWrapper:
     self.interceptor = interceptor
     self.stream = stream
     self.prefix = prefix
+
+  def fileno(self):
+    return self.stream.fileno()
 
   def isatty(self):
     return self.stream.isatty()
@@ -251,6 +266,8 @@ class Runner:
       print "Error during %s:" % name
       print indent("".join(traceback.format_exception(*info))).rstrip()
 
+ST_WIDTH = 8
+
 def run_test(name, test, config):
   patterns = filter.patterns
   level = root.level
@@ -262,7 +279,7 @@ def run_test(name, test, config):
   output = ""
   for part in parts:
     if line:
-      if len(line) + len(part) >= 71:
+      if len(line) + len(part) >= (WIDTH - ST_WIDTH - 1):
         output += "%s. \\\n" % line
         line = "    %s" % part
       else:
@@ -271,7 +288,7 @@ def run_test(name, test, config):
       line = part
 
   if line:
-    output += "%s %s" % (line, ((72 - len(line))*"."))
+    output += "%s %s" % (line, (((WIDTH - ST_WIDTH) - len(line))*"."))
   sys.stdout.write(output)
   sys.stdout.flush()
   interceptor.begin()
