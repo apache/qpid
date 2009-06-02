@@ -60,10 +60,10 @@ class Base(Test):
     ssn.acknowledge()
     assert msg.content == content
 
-  def drain(self, rcv):
+  def drain(self, rcv, limit=None):
     msgs = []
     try:
-      while True:
+      while limit is None or len(msgs) < limit:
         msgs.append(rcv.fetch(0))
     except Empty:
       pass
@@ -245,14 +245,21 @@ class ReceiverTests(Base):
   def setup_receiver(self):
     return self.ssn.receiver("test-receiver-queue")
 
+  def send(self, base, count = None):
+    if count is None:
+      content = "%s[%s]" % (base, uuid4())
+    else:
+      content = "%s[%s, %s]" % (base, count, uuid4())
+    self.snd.send(content)
+    return content
+
   def testListen(self):
     msgs = Queue()
     def listener(m):
       msgs.put(m)
       self.ssn.acknowledge(m)
     self.rcv.listen(listener)
-    content = "testListen[%s]" % uuid4()
-    self.snd.send(content)
+    content = self.send("testListen")
     try:
       msg = msgs.get(timeout=3)
       assert False, "did not expect message: %s" % msg
@@ -276,18 +283,75 @@ class ReceiverTests(Base):
       elapsed = time.time() - start
       assert elapsed >= 3
 
-    content = "testListen[%s]" % uuid4()
-    for i in range(3):
-      self.snd.send(content)
+    one = self.send("testListen", 1)
+    two = self.send("testListen", 2)
+    three = self.send("testListen", 3)
     msg = self.rcv.fetch(0)
-    assert msg.content == content
+    assert msg.content == one
     msg = self.rcv.fetch(3)
-    assert msg.content == content
+    assert msg.content == two
     msg = self.rcv.fetch()
-    assert msg.content == content
+    assert msg.content == three
     self.ssn.acknowledge()
 
-  # XXX: need testStart, testStop and testClose
+  def testStart(self):
+    content = self.send("testStart")
+    time.sleep(2)
+    assert self.rcv.pending() == 0
+    self.rcv.start()
+    time.sleep(2)
+    assert self.rcv.pending() == 1
+    msg = self.rcv.fetch(0)
+    assert msg.content == content
+    assert self.rcv.pending() == 0
+    self.ssn.acknowledge()
+
+  def testStop(self):
+    self.rcv.start()
+    one = self.send("testStop", 1)
+    time.sleep(2)
+    assert self.rcv.pending() == 1
+    msg = self.rcv.fetch(0)
+    assert msg.content == one
+
+    self.rcv.stop()
+
+    two = self.send("testStop", 2)
+    time.sleep(2)
+    assert self.rcv.pending() == 0
+    msg = self.rcv.fetch(0)
+    assert msg.content == two
+
+    self.ssn.acknowledge()
+
+  def testPending(self):
+    self.rcv.start()
+
+    assert self.rcv.pending() == 0
+
+    for i in range(3):
+      self.send("testPending", i)
+    time.sleep(2)
+
+    assert self.rcv.pending() == 3
+
+    for i in range(3, 10):
+      self.send("testPending", i)
+    time.sleep(2)
+
+    assert self.rcv.pending() == 10
+
+    self.drain(self.rcv, limit=3)
+
+    assert self.rcv.pending() == 7
+
+    self.drain(self.rcv)
+
+    assert self.rcv.pending() == 0
+
+    self.ssn.acknowledge()
+
+  # XXX: need testClose
 
 class MessageTests(Base):
 
