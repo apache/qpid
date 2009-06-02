@@ -53,12 +53,14 @@ parser.add_option("-i", "--ignore", action="append", default=[],
 parser.add_option("-I", "--ignore-file", metavar="IFILE", action="append",
                   default=[],
                   help="ignore tests matching patterns in IFILE")
+parser.add_option("-D", "--define", metavar="DEFINE", dest="defines",
+                  action="append", default=[], help="define test parameters")
 
 class Config:
 
   def __init__(self):
     self.broker = URL("localhost")
-    self.work = None
+    self.defines = {}
     self.log_file = None
     self.log_level = WARN
     self.log_categories = []
@@ -70,6 +72,14 @@ excludes = ["*__*__"]
 config = Config()
 list_only = opts.list
 config.broker = URL(opts.broker)
+for d in opts.defines:
+  try:
+    idx = d.index("=")
+    name = d[:idx]
+    value = d[idx+1:]
+    config.defines[name] = value
+  except ValueError:
+    config.defines[d] = None
 config.log_file = opts.log_file
 config.log_level = levels[opts.log_level.upper()]
 config.log_categories = opts.log_categories

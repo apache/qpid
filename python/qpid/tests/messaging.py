@@ -70,7 +70,8 @@ class Base(Test):
     return msgs
 
   def delay(self):
-    time.sleep(2)
+    d = float(self.config.defines.get("delay", "2"))
+    time.sleep(d)
 
 class SetupTests(Base):
 
