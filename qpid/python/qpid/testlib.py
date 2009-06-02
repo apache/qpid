@@ -412,7 +412,7 @@ class TestBase010(unittest.TestCase):
         sock = connect(host or testrunner.host, port or testrunner.port)
         if testrunner.url.scheme == URL.AMQPS:
             sock = ssl(sock)
-        conn = Connection(sock, testrunner.spec, username=testrunner.user,
+        conn = Connection(sock, username=testrunner.user,
                           password=testrunner.password)
         conn.start(timeout=10)
         return conn
