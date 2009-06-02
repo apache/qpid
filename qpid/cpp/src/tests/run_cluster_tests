@@ -20,7 +20,7 @@
 #
 
 # Run the cluster tests.
-TEST_DIR=$srcdir
+TEST_DIR=${top_builddir}/src/tests
 
 # Check AIS requirements
 id -nG | grep '\<ais\>' >/dev/null || NOGROUP="You are not a member of the ais group."
@@ -45,12 +45,12 @@ fi
 
 export PYTHONPATH=$srcdir:$srcdir/../../../python
 export RUN_CLUSTER_TESTS=1
-export QPIDD_EXEC=$srcdir/../qpidd
-export CLUSTER_LIB=$srcdir/../.libs/cluster.so
+export QPIDD_EXEC=${top_builddir}/src/qpidd
+export CLUSTER_LIB=${top_builddir}/src/.libs/cluster.so
 export QPID_CONFIG_EXEC=$srcdir/../../../python/commands/qpid-config
 export QPID_ROUTE_EXEC=$srcdir/../../../python/commands/qpid-route
-export RECEIVER_EXEC=$srcdir/receiver
-export SENDER_EXEC=$srcdir/sender
+export RECEIVER_EXEC=${top_builddir}/src/tests/receiver
+export SENDER_EXEC=${top_builddir}/src/tests/sender
 
 #Make sure temp dir exists if this is the first to use it
 TMP_STORE_DIR=${TEST_DIR}/test_tmp
@@ -64,8 +64,7 @@ fi
 export TMP_STORE_DIR
 
 
-AMQP_SPEC=${TEST_DIR}/../../../specs/amqp.0-10-qpid-errata.xml
-sg ais -c "${TEST_DIR}/cluster.py -v"
+sg ais -c "${srcdir}/cluster.py -v"
 RETCODE=$?
 if test x$RETCODE != x0; then 
     echo "FAIL cluster tests"; exit 1;

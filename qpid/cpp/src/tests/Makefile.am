@@ -231,6 +231,7 @@ DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
     srcdir=$(srcdir) \
+    top_builddir=$(top_builddir) \
     QPID_DATA_DIR= \
     QPID_LIB_DIR=../.libs \
     BOOST_TEST_SHOW_PROGRESS=yes \
