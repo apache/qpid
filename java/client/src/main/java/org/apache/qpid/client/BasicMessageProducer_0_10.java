@@ -98,13 +98,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             deliveryProp.setTimestamp(currentTime);
             if (timeToLive > 0)
             {
-                deliveryProp.setExpiration(currentTime + timeToLive);
-                message.setJMSExpiration(currentTime + timeToLive);
+                deliveryProp.setTtl(timeToLive);                
             }
             else
             {
-               deliveryProp.setExpiration(0);
-               message.setJMSExpiration(0);
+               deliveryProp.setTtl(0);
             }
             message.setJMSTimestamp(currentTime);
         }
