@@ -431,7 +431,7 @@ class Harness:
 modules = "qpid.tests", "tests", "tests_0-10"
 h = Harness()
 for name in modules:
-  m = __import__(name, fromlist=["dummy"])
+  m = __import__(name, None, None, ["dummy"])
   h.scan(m)
 
 filtered = [t for t in h.tests if included(t.name())]
