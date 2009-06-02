@@ -556,7 +556,10 @@ class Sender(Lockable):
     else:
       rk = self._routing_key
     # XXX: do we need to query to figure out how to create the reply-to interoperably?
-    rt = self._ssn.reply_to(*parse_addr(message.reply_to)) if message.reply_to else None
+    if message.reply_to:
+      rt = self._ssn.reply_to(*parse_addr(message.reply_to))
+    else:
+      rt = None
     dp = self._ssn.delivery_properties(routing_key=rk)
     mp = self._ssn.message_properties(message_id=message.id,
                                       user_id=message.user_id,
