@@ -447,7 +447,11 @@ for t in filtered:
       failed += 1
 
 if not list_only:
+  if failed:
+    outcome = "fail"
+  else:
+    outcome = "pass"
   print colorize("Totals:", 1), \
       colorize_word("total", "%s tests" % len(filtered)) + ",", \
       colorize_word("pass", "%s passed" % passed) + ",", \
-      colorize_word("fail" if failed else "pass", "%s failed" % failed)
+      colorize_word(outcome, "%s failed" % failed)
