@@ -365,7 +365,8 @@ class FunctionScanner(PatternMatcher):
     return type(obj) == types.FunctionType and self.matches(name)
 
   def descend(self, func):
-    return; yield
+    # the None is required for older versions of python
+    return; yield None
 
   def extract(self, func):
     yield FunctionTest(func)
@@ -376,7 +377,8 @@ class ClassScanner(PatternMatcher):
     return type(obj) in (types.ClassType, types.TypeType) and self.matches(obj.__name__)
 
   def descend(self, cls):
-    return; yield
+    # the None is required for older versions of python
+    return; yield None
 
   def extract(self, cls):
     names = dir(cls)
@@ -399,7 +401,8 @@ class ModuleScanner:
       yield getattr(obj, name)
 
   def extract(self, obj):
-    return; yield
+    # the None is required for older versions of python
+    return; yield None
 
 class Harness:
 
