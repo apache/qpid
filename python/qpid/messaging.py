@@ -551,7 +551,10 @@ class Sender(Lockable):
     else:
       message = Message(object)
     # XXX: what if subject is specified for a normal queue?
-    rk = message.subject if self._routing_key is None else self._routing_key
+    if self._routing_key is None:
+      rk = message.subject
+    else:
+      rk = self._routing_key
     # XXX: do we need to query to figure out how to create the reply-to interoperably?
     rt = self._ssn.reply_to(*parse_addr(message.reply_to)) if message.reply_to else None
     dp = self._ssn.delivery_properties(routing_key=rk)
