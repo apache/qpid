@@ -92,18 +92,22 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             messageProps.clearMessageId();
         }
 
+        long currentTime = 0;
+        if (timeToLive > 0 || !_disableTimestamps)
+        {
+            currentTime = System.currentTimeMillis();
+        }        
+        
+        if (timeToLive > 0)
+        {
+            deliveryProp.setTtl(timeToLive);
+            message.setJMSExpiration(currentTime + timeToLive);
+        }
+        
         if (!_disableTimestamps)
         {
-            final long currentTime = System.currentTimeMillis();
-            deliveryProp.setTimestamp(currentTime);
-            if (timeToLive > 0)
-            {
-                deliveryProp.setTtl(timeToLive);                
-            }
-            else
-            {
-               deliveryProp.setTtl(0);
-            }
+            
+            deliveryProp.setTimestamp(currentTime);            
             message.setJMSTimestamp(currentTime);
         }
 
