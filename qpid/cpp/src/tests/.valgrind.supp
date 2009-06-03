@@ -13,7 +13,7 @@
    fun:dlopen_doit
    fun:_dl_catch_error
    fun:_dlerror_run
-   fun:dlopen@@GLIBC_2.2.5
+   fun:*
    fun:_sasl_get_plugin
    fun:_sasl_load_plugins
    fun:sasl_client_init
