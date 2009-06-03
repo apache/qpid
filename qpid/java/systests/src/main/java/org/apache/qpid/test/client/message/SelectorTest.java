@@ -33,8 +33,8 @@ public class SelectorTest extends QpidTestCase
             prod.send(msg);
         }
         
-        Message msg1 = consumer.receive(500);
-        Message msg2 = consumer.receive(500);
+        Message msg1 = consumer.receive(1000);
+        Message msg2 = consumer.receive(1000);
         
         Assert.assertNotNull("Msg1 should not be null", msg1);
         Assert.assertNotNull("Msg2 should not be null", msg2);
@@ -52,8 +52,8 @@ public class SelectorTest extends QpidTestCase
         
         consumer = session.createConsumer(dest,"JMSMessageID IS NULL");
         
-        Message msg4 = consumer.receive(500);
-        Message msg5 = consumer.receive(500);
+        Message msg4 = consumer.receive(1000);
+        Message msg5 = consumer.receive(1000);
         
         Assert.assertNotNull("Msg4 should not be null", msg4);
         Assert.assertNotNull("Msg5 should not be null", msg5);
