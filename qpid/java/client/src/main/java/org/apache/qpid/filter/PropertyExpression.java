@@ -204,6 +204,24 @@ public class PropertyExpression implements Expression
                                              }
                                          }
                                      });
+        
+        JMS_PROPERTY_EXPRESSIONS.put("JMSMessageID", new Expression()
+                                    {
+                                        public Object evaluate(AbstractJMSMessage message)
+                                        {
+                                            try
+                                            {
+                                                return message.getJMSMessageID();
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                _logger.warn("Error evaluating property",e);
+                            
+                                                return null;
+                                            }
+                            
+                                        }
+                                    });
 
     }
 
