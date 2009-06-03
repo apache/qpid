@@ -35,8 +35,25 @@ endif (MSVC)
 
 # Like this to work with cmake 2.4 on Unix
 set (qpid_test_boost_libs 
-     boost_regex
-     boost_unit_test_framework)
+     ${Boost_regex_LIBRARY}
+     ${Boost_unit_test_framework_LIBRARY})
+
+# Macro to make it easier to remember where the tests are built
+macro(remember_location testname)
+  set (${testname}_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${testname}${CMAKE_EXECUTABLE_SUFFIX})
+endmacro(remember_location)
+
+# Windows uses some process-startup calls to ensure that errors, etc. don't
+# result in error boxes being thrown up. Since it's expected that most test
+# runs will be in scripts, the default is to force these outputs to stderr
+# instead of windows. If you want to remove this code, build without the
+# QPID_WINDOWS_DEFAULT_TEST_OUTPUTS ON.
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  option(QPID_WINDOWS_DEFAULT_TEST_OUTPUTS "Use default error-handling on Windows tests" OFF)
+  if (NOT QPID_WINDOWS_DEFAULT_TEST_OUTPUTS)
+    set(platform_test_additions windows/DisableWin32ErrorWindows.cpp)
+  endif (NOT QPID_WINDOWS_DEFAULT_TEST_OUTPUTS)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 #
 # Unit test program
@@ -107,7 +124,8 @@ mark_as_advanced(unit_tests_to_build)
 # 	amqp_0_10/Map.cpp \
 # 	amqp_0_10/handlers.cpp 
 
-add_executable (unit_test unit_test ${unit_tests_to_build})
+add_executable (unit_test unit_test
+                ${unit_tests_to_build} ${platform_test_additions})
 # The generally recommended way to add macro settings is to use
 # COMPILE_DEFINITIONS, but it's a rough go to add more than one definition
 # with a value; in this case, assuming that -D works everywhere is easier.
@@ -118,6 +136,7 @@ set_source_files_properties (ReplicationTest.cpp Shlib.cpp ${xml_tests}
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidclient qpidbroker qmfconsole)
+remember_location(unit_test)
 add_dependencies (check unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
@@ -132,115 +151,137 @@ add_dependencies (check shlibtest)
 #
 # Other test programs
 #
-add_executable (perftest perftest.cpp)
+add_executable (perftest perftest.cpp ${platform_test_additions})
 target_link_libraries (perftest qpidclient)
 #perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
+remember_location(perftest)
 add_dependencies (check perftest)
 
-add_executable (txtest txtest.cpp)
+add_executable (txtest txtest.cpp ${platform_test_additions})
 target_link_libraries (txtest qpidclient)
 #txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
+remember_location(txtest)
 add_dependencies (check txtest)
 
-add_executable (latencytest latencytest.cpp)
+add_executable (latencytest latencytest.cpp ${platform_test_additions})
 target_link_libraries (latencytest qpidclient)
 #latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
+remember_location(latencytest)
 add_dependencies (check latencytest)
 
-add_executable (echotest echotest.cpp)
+add_executable (echotest echotest.cpp ${platform_test_additions})
 target_link_libraries (echotest qpidclient)
 #echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
+remember_location(echotest)
 add_dependencies (check echotest)
 
-add_executable (client_test client_test.cpp)
+add_executable (client_test client_test.cpp ${platform_test_additions})
 target_link_libraries (client_test qpidclient)
 #client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
+remember_location(client_test)
 add_dependencies (check client_test)
 
-add_executable (topic_listener topic_listener.cpp)
+add_executable (topic_listener topic_listener.cpp ${platform_test_additions})
 target_link_libraries (topic_listener qpidclient)
 #topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
+remember_location(topic_listener)
 add_dependencies (check topic_listener)
 
-add_executable (topic_publisher topic_publisher.cpp)
+add_executable (topic_publisher topic_publisher.cpp ${platform_test_additions})
 target_link_libraries (topic_publisher qpidclient)
 #topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
+remember_location(topic_publisher)
 add_dependencies (check topic_publisher)
 
-add_executable (publish publish.cpp)
+add_executable (publish publish.cpp ${platform_test_additions})
 target_link_libraries (publish qpidclient)
 #publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
+remember_location(publish)
 add_dependencies (check publish)
 
-add_executable (consume consume.cpp)
+add_executable (consume consume.cpp ${platform_test_additions})
 target_link_libraries (consume qpidclient)
 #consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
+remember_location(consume)
 add_dependencies (check consume)
 
-add_executable (header_test header_test.cpp)
+add_executable (header_test header_test.cpp ${platform_test_additions})
 target_link_libraries (header_test qpidclient)
 #header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
+remember_location(header_test)
 add_dependencies (check header_test)
 
 if (BUILD_CLUSTER)
-  add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp)
+  add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp ${platform_test_additions})
   target_link_libraries (failover_soak qpidclient)
   #failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
+  remember_location(failover_soak)
   add_dependencies (check failover_soak)
 endif (BUILD_CLUSTER)
 
-add_executable (declare_queues declare_queues.cpp)
+add_executable (declare_queues declare_queues.cpp ${platform_test_additions})
 target_link_libraries (declare_queues qpidclient)
+remember_location(declare_queues)
 add_dependencies (check declare_queues)
 
-add_executable (replaying_sender replaying_sender.cpp)
+add_executable (replaying_sender replaying_sender.cpp ${platform_test_additions})
 target_link_libraries (replaying_sender qpidclient)
+remember_location(replaying_sender)
 add_dependencies (check replaying_sender)
 
-add_executable (resuming_receiver resuming_receiver.cpp)
+add_executable (resuming_receiver resuming_receiver.cpp ${platform_test_additions})
 target_link_libraries (resuming_receiver qpidclient)
+remember_location(resuming_receiver)
 add_dependencies (check resuming_receiver)
 
-add_executable (txshift txshift.cpp)
+add_executable (txshift txshift.cpp ${platform_test_additions})
 target_link_libraries (txshift qpidclient)
 #txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
+remember_location(txshift)
 add_dependencies (check txshift)
 
-add_executable (txjob txjob.cpp)
+add_executable (txjob txjob.cpp ${platform_test_additions})
 target_link_libraries (txjob qpidclient)
 #txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
+remember_location(txjob)
 add_dependencies (check txjob)
 
-add_executable (receiver receiver.cpp)
+add_executable (receiver receiver.cpp ${platform_test_additions})
 target_link_libraries (receiver qpidclient)
 #receiver_SOURCES=receiver.cpp  TestOptions.h ConnectionOptions.h
+remember_location(receiver)
 add_dependencies (check receiver)
 
-add_executable (sender sender.cpp)
+add_executable (sender sender.cpp ${platform_test_additions})
 target_link_libraries (sender qpidclient)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
+remember_location(sender)
 add_dependencies (check sender)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-  set (test_script_suffix ".bat")
+  set (ENV{OUTDIR} ${EXECUTABLE_OUTPUT_PATH})
+  set (test_script_suffix ".ps1")
+  set (shell "powershell")
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-set(test_wrap ${CMAKE_CURRENT_SOURCE_DIR}/test_wrap${test_script_suffix})
+set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix})
 
-add_test (unit_test unit_test)
-add_test (start_broker ${CMAKE_CURRENT_SOURCE_DIR}/start_broker${test_script_suffix})
-add_test (client_test ${test_wrap} ./client_test)
-add_test (quick_perftest ${test_wrap} ./perftest --summary --count 100)
+add_test (unit_test ${test_wrap} ${unit_test_LOCATION})
+add_test (start_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/start_broker${test_script_suffix})
+add_test (client_test ${test_wrap} ${client_test_LOCATION})
+add_test (quick_perftest ${test_wrap} ${perftest_LOCATION} --summary --count 100)
 add_test (quick_topictest ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
-add_test (quick_txtest ${test_wrap} ./txtest --queues 4 --tx-count 10 --quiet)
+add_test (quick_txtest ${test_wrap} ${txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
 if (PYTHON_EXECUTABLE)
-  add_test (run_header_test ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
+  add_test (run_header_test ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
   add_test (python_tests ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/python_tests${test_script_suffix})
 endif (PYTHON_EXECUTABLE)
-add_test (stop_broker ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
+add_test (stop_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
 if (PYTHON_EXECUTABLE)
   add_test (federation_tests ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
+if (BUILD_ACL)
   add_test (acl_tests ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
+endif (BUILD_ACL)
 endif (PYTHON_EXECUTABLE)
 
 #EXTRA_DIST +=								\
