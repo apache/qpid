@@ -47,6 +47,7 @@ private:
 
 public:
     SslAcceptor(const SslSocket& s, Callback callback);
+    ~SslAcceptor();
     void start(qpid::sys::Poller::shared_ptr poller);
 
 private:

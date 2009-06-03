@@ -446,6 +446,11 @@ namespace Rdma {
         ci->nonblocking();
     }
 
+    ConnectionManager::~ConnectionManager()
+    {
+        handle.stopWatch();
+    }
+
     void ConnectionManager::start(Poller::shared_ptr poller) {
         startConnection(ci);
         handle.startWatch(poller);
