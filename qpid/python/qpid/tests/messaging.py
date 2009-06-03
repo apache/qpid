@@ -385,6 +385,41 @@ class ReceiverTests(Base):
 
   # XXX: need testClose
 
+class SenderTests(Base):
+
+  def setup_connection(self):
+    return Connection.open(self.broker.host, self.broker.port)
+
+  def setup_session(self):
+    return self.conn.session()
+
+  def setup_sender(self):
+    return self.ssn.sender("test-sender-queue")
+
+  def setup_receiver(self):
+    return self.ssn.receiver("test-sender-queue")
+
+  def checkContent(self, content):
+    self.snd.send(content)
+    msg = self.rcv.fetch(0)
+    assert msg.content == content
+
+    out = Message(content)
+    self.snd.send(out)
+    echo = self.rcv.fetch(0)
+    assert out.content == echo.content
+    assert echo.content == msg.content
+    self.ssn.acknowledge()
+
+  def testSendString(self):
+    self.checkContent("testSendString[%s]" % uuid4())
+
+  def testSendList(self):
+    self.checkContent(["testSendList", 1, 3.14, uuid4()])
+
+  def testSendMap(self):
+    self.checkContent({"testSendMap": uuid4(), "pie": "blueberry", "pi": 3.14})
+
 class MessageTests(Base):
 
   def testCreateString(self):
