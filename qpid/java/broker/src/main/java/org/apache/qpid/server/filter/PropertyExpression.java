@@ -63,6 +63,8 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
         JMS_PROPERTY_EXPRESSIONS.put("JMSPriority", new PriorityExpression());
 
+        JMS_PROPERTY_EXPRESSIONS.put("JMSMessageID", new MessageIDExpression());
+
         JMS_PROPERTY_EXPRESSIONS.put("AMQMessageID", new MessageIDExpression());
 
         JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp", new TimestampExpression());
