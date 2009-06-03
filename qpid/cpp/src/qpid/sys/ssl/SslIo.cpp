@@ -76,6 +76,11 @@ SslAcceptor::SslAcceptor(const SslSocket& s, Callback callback) :
     ignoreSigpipe();
 }
 
+SslAcceptor::~SslAcceptor() 
+{
+    handle.stopWatch();
+}
+
 void SslAcceptor::start(Poller::shared_ptr poller) {
     handle.startWatch(poller);
 }

@@ -157,7 +157,7 @@ namespace Rdma {
             DisconnectedCallback dc
         );
 
-        virtual ~ConnectionManager() {}
+        virtual ~ConnectionManager();
 
         void start(qpid::sys::Poller::shared_ptr poller);
 
