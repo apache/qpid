@@ -73,7 +73,7 @@ def Usage ():
     print "         ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
     print "Add Queue Options:"
-    print "    --altern-ex [name of the alternate exchange]"
+    print "    --alternate-exchange [name of the alternate exchange]"
     print "                         The alternate-exchange field specifies how messages on this queue should"
     print "                         be treated when they are rejected by a subscriber, or when they are"
     print "                         orphaned by queue deletion. When present, rejected or orphaned messages"
@@ -371,7 +371,7 @@ try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
                 "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
-                "force_if_used", "altern_ex=", "passive")
+                "force_if_used", "alternate-exchange=", "passive")
     (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -387,7 +387,7 @@ for opt in optlist:
         _recursive = True
     if opt[0] == "-a" or opt[0] == "--broker-addr":
         _host = opt[1]
-    if opt[0] == "--altern-ex":
+    if opt[0] == "--alternate-exchange":
         _altern_ex = opt[1]
     if opt[0] == "--passive":
         _passive = True
