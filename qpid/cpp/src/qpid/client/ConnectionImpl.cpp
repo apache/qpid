@@ -130,10 +130,7 @@ public:
     }
 };
 
-IOThread& theIO() {
-    static IOThread io(SystemInfo::concurrency());
-    return io;
-}
+static IOThread io(SystemInfo::concurrency());
 
 class HeartbeatTask : public TimerTask {
     TimeoutHandler& timeout;
@@ -176,7 +173,7 @@ ConnectionImpl::~ConnectionImpl() {
     // is running.
     failover.reset();
     if (connector) connector->close();
-    theIO().sub();
+    io.sub();
 }
 
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, uint16_t channel)
@@ -220,8 +217,8 @@ void ConnectionImpl::open()
     int port = handler.port;
     QPID_LOG(info, "Connecting to " << protocol << ":" << host << ":" << port);
 
-    theIO().add();
-    connector.reset(Connector::create(protocol, theIO().poller(), version, handler, this));
+    io.add();
+    connector.reset(Connector::create(protocol, io.poller(), version, handler, this)); 
     connector->setInputHandler(&handler);
     connector->setShutdownHandler(this);
     connector->connect(host, port);
