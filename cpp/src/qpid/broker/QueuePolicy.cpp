@@ -187,11 +187,17 @@ bool FlowToDiskPolicy::checkLimit(const QueuedMessage& m)
 RingQueuePolicy::RingQueuePolicy(uint32_t _maxCount, uint64_t _maxSize, const std::string& _type) : 
     QueuePolicy(_maxCount, _maxSize, _type), strict(_type == RING_STRICT) {}
 
+bool before(const QueuedMessage& a, const QueuedMessage& b)
+{
+    return a.position < b.position;
+}
+
 void RingQueuePolicy::enqueued(const QueuedMessage& m)
 {
     QueuePolicy::enqueued(m);
     qpid::sys::Mutex::ScopedLock l(lock);
-    queue.push_back(m);
+    //need to insert in correct location based on position
+    queue.insert(lower_bound(queue.begin(), queue.end(), m, before), m);
 }
 
 void RingQueuePolicy::dequeued(const QueuedMessage& m)
