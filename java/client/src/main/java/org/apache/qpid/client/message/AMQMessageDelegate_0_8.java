@@ -124,12 +124,18 @@ public class AMQMessageDelegate_0_8 implements AMQMessageDelegate
 
     public void setJMSMessageID(String messageId) throws JMSException
     {
-        getContentHeaderProperties().setMessageId(messageId);
+        if (messageId != null)
+        {
+            getContentHeaderProperties().setMessageId(messageId);
+        }
     }
 
     public void setJMSMessageID(UUID messageId) throws JMSException
     {
-        getContentHeaderProperties().setMessageId("ID:" + messageId);
+        if (messageId != null)
+        {
+            getContentHeaderProperties().setMessageId("ID:" + messageId);
+        }
     }
 
 
