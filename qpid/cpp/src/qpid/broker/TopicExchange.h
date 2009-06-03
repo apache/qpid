@@ -46,8 +46,8 @@ class TopicExchange : public virtual Exchange {
   public:
     static const std::string typeName;
 
-    static bool match(const std::string& pattern, const std::string& topic);
-    static std::string normalize(const std::string& pattern);
+    static QPID_BROKER_EXTERN bool match(const std::string& pattern, const std::string& topic);
+    static QPID_BROKER_EXTERN std::string normalize(const std::string& pattern);
 
     QPID_BROKER_EXTERN TopicExchange(const string& name,
                                      management::Manageable* parent = 0, Broker* broker = 0);
