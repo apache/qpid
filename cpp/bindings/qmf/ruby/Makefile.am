@@ -22,7 +22,7 @@ rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = qmfengine.la
 
 qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
-qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(QPID_SRC)/.libs -lqpidclient $(top_builddir)/src/libqmfcommon.la
+qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfcommon.la
 
 qmfengine_la_SOURCES = \
 	qmfengine.cpp
