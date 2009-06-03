@@ -354,8 +354,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${qpid_poller_module}
   )
   set (libqpidcommon_platform_LIBS
-    boost_program_options
-    boost_filesystem
+    ${Boost_program_options_LIBRARY}
+    ${Boost_filesystem_LIBRARY}
     uuid
     ${CMAKE_DL_LIBS}
   )
