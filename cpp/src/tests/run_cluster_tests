@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -23,13 +23,13 @@
 TEST_DIR=${top_builddir}/src/tests
 
 # Check AIS requirements
-id -nG | grep '\<ais\>' >/dev/null || NOGROUP="You are not a member of the ais group."
-ps -u root | grep 'aisexec\|corosync' >/dev/null || NOAISEXEC="The aisexec or corosync daemon is not running as root"
+id -nG | grep '\<ais\>' > /dev/null || NOGROUP="You are not a member of the ais group."
+ps -u root | grep 'aisexec\|corosync' > /dev/null || NOAISEXEC="The aisexec or corosync daemon is not running as root"
 
 if test -n "${NOGROUP}" -o -n "${NOAISEXEC}"; then
     cat <<EOF
 
-    ========= WARNING: CLUSTERING TESTS DISABLED ==============
+    ======== WARNING: PYTHON CLUSTER TESTS DISABLED ===========
 
     Tests that depend on the openais library (used for clustering)
     will not be run because:
@@ -43,22 +43,28 @@ EOF
 	exit 0
 fi
 
-export PYTHONPATH=$srcdir:$srcdir/../../../python
-export RUN_CLUSTER_TESTS=1
+# Check XML exchange requirements
+XML_LIB=$srcdir/../.libs/xml.so
+if [ -f ${XML_LIB} ]; then
+	export XML_LIB
+fi
+
+export PYTHONPATH=${srcdir}:${srcdir}/../../../python
 export QPIDD_EXEC=${top_builddir}/src/qpidd
 export CLUSTER_LIB=${top_builddir}/src/.libs/cluster.so
-export QPID_CONFIG_EXEC=$srcdir/../../../python/commands/qpid-config
-export QPID_ROUTE_EXEC=$srcdir/../../../python/commands/qpid-route
+export QPID_CONFIG_EXEC=${srcdir}/../../../python/commands/qpid-config
+export QPID_ROUTE_EXEC=${srcdir}/../../../python/commands/qpid-route
 export RECEIVER_EXEC=${top_builddir}/src/tests/receiver
 export SENDER_EXEC=${top_builddir}/src/tests/sender
+
 
 #Make sure temp dir exists if this is the first to use it
 TMP_STORE_DIR=${TEST_DIR}/test_tmp
 if ! test -d ${TMP_STORE_DIR} ; then
-    mkdir -p ${TMP_STORE_DIR}
    	mkdir -p ${TMP_STORE_DIR}/cluster
 else
-	rm -rf "${TMP_STORE_DIR}/cluster"
+    # Delete old cluster test dirs
+    rm -rf "${TMP_STORE_DIR}/cluster"
     mkdir -p "${TMP_STORE_DIR}/cluster"
 fi
 export TMP_STORE_DIR
@@ -66,6 +72,6 @@ export TMP_STORE_DIR
 
 sg ais -c "${srcdir}/cluster.py -v"
 RETCODE=$?
-if test x$RETCODE != x0; then 
-    echo "FAIL cluster tests"; exit 1;
+if test x${RETCODE} != x0; then 
+    exit 1;
 fi
