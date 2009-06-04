@@ -40,6 +40,7 @@ class Base(Test):
     return None
 
   def setup(self):
+    self.test_id = uuid4()
     self.broker = self.config.broker
     self.conn = self.setup_connection()
     self.ssn = self.setup_session()
@@ -50,10 +51,16 @@ class Base(Test):
     if self.conn is not None and self.conn.connected():
       self.conn.close()
 
+  def content(self, base, count = None):
+    if count is None:
+      return "%s[%s]" % (base, self.test_id)
+    else:
+      return "%s[%s, %s]" % (base, count, self.test_id)
+
   def ping(self, ssn):
     # send a message
     sender = ssn.sender("ping-queue")
-    content = "ping[%s]" % uuid4()
+    content = self.content("ping")
     sender.send(content)
     receiver = ssn.receiver("ping-queue")
     msg = receiver.fetch(timeout=0)
@@ -61,13 +68,17 @@ class Base(Test):
     assert msg.content == content
 
   def drain(self, rcv, limit=None):
-    msgs = []
+    contents = []
     try:
-      while limit is None or len(msgs) < limit:
-        msgs.append(rcv.fetch(0))
+      while limit is None or len(contents) < limit:
+        contents.append(rcv.fetch(0).content)
     except Empty:
       pass
-    return msgs
+    return contents
+
+  def assertEmpty(self, rcv):
+    contents = self.drain(rcv)
+    assert len(contents) == 0, "%s is supposed to be empty: %s" % (rcv, contents)
 
   def delay(self):
     d = float(self.config.defines.get("delay", "2"))
@@ -156,7 +167,7 @@ class SessionTests(Base):
     assert snd is not snd2
     snd2.close()
 
-    content = "testSender[%s]" % uuid4()
+    content = self.content("testSender")
     snd.send(content)
     rcv = self.ssn.receiver(snd.target)
     msg = rcv.fetch(0)
@@ -169,7 +180,7 @@ class SessionTests(Base):
     assert rcv is not rcv2
     rcv2.close()
 
-    content = "testReceiver[%s]" % uuid4()
+    content = self.content("testReceiver")
     snd = self.ssn.sender(rcv.source)
     snd.send(content)
     msg = rcv.fetch(0)
@@ -206,16 +217,14 @@ class SessionTests(Base):
     # drain the queue, verify the messages are there and then close
     # without acking
     rcv = self.ssn.receiver(snd.target)
-    msgs = self.drain(rcv)
-    assert contents == [m.content for m in msgs]
+    assert contents == self.drain(rcv)
     self.ssn.close()
 
     # drain the queue again, verify that they are all the messages
     # were requeued, and ack this time before closing
     self.ssn = self.conn.session()
     rcv = self.ssn.receiver("test-ack-queue")
-    msgs = self.drain(rcv)
-    assert contents == [m.content for m in msgs]
+    assert contents == self.drain(rcv)
     self.ssn.acknowledge()
     self.ssn.close()
 
@@ -223,8 +232,69 @@ class SessionTests(Base):
     # dequeued
     self.ssn = self.conn.session()
     rcv = self.ssn.receiver("test-ack-queue")
-    msgs = self.drain(rcv)
-    assert len(msgs) == 0
+    self.assertEmpty(rcv)
+
+  def send(self, ssn, queue, base, count=1):
+    snd = ssn.sender(queue)
+    contents = []
+    for i in range(count):
+      c = self.content(base, i)
+      snd.send(c)
+      contents.append(c)
+    snd.close()
+    return contents
+
+  def testCommitSend(self):
+    txssn = self.conn.session(transactional=True)
+    contents = self.send(txssn, "test-commit-send-queue", "testCommitSend", 3)
+    rcv = self.ssn.receiver("test-commit-send-queue")
+    self.assertEmpty(rcv)
+    txssn.commit()
+    assert contents == self.drain(rcv)
+    self.ssn.acknowledge()
+
+  def testCommitAck(self):
+    txssn = self.conn.session(transactional=True)
+    txrcv = txssn.receiver("test-commit-ack-queue")
+    self.assertEmpty(txrcv)
+    contents = self.send(self.ssn, "test-commit-ack-queue", "testCommitAck", 3)
+    assert contents == self.drain(txrcv)
+    txssn.acknowledge()
+    txssn.close()
+
+    txssn = self.conn.session(transactional=True)
+    txrcv = txssn.receiver("test-commit-ack-queue")
+    assert contents == self.drain(txrcv)
+    txssn.acknowledge()
+    txssn.commit()
+    rcv = self.ssn.receiver("test-commit-ack-queue")
+    self.assertEmpty(rcv)
+    txssn.close()
+    self.assertEmpty(rcv)
+
+  def testRollbackAck(self):
+    txssn = self.conn.session(transactional=True)
+    txrcv = txssn.receiver("test-rollback-ack-queue")
+    self.assertEmpty(txrcv)
+    contents = self.send(self.ssn, "test-rollback-ack-queue", "testRollbackAck", 3)
+    assert contents == self.drain(txrcv)
+    txssn.rollback()
+    assert contents == self.drain(txrcv)
+    txssn.acknowledge()
+    txssn.rollback()
+    assert contents == self.drain(txrcv)
+    txssn.commit() # commit without ack
+    self.assertEmpty(txrcv)
+    txssn.close()
+    txssn = self.conn.session(transactional=True)
+    txrcv = txssn.receiver("test-rollback-ack-queue")
+    assert contents == self.drain(txrcv)
+    txssn.acknowledge()
+    txssn.commit()
+    rcv = self.ssn.receiver("test-rollback-ack-queue")
+    self.assertEmpty(rcv)
+    txssn.close()
+    self.assertEmpty(rcv)
 
   def testClose(self):
     self.ssn.close()
@@ -249,10 +319,7 @@ class ReceiverTests(Base):
     return self.ssn.receiver("test-receiver-queue")
 
   def send(self, base, count = None):
-    if count is None:
-      content = "%s[%s]" % (base, uuid4())
-    else:
-      content = "%s[%s, %s]" % (base, count, uuid4())
+    content = self.content(base, count)
     self.snd.send(content)
     return content
 
@@ -412,13 +479,13 @@ class SenderTests(Base):
     self.ssn.acknowledge()
 
   def testSendString(self):
-    self.checkContent("testSendString[%s]" % uuid4())
+    self.checkContent(self.content("testSendString"))
 
   def testSendList(self):
-    self.checkContent(["testSendList", 1, 3.14, uuid4()])
+    self.checkContent(["testSendList", 1, 3.14, self.test_id])
 
   def testSendMap(self):
-    self.checkContent({"testSendMap": uuid4(), "pie": "blueberry", "pi": 3.14})
+    self.checkContent({"testSendMap": self.test_id, "pie": "blueberry", "pi": 3.14})
 
 class MessageTests(Base):
 
@@ -506,7 +573,7 @@ class MessageEchoTests(Base):
     msg = Message()
     msg.to = "to-address"
     msg.subject = "subject"
-    msg.correlation_id = str(uuid4())
+    msg.correlation_id = str(self.test_id)
     msg.properties = MessageEchoTests.TEST_MAP
     msg.reply_to = "reply-address"
     self.check(msg)
