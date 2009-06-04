@@ -244,57 +244,92 @@ class SessionTests(Base):
     snd.close()
     return contents
 
-  def testCommitSend(self):
+  def txTest(self, commit):
     txssn = self.conn.session(transactional=True)
-    contents = self.send(txssn, "test-commit-send-queue", "testCommitSend", 3)
-    rcv = self.ssn.receiver("test-commit-send-queue")
-    self.assertEmpty(rcv)
-    txssn.commit()
-    assert contents == self.drain(rcv)
+    contents = self.send(self.ssn, "test-tx-queue", "txTest", 3)
+    txrcv = txssn.receiver("test-tx-queue")
+    txsnd = txssn.sender("test-tx-queue-copy")
+    rcv = self.ssn.receiver(txrcv.source)
+    copy_rcv = self.ssn.receiver(txsnd.target)
+    self.assertEmpty(copy_rcv)
+    for i in range(3):
+      m = txrcv.fetch(0)
+      txsnd.send(m)
+      self.assertEmpty(copy_rcv)
+    txssn.acknowledge()
+    if commit:
+      txssn.commit()
+      self.assertEmpty(rcv)
+      assert contents == self.drain(copy_rcv)
+    else:
+      txssn.rollback()
+      assert contents == self.drain(rcv)
+      self.assertEmpty(copy_rcv)
     self.ssn.acknowledge()
 
-  def testCommitAck(self):
+  def testCommit(self):
+    self.txTest(True)
+
+  def testRollback(self):
+    self.txTest(False)
+
+  def txTestSend(self, commit):
     txssn = self.conn.session(transactional=True)
-    txrcv = txssn.receiver("test-commit-ack-queue")
+    contents = self.send(txssn, "test-tx-send-queue", "txTestSend", 3)
+    rcv = self.ssn.receiver("test-tx-send-queue")
+    self.assertEmpty(rcv)
+
+    if commit:
+      txssn.commit()
+      assert contents == self.drain(rcv)
+      self.ssn.acknowledge()
+    else:
+      txssn.rollback()
+      self.assertEmpty(rcv)
+      txssn.commit()
+      self.assertEmpty(rcv)
+
+  def testCommitSend(self):
+    self.txTestSend(True)
+
+  def testRollbackSend(self):
+    self.txTestSend(False)
+
+  def txTestAck(self, commit):
+    txssn = self.conn.session(transactional=True)
+    txrcv = txssn.receiver("test-tx-ack-queue")
     self.assertEmpty(txrcv)
-    contents = self.send(self.ssn, "test-commit-ack-queue", "testCommitAck", 3)
+    contents = self.send(self.ssn, "test-tx-ack-queue", "txTestAck", 3)
     assert contents == self.drain(txrcv)
-    txssn.acknowledge()
+
+    if commit:
+      txssn.acknowledge()
+    else:
+      txssn.rollback()
+      assert contents == self.drain(txrcv)
+      txssn.acknowledge()
+      txssn.rollback()
+      assert contents == self.drain(txrcv)
+      txssn.commit() # commit without ack
+      self.assertEmpty(txrcv)
+
     txssn.close()
 
     txssn = self.conn.session(transactional=True)
-    txrcv = txssn.receiver("test-commit-ack-queue")
+    txrcv = txssn.receiver("test-tx-ack-queue")
     assert contents == self.drain(txrcv)
     txssn.acknowledge()
     txssn.commit()
-    rcv = self.ssn.receiver("test-commit-ack-queue")
+    rcv = self.ssn.receiver("test-tx-ack-queue")
     self.assertEmpty(rcv)
     txssn.close()
     self.assertEmpty(rcv)
+
+  def testCommitAck(self):
+    self.txTestAck(True)
 
   def testRollbackAck(self):
-    txssn = self.conn.session(transactional=True)
-    txrcv = txssn.receiver("test-rollback-ack-queue")
-    self.assertEmpty(txrcv)
-    contents = self.send(self.ssn, "test-rollback-ack-queue", "testRollbackAck", 3)
-    assert contents == self.drain(txrcv)
-    txssn.rollback()
-    assert contents == self.drain(txrcv)
-    txssn.acknowledge()
-    txssn.rollback()
-    assert contents == self.drain(txrcv)
-    txssn.commit() # commit without ack
-    self.assertEmpty(txrcv)
-    txssn.close()
-    txssn = self.conn.session(transactional=True)
-    txrcv = txssn.receiver("test-rollback-ack-queue")
-    assert contents == self.drain(txrcv)
-    txssn.acknowledge()
-    txssn.commit()
-    rcv = self.ssn.receiver("test-rollback-ack-queue")
-    self.assertEmpty(rcv)
-    txssn.close()
-    self.assertEmpty(rcv)
+    self.txTestAck(False)
 
   def testClose(self):
     self.ssn.close()
