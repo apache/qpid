@@ -116,6 +116,8 @@ qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/test
 qpidtest_PROGRAMS =
 qpidtest_SCRIPTS =
+tmoduledir = $(libdir)/qpid/test
+tmodule_LTLIBRARIES=
 
 ## Automake macros to build libraries and executables.
 qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduledir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
