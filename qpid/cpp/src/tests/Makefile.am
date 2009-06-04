@@ -47,6 +47,8 @@ qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/test
 qpidtest_PROGRAMS =
 qpidtest_SCRIPTS =
+tmoduledir = $(libdir)/qpid/test
+tmodule_LTLIBRARIES=
 
 #
 # Unit test program
@@ -128,10 +130,10 @@ check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = $(TESTLIBFLAGS)
 libshlibtest_la_SOURCES = shlibtest.cpp
 
-check_LTLIBRARIES += test_store.la
+tmodule_LTLIBRARIES += test_store.la
 test_store_la_SOURCES = test_store.cpp
 test_store_la_LIBADD = $(lib_broker) # FIXME aconway 2009-04-03: required?
-test_store_la_LDFLAGS = $(TESTLIBFLAGS)
+test_store_la_LDFLAGS = -module
 
 include cluster.mk
 if SSL
