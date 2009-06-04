@@ -576,7 +576,7 @@ class MessageEchoTests(Base):
     assert msg.correlation_id == echo.correlation_id
     assert msg.properties == echo.properties
     assert msg.content_type == echo.content_type
-    assert msg.content == echo.content
+    assert msg.content == echo.content, "%s, %s" % (msg, echo)
 
     self.ssn.acknowledge(echo)
 
@@ -594,7 +594,8 @@ class MessageEchoTests(Base):
               "key5": 3.14,
               "key6": -3.14,
               "key7": ["one", 2, 3.14],
-              "key8": []}
+              "key8": [],
+              "key9": {"sub-key0": 3}}
 
   def testMapContent(self):
     self.check(Message(MessageEchoTests.TEST_MAP))
