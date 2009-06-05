@@ -1,6 +1,6 @@
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 718931)
+--- configure.ac	(revision 782009)
 +++ configure.ac	(working copy)
 @@ -66,7 +66,6 @@
  	# -Wunreachable-code -Wpadded -Winline
@@ -12,9 +12,9 @@ Index: configure.ac
  	    gl_COMPILER_FLAGS(-Wextra)
 Index: src/Makefile.am
 ===================================================================
---- src/Makefile.am	(revision 718931)
+--- src/Makefile.am	(revision 782009)
 +++ src/Makefile.am	(working copy)
-@@ -37,7 +37,7 @@
+@@ -59,7 +59,7 @@
    qpid/broker/windows/BrokerDefaults.cpp \
    qpid/broker/windows/SaslAuthenticator.cpp
  
