@@ -118,6 +118,7 @@ RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& 
         Exchange::shared_ptr exchange = exchanges.getDefault();
         if (exchange) {
             exchange->bind(queue, queue->getName(), 0);
+            queue->bound(exchange->getName(), queue->getName(), framing::FieldTable());
         }
     } catch (const framing::NotFoundException& /*e*/) {
         //assume no default exchange has been declared
@@ -226,6 +227,7 @@ void RecoverableExchangeImpl::bind(string& queueName, string& key, framing::Fiel
 {
     Queue::shared_ptr queue = queues.find(queueName);
     exchange->bind(queue, key, &args);
+    queue->bound(exchange->getName(), key, args);
 }
 
 void RecoverableMessageImpl::dequeue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue)
