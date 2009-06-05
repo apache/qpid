@@ -372,6 +372,7 @@ void UpdateClient::updateUnacked(const broker::DeliveryRecord& dr) {
         dr.isComplete(),
         dr.isEnded(),
         dr.isWindowing(),
+        dr.getQueue()->isEnqueued(dr.getMessage()),
         dr.getCredit()
     );
 }
