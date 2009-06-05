@@ -37,7 +37,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
-#include <boost/algorithm/string.hpp>
 #include <boost/cast.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -85,7 +84,7 @@ class TestStore : public NullMessageStore {
         // Check the message for special instructions.
         size_t i = string::npos;
         size_t j = string::npos; 
-        if (starts_with(data, TEST_STORE_DO)
+        if (strncmp(data.c_str(), TEST_STORE_DO.c_str(), strlen(TEST_STORE_DO.c_str())) == 0
             && (i = data.find(name+"[")) != string::npos
             && (j = data.find("]", i)) != string::npos)
         {
@@ -102,7 +101,7 @@ class TestStore : public NullMessageStore {
                 QPID_LOG(critical, "TestStore " << name << " forcing process exit for: " << data);
                 exit(0);
             }
-            else if (starts_with(action, ASYNC)) {
+            else if (strncmp(action.c_str(), ASYNC.c_str(), strlen(ASYNC.c_str())) == 0) {
                 std::string delayStr(action.substr(ASYNC.size()));
                 int delay = lexical_cast<int>(delayStr);
                 threads.push_back(Thread(*new Completer(msg, delay)));
