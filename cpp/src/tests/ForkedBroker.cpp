@@ -22,7 +22,6 @@
 #include "ForkedBroker.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
-#include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -76,7 +75,11 @@ static ostream& operator<<(ostream& o, const ForkedBroker::Args& a) {
 }
 
 bool isLogOption(const std::string& s) {
-    return boost::starts_with(s, "--log-enable") || boost::starts_with(s, "--trace");
+    const char * log_enable = "--log-enable",
+               * trace      = "--trace";
+    return( (! strncmp(s.c_str(), log_enable, strlen(log_enable))) ||
+            (! strncmp(s.c_str(), trace,      strlen(trace)))
+          );
 }
 
 }
