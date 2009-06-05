@@ -325,6 +325,7 @@ void Connection::deliveryRecord(const string& qname,
                                 bool completed,
                                 bool ended,
                                 bool windowing,
+                                bool enqueued,
                                 uint32_t credit)
 {
     broker::QueuedMessage m;
@@ -333,7 +334,7 @@ void Connection::deliveryRecord(const string& qname,
         if (acquired) {         // Message is on the update queue
             m = getUpdateMessage();
             m.queue = queue.get();
-            queue->enqueued(m); //inform queue of the message 
+            if (enqueued) queue->enqueued(m); //inform queue of the message 
         } else {                // Message at original position in original queue
             m = queue->find(position);
         }

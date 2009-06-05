@@ -202,7 +202,7 @@ void Queue::process(boost::intrusive_ptr<Message>& msg){
 }
 
 void Queue::requeue(const QueuedMessage& msg){
-    if (policy.get() && !policy->isEnqueued(msg)) return;
+    if (!isEnqueued(msg)) return;
 
     QueueListeners::NotificationSet copy;
     {    
@@ -691,7 +691,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 {
     {
         Mutex::ScopedLock locker(messageLock);
-        if (policy.get() && !policy->isEnqueued(msg)) return false;
+        if (!isEnqueued(msg)) return false;
         if (!ctxt) { 
             dequeued(msg);
         }
@@ -1018,4 +1018,9 @@ void Queue::enqueued(const QueuedMessage& m)
     } else {
         QPID_LOG(warning, "Queue informed of enqueued message that has no payload");
     }
+}
+
+bool Queue::isEnqueued(const QueuedMessage& msg)
+{
+    return policy.get() && policy->isEnqueued(msg);
 }

@@ -123,6 +123,7 @@ struct ClientT {
         : connection(settings), session(connection.newSession(name_)), subs(session), name(name_) {}
 
     ~ClientT() { connection.close(); }
+    void close() { session.close(); connection.close(); }
 };
 
 typedef ClientT<> Client;

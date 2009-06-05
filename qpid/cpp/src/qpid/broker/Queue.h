@@ -257,6 +257,15 @@ namespace qpid {
              * clustered broker.  
              */ 
             void enqueued(const QueuedMessage& msg);
+
+            /**
+             * Test whether the specified message (identified by its
+             * sequence/position), is still enqueued (note this
+             * doesn't mean it is available for delivery as it may
+             * have been delievered to a subscriber who has not yet
+             * accepted it).
+             */
+            bool isEnqueued(const QueuedMessage& msg);
             
             /**
              * Gets the next available message 
