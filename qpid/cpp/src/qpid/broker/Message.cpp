@@ -326,8 +326,11 @@ void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
     if (props->getTtl()) {
         // AMQP requires setting the expiration property to be posix
         // time_t in seconds. TTL is in milliseconds
-        time_t now = ::time(0);
-        props->setExpiration(now + (props->getTtl()/1000));
+        if (!props->getExpiration()) {
+            //only set expiration in delivery properties if not already set
+            time_t now = ::time(0);
+            props->setExpiration(now + (props->getTtl()/1000));
+        }
         // Use higher resolution time for the internal expiry calculation.
         expiration = AbsTime(AbsTime::now(), Duration(props->getTtl() * TIME_MSEC));
         setExpiryPolicy(e);

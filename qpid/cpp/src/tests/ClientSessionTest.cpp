@@ -590,6 +590,20 @@ QPID_AUTO_TEST_CASE(testSessionIsValid) {
     BOOST_CHECK(!session.isValid());
 }
 
+QPID_AUTO_TEST_CASE(testExpirationNotAltered) {
+    ClientSessionFixture fix;
+    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
+
+    Message m("my-message", "my-queue");        
+    m.getDeliveryProperties().setTtl(60000);
+    m.getDeliveryProperties().setExpiration(12345);
+    fix.session.messageTransfer(arg::content=m);
+    Message got;
+    BOOST_CHECK(fix.subs.get(got, "my-queue"));
+    BOOST_CHECK_EQUAL("my-message", got.getData());
+    BOOST_CHECK_EQUAL(12345u, got.getDeliveryProperties().getExpiration());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 
