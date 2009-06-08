@@ -139,7 +139,6 @@ void ConnectionImpl::open()
     connector->setShutdownHandler(this);
     connector->connect(host, port);
     connector->init();
-    handler.waitForOpen();
  
     // Enable heartbeat if requested
     uint16_t heartbeat = static_cast<ConnectionSettings&>(handler).heartbeat;
@@ -150,6 +149,8 @@ void ConnectionImpl::open()
         theTimer().add(heartbeatTask);
     }
  
+    handler.waitForOpen();
+
     //enable security layer if one has been negotiated:
     std::auto_ptr<SecurityLayer> securityLayer = handler.getSecurityLayer();
     if (securityLayer.get()) {
