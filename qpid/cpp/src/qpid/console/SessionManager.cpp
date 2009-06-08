@@ -41,6 +41,13 @@ SessionManager::SessionManager(ConsoleListener* _listener, Settings _settings) :
     bindingKeys();
 }
 
+SessionManager::~SessionManager()
+{
+    for (vector<Broker*>::iterator iter = brokers.begin();
+         iter != brokers.end(); iter++)
+        delete *iter;
+}
+
 Broker* SessionManager::addBroker(client::ConnectionSettings& settings)
 {
     Broker* broker(new Broker(*this, settings));
@@ -58,6 +65,7 @@ void SessionManager::delBroker(Broker* broker)
          iter != brokers.end(); iter++)
         if (*iter == broker) {
             brokers.erase(iter);
+            delete broker;
             return;
         }
 }
@@ -171,6 +179,11 @@ void SessionManager::getObjects(Object::Vector& objects, const std::string& clas
     syncSequenceList.clear();
     error = string();
 
+    if (agentList.empty()) {
+        objects = getResult;
+        return;
+    }
+
     for (Agent::Vector::iterator iter = agentList.begin(); iter != agentList.end(); iter++) {
         Agent* agent = *iter;
         char rawbuffer[512];
@@ -191,8 +204,12 @@ void SessionManager::getObjects(Object::Vector& objects, const std::string& clas
 
     {
         Mutex::ScopedLock _lock(lock);
+        sys::AbsTime startTime = sys::now();
         while (!syncSequenceList.empty() && error.empty()) {
             cv.wait(lock, AbsTime(now(), settings.getTimeout * TIME_SEC));
+            sys::AbsTime currTime = sys::now();
+            if (sys::Duration(startTime, currTime) > settings.getTimeout * TIME_SEC)
+                break;
         }
     }
 
@@ -221,7 +238,8 @@ void SessionManager::allBrokersStable()
     Mutex::ScopedLock l(brokerListLock);
     for (vector<Broker*>::iterator iter = brokers.begin();
          iter != brokers.end(); iter++)
-        (*iter)->waitForStable();
+        if ((*iter)->isConnected())
+            (*iter)->waitForStable();
 }
 
 void SessionManager::startProtocol(Broker* broker)

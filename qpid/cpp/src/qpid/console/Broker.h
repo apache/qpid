@@ -73,7 +73,6 @@ namespace console {
 
         SessionManager& sessionManager;
         AgentMap agents;
-        client::SubscriptionManager* subscription;
         bool connected;
         std::string error;
         std::string amqpSessionId;
@@ -88,25 +87,27 @@ namespace console {
 
         friend class ConnectionThread;
         class ConnectionThread : public sys::Runnable {
-                bool operational;
-                Broker&              broker;
-                framing::Uuid        sessionId;
-                client::Connection   connection;
-                client::Session      session;
-                client::SubscriptionManager* subscriptions;
-                std::stringstream queueName;
-                sys::Mutex        connLock;
-                void run();
-            public:
+            bool operational;
+            bool shuttingDown;
+            Broker&              broker;
+            framing::Uuid        sessionId;
+            client::Connection   connection;
+            client::Session      session;
+            client::SubscriptionManager* subscriptions;
+            std::stringstream queueName;
+            sys::Mutex        connLock;
+            void run();
+        public:
             ConnectionThread(Broker& _broker) :
-                operational(false), broker(_broker), subscriptions(0) {}
-                ~ConnectionThread();
-                void sendBuffer(qpid::framing::Buffer& buf,
-                                uint32_t               length,
-                                const std::string&     exchange = "qpid.management",
-                                const std::string&     routingKey = "broker");
-                void bindExchange(const std::string& exchange, const std::string& key);
-            };
+                operational(false), shuttingDown(false), broker(_broker), subscriptions(0) {}
+            ~ConnectionThread();
+            void sendBuffer(qpid::framing::Buffer& buf,
+                            uint32_t               length,
+                            const std::string&     exchange = "qpid.management",
+                            const std::string&     routingKey = "broker");
+            void bindExchange(const std::string& exchange, const std::string& key);
+            void shutdown();
+        };
 
         ConnectionThread connThreadBody;
         sys::Thread      connThread;
