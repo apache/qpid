@@ -43,6 +43,7 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
 
     // sys::ConnectionOutputHandler functions
     void send(framing::AMQFrame& f);
+    void abort();
     void activateOutput();
     void giveReadCredit(int32_t);
     void close();

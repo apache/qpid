@@ -63,9 +63,6 @@ void ConnectionHandler::heartbeat()
 
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
-    // Received frame on connection so delay timeout
-    handler->connection.restartTimeout();
-
     AMQMethodBody* method=frame.getBody()->getMethod();
     Connection::ErrorListener* errorListener = handler->connection.getErrorListener();
     try{
