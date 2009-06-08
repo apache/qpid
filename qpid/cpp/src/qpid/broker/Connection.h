@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -61,7 +61,7 @@ namespace broker {
 class LinkRegistry;
 class SecureConnection;
 
-class Connection : public sys::ConnectionInputHandler, 
+class Connection : public sys::ConnectionInputHandler,
                    public ConnectionState,
                    public RefCounted
 {
@@ -115,9 +115,11 @@ class Connection : public sys::ConnectionInputHandler,
     /** Connection does not delete the listener. 0 resets. */
     void setErrorListener(ErrorListener* l) { errorListener=l; }
     ErrorListener* getErrorListener() { return errorListener; }
-    
+
     void setHeartbeatInterval(uint16_t heartbeat);
     void sendHeartbeat();
+    void restartTimeout();
+    void abort();
 
     template <class F> void eachSessionHandler(F f) {
         for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
@@ -143,6 +145,7 @@ class Connection : public sys::ConnectionInputHandler,
     management::ManagementAgent* agent;
     Timer& timer;
     boost::intrusive_ptr<TimerTask> heartbeatTimer;
+    boost::intrusive_ptr<TimerTask> timeoutTimer;
     ErrorListener* errorListener;
 
   public:

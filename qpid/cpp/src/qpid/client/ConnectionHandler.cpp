@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -70,8 +70,8 @@ CloseCode ConnectionHandler::convert(uint16_t replyCode)
     }
 }
 
-ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v) 
-    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler), 
+ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersion& v)
+    : StateManager(NOT_STARTED), ConnectionSettings(s), outHandler(*this), proxy(outHandler),
       errorCode(CLOSE_CODE_NORMAL), version(v)
 {
     insist = true;
@@ -82,7 +82,7 @@ ConnectionHandler::ConnectionHandler(const ConnectionSettings& s, ProtocolVersio
 
     FINISHED.insert(FAILED);
     FINISHED.insert(CLOSED);
-    
+
     properties.setInt(SESSION_FLOW_CONTROL, SESSION_FLOW_CONTROL_VER);
     properties.setString(CLIENT_PROCESS_NAME, sys::SystemInfo::getProcessName());
     properties.setInt(CLIENT_PID, sys::SystemInfo::getProcessId());
@@ -125,7 +125,7 @@ void ConnectionHandler::incoming(AMQFrame& frame)
 
 void ConnectionHandler::outgoing(AMQFrame& frame)
 {
-    if (getState() == OPEN) 
+    if (getState() == OPEN)
         out(frame);
     else
         throw TransportFailure(errorText.empty() ? "Connection is not open." : errorText);
@@ -160,6 +160,10 @@ void ConnectionHandler::heartbeat()
     // Do nothing - the purpose of heartbeats is just to make sure that there is some
     // traffic on the connection within the heart beat interval, we check for the
     // traffic and don't need to do anything in response to heartbeats
+
+    // Although the above is still true we're now using a received heartbeat as a trigger
+    // to send out our own heartbeat
+    proxy.heartbeat();
 }
 
 void ConnectionHandler::checkState(STATES s, const std::string& msg)
@@ -223,13 +227,13 @@ void ConnectionHandler::secure(const std::string& challenge)
     }
 }
 
-void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSizeProposed, 
+void ConnectionHandler::tune(uint16_t maxChannelsProposed, uint16_t maxFrameSizeProposed,
                              uint16_t heartbeatMin, uint16_t heartbeatMax)
 {
     checkState(NEGOTIATING, INVALID_STATE_TUNE);
     maxChannels = std::min(maxChannels, maxChannelsProposed);
     maxFrameSize = std::min(maxFrameSize, maxFrameSizeProposed);
-    // Clip the requested heartbeat to the maximum/minimum offered 
+    // Clip the requested heartbeat to the maximum/minimum offered
     uint16_t heartbeat = ConnectionSettings::heartbeat;
     heartbeat = heartbeat < heartbeatMin ? heartbeatMin :
                 heartbeat > heartbeatMax ? heartbeatMax :
