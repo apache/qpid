@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,6 +25,8 @@
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/log/Statement.h"
+
+#include <boost/bind.hpp>
 
 namespace qpid {
 namespace sys {
@@ -76,6 +78,10 @@ void SslHandler::write(const framing::ProtocolInitiation& data)
     aio->queueWrite(buff);
 }
 
+void SslHandler::abort() {
+    // TODO: can't implement currently as underlying functionality not implemented
+    // aio->requestCallback(boost::bind(&SslHandler::eof, this, _1));
+}
 void SslHandler::activateOutput() {
     aio->notifyPendingWrite();
 }
@@ -111,7 +117,7 @@ void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
                     //send valid version header & close connection.
                     write(framing::ProtocolInitiation(framing::highestProtocolVersion));
                     readError = true;
-                    aio->queueWriteClose();                
+                    aio->queueWriteClose();
                 }
             } catch (const std::exception& e) {
                 QPID_LOG(error, e.what());
@@ -140,7 +146,7 @@ void SslHandler::eof(SslIO&) {
 }
 
 void SslHandler::closedSocket(SslIO&, const SslSocket& s) {
-    // If we closed with data still to send log a warning 
+    // If we closed with data still to send log a warning
     if (!aio->writeQueueEmpty()) {
         QPID_LOG(warning, "CLOSING [" << identifier << "] unsent data (probably due to client disconnect)");
     }

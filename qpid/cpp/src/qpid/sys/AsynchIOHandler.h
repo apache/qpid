@@ -9,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -60,7 +60,7 @@ class AsynchIOHandler : public OutputControl {
     QPID_COMMON_EXTERN void setClient() { isClient = true; }
 
     // Output side
-    QPID_COMMON_EXTERN void close();
+    QPID_COMMON_EXTERN void abort();
     QPID_COMMON_EXTERN void activateOutput();
     QPID_COMMON_EXTERN void giveReadCredit(int32_t credit);
 
@@ -68,7 +68,7 @@ class AsynchIOHandler : public OutputControl {
     QPID_COMMON_EXTERN bool readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
     QPID_COMMON_EXTERN void eof(AsynchIO& aio);
     QPID_COMMON_EXTERN void disconnect(AsynchIO& aio);
-	
+
     // Notifications
     QPID_COMMON_EXTERN void nobuffs(AsynchIO& aio);
     QPID_COMMON_EXTERN void idle(AsynchIO& aio);

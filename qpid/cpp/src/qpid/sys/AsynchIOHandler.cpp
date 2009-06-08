@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,6 +25,8 @@
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/log/Statement.h"
+
+#include <boost/bind.hpp>
 
 namespace qpid {
 namespace sys {
@@ -75,6 +77,10 @@ void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
     aio->queueWrite(buff);
 }
 
+void AsynchIOHandler::abort() {
+    aio->requestCallback(boost::bind(&AsynchIOHandler::eof, this, _1));
+}
+
 void AsynchIOHandler::activateOutput() {
     aio->notifyPendingWrite();
 }
@@ -120,7 +126,7 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
                     //send valid version header & close connection.
                     write(framing::ProtocolInitiation(framing::highestProtocolVersion));
                     readError = true;
-                    aio->queueWriteClose();                
+                    aio->queueWriteClose();
                 }
             } catch (const std::exception& e) {
                 QPID_LOG(error, e.what());
@@ -163,7 +169,7 @@ void AsynchIOHandler::eof(AsynchIO&) {
 }
 
 void AsynchIOHandler::closedSocket(AsynchIO&, const Socket& s) {
-    // If we closed with data still to send log a warning 
+    // If we closed with data still to send log a warning
     if (!aio->writeQueueEmpty()) {
         QPID_LOG(warning, "CLOSING [" << identifier << "] unsent data (probably due to client disconnect)");
     }
@@ -198,7 +204,7 @@ void AsynchIOHandler::idle(AsynchIO&){
             aio->queueWrite(buff);
         }
         if (codec->isClosed())
-            aio->queueWriteClose();       
+            aio->queueWriteClose();
     } catch (const std::exception& e) {
         QPID_LOG(error, e.what());
         aio->queueWriteClose();
