@@ -146,6 +146,11 @@ public class ClientDelegate extends ConnectionDelegate
         throw new UnsupportedOperationException();
     }
 
+    @Override public void connectionHeartbeat(Connection conn, ConnectionHeartbeat hearbeat)
+    {
+        conn.connectionHeartbeat();
+    }
+
     /**
      * Currently the spec specified the min and max for heartbeat using secs
      */
