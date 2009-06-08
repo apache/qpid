@@ -66,7 +66,9 @@ void OutputInterceptor::activateOutput() {
 
 void OutputInterceptor::abort() {
     sys::Mutex::ScopedLock l(lock);
-    next->abort();
+    if (parent.isLocal()) {
+        next->abort();
+    }
 }
 
 void OutputInterceptor::giveReadCredit(int32_t credit) {
