@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,12 +41,12 @@ void TimerTask::reset() { time = AbsTime(AbsTime::now(), duration); }
 void TimerTask::cancel() { cancelled = true; }
 bool TimerTask::isCancelled() const { return cancelled; }
 
-Timer::Timer() : active(false) 
+Timer::Timer() : active(false)
 {
     start();
 }
 
-Timer::~Timer() 
+Timer::~Timer()
 {
     stop();
 }
@@ -59,14 +59,16 @@ void Timer::run()
             monitor.wait();
         } else {
             intrusive_ptr<TimerTask> t = tasks.top();
+            tasks.pop();
             if (t->isCancelled()) {
-                tasks.pop();
             } else if(t->time < AbsTime::now()) {
-                tasks.pop();
                 Monitor::ScopedUnlock u(monitor);
                 t->fire();
             } else {
-                monitor.wait(t->time);
+                // If the timer was adjusted into the future it might no longer
+                // be the next event, so push and then get top to make sure
+                tasks.push(t);
+                monitor.wait(tasks.top()->time);
             }
         }
     }
