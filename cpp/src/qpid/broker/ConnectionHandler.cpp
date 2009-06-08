@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -63,6 +63,9 @@ void ConnectionHandler::heartbeat()
 
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
+    // Received frame on connection so delay timeout
+    handler->connection.restartTimeout();
+
     AMQMethodBody* method=frame.getBody()->getMethod();
     Connection::ErrorListener* errorListener = handler->connection.getErrorListener();
     try{
@@ -186,7 +189,7 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
 {
     std::vector<Url> urls = connection.broker.getKnownBrokers();
     framing::Array array(0x95); // str16 array
-    for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i) 
+    for (std::vector<Url>::iterator i = urls.begin(); i < urls.end(); ++i)
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
     proxy.openOk(array);
 
@@ -197,7 +200,7 @@ void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
     }
 }
 
-        
+
 void ConnectionHandler::Handler::close(uint16_t replyCode, const string& replyText)
 {
     if (replyCode != 200) {
@@ -209,11 +212,11 @@ void ConnectionHandler::Handler::close(uint16_t replyCode, const string& replyTe
 
     proxy.closeOk();
     connection.getOutput().close();
-} 
-        
+}
+
 void ConnectionHandler::Handler::closeOk(){
     connection.getOutput().close();
-} 
+}
 
 void ConnectionHandler::Handler::heartbeat(){
 	// Do nothing - the purpose of heartbeats is just to make sure that there is some
