@@ -43,6 +43,7 @@ int main_int(int /*argc*/, char** /*argv*/)
     //
     SessionManager::Settings smSettings;
     smSettings.methodTimeout = 2;
+    smSettings.getTimeout = 2;
 
     //
     // Declare the console session manager.  With a null listener argument, it defaults to
@@ -58,18 +59,21 @@ int main_int(int /*argc*/, char** /*argv*/)
     uint32_t count = 5;  // The number of echo requests we will send to the broker.
     Object::Vector list; // A container for holding objects retrieved from the broker.
 
-    //
-    // Query for a list of 'broker' objects from the Management Database
-    //
-    sm.getObjects(list, "broker");
+    for (uint32_t iter = 0; iter < count; iter++) {
+        cout << "Ping Broker: " << broker->getUrl() << "... ";
+        cout.flush();
 
-    //
-    // We expect one object (since we are connected to only one broker)
-    //
-    if (list.size() == 1) {
-        Object& brokerObject = *(list.begin());
+        //
+        // Query for a list of 'broker' objects from the Management Database
+        //
+        sm.getObjects(list, "broker");
 
-        for (uint32_t iter = 0; iter < count; iter++) {
+        //
+        // We expect one object (since we are connected to only one broker)
+        //
+        if (list.size() == 1) {
+            Object& brokerObject = *(list.begin());
+
             //
             // Declare a container for arguments to be sent with the "echo" method
             // that we will invoke on the remote "broker" object.
@@ -86,9 +90,6 @@ int main_int(int /*argc*/, char** /*argv*/)
             //
             args.addUint("sequence", iter);
             args.addString("body", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-
-            cout << "Ping Broker: " << broker->getUrl() << "... ";
-            cout.flush();
 
             //
             // Invoke the method.  This is a synchronous operation that will block until
@@ -109,6 +110,9 @@ int main_int(int /*argc*/, char** /*argv*/)
 
             if (result.code == 0 && iter < count - 1)
               qpid::sys::sleep(1);
+        } else {
+            cout << "Disconnected..." << endl;
+            qpid::sys::sleep(1);
         }
     }
 

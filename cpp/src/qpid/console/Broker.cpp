@@ -57,6 +57,8 @@ Broker::Broker(SessionManager& sm, ConnectionSettings& settings) :
 
 Broker::~Broker()
 {
+    connThreadBody.shutdown();
+    connThread.join();
 }
 
 string Broker::getUrl() const
@@ -184,6 +186,8 @@ void Broker::ConnectionThread::run()
             subscriptions->setFlowControl(dest, FlowControl::unlimited());
             {
                 Mutex::ScopedLock _lock(connLock);
+                if (shuttingDown)
+                    return;
                 operational = true;
                 broker.resetAgents();
                 broker.connected = true;
@@ -199,16 +203,26 @@ void Broker::ConnectionThread::run()
                 broker.sessionManager.handleBrokerDisconnect(&broker);
             }
             delay = delayMin;
+            connection.close();
             delete subscriptions;
             subscriptions = 0;
-            session.close();
         } catch (std::exception &e) {
             QPID_LOG(debug, "  outer exception: " << e.what());
             if (delay < delayMax)
                 delay *= delayFactor;
         }
 
-        ::sleep(delay);
+            {
+                Mutex::ScopedLock _lock(connLock);
+                if (shuttingDown)
+                    return;
+                {
+                    Mutex::ScopedUnlock _unlock(connLock);
+                    ::sleep(delay);
+                }
+                if (shuttingDown)
+                    return;
+            }
     }
 }
 
@@ -251,6 +265,16 @@ void Broker::ConnectionThread::bindExchange(const std::string& exchange, const s
     QPID_LOG(debug, "Broker::ConnectionThread::bindExchange: exchange=" << exchange << " key=" << key);
     session.exchangeBind(arg::exchange=exchange, arg::queue=queueName.str(),
                           arg::bindingKey=key);
+}
+
+void Broker::ConnectionThread::shutdown()
+{
+    {
+        Mutex::ScopedLock _lock(connLock);
+        shuttingDown = true;
+    }
+    if (subscriptions)
+        subscriptions->stop();
 }
 
 void Broker::waitForStable()
