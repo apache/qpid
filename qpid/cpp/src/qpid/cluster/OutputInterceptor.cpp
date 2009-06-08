@@ -64,6 +64,11 @@ void OutputInterceptor::activateOutput() {
         sendDoOutput(sendMax);
 }
 
+void OutputInterceptor::abort() {
+    sys::Mutex::ScopedLock l(lock);
+    next->abort();
+}
+
 void OutputInterceptor::giveReadCredit(int32_t credit) {
     sys::Mutex::ScopedLock l(lock);
     next->giveReadCredit(credit);

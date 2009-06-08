@@ -37,6 +37,7 @@ class NoOpConnectionOutputHandler : public sys::ConnectionOutputHandler
   public:
     virtual void send(framing::AMQFrame&) {}
     virtual void close() {}
+    virtual void abort() {}
     virtual void activateOutput() {}
     virtual void giveReadCredit(int32_t) {}
 };

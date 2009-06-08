@@ -103,6 +103,9 @@ Connection::~Connection()
 }
 
 void Connection::received(framing::AMQFrame& frame) {
+    // Received frame on connection so delay timeout
+    restartTimeout();
+
     if (frame.getChannel() == 0 && frame.getMethod()) {
         adapter.handle(frame);
     } else {
