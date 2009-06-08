@@ -1022,5 +1022,5 @@ void Queue::enqueued(const QueuedMessage& m)
 
 bool Queue::isEnqueued(const QueuedMessage& msg)
 {
-    return policy.get() && policy->isEnqueued(msg);
+    return !policy.get() || policy->isEnqueued(msg);
 }
