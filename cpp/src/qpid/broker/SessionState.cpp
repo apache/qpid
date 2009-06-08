@@ -134,6 +134,11 @@ void SessionState::attach(SessionHandler& h) {
     }
 }
 
+void SessionState::abort() {
+    if (isAttached())
+        getConnection().outputTasks.abort();
+}
+
 void SessionState::activateOutput() {
     if (isAttached())
         getConnection().outputTasks.activateOutput();
@@ -213,7 +218,7 @@ struct ScheduledCreditTask : public TimerTask {
             sessionState.getConnection().requestIOProcessing(boost::bind(&ScheduledCreditTask::sendCredit, this));
         }
     }
-    
+
     void sendCredit() {
         if ( !sessionState.processSendCredit(0) ) {
             QPID_LOG(warning, sessionState.getId() << ": Reschedule sending credit");

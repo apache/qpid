@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -56,7 +56,7 @@ class SslHandler : public OutputControl {
     void setClient() { isClient = true; }
 
     // Output side
-    void close();
+    void abort();
     void activateOutput();
     void giveReadCredit(int32_t);
 
@@ -64,7 +64,7 @@ class SslHandler : public OutputControl {
     void readbuff(SslIO& aio, SslIOBufferBase* buff);
     void eof(SslIO& aio);
     void disconnect(SslIO& aio);
-	
+
     // Notifications
     void nobuffs(SslIO& aio);
     void idle(SslIO& aio);

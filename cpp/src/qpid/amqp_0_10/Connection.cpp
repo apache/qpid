@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -72,7 +72,7 @@ size_t  Connection::encode(const char* buffer, size_t size) {
     {   // Swap frameQueue data into workQueue to avoid holding lock while we encode.
         Mutex::ScopedLock l(frameQueueLock);
         assert(workQueue.empty());
-        workQueue.swap(frameQueue); 
+        workQueue.swap(frameQueue);
     }
     framing::Buffer out(const_cast<char*>(buffer), size);
     if (!isClient && !initialized) {
@@ -88,7 +88,7 @@ size_t  Connection::encode(const char* buffer, size_t size) {
         QPID_LOG(trace, "SENT [" << identifier << "]: " << workQueue.front());
         workQueue.pop_front();
         encoded += frameSize;
-        if (workQueue.empty() && out.available() > 0) connection->doOutput(); 
+        if (workQueue.empty() && out.available() > 0) connection->doOutput();
     }
     assert(workQueue.empty() || workQueue.front().encodedSize() <= size);
     if (!workQueue.empty() && workQueue.front().encodedSize() > size)
@@ -103,7 +103,8 @@ size_t  Connection::encode(const char* buffer, size_t size) {
     return out.getPosition();
 }
 
-void  Connection::activateOutput() { output.activateOutput(); }
+void Connection::abort() { output.abort(); }
+void Connection::activateOutput() { output.activateOutput(); }
 void Connection::giveReadCredit(int32_t credit) { output.giveReadCredit(credit); }
 
 void  Connection::close() {
@@ -130,7 +131,7 @@ framing::ProtocolVersion Connection::getVersion() const {
     return framing::ProtocolVersion(0,10);
 }
 
-size_t Connection::getBuffered() const { 
+size_t Connection::getBuffered() const {
     Mutex::ScopedLock l(frameQueueLock);
     return buffered;
 }

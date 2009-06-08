@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,13 +25,15 @@
 
 namespace qpid {
 namespace sys {
-    
+
+void AggregateOutput::abort() { control.abort(); }
+
 void AggregateOutput::activateOutput() { control.activateOutput(); }
 
 void AggregateOutput::giveReadCredit(int32_t credit) { control.giveReadCredit(credit); }
 
 bool AggregateOutput::hasOutput() {
-    for (TaskList::const_iterator i = tasks.begin(); i != tasks.end(); ++i) 
+    for (TaskList::const_iterator i = tasks.begin(); i != tasks.end(); ++i)
         if ((*i)->hasOutput()) return true;
     return false;
 }
@@ -41,7 +43,7 @@ bool AggregateOutput::doOutput()
     bool result = false;
     if (!tasks.empty()) {
         if (next >= tasks.size()) next = next % tasks.size();
-        
+
         size_t start = next;
         //loop until a task generated some output
         while (!result) {
@@ -58,7 +60,7 @@ void AggregateOutput::addOutputTask(OutputTask* t)
 {
     tasks.push_back(t);
 }
-     
+
 void AggregateOutput::removeOutputTask(OutputTask* t)
 {
     TaskList::iterator i = std::find(tasks.begin(), tasks.end(), t);
