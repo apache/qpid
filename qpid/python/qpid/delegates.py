@@ -170,3 +170,6 @@ class Client(Delegate):
   def connection_open_ok(self, ch, open_ok):
     self.connection.opened = True
     notify(self.connection.condition)
+
+  def connection_heartbeat(self, ch, hrt):
+    ch.connection_heartbeat()
