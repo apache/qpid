@@ -577,6 +577,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
                     //recovery is complete
                     pendingDequeues.push_back(QueuedMessage(qm.queue, old, qm.position));
                 } else {
+                    Mutex::ScopedUnlock u(messageLock);   
                     dequeue(0, QueuedMessage(qm.queue, old, qm.position));
                 }
             }		 
