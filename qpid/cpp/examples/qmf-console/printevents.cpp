@@ -22,6 +22,7 @@
 #include "qpid/console/ConsoleListener.h"
 #include "qpid/console/SessionManager.h"
 #include "qpid/sys/Time.h"
+#include <signal.h>
 
 using namespace std;
 using namespace qpid::console;
@@ -50,54 +51,73 @@ public:
 //==============================================================
 // Main program
 //==============================================================
-int main_int(int /*argc*/, char** /*argv*/)
+struct Main {
+    bool stopping;
+
+    Main() : stopping(false) {}
+
+    int run(int /*argc*/, char** /*argv*/)
+    {
+        //
+        // Declare an instance of our listener.
+        //
+        Listener listener;
+
+        //
+        // Declare connection settings for the messaging broker.  The settings default to
+        // localhost:5672 with user guest (password guest).  Refer to the header file
+        // <qpid/client/ConnectionSettings.h> for full details.
+        //
+        qpid::client::ConnectionSettings connSettings;
+
+        //
+        // Declare the (optional) session manager settings.  Disable the reception of
+        // object updates and heartbeats.  Note that by disabling the reception of things
+        // we don't need, we don't unnecessarily use network bandwidth.
+        //
+        SessionManager::Settings smSettings;
+        smSettings.rcvObjects = false;
+        smSettings.rcvHeartbeats = false;
+
+        //
+        // Declare the console session manager.
+        //
+        SessionManager sm(&listener, smSettings);
+
+        //
+        // Add a broker connection to the session manager.  If desired, multiple brokers may
+        // be connected.
+        //
+        Broker* broker = sm.addBroker(connSettings);
+
+        //
+        //  Sleep indefinitely while asynchronous events are handled by the listener.
+        //
+        while (!stopping)
+            qpid::sys::sleep(1);
+
+        sm.delBroker(broker);
+        return 0;
+    }
+
+    void stop()
+    {
+        stopping = true;
+    }
+};
+
+Main main_program;
+
+void signal_handler(int)
 {
-    //
-    // Declare an instance of our listener.
-    //
-    Listener listener;
-
-    //
-    // Declare connection settings for the messaging broker.  The settings default to
-    // localhost:5672 with user guest (password guest).  Refer to the header file
-    // <qpid/client/ConnectionSettings.h> for full details.
-    //
-    qpid::client::ConnectionSettings connSettings;
-
-    //
-    // Declare the (optional) session manager settings.  Disable the reception of
-    // object updates and heartbeats.  Note that by disabling the reception of things
-    // we don't need, we don't unnecessarily use network bandwidth.
-    //
-    SessionManager::Settings smSettings;
-    smSettings.rcvObjects = false;
-    smSettings.rcvHeartbeats = false;
-
-    //
-    // Declare the console session manager.
-    //
-    SessionManager sm(&listener, smSettings);
-
-    //
-    // Add a broker connection to the session manager.  If desired, multiple brokers may
-    // be connected.
-    //
-    Broker* broker = sm.addBroker(connSettings);
-
-    //
-    //  Sleep indefinitely while asynchronous events are handled by the listener.
-    //
-    for (;;)
-      qpid::sys::sleep(1);
-
-    sm.delBroker(broker);
-    return 0;
+    main_program.stop();
 }
 
 int main(int argc, char** argv)
 {
+    signal(SIGINT, signal_handler);
     try {
-        return main_int(argc, argv);
+        return main_program.run(argc, argv);
     } catch(std::exception& e) {
         cout << "Top Level Exception: " << e.what() << endl;
     }
