@@ -198,8 +198,6 @@
     </copy>
   </target>
 
-  <property name="java.naming.factory.initial" value="org.apache.qpid.jndi.PropertiesFileInitialContextFactory"/>
-
   <condition property="config" value="${profile}.testprofile" else="default.testprofile">
     <and>
       <isset property="profile"/>
