@@ -70,14 +70,14 @@ using namespace boost::assign;
 using broker::Broker;
 using boost::shared_ptr;
 
-bool durableFlag = std::getenv("STORE_ENABLE") != 0;
+bool durableFlag = std::getenv("STORE_LIB") != 0;
 
 void prepareArgs(ClusterFixture::Args& args, const bool durableFlag = false) {
     ostringstream clusterLib;
     clusterLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/cluster.so";
     args += "--auth", "no", "--no-module-dir", "--load-module", clusterLib.str();
     if (durableFlag)
-        args += "--load-module", getLibPath("LIBSTORE"), "TMP_DATA_DIR";
+        args += "--load-module", getLibPath("STORE_LIB"), "TMP_DATA_DIR";
     else
         args += "--no-data-dir";
 }
@@ -697,7 +697,7 @@ QPID_AUTO_TEST_CASE(testDequeueWaitingSubscription) {
 QPID_AUTO_TEST_CASE(queueDurabilityPropagationToNewbie)
 {
     /*
-      Start with a single broker.  
+      Start with a single broker.
       Set up two queues: one durable, and one not.
       Add a new broker to the cluster.
       Make sure it has one durable and one non-durable queue.
@@ -714,7 +714,7 @@ QPID_AUTO_TEST_CASE(queueDurabilityPropagationToNewbie)
     QueueQueryResult non_durable_query = c1.session.queueQuery ( "non_durable_queue" );
     BOOST_CHECK_EQUAL(durable_query.getQueue(), std::string("durable_queue"));
     BOOST_CHECK_EQUAL(non_durable_query.getQueue(), std::string("non_durable_queue"));
-    
+
     BOOST_CHECK_EQUAL ( durable_query.getDurable(),     true  );
     BOOST_CHECK_EQUAL ( non_durable_query.getDurable(), false );
 }
@@ -869,9 +869,9 @@ Subscription lockMessages(Client& client, const std::string& queue, int count)
     Subscription sub = client.subs.subscribe(q, queue, settings);
     client.session.messageFlush(sub.getName());
     return sub;
-} 
+}
 
-/** 
+/**
  * check that the specified queue contains the expected set of
  * messages (matched on content) for all nodes in the cluster
  */
@@ -884,7 +884,7 @@ void checkQueue(ClusterFixture& cluster, const std::string& queue, const std::ve
     }
 }
 
-void send(Client& client, const std::string& queue, int count, int start=1, const std::string& base="m") 
+void send(Client& client, const std::string& queue, int count, int start=1, const std::string& base="m")
 {
     for (int i = 0; i < count; i++) {
         client.session.messageTransfer(arg::content=makeMessage((boost::format("%1%_%2%") % base % (i+start)).str(), queue, durableFlag));

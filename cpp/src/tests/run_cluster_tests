@@ -19,6 +19,15 @@
 # under the License.
 #
 
+
+# Check that top_builddir and srcdir are set
+# If not, assume local run from test dir
+if [ -z ${top_builddir} -o -z ${srcdir} ]; then
+	srcdir=`pwd`
+	top_builddir=${srcdir}/../../
+fi
+	
+
 # Run the cluster tests.
 TEST_DIR=${top_builddir}/src/tests
 
@@ -64,8 +73,8 @@ if ! test -d ${TMP_STORE_DIR} ; then
    	mkdir -p ${TMP_STORE_DIR}/cluster
 else
     # Delete old cluster test dirs
-    rm -rf "${TMP_STORE_DIR}/cluster"
-    mkdir -p "${TMP_STORE_DIR}/cluster"
+    rm -rf ${TMP_STORE_DIR}/cluster
+    mkdir -p ${TMP_STORE_DIR}/cluster
 fi
 export TMP_STORE_DIR
 
@@ -75,3 +84,8 @@ RETCODE=$?
 if test x${RETCODE} != x0; then 
     exit 1;
 fi
+
+# Delete cluster store dir if test was successful.
+rm -rf ${TMP_STORE_DIR}
+
+exit 0

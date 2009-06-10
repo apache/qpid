@@ -44,7 +44,9 @@ stop_brokers() {
         ../qpidd -q --port $NODE_2
         unset NODE_2
     fi
-    rm cluster.ports
+    if [ -f cluster.ports ]; then
+    	rm cluster.ports
+    fi
 }
 
 start_brokers() {
