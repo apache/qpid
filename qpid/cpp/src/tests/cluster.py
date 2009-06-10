@@ -43,7 +43,7 @@ class ClusterTests(TestBaseCluster):
             self.checkNumBrokers(25)
             self.killCluster("cluster-02.2")
             self.checkNumBrokers(20)
-            self.stopCheckAll()
+            self.stopAllCheck()
         except:
             self.killAllClusters(True)
             raise
@@ -53,17 +53,17 @@ class ClusterTests(TestBaseCluster):
         try:
             clusterName = "cluster-03"
             self.createCheckCluster(clusterName, 3)
-            for i in range(4,9):
+            for i in range(3,8):
                 self.createClusterNode(i, clusterName)
             self.checkNumClusterBrokers(clusterName, 8)
             self.killNode(2, clusterName)
             self.killNode(5, clusterName)
             self.killNode(6, clusterName)
             self.checkNumClusterBrokers(clusterName, 5)
+            self.createClusterNode(8, clusterName)
             self.createClusterNode(9, clusterName)
-            self.createClusterNode(10, clusterName)
             self.checkNumClusterBrokers(clusterName, 7)
-            self.stopCheckAll()
+            self.stopAllCheck()
         except:
             self.killAllClusters(True)
             raise
@@ -90,7 +90,7 @@ class ClusterTests(TestBaseCluster):
             self.createClusterNode(3, clusterName)
             self.createClusterNode(4, clusterName)
             self.checkNumClusterBrokers(clusterName, 6)
-            self.stopCheckAll()
+            self.stopAllCheck()
         except:
             self.killAllClusters(True)
             raise
@@ -102,7 +102,7 @@ class ClusterTests(TestBaseCluster):
             self.createCheckCluster(clusterName, 6)
             self.killClusterCheck(clusterName)
             self.createCheckCluster(clusterName, 6)
-            self.stopCheckAll()
+            self.stopAllCheck()
         except:
             self.killAllClusters(True)
             raise
@@ -245,6 +245,7 @@ class ClusterTests(TestBaseCluster):
             dh.sendMsgs(20, 5)    #  60  30            *
             dh.receiveMsgs(20, 4) #  60  50          *
             dh.killCluster()      # cluster does not exist
+            self.checkNumClusterBrokers("cluster-12", 0)
             dh.restoreCluster()   #  60  50  . . . . . .
             dh.restoreNodes()     #          0 1 2 3 4 5
             dh.finalizeTest()
@@ -325,7 +326,7 @@ class ClusterTests(TestBaseCluster):
 # Start the test here
   
 if __name__ == '__main__':
-    if os.getenv("STORE_ENABLE") != None:
+    if os.getenv("STORE_LIB") != None:
         print "NOTE: Store enabled for the following tests:"
     if not unittest.main(): sys.exit(1)
   
