@@ -47,6 +47,6 @@ replication_exchange_la_SOURCES =  \
 replication_exchange_la_LIBADD = libqpidbroker.la
 
 if SUNOS
-  replication_exchange_la_LIBADD += libqpidcommon.la -lboost_program_options -lCrun -luuid
+  replication_exchange_la_LIBADD += libqpidcommon.la -lboost_program_options $(SUNCC_RUNTIME_LIBS) -luuid
 endif
 replication_exchange_la_LDFLAGS = $(PLUGINLDFLAGS)
