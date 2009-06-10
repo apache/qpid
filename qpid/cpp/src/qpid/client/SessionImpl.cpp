@@ -289,15 +289,24 @@ Future SessionImpl::send(const AMQBody& command, const MethodContent& content)
 }
 
 namespace {
-// Functor for FrameSet::map to send header + content frames but, not method frames.
-struct SendContentFn {
-    FrameHandler& handler;
-    void operator()(const AMQFrame& f) {
-        if (!f.getMethod()) 
-            handler(const_cast<AMQFrame&>(f));
+// Adaptor to make FrameSet look like MethodContent; used in cluster update client
+struct MethodContentAdaptor : MethodContent
+{
+    AMQHeaderBody header;
+    const std::string content;
+
+    MethodContentAdaptor(const FrameSet& f) : header(*f.getHeaders()), content(f.getContent()) {}
+
+    AMQHeaderBody getHeader() const
+    {
+        return header;
     }
-    SendContentFn(FrameHandler& h) : handler(h) {}
+    const std::string& getData() const
+    {
+        return content;
+    }
 };
+
 }
     
 Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
@@ -318,8 +327,8 @@ Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
     frame.setEof(false);
     handleOut(frame);
 
-    SendContentFn send(out);
-    content.map(send);
+    MethodContentAdaptor c(content);
+    sendContent(c);
     return f;
 }
 
