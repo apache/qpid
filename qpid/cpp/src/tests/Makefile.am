@@ -44,10 +44,10 @@ LONG_TESTS=
 qpidexecdir = $(libexecdir)/qpid
 qpidexec_PROGRAMS =
 qpidexec_SCRIPTS =
-qpidtestdir = $(qpidexecdir)/test
+qpidtestdir = $(qpidexecdir)/tests
 qpidtest_PROGRAMS =
 qpidtest_SCRIPTS =
-tmoduledir = $(libdir)/qpid/test
+tmoduledir = $(libdir)/qpid/tests
 tmodule_LTLIBRARIES=
 
 #
