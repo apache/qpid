@@ -94,6 +94,7 @@ void Connection::init() {
     else {                                                  // Shadow or catch-up connection
         connection.setClusterOrderOutput(nullFrameHandler); // Passive, discard cluster-order frames
         connection.setClientThrottling(false);              // Disable client throttling, done by active node.
+        connection.setShadow(); // Mark the broker connection as a shadow.
     }
     if (!isCatchUp())
         connection.setErrorListener(this);

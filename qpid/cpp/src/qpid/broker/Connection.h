@@ -129,6 +129,11 @@ class Connection : public sys::ConnectionInputHandler,
     void sendClose();
     void setSecureConnection(SecureConnection* secured);
 
+    /** True if this is a shadow connection in a cluster. */
+    bool isShadow() { return shadow; }
+    /** Called by cluster to mark shadow connections */
+    void setShadow() { shadow = true; }
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -147,6 +152,7 @@ class Connection : public sys::ConnectionInputHandler,
     boost::intrusive_ptr<TimerTask> heartbeatTimer;
     boost::intrusive_ptr<TimerTask> timeoutTimer;
     ErrorListener* errorListener;
+    bool shadow;
 
   public:
     qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
