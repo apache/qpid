@@ -773,10 +773,16 @@ module Qpid::Qmf
       @methods = []
       @arguments = []
 
+      has_supertype = codec.read_uint8
       if @kind == CLASS_KIND_TABLE
         prop_count   = codec.read_uint16
         stat_count   = codec.read_uint16
         method_count = codec.read_uint16
+        if has_supertype == 1
+          codec.read_str8
+          codec.read_str8
+          codec.read_bin128
+        end
         prop_count.times { |idx|
           @properties << SchemaProperty.new(codec) }
         stat_count.times { |idx|
@@ -1111,13 +1117,11 @@ module Qpid::Qmf
     def invoke(method, name, args)
       kwargs = args[args.size - 1]
       sync = true
-      timeout = nil
+      timeout = DEFAULT_METHOD_WAIT_TIME
 
       if kwargs.class == Hash
         if kwargs.include?(:timeout)
           timeout = kwargs[:timeout]
-        else
-          timeout = DEFAULT_METHOD_WAIT_TIME
         end
 
         if kwargs.include?(:async)
@@ -1343,7 +1347,7 @@ module Qpid::Qmf
     def set_header(codec, opcode, seq=0)
       codec.write_uint8(?A)
       codec.write_uint8(?M)
-      codec.write_uint8(?2)
+      codec.write_uint8(?3)
       codec.write_uint8(opcode)
       codec.write_uint32(seq)
     end
@@ -1508,7 +1512,7 @@ module Qpid::Qmf
       begin
         return [nil, nil] unless codec.read_uint8 == ?A
         return [nil, nil] unless codec.read_uint8 == ?M
-        return [nil, nil] unless codec.read_uint8 == ?2
+        return [nil, nil] unless codec.read_uint8 == ?3
         opcode = codec.read_uint8
         seq    = codec.read_uint32
         return [opcode, seq]

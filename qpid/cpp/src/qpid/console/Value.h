@@ -98,6 +98,8 @@ namespace console {
         std::string str() const;
         bool isUint() const { return true; }
         uint32_t asUint() const { return value; }
+        bool isUint64() const { return true; }
+        uint64_t asUint64() const { return (uint64_t) value; }
     private:
         uint32_t value;
     };
@@ -108,6 +110,8 @@ namespace console {
         std::string str() const;
         bool isInt() const { return true; }
         int32_t asInt() const { return value; }
+        bool isInt64() const { return true; }
+        int64_t asInt64() const { return (int64_t) value; }
     private:
         int32_t value;
     };
@@ -160,6 +164,8 @@ namespace console {
         std::string str() const;
         bool isFloat() const { return true; }
         float asFloat() const { return value; }
+        bool isDouble() const { return true; }
+        double asDouble() const { return (double) value; }
     private:
         float value;
     };

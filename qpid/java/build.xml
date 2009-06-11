@@ -22,7 +22,7 @@
 
   <import file="common.xml"/>
 
-  <property name="modules.core"       value="junit-toolkit common broker client tools"/>
+  <property name="modules.core"       value="junit-toolkit common broker client tools agent"/>
   <property name="modules.examples"   value="client/example"/>
   <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
   <property name="modules.management" value="management/common management/client management/eclipse-plugin"/>

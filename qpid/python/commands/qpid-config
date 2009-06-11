@@ -473,7 +473,7 @@ try:
 except KeyboardInterrupt:
     print
 except Exception,e:
-    print "Failed:", e.args
+    print "Failed: %s: %s" % (e.__class__.__name__, e)
     sys.exit(1)
 
 bm.Disconnect()

@@ -65,6 +65,7 @@ void Event/*MGEN:Event.NameCap*/::writeSchema (Buffer& buf)
     buf.putShortString (packageName); // Package Name
     buf.putShortString (eventName);   // Event Name
     buf.putBin128      (md5Sum);      // Schema Hash
+    buf.putOctet       (0);           // No Superclass    
     buf.putShort       (/*MGEN:Event.ArgCount*/); // Argument Count
 
     // Arguments

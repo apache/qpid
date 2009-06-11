@@ -60,6 +60,10 @@ class FieldTable
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
 
+    QPID_COMMON_EXTERN uint32_t qmfEncodedSize() const;
+    QPID_COMMON_EXTERN void qmfEncode(Buffer& buffer) const;
+    QPID_COMMON_EXTERN void qmfDecode(Buffer& buffer);
+
     QPID_COMMON_EXTERN int count() const;
     QPID_COMMON_EXTERN void set(const std::string& name, const ValuePtr& value);
     QPID_COMMON_EXTERN ValuePtr get(const std::string& name) const;

@@ -36,7 +36,7 @@
 <type name="float"     base="FLOAT"     cpp="float"         encode="@.putFloat(#)"       decode="# = @.getFloat()"     accessor="direct" init="0."/>
 <type name="double"    base="DOUBLE"    cpp="double"        encode="@.putDouble(#)"      decode="# = @.getDouble()"    accessor="direct" init="0."/>
 <type name="uuid"      base="UUID"      cpp="::qpid::framing::Uuid" encode="#.encode(@)"       decode="#.decode(@)"    accessor="direct" init="::qpid::framing::Uuid()" byRef="y"/>
-<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.encode(@)" decode="#.decode(@)"    accessor="direct" init="::qpid::framing::FieldTable()" byRef="y"/>
+<type name="map"       base="FTABLE"    cpp="::qpid::framing::FieldTable" encode="#.qmfEncode(@)" decode="#.decode(@)"    accessor="direct" init="::qpid::framing::FieldTable()" byRef="y"/>
 
 <type name="hilo8"   base="U8"   cpp="uint8_t"  encode="@.putOctet(#)"    decode="# = @.getOctet()"    style="wm" accessor="counter" init="0"/>
 <type name="hilo16"  base="U16"  cpp="uint16_t" encode="@.putShort(#)"    decode="# = @.getShort()"    style="wm" accessor="counter" init="0"/>
