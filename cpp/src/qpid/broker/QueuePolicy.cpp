@@ -60,19 +60,22 @@ void QueuePolicy::dequeued(uint64_t _size)
 
 bool QueuePolicy::checkLimit(const QueuedMessage& m)
 {
-    bool exceeded = (maxSize && (size.get() + m.payload->contentSize()) > maxSize) || (maxCount && (count.get() + 1) > maxCount);
+    bool sizeExceeded = maxSize && (size.get() + m.payload->contentSize()) > maxSize;
+    bool countExceeded = maxCount && (count.get() + 1) > maxCount;
+    bool exceeded = sizeExceeded || countExceeded;
     if (exceeded) {
         if (!policyExceeded) {
             policyExceeded = true;
             if (m.queue) {
-                QPID_LOG(info, "Queue size exceeded policy for " << m.queue->getName());
+                if (sizeExceeded) QPID_LOG(info, "Queue cumulative message size exceeded policy for " << m.queue->getName());
+                if (countExceeded) QPID_LOG(info, "Queue message count exceeded policy for " << m.queue->getName());
             }
         }
     } else {
         if (policyExceeded) {
             policyExceeded = false;
             if (m.queue) {
-                QPID_LOG(info, "Queue size within policy for " << m.queue->getName());
+                QPID_LOG(info, "Queue cumulative message size and message count within policy for " << m.queue->getName());
             }
         }
     }
