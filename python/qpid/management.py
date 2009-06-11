@@ -401,7 +401,7 @@ class managementClient:
     """ Compose the header of a management message. """
     codec.write_uint8 (ord ('A'))
     codec.write_uint8 (ord ('M'))
-    codec.write_uint8 (ord ('2'))
+    codec.write_uint8 (ord ('3'))
     codec.write_uint8 (opcode)
     codec.write_uint32  (seq)
 
@@ -415,7 +415,7 @@ class managementClient:
       if octet != 'M':
         return None
       octet = chr (codec.read_uint8 ())
-      if octet != '2':
+      if octet != '3':
         return None
       opcode = chr (codec.read_uint8 ())
       seq    = codec.read_uint32 ()
@@ -672,9 +672,14 @@ class managementClient:
     packageName = codec.read_str8 ()
     className   = codec.read_str8 ()
     hash        = codec.read_bin128 ()
+    hasSupertype = codec.read_uint8()
     configCount = codec.read_uint16 ()
     instCount   = codec.read_uint16 ()
     methodCount = codec.read_uint16 ()
+    if hasSupertype != 0:
+      supertypePackage = codec.read_str8()
+      supertypeClass   = codec.read_str8()
+      supertypeHash    = codec.read_bin128()
 
     if packageName not in self.packages:
       return

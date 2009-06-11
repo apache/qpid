@@ -55,7 +55,7 @@ javassist=lib/javassist.jar
 jetty=lib/jetty-6.1.14.jar
 jetty-util=lib/jetty-util-6.1.14.jar
 jetty-bootstrap=lib/start.jar
-
+jms=lib/jms-1.1.jar
 jsp-api=lib/jsp-api-2.1.jar
 jsp-impl=lib/jsp-2.1.jar
 core-lib=lib/core-3.1.1.jar
@@ -85,6 +85,8 @@ broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
 
 broker-plugins.libs=${common.libs} ${felix.libs} 
 management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
+
+agent.libs=${jms}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}

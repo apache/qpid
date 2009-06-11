@@ -272,6 +272,7 @@ void SchemaObjectClassImpl::encode(Buffer& buffer) const
     buffer.putShortString(package);
     buffer.putShortString(name);
     hash.encode(buffer);
+    buffer.putOctet(0); // No parent class
     buffer.putShort((uint16_t) properties.size());
     buffer.putShort((uint16_t) statistics.size());
     buffer.putShort((uint16_t) methods.size());

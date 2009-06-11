@@ -72,7 +72,7 @@ void Broker::encodeHeader(Buffer& buf, uint8_t opcode, uint32_t seq) const
 {
     buf.putOctet('A');
     buf.putOctet('M');
-    buf.putOctet('2');
+    buf.putOctet('3');
     buf.putOctet(opcode);
     buf.putLong (seq);
 }
@@ -89,7 +89,7 @@ bool Broker::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq) const
     *opcode = buf.getOctet();
     *seq    = buf.getLong();
 
-    return h1 == 'A' && h2 == 'M' && h3 == '2';
+    return h1 == 'A' && h2 == 'M' && h3 == '3';
 }
 
 void Broker::received(qpid::client::Message& msg)

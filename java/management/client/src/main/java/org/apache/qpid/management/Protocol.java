@@ -27,7 +27,7 @@ package org.apache.qpid.management;
  */
 public interface Protocol
 {
-    String MAGIC_NUMBER = "AM2";
+    String MAGIC_NUMBER = "AM3";
     
     char SCHEMA_REQUEST_OPCODE = 'S';
     char SCHEMA_RESPONSE_OPCODE = Character.toLowerCase(SCHEMA_REQUEST_OPCODE);

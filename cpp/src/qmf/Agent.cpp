@@ -484,7 +484,7 @@ void AgentImpl::encodeHeader(Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet('A');
     buf.putOctet('M');
-    buf.putOctet('2');
+    buf.putOctet('3');
     buf.putOctet(opcode);
     buf.putLong (seq);
 }
@@ -501,7 +501,7 @@ bool AgentImpl::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq)
     *opcode = buf.getOctet();
     *seq    = buf.getLong();
 
-    return h1 == 'A' && h2 == 'M' && h3 == '2';
+    return h1 == 'A' && h2 == 'M' && h3 == '3';
 }
 
 AgentEventImpl::Ptr AgentImpl::eventDeclareQueue(const string& name)

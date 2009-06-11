@@ -360,6 +360,12 @@ class ManagementData:
       return "int32"
     elif typecode == 19:
       return "int64"
+    elif typecode == 20:
+      return "object"
+    elif typecode == 21:
+      return "list"
+    elif typecode == 22:
+      return "array"      
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 

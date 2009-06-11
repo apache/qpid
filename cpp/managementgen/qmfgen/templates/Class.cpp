@@ -98,6 +98,7 @@ void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
     buf.putShortString (packageName); // Package Name
     buf.putShortString (className);   // Class Name
     buf.putBin128      (md5Sum);      // Schema Hash
+    buf.putOctet       (0);           // No Superclass
     buf.putShort       (/*MGEN:Class.ConfigCount*/); // Config Element Count
     buf.putShort       (/*MGEN:Class.InstCount*/); // Inst Element Count
     buf.putShort       (/*MGEN:Class.MethodCount*/); // Method Count

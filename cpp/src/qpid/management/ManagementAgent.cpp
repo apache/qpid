@@ -246,7 +246,7 @@ void ManagementAgent::encodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
 {
     buf.putOctet ('A');
     buf.putOctet ('M');
-    buf.putOctet ('2');
+    buf.putOctet ('3');
     buf.putOctet (opcode);
     buf.putLong  (seq);
 }
@@ -260,7 +260,7 @@ bool ManagementAgent::checkHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
     *opcode = buf.getOctet();
     *seq    = buf.getLong();
 
-    return h1 == 'A' && h2 == 'M' && h3 == '2';
+    return h1 == 'A' && h2 == 'M' && h3 == '3';
 }
 
 void ManagementAgent::sendBuffer(Buffer&  buf,
@@ -1097,10 +1097,18 @@ size_t ManagementAgent::validateTableSchema(Buffer& inBuffer)
         inBuffer.getShortString(text);
         inBuffer.getBin128(hash);
 
+        uint8_t superType = inBuffer.getOctet();      
+
         uint16_t propCount = inBuffer.getShort();
         uint16_t statCount = inBuffer.getShort();
         uint16_t methCount = inBuffer.getShort();
 
+        if (superType == 1) {
+            inBuffer.getShortString(text);
+            inBuffer.getShortString(text);
+            inBuffer.getBin128(hash);
+        }
+        
         for (uint16_t idx = 0; idx < propCount + statCount; idx++) {
             FieldTable ft;
             ft.decode(inBuffer);
@@ -1142,9 +1150,16 @@ size_t ManagementAgent::validateEventSchema(Buffer& inBuffer)
         inBuffer.getShortString(text);
         inBuffer.getShortString(text);
         inBuffer.getBin128(hash);
+        
+        uint8_t superType = inBuffer.getOctet();
 
         uint16_t argCount = inBuffer.getShort();
 
+        if (superType == 1) {
+            inBuffer.getShortString(text);
+            inBuffer.getShortString(text);
+            inBuffer.getBin128(hash);
+        }
         for (uint16_t idx = 0; idx < argCount; idx++) {
             FieldTable ft;
             ft.decode(inBuffer);
