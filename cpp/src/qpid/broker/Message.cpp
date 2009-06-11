@@ -226,7 +226,7 @@ bool Message::getContentFrame(const Queue& queue, AMQFrame& frame, uint16_t maxC
 
 void Message::sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const
 {
-    if (isContentReleased()) {
+    if (isContentReleased() && !frames.isComplete()) {
 
         uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
         bool morecontent = true;
