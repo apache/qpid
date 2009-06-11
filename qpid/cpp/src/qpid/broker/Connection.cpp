@@ -353,7 +353,7 @@ void Connection::abort()
 void Connection::setHeartbeatInterval(uint16_t heartbeat)
 {
     setHeartbeat(heartbeat);
-    if (heartbeat > 0) {
+    if (heartbeat > 0 && !isShadow()) {
         heartbeatTimer = new ConnectionHeartbeatTask(heartbeat, timer, *this);
         timer.add(heartbeatTimer);
         timeoutTimer = new ConnectionTimeoutTask(heartbeat, timer, *this);
