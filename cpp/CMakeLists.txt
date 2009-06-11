@@ -16,15 +16,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-project(qpidc)
+project(qpid-cpp)
+
 cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+enable_testing()
+include (CTest)
+
 set (qpidc_version 0.5)
 
-enable_testing()
 # set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Emulate "make check" behavior of the autoconf world.
