@@ -1,6 +1,7 @@
 
 require 'qmfengine'
 require 'thread'
+require 'socket'
 
 module Qmf
 
@@ -358,6 +359,10 @@ module Qmf
         @impl.setUnit(kwargs[:unit])         if kwargs.include?(:unit)
         @impl.setDesc(kwargs[:desc])         if kwargs.include?(:desc)
       end
+
+      def name
+        @impl.getName
+      end
     end
 
     class SchemaStatistic
@@ -391,6 +396,20 @@ module Qmf
       def add_method(meth)
         @methods << meth
         @impl.addMethod(meth.impl)
+      end
+
+      def name
+        @impl.getName
+      end
+
+      def properties
+        unless @properties
+          @properties = []
+          @impl.getPropertyCount.times do |i|
+            @properties << @impl.getProperty(i)
+          end
+        end
+        return @properties
       end
     end
 
