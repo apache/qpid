@@ -165,6 +165,7 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
 void AsynchIOHandler::eof(AsynchIO&) {
     QPID_LOG(debug, "DISCONNECTED [" << identifier << "]");
     if (codec) codec->closed();
+    readError = true;
     aio->queueWriteClose();
 }
 
