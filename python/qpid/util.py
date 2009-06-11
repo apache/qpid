@@ -22,7 +22,21 @@ import os, socket, time, textwrap, re
 try:
   from ssl import wrap_socket as ssl
 except ImportError:
-  from socket import ssl
+  from socket import ssl as wrap_socket
+  class ssl:
+
+    def __init__(self, sock):
+      self.sock = sock
+      self.ssl = wrap_socket(sock)
+
+    def recv(self, n):
+      return self.ssl.read(n)
+
+    def send(self, s):
+      return self.ssl.write(s)
+
+    def close(self):
+      self.sock.close()
 
 def connect(host, port):
   sock = socket.socket()

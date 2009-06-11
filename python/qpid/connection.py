@@ -43,32 +43,10 @@ def client(*args, **kwargs):
 def server(*args, **kwargs):
   return delegates.Server(*args, **kwargs)
 
-class SSLWrapper:
-
-  def __init__(self, ssl):
-    self.ssl = ssl
-
-  def recv(self, n):
-    return self.ssl.read(n)
-
-  def send(self, s):
-    return self.ssl.write(s)
-
-try:
-  from socket import SSLType
-  def sslwrap(sock):
-    if isinstance(sock, SSLType):
-      return SSLWrapper(sock)
-    else:
-      return sock
-except ImportError:
-  def sslwrap(sock):
-    return sock
-
 class Connection(Assembler):
 
   def __init__(self, sock, spec=SPEC, delegate=client, **args):
-    Assembler.__init__(self, sslwrap(sock))
+    Assembler.__init__(self, sock)
     self.spec = spec
 
     self.lock = RLock()
