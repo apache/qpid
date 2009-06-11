@@ -1,9 +1,25 @@
-import traceback, time, sys
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 
-from threading import RLock
+import threading, traceback, signal, sys, time
 
-def stackdump(*args):
-  print args
+def stackdump(sig, frm):
   code = []
   for threadId, stack in sys._current_frames().items():
     code.append("\n# ThreadID: %s" % threadId)
@@ -13,28 +29,22 @@ def stackdump(*args):
         code.append("  %s" % (line.strip()))
   print "\n".join(code)
 
-import signal
 signal.signal(signal.SIGQUIT, stackdump)
-
-#out = open("/tmp/stacks.txt", "write")
 
 class LoudLock:
 
   def __init__(self):
-    self.lock = RLock()
+    self.lock = threading.RLock()
 
   def acquire(self, blocking=1):
-    import threading
     while not self.lock.acquire(blocking=0):
       time.sleep(1)
-      print >> out, "TRYING"
-#      print self.lock._RLock__owner, threading._active
-#      stackdump()
+      print >> sys.out, "TRYING"
       traceback.print_stack(None, None, out)
-      print >> out, "TRYING"
-    print >> out, "ACQUIRED"
+      print >> sys.out, "TRYING"
+    print >> sys.out, "ACQUIRED"
     traceback.print_stack(None, None, out)
-    print >> out, "ACQUIRED"
+    print >> sys.out, "ACQUIRED"
     return True
 
   def _is_owned(self):
