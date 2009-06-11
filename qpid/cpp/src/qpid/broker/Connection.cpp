@@ -212,6 +212,10 @@ void Connection::idleOut(){}
 void Connection::idleIn(){}
 
 void Connection::closed(){ // Physically closed, suspend open sessions.
+    if (heartbeatTimer)
+        heartbeatTimer->cancel();
+    if (timeoutTimer)
+        timeoutTimer->cancel();
     try {
         while (!channels.empty())
             ptr_map_ptr(channels.begin())->handleDetach();
