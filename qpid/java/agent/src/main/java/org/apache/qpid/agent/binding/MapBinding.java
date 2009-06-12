@@ -30,6 +30,9 @@ import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Binding information from a java Map to a QMF schema.
+ */
 public class MapBinding implements TypeBinding
 {
     private static Log log = LogFactory.getLog(MapBinding.class);

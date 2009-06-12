@@ -23,6 +23,9 @@ package org.apache.qpid.agent.binding;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Binding between Java Type and QMF type
+ */
 public interface TypeBinding
 {
     public Object decode(Decoder dec);

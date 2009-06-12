@@ -27,6 +27,11 @@ import org.apache.qpid.agent.binding.BindingUtils;
 import org.apache.qpid.agent.binding.MethodBinding;
 import org.apache.qpid.agent.binding.PropertyBinding;
 
+/**
+ * Wrapper classe for adding EJBS which are to be 
+ * managed by the QMF Agent. The jndi location and the
+ * public interface to exposed are used to generate the schema.
+ */
 public class ManagedEJB extends ManagedObjectBase
 {
     protected String className;

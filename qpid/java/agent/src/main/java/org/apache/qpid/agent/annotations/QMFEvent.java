@@ -27,6 +27,11 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Tells the QMF Agent that this object will be passed as a
+ * QMF event. This will cause only properties to be sent across
+ * the wire.
+ */
 @Target(TYPE)
 @Retention(RUNTIME)
 @Documented

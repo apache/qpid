@@ -28,6 +28,9 @@ import java.util.UUID;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Basic type mappings for QMF schema
+ */
 public abstract class QMFTypeBinding implements TypeBinding
 {
     private static final Map<Class<?>, QMFTypeBinding> TYPES = new HashMap<Class<?>, QMFTypeBinding>();

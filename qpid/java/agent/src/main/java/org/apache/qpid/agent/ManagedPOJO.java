@@ -26,6 +26,10 @@ import org.apache.qpid.agent.binding.BindingUtils;
 import org.apache.qpid.agent.binding.MethodBinding;
 import org.apache.qpid.agent.binding.PropertyBinding;
 
+/**
+ * Wrapper classe for adding POJOS which are to be 
+ * managed by the QMF Agent. 
+ */
 public class ManagedPOJO extends ManagedObjectBase implements ManagedObject
 {
     private Log log = LogFactory.getLog(ManagedPOJO.class);

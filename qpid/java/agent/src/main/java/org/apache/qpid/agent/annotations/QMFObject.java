@@ -27,6 +27,11 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Tells the QMF Agent that this object will be a managed 
+ * object. This will allow users to query for it, as well as
+ * invoke methods on it.
+ */
 @Target(TYPE)
 @Retention(RUNTIME)
 @Documented

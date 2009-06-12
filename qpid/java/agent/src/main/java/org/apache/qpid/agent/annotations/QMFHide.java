@@ -27,6 +27,10 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Causes the property which is annotated to not be added to the
+ * QMF schema when it is built.
+ */
 @Target(ElementType.METHOD)
 @Retention(RUNTIME)
 @Documented

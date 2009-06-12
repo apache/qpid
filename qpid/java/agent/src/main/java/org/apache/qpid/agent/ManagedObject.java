@@ -23,6 +23,9 @@ package org.apache.qpid.agent;
 import org.apache.qpid.agent.binding.MethodBinding;
 import org.apache.qpid.agent.binding.PropertyBinding;
 
+/**
+ * Objects which are to be managed and controlled by the QMF Agent.
+ */
 public interface ManagedObject
 {
     public abstract long getId();
