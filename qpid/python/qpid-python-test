@@ -18,6 +18,8 @@
 # under the License.
 #
 
+# TODO: summarize, test harness preconditions (e.g. broker is alive)
+
 import fcntl, logging, optparse, os, struct, sys, termios, traceback, types
 from fnmatch import fnmatchcase as match
 from getopt import GetoptError
@@ -53,6 +55,8 @@ parser.add_option("-i", "--ignore", action="append", default=[],
 parser.add_option("-I", "--ignore-file", metavar="IFILE", action="append",
                   default=[],
                   help="ignore tests matching patterns in IFILE")
+parser.add_option("-H", "--halt-on-error", action="store_true", default=False,
+                  dest="hoe", help="halt if an error is encountered")
 parser.add_option("-D", "--define", metavar="DEFINE", dest="defines",
                   action="append", default=[], help="define test parameters")
 
@@ -99,10 +103,15 @@ for a in args:
 if not includes:
   includes.append("*")
 
-def included(path):
+def is_ignored(path):
   for p in excludes:
     if match(path, p):
-      return False
+      return True
+  return False
+
+def is_included(path):
+  if is_ignored(path):
+    return False
   for p in includes:
     if match(path, p):
       return True
@@ -135,7 +144,9 @@ vt100_reset = vt100_attrs(0)
 KEYWORDS = {"pass": (32,),
             "fail": (31,),
             "start": (34,),
-            "total": (34,)}
+            "total": (34,),
+            "ignored": (33,),
+            "selected": (34,)}
 
 COLORIZE = sys.stdout.isatty()
 
@@ -468,7 +479,10 @@ for name in modules:
   m = __import__(name, None, None, ["dummy"])
   h.scan(m)
 
-filtered = [t for t in h.tests if included(t.name())]
+filtered = [t for t in h.tests if is_included(t.name())]
+ignored = [t for t in h.tests if is_ignored(t.name())]
+total = len(filtered) + len(ignored)
+
 passed = 0
 failed = 0
 for t in filtered:
@@ -479,13 +493,26 @@ for t in filtered:
       passed += 1
     else:
       failed += 1
+      if opts.hoe:
+        break
+
+run = passed + failed
 
 if not list_only:
   if failed:
     outcome = "fail"
   else:
     outcome = "pass"
+  if ignored:
+    ign = "ignored"
+  else:
+    ign = "pass"
   print colorize("Totals:", 1), \
-      colorize_word("total", "%s tests" % len(filtered)) + ",", \
+      colorize_word("total", "%s tests" % total) + ",", \
       colorize_word("pass", "%s passed" % passed) + ",", \
-      colorize_word(outcome, "%s failed" % failed)
+      colorize_word(ign, "%s ignored" % len(ignored)) + ",", \
+      colorize_word(outcome, "%s failed" % failed),
+  if opts.hoe and failed > 0:
+    print " -- (halted after %s)" % run
+  else:
+    print
