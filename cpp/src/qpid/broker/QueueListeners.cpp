@@ -27,29 +27,41 @@ namespace broker {
 void QueueListeners::addListener(Consumer::shared_ptr c)
 {
     if (c->preAcquires()) {
-        consumers.insert(c);
+        add(consumers, c);
     } else {
-        browsers.insert(c);
+        add(browsers, c);
     }
 }
 
 void QueueListeners::removeListener(Consumer::shared_ptr c)
 {
     if (c->preAcquires()) {
-        consumers.erase(c);
+        remove(consumers, c);
     } else {
-        browsers.erase(c);
+        remove(browsers, c);
     }
 }
 
 void QueueListeners::populate(NotificationSet& set)
 {
-    if (!consumers.empty()) {
-        set.consumer = *consumers.begin();
-        consumers.erase(consumers.begin());
+    if (consumers.size()) {
+        set.consumer = consumers.front();
+        consumers.pop_front();
     } else {
         browsers.swap(set.browsers);
     }
+}
+
+void QueueListeners::add(Listeners& listeners, Consumer::shared_ptr c)
+{
+    Listeners::iterator i = std::find(listeners.begin(), listeners.end(), c);
+    if (i == listeners.end()) listeners.push_back(c);
+}
+
+void QueueListeners::remove(Listeners& listeners, Consumer::shared_ptr c)
+{
+    Listeners::iterator i = std::find(listeners.begin(), listeners.end(), c);
+    if (i != listeners.end()) listeners.erase(i);
 }
 
 void QueueListeners::NotificationSet::notify()
