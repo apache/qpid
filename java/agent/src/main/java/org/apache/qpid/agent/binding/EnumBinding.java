@@ -25,6 +25,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Binding information from a java enum to a QMF schema
+ */
 public class EnumBinding extends ClassBinding
 {
     private static Log log = LogFactory.getLog(EnumBinding.class);

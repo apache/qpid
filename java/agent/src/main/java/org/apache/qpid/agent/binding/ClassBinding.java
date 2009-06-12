@@ -37,6 +37,9 @@ import org.apache.qpid.agent.annotations.QMFHide;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Binding information from a custom java class to a QMF schema
+ */
 public class ClassBinding implements TypeBinding
 {
     private static Log log = LogFactory.getLog(ClassBinding.class);

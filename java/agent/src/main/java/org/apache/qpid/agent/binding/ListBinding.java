@@ -30,6 +30,9 @@ import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Binding information from a java list to a QMF schema.
+ */
 public class ListBinding implements TypeBinding
 {
     private static Log log = LogFactory.getLog(ListBinding.class);
@@ -46,12 +49,17 @@ public class ListBinding implements TypeBinding
     {
         List list = (List) value;
         BBEncoder newEncoder = new BBEncoder(10);
-        newEncoder.writeUint32(list.size());
-        for (Object obj : list)
-        {
-            TypeBinding type = bctx.getTypeBinding(obj.getClass());
-            newEncoder.writeUint8(type.getCode());
-            type.encode(newEncoder, obj);
+        if (list != null) {
+            newEncoder.writeUint32(list.size());
+            for (Object obj : list)
+            {
+                TypeBinding type = bctx.getTypeBinding(obj.getClass());
+                newEncoder.writeUint8(type.getCode());
+                type.encode(newEncoder, obj);
+            }
+        }
+        else {
+            newEncoder.writeUint32(0) ;
         }
         enc.writeVbin32(newEncoder.buffer().array());
     }

@@ -54,8 +54,9 @@ import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.Decoder;
 
 /**
- * Agent
- * 
+ * The main class for interacting with the QMF bus. Objects which are
+ * to be managed can be registered with the agent, as can classes
+ * to be exposed via the schema.
  */
 public class Agent implements MessageListener
 {
@@ -96,6 +97,7 @@ public class Agent implements MessageListener
                 systemId.toString()));
     }
 
+
     public void register(ManagedObject managedObject)
     {
         Class managedClass = managedObject.getObjectClass();
@@ -120,6 +122,10 @@ public class Agent implements MessageListener
         }
     }
 
+    /**
+     * Starts up the agent. Many bean containers may call this by
+     * default which aids in deployment
+     */
     public void start()
     {
         log.debug(String.format("Agent with uid %s and name %s starting",
@@ -161,6 +167,9 @@ public class Agent implements MessageListener
         }
     }
 
+    /**
+     * Send an event object to the bus
+     */
     public void raiseEvent(Object value, EventSeverity sev)
     {
         log.debug(String.format("Sending event of class %s with Severity %s",
@@ -201,7 +210,7 @@ public class Agent implements MessageListener
             throw new AgentException(e);
         }
         byte[] magic = dec.readBytes(3);
-        if (magic[0] != 'A' || magic[1] != 'M' || magic[2] != '2')
+        if (magic[0] != 'A' || magic[1] != 'M' || magic[2] != '3')
         {
             throw new AgentException("bad magic: " + new String(magic));
         }
@@ -436,7 +445,7 @@ public class Agent implements MessageListener
         enc.init();
         enc.writeUint8((short) 'A');
         enc.writeUint8((short) 'M');
-        enc.writeUint8((short) '2');
+        enc.writeUint8((short) '3');
         enc.writeUint8((short) opcode);
         enc.writeUint32(sequence);
         return enc;

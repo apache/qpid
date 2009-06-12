@@ -25,6 +25,9 @@ import java.util.Map;
 
 import org.apache.qpid.transport.codec.Encoder;
 
+/**
+ * Metadata for mapping a method argument to a QMF schema
+ */
 public class ParameterBinding
 {
     private final String name;

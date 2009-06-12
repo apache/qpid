@@ -27,6 +27,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+/**
+ * Controls the QMF schema which is generated for this property.
+ */
 @Target(ElementType.FIELD)
 @Retention(RUNTIME)
 @Documented
