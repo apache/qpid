@@ -63,7 +63,7 @@ class Base(Test):
     content = self.content("ping")
     sender.send(content)
     receiver = ssn.receiver("ping-queue")
-    msg = receiver.fetch(timeout=0)
+    msg = receiver.fetch(0)
     ssn.acknowledge()
     assert msg.content == content
 
@@ -80,9 +80,11 @@ class Base(Test):
     contents = self.drain(rcv)
     assert len(contents) == 0, "%s is supposed to be empty: %s" % (rcv, contents)
 
+  def sleep(self):
+    time.sleep(self.delay())
+
   def delay(self):
-    d = float(self.config.defines.get("delay", "2"))
-    time.sleep(d)
+    return float(self.config.defines.get("delay", "2"))
 
 class SetupTests(Base):
 
@@ -366,12 +368,12 @@ class ReceiverTests(Base):
     self.rcv.listen(listener)
     content = self.send("testListen")
     try:
-      msg = msgs.get(timeout=3)
+      msg = msgs.get(timeout=self.delay())
       assert False, "did not expect message: %s" % msg
     except QueueEmpty:
       pass
     self.rcv.start()
-    msg = msgs.get(timeout=3)
+    msg = msgs.get(timeout=self.delay())
     assert msg.content == content
 
   def testFetch(self):
@@ -382,18 +384,18 @@ class ReceiverTests(Base):
       pass
     try:
       start = time.time()
-      msg = self.rcv.fetch(3)
+      msg = self.rcv.fetch(self.delay())
       assert False, "unexpected message: %s" % msg
     except Empty:
       elapsed = time.time() - start
-      assert elapsed >= 3
+      assert elapsed >= self.delay()
 
     one = self.send("testListen", 1)
     two = self.send("testListen", 2)
     three = self.send("testListen", 3)
     msg = self.rcv.fetch(0)
     assert msg.content == one
-    msg = self.rcv.fetch(3)
+    msg = self.rcv.fetch(self.delay())
     assert msg.content == two
     msg = self.rcv.fetch()
     assert msg.content == three
@@ -401,10 +403,10 @@ class ReceiverTests(Base):
 
   def testStart(self):
     content = self.send("testStart")
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 0
     self.rcv.start()
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == content
@@ -414,7 +416,7 @@ class ReceiverTests(Base):
   def testStop(self):
     self.rcv.start()
     one = self.send("testStop", 1)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == one
@@ -422,7 +424,7 @@ class ReceiverTests(Base):
     self.rcv.stop()
 
     two = self.send("testStop", 2)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 0
     msg = self.rcv.fetch(0)
     assert msg.content == two
@@ -435,12 +437,12 @@ class ReceiverTests(Base):
 
     for i in range(3):
       self.send("testPending", i)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 3
 
     for i in range(3, 10):
       self.send("testPending", i)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 10
 
     self.drain(self.rcv, limit=3)
@@ -458,11 +460,11 @@ class ReceiverTests(Base):
 
     for i in range(15):
       self.send("testCapacity", i)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 5
 
     self.drain(self.rcv, limit = 5)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 5
 
     self.drain(self.rcv)
@@ -477,7 +479,7 @@ class ReceiverTests(Base):
 
     for i in range(10):
       self.send("testCapacityUNLIMITED", i)
-    self.delay()
+    self.sleep()
     assert self.rcv.pending() == 10
 
     self.drain(self.rcv)
