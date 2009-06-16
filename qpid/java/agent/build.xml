@@ -25,17 +25,4 @@
 
     <import file="../module.xml"/>
 
-    <target name="copy-bin-release" description="copy dependencies into module release">
-        <copy todir="${module.release}/bin" failonerror="true">
-            <fileset dir="${module.bin}"/>
-        </copy>
-        <copy todir="${module.release}/bin" failonerror="true" flatten="true">
-            <fileset dir="${basedir}/../common/bin"/>
-        </copy>
-        <chmod dir="${module.release}/bin" perm="ugo+rx" includes="**/*"/>
-
-    </target>
-
-    <target name="release-bin" depends="release-bin-tasks"/>
-
 </project>
