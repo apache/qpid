@@ -113,7 +113,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Decoder& getDecoder() { return decoder; }
 
     ExpiryPolicy& getExpiryPolicy() { return *expiryPolicy; }
-    
+
   private:
     typedef sys::Monitor::ScopedLock Lock;
 

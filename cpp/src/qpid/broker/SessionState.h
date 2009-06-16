@@ -81,6 +81,9 @@ class SessionState : public qpid::SessionState,
     framing::AMQP_ClientProxy& getProxy();
 
     /** @pre isAttached() */
+    uint16_t getChannel() const;
+
+    /** @pre isAttached() */
     ConnectionState& getConnection();
     bool isLocal(const ConnectionToken* t) const;
 

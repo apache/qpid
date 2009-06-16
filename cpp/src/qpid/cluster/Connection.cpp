@@ -245,10 +245,13 @@ broker::SemanticState& Connection::semanticState() {
     return sessionState().getSemanticState();
 }
 
-void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled) {
+void Connection::consumerState(
+    const string& name, bool blocked, bool notifyEnabled, bool isInListener)
+{
     broker::SemanticState::ConsumerImpl& c = semanticState().find(name);
     c.setBlocked(blocked);
     if (notifyEnabled) c.enableNotify(); else c.disableNotify();
+    if (isInListener) c.getQueue()->getListeners().addListener(c.shared_from_this());
 }
 
 void Connection::sessionState(
@@ -270,6 +273,17 @@ void Connection::sessionState(
         unknownCompleted,
         receivedIncomplete);
     QPID_LOG(debug, cluster << " received session state update for " << sessionState().getId());
+    // The output tasks will be added later in the update process. 
+    connection.getOutputTasks().removeAll();
+}
+
+void Connection::outputTask(uint16_t channel, const std::string& name) {
+    broker::SessionState* session = connection.getChannel(channel).getSession();
+    if (!session)
+        throw Exception(QPID_MSG(cluster << " channel not attached " << *this
+                                 << "[" <<  channel << "] "));
+    OutputTask* task = &session->getSemanticState().find(name);
+    connection.getOutputTasks().addOutputTask(task);
 }
     
 void Connection::shadowReady(uint64_t memberId, uint64_t connectionId, const string& username, const string& fragment, uint32_t sendMax) {

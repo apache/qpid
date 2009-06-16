@@ -134,6 +134,9 @@ class Connection : public sys::ConnectionInputHandler,
     /** Called by cluster to mark shadow connections */
     void setShadow() { shadow = true; }
 
+    // Used by cluster to update connection status
+    sys::AggregateOutput& getOutputTasks() { return outputTasks; }
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;

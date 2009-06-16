@@ -40,9 +40,11 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
   public:
     virtual ~SessionContext(){}
     virtual bool isLocal(const ConnectionToken* t) const = 0;
+    virtual bool isAttached() const = 0;
     virtual ConnectionState& getConnection() = 0;
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
     virtual Broker& getBroker() = 0;
+    virtual uint16_t getChannel() const = 0;
 };
 
 }} // namespace qpid::broker

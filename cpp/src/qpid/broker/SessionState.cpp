@@ -99,6 +99,11 @@ AMQP_ClientProxy& SessionState::getProxy() {
     return handler->getProxy();
 }
 
+uint16_t SessionState::getChannel() const {
+    assert(isAttached());
+    return handler->getChannel();
+}
+
 ConnectionState& SessionState::getConnection() {
     assert(isAttached());
     return handler->getConnection();
@@ -119,8 +124,7 @@ void SessionState::detach() {
 
 void SessionState::disableOutput()
 {
-    semanticState.detached();//prevents further activateOutput calls until reattached
-    getConnection().outputTasks.removeOutputTask(&semanticState);
+    semanticState.detached(); //prevents further activateOutput calls until reattached
 }
 
 void SessionState::attach(SessionHandler& h) {
@@ -362,10 +366,6 @@ void SessionState::readyToSend() {
     QPID_LOG(debug, getId() << ": ready to send, activating output.");
     assert(handler);
     semanticState.attached();
-    sys::AggregateOutput& tasks = handler->getConnection().outputTasks;
-    tasks.addOutputTask(&semanticState);
-    tasks.activateOutput();
-
     if (rateFlowcontrol) {
         qpid::sys::ScopedLock<Mutex> l(rateLock);
         // Issue initial credit - use a heuristic here issue min of 300 messages or 1 secs worth

@@ -65,8 +65,6 @@
 
   </class>
 
-  <!-- TODO aconway 2008-09-10: support for un-attached connections. -->
-  
   <!-- Controls associated with a specific connection. -->
 
   <class name="cluster-connection" code="0x81" label="Qpid clustering extensions.">
@@ -91,6 +89,8 @@
       <field name="name" type="str8"/>
       <field name="blocked" type="bit"/>
       <field name="notifyEnabled" type="bit"/>
+      <!-- Flag set if the consumer is in its queue's listener set. -->
+      <field name="is-in-listener" type="bit"/>
     </control>
 
     <!-- Delivery-record for outgoing messages sent but not yet accepted. -->
@@ -121,8 +121,14 @@
     <control name="tx-end" code="0x17"/>
     <control name="accumulated-ack" code="0x18"> <field name="commands" type="sequence-set"/> </control>
     
+    <!-- Consumers in the connection's output task -->
+    <control name="output-task" code="0x19">
+      <field name="channel" type="uint16"/>
+      <field name="name" type="str8"/>
+    </control>
+
     <!-- Complete a session state update. -->
-    <control name="session-state" code="0x1F" label="Set session state during a brain update.">
+    <control name="session-state" code="0x1F">
       <!-- Target session deduced from channel number.  -->
       <field name="replay-start" type="sequence-no"/>	       <!-- Replay frames will start from this point.-->
       <field name="command-point" type="sequence-no"/>	       <!-- Id of next command sent -->

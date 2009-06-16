@@ -325,6 +325,9 @@ namespace qpid {
              * Notify queue that recovery has completed.
              */
             void recoveryComplete();
+
+            // For cluster update
+            QueueListeners& getListeners();
         };
     }
 }

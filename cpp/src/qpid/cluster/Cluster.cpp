@@ -755,13 +755,16 @@ void Cluster::messageExpired(const MemberId&, uint64_t id, Lock&) {
     expiryPolicy->deliverExpire(id);
 }
 
-void Cluster::errorCheck(const MemberId& , uint8_t type, uint64_t frameSeq, Lock&) {
+void Cluster::errorCheck(const MemberId& m, uint8_t type, uint64_t frameSeq, Lock&) {
     // If we receive an errorCheck here, it's because we  have processed past the point
     // of the error so respond with ERROR_TYPE_NONE
     assert(map.getFrameSeq() >= frameSeq);
-    if (type != framing::cluster::ERROR_TYPE_NONE) // Don't respond if its already NONE.
+    if (type != framing::cluster::ERROR_TYPE_NONE) { // Don't respond to NONE.
+        QPID_LOG(debug, "Error " << frameSeq << " on " << m << " did not occur locally");
         mcast.mcastControl(
-            ClusterErrorCheckBody(ProtocolVersion(), framing::cluster::ERROR_TYPE_NONE, frameSeq), self);
+            ClusterErrorCheckBody(ProtocolVersion(),
+                                  framing::cluster::ERROR_TYPE_NONE, frameSeq), self);
+    }
 }
 
 }} // namespace qpid::cluster

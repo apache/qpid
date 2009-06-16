@@ -103,7 +103,7 @@ class Connection :
     // Called for data delivered from the cluster.
     void deliveredFrame(const EventFrame&);
 
-    void consumerState(const std::string& name, bool blocked, bool notifyEnabled);
+    void consumerState(const std::string& name, bool blocked, bool notifyEnabled, bool isInListener);
     
     // ==== Used in catch-up mode to build initial state.
     // 
@@ -114,6 +114,8 @@ class Connection :
                       const framing::SequenceNumber& expected,
                       const framing::SequenceNumber& received,
                       const framing::SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
+    
+    void outputTask(uint16_t channel, const std::string& name);
     
     void shadowReady(uint64_t memberId, uint64_t connectionId, const std::string& username, const std::string& fragment, uint32_t sendMax);
 
