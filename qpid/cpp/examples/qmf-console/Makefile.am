@@ -22,7 +22,7 @@ examplesdir=$(pkgdatadir)/examples/qmf-console
 MAKELDFLAGS=$(CONSOLEFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
-noinst_PROGRAMS=console printevents ping queuestats
+noinst_PROGRAMS=console printevents ping queuestats cluster-qmon
 
 console_SOURCES=console.cpp
 console_LDADD=$(CONSOLE_LIB)
@@ -36,11 +36,15 @@ ping_LDADD=$(CONSOLE_LIB)
 queuestats_SOURCES=queuestats.cpp
 queuestats_LDADD=$(CONSOLE_LIB)
 
+cluster_qmon_SOURCES=cluster-qmon.cpp
+cluster_qmon_LDADD=$(CONSOLE_LIB)
+
 examples_DATA= \
 	console.cpp \
 	printevents.cpp \
 	ping.cpp \
 	queuestats.cpp \
+	cluster-qmon.cpp \
 	$(MAKEDIST)
 
 EXTRA_DIST=                  \
