@@ -43,6 +43,11 @@ using qpid::sys::Mutex;
 //==============================================================
 // Main program
 //==============================================================
+
+//
+//  The Main class extends ConsoleListener so it can receive broker connected/disconnected
+//  notifications.
+//
 class Main : public ConsoleListener {
     bool  stopping;  // Used to tell the program to exit
     Mutex lock;      // Mutex to protect the broker-map
@@ -84,11 +89,12 @@ public:
         // Connect to the brokers.
         //
         for (int idx = 1; idx < argc; idx++) {
-            Mutex::ScopedLock l(lock);
             qpid::client::ConnectionSettings connSettings;
             connSettings.host = "localhost";
             connSettings.port = atoi(argv[idx]);
             Broker* broker = sm.addBroker(connSettings);
+
+            Mutex::ScopedLock l(lock);
             brokerMap[broker] = false; // initially assume broker is disconnected
         }
 
@@ -100,11 +106,14 @@ public:
             // Find an operational broker
             //
             Broker* operationalBroker = 0;
-            for (map<Broker*, bool>::iterator iter = brokerMap.begin();
-                 iter != brokerMap.end(); iter++) {
-                if (iter->second) {
-                    operationalBroker = iter->first;
-                    break;
+            {
+                Mutex::ScopedLock l(lock);
+                for (map<Broker*, bool>::iterator iter = brokerMap.begin();
+                     iter != brokerMap.end(); iter++) {
+                    if (iter->second) {
+                        operationalBroker = iter->first;
+                        break;
+                    }
                 }
             }
 
