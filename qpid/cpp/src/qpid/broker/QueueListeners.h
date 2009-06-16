@@ -22,7 +22,7 @@
  *
  */
 #include "Consumer.h"
-#include <list>
+#include <vector>
 
 namespace qpid {
 namespace broker {
@@ -40,7 +40,7 @@ namespace broker {
 class QueueListeners
 {
   public:
-    typedef std::list<Consumer::shared_ptr> Listeners;
+    typedef std::vector<Consumer::shared_ptr> Listeners;
 
     class NotificationSet
     {
@@ -55,6 +55,8 @@ class QueueListeners
     void addListener(Consumer::shared_ptr);    
     void removeListener(Consumer::shared_ptr);    
     void populate(NotificationSet&);
+    bool contains(Consumer::shared_ptr c) const;
+
   private:
     Listeners consumers;
     Listeners browsers;

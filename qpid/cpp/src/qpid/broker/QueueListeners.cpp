@@ -46,9 +46,11 @@ void QueueListeners::populate(NotificationSet& set)
 {
     if (consumers.size()) {
         set.consumer = consumers.front();
-        consumers.pop_front();
+        consumers.erase(consumers.begin());
     } else {
-        browsers.swap(set.browsers);
+        // Don't swap the vectors, hang on to the memory allocated.
+        set.browsers = browsers;
+        browsers.clear();
     }
 }
 
@@ -68,6 +70,12 @@ void QueueListeners::NotificationSet::notify()
 {
     if (consumer) consumer->notify();
     else for_each(browsers.begin(), browsers.end(), boost::mem_fn(&Consumer::notify));
+}
+
+bool QueueListeners::contains(Consumer::shared_ptr c) const {
+    return
+        find(browsers.begin(), browsers.end(), c) != browsers.end() ||
+        find(consumers.begin(), consumers.end(), c) != consumers.end();
 }
 
 }} // namespace qpid::broker

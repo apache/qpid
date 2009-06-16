@@ -1025,3 +1025,5 @@ bool Queue::isEnqueued(const QueuedMessage& msg)
 {
     return !policy.get() || policy->isEnqueued(msg);
 }
+
+QueueListeners& Queue::getListeners() { return listeners; }

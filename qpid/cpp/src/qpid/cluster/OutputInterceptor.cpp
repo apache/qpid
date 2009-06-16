@@ -48,8 +48,6 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
     LATENCY_TRACK(doOutputTracker.finish(f.getBody()));
     parent.getCluster().checkQuorum();
     {
-        // FIXME aconway 2009-04-28: locking around next-> may be redundant
-        // with the fixes to read-credit in the IO layer. Review.
         sys::Mutex::ScopedLock l(lock);
         next->send(f);
     }

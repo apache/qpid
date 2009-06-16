@@ -91,7 +91,8 @@ class UpdateClient : public sys::Runnable {
     void updateConnection(const boost::intrusive_ptr<Connection>& connection);
     void updateSession(broker::SessionHandler& s);
     void updateTxState(broker::SemanticState& s);
-    void updateConsumer(const broker::SemanticState::ConsumerImpl*);
+    void updateOutputTask(const sys::OutputTask* task);
+    void updateConsumer(const broker::SemanticState::ConsumerImpl::shared_ptr&);
 
     MemberId updaterId;
     MemberId updateeId;

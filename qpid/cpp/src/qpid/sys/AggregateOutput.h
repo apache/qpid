@@ -21,47 +21,58 @@
 #ifndef _AggregateOutput_
 #define _AggregateOutput_
 
-#include "Mutex.h"
+#include "Monitor.h"
 #include "OutputControl.h"
 #include "OutputTask.h"
 #include "qpid/CommonImportExport.h"
 
 #include <algorithm>
-#include <vector>
+#include <deque>
 
 namespace qpid {
 namespace sys {
 
-    class AggregateOutput : public OutputTask, public OutputControl
-    {
-        typedef std::vector<OutputTask*> TaskList;
+/**
+ * Holds a collection of output tasks, doOutput picks the next one to execute.
+ * 
+ * Tasks are automatically removed if their doOutput() or hasOutput() returns false.
+ * 
+ * Thread safe. addOutputTask may be called in one connection thread while
+ * doOutput is called in another.
+ */
 
-        TaskList tasks;
-        size_t next;
-        OutputControl& control;
+class AggregateOutput : public OutputTask, public OutputControl
+{
+    typedef std::deque<OutputTask*> TaskList;
 
-    public:
-        AggregateOutput(OutputControl& c) : next(0), control(c) {};
-        //this may be called on any thread
-        QPID_COMMON_EXTERN void abort();
-        QPID_COMMON_EXTERN void activateOutput();
-        QPID_COMMON_EXTERN void giveReadCredit(int32_t);
+    Monitor lock;
+    TaskList tasks;
+    bool busy;
+    OutputControl& control;
 
-        //all the following will be called on the same thread
-        QPID_COMMON_EXTERN bool doOutput();
-        QPID_COMMON_EXTERN bool hasOutput();
-        QPID_COMMON_EXTERN void addOutputTask(OutputTask* t);
-        QPID_COMMON_EXTERN void removeOutputTask(OutputTask* t);
-        QPID_COMMON_EXTERN void removeAll();
+  public:
+    QPID_COMMON_EXTERN AggregateOutput(OutputControl& c);
 
-        /** Apply f to each OutputTask* in the tasks list */
-        template <class F> void eachOutput(F f) {
-            std::for_each(tasks.begin(), tasks.end(), f);
-        }
-    };
+    // These may be called concurrently with any function.
+    QPID_COMMON_EXTERN void abort();
+    QPID_COMMON_EXTERN void activateOutput();
+    QPID_COMMON_EXTERN void giveReadCredit(int32_t);
+    QPID_COMMON_EXTERN void addOutputTask(OutputTask* t);
 
-}
-}
+    // These functions must not be called concurrently with each other.
+    QPID_COMMON_EXTERN bool doOutput();
+    QPID_COMMON_EXTERN bool hasOutput();
+    QPID_COMMON_EXTERN void removeOutputTask(OutputTask* t);
+    QPID_COMMON_EXTERN void removeAll();
+
+    /** Apply f to each OutputTask* in the tasks list */
+    template <class F> void eachOutput(F f) {
+        Mutex::ScopedLock l(lock);
+        std::for_each(tasks.begin(), tasks.end(), f);
+    }
+};
+
+}} // namespace qpid::sys
 
 
 #endif

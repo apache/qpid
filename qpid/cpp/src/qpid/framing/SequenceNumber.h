@@ -22,6 +22,7 @@
 #define _framing_SequenceNumber_h
 
 #include "amqp_types.h"
+#include <boost/operators.hpp>
 #include <iosfwd>
 #include "qpid/CommonImportExport.h"
 
@@ -33,34 +34,36 @@ class Buffer;
 /**
  * 4-byte sequence number that 'wraps around'.
  */
-class SequenceNumber
+class SequenceNumber : public
+boost::equality_comparable<
+    SequenceNumber, boost::less_than_comparable<
+        SequenceNumber, boost::incrementable<
+        SequenceNumber, boost::decrementable<SequenceNumber> > > >
 {
     int32_t value;
 
- public:
-    QPID_COMMON_EXTERN SequenceNumber();
-    QPID_COMMON_EXTERN SequenceNumber(uint32_t v);
-
-    QPID_COMMON_EXTERN SequenceNumber& operator++();//prefix ++
-    QPID_COMMON_EXTERN const SequenceNumber operator++(int);//postfix ++
-    QPID_COMMON_EXTERN SequenceNumber& operator--();//prefix ++
-    QPID_COMMON_EXTERN bool operator==(const SequenceNumber& other) const;
-    QPID_COMMON_EXTERN bool operator!=(const SequenceNumber& other) const;
-    QPID_COMMON_EXTERN bool operator<(const SequenceNumber& other) const;
-    QPID_COMMON_EXTERN bool operator>(const SequenceNumber& other) const;
-    QPID_COMMON_EXTERN bool operator<=(const SequenceNumber& other) const;
-    QPID_COMMON_EXTERN bool operator>=(const SequenceNumber& other) const;
-    uint32_t getValue() const { return (uint32_t) value; }
-    operator uint32_t() const { return (uint32_t) value; }
-
-    QPID_COMMON_EXTERN friend int32_t operator-(const SequenceNumber& a, const SequenceNumber& b);
+  public:
+    SequenceNumber(uint32_t v=0) : value(v) {}
+  
+    SequenceNumber& operator++() { ++value; return *this; }
+    SequenceNumber& operator--() { --value; return *this; }
+    bool operator==(const SequenceNumber& other) const { return value == other.value; }
+    bool operator<(const SequenceNumber& other) const { return (value - other.value) < 0; }
+    uint32_t getValue() const { return uint32_t(value); }
+    operator uint32_t() const { return uint32_t(value); }
 
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
     uint32_t encodedSize() const;   
 
     template <class S> void serialize(S& s) { s(value); }
+
+  friend inline int32_t operator-(const SequenceNumber& a, const SequenceNumber& b);
 };    
+
+inline int32_t operator-(const SequenceNumber& a, const SequenceNumber& b) {
+    return int32_t(a.value - b.value);
+}
 
 struct Window 
 {
