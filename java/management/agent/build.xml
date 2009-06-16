@@ -20,9 +20,8 @@
  -->
 <project name="QMF Agent" default="build">
 
-    <property name="module.depends" value="common client jms"/>
-    <property name="module.main" value="org.apache.qpid.agent.Agent"/>
+    <property name="module.depends" value="common client"/>
 
-    <import file="../module.xml"/>
+    <import file="../../module.xml"/>
 
 </project>
