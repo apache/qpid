@@ -103,6 +103,7 @@
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/ClusterConfigChangeBody.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
+#include "qpid/framing/ClusterConnectionAbortBody.h"
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/framing/ClusterErrorCheckBody.h"
 #include "qpid/framing/ClusterReadyBody.h"
@@ -245,6 +246,7 @@ void Cluster::erase(const ConnectionId& id) {
 
 // Called by Connection::deliverClose() in deliverFrameQueue thread.
 void Cluster::erase(const ConnectionId& id, Lock&) {
+    QPID_LOG(debug, *this << " erasing connection " << id);
     connections.erase(id);
     decoder.erase(id);
 }
@@ -334,8 +336,16 @@ void Cluster::deliveredEvent(const Event& e) {
     else if(!discarding) {    
         if (e.isControl())
             deliverFrame(EventFrame(e, e.getFrame()));
-        else
-            decoder.decode(e, e.getData());
+        else {
+            try { decoder.decode(e, e.getData()); }
+            catch (const Exception& ex) {
+                // Close a connection that is sending us invalid data.
+                QPID_LOG(error, *this << " aborting connection "
+                         << e.getConnectionId() << ": " << ex.what());
+                framing::AMQFrame abort((ClusterConnectionAbortBody()));
+                deliverFrame(EventFrame(EventHeader(CONTROL, e.getConnectionId()), abort));
+            }
+        }
     }
     else // Discard connection events if discarding is set.
         QPID_LOG(trace, *this << " DROP: " << e);

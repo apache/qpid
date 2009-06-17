@@ -198,6 +198,12 @@ void Connection::deliverClose () {
     cluster.erase(self);
 }
 
+// The connection has been killed for misbehaving
+void Connection::abort() {
+    connection.abort();
+    cluster.erase(self);
+}
+
 // Member of a shadow connection left the cluster.
 void Connection::left() {
     assert(isShadow());

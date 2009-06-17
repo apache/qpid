@@ -173,9 +173,49 @@ ConnectionSettings aclSettings(int port, const std::string& id) {
     return settings;
 }
 
+// An illegal frame body
+struct PoisonPill : public AMQBody {
+    virtual uint8_t type() const { return 0xFF; }
+    virtual void encode(Buffer& ) const {}
+    virtual void decode(Buffer& , uint32_t=0) {}
+    virtual uint32_t encodedSize() const { return 0; }
+
+    virtual void print(std::ostream&) const {};
+    virtual void accept(AMQBodyConstVisitor&) const {};
+
+    virtual AMQMethodBody* getMethod() { return 0; }
+    virtual const AMQMethodBody* getMethod() const { return 0; }
+
+    /** Match if same type and same class/method ID for methods */
+    static bool match(const AMQBody& , const AMQBody& ) { return false; }
+    virtual boost::intrusive_ptr<AMQBody> clone() const { return new PoisonPill; }
+};
+    
+QPID_AUTO_TEST_CASE(testBadClientData) {
+    // Ensure that bad data on a client connection closes the
+    // connection but does not stop the broker.
+    ClusterFixture::Args args;
+    prepareArgs(args, false);
+    args += "--log-enable=critical"; // Supress expected errors
+    ClusterFixture cluster(2, args, -1);
+    Client c0(cluster[0]);
+    Client c1(cluster[1]);
+    boost::shared_ptr<client::ConnectionImpl> ci =
+        client::ConnectionAccess::getImpl(c0.connection);
+    AMQFrame poison(boost::intrusive_ptr<AMQBody>(new PoisonPill));
+    ci->handle(poison);
+    {
+        ScopedSuppressLogging sl;
+        BOOST_CHECK_THROW(c0.session.queueQuery("q"), TransportFailure);
+    }
+    Client c00(cluster[0]);
+    BOOST_CHECK_EQUAL(c00.session.queueQuery("q").getQueue(), "");
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getQueue(), "");
+}
+
 #if 0
-// FIXME aconway 2009-03-10: This test passes but exposes a memory leak in the SASL client code.
-// Enable it when the leak is fixed.
+// FIXME aconway 2009-03-10: This test passes but exposes a memory
+// leak in the SASL client code.  Enable it when the leak is fixed.
 
 QPID_AUTO_TEST_CASE(testAcl) {
     ofstream policyFile("cluster_test.acl");

@@ -69,8 +69,13 @@
 
   <class name="cluster-connection" code="0x81" label="Qpid clustering extensions.">
 
+    <!-- Abort a connection that is sending invalid data. -->
+    <control name="abort" code="0x1"/>
+
+    <!-- Marks the cluster-wide point when a connection is considered closed. -->
     <control name="deliver-close" code="0x2"/>
 
+    <!-- Permission to generate output up to the limit. -->
     <control name="deliver-do-output" code="0x3">
       <field name="limit" type="uint32"/>
     </control>
