@@ -150,7 +150,7 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
-
+    void abort();
     void deliverClose();
 
     OutputInterceptor& getOutput() { return output; }
