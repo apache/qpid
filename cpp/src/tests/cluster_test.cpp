@@ -388,7 +388,8 @@ QPID_AUTO_TEST_CASE(testUnacked) {
     BOOST_CHECK_EQUAL(c1.subs.get("q2", TIMEOUT).getData(), "22");
 }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testUpdateTxState, 1) {
+// FIXME aconway 2009-06-17: test for unimplemented feature, enable when implemented.
+void testUpdateTxState() {
     // Verify that we update transaction state correctly to new members.
     ClusterFixture::Args args;
     prepareArgs(args, durableFlag);

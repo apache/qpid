@@ -147,8 +147,8 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
         BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspend0Timeout, 1)
-{
+// FIXME aconway 2009-06-17: test for unimplemented feature, enable when implemented.
+void testSuspend0Timeout() {
     ClientSessionFixture fix;
     fix.session.suspend();  // session has 0 timeout.
     try {
@@ -168,8 +168,8 @@ QPID_AUTO_TEST_CASE(testUseSuspendedError)
     } catch(const NotAttachedException&) {}
 }
 
-QPID_AUTO_TEST_CASE_EXPECTED_FAILURES(testSuspendResume, 1)
-{
+// FIXME aconway 2009-06-17: test for unimplemented feature, enable when implemented.
+void testSuspendResume() {
     ClientSessionFixture fix;
     fix.session.timeout(60);
     fix.session.suspend();
