@@ -60,6 +60,7 @@ namespace broker {
 
 class LinkRegistry;
 class SecureConnection;
+struct ConnectionTimeoutTask;
 
 class Connection : public sys::ConnectionInputHandler,
                    public ConnectionState,
@@ -153,7 +154,7 @@ class Connection : public sys::ConnectionInputHandler,
     management::ManagementAgent* agent;
     Timer& timer;
     boost::intrusive_ptr<TimerTask> heartbeatTimer;
-    boost::intrusive_ptr<TimerTask> timeoutTimer;
+    boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
     bool shadow;
 

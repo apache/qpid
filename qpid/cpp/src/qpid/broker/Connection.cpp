@@ -48,6 +48,38 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 
+struct ConnectionTimeoutTask : public TimerTask {
+    Timer& timer;
+    Connection& connection;
+    AbsTime expires;
+    
+    ConnectionTimeoutTask(uint16_t hb, Timer& t, Connection& c) :
+        TimerTask(Duration(hb*2*TIME_SEC)),
+        timer(t),
+        connection(c),
+        expires(AbsTime::now(), duration)
+    {}
+
+    void touch()
+    {
+        expires = AbsTime(AbsTime::now(), duration);
+    }
+
+    void fire() {
+        // This is the best we can currently do to avoid a destruction/fire race
+        if (isCancelled()) return;
+        if (expires < AbsTime::now()) {
+            // If we get here then we've not received any traffic in the timeout period
+            // Schedule closing the connection for the io thread
+            QPID_LOG(error, "Connection timed out: closing");
+            connection.abort();
+        } else {
+            reset();
+            timer.add(this);
+        }
+    }
+};
+
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink_, uint64_t objectId) :
     ConnectionState(out_, broker_),
     adapter(*this, isLink_),
@@ -325,26 +357,6 @@ struct ConnectionHeartbeatTask : public TimerTask {
     }
 };
 
-struct ConnectionTimeoutTask : public TimerTask {
-    Timer& timer;
-    Connection& connection;
-    ConnectionTimeoutTask(uint16_t hb, Timer& t, Connection& c) :
-        TimerTask(Duration(hb*2*TIME_SEC)),
-        timer(t),
-        connection(c)
-    {}
-
-    void fire() {
-        // This is the best we can currently do to avoid a destruction/fire race
-        if (!isCancelled()) {
-            // If we get here then we've not received any traffic in the timeout period
-            // Schedule closing the connection for the io thread
-            QPID_LOG(error, "Connection timed out: closing");
-            connection.abort();
-        }
-    }
-};
-
 void Connection::abort()
 {
     out.abort();
@@ -364,7 +376,7 @@ void Connection::setHeartbeatInterval(uint16_t heartbeat)
 void Connection::restartTimeout()
 {
     if (timeoutTimer)
-        timeoutTimer->reset();
+        timeoutTimer->touch();
 }
 
 }}
