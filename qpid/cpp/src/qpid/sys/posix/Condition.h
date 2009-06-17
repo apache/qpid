@@ -56,7 +56,7 @@ Condition::Condition() {
 }
 
 Condition::~Condition() {
-    QPID_POSIX_ASSERT_THROW_IF(pthread_cond_destroy(&condition));
+    QPID_POSIX_ABORT_IF(pthread_cond_destroy(&condition));
 }
 
 void Condition::wait(Mutex& mutex) {

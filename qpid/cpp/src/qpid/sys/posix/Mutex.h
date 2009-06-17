@@ -109,7 +109,7 @@ Mutex::Mutex() {
 }
 
 Mutex::~Mutex(){
-    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_destroy(&mutex));
+    QPID_POSIX_ABORT_IF(pthread_mutex_destroy(&mutex));
 }
 
 void Mutex::lock() {
@@ -130,7 +130,7 @@ RWlock::RWlock() {
 }
 
 RWlock::~RWlock(){
-    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_destroy(&rwlock));
+    QPID_POSIX_ABORT_IF(pthread_rwlock_destroy(&rwlock));
 }
 
 void RWlock::wlock() {
