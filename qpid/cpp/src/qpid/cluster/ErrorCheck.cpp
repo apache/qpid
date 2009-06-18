@@ -22,7 +22,7 @@
 #include "EventFrame.h"
 #include "ClusterMap.h"
 #include "Cluster.h"
-#include "qpid/framing/ClusterErrorCheckBody.h"
+#include "qpid/framing/ClusterConnectionErrorCheckBody.h"
 #include "qpid/framing/ClusterConfigChangeBody.h"
 #include "qpid/log/Statement.h"
 
@@ -33,7 +33,7 @@ namespace cluster {
 
 using namespace std;
 using namespace framing;
-using namespace framing::cluster;
+using namespace framing::cluster_connection;
 
 ErrorCheck::ErrorCheck(Cluster& c)
     : cluster(c), mcast(c.getMulticast()), frameSeq(0), type(ERROR_TYPE_NONE), connection(0)
@@ -55,14 +55,16 @@ void ErrorCheck::error(Connection& c, ErrorType t, uint64_t seq, const MemberSet
     connection = &c;
     QPID_LOG(debug, cluster << (type == ERROR_TYPE_SESSION ? " Session" : " Connection")
              << " error " << frameSeq << " unresolved: " << unresolved);
-    mcast.mcastControl(ClusterErrorCheckBody(ProtocolVersion(), type, frameSeq), cluster.getId());
+    mcast.mcastControl(
+        ClusterConnectionErrorCheckBody(ProtocolVersion(), type, frameSeq), c.getId());
 }
 
 void ErrorCheck::delivered(const EventFrame& e) {
     if (isUnresolved()) {
-        const ClusterErrorCheckBody* errorCheck = 0;
+        const ClusterConnectionErrorCheckBody* errorCheck = 0;
         if (e.frame.getBody())
-            errorCheck = dynamic_cast<const ClusterErrorCheckBody*>(e.frame.getMethod());
+            errorCheck = dynamic_cast<const ClusterConnectionErrorCheckBody*>(
+                e.frame.getMethod());
         if (errorCheck && errorCheck->getFrameSeq() == frameSeq) { // Same error
             if (errorCheck->getType() < type) { // my error is worse than his
                 QPID_LOG(critical, cluster << " Error " << frameSeq << " did not occur on " << e.getMemberId());

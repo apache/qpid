@@ -144,7 +144,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
-    void errorCheck(const MemberId&, uint8_t, uint64_t, Lock&);
     void shutdown(const MemberId&, Lock&);
 
     // Helper functions

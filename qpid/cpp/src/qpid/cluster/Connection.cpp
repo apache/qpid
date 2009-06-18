@@ -38,6 +38,7 @@
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"
+#include "qpid/framing/ClusterConnectionErrorCheckBody.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/current_function.hpp>
@@ -54,7 +55,7 @@ namespace qpid {
 namespace cluster {
 
 using namespace framing;
-using namespace framing::cluster;
+using namespace framing::cluster_connection;
 
 qpid::sys::AtomicValue<uint64_t> Connection::catchUpId(0x5000000000000000LL);
 
@@ -443,6 +444,20 @@ void Connection::sessionError(uint16_t , const std::string& ) {
 void Connection::connectionError(const std::string& ) {
     cluster.flagError(*this, ERROR_TYPE_CONNECTION);
 }
+
+void  Connection::errorCheck(uint8_t type, uint64_t frameSeq) {
+    // If we handle an errorCheck at this point (rather than in the
+    // ErrorCheck class) then we have processed succesfully past the
+    // point of the error so respond with ERROR_TYPE_NONE
+    if (type != ERROR_TYPE_NONE) { // Don't respond to NONE.
+        QPID_LOG(debug, cluster << " error " << frameSeq << " on " << *this
+                 << " did not occur locally.");
+        cluster.getMulticast().mcastControl(
+            ClusterConnectionErrorCheckBody(
+                ProtocolVersion(), ERROR_TYPE_NONE, frameSeq), self);
+    }
+}
+
 
 }} // namespace qpid::cluster
 

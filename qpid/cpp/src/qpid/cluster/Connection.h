@@ -152,6 +152,7 @@ class Connection :
     void giveReadCredit(int credit);
     void abort();
     void deliverClose();
+    void errorCheck(uint8_t type, uint64_t frameSeq);
 
     OutputInterceptor& getOutput() { return output; }
 

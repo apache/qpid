@@ -105,7 +105,6 @@
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/ClusterConnectionAbortBody.h"
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
-#include "qpid/framing/ClusterErrorCheckBody.h"
 #include "qpid/framing/ClusterReadyBody.h"
 #include "qpid/framing/ClusterShutdownBody.h"
 #include "qpid/framing/ClusterUpdateOfferBody.h"
@@ -134,7 +133,7 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace std;
 using namespace qpid::cluster;
-using namespace qpid::framing::cluster;
+using namespace qpid::framing::cluster_connection;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
@@ -152,7 +151,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     void configChange(const std::string& current) { cluster.configChange(member, current, l); }
     void updateOffer(uint64_t updatee, const Uuid& id) { cluster.updateOffer(member, updatee, id, l); }
     void messageExpired(uint64_t id) { cluster.messageExpired(member, id, l); }
-    void errorCheck(uint8_t type, uint64_t seq) { cluster.errorCheck(member, type, seq, l); }
+
     void shutdown() { cluster.shutdown(member, l); }
 
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
@@ -763,18 +762,6 @@ void Cluster::setClusterId(const Uuid& uuid, Lock&) {
 
 void Cluster::messageExpired(const MemberId&, uint64_t id, Lock&) {
     expiryPolicy->deliverExpire(id);
-}
-
-void Cluster::errorCheck(const MemberId& m, uint8_t type, uint64_t frameSeq, Lock&) {
-    // If we receive an errorCheck here, it's because we  have processed past the point
-    // of the error so respond with ERROR_TYPE_NONE
-    assert(map.getFrameSeq() >= frameSeq);
-    if (type != framing::cluster::ERROR_TYPE_NONE) { // Don't respond to NONE.
-        QPID_LOG(debug, "Error " << frameSeq << " on " << m << " did not occur locally");
-        mcast.mcastControl(
-            ClusterErrorCheckBody(ProtocolVersion(),
-                                  framing::cluster::ERROR_TYPE_NONE, frameSeq), self);
-    }
 }
 
 }} // namespace qpid::cluster
