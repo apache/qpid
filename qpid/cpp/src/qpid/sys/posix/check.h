@@ -27,6 +27,7 @@
 #include <cerrno>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define QPID_POSIX_ERROR(ERRNO) qpid::Exception(QPID_MSG(qpid::sys::strError(ERRNO)))
 
