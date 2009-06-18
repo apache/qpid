@@ -72,7 +72,7 @@ int Cpg::getFd() {
 
 Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdown(false) {
     cpg_callbacks_t callbacks;
-    ::memset(&callbacks, sizeof(callbacks), 0);
+    ::memset(&callbacks, 0, sizeof(callbacks));
     callbacks.cpg_deliver_fn = &globalDeliver;
     callbacks.cpg_confchg_fn = &globalConfigChange;
 
