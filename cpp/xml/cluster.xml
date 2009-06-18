@@ -48,19 +48,6 @@
       <field name="id" type="uint64"/>
     </control>
     
-    <domain name="error-type" type="uint8" label="Types of error">
-      <enum>
-	<choice name="none" value="0"/>
-	<choice name="session" value="1"/>
-	<choice name="connection" value="2"/>
-      </enum>
-    </domain>
-	
-    <control name="error-check" code="0x13">
-      <field name="type" type="error-type"/>
-      <field name="frame-seq" type="uint64"/>
-    </control>
-    
     <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
 
   </class>
@@ -80,6 +67,20 @@
       <field name="limit" type="uint32"/>
     </control>
 
+    <domain name="error-type" type="uint8" label="Types of error">
+      <enum>
+	<choice name="none" value="0"/>
+	<choice name="session" value="1"/>
+	<choice name="connection" value="2"/>
+      </enum>
+    </domain>
+	
+    <!-- Check for error consistency across the cluster -->
+    <control name="error-check" code="0x4">
+      <field name="type" type="error-type"/>
+      <field name="frame-seq" type="uint64"/>
+    </control>
+    
     <!-- Update controls. Sent to a new broker in joining mode.
 	 A connection is updateed as followed:
 	 - open as a normal connection.

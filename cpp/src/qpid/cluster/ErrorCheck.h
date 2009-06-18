@@ -48,7 +48,7 @@ class ErrorCheck
 {
   public:
     typedef std::set<MemberId> MemberSet;
-    typedef framing::cluster::ErrorType ErrorType;
+    typedef framing::cluster_connection::ErrorType ErrorType;
     
     ErrorCheck(Cluster&);
 
