@@ -26,7 +26,7 @@ public class FailoverBaseCase extends QpidTestCase
 {
 
     public static int FAILING_VM_PORT = 2;
-    public static int FAILING_PORT = 5673;
+    public static int FAILING_PORT = DEFAULT_PORT + 1;
 
     protected int failingPort;
     

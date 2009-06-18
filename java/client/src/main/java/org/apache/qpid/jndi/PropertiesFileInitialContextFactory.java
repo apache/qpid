@@ -48,6 +48,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +85,20 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                 Properties p = new Properties();
 
                 p.load(new BufferedInputStream(new FileInputStream(file)));
+                Strings.Resolver resolver = new Strings.ChainedResolver
+                    (Strings.SYSTEM_RESOLVER, new Strings.PropertiesResolver(p));
 
-                environment.putAll(p);
-                System.getProperties().putAll(p);
+                for (Map.Entry me : p.entrySet())
+                {
+                    String key = (String) me.getKey();
+                    String value = (String) me.getValue();
+                    String expanded = Strings.expand(value, resolver);
+                    environment.put(key, expanded);
+                    if (System.getProperty(key) == null)
+                    {
+                        System.setProperty(key, expanded);
+                    }
+                }
                 _logger.info("Loaded Context Properties:" + environment.toString());
             }
             else

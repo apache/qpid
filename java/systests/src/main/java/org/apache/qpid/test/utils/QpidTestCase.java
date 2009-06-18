@@ -148,8 +148,8 @@ public class QpidTestCase extends TestCase
 
     private static final String QPID_HOME = "QPID_HOME";
 
-    protected int DEFAULT_VM_PORT = 1;
-    protected int DEFAULT_PORT = 5672;
+    protected static int DEFAULT_VM_PORT = 1;
+    protected static int DEFAULT_PORT = Integer.getInteger("test.port", 5672);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
