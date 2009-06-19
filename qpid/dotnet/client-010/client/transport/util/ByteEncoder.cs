@@ -80,6 +80,15 @@ namespace org.apache.qpid.transport.util
             }
             return value;
         }
+        
+        public static double GetBigEndian(double value)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                return swapByteOrder(value);
+            }
+            return value;
+        }        
 
         /// <summary>
         /// Returns the value encoded in Little Endian (x86, NDR) format.
@@ -136,6 +145,15 @@ namespace org.apache.qpid.transport.util
             }
             return swapByteOrder(value);
         }
+        
+        public static double GetLittleEndian(double value)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                return value;
+            }
+            return swapByteOrder(value);
+        }        
 
         /// <summary>
         /// Swaps the Byte order of an <see cref="Int32"/>.
@@ -187,6 +205,13 @@ namespace org.apache.qpid.transport.util
             Array.Reverse(buffer, 0, buffer.Length);
             return BitConverter.ToInt64(buffer, 0);
         }
+        
+        private static double swapByteOrder(double value)
+        {
+            Byte[] buffer = BitConverter.GetBytes(value);
+            Array.Reverse(buffer, 0, buffer.Length);
+            return BitConverter.ToDouble(buffer,0) ;
+        }        
         #endregion
     }
 

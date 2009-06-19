@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{42E3CD17-EFDC-4533-95AA-4AF67FF534B5}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>console</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Reference Include="qpid.client, Version=0.5.0.0, Culture=neutral, PublicKeyToken=null" />
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Agent.cs" />
+    <Compile Include="Broker.cs" />
+    <Compile Include="BrokerURL.cs" />
+    <Compile Include="Session.cs" />
+    <Compile Include="Console.cs" />
+    <Compile Include="SequenceManager.cs" />
+    <Compile Include="ClassKey.cs" />
+    <Compile Include="SchemaClass.cs" />
+    <Compile Include="SchemaMethod.cs" />
+    <Compile Include="SchemaArgument.cs" />
+    <Compile Include="SchemaProperty.cs" />
+    <Compile Include="SchemaStatistic.cs" />
+    <Compile Include="SchemaVariable.cs" />
+    <Compile Include="Util.cs" />
+    <Compile Include="QMFObject.cs" />
+    <Compile Include="ObjectID.cs" />
+    <Compile Include="MethodResult.cs" />
+    <Compile Include="QMFEvent.cs" />
+    <Compile Include="AbstractConsole.cs" />
+    <Compile Include="XMLUtil.cs" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <MonoDevelop>
+      <Properties InternalTargetFrameworkVersion="3.5" />
+    </MonoDevelop>
+  </ProjectExtensions>
+  <ItemGroup>
+    <None Include="console.userprefs">
+      <Visible>False</Visible>
+    </None>
+    <None Include="console.usertasks">
+      <Visible>False</Visible>
+    </None>
+    <None Include="default.build">
+      <Visible>False</Visible>
+    </None>
+    <None Include="bin\Debug\qpid.client.dll.mdb">
+      <Visible>False</Visible>
+    </None>
+  </ItemGroup>
+</Project>

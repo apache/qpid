@@ -93,6 +93,37 @@ namespace org.apache.qpid.transport.codec
             _writer.Write(ByteEncoder.GetBigEndian(l));
         }
 
+        public override void writeInt8(short b)
+        {
+            Debug.Assert(b < 0x100);
+            _writer.Write((byte) b);
+        }
+
+        public override void writeInt16(int s)
+        {
+            Debug.Assert(s < 0x10000);
+            _writer.Write(ByteEncoder.GetBigEndian((Int16) s));
+        }
+
+        public override void writeInt32(long i)
+        {
+            Debug.Assert(i < 0x100000000L);
+            _writer.Write(ByteEncoder.GetBigEndian((Int32) i));
+        }
+
+        public override void writeInt64(long l)
+        {
+            _writer.Write(ByteEncoder.GetBigEndian(l));
+        }        
+        
+        public override void writeFloat(float f) {
+        	_writer.Write(f) ;
+        }
+        
+        public override void writeDouble(double d) {
+        	_writer.Write(ByteEncoder.GetBigEndian(d)) ;
+        }
+        
         protected override int beginSize8()
         {
             int pos = (int) _out.Position;

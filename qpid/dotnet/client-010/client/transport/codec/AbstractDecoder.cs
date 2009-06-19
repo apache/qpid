@@ -86,6 +86,13 @@ namespace org.apache.qpid.transport.codec
             return l;
         }
 
+        public abstract short readInt8();
+        public abstract int readInt16();       
+        public abstract long readInt32() ;
+        public abstract long readInt64();     
+        public abstract float readFloat() ;  
+        public abstract double readDouble() ;          
+
         public long readDatetime()
         {
             return readUint64();

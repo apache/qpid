@@ -40,6 +40,7 @@
     <!-- Fileset with build files for each 'core' assembly. -->
     <fileset id="src.builds">
         <include name="client/default.build" />
+        <include name="management/console/default.build" />        
         <include name="demo/default.build" />       
     </fileset>
 
