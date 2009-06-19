@@ -149,7 +149,7 @@ public class Agent implements MessageListener
         {
             session = connection.createSession(sessionTransacted,
                     acknowledgeMode);
-            reply = session.createQueue("direct://amq.direct//" + label);
+            reply = session.createQueue(String.format("direct://amq.direct//%s-%s?exclusive='True'&autodelete='True'",label,systemId));
             cons = session.createConsumer(reply);
             cons.setMessageListener(this);
             prod = session.createProducer(null);
@@ -291,8 +291,8 @@ public class Agent implements MessageListener
                     .createConsumer(session
                             .createQueue(String
                                     .format(
-                                            "management://qpid.management//%s?routingkey='agent.%d.%d'",
-                                            label, bbank, abank)));
+                                            "management://qpid.management//%s-%s?routingkey='agent.%d.%d'&exclusive='True'&autodelete='True'",
+                                            label, systemId, bbank, abank)));
             mc.setMessageListener(this);
         } catch (JMSException e)
         {
