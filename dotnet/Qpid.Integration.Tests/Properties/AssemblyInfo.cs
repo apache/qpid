@@ -50,4 +50,4 @@ using log4net.Config;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("2.1.0.0")]
+[assembly: AssemblyVersion("0.5.0.0")]

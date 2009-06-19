@@ -38,7 +38,14 @@ namespace org.apache.qpid.transport.codec
 		int readUint16();
 		long readUint32();
 		long readUint64();
-		
+
+        short readInt8();
+        int readInt16();
+        long readInt32();
+        long readInt64();   
+        
+        double readDouble() ;	
+		float readFloat() ;		
 		long readDatetime();
 	    
         UUID readUuid();

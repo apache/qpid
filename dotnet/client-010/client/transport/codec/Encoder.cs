@@ -37,6 +37,14 @@ namespace org.apache.qpid.transport.codec
 		void  writeUint16(int s);
 		void  writeUint32(long i);
 		void  writeUint64(long l);
+
+		void  writeInt8(short b);
+		void  writeInt16(int s);
+		void  writeInt32(long i);
+		void  writeInt64(long l);      
+		
+		void writeFloat(float f) ;
+		void writeDouble(double d) ;  
 		
 		void  writeDatetime(long l);
 		void  writeUuid(UUID uuid);

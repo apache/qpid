@@ -115,6 +115,12 @@ namespace org.apache.qpid.transport.codec
             }
         }
 
+        public abstract void writeInt8(short b) ;
+        public abstract void writeInt16(int s) ;
+        public abstract void writeInt32(long i) ;
+        public abstract void writeInt64(long l) ;
+        public abstract void writeFloat(float f) ;
+        public abstract void writeDouble(double d) ;        
 
         public void writeDatetime(long l)
         {

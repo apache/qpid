@@ -78,5 +78,33 @@ namespace org.apache.qpid.transport.codec
 		{
 		    return (long) ByteEncoder.GetBigEndian(reader.ReadInt64());            
 		}
+
+        public override short readInt8()
+		{
+			return (short) (0xFF & reader.ReadByte());
+		}
+
+        public override int readInt16()
+		{
+		    return ByteEncoder.GetBigEndian((Int16) reader.ReadInt16());
+		}
+
+        public override long readInt32()
+		{
+            return ByteEncoder.GetBigEndian((Int32) reader.ReadInt32());
+		}
+
+        public override long readInt64()
+		{
+		    return (long) ByteEncoder.GetBigEndian(reader.ReadInt64());            
+		}        
+		
+		public override double readDouble() {
+			return (double) ByteEncoder.GetBigEndian(reader.ReadDouble()) ;
+		}
+		
+		public override float readFloat() {
+			return (float) reader.ReadSingle() ;
+		}		
 	}
 }
