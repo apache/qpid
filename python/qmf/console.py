@@ -347,6 +347,12 @@ class Object(object):
     raise Exception("Invalid Method (software defect) [%s]" % name)
 
   def _encodeUnmanaged(self, codec):
+
+    codec.write_uint8(20) 
+    codec.write_str8(self._schema.getKey().getPackageName())
+    codec.write_str8(self._schema.getKey().getClassName())
+    codec.write_bin128(self._schema.getKey().getHash())
+
     # emit presence masks for optional properties
     mask = 0
     bit  = 0
@@ -362,12 +368,7 @@ class Object(object):
           codec.write_uint8(mask)
           mask = 0
     if bit != 0:
-      codec.write_uint8(mask)
-
-    codec.write_uint8(20) 
-    codec.write_str8(self._schema.getKey().getPackageName())
-    codec.write_str8(self._schema.getKey().getClassName())
-    codec.write_bin128(self._schema.getKey().getHash())    
+      codec.write_uint8(mask)    
     
     # encode properties
     for prop, value in self._properties:
