@@ -87,6 +87,7 @@ broker-plugins.libs=${common.libs} ${felix.libs}
 management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
 
 management-agent.libs=${client.libs} ${commons-logging} ${geronimo-jms}
+management-console.libs=${client.libs} ${commons-logging} ${geronimo-jms}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
 test.libs=${slf4j-log4j} ${junit-toolkit.libs}
