@@ -25,7 +25,7 @@
 
 namespace qmf {
 
-    class QueryImpl;
+    struct QueryImpl;
     class Query {
     public:
         Query();

@@ -26,7 +26,7 @@
 
 namespace qmf {
 
-    class ObjectImpl;
+    struct ObjectImpl;
     class Object {
     public:
         Object(const SchemaObjectClass* type);

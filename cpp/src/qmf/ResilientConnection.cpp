@@ -27,6 +27,7 @@
 #include <qpid/sys/Runnable.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/sys/Condition.h>
+#include <qpid/sys/Time.h>
 #include <qpid/log/Statement.h>
 #include <qpid/RefCounted.h>
 #include <boost/bind.hpp>
@@ -144,7 +145,7 @@ void RCSession::run()
 {
     try {
         subscriptions->run();
-    } catch (exception& e) {
+    } catch (exception& /*e*/) {
         connImpl.sessionClosed(this);
     }
 }
@@ -350,7 +351,7 @@ void ResilientConnectionImpl::run()
                 delay *= delayFactor;
         }
 
-        ::sleep(delay);
+        ::qpid::sys::sleep(delay);
     }
 }
 
@@ -373,7 +374,7 @@ void ResilientConnectionImpl::sessionClosed(RCSession*)
 
 void ResilientConnectionImpl::EnqueueEvent(ResilientConnectionEvent::EventKind kind,
                                            void* sessionContext,
-                                           const MessageImpl& message,
+                                           const qmf::MessageImpl& message,
                                            const string& errorText)
 {
     Mutex::ScopedLock _lock(lock);

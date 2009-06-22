@@ -52,7 +52,7 @@ class SessionManager
   public:
     typedef std::vector<std::string> NameVector;
     typedef std::vector<ClassKey> KeyVector;
-    ~SessionManager();
+    QPID_CONSOLE_EXTERN ~SessionManager();
 
     struct Settings {
         bool rcvObjects;
