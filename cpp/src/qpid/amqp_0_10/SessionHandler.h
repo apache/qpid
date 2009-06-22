@@ -107,6 +107,7 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     std::string name;
 
   private:
+    void checkAttached();
     void sendCommandPoint(const SessionPoint&);
 };
 }} // namespace qpid::amqp_0_10
