@@ -472,7 +472,7 @@ public class ClassBinding implements TypeBinding
                 }
                 if ((mask & bit) == 0)
                 {
-                    log.trace("Going in exlude " + prop.getName());
+                    log.trace("Going in exclude " + prop.getName());
                     excludes.add(prop.getName());
                 }
                 bit *= 2;
