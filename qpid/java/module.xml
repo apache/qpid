@@ -50,6 +50,7 @@
   <property name="module.etc"          location="etc"/>
     
   <property name="module.namever"              value="${project.name}-${module.name}-${project.version}"/>
+  <property name="module.namever.osgi"         value="${project.name}-${module.name}_${project.version}.osgi"/>
   <property name="module.release.base"	       value="${basedir}/release"/>
   <property name="module.release"              value="${module.release.base}/${module.namever}"/>
   <property name="module.release.lib"	       value="${module.release}/lib"/>
@@ -423,16 +424,18 @@
     </zip>
   </target>
 
-  <target name="bundle" depends="jar">
+  <target name="bundle" description="Build module osgi artifact. Override and depend on bundle-tasks to use"/>
+
+  <target name="bundle-tasks" depends="jar">
    <taskdef resource="aQute/bnd/ant/taskdef.properties" classpath="${project.root}/lib/bnd-0.0.249.jar"/>
-   <echo message="Bundling ${build}/lib/${module.namever}.jar with ${module.src}/${module}.bnd"/>
+   <echo message="Bundling ${build}/lib/${module.namever}.jar with ${module.src}/${module.name}.bnd"/>
    <bnd 
       classpath="${build}/lib/${module.namever}.jar"
       eclipse="false" 
       failok="false" 
       exceptions="true"
-      output="${build}/lib/${module.namever}-osgi.jar"
-      files="${module.src}/${module}.bnd"/>
+      output="${build}/lib/${module.namever.osgi}.jar"
+      files="${module.src}/${module.name}.bnd"/>
   </target>    
 
     <target name="tar-release" depends="zip-release" description="build release archive">

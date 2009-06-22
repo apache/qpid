@@ -45,4 +45,5 @@
 
   <target name="release-bin" depends="release-bin-tasks"/>    
 
+  <target name="bundle" depends="bundle-tasks"/>
 </project>
