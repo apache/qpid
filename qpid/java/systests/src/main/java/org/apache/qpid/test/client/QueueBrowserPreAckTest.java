@@ -28,8 +28,5 @@ public class QueueBrowserPreAckTest extends QueueBrowserAutoAckTest
     protected void setupSession() throws Exception
     {
         _clientSession = _clientConnection.createSession(false, AMQSession.PRE_ACKNOWLEDGE);
-
-        //Ensure _queue is created
-        _clientSession.createConsumer(_queue).close();
     }
 }

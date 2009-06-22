@@ -62,6 +62,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         setupSession();
 
         _queue = _clientSession.createQueue(getName());
+        _clientSession.createConsumer(_queue).close();
         
         //Ensure there are no messages on the queue to start with.
         checkQueueDepth(0);

@@ -27,8 +27,5 @@ public class QueueBrowserDupsOkTest extends QueueBrowserAutoAckTest
     protected void setupSession() throws Exception
     {
           _clientSession = _clientConnection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
-
-        //Ensure _queue is created
-        _clientSession.createConsumer(_queue).close();
     }
 }

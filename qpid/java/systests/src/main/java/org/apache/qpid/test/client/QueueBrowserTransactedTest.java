@@ -27,8 +27,5 @@ public class QueueBrowserTransactedTest extends QueueBrowserAutoAckTest
     protected void setupSession() throws Exception
     {
         _clientSession = _clientConnection.createSession(true, Session.SESSION_TRANSACTED);
-
-        //Ensure _queue is created
-        _clientSession.createConsumer(_queue).close();
     }
 }
