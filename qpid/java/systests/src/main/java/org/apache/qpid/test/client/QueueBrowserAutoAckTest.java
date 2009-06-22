@@ -53,7 +53,6 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     {
         super.setUp();
 
-        _queue = (Queue) getInitialContext().lookup("queue");
 
         //Create Client
         _clientConnection = getConnection();
@@ -62,6 +61,8 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         setupSession();
 
+        _queue = _clientSession.createQueue(getName());
+        
         //Ensure there are no messages on the queue to start with.
         checkQueueDepth(0);
     }
