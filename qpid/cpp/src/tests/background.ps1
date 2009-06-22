@@ -1,36 +1,40 @@
-# From http://ps1.soapyfrog.com/2007/01/22/running-pipelines-in-the-background/
-# Copyright © 2006-2009 Adrian Milliner
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run a PowerShell scriptblock in a background process.
 param(
-    [scriptblock] $script,  # scriptblock to run
-    [switch] $inconsole      # don't create a new window
+    [scriptblock] $script  # scriptblock to run
 )
 
 # break out of the script on any errors
 trap { break }
 
-# encode the script to pass to the child process...
-$encodedString = [convert]::ToBase64String(
+# In order to pass a scriptblock to another powershell instance, it must
+# be encoded to pass through the command line.
+$encodedScript = [convert]::ToBase64String(
     [Text.Encoding]::Unicode.GetBytes([string] $script))
 
-# create a new process
 $p = new-object System.Diagnostics.Process
-
-# create a startinfo object for the process
 $si = new-object System.Diagnostics.ProcessStartInfo
 $si.WorkingDirectory = $pwd
-
-if ($inconsole)
-{ 
-    $si.UseShellExecute = $false
-}
-Else
-{
-    $si.UseShellExecute = $true
-}
-
-# set up the command and arguments to run
+$si.UseShellExecute = $true
 $si.FileName = (get-command powershell.exe).Definition
-$si.Arguments = "-encodedCommand $encodedString"
+$si.Arguments = "-encodedCommand $encodedScript"
 
-# and start the powershell process
 [diagnostics.process]::Start($si)
