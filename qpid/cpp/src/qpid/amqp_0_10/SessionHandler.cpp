@@ -34,7 +34,12 @@ namespace amqp_0_10 {
 using namespace framing;
 using namespace std;
 
-#define CHECK_ATTACHED(MSG) if (!getState()) throw NotAttachedException(QPID_MSG(MSG << ": channel " << channel.get() << " is not attached"))
+void SessionHandler::checkAttached() {
+    if (!getState()) {
+        ignoring = true;
+        throw NotAttachedException(QPID_MSG("Channel " << channel.get() << " is not attached"));
+    }
+}
 
 SessionHandler::SessionHandler(FrameHandler* out, ChannelId ch)
     : channel(ch, out), peer(channel), ignoring(false), sendReady(), receiveReady() {}
@@ -76,7 +81,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
         else if (isSessionControl(m))
             invoke(*m);
         else {
-            CHECK_ATTACHED("receiving " << f);
+            checkAttached();
             if (!receiveReady)
                 throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to receive data"));
             if (!getState()->receiverRecord(f))
@@ -122,7 +127,7 @@ bool isCommand(const AMQFrame& f) {
 } // namespace
 
 void SessionHandler::handleOut(AMQFrame& f) {
-    CHECK_ATTACHED("sending " << f);
+    checkAttached();
     if (!sendReady)
         throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to send data"));
     getState()->senderRecord(f); 
@@ -153,7 +158,7 @@ void SessionHandler::attach(const std::string& name_, bool force) {
 }
 
 #define CHECK_NAME(NAME, MSG) do {                                       \
-    CHECK_ATTACHED(MSG);                                                \
+    checkAttached();                                                \
     if (NAME != getState()->getId().getName())                          \
         throw InvalidArgumentException(                                 \
             QPID_MSG(MSG << ": incorrect session name: " << NAME        \
@@ -186,18 +191,18 @@ void SessionHandler::handleDetach() {
 }
 
 void SessionHandler::requestTimeout(uint32_t t) {
-    CHECK_ATTACHED("session.request-timeout");
+    checkAttached();
     getState()->setTimeout(t);
     peer.timeout(t);
 }
 
 void SessionHandler::timeout(uint32_t t) {
-    CHECK_ATTACHED("session.request-timeout");
+    checkAttached();
     getState()->setTimeout(t);
 }
 
 void SessionHandler::commandPoint(const SequenceNumber& id, uint64_t offset) {
-    CHECK_ATTACHED("session.command-point");
+    checkAttached();
     getState()->receiverSetCommandPoint(SessionPoint(id, offset));
     if (!receiveReady) {
         receiveReady = true;
@@ -206,7 +211,7 @@ void SessionHandler::commandPoint(const SequenceNumber& id, uint64_t offset) {
 }
 
 void SessionHandler::expected(const SequenceSet& commands, const Array& /*fragments*/) {
-    CHECK_ATTACHED("session.expected");
+    checkAttached();
     if (getState()->hasState()) { // Replay
         if (commands.empty()) throw IllegalStateException(
             QPID_MSG(getState()->getId() << ": has state but client is attaching as new session."));        
@@ -222,14 +227,14 @@ void SessionHandler::expected(const SequenceSet& commands, const Array& /*fragme
 }
 
 void SessionHandler::confirmed(const SequenceSet& commands, const Array& /*fragments*/) {
-    CHECK_ATTACHED("session.confirmed");
+    checkAttached();
     // Ignore non-contiguous confirmations.
     if (!commands.empty() && commands.front() >= getState()->senderGetReplayPoint()) 
         getState()->senderConfirmed(commands.rangesBegin()->last());
 }
 
 void SessionHandler::completed(const SequenceSet& commands, bool timelyReply) {
-    CHECK_ATTACHED("session.completed");
+    checkAttached();
     getState()->senderCompleted(commands);
     if (getState()->senderNeedKnownCompleted() || timelyReply) {
         peer.knownCompleted(commands);
@@ -238,12 +243,12 @@ void SessionHandler::completed(const SequenceSet& commands, bool timelyReply) {
 }
 
 void SessionHandler::knownCompleted(const SequenceSet& commands) {
-    CHECK_ATTACHED("session.known-completed");
+    checkAttached();
     getState()->receiverKnownCompleted(commands);
 }
 
 void SessionHandler::flush(bool expected, bool confirmed, bool completed) {
-    CHECK_ATTACHED("session.flush");
+    checkAttached();
     if (expected)  {
         SequenceSet expectSet;
         if (getState()->hasState())
@@ -267,13 +272,13 @@ void SessionHandler::gap(const SequenceSet& /*commands*/) {
 
 void SessionHandler::sendDetach()
 {
-    CHECK_ATTACHED("session.sendDetach");
+    checkAttached();
     ignoring = true;
     peer.detach(getState()->getId().getName());
 }
 
 void SessionHandler::sendCompletion() {
-    CHECK_ATTACHED("session.send-completion");
+    checkAttached();
     const SequenceSet& c = getState()->receiverGetUnknownComplete();
     peer.completed(c, getState()->receiverNeedKnownCompleted());
 }
@@ -302,7 +307,7 @@ void SessionHandler::markReadyToSend() {
 }
 
 void SessionHandler::sendTimeout(uint32_t t) {
-    CHECK_ATTACHED("session.send-timeout");
+    checkAttached();
     peer.requestTimeout(t);
 }
 
