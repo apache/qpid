@@ -26,7 +26,7 @@
 namespace qmf {
 
     class Object;
-    class ValueImpl;
+    struct ValueImpl;
 
     class Value {
     public:

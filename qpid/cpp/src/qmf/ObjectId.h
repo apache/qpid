@@ -20,13 +20,13 @@
  * under the License.
  */
 
-#include <stdint.h>
+#include <qpid/sys/IntegerTypes.h>
 
 namespace qmf {
 
     // TODO: Add to/from string and << operator
 
-    class ObjectIdImpl;
+    struct ObjectIdImpl;
     class ObjectId {
     public:
         ObjectId();

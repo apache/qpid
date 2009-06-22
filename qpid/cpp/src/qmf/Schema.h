@@ -21,7 +21,7 @@
  */
 
 #include <qmf/Typecode.h>
-#include <stdint.h>
+#include <qpid/sys/IntegerTypes.h>
 
 namespace qmf {
 
@@ -29,12 +29,12 @@ namespace qmf {
     enum Direction { DIR_IN = 1, DIR_OUT = 2, DIR_IN_OUT = 3 };
     enum ClassKind { CLASS_OBJECT = 1, CLASS_EVENT = 2 };
 
-    class SchemaArgumentImpl;
-    class SchemaMethodImpl;
-    class SchemaPropertyImpl;
-    class SchemaStatisticImpl;
-    class SchemaObjectClassImpl;
-    class SchemaEventClassImpl;
+    struct SchemaArgumentImpl;
+    struct SchemaMethodImpl;
+    struct SchemaPropertyImpl;
+    struct SchemaStatisticImpl;
+    struct SchemaObjectClassImpl;
+    struct SchemaEventClassImpl;
 
     /**
      */
