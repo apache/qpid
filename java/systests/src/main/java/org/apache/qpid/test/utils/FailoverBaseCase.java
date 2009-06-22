@@ -22,6 +22,8 @@ package org.apache.qpid.test.utils;
 
 import javax.jms.Connection;
 
+import org.apache.qpid.util.FileUtils;
+
 public class FailoverBaseCase extends QpidTestCase
 {
 
@@ -81,6 +83,7 @@ public class FailoverBaseCase extends QpidTestCase
             port = FAILING_PORT;
         }
         stopBroker(port);
+        FileUtils.deleteDirectory(System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
         super.tearDown();
     }
 
