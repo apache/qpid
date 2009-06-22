@@ -387,7 +387,7 @@ public class QpidTestCase extends TestCase
 
             //Add the test name to the broker run.
             env.put("QPID_PNAME", "-DPNAME=\"" + _testName + "\"");
-
+            env.put("QPID_WORK", System.getProperty("QPID_WORK"));
             process = pb.start();
 
             Piper p = new Piper(process.getInputStream(),
@@ -467,6 +467,34 @@ public class QpidTestCase extends TestCase
         {
             TransportConnection.killVMBroker(port);
             ApplicationRegistry.remove(port);
+        }
+    }
+    
+    public void nukeBroker() throws Exception
+    {
+        nukeBroker(0);
+    }
+    
+    public void nukeBroker(int port) throws Exception
+    {
+        Process proc = _brokers.get(getPort(port));
+        if (proc == null)
+        {
+            stopBroker(port);
+        }
+        else
+        {
+            String command = "pkill -KILL -f "+getBrokerCommand(getPort(port));
+            try 
+            {
+                Runtime.getRuntime().exec(command);
+            }
+            catch (Exception e)
+            {
+                // Can't do that, try the old fashioned way
+                _logger.warn("Could not run "+command+", killing with stopBroker()");
+                stopBroker(port);
+            }
         }
     }
 

@@ -54,6 +54,7 @@ public class FailoverBaseCase extends QpidTestCase
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
+        System.setProperty("QPID_WORK", System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
         startBroker(getFailingPort());
     }
 
