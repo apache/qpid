@@ -27,6 +27,7 @@ $env:BOOST_TEST_SHOW_PROGRESS = "yes"
 # and PATH to look in the corresponding configuration off the src directory,
 # one level up.
 $prog = $args[0]
+$is_script = $prog -match ".ps1$"
 if (Test-Path $prog) {
    $env:QPID_LIB_DIR = ".."
    $env:PATH += ";.."
@@ -51,4 +52,21 @@ if (Test-Path qpidd.port) {
    set-item -path env:QPID_PORT -value (get-content -path qpidd.port -totalcount 1)
 }
 
-exit Invoke-Item "$args" | Out-Default
+#$p = new-object System.Diagnostics.Process
+$si = new-object System.Diagnostics.ProcessStartInfo
+$si.WorkingDirectory = $pwd
+$si.UseShellExecute = $true
+
+if ($is_script) {
+   $si.FileName = (get-command powershell.exe).Definition
+   $si.Arguments = $args
+}
+else {
+   $si.FileName = $args[0]
+   if ($args.length > 1) {
+      $si.Arguments = $args[1..$args.length-1]
+   }
+}
+$p = [diagnostics.process]::Start($si)
+$p.WaitForExit()
+exit $?

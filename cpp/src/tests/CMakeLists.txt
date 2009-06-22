@@ -17,6 +17,9 @@
 # under the License.
 #
 
+# Enable dashboard reporting.
+include (CTest)
+
 # Make sure that everything get built before the tests
 # Need to create a var with all the necessary top level targets
 
@@ -273,14 +276,14 @@ add_test (quick_perftest ${test_wrap} ${perftest_LOCATION} --summary --count 100
 add_test (quick_topictest ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
 add_test (quick_txtest ${test_wrap} ${txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
 if (PYTHON_EXECUTABLE)
-  add_test (run_header_test ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
+  add_test (run_header_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
   add_test (python_tests ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/python_tests${test_script_suffix})
 endif (PYTHON_EXECUTABLE)
 add_test (stop_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
 if (PYTHON_EXECUTABLE)
-  add_test (federation_tests ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
+  add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
 if (BUILD_ACL)
-  add_test (acl_tests ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
+  add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
 endif (BUILD_ACL)
 endif (PYTHON_EXECUTABLE)
 
