@@ -57,21 +57,11 @@ public class AcknowledgeTest extends QpidTestCase
     }
 
 	private void init(boolean transacted, int mode) throws JMSException {
-		_producerSession = _con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+		_producerSession = _con.createSession(true, Session.AUTO_ACKNOWLEDGE);
         _consumerSession = _con.createSession(transacted, mode);
         _producer = _producerSession.createProducer(_queue);
         _consumerA = _consumerSession.createConsumer(_queue);
 	}
-
-
-
-    private void sendMessages(int totalMessages) throws JMSException
-    {
-        for (int i = 0; i < totalMessages; i++)
-        {
-            _producer.send(_producerSession.createTextMessage("message " + i));
-        }
-    }
 
     /**
      * Produces and consumes messages an either ack or commit the receipt of those messages
@@ -83,10 +73,11 @@ public class AcknowledgeTest extends QpidTestCase
     private void testMessageAck(boolean transacted, int mode) throws Exception
     {
     	init(transacted, mode);
-        sendMessages(NUM_MESSAGES/2);
-        Thread.sleep(1500);
+        sendMessage(_producerSession, _queue, NUM_MESSAGES/2);
+        _producerSession.commit();
         MessageConsumer consumerB = _consumerSession.createConsumer(_queue);
-        sendMessages(NUM_MESSAGES/2);
+        sendMessage(_producerSession, _queue, NUM_MESSAGES/2);
+        _producerSession.commit();
         int count = 0;
         Message msg = consumerB.receive(1500);
         while (msg != null) 
@@ -146,7 +137,8 @@ public class AcknowledgeTest extends QpidTestCase
     public void testIndividualAck() throws Exception
     {
         init(false, Session.CLIENT_ACKNOWLEDGE);
-        sendMessages(3);
+        sendMessage(_producerSession, _queue, 3);
+        _producerSession.commit();
         Message msg = null;
         for (int i = 0; i < 2; i++)
         {

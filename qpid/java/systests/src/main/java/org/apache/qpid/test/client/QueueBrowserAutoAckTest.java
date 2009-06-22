@@ -116,7 +116,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     {
         producerConnection.start();
 
-        Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session producerSession = producerConnection.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
         //Ensure _queue is created
         producerSession.createConsumer(_queue).close();
@@ -129,6 +129,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             textMsg.setIntProperty(MESSAGE_ID_PROPERTY, messsageID);
             producer.send(textMsg);
         }
+        producerSession.commit();
 
         producerConnection.close();
     }
