@@ -95,7 +95,7 @@
             <name>localhost</name>
             <localhost>
                 <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.DerbyMessageStore</class>
                 </store>
 
                 <housekeeping>
@@ -109,7 +109,7 @@
             <name>development</name>
             <development>
                 <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.DerbyMessageStore</class>
                 </store>
             </development>
         </virtualhost>
@@ -118,7 +118,7 @@
             <name>test</name>
             <test>
                 <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.DerbyMessageStore</class>
                 </store>
             </test>
         </virtualhost>
