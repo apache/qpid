@@ -22,4 +22,5 @@
 
     <import file="../../module.xml"/>
 
+    <target name="bundle" depends="bundle-tasks"/>
 </project>
