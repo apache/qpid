@@ -427,7 +427,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     {
 
         checkNotClosed();
-        AMQTopic origTopic = checkValidTopic(topic);
+        AMQTopic origTopic = checkValidTopic(topic, true);
         AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
         TopicSubscriberAdaptor<BasicMessageConsumer_0_8> subscriber = _subscriptions.get(name);
         if (subscriber != null)

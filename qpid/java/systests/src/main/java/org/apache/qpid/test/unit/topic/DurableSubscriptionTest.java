@@ -37,6 +37,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 /**
@@ -387,6 +388,32 @@ public class DurableSubscriptionTest extends QpidTestCase
         rMsg = subB.receive(1000);
         assertNull(rMsg);
         session.unsubscribe("testResubscribeWithChangedSelector");
+    }
+
+    public void testDurableSubscribeWithTemporaryTopic() throws Exception
+    {
+        Connection conn = getConnection();
+        conn.start();
+        Session ssn = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = ssn.createTemporaryTopic();
+        try
+        {
+            ssn.createDurableSubscriber(topic, "test");
+            fail("expected InvalidDestinationException");
+        }
+        catch (InvalidDestinationException ex)
+        {
+            // this is expected
+        }
+        try
+        {
+            ssn.createDurableSubscriber(topic, "test", null, false);
+            fail("expected InvalidDestinationException");
+        }
+        catch (InvalidDestinationException ex)
+        {
+            // this is expected
+        }
     }
 
     private void sendMatchingAndNonMatchingMessage(Session session, MessageProducer producer) throws JMSException

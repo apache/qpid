@@ -944,7 +944,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws JMSException
     {
         checkNotClosed();
-        checkValidTopic(topic);
+        checkValidTopic(topic, true);
         if (_subscriptions.containsKey(name))
         {
             _subscriptions.get(name).close();
@@ -2063,7 +2063,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
-    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
+    protected AMQTopic checkValidTopic(Topic topic, boolean durable) throws JMSException
     {
         if (topic == null)
         {
@@ -2076,6 +2076,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     "Cannot create a subscription on a temporary topic created in another session");
         }
 
+        if ((topic instanceof TemporaryDestination) && durable)
+        {
+            throw new javax.jms.InvalidDestinationException
+                ("Cannot create a durable subscription with a temporary topic: " + topic);
+        }
+
         if (!(topic instanceof AMQTopic))
         {
             throw new javax.jms.InvalidDestinationException(
@@ -2084,6 +2090,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
 
         return (AMQTopic) topic;
+    }
+
+    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
+    {
+        return checkValidTopic(topic, false);
     }
 
     /**
