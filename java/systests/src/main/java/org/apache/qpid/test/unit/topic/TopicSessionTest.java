@@ -174,7 +174,7 @@ public class TopicSessionTest extends QpidTestCase
 
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic4");
-        TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+        TopicSession session1 = con.createTopicSession(false, AMQSession.AUTO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
         MessageConsumer consumer1 = session1.createConsumer(topic);
         con.start();
