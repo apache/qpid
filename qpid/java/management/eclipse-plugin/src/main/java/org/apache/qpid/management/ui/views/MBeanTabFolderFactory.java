@@ -36,6 +36,7 @@ import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
+import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -72,6 +73,8 @@ public class MBeanTabFolderFactory
         layoutData.bottom = new FormAttachment(100);
         tabFolder.setLayoutData(layoutData);
 
+        TabItem tab;
+        TabControl controller;
         QpidMBeanType mbeanType = QpidMBeanType.get(mbean.getType());
 
         switch(mbeanType)
@@ -92,7 +95,11 @@ public class MBeanTabFolderFactory
                 tempCreateGeneric(tabFolder, mbean);
                 break;
             case USER_MANAGEMENT:
-                tempCreateGeneric(tabFolder, mbean);
+                tab = new TabItem(tabFolder, SWT.NONE);
+                tab.setText("Operations");
+                controller = new UserManagementTabControl(tabFolder, mbean, mbsc);
+                tab.setControl(controller.getControl());
+                tab.setData(TabControl.CONTROLLER, controller);
                 break;
             case CONFIGURATION_MANAGEMENT:
                 tempCreateGeneric(tabFolder, mbean);

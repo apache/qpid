@@ -772,6 +772,11 @@ public class ViewUtility
     {
         return showBox(title, message,SWT.ICON_QUESTION | SWT.YES | SWT.NO);
     }
+    
+    public static int popupOkCancelConfirmationMessage(String title, String message)
+    {
+        return showBox(title, message,SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+    }
 
     
     public static Shell createPopupShell(String title, int width, int height)
