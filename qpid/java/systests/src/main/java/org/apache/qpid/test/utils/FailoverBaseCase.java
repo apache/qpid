@@ -33,7 +33,6 @@ public class FailoverBaseCase extends QpidTestCase
     protected int failingPort;
     
     private boolean failedOver = false;
-    private String _oldWork;
 
     public FailoverBaseCase()
     {
@@ -57,8 +56,7 @@ public class FailoverBaseCase extends QpidTestCase
         super.setUp();
         cleanBroker();
         FileUtils.deleteDirectory(System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
-        _oldWork = System.getProperty("QPID_WORK");
-        System.setProperty("QPID_WORK", System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
+        setSystemProperty("QPID_WORK", System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
         startBroker(getFailingPort());
     }
 
@@ -79,7 +77,6 @@ public class FailoverBaseCase extends QpidTestCase
     public void tearDown() throws Exception
     {
         stopBroker(getFailingPort());
-        System.setProperty("QPID_WORK", _oldWork);
         super.tearDown();
         FileUtils.deleteDirectory(System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
     }
