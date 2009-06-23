@@ -52,7 +52,7 @@ struct ConnectionTimeoutTask : public TimerTask {
     Timer& timer;
     Connection& connection;
     AbsTime expires;
-    
+
     ConnectionTimeoutTask(uint16_t hb, Timer& t, Connection& c) :
         TimerTask(Duration(hb*2*TIME_SEC)),
         timer(t),
@@ -359,6 +359,11 @@ struct ConnectionHeartbeatTask : public TimerTask {
 
 void Connection::abort()
 {
+    // Make sure that we don't try to send a heartbeat as we're
+    // aborting the connection
+    if (heartbeatTimer)
+        heartbeatTimer->cancel();
+
     out.abort();
 }
 
