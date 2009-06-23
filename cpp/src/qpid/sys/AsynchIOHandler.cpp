@@ -78,7 +78,10 @@ void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
 }
 
 void AsynchIOHandler::abort() {
-    aio->requestCallback(boost::bind(&AsynchIOHandler::eof, this, _1));
+    // Don't disconnect if we're already disconnecting
+    if (!readError) {
+        aio->requestCallback(boost::bind(&AsynchIOHandler::eof, this, _1));
+    }
 }
 
 void AsynchIOHandler::activateOutput() {
@@ -204,10 +207,13 @@ void AsynchIOHandler::idle(AsynchIO&){
             buff->dataCount = encoded;
             aio->queueWrite(buff);
         }
-        if (codec->isClosed())
+        if (codec->isClosed()) {
+            readError = true;
             aio->queueWriteClose();
+        }
     } catch (const std::exception& e) {
         QPID_LOG(error, e.what());
+        readError = true;
         aio->queueWriteClose();
     }
 }
