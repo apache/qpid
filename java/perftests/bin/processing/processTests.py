@@ -233,28 +233,40 @@ def extractTime(field, statFile):
 # Given a text line in ISO format convert it to a date object
 #				
 def lineToDate(line):
-    #
-    # Need to add checks for when time has no zone
-    #
-    date, time, tz = line.split(' ')
-		
-    year, month, day = date.split('-')
-				
-    hour, minute, s = time.split(':')
+    #2009-06-22 17:04:44,320
+    #2009-06-22 17:04:44.320
+    pattern = re.compile(r'(?P<year>^[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9][0-9]) (?P<hour>[0-9][0-9]):(?P<minute>[0-9][0-9]):(?P<seconds>[0-9][0-9])')
     
-    if s.find('.') == -1:
-        second = s
-	micro = 0
+    
+    m = pattern.match(line)
+    if m:			
+        year = int(m.group('year'))
+        month = int(m.group('month'))
+        day = int(m.group('day'))
+        hour = int(m.group('hour'))
+        minute = int(m.group('minute'))
+        seconds = int(m.group('seconds'))
+	
+        pattern = re.compile(r'(?P<year>^[0-9][0-9][0-9][0-9])-(?P<month>[0-9][0-9])-(?P<day>[0-9][0-9]) (?P<hour>[0-9][0-9]):(?P<minute>[0-9][0-9]):(?P<seconds>[0-9][0-9])[.|,](?P<micro>[0-9]+)')
+        m = pattern.match(line)
+        micro = None
+        if m:
+	    micro = m.group('micro')
+	    
+        if micro == None:
+	   micro = 0
+	
+        return datetime(year,month,day,hour,minute,seconds,int(micro))
     else:
-        second, micro = s.split('.')
-				
-    return datetime(int(year),int(month),int(day),int(hour),int(minute),int(second),int(micro))		
+        # Error we shouldn't get here
+        return null
 		
 def createResultSetPackage(root, resultFile):
-    
     # Get the Name of the test to make a directory with said name
     testName = resultFile.split(".csv")[0]
     resultDir = root+ os.sep + testName
+
+    log("Processing Result set for:"+ testName)
     
     mkdir(resultDir)
     
@@ -285,21 +297,21 @@ def sliceBrokerLogs(resultDir, start, end):
 
 def sliceCPULog(resultDir, start, end):
     global _brokerLogs
-    logfile=_brokerLogs+os.sep+BROKER_CPU_DATED
+    logfilePath=_brokerLogs+os.sep+BROKER_CPU_DATED
     cpuSliceFile=resultDir+os.sep+BROKER_CPU
     
     # Process the CPU log file and make a file of format:
     # datetime <CPU% usage> <MEM% usage>
     #
     # Open log CPU file for reading
-    log = open(logfile, "r")
+    logFile = open(logfilePath, "r")
     
     #
     # Create outputfile
     #
     cpuslice = open(cpuSliceFile,"w")
     
-    for line in log:
+    for line in logFile:
     	data = line.split()
 	#
 	# //fixme remove tz addition.
@@ -310,18 +322,19 @@ def sliceCPULog(resultDir, start, end):
 	    if lineTime < end:
    	        cpuslice.writelines(line)
 
-    log.close()
+    logFile.close()
     cpuslice.close()
+    log("Sliced CPU log")
 
 def sliceGCLog(resultDir, start, end):
     global _brokerLogs
-    logfile=_brokerLogs+os.sep+BROKER_GC
+    logfilePath=_brokerLogs+os.sep+BROKER_GC
     sliceFile=resultDir+os.sep+BROKER_GC
     
-    gcstart = extractTime(ACCESS, logfile+".stat")        
+    gcstart = extractTime(ACCESS, logfilePath+".stat")        
     
     # Open log GC file for reading
-    log = open(logfile, "r")
+    logFile = open(logfilePath, "r")
 
     # Open the output file, erasing any existing version
     output= open(sliceFile, "w")
@@ -330,7 +343,7 @@ def sliceGCLog(resultDir, start, end):
     # Start of the gc log line.
     pattern = re.compile(r'(?P<seconds>^[0-9]+)\.(?P<millis>[0-9]+):')
     
-    for line in log:
+    for line in logFile:
         m = pattern.match(line)
     
         if m:
@@ -346,12 +359,85 @@ def sliceGCLog(resultDir, start, end):
    	            output.writelines(line)
 				
     # Close the files
-    log.close
+    logFile.close
     output.close()
+    log("Sliced gc log")
 
+	    
+def sliceLog4j(resultDir, start, end):    
+    global _brokerLogs
+    logfilePath=_brokerLogs+os.sep+BROKER_LOG
+    log4jSliceFile=resultDir+os.sep+BROKER_LOG
     
-def sliceLog4j(resultDir, start, end):
-    debug("slice log4j")
+    log4jstart = extractTime(ACCESS, logfilePath+".stat")        
+    
+    #
+    # Say that first line is the start of the file,
+    # This value will give a time value to the initial
+    # logging before Log4j kicks in.
+    #
+    lineTime = log4jstart
+    
+    # Process the broker log4j file
+    # Open log CPU file for reading
+    logFile = open(logfilePath, "r")
+    
+    #
+    # Create outputfile
+    #
+    log4jslice = open(log4jSliceFile,"w")
+    
+    for line in logFile:
+    	data = line.split()
+	
+	#
+	# If the line has a time at the start then process it
+	# otherwise use the previous time. This means if there is
+	# a stack trace in the middle of the log file then it will
+	# be copied over to the split file as long as it is in the 	
+	# split time.
+	#
+	if (hasTime(data)):
+	    #
+	    # //fixme remove tz addition.
+   	    #
+	    lineTime = lineToDate(" ".join(data[0:2])+" +0000")
+	    	
+	if lineTime > start:	    
+	    if lineTime < end:
+	        print line
+   	        log4jslice.writelines(line)
+
+    logFile.close()
+    log4jslice.close()
+    log("Sliced broker log")
+
+
+#
+# Check the first two entries of data can make a datetime object
+#
+def hasTime(data):
+    date = data[0]
+    time = data[1]
+    
+    # Examples:
+    # 2009-06-22 17:04:44,246
+    # 2009-06-22 17:04:44.2464
+    # 2009-06-22 17:04:44
+    
+    # ISO-8601 '-' format date
+    dateRE = re.compile('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]')
+    
+    #
+    # Check for times with/out millis    
+    # e.g.
+    # 10:00:00,000    - log4j
+    # 10:00:00.0000   - generated in script for cpu time
+    #
+    timeRE = re.compile('[0-9][0-9]:[0-9][0-9]:[0-9][0-9]?[0-9]*')
+
+    return dateRE.match(date) and timeRE.match(time)
+ 
     
 def createGraphData(resultDir, testName):
     # Create graph.data file for process.sh
@@ -379,6 +465,7 @@ def createGraphData(resultDir, testName):
     graphData.writelines(version+"-"+testName)
     graphData.write('\n')    
     graphData.close
+    log("Created graph.data")
     
   
 def getBrokerVersion():
