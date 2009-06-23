@@ -35,6 +35,7 @@ public interface LoggingManagement
     int VERSION = 1;
     
     //TabularType and contained CompositeType key/description information
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
     String[] COMPOSITE_ITEM_NAMES = {"LoggerName", "Level"};
     String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Name of the logger", "Level of the logger"};
     String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
