@@ -241,7 +241,10 @@ void TCPConnector::close() {
 }
 
 void TCPConnector::abort() {
-    aio->requestCallback(boost::bind(&TCPConnector::eof, this, _1));
+    // Can't abort a closed connection
+    if (!closed) {
+        aio->requestCallback(boost::bind(&TCPConnector::eof, this, _1));
+    }
 }
 
 void TCPConnector::setInputHandler(InputHandler* handler){
