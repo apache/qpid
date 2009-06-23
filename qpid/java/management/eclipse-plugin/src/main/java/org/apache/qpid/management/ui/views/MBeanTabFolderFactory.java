@@ -37,6 +37,8 @@ import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
+import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
+import org.apache.qpid.management.ui.views.logging.RuntimeTabControl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
@@ -92,7 +94,17 @@ public class MBeanTabFolderFactory
                 tempCreateGeneric(tabFolder, mbean);
                 break;
             case LOGGING_MANAGEMENT:
-                tempCreateGeneric(tabFolder, mbean);
+                tab = new TabItem(tabFolder, SWT.NONE);
+                tab.setText("Runtime Options");
+                controller = new RuntimeTabControl(tabFolder, mbean, mbsc);
+                tab.setControl(controller.getControl());
+                tab.setData(TabControl.CONTROLLER, controller);
+
+                tab = new TabItem(tabFolder, SWT.NONE);
+                tab.setText("ConfigurationFile Options");
+                controller = new ConfigurationFileTabControl(tabFolder, mbean, mbsc);
+                tab.setControl(controller.getControl());
+                tab.setData(TabControl.CONTROLLER, controller);
                 break;
             case USER_MANAGEMENT:
                 tab = new TabItem(tabFolder, SWT.NONE);
