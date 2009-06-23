@@ -82,9 +82,8 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 
     protected void init(boolean transacted, int mode) throws JMSException, NamingException
     {
-        queue = (Queue) getInitialContext().lookup(QUEUE);
-
         consumerSession = connection.createSession(transacted, mode);
+        queue = consumerSession.createQueue(getName()+System.currentTimeMillis());
         consumer = consumerSession.createConsumer(queue);
 
         producerSession = connection.createSession(transacted, mode);
