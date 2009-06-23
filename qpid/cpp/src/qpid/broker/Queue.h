@@ -326,6 +326,18 @@ namespace qpid {
              */
             void recoveryComplete();
 
+            /**
+             * This is a hack to avoid deadlocks in durable ring
+             * queues. It is used for dequeueing messages in response
+             * to an enqueue while avoid holding lock over call to
+             * store.
+             * 
+             * Assumes messageLock is held - true for curent use case
+             * (QueuePolicy::tryEnqueue()) but rather nasty as this is a public
+             * method
+             **/
+            void addPendingDequeue(const QueuedMessage &msg);
+
             // For cluster update
             QueueListeners& getListeners();
         };
