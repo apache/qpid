@@ -551,11 +551,16 @@ void Queue::popMsg(QueuedMessage& qmsg)
 }
 
 void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
+    Messages dequeues;
     QueueListeners::NotificationSet copy;
     {
         Mutex::ScopedLock locker(messageLock);   
         QueuedMessage qm(this, msg, ++sequence);
-        if (policy.get()) policy->tryEnqueue(qm);
+        if (policy.get()) {
+            policy->tryEnqueue(qm);
+            //depending on policy, may have some dequeues
+            if (!isRecovery) pendingDequeues.swap(dequeues);
+        }
         if (insertSeqNo) msg->getOrInsertHeaders().setInt64(seqNoKey, sequence);
          
         LVQ::iterator i;
@@ -591,6 +596,10 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
         }
     }
     copy.notify();
+    if (!dequeues.empty()) {
+        //depending on policy, may have some dequeues
+        for_each(dequeues.begin(), dequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
+    }
 }
 
 QueuedMessage Queue::getFront()
@@ -1024,6 +1033,12 @@ void Queue::enqueued(const QueuedMessage& m)
 bool Queue::isEnqueued(const QueuedMessage& msg)
 {
     return !policy.get() || policy->isEnqueued(msg);
+}
+
+void Queue::addPendingDequeue(const QueuedMessage& msg)
+{
+    //assumes lock is held - true at present but rather nasty as this is a public method
+    pendingDequeues.push_back(msg);    
 }
 
 QueueListeners& Queue::getListeners() { return listeners; }

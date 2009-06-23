@@ -101,8 +101,11 @@ class RingQueuePolicy : public QueuePolicy
   private:
     typedef std::deque<QueuedMessage> Messages;
     qpid::sys::Mutex lock;
+    Messages pendingDequeues;
     Messages queue;
     const bool strict;
+
+    bool find(const QueuedMessage&, Messages&, bool remove);
 };
 
 }}
