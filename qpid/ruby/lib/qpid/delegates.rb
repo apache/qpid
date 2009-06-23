@@ -44,7 +44,7 @@ module Qpid
       if seg.track == @control
         ctl = seg.decode(@spec)
         log.debug("RECV %s", ctl) if log
-        attr = ctl.type.name
+        attr = ctl.st_type.name
         method(attr).call(ch, ctl)
       elsif ssn.nil?
         ch.session_detached

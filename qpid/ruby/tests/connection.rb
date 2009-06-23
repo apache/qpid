@@ -49,7 +49,7 @@ class MockSession < Qpid::Session::Delegate
   end
 
   def queue_query(qq)
-    return qq.type.result.create(qq.queue)
+    return qq.st_type.result.create(qq.queue)
   end
 
   def message_transfer(cmd, headers, body)
@@ -63,6 +63,10 @@ class MockSession < Qpid::Session::Delegate
     else
       @queue.put([cmd, headers, body])
     end
+  end
+
+  def exchange_declare(ed)
+    # do nothing
   end
 end
 
@@ -231,5 +235,12 @@ class TestConnectionTest < Test::Unit::TestCase
     s.message_transfer("echo",
                        :message => Qpid::Message.new("test"))
     s.sync(10)
+  end
+
+  def test_exchange_declare
+    c = connect
+    c.start(10)
+    s = c.session("test")
+    s.exchange_declare("test-exchange")
   end
 end

@@ -54,12 +54,12 @@ module Qpid
         [type.name, unexpected]
     end
 
-    attrs[:type] = type
+    attrs[:st_type] = type
     attrs[:id] = nil
 
     name = "Qpid_" + type.name.to_s.capitalize
     unless ::Struct.const_defined?(name)
-      vars = type.fields.collect { |f| f.name } << :type << :id
+      vars = type.fields.collect { |f| f.name } << :st_type << :id
       ::Struct.new(name, *vars)
     end
     st = ::Struct.const_get(name)
@@ -90,13 +90,13 @@ module Qpid
     def get(name)
       if @headers
         name = name.to_sym
-        @headers.find { |h| h.type.name == name }
+        @headers.find { |h| h.st_type.name == name }
       end
     end
 
     def set(header)
       @headers ||= []
-      if h = @headers.find { |h| h.type == header.type }
+      if h = @headers.find { |h| h.st_type == header.st_type }
         ind = @headers.index(h)
         @headers[ind] = header
       else
@@ -107,7 +107,7 @@ module Qpid
     def clear(name)
       if @headers
         name = name.to_sym
-        @headers.delete_if { |h| h.type.name == name }
+        @headers.delete_if { |h| h.st_type.name == name }
       end
     end
 

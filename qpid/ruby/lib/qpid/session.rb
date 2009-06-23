@@ -277,13 +277,13 @@ module Qpid
       end
       log.debug("RECV %s %s %s" % [cmd.id, hdr, cmd]) if log
 
-      if cmd.type.payload
-        result = @delegate.send(cmd.type.name, cmd, header, body)
+      if cmd.st_type.payload
+        result = @delegate.send(cmd.st_type.name, cmd, header, body)
       else
-        result = @delegate.send(cmd.type.name, cmd)
+        result = @delegate.send(cmd.st_type.name, cmd)
       end
 
-      unless cmd.type.result.nil?
+      unless cmd.st_type.result.nil?
         execution_result(cmd.id, result)
       end
 
