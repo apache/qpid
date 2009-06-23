@@ -36,7 +36,9 @@ ssn = conn.session("test")
 # create a queue
 ssn.queue_declare("test-queue")
 
-# publish a message
+ssn.exchange_declare("test-exchange", :type => "direct")
+
+# Publish a message
 dp = ssn.delivery_properties(:routing_key => "test-queue")
 mp = ssn.message_properties(:content_type => "text/plain")
 msg = Qpid::Message.new(dp, mp, "Hello World!")

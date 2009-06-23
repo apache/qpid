@@ -370,7 +370,7 @@ module Qpid
     end
 
     def write_struct32(value)
-      type = value.type
+      type = value.st_type
       sc = StringCodec.new(@spec)
       sc.write_uint16(type.code)
       type.encode_fields(sc, value)
@@ -383,7 +383,7 @@ module Qpid
     end
 
     def write_control(ctrl)
-      type = ctrl.type
+      type = ctrl.st_type
       write_uint16(type.code)
       type.encode_fields(self, ctrl)
     end
@@ -396,9 +396,9 @@ module Qpid
     end
 
     def write_command(hdr, cmd)
-      type = cmd.type
+      type = cmd.st_type
       write_uint16(type.code)
-      hdr.type.encode(self, hdr)
+      hdr.st_type.encode(self, hdr)
       type.encode_fields(self, cmd)
     end
 
