@@ -497,7 +497,16 @@ class managementClient:
     elif typecode == 14: # UUID
       data = codec.read_uuid ()
     elif typecode == 15: # FTABLE
-      data = codec.read_map ()
+      data = {}
+      sc = Codec(codec.spec, codec.read_vbin32())
+      if sc.encoded:
+        count = sc.read_uint32()
+        while count > 0:
+          k = sc.read_str8()
+          code = sc.read_uint8()
+          v = self.decodeValue(sc, code)
+          data[k] = v
+          count -= 1
     elif typecode == 16:
       data = codec.read_int8 ()
     elif typecode == 17:
