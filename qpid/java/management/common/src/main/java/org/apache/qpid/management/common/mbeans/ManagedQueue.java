@@ -42,6 +42,18 @@ public interface ManagedQueue
     static final String TYPE = "Queue";
     static final int VERSION = 2;
 
+    //TabularType and contained CompositeType key/description information for message list
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
+    String[] VIEW_MSGS_COMPOSITE_ITEM_NAMES = {"AMQ MessageId", "Header", "Size(bytes)", "Redelivered"};
+    String[] VIEW_MSGS_COMPOSITE_ITEM_DESCRIPTIONS = {"AMQ MessageId", "Header", "Size(bytes)", "Redelivered"};
+    String[] VIEW_MSGS_TABULAR_UNIQUE_INDEX = {VIEW_MSGS_COMPOSITE_ITEM_NAMES[0]};
+
+    //CompositeType key/description information for message content
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
+    String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
+    String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
+    
+    
     /**
      * Returns the Name of the ManagedQueue.
      * @return the name of the managedQueue.

@@ -81,15 +81,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private AMQQueue _queue = null;
     private String _queueName = null;
     // OpenMBean data types for viewMessages method
-    private static final String[] _msgAttributeNames = { "AMQ MessageId", "Header", "Size(bytes)", "Redelivered" };
-    private static String[] _msgAttributeIndex = { _msgAttributeNames[0] };
+
     private static OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
     private static CompositeType _messageDataType = null; // Composite type for representing AMQ Message data.
     private static TabularType _messagelistDataType = null; // Datatype for representing AMQ messages list.
 
     // OpenMBean data types for viewMessageContent method
     private static CompositeType _msgContentType = null;
-    private static final String[] _msgContentAttributes = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
     private static OpenType[] _msgContentAttributeTypes = new OpenType[4];
 
     private final long[] _lastNotificationTimes = new long[NotificationCheck.values().length];
@@ -133,18 +131,19 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgContentAttributeTypes[1] = SimpleType.STRING; // For MimeType
         _msgContentAttributeTypes[2] = SimpleType.STRING; // For Encoding
         _msgContentAttributeTypes[3] = new ArrayType(1, SimpleType.BYTE); // For message content
-        _msgContentType =
-            new CompositeType("Message Content", "AMQ Message Content", _msgContentAttributes, _msgContentAttributes,
-                _msgContentAttributeTypes);
+        _msgContentType = new CompositeType("Message Content", "AMQ Message Content", 
+                    VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS,
+                    _msgContentAttributeTypes);
 
         _msgAttributeTypes[0] = SimpleType.LONG; // For message id
         _msgAttributeTypes[1] = new ArrayType(1, SimpleType.STRING); // For header attributes
         _msgAttributeTypes[2] = SimpleType.LONG; // For size
         _msgAttributeTypes[3] = SimpleType.BOOLEAN; // For redelivered
 
-        _messageDataType =
-            new CompositeType("Message", "AMQ Message", _msgAttributeNames, _msgAttributeNames, _msgAttributeTypes);
-        _messagelistDataType = new TabularType("Messages", "List of messages", _messageDataType, _msgAttributeIndex);
+        _messageDataType = new CompositeType("Message", "AMQ Message", VIEW_MSGS_COMPOSITE_ITEM_NAMES, 
+                                VIEW_MSGS_COMPOSITE_ITEM_DESCRIPTIONS, _msgAttributeTypes);
+        _messagelistDataType = new TabularType("Messages", "List of messages", _messageDataType, 
+                                                VIEW_MSGS_TABULAR_UNIQUE_INDEX);
     }
 
     public String getObjectInstanceName()
@@ -368,7 +367,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
             Object[] itemValues = { msgId, mimeType, encoding, msgContent.toArray(new Byte[0]) };
 
-            return new CompositeDataSupport(_msgContentType, _msgContentAttributes, itemValues);
+            return new CompositeDataSupport(_msgContentType, VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, itemValues);
         }
         catch (AMQException e)
         {
@@ -402,7 +401,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                 // Create header attributes list
                 String[] headerAttributes = getMessageHeaderProperties(headerBody);
                 Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered() };
-                CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
+                CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
                 _messageList.put(messageData);
             }
         }
