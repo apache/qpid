@@ -136,6 +136,7 @@ void AsynchAcceptorPrivate::readable(DispatchHandle& h) {
             }
         } catch (const std::exception& e) {
             QPID_LOG(error, "Could not accept socket: " << e.what());
+            break;
         }
     } while (true);
 
