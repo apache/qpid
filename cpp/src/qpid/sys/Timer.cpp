@@ -19,6 +19,7 @@
  *
  */
 #include "Timer.h"
+#include "Mutex.h"
 #include <iostream>
 #include <numeric>
 
@@ -62,7 +63,10 @@ void TimerTask::setupNextFire() {
 void TimerTask::restart() { nextFireTime = AbsTime(AbsTime::now(), period); }
 void TimerTask::delayTill(AbsTime time) { period = 0; nextFireTime = max(nextFireTime, time); }
 
-void TimerTask::cancel() { cancelled = true; }
+void TimerTask::cancel() {
+    ScopedLock<Mutex> l(callbackLock);
+    cancelled = true;
+}
 bool TimerTask::isCancelled() const { return cancelled; }
 
 Timer::Timer() :
@@ -85,16 +89,21 @@ void Timer::run()
         } else {
             intrusive_ptr<TimerTask> t = tasks.top();
             tasks.pop();
+            {
+            ScopedLock<Mutex> l(t->callbackLock);
             if (t->isCancelled()) {
+                continue;
             } else if(t->readyToFire()) {
                 Monitor::ScopedUnlock u(monitor);
                 t->fireTask();
+                continue;
             } else {
                 // If the timer was adjusted into the future it might no longer
                 // be the next event, so push and then get top to make sure
                 tasks.push(t);
-                monitor.wait(tasks.top()->nextFireTime);
             }
+            }
+            monitor.wait(tasks.top()->nextFireTime);
         }
     }
 }

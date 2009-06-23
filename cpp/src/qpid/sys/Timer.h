@@ -22,6 +22,7 @@
 #define sys_Timer
 
 #include "qpid/sys/Monitor.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/RefCounted.h"
@@ -43,6 +44,7 @@ class TimerTask : public RefCounted {
 
     Duration period;
     AbsTime nextFireTime;
+    Mutex callbackLock;
     volatile bool cancelled;
 
     bool readyToFire() const;
