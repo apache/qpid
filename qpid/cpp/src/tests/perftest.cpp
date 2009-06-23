@@ -656,7 +656,10 @@ struct SubscribeThread : public Client {
 };
 
 int main(int argc, char** argv) {
-    
+    int exitCode = 0;
+    boost::ptr_vector<Client> subs(opts.subs);
+    boost::ptr_vector<Client> pubs(opts.pubs);
+
     try {
         opts.parse(argc, argv);
 
@@ -666,16 +669,13 @@ int main(int argc, char** argv) {
             case TOPIC: exchange="amq.topic"; break;
             case SHARED: break;
         }
-        
+
         bool singleProcess=
             (!opts.setup && !opts.control && !opts.publish && !opts.subscribe);
         if (singleProcess)
             opts.setup = opts.control = opts.publish = opts.subscribe = true;
 
         if (opts.setup) Setup().run();          // Set up queues
-
-        boost::ptr_vector<Client> subs(opts.subs);
-        boost::ptr_vector<Client> pubs(opts.pubs);
 
         // Start pubs/subs for each queue/topic.
         for (size_t i = 0; i < opts.qt; ++i) {
@@ -701,29 +701,25 @@ int main(int argc, char** argv) {
         }
 
         if (opts.control) Controller().run();
-
-
-        // Wait for started threads.
-        if (opts.publish) {
-            for (boost::ptr_vector<Client>::iterator i=pubs.begin();
-                 i != pubs.end();
-                 ++i) 
-                i->thread.join();
-        }
-            
-
-        if (opts.subscribe) {
-            for (boost::ptr_vector<Client>::iterator i=subs.begin();
-                 i != subs.end();
-                 ++i) 
-                i->thread.join();
-        }
-        return 0;
     }
     catch (const std::exception& e) {
-        cout << endl << e.what() << endl; 
+        cout << endl << e.what() << endl;
+        exitCode = 1;
     }
-    return 1;
-}
 
-                                            
+    // Wait for started threads.
+    if (opts.publish) {
+        for (boost::ptr_vector<Client>::iterator i=pubs.begin();
+             i != pubs.end();
+             ++i)
+            i->thread.join();
+    }
+
+    if (opts.subscribe) {
+        for (boost::ptr_vector<Client>::iterator i=subs.begin();
+             i != subs.end();
+             ++i)
+            i->thread.join();
+    }
+    return exitCode;
+}
