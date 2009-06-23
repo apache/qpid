@@ -18,12 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.configuration.management;
+package org.apache.qpid.management.common.mbeans;
 
 import javax.management.MBeanOperationInfo;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.management.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 
 public interface ConfigurationManagement
 {
@@ -38,6 +37,6 @@ public interface ConfigurationManagement
     @MBeanOperation(name="reloadSecurityConfiguration", 
                     description = "Force a reload of the security configuration sections",
                     impact = MBeanOperationInfo.ACTION)
-    void reloadSecurityConfiguration() throws ConfigurationException;
+    void reloadSecurityConfiguration() throws Exception;
     
 }

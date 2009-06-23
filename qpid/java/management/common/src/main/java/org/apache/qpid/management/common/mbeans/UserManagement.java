@@ -18,12 +18,11 @@
  *
  * 
  */
-package org.apache.qpid.server.security.access.management;
+package org.apache.qpid.management.common.mbeans;
 
-import org.apache.qpid.server.management.MBeanOperation;
-import org.apache.qpid.server.management.MBeanOperationParameter;
-import org.apache.qpid.server.management.MBeanAttribute;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.CompositeData;
