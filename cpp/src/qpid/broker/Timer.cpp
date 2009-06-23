@@ -26,6 +26,8 @@ using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::sys::Monitor;
 using qpid::sys::Thread;
+using qpid::sys::Mutex;
+using qpid::sys::ScopedLock;
 using namespace qpid::broker;
 
 TimerTask::TimerTask(Duration timeout) :
@@ -38,7 +40,11 @@ TimerTask::~TimerTask(){}
 
 void TimerTask::reset() { time = AbsTime(AbsTime::now(), duration); }
 
-void TimerTask::cancel() { cancelled = true; }
+void TimerTask::cancel() {
+    ScopedLock<Mutex> l(cancelLock);
+    cancelled = true;
+}
+
 bool TimerTask::isCancelled() const { return cancelled; }
 
 Timer::Timer() : active(false)
@@ -60,16 +66,21 @@ void Timer::run()
         } else {
             intrusive_ptr<TimerTask> t = tasks.top();
             tasks.pop();
+            {
+            ScopedLock<Mutex> l(t->cancelLock);
             if (t->isCancelled()) {
+                continue;
             } else if(t->time < AbsTime::now()) {
                 Monitor::ScopedUnlock u(monitor);
                 t->fire();
+                continue;
             } else {
                 // If the timer was adjusted into the future it might no longer
                 // be the next event, so push and then get top to make sure
                 tasks.push(t);
-                monitor.wait(tasks.top()->time);
             }
+            }
+            monitor.wait(tasks.top()->time);
         }
     }
 }
