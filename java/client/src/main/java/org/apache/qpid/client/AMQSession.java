@@ -205,6 +205,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     protected static final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
 
+    protected static final boolean DECLARE_QUEUES =
+        Boolean.parseBoolean(System.getProperty("qpid.declare_queues", "true"));
+    protected static final boolean DECLARE_EXCHANGES =
+        Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
+
     /** System property to enable strict AMQP compliance. */
     public static final String STRICT_AMQP = "STRICT_AMQP";
 
@@ -2465,9 +2470,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         AMQProtocolHandler protocolHandler = getProtocolHandler();
 
-        declareExchange(amqd, protocolHandler, nowait);
+        if (DECLARE_EXCHANGES)
+        {
+            declareExchange(amqd, protocolHandler, nowait);
+        }
 
-        AMQShortString queueName = declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+        if (DECLARE_QUEUES || amqd.isNameRequired())
+        {
+            declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
+        }
+        AMQShortString queueName = amqd.getAMQQueueName();
 
         // store the consumer queue name
         consumer.setQueuename(queueName);
