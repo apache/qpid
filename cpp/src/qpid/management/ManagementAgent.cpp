@@ -239,6 +239,7 @@ void ManagementAgent::clientAdded (const std::string& routingKey)
         outLen = outBuffer.getPosition();
         outBuffer.reset();
         sendBuffer(outBuffer, outLen, dExchange, aIter->second->routingKey);
+        QPID_LOG(debug, "SEND ConsoleAddedIndication to=" << aIter->second->routingKey);
     }
 }
 
@@ -390,6 +391,7 @@ void ManagementAgent::periodicProcessing (void)
             stringstream key;
             key << "console.obj.1.0." << baseObject->getPackageName() << "." << baseObject->getClassName();
             sendBuffer(msgBuffer, contentSize, mExchange, key.str());
+            QPID_LOG(debug, "SEND Multicast ContentInd to=" << key.str());
         }
     }
 
@@ -415,6 +417,7 @@ void ManagementAgent::periodicProcessing (void)
         msgBuffer.reset ();
         routingKey = "console.heartbeat.1.0";
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+        QPID_LOG(debug, "SEND HeartbeatInd to=" << routingKey);
     }
 }
 
@@ -430,6 +433,8 @@ void ManagementAgent::sendCommandComplete (string replyToKey, uint32_t sequence,
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+    QPID_LOG(debug, "SEND CommandCompleteInd code=" << code << " text=" << text << " to=" <<
+             replyToKey << " seq=" << sequence);
 }
 
 bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
@@ -484,6 +489,10 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
     inBuffer.getShortString(className);
     inBuffer.getBin128(hash);
     inBuffer.getShortString(methodName);
+
+    QPID_LOG(debug, "RECV MethodRequest class=" << packageName << ":" << className << "(" << Uuid(hash) << ") method=" <<
+             methodName << " replyTo=" << replyToKey);
+
     encodeHeader(outBuffer, 'm', sequence);
 
     DisallowedMethods::const_iterator i = disallowed.find(std::make_pair(className, methodName));
@@ -493,6 +502,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
         outLen = MA_BUFFER_SIZE - outBuffer.available();
         outBuffer.reset();
         sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+        QPID_LOG(debug, "SEND MethodResponse status=FORBIDDEN text=" << i->second << " seq=" << sequence)
         return;
     }
 
@@ -508,6 +518,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
             sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+            QPID_LOG(debug, "SEND MethodResponse status=FORBIDDEN" << " seq=" << sequence)
             return;
         }
     }
@@ -537,6 +548,7 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
     outLen = MA_BUFFER_SIZE - outBuffer.available();
     outBuffer.reset();
     sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+    QPID_LOG(debug, "SEND MethodResponse to=" << replyToKey << " seq=" << sequence);
 }
 
 void ManagementAgent::handleBrokerRequestLH (Buffer&, string replyToKey, uint32_t sequence)
@@ -544,16 +556,21 @@ void ManagementAgent::handleBrokerRequestLH (Buffer&, string replyToKey, uint32_
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
     uint32_t outLen;
 
+    QPID_LOG(debug, "RECV BrokerRequest replyTo=" << replyToKey);
+
     encodeHeader (outBuffer, 'b', sequence);
     uuid.encode  (outBuffer);
 
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+    QPID_LOG(debug, "SEND BrokerResponse to=" << replyToKey);
 }
 
 void ManagementAgent::handlePackageQueryLH (Buffer&, string replyToKey, uint32_t sequence)
 {
+    QPID_LOG(debug, "RECV PackageQuery replyTo=" << replyToKey);
+
     for (PackageMap::iterator pIter = packages.begin ();
          pIter != packages.end ();
          pIter++)
@@ -566,16 +583,20 @@ void ManagementAgent::handlePackageQueryLH (Buffer&, string replyToKey, uint32_t
         outLen = MA_BUFFER_SIZE - outBuffer.available ();
         outBuffer.reset ();
         sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+        QPID_LOG(debug, "SEND PackageInd package=" << (*pIter).first << " to=" << replyToKey << " seq=" << sequence);
     }
 
     sendCommandComplete (replyToKey, sequence);
 }
 
-void ManagementAgent::handlePackageIndLH (Buffer& inBuffer, string /*replyToKey*/, uint32_t /*sequence*/)
+void ManagementAgent::handlePackageIndLH (Buffer& inBuffer, string replyToKey, uint32_t sequence)
 {
     string packageName;
 
     inBuffer.getShortString(packageName);
+
+    QPID_LOG(debug, "RECV PackageInd package=" << packageName << " replyTo=" << replyToKey << " seq=" << sequence);
+
     findOrAddPackageLH(packageName);
 }
 
@@ -584,6 +605,9 @@ void ManagementAgent::handleClassQueryLH(Buffer& inBuffer, string replyToKey, ui
     string packageName;
 
     inBuffer.getShortString(packageName);
+
+    QPID_LOG(debug, "RECV ClassQuery package=" << packageName << " replyTo=" << replyToKey << " seq=" << sequence);
+
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end())
     {
@@ -602,6 +626,8 @@ void ManagementAgent::handleClassQueryLH(Buffer& inBuffer, string replyToKey, ui
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
                 sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+                QPID_LOG(debug, "SEND ClassInd class=" << (*pIter).first << ":" << (*cIter).first.name <<
+                         "(" << Uuid((*cIter).first.hash) << ") to=" << replyToKey << " seq=" << sequence);
             }
         }
     }
@@ -617,6 +643,9 @@ void ManagementAgent::handleClassIndLH (Buffer& inBuffer, string replyToKey, uin
     inBuffer.getShortString(packageName);
     inBuffer.getShortString(key.name);
     inBuffer.getBin128(key.hash);
+
+    QPID_LOG(debug, "RECV ClassInd class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) <<
+             "), replyTo=" << replyToKey);
 
     PackageMap::iterator pIter = findOrAddPackageLH(packageName);
     ClassMap::iterator   cIter = pIter->second.find(key);
@@ -661,6 +690,9 @@ void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey,
     inBuffer.getShortString (key.name);
     inBuffer.getBin128      (key.hash);
 
+    QPID_LOG(debug, "RECV SchemaRequest class=" << packageName << ":" << key.name << " (" << Uuid(key.hash) <<
+             "), replyTo=" << replyToKey << " seq=" << sequence);
+
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
         ClassMap& cMap = pIter->second;
@@ -676,6 +708,7 @@ void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey,
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
                 sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+                QPID_LOG(debug, "SEND SchemaResponse to=" << replyToKey << " seq=" << sequence);
             }
             else
                 sendCommandComplete(replyToKey, sequence, 1, "Schema not available");
@@ -698,6 +731,8 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
     inBuffer.getShortString(key.name);
     inBuffer.getBin128(key.hash);
     inBuffer.restore();
+
+    QPID_LOG(debug, "RECV SchemaResponse class=" << packageName << ":" << key.name << " (" << Uuid(key.hash) << ")" << " seq=" << sequence);
 
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
@@ -722,6 +757,8 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
                 sendBuffer(outBuffer, outLen, mExchange, "schema.class");
+                QPID_LOG(debug, "SEND ClassInd class=" << packageName << ":" << key.name << " (" << Uuid(key.hash) << ")" <<
+                         " to=schema.class");
             }
         }
     }
@@ -804,6 +841,10 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     systemId.decode(inBuffer);
     requestedBrokerBank = inBuffer.getLong();
     requestedAgentBank  = inBuffer.getLong();
+
+    QPID_LOG(debug, "RECV (Agent)AttachRequest label=" << label << " reqBrokerBank=" << requestedBrokerBank <<
+             " reqAgentBank=" << requestedAgentBank << " replyTo=" << replyToKey << " seq=" << sequence);
+
     assignedBank = assignBankLH(requestedAgentBank);
 
     RemoteAgent* agent = new RemoteAgent;
@@ -832,6 +873,9 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+
+    QPID_LOG(debug, "SEND AttachResponse brokerBank=" << brokerBank << " agentBank=" << assignedBank <<
+             " to=" << replyToKey << " seq=" << sequence);
 }
 
 void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uint32_t sequence)
@@ -842,6 +886,9 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
     moveNewObjectsLH();
 
     ft.decode(inBuffer);
+
+    QPID_LOG(debug, "RECV GetQuery query=" << ft << " seq=" << sequence);
+
     value = ft.get("_class");
     if (value.get() == 0 || !value->convertsTo<string>()) {
         value = ft.get("_objectid");
@@ -865,6 +912,7 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
                 outLen = MA_BUFFER_SIZE - outBuffer.available ();
                 outBuffer.reset ();
                 sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+                QPID_LOG(debug, "SEND GetResponse to=" << replyToKey << " seq=" << sequence);
             }
         }
         sendCommandComplete(replyToKey, sequence);
@@ -891,6 +939,7 @@ void ManagementAgent::handleGetQueryLH (Buffer& inBuffer, string replyToKey, uin
                 outLen = MA_BUFFER_SIZE - outBuffer.available ();
                 outBuffer.reset ();
                 sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+                QPID_LOG(debug, "SEND GetResponse to=" << replyToKey << " seq=" << sequence);
             }
         }
     }
@@ -954,6 +1003,7 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
             sendBuffer(outBuffer, outLen, dExchange, replyToKey);
+            QPID_LOG(debug, "SEND MethodResponse status=FORBIDDEN" << " seq=" << sequence)
         }
 
         return false;
@@ -1025,15 +1075,16 @@ ManagementAgent::PackageMap::iterator ManagementAgent::findOrAddPackageLH(string
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     sendBuffer (outBuffer, outLen, mExchange, "schema.package");
+    QPID_LOG(debug, "SEND PackageInd package=" << name << " to=schema.package")
 
     return result.first;
 }
 
 void ManagementAgent::addClassLH(uint8_t               kind,
-                                  PackageMap::iterator  pIter,
-                                  const string&         className,
-                                  uint8_t*              md5Sum,
-                                  ManagementObject::writeSchemaCall_t schemaCall)
+                                 PackageMap::iterator  pIter,
+                                 const string&         className,
+                                 uint8_t*              md5Sum,
+                                 ManagementObject::writeSchemaCall_t schemaCall)
 {
     SchemaClassKey key;
     ClassMap&      cMap = pIter->second;
@@ -1054,14 +1105,14 @@ void ManagementAgent::addClassLH(uint8_t               kind,
 }
 
 void ManagementAgent::encodePackageIndication(Buffer&              buf,
-                                               PackageMap::iterator pIter)
+                                              PackageMap::iterator pIter)
 {
     buf.putShortString((*pIter).first);
 }
 
 void ManagementAgent::encodeClassIndication(Buffer&              buf,
-                                             PackageMap::iterator pIter,
-                                             ClassMap::iterator   cIter)
+                                            PackageMap::iterator pIter,
+                                            ClassMap::iterator   cIter)
 {
     SchemaClassKey key = (*cIter).first;
 
