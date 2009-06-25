@@ -661,6 +661,8 @@ void ManagementAgent::handleClassIndLH (Buffer& inBuffer, string replyToKey, uin
         outLen = MA_BUFFER_SIZE - outBuffer.available ();
         outBuffer.reset ();
         sendBuffer (outBuffer, outLen, dExchange, replyToKey);
+        QPID_LOG(debug, "SEND SchemaRequest class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) <<
+                 "), to=" << replyToKey << " seq=" << sequence);
 
         if (cIter != pIter->second.end())
             pIter->second.erase(key);
@@ -873,7 +875,6 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     outLen = MA_BUFFER_SIZE - outBuffer.available ();
     outBuffer.reset ();
     sendBuffer (outBuffer, outLen, dExchange, replyToKey);
-
     QPID_LOG(debug, "SEND AttachResponse brokerBank=" << brokerBank << " agentBank=" << assignedBank <<
              " to=" << replyToKey << " seq=" << sequence);
 }
