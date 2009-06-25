@@ -230,6 +230,11 @@ check_PROGRAMS+=DispatcherTest
 DispatcherTest_SOURCES=DispatcherTest.cpp
 DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
 
+check_PROGRAMS+=qpid_ping
+qpid_ping_SOURCES=qpid_ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
+qpid_ping_LDADD=$(lib_client) 
+
+
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
     srcdir=$(srcdir) \
