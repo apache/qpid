@@ -44,10 +44,10 @@ struct Uuid : public boost::array<uint8_t, 16> {
     Uuid(bool unique=false) { if (unique) generate(); else clear(); }
 
     /** Copy from 16 bytes of data. */
-    Uuid(uint8_t* data) { assign(data); }
+    Uuid(const uint8_t* data) { assign(data); }
 
     /** Copy from 16 bytes of data. */
-    void assign(uint8_t* data) {
+    void assign(const uint8_t* data) {
         uuid_copy(c_array(), data);
     }
     

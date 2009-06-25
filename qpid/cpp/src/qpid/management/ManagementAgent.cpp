@@ -692,7 +692,7 @@ void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, string replyToKey,
     inBuffer.getShortString (key.name);
     inBuffer.getBin128      (key.hash);
 
-    QPID_LOG(debug, "RECV SchemaRequest class=" << packageName << ":" << key.name << " (" << Uuid(key.hash) <<
+    QPID_LOG(debug, "RECV SchemaRequest class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) <<
              "), replyTo=" << replyToKey << " seq=" << sequence);
 
     PackageMap::iterator pIter = packages.find(packageName);
@@ -734,7 +734,7 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
     inBuffer.getBin128(key.hash);
     inBuffer.restore();
 
-    QPID_LOG(debug, "RECV SchemaResponse class=" << packageName << ":" << key.name << " (" << Uuid(key.hash) << ")" << " seq=" << sequence);
+    QPID_LOG(debug, "RECV SchemaResponse class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) << ")" << " seq=" << sequence);
 
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
@@ -759,7 +759,7 @@ void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, string /*replyToK
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
                 sendBuffer(outBuffer, outLen, mExchange, "schema.class");
-                QPID_LOG(debug, "SEND ClassInd class=" << packageName << ":" << key.name << " (" << Uuid(key.hash) << ")" <<
+                QPID_LOG(debug, "SEND ClassInd class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) << ")" <<
                          " to=schema.class");
             }
         }
