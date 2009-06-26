@@ -24,7 +24,7 @@ import getopt
 import sys
 import socket
 from cmd                 import Cmd
-from qpid.connection     import ConnectionFailed
+from qpid.connection     import ConnectionFailed, Timeout
 from qpid.managementdata import ManagementData
 from shlex               import split
 from qpid.disp           import Display
@@ -183,6 +183,8 @@ except ConnectionFailed, e:
 except Exception, e:
   if str(e).find ("Exchange not found") != -1:
     print "Management not enabled on broker:  Use '-m yes' option on broker startup."
+  else:
+    print "Failed: %s - %s" % (e.__class__.__name__, e)
   sys.exit(1)
 
 # Instantiate the CLI interpreter and launch it.

@@ -27,6 +27,7 @@ from qmf.console import Session
 
 _recursive         = False
 _host              = "localhost"
+_connTimeout       = 10
 _altern_ex         = None
 _passive           = False
 _durable           = False
@@ -67,6 +68,7 @@ def Usage ():
     print "        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"
     print
     print "Options:"
+    print "    --timeout seconds (10)                    Maximum time to wait for broker connection"
     print "    -b [ --bindings ]                         Show bindings in queue or exchange list"
     print "    -a [ --broker-addr ] Address (localhost)  Address of qpidd broker"
     print "         broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
@@ -135,7 +137,7 @@ class BrokerManager:
     def SetBroker (self, brokerUrl):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl)
+        self.broker = self.qmf.addBroker(brokerUrl, _connTimeout)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == 0:
@@ -371,7 +373,7 @@ try:
     longOpts = ("durable", "cluster-durable", "bindings", "broker-addr=", "file-count=",
                 "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
                 "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
-                "force_if_used", "alternate-exchange=", "passive")
+                "force_if_used", "alternate-exchange=", "passive", "timeout=")
     (optlist, encArgs) = getopt.gnu_getopt (sys.argv[1:], "a:b", longOpts)
 except:
     Usage ()
@@ -387,6 +389,10 @@ for opt in optlist:
         _recursive = True
     if opt[0] == "-a" or opt[0] == "--broker-addr":
         _host = opt[1]
+    if opt[0] == "--timeout":
+        _connTimeout = int(opt[1])
+        if _connTimeout == 0:
+            _connTimeout = None
     if opt[0] == "--alternate-exchange":
         _altern_ex = opt[1]
     if opt[0] == "--passive":

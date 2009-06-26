@@ -29,7 +29,7 @@ from qmf.console import Session, Console
 from qpid.disp import Display, Header, Sorter
 
 _host = "localhost"
-_top = False
+_connTimeout = 10
 _types = ""
 _limit = 50
 _increasing = False
@@ -42,10 +42,10 @@ def Usage ():
     print "             broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
     print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
-#    print "General Options:"
+    print "General Options:"
+    print "    --timeout seconds (10)  Maximum time to wait for broker connection"
 #    print "     -n [--numeric]  Don't resolve names"
-#    print "     -t [--top]      Repeatedly display top items"
-#    print
+    print
     print "Display Options:"
     print
     print "     -b   Show Brokers"
@@ -144,7 +144,7 @@ class BrokerManager(Console):
     def SetBroker(self, brokerUrl):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl)
+        self.broker = self.qmf.addBroker(brokerUrl, _connTimeout)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == 0:
@@ -389,7 +389,7 @@ class BrokerManager(Console):
             self.qmf.delBroker(self.broker)
             self.broker = None
             for host in hostList:
-                b = self.qmf.addBroker(host)
+                b = self.qmf.addBroker(host, _connTimeout)
                 self.brokers.append(Broker(self.qmf, b))
         else:
             self.brokers.append(Broker(self.qmf, self.broker))
@@ -402,7 +402,7 @@ class BrokerManager(Console):
 ##
 
 try:
-    longOpts = ("top", "numeric", "sort-by=", "limit=", "increasing")
+    longOpts = ("top", "numeric", "sort-by=", "limit=", "increasing", "timeout=")
     (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "bceqS:L:I", longOpts)
 except:
     Usage()
@@ -414,8 +414,10 @@ except:
     cargs = encArgs
 
 for opt in optlist:
-    if opt[0] == "-t" or opt[0] == "--top":
-        _top = True
+    if opt[0] == "--timeout":
+        _connTimeout = int(opt[1])
+        if _connTimeout == 0:
+            _connTimeout = None
     elif opt[0] == "-n" or opt[0] == "--numeric":
         _numeric = True
     elif opt[0] == "-S" or opt[0] == "--sort-by":
@@ -448,8 +450,7 @@ try:
 except KeyboardInterrupt:
     print
 except Exception,e:
-    print "Failed:", e.args
-    #raise  # TODO: Remove before flight
+    print "Failed: %s - %s" % (e.__class__.__name__, e)
     sys.exit(1)
 
 bm.Disconnect()
