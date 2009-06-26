@@ -28,6 +28,7 @@ import re
 from qmf.console import Session
 
 _host = "localhost"
+_connTimeout = 10
 _stopId = None
 _stopAll = False
 _force = False
@@ -42,6 +43,7 @@ def Usage ():
     print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
     print
     print "Options:"
+    print "          --timeout seconds (10)  Maximum time to wait for broker connection"
     print "          -C [--all-connections]  View client connections to all cluster members"
     print "          -c [--connections] ID   View client connections to specified member"
     print "          -d [--del-connection] HOST:PORT"
@@ -88,7 +90,7 @@ class BrokerManager:
     def SetBroker(self, brokerUrl):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl)
+        self.broker = self.qmf.addBroker(brokerUrl, _connTimeout)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == 0:
@@ -200,7 +202,7 @@ class BrokerManager:
         idx = 0
         for host in hostList:
             if _showConn == "all" or _showConn == idList[idx] or _delConn:
-                self.brokers.append(self.qmf.addBroker(host))
+                self.brokers.append(self.qmf.addBroker(host, _connTimeout))
                 displayList.append(idList[idx])
             idx += 1
 
@@ -247,7 +249,7 @@ class BrokerManager:
 ##
 
 try:
-    longOpts = ("stop=", "all-stop", "force", "connections=", "all-connections" "del-connection=", "numeric")
+    longOpts = ("stop=", "all-stop", "force", "connections=", "all-connections" "del-connection=", "numeric", "timeout=")
     (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "s:kfCc:d:n", longOpts)
 except:
     Usage()
@@ -260,6 +262,10 @@ except:
 
 count = 0
 for opt in optlist:
+    if opt[0] == "--timeout":
+        _connTimeout = int(opt[1])
+        if _connTimeout == 0:
+            _connTimeout = None
     if opt[0] == "-s" or opt[0] == "--stop":
         _stopId = opt[1]
         if len(_stopId.split(":")) != 2:
@@ -316,7 +322,7 @@ except Exception,e:
     if e.__repr__().find("connection aborted") > 0:
         # we expect this when asking the connected broker to shut down
         sys.exit(0)
-    print "Failed:", e.args
+    print "Failed: %s - %s" % (e.__class__.__name__, e)
     sys.exit(1)
 
 bm.Disconnect()

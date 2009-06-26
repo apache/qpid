@@ -469,11 +469,11 @@ class Session:
   def __repr__(self):
     return "QMF Console Session Manager (brokers: %d)" % len(self.brokers)
 
-  def addBroker(self, target="localhost"):
+  def addBroker(self, target="localhost", timeout=None):
     """ Connect to a Qpid broker.  Returns an object of type Broker. """
     url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, url.authMech, url.authName, url.authPass,
-                    ssl = url.scheme == URL.AMQPS)
+                    ssl = url.scheme == URL.AMQPS, connTimeout=timeout)
 
     self.brokers.append(broker)
     if not self.manageConnections:
@@ -1551,11 +1551,12 @@ class Broker:
   SYNC_TIME = 60
   nextSeq = 1
 
-  def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False):
+  def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False, connTimeout=None):
     self.session  = session
     self.host = host
     self.port = port
     self.ssl = ssl
+    self.connTimeout = connTimeout
     self.authUser = authUser
     self.authPass = authPass
     self.cv = Condition()
@@ -1641,13 +1642,21 @@ class Broker:
 
       sock = connect(self.host, self.port)
       sock.settimeout(5)
+      oldTimeout = sock.gettimeout()
+      sock.settimeout(self.connTimeout)
       if self.ssl:
-        sock = ssl(sock)
-      self.conn = Connection(sock, username=self.authUser, password=self.authPass, heartbeat=2)
+        connSock = ssl(sock)
+      else:
+        connSock = sock
+      self.conn = Connection(connSock, username=self.authUser, password=self.authPass)
       def aborted():
-        raise Timeout("read timed out")
+        raise Timeout("Waiting for connection to be established with broker")
+      oldAborted = self.conn.aborted
       self.conn.aborted = aborted
       self.conn.start()
+      sock.settimeout(oldTimeout)
+      self.conn.aborted = oldAborted
+
       self.replyName = "reply-%s" % self.amqpSessionId
       self.amqpSession = self.conn.session(self.amqpSessionId)
       self.amqpSession.auto_sync = True
@@ -1681,13 +1690,13 @@ class Broker:
       self._send(msg)
 
     except socket.error, e:
-      self.error = "Socket Error %s - %s" % (e[0], e[1])
+      self.error = "Socket Error %s - %s" % (e.__class__.__name__, e)
       raise
     except Closed, e:
-      self.error = "Connect Failed %d - %s" % (e[0], e[1])
+      self.error = "Connect Failed %d - %s" % (e.__class__.__name__, e)
       raise
     except ConnectionFailed, e:
-      self.error = "Connect Failed %d - %s" % (e[0], e[1])
+      self.error = "Connect Failed %d - %s" % (e.__class__.__name__, e)
       raise
 
   def _updateAgent(self, obj):

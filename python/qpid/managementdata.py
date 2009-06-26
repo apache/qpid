@@ -31,6 +31,7 @@ import struct
 import os
 import platform
 import locale
+from qpid.connection import Timeout
 from qpid.management import managementChannel, managementClient
 from threading       import Lock
 from disp            import Display
@@ -206,10 +207,21 @@ class ManagementData:
     self.sessionId      = "%s.%d" % (platform.uname()[1], os.getpid())
 
     self.broker = Broker (host)
-    self.conn   = Connection (connect (self.broker.host, self.broker.port),
+    sock = connect (self.broker.host, self.broker.port)
+    oldTimeout = sock.gettimeout()
+    sock.settimeout(10)
+    self.conn   = Connection (sock,
                               username=self.broker.username, password=self.broker.password)
     self.spec = self.conn.spec
+    def aborted():
+      raise Timeout("Waiting for connection to be established with broker")
+    oldAborted = self.conn.aborted
+    self.conn.aborted = aborted
+
     self.conn.start ()
+
+    sock.settimeout(oldTimeout)
+    self.conn.aborted = oldAborted
 
     self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply, self.closeHandler)
