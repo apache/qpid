@@ -7,4 +7,3 @@ org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalidSize
 
 // exclude until aidan fixes
 org.apache.qpid.server.AlertingTest#*
-org.apache.qpid.server.store.PersistentStoreTest#*

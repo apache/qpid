@@ -5,6 +5,7 @@ broker.version=0-8
 broker=vm
 broker.clean=${project.root}/clean-dir ${build.data} ${project.root}/build/work/derbyDB
 broker.ready=Listening on TCP port
+broker.config=${project.root}/build/etc/config-systests.xml
 
 max_prefetch=1000
 
@@ -16,7 +17,7 @@ log4j.configuration=file:///${project.root}/log4j-test.xml
 log4j.debug=false
 
 test.excludes=true
-test.excludesfile=${project.root}/ExcludeList ${project.root}/XAExcludeList ${project.root}/08ExcludeList
+test.excludesfile=${project.root}/ExcludeList ${project.root}/XAExcludeList ${project.root}/08ExcludeList ${project.root}/08ExcludeList-nopersistence
 test.fork=no
 test.mem=512M
 test=*Test

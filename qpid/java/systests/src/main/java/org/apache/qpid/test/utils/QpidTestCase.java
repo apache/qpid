@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 public class QpidTestCase extends TestCase
 {
     protected final String QpidHome = System.getProperty("QPID_HOME");
-    protected File _configFile = new File(QpidHome, "etc/config-systests.xml");
+    protected File _configFile = new File(System.getProperty("broker.config"));
 
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
