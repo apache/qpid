@@ -30,6 +30,10 @@ using namespace std;
 typedef InlineVector<int, 3> Vec;
 
 bool isInline(const Vec& v) {
+    // If nothing, give it the benefit of the doubt;
+    // can't take address of nothing.
+    if (v.size() <= 0)
+        return true;
     return (const char*)&v <= (const char*)(&v[0]) &&
         (const char*)(&v[0]) < (const char*)&v+sizeof(v);
 }
