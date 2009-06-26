@@ -1,4 +1,4 @@
- /*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -47,7 +47,7 @@ QPID_AUTO_TEST_SUITE(ReplicationTestSuite)
 // The CMake-based build passes in the module suffix; if it's not there, this
 // is a Linux/UNIX libtool-based build.
 #if defined (QPID_MODULE_SUFFIX)
-qpid::sys::Shlib plugin("../replicating_listener" QPID_MODULE_SUFFIX);
+qpid::sys::Shlib plugin("replicating_listener" QPID_MODULE_SUFFIX);
 #else
 qpid::sys::Shlib plugin("../.libs/replicating_listener.so");
 #endif
