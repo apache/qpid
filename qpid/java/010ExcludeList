@@ -76,3 +76,6 @@ org.apache.qpid.client.SessionCreateTest#*
 // QPID-1730: the C++ server has a totally different logging mechanism. We should split this file differently
 org.apache.qpid.server.AlertingTest#*
 
+// The C++ server has a totally different persistence mechanism
+org.apache.qpid.server.store.PersistentStoreTest#*
+
