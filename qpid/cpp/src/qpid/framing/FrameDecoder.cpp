@@ -32,7 +32,8 @@ namespace {
 /** Append up to n bytes from start of buf to end of bytes. */
 void append(std::vector<char>& bytes, Buffer& buffer, size_t n) {
     size_t oldSize = bytes.size();
-    n = std::min(n, size_t(buffer.available()));
+    if ((n = std::min(n, size_t(buffer.available()))) == 0)
+        return;
     bytes.resize(oldSize+n);
     char* p = &bytes[oldSize];
     buffer.getRawData(reinterpret_cast<uint8_t*>(p), n);
