@@ -54,6 +54,7 @@ public class Broker implements MessageListener
                     (valid ? "Valid" : "Invalid"), opcode, sequence);
         }
     }
+
     private static Logger log = LoggerFactory.getLogger(Broker.class);
     public static int SYNC_TIME = 60000;
     // JMS Stuff
@@ -76,7 +77,6 @@ public class Broker implements MessageListener
     private boolean topicBound = false;
     private int reqsOutstanding = 0;
     private Object lockObject = new Object();
-
     UUID brokerId = UUID.randomUUID();
 
     public Broker(org.apache.qpid.console.Session session, String url)
@@ -428,8 +428,8 @@ public class Broker implements MessageListener
 
     public void updateAgent(QMFObject obj)
     {
-        long agentBank = (Long) obj.GetProperty("agentBank");
-        long brokerBank = (Long) obj.GetProperty("brokerBank");
+        long agentBank = (Long) obj.getProperty("agentBank");
+        long brokerBank = (Long) obj.getProperty("brokerBank");
         String key = Agent.AgentKey(agentBank, brokerBank);
         if (obj.isDeleted())
         {
@@ -444,7 +444,7 @@ public class Broker implements MessageListener
             if (!Agents.containsKey(key))
             {
                 Agent newAgent = new Agent(this, agentBank, (String) obj
-                        .GetProperty("label"));
+                        .getProperty("label"));
                 Agents.put(key, newAgent);
                 consoleSession.handleNewAgent(newAgent);
             }

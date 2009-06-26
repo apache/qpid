@@ -233,7 +233,7 @@ public class QMFObject
         return objectID;
     }
 
-    public final Object GetProperty(String attributeName)
+    public final Object getProperty(String attributeName)
     {
         return properties.get(attributeName);
     }

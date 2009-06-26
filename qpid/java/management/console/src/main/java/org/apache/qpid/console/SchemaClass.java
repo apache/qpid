@@ -198,7 +198,7 @@ public class SchemaClass
     {
         superType = value;
     }
-    
+
     public ArrayList<SchemaProperty> getProperties()
     {
         return properties;
