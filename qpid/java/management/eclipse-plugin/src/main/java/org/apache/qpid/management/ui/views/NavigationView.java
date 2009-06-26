@@ -62,6 +62,8 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
 /**
@@ -190,7 +192,7 @@ public class NavigationView extends ViewPart
                         {
                             public void handleEvent(Event e)
                             {
-                                removeManagedObject(parentNode, (ManagedBean) selectedNode.getManagedObject());
+                                removeManagedObject(parentNode, (ManagedBean) selectedNode.getManagedObject(), true);
                                 _treeViewer.refresh();
                                 // set the selection to the parent node
                                 _treeViewer.setSelection(new StructuredSelection(parentNode));
@@ -675,7 +677,7 @@ public class NavigationView extends ViewPart
      * @param parent
      * @param mbean
      */
-    private void removeManagedObject(TreeObject parent, ManagedBean mbean)
+    private void removeManagedObject(TreeObject parent, ManagedBean mbean, boolean removeFromConfigFile)
     {
         List<TreeObject> list = parent.getChildren();
         TreeObject objectToRemove = null;
@@ -693,14 +695,17 @@ public class NavigationView extends ViewPart
             }
             else
             {
-                removeManagedObject(child, mbean);
+                removeManagedObject(child, mbean, removeFromConfigFile);
             }
         }
 
         if (objectToRemove != null)
         {
             list.remove(objectToRemove);
-            removeItemFromConfigFile(objectToRemove);
+            if(removeFromConfigFile)
+            {
+                removeItemFromConfigFile(objectToRemove);
+            }
         }
 
     }
@@ -1201,11 +1206,20 @@ public class NavigationView extends ViewPart
                     {
                         public void run()
                         {
+                            IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+                            final MBeanView view = (MBeanView)window.getActivePage().findView(MBeanView.ID);
+                            
                             for (ManagedBean mbean : removalList)
                             {
                                 TreeObject treeServerObject = _managedServerMap.get(mbean.getServer());
 
-                                removeManagedObject(treeServerObject, mbean);
+                                if(view != null)
+                                {
+                                    //notify the MBeanView in case the unregistered mbean is being viewed
+                                    view.mbeanUnregistered(mbean);
+                                }
+                                
+                                removeManagedObject(treeServerObject, mbean, false);
                             }
 
                             _treeViewer.refresh();

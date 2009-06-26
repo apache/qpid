@@ -42,7 +42,7 @@ public class Refresh extends AbstractAction implements IWorkbenchWindowActionDel
             MBeanView mbeanview = (MBeanView)_window.getActivePage().findView(MBeanView.ID);
             try
             {
-                mbeanview.refreshMBeanView();
+                mbeanview.refresh();
             }
             catch (Exception ex)
             {
