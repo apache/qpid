@@ -149,6 +149,7 @@ public class Session
         { this, schema, dec, hasProperties, hasStats, isManaged };
         try
         {
+            log.debug("" + realClass);
             Constructor ci = realClass.getConstructor(types);
             return (QMFObject) ci.newInstance(args);
         } catch (Exception e)
@@ -277,7 +278,7 @@ public class Session
                 enc.writeUint16(((Integer) val).intValue());
                 break;
             case 3: // U32
-                enc.writeUint32(((Long) val).longValue());
+                enc.writeUint32(((Integer) val).longValue());
                 break;
             case 4: // U64
                 enc.writeUint64(((Long) val).longValue());

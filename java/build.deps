@@ -167,6 +167,7 @@ client-example.test.libs=${test.libs}
 tools.test.libs=${client.test.libs}
 testkit.test.libs=${test.libs}
 management-client.test.libs=${muse.libs} ${test.libs} ${log4j} ${javassist} ${geronimo-servlet} ${commons-pool}
+management-console.test.libs=${junit4} ${slf4j-log4j} ${log4j} ${client.libs}
 management-eclipse-plugin.test.libs=${systests.libs}
 broker-plugins.test.libs=${test.libs}
 management-tools-qpid-cli.test.libs=${junit4} ${slf4j-log4j} ${log4j} ${client.libs}

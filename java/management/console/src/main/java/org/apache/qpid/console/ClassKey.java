@@ -22,9 +22,12 @@ package org.apache.qpid.console;
 
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClassKey
 {
+    private static Logger log = LoggerFactory.getLogger(ClassKey.class);
     private String packageName;
     private String className;
     private long[] hash = new long[4];
@@ -41,8 +44,8 @@ public class ClassKey
 
     public ClassKey(String keyString)
     {
-        String delims = ":()";
-        String[] parts = keyString.split(java.util.regex.Pattern.quote(delims));
+        String delims = "[*:*(*)]";
+        String[] parts = keyString.split(delims);
         if (parts.length < 3)
         {
             throw new ConsoleException(
@@ -51,7 +54,7 @@ public class ClassKey
         setPackageName(parts[0]);
         setClassName(parts[1]);
         delims = "-";
-        String[] bytes = parts[2].split(java.util.regex.Pattern.quote(delims));
+        String[] bytes = parts[2].split(delims);
         if (bytes.length != 4)
         {
             throw new ConsoleException(
@@ -95,15 +98,16 @@ public class ClassKey
     {
         return hash;
     }
-    
-    public String getHashString() {
-        return String.format("%08x-%08x-%08x-%08x", hash[0], hash[1],
-                hash[2], hash[3]);   
+
+    public String getHashString()
+    {
+        return String.format("%08x-%08x-%08x-%08x", hash[0], hash[1], hash[2],
+                hash[3]);
     }
 
     public String getKeyString()
     {
-        String hashString = this.getHashString() ;
+        String hashString = this.getHashString();
         return String.format("%s:%s(%s)", getPackageName(), getClassName(),
                 hashString);
     }
