@@ -19,7 +19,11 @@
  */
 
 int* loaderData = 0;
-extern "C" void callMe(int *i) { loaderData=i; }
+extern "C"
+#ifdef WIN32
+__declspec(dllexport)
+#endif
+void callMe(int *i) { loaderData=i; }
 
 struct OnUnload { ~OnUnload() { *loaderData=42; } };
 OnUnload unloader;              // For destructor.
