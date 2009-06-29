@@ -1693,10 +1693,10 @@ class Broker:
       self.error = "Socket Error %s - %s" % (e.__class__.__name__, e)
       raise
     except Closed, e:
-      self.error = "Connect Failed %d - %s" % (e.__class__.__name__, e)
+      self.error = "Connect Failed %s - %s" % (e.__class__.__name__, e)
       raise
     except ConnectionFailed, e:
-      self.error = "Connect Failed %d - %s" % (e.__class__.__name__, e)
+      self.error = "Connect Failed %s - %s" % (e.__class__.__name__, e)
       raise
 
   def _updateAgent(self, obj):
