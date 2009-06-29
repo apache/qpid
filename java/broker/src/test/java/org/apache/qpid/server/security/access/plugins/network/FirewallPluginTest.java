@@ -195,8 +195,8 @@ public class FirewallPluginTest extends TestCase
     {
         RuleInfo rule = new RuleInfo();
         rule.setAccess("allow");
-        rule.setHostname(".*ocal.*");
-        
+        String hostname = new InetSocketAddress("127.0.0.1", 0).getHostName();
+        rule.setHostname(".*"+hostname.subSequence(hostname.length() - 1, hostname.length())+"*");
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set session IP so that we're connected from the right address
