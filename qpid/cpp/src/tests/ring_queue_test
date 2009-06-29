@@ -42,7 +42,7 @@ send() {
 
 receive() {
     #TODO: allow a variety of receiver options to be passed in (ack-frequency, credit-window etc)
-    receiver --queue $QUEUE_NAME --ignore-duplicates > receiver_${QUEUE_NAME}_${1}
+    receiver --queue $QUEUE_NAME > receiver_${QUEUE_NAME}_${1}
 }
 
 cleanup() {
