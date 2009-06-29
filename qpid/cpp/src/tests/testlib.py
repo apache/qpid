@@ -35,7 +35,7 @@ class TestBase(unittest.TestCase):
     _storeLib = os.getenv("STORE_LIB")
     _storeEnable = _storeLib != None # Must be True for durability to be enabled during the test
     _qpiddExec = os.getenv("QPIDD_EXEC", "/usr/sbin/qpidd")
-    _tempStoreDir = os.path.abspath(os.getenv("TMP_STORE_DIR", "/tmp/qpid"))
+    _tempStoreDir = os.path.abspath(os.getenv("TMP_DATA_DIR", "/tmp/qpid"))
     
     """Global message counter ensures unique messages"""
     _msgCnt = 0
@@ -190,7 +190,7 @@ class TestBaseCluster(TestBase):
     def createClusterNode(self, nodeNumber, clusterName):
         """Create a node and add it to the named cluster"""
         if self._tempStoreDir == None:
-            raise Exception("Environment variable TMP_STORE_DIR is not set")
+            raise Exception("Environment variable TMP_DATA_DIR is not set")
         if self._clusterLib == None:
             raise Exception("Environment variable LIBCLUSTER is not set")
         name = "%s-%d" % (clusterName, nodeNumber)
