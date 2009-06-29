@@ -234,6 +234,10 @@ check_PROGRAMS+=qpid_ping
 qpid_ping_SOURCES=qpid_ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_ping_LDADD=$(lib_client) 
 
+check_PROGRAMS+=datagen
+datagen_SOURCES=datagen.cpp
+datagen_LDADD=$(lib_common)
+
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
