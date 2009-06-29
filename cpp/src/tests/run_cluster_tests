@@ -68,15 +68,15 @@ export SENDER_EXEC=${top_builddir}/src/tests/sender
 
 
 #Make sure temp dir exists if this is the first to use it
-TMP_STORE_DIR=${TEST_DIR}/test_tmp
-if ! test -d ${TMP_STORE_DIR} ; then
-   	mkdir -p ${TMP_STORE_DIR}/cluster
+TMP_DATA_DIR=${TEST_DIR}/test_tmp
+if ! test -d ${TMP_DATA_DIR} ; then
+   	mkdir -p ${TMP_DATA_DIR}/cluster
 else
     # Delete old cluster test dirs
-    rm -rf ${TMP_STORE_DIR}/cluster
-    mkdir -p ${TMP_STORE_DIR}/cluster
+    rm -rf ${TMP_DATA_DIR}/cluster
+    mkdir -p ${TMP_DATA_DIR}/cluster
 fi
-export TMP_STORE_DIR
+export TMP_DATA_DIR
 
 
 sg ais -c "${srcdir}/cluster.py -v"
@@ -86,6 +86,6 @@ if test x${RETCODE} != x0; then
 fi
 
 # Delete cluster store dir if test was successful.
-rm -rf ${TMP_STORE_DIR}
+rm -rf ${TMP_DATA_DIR}
 
 exit 0
