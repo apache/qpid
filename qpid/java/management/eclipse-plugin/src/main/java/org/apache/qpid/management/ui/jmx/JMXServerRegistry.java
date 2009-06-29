@@ -164,6 +164,12 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
+        if (mbean == null)
+        {
+            return;
+        }
+        
+        _mbeansMap.remove(mbean.getUniqueName());
         
         if (mbean.isQueue())
         {
@@ -177,8 +183,6 @@ public class JMXServerRegistry extends ServerRegistry
         {
             removeConnectionMBean(mbean);
         }
-        
-        _mbeansMap.remove(mbean.getUniqueName());
     }
     
     public void putMBeanInfo(ManagedBean mbean, MBeanInfo mbeanInfo)
@@ -423,11 +427,11 @@ public class JMXServerRegistry extends ServerRegistry
     public void unregisterManagedObject(ObjectName objName)
     {
         ManagedBean mbean = _mbeansMap.get(objName.toString());
-        removeManagedObject(mbean);
         // Check if mbean was not available in the map. It can happen if mbean unregistration
         // notification is received and the mbean is not added in the map.
         if (mbean != null)
         {
+            removeManagedObject(mbean);
             _mbeansToBeRemoved.add(mbean);
         }
     }
