@@ -63,6 +63,3 @@ libqmfagent_la_SOURCES = \
   qmf/Agent.cpp
 
 libqmfagent_la_LIBADD = libqpidclient.la
-
-libqmfagent_ladir = $(includedir)/qmf
-libqmfagent_la_HEADERS = $(module_hdr)
