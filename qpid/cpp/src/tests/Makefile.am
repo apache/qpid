@@ -271,7 +271,9 @@ EXTRA_DIST +=								\
   TestMessageStore.h							\
   TxMocks.h								\
   replication_test							\
-  run_perftest
+  run_perftest								\
+  ring_queue_test								\
+  run_ring_queue_test
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -282,7 +284,7 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
 
-LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak stop_broker \
+LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test run_failover_soak stop_broker \
  reliable_replication_test federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test \
