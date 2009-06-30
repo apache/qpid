@@ -150,9 +150,9 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
+    void announce() {}          // handled by Cluster.
     void abort();
     void deliverClose();
-    void errorCheck(uint8_t type, uint64_t frameSeq);
 
     OutputInterceptor& getOutput() { return output; }
 

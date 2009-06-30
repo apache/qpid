@@ -206,11 +206,11 @@ QPID_AUTO_TEST_CASE(testBadClientData) {
     ci->handle(poison);
     {
         ScopedSuppressLogging sl;
-        BOOST_CHECK_THROW(c0.session.queueQuery("q"), TransportFailure);
+        BOOST_CHECK_THROW(c0.session.queueQuery("q0"), TransportFailure);
     }
     Client c00(cluster[0]);
-    BOOST_CHECK_EQUAL(c00.session.queueQuery("q").getQueue(), "");
-    BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getQueue(), "");
+    BOOST_CHECK_EQUAL(c00.session.queueQuery("q00").getQueue(), "");
+    BOOST_CHECK_EQUAL(c1.session.queueQuery("q1").getQueue(), "");
 }
 
 #if 0
@@ -784,9 +784,9 @@ QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
         std::string expectedContent;
         qpid::client::Subscription subscription;
         qpid::sys::Monitor lock;
-        bool ready;
+        bool ready, failed;
 
-        Receiver(FailoverManager& m, const std::string& q, const std::string& c) : mgr(m), queue(q), expectedContent(c), ready(false) {}
+        Receiver(FailoverManager& m, const std::string& q, const std::string& c) : mgr(m), queue(q), expectedContent(c), ready(false), failed(false) {}
 
         void received(Message& message)
         {
@@ -808,7 +808,13 @@ QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
 
         void run()
         {
+            try { 
             mgr.execute(*this);
+        }
+            catch (const std::exception& e) {
+                BOOST_MESSAGE("Exception in mgr.execute: " << e.what());
+                failed = true;
+            }
         }
 
         void waitForReady()
@@ -843,6 +849,7 @@ QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
     ::usleep(2*1000*1000);
     fmgr.execute(sender);
     runner.join();
+    BOOST_CHECK(!receiver.failed);
     fmgr.close();
 }
 

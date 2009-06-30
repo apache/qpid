@@ -62,7 +62,7 @@ void Multicaster::mcast(const Event& e) {
     {
         sys::Mutex::ScopedLock l(lock);
         LATENCY_TRACK(cpgLatency.start());
-        if (e.getType() == DATA && e.isConnection() && holding) {
+        if (e.isConnection() && holding) {
             holdingQueue.push_back(e); 
             return;
         }

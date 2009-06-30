@@ -94,6 +94,7 @@ class Ping : public Runnable {
             ;
         if (status == WAITING && !opts.quiet)
             cerr << "Timed out after " << opts.timeout << " seconds." << endl;
+        if (status != WAITING) thread.join();
         return status == SUCCESS;
     }
 };
@@ -104,7 +105,7 @@ int main(int argc, char** argv) {
         opts.parse(argc, argv);
         Ping ping;
         ping.start();
-        if (!ping.wait()) return 1;
+        if (!ping.wait()) exit(1);
         if (!opts.quiet) cout << "Success!" << endl;
         return 0;
     } catch (const exception& e) {

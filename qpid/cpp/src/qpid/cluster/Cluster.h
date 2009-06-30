@@ -144,10 +144,12 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
+    void errorCheck(const MemberId&, uint8_t type, uint64_t frameSeq, Lock&);
+
     void shutdown(const MemberId&, Lock&);
 
     // Helper functions
-    ConnectionPtr getConnection(const ConnectionId&, Lock&);
+    ConnectionPtr getConnection(const EventFrame&, Lock&);
     ConnectionVector getConnections(Lock&);
     void updateStart(const MemberId& updatee, const Url& url, Lock&);
     void makeOffer(const MemberId&, Lock&);
