@@ -39,18 +39,18 @@ public class SSLSender implements Sender<ByteBuffer>
     private int sslBufSize;
     private ByteBuffer netData;
     private long timeout = 30000;
-    
+
     private final Object engineState = new Object();
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    
-    private static final Logger log = Logger.get(SSLSender.class);    
-    
+
+    private static final Logger log = Logger.get(SSLSender.class);
+
     public SSLSender(SSLEngine engine, Sender<ByteBuffer> delegate)
     {
         this.engine = engine;
-        this.delegate = delegate;        
+        this.delegate = delegate;
         sslBufSize = engine.getSession().getPacketBufferSize();
-        netData = ByteBuffer.allocate(sslBufSize);    
+        netData = ByteBuffer.allocate(sslBufSize);
         timeout = Long.getLong("qpid.ssl_timeout", 60000);
     }
 
@@ -66,13 +66,13 @@ public class SSLSender implements Sender<ByteBuffer>
             engine.closeOutbound();
             try
             {
-                tearDownSSLConnection();            
+                tearDownSSLConnection();
             }
             catch(Exception e)
             {
                 throw new SenderException("Error closing SSL connection",e);
             }
-            
+
             while (!engine.isOutboundDone())
             {
                 synchronized(engineState)
@@ -107,24 +107,24 @@ public class SSLSender implements Sender<ByteBuffer>
                 int limit = netData.limit();
                 netData.limit(netData.position());
                 netData.position(netData.position() - read);
-                
+
                 ByteBuffer data = netData.slice();
-                
+
                 netData.limit(limit);
                 netData.position(netData.position() + read);
-                
+
                 delegate.send(data);
                 flush();
-            }            
+            }
             result = engine.wrap(ByteBuffer.allocate(0), netData);
-            status = result.getStatus();             
+            status = result.getStatus();
             read   = result.bytesProduced();
         }
     }
-    
+
     public void flush()
     {
-        delegate.flush();        
+        delegate.flush();
     }
 
     public void send(ByteBuffer appData)
@@ -136,54 +136,54 @@ public class SSLSender implements Sender<ByteBuffer>
 
         HandshakeStatus handshakeStatus;
         Status status;
-        
+
         while(appData.hasRemaining())
-        {        
+        {
 
             int read = 0;
             try
             {
-                SSLEngineResult result = engine.wrap(appData, netData);        
+                SSLEngineResult result = engine.wrap(appData, netData);
                 read   = result.bytesProduced();
                 status = result.getStatus();
                 handshakeStatus = result.getHandshakeStatus();
-                
+
             }
             catch(SSLException e)
             {
                 throw new SenderException("SSL, Error occurred while encrypting data",e);
-            }            
-            
+            }
+
             if(read > 0)
             {
                 int limit = netData.limit();
                 netData.limit(netData.position());
                 netData.position(netData.position() - read);
-                
+
                 ByteBuffer data = netData.slice();
-                
+
                 netData.limit(limit);
                 netData.position(netData.position() + read);
-                
+
                 delegate.send(data);
             }
-            
-            switch(status) 
+
+            switch(status)
             {
                 case CLOSED:
                     throw new SenderException("SSLEngine is closed");
-                
+
                 case BUFFER_OVERFLOW:
                     netData.clear();
                     continue;
-                    
-                case OK:                        
-                    break; // do nothing 
-                
+
+                case OK:
+                    break; // do nothing
+
                 default:
                     throw new IllegalStateException("SSLReceiver: Invalid State " + status);
-            }          
-            
+            }
+
             switch (handshakeStatus)
             {
                 case NEED_WRAP:
@@ -191,11 +191,11 @@ public class SSLSender implements Sender<ByteBuffer>
                     {
                         continue;
                     }
-                
+
                 case NEED_TASK:
                     doTasks();
                     break;
-                   
+
                 case NEED_UNWRAP:
                     flush();
                     synchronized(engineState)
@@ -209,7 +209,7 @@ public class SSLSender implements Sender<ByteBuffer>
                         {
                             // pass
                         }
-                        
+
                         if (System.currentTimeMillis()- start >= timeout)
                         {
                             throw new SenderException(
@@ -218,31 +218,31 @@ public class SSLSender implements Sender<ByteBuffer>
                         }
                     }
                     break;
-                    
-                case FINISHED:                     
+
+                case FINISHED:
                 case NOT_HANDSHAKING:
                     break; //do  nothing
-                      
+
                 default:
                     throw new IllegalStateException("SSLReceiver: Invalid State " + status);
             }
-            
+
         }
     }
-    
-    public void doTasks() 
+
+    public void doTasks()
     {
         Runnable runnable;
         while ((runnable = engine.getDelegatedTask()) != null) {
             runnable.run();
         }
-    }    
-    
+    }
+
     public Object getNotificationToken()
     {
         return engineState;
     }
-    
+
     public void setIdleTimeout(long l)
     {
         delegate.setIdleTimeout(l);
