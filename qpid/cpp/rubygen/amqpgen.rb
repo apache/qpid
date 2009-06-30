@@ -30,6 +30,7 @@
 require 'delegate'
 require 'rexml/document'
 require 'pathname'
+require 'set'
 include REXML
 
 # Handy String functions for converting names.
@@ -463,8 +464,8 @@ end
 
 # Collect information about generated files.
 class GenFiles
-  @@files =[]
-  def GenFiles.add(f) @@files << f; end
+  @@files = Set.new 
+  def GenFiles.add(f) @@files.add f; end
   def GenFiles.get() @@files; end
 end
 
