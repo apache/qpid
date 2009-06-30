@@ -48,25 +48,6 @@
       <field name="id" type="uint64"/>
     </control>
     
-    <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
-
-  </class>
-
-  <!-- Controls associated with a specific connection. -->
-
-  <class name="cluster-connection" code="0x81" label="Qpid clustering extensions.">
-
-    <!-- Abort a connection that is sending invalid data. -->
-    <control name="abort" code="0x1"/>
-
-    <!-- Marks the cluster-wide point when a connection is considered closed. -->
-    <control name="deliver-close" code="0x2"/>
-
-    <!-- Permission to generate output up to the limit. -->
-    <control name="deliver-do-output" code="0x3">
-      <field name="limit" type="uint32"/>
-    </control>
-
     <domain name="error-type" type="uint8" label="Types of error">
       <enum>
 	<choice name="none" value="0"/>
@@ -76,10 +57,33 @@
     </domain>
 	
     <!-- Check for error consistency across the cluster -->
-    <control name="error-check" code="0x4">
+    <control name="error-check" code="0x14">
       <field name="type" type="error-type"/>
       <field name="frame-seq" type="uint64"/>
     </control>
+    
+
+    <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
+
+  </class>
+
+  <!-- Controls associated with a specific connection. -->
+
+  <class name="cluster-connection" code="0x81" label="Qpid clustering extensions.">
+
+    <!-- Announce a new connection -->
+    <control name="announce" code="0x1"/>
+
+    <!-- Marks the cluster-wide point when a connection is considered closed. -->
+    <control name="deliver-close" code="0x2"/>
+
+    <!-- Permission to generate output up to the limit. -->
+    <control name="deliver-do-output" code="0x3">
+      <field name="limit" type="uint32"/>
+    </control>
+
+    <!-- Abort a connection that is sending invalid data. -->
+    <control name="abort" code="0x4"/>
     
     <!-- Update controls. Sent to a new broker in joining mode.
 	 A connection is updateed as followed:
