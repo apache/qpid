@@ -28,12 +28,13 @@ MESSAGES=10000
 SENDERS=1
 RECEIVERS=1
 CONCURRENT=0
+BROKER_URL="-a ${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
 
 setup() {
     if [[ $DURABLE -gt 0 ]]; then
         EXTRA_ARGS=" --durable"
     fi
-    qpid-config add queue $QUEUE_NAME --max-queue-count $LIMIT --limit-policy ring $EXTRA_ARGS
+    qpid-config $BROKER_URL add queue $QUEUE_NAME --max-queue-count $LIMIT --limit-policy ring $EXTRA_ARGS
 }
 
 send() {
@@ -47,7 +48,7 @@ receive() {
 
 cleanup() {
     rm -f sender_${QUEUE_NAME}_* receiver_${QUEUE_NAME}_*
-    qpid-config add queue $QUEUE_NAME
+    qpid-config $BROKER_URL add queue $QUEUE_NAME
 }
 
 log() {
@@ -140,7 +141,6 @@ Options:
       -q <queue>      the name of the queue to use
       -s <senders>    the number of senders to start
       -r <receivers>  the number of receivers to start
-      -u <url>
       -l <limit>      the limit for the ring queue
       -m <messages>   the number of messages to send
       -c              if specified, receivers will run concurrently with senders
@@ -156,7 +156,6 @@ while getopts "s:r:m:u:dch" opt ; do
 	s) SENDERS=$OPTARG ;;
 	r) RECEIVERS=$OPTARG ;;
 	m) MESSAGES=$OPTARG ;;
-	u) URL=$OPTARG ;;
         d) DURABLE=1 ;;
         c) CONCURRENT=1 ;;
         h) usage;;
