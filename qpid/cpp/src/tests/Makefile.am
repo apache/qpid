@@ -244,7 +244,9 @@ TESTS_ENVIRONMENT = \
     srcdir=$(srcdir) \
     top_builddir=$(top_builddir) \
     QPID_DATA_DIR= \
-    QPID_LIB_DIR=../.libs \
+    ACL_LIB=../.libs/acl.so \
+    CLUSTER_LIB=../.libs/cluster.so \
+    TEST_STORE_LIB=.libs/test_store.so \
     BOOST_TEST_SHOW_PROGRESS=yes \
     $(srcdir)/run_test 
 

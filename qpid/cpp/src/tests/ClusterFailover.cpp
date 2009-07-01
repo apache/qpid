@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -51,7 +51,7 @@ const sys::Duration TIMEOUT=sys::TIME_SEC/4;
 // Test re-connecting with same session name after a failure.
 QPID_AUTO_TEST_CASE(testReconnectSameSessionName) {
     ostringstream clusterLib;
-    clusterLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/cluster.so";
+    clusterLib << getLibPath("CLUSTER_LIB", "../.libs/cluster.so");
     ClusterFixture::Args args = list_of<string>("--auth")("no")("--no-module-dir")("--no-data-dir")("--load-module")(clusterLib.str());
     ClusterFixture cluster(2, args, -1);
     Client c0(cluster[0], "foo");
