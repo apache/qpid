@@ -673,9 +673,15 @@ public class QpidTestCase extends TestCase
 
         revertSystemProperties();
     }
-
+    
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count) throws Exception
+    {
+       return sendMessage(session, destination, count, 0);
+    }
+
+    public List<Message> sendMessage(Session session, Destination destination,
+                                     int count,int batchSize) throws Exception
     {
         List<Message> messages = new ArrayList<Message>(count);
         
@@ -683,13 +689,35 @@ public class QpidTestCase extends TestCase
 
         for (int i = 0; i < count; i++)
         {
-            Message next = session.createMessage();
+            Message next = createNextMessage(session, i);
 
             producer.send(next);
 
+            if (session.getTransacted() && batchSize > 0)
+            {
+                if (i % batchSize == 0)
+                {
+                    session.commit();
+                }
+
+            }
+
             messages.add(next);
         }
+
+        // Ensure we commit the last messages
+        if (session.getTransacted() && (batchSize > 0) &&
+            (count / batchSize != 0))
+        {
+            session.commit();
+        }
+
         return messages;
+    }
+
+    public Message createNextMessage(Session session, int msgCount) throws JMSException
+    {
+        return session.createMessage();
     }
 
     public ConnectionURL getConnectionURL() throws NamingException
