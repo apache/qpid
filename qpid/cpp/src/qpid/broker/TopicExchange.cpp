@@ -322,6 +322,7 @@ void TopicExchange::route(Deliverable& msg, const string& routingKey, const Fiel
 
 bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routingKey, const FieldTable* const)
 {
+    RWlock::ScopedRlock l(lock);
     if (routingKey && queue) {
         string key(normalize(*routingKey));
         return isBound(queue, key);
