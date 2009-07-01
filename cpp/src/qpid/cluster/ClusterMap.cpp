@@ -158,8 +158,6 @@ bool ClusterMap::ready(const MemberId& id, const Url& url) {
 bool ClusterMap::configChange(const std::string& addresses) {
     bool memberChange = false;
     Set update = decode(addresses);
-    for (std::string::const_iterator i = addresses.begin(); i < addresses.end(); i += 8)  
-        update.insert(MemberId(std::string(i, i+8)));
     Set removed;
     std::set_difference(alive.begin(), alive.end(),
                         update.begin(), update.end(),

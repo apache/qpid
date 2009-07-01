@@ -108,7 +108,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Called in deliverFrame thread to indicate an error from the broker.
     void flagError(Connection&, ErrorCheck::ErrorType, const std::string& msg);
-    void connectionError();
 
     // Called only during update by Connection::shadowReady
     Decoder& getDecoder() { return decoder; }
@@ -122,6 +121,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     typedef PollableQueue<EventFrame> PollableFrameQueue;
     typedef std::map<ConnectionId, ConnectionPtr> ConnectionMap;
 
+    /** Version number of the cluster protocol, to avoid mixed versions. */
+    static const uint32_t CLUSTER_VERSION;
+    
     // NB: A dummy Lock& parameter marks functions that must only be
     // called with Cluster::lock  locked.
  
@@ -141,7 +143,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Cluster controls implement XML methods from cluster.xml.
     void updateRequest(const MemberId&, const std::string&, Lock&);
-    void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
+    void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&,
+                     uint32_t version, Lock&);
     void retractOffer(const MemberId& updater, uint64_t updatee, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
@@ -159,7 +162,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);       
-    void cancelOffer(const MemberId&, Lock&);
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 

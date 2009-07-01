@@ -37,6 +37,7 @@ class LockedConnectionMap
   public:
     void insert(const ConnectionPtr& c) {
         sys::Mutex::ScopedLock l(lock);
+        assert(map.find(c->getId()) == map.end());
         map[c->getId()] = c;
     }
     
