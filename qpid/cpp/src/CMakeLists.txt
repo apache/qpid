@@ -147,7 +147,8 @@ endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 find_package(Boost 1.33 REQUIRED
-             COMPONENTS date_time program_options regex thread unit_test_framework)
+             COMPONENTS date_time filesystem program_options thread
+                        regex unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
@@ -254,7 +255,7 @@ if (BUILD_ACL)
        qpid/acl/AclReader.h
       )
   add_library (acl MODULE ${acl_SOURCES})
-  target_link_libraries (acl qpidbroker)
+  target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties (acl PROPERTIES
                            PREFIX ""
@@ -354,8 +355,8 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${qpid_poller_module}
   )
   set (libqpidcommon_platform_LIBS
-    ${Boost_program_options_LIBRARY}
-    ${Boost_filesystem_LIBRARY}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+    ${Boost_FILESYSTEM_LIBRARY}
     uuid
     ${CMAKE_DL_LIBS}
   )
@@ -687,7 +688,4 @@ add_definitions(-DHAVE_CONFIG_H)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-# tests has EXCLUDE_FROM_ALL to avoid building and running tests during
-# "make all". Top-level CMakeLists has a "check" target that runs the tests
-# and all the tests are dependencies of "check" so they'll get built then.
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+add_subdirectory(tests)

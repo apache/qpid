@@ -28,6 +28,20 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include (FindPythonInterp)
 
+# If valgrind is selected in the configuration step, set up the path to it
+# for CTest.
+if (ENABLE_VALGRIND)
+  set (MEMORYCHECK_COMMAND ${VALGRIND})
+  set (MEMORYCHECK_COMMAND_OPTIONS "--gen-suppressions=all
+--leak-check=full
+--demangle=yes
+--suppressions=${CMAKE_CURRENT_SOURCE_DIR}/.valgrind.supp
+--num-callers=25
+--log-file=ctest_valgrind.vglog")
+else (ENABLE_VALGRIND)
+  unset (MEMORYCHECK_COMMAND)
+endif (ENABLE_VALGRIND)
+
 # Using the Boost DLLs triggers warning 4275 on Visual Studio
 # (non dll-interface class used as base for dll-interface class).
 # This is ok, so suppress the warning.
@@ -38,8 +52,8 @@ endif (MSVC)
 
 # Like this to work with cmake 2.4 on Unix
 set (qpid_test_boost_libs 
-     ${Boost_regex_LIBRARY}
-     ${Boost_unit_test_framework_LIBRARY})
+     ${Boost_REGEX_LIBRARY}
+     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
 # Macro to make it easier to remember where the tests are built
 macro(remember_location testname)
@@ -140,10 +154,8 @@ target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidclient qpidbroker qmfconsole)
 remember_location(unit_test)
-add_dependencies (check unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
-add_dependencies (check shlibtest)
 #libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
 
 #include cluster.mk
@@ -158,108 +170,90 @@ add_executable (perftest perftest.cpp ${platform_test_additions})
 target_link_libraries (perftest qpidclient)
 #perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 remember_location(perftest)
-add_dependencies (check perftest)
 
 add_executable (txtest txtest.cpp ${platform_test_additions})
 target_link_libraries (txtest qpidclient)
 #txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txtest)
-add_dependencies (check txtest)
 
 add_executable (latencytest latencytest.cpp ${platform_test_additions})
 target_link_libraries (latencytest qpidclient)
 #latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
 remember_location(latencytest)
-add_dependencies (check latencytest)
 
 add_executable (echotest echotest.cpp ${platform_test_additions})
 target_link_libraries (echotest qpidclient)
 #echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
 remember_location(echotest)
-add_dependencies (check echotest)
 
 add_executable (client_test client_test.cpp ${platform_test_additions})
 target_link_libraries (client_test qpidclient)
 #client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
 remember_location(client_test)
-add_dependencies (check client_test)
 
 add_executable (topic_listener topic_listener.cpp ${platform_test_additions})
 target_link_libraries (topic_listener qpidclient)
 #topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
 remember_location(topic_listener)
-add_dependencies (check topic_listener)
 
 add_executable (topic_publisher topic_publisher.cpp ${platform_test_additions})
 target_link_libraries (topic_publisher qpidclient)
 #topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
 remember_location(topic_publisher)
-add_dependencies (check topic_publisher)
 
 add_executable (publish publish.cpp ${platform_test_additions})
 target_link_libraries (publish qpidclient)
 #publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
 remember_location(publish)
-add_dependencies (check publish)
 
 add_executable (consume consume.cpp ${platform_test_additions})
 target_link_libraries (consume qpidclient)
 #consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
 remember_location(consume)
-add_dependencies (check consume)
 
 add_executable (header_test header_test.cpp ${platform_test_additions})
 target_link_libraries (header_test qpidclient)
 #header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 remember_location(header_test)
-add_dependencies (check header_test)
 
 if (BUILD_CLUSTER)
   add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp ${platform_test_additions})
   target_link_libraries (failover_soak qpidclient)
   #failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
   remember_location(failover_soak)
-  add_dependencies (check failover_soak)
 endif (BUILD_CLUSTER)
 
 add_executable (declare_queues declare_queues.cpp ${platform_test_additions})
 target_link_libraries (declare_queues qpidclient)
 remember_location(declare_queues)
-add_dependencies (check declare_queues)
 
 add_executable (replaying_sender replaying_sender.cpp ${platform_test_additions})
 target_link_libraries (replaying_sender qpidclient)
 remember_location(replaying_sender)
-add_dependencies (check replaying_sender)
 
 add_executable (resuming_receiver resuming_receiver.cpp ${platform_test_additions})
 target_link_libraries (resuming_receiver qpidclient)
 remember_location(resuming_receiver)
-add_dependencies (check resuming_receiver)
 
 add_executable (txshift txshift.cpp ${platform_test_additions})
 target_link_libraries (txshift qpidclient)
 #txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txshift)
-add_dependencies (check txshift)
 
 add_executable (txjob txjob.cpp ${platform_test_additions})
 target_link_libraries (txjob qpidclient)
 #txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
 remember_location(txjob)
-add_dependencies (check txjob)
 
 add_executable (receiver receiver.cpp ${platform_test_additions})
 target_link_libraries (receiver qpidclient)
 #receiver_SOURCES=receiver.cpp  TestOptions.h ConnectionOptions.h
 remember_location(receiver)
-add_dependencies (check receiver)
 
 add_executable (sender sender.cpp ${platform_test_additions})
 target_link_libraries (sender qpidclient)
 #sender_SOURCES=sender.cpp  TestOptions.h ConnectionOptions.h
 remember_location(sender)
-add_dependencies (check sender)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (ENV{OUTDIR} ${EXECUTABLE_OUTPUT_PATH})
