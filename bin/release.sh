@@ -110,14 +110,14 @@ for arg in $* ; do
  esac
 done
 
-if [ -z "$SVN" -o -z "$REV" -o -z "$VER" ]; then
-    echo "Usage: release.sh <svn-path> <svn-revision> <version>"
-    exit 1
-fi
-
 if [ -n "${HELP}" ] ; then
  usage
  exit 0
+fi
+
+if [ -z "$SVN" -o -z "$REV" -o -z "$VER" ]; then
+    echo "Usage: release.sh <svn-path> <svn-revision> <version>"
+    exit 1
 fi
 
 echo SVN:$SVN
