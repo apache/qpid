@@ -146,7 +146,8 @@ void UpdateClient::update() {
     client::ConnectionAccess::getImpl(connection)->handle(frame);
 
     connection.close();
-    QPID_LOG(debug,  updaterId << " updated state to " << updateeId << " at " << updateeUrl);
+    QPID_LOG(debug,  updaterId << " update completed to " << updateeId
+             << " at " << updateeUrl << ": " << membership);
 }
 
 namespace {

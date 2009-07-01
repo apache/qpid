@@ -36,6 +36,7 @@
     <control name = "update-offer" code="0x2">
       <field name="updatee" type="uint64"/>
       <field name="cluster-id" type="uuid"/>
+      <field name="version" type="uint32"/>
     </control>
 
     <!-- Sender retracts an offer to a new joiner. -->

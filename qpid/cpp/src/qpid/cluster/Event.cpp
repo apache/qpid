@@ -113,11 +113,12 @@ Event::operator Buffer() const  {
     return Buffer(const_cast<char*>(getData()), getSize());
 }
 
-AMQFrame Event::getFrame() const {
+const AMQFrame& Event::getFrame() const {
     assert(type == CONTROL);
+    if (!frame.getBody()) {
     Buffer buf(*this);
-    AMQFrame frame;
     QPID_ASSERT(frame.decode(buf));
+    }
     return frame;
 }
 
@@ -128,8 +129,17 @@ std::ostream& operator << (std::ostream& o, EventType t) {
 }
 
 std::ostream& operator << (std::ostream& o, const EventHeader& e) {
-    o << "Event[" << e.getConnectionId() << " " << e.getType() << " " << e.getSize() << " bytes]";
-    return o;
+    return o << "Event[" << e.getConnectionId() << " " << e.getType()
+             << " " << e.getSize() << " bytes]";
+}
+
+std::ostream& operator << (std::ostream& o, const Event& e) {
+    o << "Event[" << e.getConnectionId() << " ";
+    if (e.getType() == CONTROL)
+        o << e.getFrame();
+    else
+        o << " data " << e.getSize() << " bytes";
+    return o << "]";
 }
 
 }} // namespace qpid::cluster

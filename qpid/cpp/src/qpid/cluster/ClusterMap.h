@@ -95,6 +95,9 @@ class ClusterMap {
     uint64_t getFrameSeq() { return frameSeq; }
     uint64_t incrementFrameSeq() { return ++frameSeq; }
     
+    /** Clear out all knowledge of joiners & members, just keep alive set */
+    void clearStatus() { joiners.clear(); members.clear(); }
+    
   private:
     Url getUrl(const Map& map, const  MemberId& id);
     

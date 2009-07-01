@@ -95,7 +95,7 @@ class Event : public EventHeader {
     char* getStore() { return store; }
     const char* getStore() const { return store; }
 
-    framing::AMQFrame getFrame() const;        
+    const framing::AMQFrame& getFrame() const;        
     
     operator framing::Buffer() const;
 
@@ -105,8 +105,10 @@ class Event : public EventHeader {
     void encodeHeader() const;
 
     RefCountedBuffer::pointer store;
+    mutable framing::AMQFrame frame;
 };
 
+std::ostream& operator << (std::ostream&, const Event&);
 std::ostream& operator << (std::ostream&, const EventHeader&);
 
 }} // namespace qpid::cluster
