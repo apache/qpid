@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -50,8 +50,8 @@ static bool isLogOption(const std::string& s) { return boost::starts_with(s, "--
 
 void updateArgs(ClusterFixture::Args& args, size_t index) {
     ostringstream clusterLib, testStoreLib, storeName;
-    clusterLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/cluster.so";
-    testStoreLib << getLibPath("QPID_LIB_DIR", "../.libs") << "/../tests/.libs/test_store.so";
+    clusterLib << getLibPath("CLUSTER_LIB", "../.libs/cluster.so");
+    testStoreLib << getLibPath("TEST_STORE_LIB", ".libs/test_store.so");
     storeName << "s" << index;
     args.push_back("--auth");
     args.push_back("no");
@@ -88,112 +88,120 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
     // the statements expected to fail (in BOOST_CHECK_THROW) but that
     // sproadically lets out messages, possibly because they're in
     // Connection thread.
-    ScopedSuppressLogging allQuiet; 
-
-    ClusterFixture cluster(3, updateArgs, -1);    
-    Client c0(cluster[0], "c0");
-    Client c1(cluster[1], "c1");
-    Client c2(cluster[2], "c2");
-
-    queueAndSub(c0);
-    c0.session.messageTransfer(content=Message("x", "c0"));
-    BOOST_CHECK_EQUAL(c0.lq.get(TIMEOUT).getData(), "x");
-
-    // Session error.
-    BOOST_CHECK_THROW(c0.session.exchangeBind(), SessionException);
-    c1.session.messageTransfer(content=Message("stay", "c0")); // Will stay on queue, session c0 is dead.
-
-    // Connection error, kill c1 on all members.
-    queueAndSub(c1);
-    BOOST_CHECK_THROW(
-        c1.session.messageTransfer(
-            content=pMessage("TEST_STORE_DO: s0[exception] s1[exception] s2[exception] testNormalErrors", "c1")),
-        ConnectionException);
-    c2.session.messageTransfer(content=Message("stay", "c1")); // Will stay on queue, session/connection c1 is dead.
-
-    BOOST_CHECK_EQUAL(3u, knownBrokerPorts(c2.connection, 3).size());
-    BOOST_CHECK_EQUAL(c2.subs.get("c0", TIMEOUT).getData(), "stay");
-    BOOST_CHECK_EQUAL(c2.subs.get("c1", TIMEOUT).getData(), "stay");
-}
-
-
-// Test errors after a new member joins to verify frame-sequence-numbers are ok in update.
-QPID_AUTO_TEST_CASE(testErrorAfterJoin) {
-    ScopedSuppressLogging allQuiet;
-
-    ClusterFixture cluster(1, updateArgs, -1);
-    Client c0(cluster[0]);
-    c0.session.queueDeclare("q", durable=true);
-    c0.session.messageTransfer(content=pMessage("a", "q"));
-
-    // Kill the new guy
-    cluster.add();
-    Client c1(cluster[1]);
-    c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception] testErrorAfterJoin", "q"));
-    BOOST_CHECK_THROW(c1.session.messageTransfer(content=pMessage("xxx", "q")), TransportFailure);
-    BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c0.connection, 1).size());
-
-    // Kill the old guy
-    cluster.add();
-    Client c2(cluster[2]);
-    c2.session.messageTransfer(content=pMessage("TEST_STORE_DO: s0[exception] testErrorAfterJoin2", "q"));
-    BOOST_CHECK_THROW(c0.session.messageTransfer(content=pMessage("xxx", "q")), TransportFailure);
-
-    BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c2.connection, 1).size());
-}
-
-// Test that if one member fails and  others do not, the failure leaves the cluster. 
-QPID_AUTO_TEST_CASE(testSinglePartialFailure) {
-    ScopedSuppressLogging allQuiet;
 
     ClusterFixture cluster(3, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
     Client c2(cluster[2], "c2");
-    
-    c0.session.queueDeclare("q", durable=true);
-    c0.session.messageTransfer(content=pMessage("a", "q"));
-    // Cause partial failure on c1
-    c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception] testSinglePartialFailure", "q"));
-    BOOST_CHECK_THROW(c1.session.queueQuery("q"), TransportFailure);
 
-    c0.session.messageTransfer(content=pMessage("b", "q"));
-    BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 3u);
-    BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c0.connection, 2).size());
+    {
+        ScopedSuppressLogging allQuiet;
+        queueAndSub(c0);
+        c0.session.messageTransfer(content=Message("x", "c0"));
+        BOOST_CHECK_EQUAL(c0.lq.get(TIMEOUT).getData(), "x");
 
-    // Cause partial failure on c2
-    c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s2[exception] testSinglePartialFailure2", "q"));
-    BOOST_CHECK_THROW(c2.session.queueQuery("q"), TransportFailure);
+        // Session error.
+        BOOST_CHECK_THROW(c0.session.exchangeBind(), SessionException);
+        c1.session.messageTransfer(content=Message("stay", "c0")); // Will stay on queue, session c0 is dead.
 
-    c0.session.messageTransfer(content=pMessage("c", "q"));
-    BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 5u);
-    BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c0.connection, 1).size());
+        // Connection error, kill c1 on all members.
+        queueAndSub(c1);
+        BOOST_CHECK_THROW(
+            c1.session.messageTransfer(
+                content=pMessage("TEST_STORE_DO: s0[exception] s1[exception] s2[exception] testNormalErrors", "c1")),
+                ConnectionException);
+        c2.session.messageTransfer(content=Message("stay", "c1")); // Will stay on queue, session/connection c1 is dead.
+
+        BOOST_CHECK_EQUAL(3u, knownBrokerPorts(c2.connection, 3).size());
+        BOOST_CHECK_EQUAL(c2.subs.get("c0", TIMEOUT).getData(), "stay");
+        BOOST_CHECK_EQUAL(c2.subs.get("c1", TIMEOUT).getData(), "stay");
+    }
 }
 
-// Test multiple partial falures: 2 fail 2 pass 
-QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
-    ScopedSuppressLogging allQuiet;
 
+// Test errors after a new member joins to verify frame-sequence-numbers are ok in update.
+QPID_AUTO_TEST_CASE(testErrorAfterJoin) {
+    ClusterFixture cluster(1, updateArgs, -1);
+    Client c0(cluster[0]);
+    {
+        ScopedSuppressLogging allQuiet;
+
+        c0.session.queueDeclare("q", durable=true);
+        c0.session.messageTransfer(content=pMessage("a", "q"));
+
+        // Kill the new guy
+        cluster.add();
+        Client c1(cluster[1]);
+        c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception] testErrorAfterJoin", "q"));
+        BOOST_CHECK_THROW(c1.session.messageTransfer(content=pMessage("xxx", "q")), TransportFailure);
+        BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c0.connection, 1).size());
+
+        // Kill the old guy
+        cluster.add();
+        Client c2(cluster[2]);
+        c2.session.messageTransfer(content=pMessage("TEST_STORE_DO: s0[exception] testErrorAfterJoin2", "q"));
+        BOOST_CHECK_THROW(c0.session.messageTransfer(content=pMessage("xxx", "q")), TransportFailure);
+
+        BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c2.connection, 1).size());
+    }
+}
+
+// Test that if one member fails and  others do not, the failure leaves the cluster.
+QPID_AUTO_TEST_CASE(testSinglePartialFailure) {
+    ClusterFixture cluster(3, updateArgs, -1);
+    Client c0(cluster[0], "c0");
+    Client c1(cluster[1], "c1");
+    Client c2(cluster[2], "c2");
+
+    {
+        ScopedSuppressLogging allQuiet;
+
+        c0.session.queueDeclare("q", durable=true);
+        c0.session.messageTransfer(content=pMessage("a", "q"));
+        // Cause partial failure on c1
+        c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception] testSinglePartialFailure", "q"));
+        BOOST_CHECK_THROW(c1.session.queueQuery("q"), TransportFailure);
+
+        c0.session.messageTransfer(content=pMessage("b", "q"));
+        BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 3u);
+        BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c0.connection, 2).size());
+
+        // Cause partial failure on c2
+        c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s2[exception] testSinglePartialFailure2", "q"));
+        BOOST_CHECK_THROW(c2.session.queueQuery("q"), TransportFailure);
+
+        c0.session.messageTransfer(content=pMessage("c", "q"));
+        BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 5u);
+        BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c0.connection, 1).size());
+    }
+}
+
+// Test multiple partial falures: 2 fail 2 pass
+QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
     ClusterFixture cluster(4, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
     Client c2(cluster[2], "c2");
     Client c3(cluster[3], "c3");
-    
-    c0.session.queueDeclare("q", durable=true);
-    c0.session.messageTransfer(content=pMessage("a", "q"));
 
-    // Cause partial failure on c1, c2
-    c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception] s2[exception] testMultiPartialFailure", "q"));
-    BOOST_CHECK_THROW(c1.session.queueQuery("q"), TransportFailure);
-    BOOST_CHECK_THROW(c2.session.queueQuery("q"), TransportFailure);
+    {
+        ScopedSuppressLogging allQuiet;
 
-    c0.session.messageTransfer(content=pMessage("b", "q"));
-    c3.session.messageTransfer(content=pMessage("c", "q"));
-    BOOST_CHECK_EQUAL(c3.session.queueQuery("q").getMessageCount(), 4u);
-    // FIXME aconway 2009-06-30: This check fails sporadically with 2 != 3.
-    // It should pass reliably.
-    // BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c0.connection, 2).size());
+        c0.session.queueDeclare("q", durable=true);
+        c0.session.messageTransfer(content=pMessage("a", "q"));
+
+        // Cause partial failure on c1, c2
+        c0.session.messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception] s2[exception] testMultiPartialFailure", "q"));
+        BOOST_CHECK_THROW(c1.session.queueQuery("q"), TransportFailure);
+        BOOST_CHECK_THROW(c2.session.queueQuery("q"), TransportFailure);
+
+        c0.session.messageTransfer(content=pMessage("b", "q"));
+        c3.session.messageTransfer(content=pMessage("c", "q"));
+        BOOST_CHECK_EQUAL(c3.session.queueQuery("q").getMessageCount(), 4u);
+        // FIXME aconway 2009-06-30: This check fails sporadically with 2 != 3.
+        // It should pass reliably.
+        // BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c0.connection, 2).size());
+    }
 }
 
 /** FIXME aconway 2009-04-10:
@@ -203,25 +211,27 @@ QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
  */
 #if 0
 QPID_AUTO_TEST_CASE(testPartialFailureMemberLeaves) {
-    ScopedSuppressLogging allQuiet;
-
     ClusterFixture cluster(2, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
 
-    c0.session.queueDeclare("q", durable=true);
-    c0.session.messageTransfer(content=pMessage("a", "q"));
+    {
+        ScopedSuppressLogging allQuiet;
 
-    // Cause failure on member 0 and simultaneous crash on member 1.
-    BOOST_CHECK_THROW(
-        c0.session.messageTransfer(
-            content=pMessage("TEST_STORE_DO: s0[exception] s1[exit_process] testPartialFailureMemberLeaves", "q")),
-        ConnectionException);
-    cluster.wait(1);
+        c0.session.queueDeclare("q", durable=true);
+        c0.session.messageTransfer(content=pMessage("a", "q"));
 
-    Client c00(cluster[0], "c00"); // Old connection is dead.
-    BOOST_CHECK_EQUAL(c00.session.queueQuery("q").getMessageCount(), 1u);
-    BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c00.connection, 1).size());
+        // Cause failure on member 0 and simultaneous crash on member 1.
+        BOOST_CHECK_THROW(
+            c0.session.messageTransfer(
+                content=pMessage("TEST_STORE_DO: s0[exception] s1[exit_process] testPartialFailureMemberLeaves", "q")),
+                ConnectionException);
+        cluster.wait(1);
+
+        Client c00(cluster[0], "c00"); // Old connection is dead.
+        BOOST_CHECK_EQUAL(c00.session.queueQuery("q").getMessageCount(), 1u);
+        BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c00.connection, 1).size());
+    }
 }
 #endif
 
