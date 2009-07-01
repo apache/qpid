@@ -5,5 +5,3 @@ org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskValidNoSize
 org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalid
 org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalidSize
 
-// exclude until aidan fixes
-org.apache.qpid.server.AlertingTest#*
