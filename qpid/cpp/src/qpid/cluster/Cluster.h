@@ -94,6 +94,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Update completed - called in update thread
     void updateInDone(const ClusterMap&);
+    void updateInRetracted();
 
     MemberId getId() const;
     broker::Broker& getBroker() const;
@@ -106,7 +107,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void deliverFrame(const EventFrame&);
 
     // Called in deliverFrame thread to indicate an error from the broker.
-    void flagError(Connection&, ErrorCheck::ErrorType);
+    void flagError(Connection&, ErrorCheck::ErrorType, const std::string& msg);
     void connectionError();
 
     // Called only during update by Connection::shadowReady
@@ -141,6 +142,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // Cluster controls implement XML methods from cluster.xml.
     void updateRequest(const MemberId&, const std::string&, Lock&);
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&, Lock&);
+    void retractOffer(const MemberId& updater, uint64_t updatee, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
@@ -157,6 +159,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);       
+    void cancelOffer(const MemberId&, Lock&);
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 
@@ -251,6 +254,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     bool lastBroker;
     sys::Thread updateThread;
     boost::optional<ClusterMap> updatedMap;
+    bool updateRetracted;
     ErrorCheck error;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);

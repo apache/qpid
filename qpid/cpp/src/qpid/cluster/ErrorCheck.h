@@ -53,7 +53,8 @@ class ErrorCheck
     ErrorCheck(Cluster&);
 
     /** A local error has occured */
-    void error(Connection&, ErrorType, uint64_t frameSeq, const MemberSet&);
+    void error(Connection&, ErrorType, uint64_t frameSeq, const MemberSet&,
+               const std::string& msg);
 
     /** Called when a frame is delivered */
     void delivered(const EventFrame&);

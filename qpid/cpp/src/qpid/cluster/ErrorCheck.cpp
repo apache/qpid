@@ -44,7 +44,8 @@ ostream& operator<<(ostream& o, ErrorCheck::MemberSet ms) {
     return o;
 }
 
-void ErrorCheck::error(Connection& c, ErrorType t, uint64_t seq, const MemberSet& ms)
+void ErrorCheck::error(
+    Connection& c, ErrorType t, uint64_t seq, const MemberSet& ms, const std::string& msg)
 {
     // Detected a local error, inform cluster and set error state.
     assert(t != ERROR_TYPE_NONE); // Must be an error.
@@ -53,8 +54,10 @@ void ErrorCheck::error(Connection& c, ErrorType t, uint64_t seq, const MemberSet
     unresolved = ms;
     frameSeq = seq;
     connection = &c;
-    QPID_LOG(debug, cluster << (type == ERROR_TYPE_SESSION ? " Session" : " Connection")
-             << " error " << frameSeq << " unresolved: " << unresolved);
+    QPID_LOG(error, cluster
+             << (type == ERROR_TYPE_SESSION ? " channel" : " connection")
+             << " error " << frameSeq << " on " << c << ": " << msg
+             << " (unresolved: " << unresolved << ")");
     mcast.mcastControl(
         ClusterErrorCheckBody(ProtocolVersion(), type, frameSeq), c.getId().getMember());
 }
@@ -67,11 +70,13 @@ void ErrorCheck::delivered(const EventFrame& e) {
                 e.frame.getMethod());
         if (errorCheck && errorCheck->getFrameSeq() == frameSeq) { // Same error
             if (errorCheck->getType() < type) { // my error is worse than his
-                QPID_LOG(critical, cluster << " Error " << frameSeq << " did not occur on " << e.getMemberId());
+                QPID_LOG(critical, cluster << " error " << frameSeq
+                         << " did not occur on " << e.getMemberId());
                 throw Exception("Aborted by local failure that did not occur on all replicas");
             }
             else {              // his error is worse/same as mine.
-                QPID_LOG(debug, cluster << " Error " << frameSeq << " outcome agrees with " << e.getMemberId());
+                QPID_LOG(debug, cluster << " error " << frameSeq
+                         << " outcome agrees with " << e.getMemberId());
                 unresolved.erase(e.getMemberId());
                 checkResolved();
             }

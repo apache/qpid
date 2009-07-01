@@ -309,6 +309,12 @@ void Connection::membership(const FieldTable& joiners, const FieldTable& members
     self.second = 0;        // Mark this as completed update connection.
 }
 
+void Connection::retractOffer() {
+    QPID_LOG(debug, cluster << " incoming update retracted on connection " << *this);
+    cluster.updateInRetracted();
+    self.second = 0;        // Mark this as completed update connection.
+}
+
 bool Connection::isLocal() const {
     return self.first == cluster.getId() && self.second;
 }
@@ -435,13 +441,13 @@ void Connection::queue(const std::string& encoded) {
     QPID_LOG(debug, cluster << " decoded queue " << q->getName());    
 }
 
-void Connection::sessionError(uint16_t , const std::string& ) {
-    cluster.flagError(*this, ERROR_TYPE_SESSION);
+void Connection::sessionError(uint16_t , const std::string& msg) {
+    cluster.flagError(*this, ERROR_TYPE_SESSION, msg);
     
 }
 
-void Connection::connectionError(const std::string& ) {
-    cluster.flagError(*this, ERROR_TYPE_CONNECTION);
+void Connection::connectionError(const std::string& msg) {
+    cluster.flagError(*this, ERROR_TYPE_CONNECTION, msg);
 }
 
 }} // namespace qpid::cluster

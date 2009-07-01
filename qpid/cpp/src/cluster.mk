@@ -56,6 +56,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/Dispatchable.h			\
   qpid/cluster/UpdateClient.cpp			\
   qpid/cluster/UpdateClient.h			\
+  qpid/cluster/RetractClient.cpp		\
+  qpid/cluster/RetractClient.h			\
   qpid/cluster/ErrorCheck.cpp			\
   qpid/cluster/ErrorCheck.h			\
   qpid/cluster/Event.cpp			\
