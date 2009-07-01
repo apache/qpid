@@ -121,6 +121,8 @@ class Connection :
 
     void membership(const framing::FieldTable&, const framing::FieldTable&, uint64_t frameSeq);
 
+    void retractOffer();
+
     void deliveryRecord(const std::string& queue,
                         const framing::SequenceNumber& position,
                         const std::string& tag,

@@ -23,7 +23,7 @@
 #include "TestOptions.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/Session.h"
+#include "qpid/client/AsyncSession.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
@@ -63,7 +63,7 @@ class Ping : public Runnable {
         try {
             opts.open(connection);
             if (!opts.quiet) cout << "Opened connection." << endl;
-            Session s = connection.newSession();
+            AsyncSession s = connection.newSession();
             string qname(Uuid(true).str());
             s.queueDeclare(arg::queue=qname,arg::autoDelete=true,arg::exclusive=true);
             s.messageTransfer(arg::content=Message("hello", qname));
@@ -71,6 +71,7 @@ class Ping : public Runnable {
             SubscriptionManager subs(s);
             subs.get(qname);
             if (!opts.quiet) cout << "Received message." << endl;
+            s.sync();
             s.close();
             connection.close();
             Mutex::ScopedLock l(lock);

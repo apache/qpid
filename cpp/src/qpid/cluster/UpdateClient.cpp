@@ -79,7 +79,7 @@ struct ClusterConnectionProxy : public AMQP_AllProxy::ClusterConnection {
 };
 
 // Create a connection with special version that marks it as a catch-up connection.
-client::Connection catchUpConnection() {
+client::Connection UpdateClient::catchUpConnection() {
     client::Connection c;
     client::ConnectionAccess::setVersion(c, ProtocolVersion(0x80 , 0x80 + 10));
     return c;

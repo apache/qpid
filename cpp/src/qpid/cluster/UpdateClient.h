@@ -65,6 +65,7 @@ class ExpiryPolicy;
 class UpdateClient : public sys::Runnable {
   public:
     static const std::string UPDATE; // Name for special update queue and exchange.
+    static client::Connection catchUpConnection();
     
     UpdateClient(const MemberId& updater, const MemberId& updatee, const Url&,
                  broker::Broker& donor, const ClusterMap& map, ExpiryPolicy& expiry,
