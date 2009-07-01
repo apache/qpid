@@ -95,6 +95,11 @@ public class SSLReceiver implements Receiver<ByteBuffer>
             try
             {
                 SSLEngineResult result = engine.unwrap(netData, appData);
+                synchronized (notificationToken)
+                {
+                    notificationToken.notifyAll();
+                }
+
                 int read = result.bytesProduced();
                 status = result.getStatus();
                 handshakeStatus = result.getHandshakeStatus();

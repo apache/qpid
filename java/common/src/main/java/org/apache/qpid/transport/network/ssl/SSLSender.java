@@ -200,21 +200,26 @@ public class SSLSender implements Sender<ByteBuffer>
                     flush();
                     synchronized(engineState)
                     {
-                        long start = System.currentTimeMillis();
-                        try
+                        switch (engine.getHandshakeStatus())
                         {
-                            engineState.wait(timeout);
-                        }
-                        catch(InterruptedException e)
-                        {
-                            // pass
-                        }
+                        case NEED_UNWRAP:
+                            long start = System.currentTimeMillis();
+                            try
+                            {
+                                engineState.wait(timeout);
+                            }
+                            catch(InterruptedException e)
+                            {
+                                // pass
+                            }
 
-                        if (System.currentTimeMillis()- start >= timeout)
-                        {
-                            throw new SenderException(
-                                "SSL Engine timed out waiting for a response." +
-                                "To get more info,run with -Djavax.net.debug=ssl");
+                            if (System.currentTimeMillis()- start >= timeout)
+                            {
+                                throw new SenderException(
+                                                          "SSL Engine timed out waiting for a response." +
+                                                          "To get more info,run with -Djavax.net.debug=ssl");
+                            }
+                            break;
                         }
                     }
                     break;
