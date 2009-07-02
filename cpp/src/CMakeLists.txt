@@ -32,7 +32,7 @@ include(CheckSymbolExists)
 include(FindBoost)
 include(FindDoxygen)
 
-#set (CMAKE_VERBOSE_MAKEFILE ON)  # for dubugging
+#set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
 # check if we generate source as part of the build
 #   - rubygen generates the amqp spec and clustering
@@ -146,12 +146,32 @@ if (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
+# TODO: Not all these libs are needed everywhere:
+# Linux only uses filesystem program_options unit_test_framework (which itself uses regex)
 find_package(Boost 1.33 REQUIRED
-             COMPONENTS date_time filesystem program_options thread
+             COMPONENTS filesystem program_options date_time thread
                         regex unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
+
+# Versions of cmake pre 2.6 don´t set the Boost_*_LIBRARY variables correctly
+# these values are correct for Linux
+if (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
+  set(Boost_PROGRAM_OPTIONS_LIBRARY boost_program_options)
+endif (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
+
+if (NOT Boost_FILESYSTEM_LIBRARY)
+  set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
+endif (NOT Boost_FILESYSTEM_LIBRARY)
+
+if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
+  set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
+endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
+
+if (NOT Boost_REGEX_LIBRARY)
+  set(Boost_REGEX_LIBRARY boost_regex)
+endif (NOT Boost_REGEX_LIBRARY)
 
 include_directories( ${Boost_INCLUDE_DIR} )
 
@@ -569,7 +589,8 @@ set (qpidd_SOURCES
      qpidd.h
 )
 add_executable (qpidd ${qpidd_SOURCES})
-target_link_libraries (qpidd qpidbroker qpidcommon)
+target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                          ${Boost_FILESYSTEM_LIBRARY})
 
 # QMF agent library
 #module_hdr += \
@@ -654,7 +675,7 @@ add_library (replicating_listener MODULE
              qpid/replication/ReplicatingEventListener.cpp
              qpid/replication/ReplicatingEventListener.h
             )
-target_link_libraries (replicating_listener qpidbroker)
+target_link_libraries (replicating_listener qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
 set_target_properties (replicating_listener PROPERTIES
                        PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)

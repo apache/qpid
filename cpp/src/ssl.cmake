@@ -76,7 +76,7 @@ if (BUILD_SSL)
        qpid/sys/ssl/SslHandler.cpp
       )
   add_library (ssl MODULE ${ssl_SOURCES})
-  target_link_libraries (ssl qpidbroker sslcommon)
+  target_link_libraries (ssl qpidbroker sslcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
   set_target_properties (ssl PROPERTIES
                          PREFIX ""
                          COMPILE_FLAGS ${NSS_COMPILE_FLAGS})
