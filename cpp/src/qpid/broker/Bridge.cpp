@@ -21,11 +21,11 @@
 #include "Bridge.h"
 #include "ConnectionState.h"
 #include "Connection.h"
+#include "Link.h"
 #include "LinkRegistry.h"
 #include "SessionState.h"
 
 #include "qpid/management/ManagementAgent.h"
-#include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include <iostream>
@@ -84,6 +84,7 @@ Bridge::~Bridge()
 void Bridge::create(Connection& c)
 {
     connState = &c;
+    conn = &c;
     FieldTable options;
     if (args.i_sync) options.setInt("qpid.sync_frequency", args.i_sync);
     SessionHandler& sessionHandler = c.getChannel(id);
@@ -288,7 +289,8 @@ void Bridge::propagateBinding(const string& key, const string& tagList,
          else
              bindArgs.setString(qpidFedOrigin, origin);
 
-         peer->getExchange().bind(queueName, args.i_src, key, bindArgs);
+         conn->requestIOProcessing(boost::bind(&Bridge::ioThreadPropagateBinding, this,
+                                               queueName, args.i_src, key, bindArgs));
     }
 }
 
@@ -299,7 +301,13 @@ void Bridge::sendReorigin()
     bindArgs.setString(qpidFedOp, fedOpReorigin);
     bindArgs.setString(qpidFedTags, link->getBroker()->getFederationTag());
 
-    peer->getExchange().bind(queueName, args.i_src, args.i_key, bindArgs);
+    conn->requestIOProcessing(boost::bind(&Bridge::ioThreadPropagateBinding, this,
+                                          queueName, args.i_src, args.i_key, bindArgs));
+}
+
+void Bridge::ioThreadPropagateBinding(const string& queue, const string& exchange, const string& key, FieldTable args)
+{
+    peer->getExchange().bind(queue, exchange, key, args);
 }
 
 bool Bridge::containsLocalTag(const string& tagList) const

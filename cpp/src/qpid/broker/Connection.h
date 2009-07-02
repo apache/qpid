@@ -29,7 +29,6 @@
 
 #include <boost/ptr_container/ptr_map.hpp>
 
-#include "Broker.h"
 #include "ConnectionHandler.h"
 #include "ConnectionState.h"
 #include "SessionHandler.h"
@@ -58,6 +57,7 @@
 namespace qpid {
 namespace broker {
 
+class Broker;
 class LinkRegistry;
 class SecureConnection;
 struct ConnectionTimeoutTask;
