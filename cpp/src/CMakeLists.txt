@@ -42,7 +42,7 @@ include(FindDoxygen)
 # If the main AMQP spec is present, then check if ruby and python are
 # present, and if any sources have changed, forcing a re-gen of source code.
 
-set(AMQP_SPEC_DIR ${qpidc_SOURCE_DIR}/../specs)
+set(AMQP_SPEC_DIR ${qpid-cpp_SOURCE_DIR}/../specs)
 set(AMQP_SPEC ${AMQP_SPEC_DIR}/amqp.0-10-qpid-errata.xml)
 if (EXISTS ${AMQP_SPEC})
   include(FindRuby)
@@ -54,21 +54,21 @@ if (EXISTS ${AMQP_SPEC})
     message(FATAL_ERROR "Can't locate python, needed to generate source files.")
   endif (NOT PYTHON_EXECUTABLE)
 
-  set(specs ${AMQP_SPEC} ${qpidc_SOURCE_DIR}/xml/cluster.xml)
+  set(specs ${AMQP_SPEC} ${qpid-cpp_SOURCE_DIR}/xml/cluster.xml)
   set(regen_amqp OFF)
-  set(rgen_dir ${qpidc_SOURCE_DIR}/rubygen)
+  set(rgen_dir ${qpid-cpp_SOURCE_DIR}/rubygen)
   file(GLOB_RECURSE rgen_progs ${rgen_dir}/*.rb)
   # If any of the specs, or any of the sources used to generate code, change
   # then regenerate the sources.
   foreach (spec_file ${specs} ${rgen_progs})
-    if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/rubygen.cmake)
+    if (${spec_file} IS_NEWER_THAN src/rubygen.cmake)
       set(regen_amqp ON)
-    endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/rubygen.cmake)
+    endif (${spec_file} IS_NEWER_THAN src/rubygen.cmake)
   endforeach (spec_file ${specs})
   if (regen_amqp)
     message(STATUS "Regenerating AMQP protocol sources")
-    execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate gen ${specs} all ${CMAKE_CURRENT_SOURCE_DIR}/rubygen.cmake
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate ${CMAKE_CURRENT_BINARY_DIR}/gen ${specs} all rubygen.cmake
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   else (regen_amqp)
     message(STATUS "No need to generate AMQP protocol sources")
   endif (regen_amqp)
@@ -76,18 +76,18 @@ if (EXISTS ${AMQP_SPEC})
   set(mgmt_specs ${AMQP_SPEC_DIR}/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/acl/management-schema.xml
                  ${CMAKE_CURRENT_SOURCE_DIR}/qpid/cluster/management-schema.xml)
-  set(mgen_dir ${qpidc_SOURCE_DIR}/managementgen)
+  set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
   foreach (spec_file ${mgmt_specs})
-    if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake)
+    if (${spec_file} IS_NEWER_THAN src/managementgen.cmake)
       message(STATUS "${spec_file} is newer")
       set(regen_mgmt ON)
-    endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake)
+    endif (${spec_file} IS_NEWER_THAN src/managementgen.cmake)
   endforeach (spec_file ${mgmt_specs})
   if (regen_mgmt)
     message(STATUS, "Regenerating Qpid Management Framework sources")
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c ${CMAKE_CURRENT_SOURCE_DIR}/managementgen.cmake -b -q -o gen/qmf ${mgmt_specs}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -q -o ${CMAKE_CURRENT_BINARY_DIR}/gen/qmf ${mgmt_specs}
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   else (regen_mgmt)
     message(STATUS "No need to generate Qpid Management Framework sources")
   endif (regen_mgmt)
@@ -97,8 +97,8 @@ else (EXISTS ${AMQP_SPEC})
 endif (EXISTS ${AMQP_SPEC})
 
 # Pull in the names of the generated files, i.e. ${rgen_framing_srcs}
-include (rubygen.cmake)
-include (managementgen.cmake)
+include (${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
+include (${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
 
 find_program(HELP2MAN help2man DOC "Location of the help2man program")
 option(GEN_MANPAGES "Use help2man to generate man pages" ON)
@@ -177,7 +177,7 @@ include_directories( ${Boost_INCLUDE_DIR} )
 
 include_directories( . )
 include_directories( gen )
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gen)
 
 link_directories( ${Boost_LIBRARY_DIRS} )
 
