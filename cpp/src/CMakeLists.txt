@@ -61,9 +61,9 @@ if (EXISTS ${AMQP_SPEC})
   # If any of the specs, or any of the sources used to generate code, change
   # then regenerate the sources.
   foreach (spec_file ${specs} ${rgen_progs})
-    if (${spec_file} IS_NEWER_THAN src/rubygen.cmake)
+    if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
       set(regen_amqp ON)
-    endif (${spec_file} IS_NEWER_THAN src/rubygen.cmake)
+    endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
   endforeach (spec_file ${specs})
   if (regen_amqp)
     message(STATUS "Regenerating AMQP protocol sources")
@@ -79,13 +79,13 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   set(mgen_dir ${qpid-cpp_SOURCE_DIR}/managementgen)
   set(regen_mgmt OFF)
   foreach (spec_file ${mgmt_specs})
-    if (${spec_file} IS_NEWER_THAN src/managementgen.cmake)
+    if (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
       message(STATUS "${spec_file} is newer")
       set(regen_mgmt ON)
-    endif (${spec_file} IS_NEWER_THAN src/managementgen.cmake)
+    endif (${spec_file} IS_NEWER_THAN ${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
   endforeach (spec_file ${mgmt_specs})
   if (regen_mgmt)
-    message(STATUS, "Regenerating Qpid Management Framework sources")
+    message(STATUS "Regenerating Qpid Management Framework sources")
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -q -o ${CMAKE_CURRENT_BINARY_DIR}/gen/qmf ${mgmt_specs}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   else (regen_mgmt)
@@ -155,7 +155,7 @@ if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
 
-# Versions of cmake pre 2.6 don´t set the Boost_*_LIBRARY variables correctly
+# Versions of cmake pre 2.6 don't set the Boost_*_LIBRARY variables correctly
 # these values are correct for Linux
 if (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
   set(Boost_PROGRAM_OPTIONS_LIBRARY boost_program_options)
@@ -173,10 +173,28 @@ if (NOT Boost_REGEX_LIBRARY)
   set(Boost_REGEX_LIBRARY boost_regex)
 endif (NOT Boost_REGEX_LIBRARY)
 
+# Boost on Windows can use automatic linking to pick up the correct
+# Boost libs based on compile-time touching of the headers. So don't really
+# need to add them to the link lines. But on Windows you can also pick whether
+# the static or dynamic versions of the libs are used; allow this choice to
+# the user.
+if (MSVC)
+   set(Boost_DATE_TIME_LIBRARY "")
+   set(Boost_THREAD_LIBRARY "")
+   set(Boost_PROGRAM_OPTIONS_LIBRARY "")
+   set(Boost_FILESYSTEM_LIBRARY "")
+   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
+   set(Boost_REGEX_LIBRARY "")
+
+   option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
+   if (QPID_LINK_BOOST_DYNAMIC)
+      add_definitions( /D BOOST_ALL_DYN_LINK)
+   endif (QPID_LINK_BOOST_DYNAMIC)
+endif (MSVC)
+
 include_directories( ${Boost_INCLUDE_DIR} )
 
 include_directories( . )
-include_directories( gen )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gen)
 
 link_directories( ${Boost_LIBRARY_DIRS} )
