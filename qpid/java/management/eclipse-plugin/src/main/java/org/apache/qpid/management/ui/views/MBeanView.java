@@ -389,7 +389,7 @@ public class MBeanView extends ViewPart
         {
             clearView();
             ViewUtility.popupInfoMessage("MBean Unregistered", 
-                    "The open MBean was been unregistered from the server.");
+                    "The open MBean was unregistered from the server.");
         }
     }
     
