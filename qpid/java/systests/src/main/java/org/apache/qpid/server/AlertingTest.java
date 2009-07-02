@@ -97,7 +97,7 @@ public class AlertingTest extends QpidTestCase
         super.setUp();
         
         _connection = getConnection();
-        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _session = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
         _destination = _session.createQueue("testQueue");
         
         // Consumer is only used to actually create the destination
@@ -146,12 +146,14 @@ public class AlertingTest extends QpidTestCase
     {
         // Send 5 messages, make sure that the alert was fired properly. 
         sendMessage(_session, _destination, _numMessages + 1);
+        _session.commit();
         wasAlertFired();
     }
 
     public void testAlertingReallyWorksWithRestart() throws Exception
     {
         sendMessage(_session, _destination, _numMessages + 1);
+        _session.commit();
         stopBroker();
         (new FileOutputStream(_logfile)).getChannel().truncate(0);
         startBroker();
@@ -162,6 +164,7 @@ public class AlertingTest extends QpidTestCase
     {
         // send some messages and nuke the logs
         sendMessage(_session, _destination, 2);
+        _session.commit();
         stopBroker();
         (new FileOutputStream(_logfile)).getChannel().truncate(0);
         
@@ -169,10 +172,11 @@ public class AlertingTest extends QpidTestCase
         _configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", 5);
         startBroker();
         _connection = getConnection();
-        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _session = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
         
         // Trigger the new value
         sendMessage(_session, _destination, 3);
+        _session.commit();
         wasAlertFired();
     }
 }
