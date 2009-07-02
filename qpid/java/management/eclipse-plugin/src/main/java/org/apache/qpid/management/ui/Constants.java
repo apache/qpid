@@ -109,7 +109,7 @@ public class Constants
     public final static String FONT_NORMAL = "Normal";
     
     public final static String BUTTON_DETAILS = "Details";
-    public final static String BUTTON_EDIT_ATTRIBUTE = "Edit Attribute";
+    public final static String BUTTON_EDIT_ATTRIBUTE = "Edit";
     public final static String BUTTON_REFRESH = "Refresh";
     public final static String BUTTON_GRAPH = "Graph";
     public final static int TIMER_INTERVAL = 5000;

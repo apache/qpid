@@ -88,7 +88,7 @@ public class AttributesTabControl extends TabControl
     private Form _form;    
     private Table _table = null;
     private TableViewer _tableViewer = null;
-    private static final int[] tableWidths = new int[] {300, 300};
+    private int[] tableWidths = new int[] {300, 300};
     
     private Composite _tableComposite = null;
     private Composite _buttonsComposite = null;
@@ -98,7 +98,6 @@ public class AttributesTabControl extends TabControl
     private Button _detailsButton  = null;
     private Button _editButton  = null;
     private Button _graphButton = null;
-    private Button _refreshButton = null;
     private boolean disableEditing = false;
     
     private static final String MAX_VALUE = "MaxValue";
@@ -129,6 +128,28 @@ public class AttributesTabControl extends TabControl
         createWidgets();         
     }
     
+    public AttributesTabControl(Composite parent, int[] tableWidths)
+    {
+        super(null);
+        this.tableWidths = tableWidths;
+        _toolkit = new FormToolkit(parent.getDisplay());
+        _form = _toolkit.createForm(parent);
+        GridLayout gridLayout = new GridLayout(2, false);      
+        gridLayout.marginWidth = 0;
+        gridLayout.marginHeight = 0;       
+        _form.getBody().setLayout(gridLayout);
+        _tableComposite = _toolkit.createComposite(_form.getBody());
+        _tableComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        _tableComposite.setLayout(new GridLayout());
+        _buttonsComposite = _toolkit.createComposite(_form.getBody());
+        _buttonsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true));
+        _buttonsComposite.setLayout(new GridLayout());
+        
+        image = Display.getCurrent().getSystemImage(SWT.ICON_INFORMATION);
+        createWidgets();         
+    }
+    
+    
     /**
      * @see TabControl#getControl()
      */
@@ -153,7 +174,7 @@ public class AttributesTabControl extends TabControl
      */
     private void createTable()
     {  
-        _table = _toolkit.createTable(_tableComposite,  SWT.FULL_SELECTION); 
+        _table = _toolkit.createTable(_tableComposite,  SWT.FULL_SELECTION | SWT.BORDER); 
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(gridData);
         
@@ -162,7 +183,7 @@ public class AttributesTabControl extends TabControl
             final TableColumn column = new TableColumn(_table, SWT.NONE);
             column.setText(ATTRIBUTE_TABLE_TITLES[i]);
             column.setWidth(tableWidths[i]);
-            column.setResizable(false);
+            column.setResizable(true);
         }
         
         _table.setLinesVisible (true);
@@ -187,7 +208,6 @@ public class AttributesTabControl extends TabControl
         addDetailsButton();
         addEditButton();
         addGraphButton();
-        addRefreshButton();
     }
       
     private void addDetailsButton()
@@ -195,8 +215,7 @@ public class AttributesTabControl extends TabControl
         // Create and configure the button for attribute details
         _detailsButton = _toolkit.createButton(_buttonsComposite, BUTTON_DETAILS, SWT.PUSH | SWT.CENTER);
         _detailsButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
-        gridData.widthHint = 80;
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         _detailsButton.setLayoutData(gridData);
         _detailsButton.addSelectionListener(new SelectionAdapter()
             {
@@ -220,8 +239,7 @@ public class AttributesTabControl extends TabControl
         // Create and configure the button for editing attribute
         _editButton = _toolkit.createButton(_buttonsComposite, BUTTON_EDIT_ATTRIBUTE, SWT.PUSH | SWT.CENTER);
         _editButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
-        gridData.widthHint = 80;
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         _editButton.setLayoutData(gridData);
         _editButton.addSelectionListener(new SelectionAdapter()
             {
@@ -242,8 +260,7 @@ public class AttributesTabControl extends TabControl
     {
         _graphButton = _toolkit.createButton(_buttonsComposite, BUTTON_GRAPH, SWT.PUSH | SWT.CENTER);
         _graphButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
-        gridData.widthHint = 80;
+        GridData gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
         _graphButton.setLayoutData(gridData);
         _graphButton.addSelectionListener(new SelectionAdapter()
             {
@@ -253,35 +270,6 @@ public class AttributesTabControl extends TabControl
                     AttributeData data = (AttributeData)_table.getItem(selectionIndex).getData();
                     createGraph(data);
                     setFocus();
-                }
-            });
-    }
-    
-    /**
-     * Creates the "Refresh" button
-     */
-    private void addRefreshButton()
-    {    
-        _refreshButton = _toolkit.createButton(_buttonsComposite, BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
-
-        _refreshButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        GridData gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
-        gridData.widthHint = 80;
-        _refreshButton.setLayoutData(gridData);
-        _refreshButton.addSelectionListener(new SelectionAdapter()
-            {
-                public void widgetSelected(SelectionEvent e)
-                {
-                    try
-                    {
-                        // refresh the attributes list                
-                        refresh(_mbean);
-                    }
-                    catch (Exception ex)
-                    {
-                        MBeanUtility.handleException(_mbean, ex);
-                    }
-                    
                 }
             });
     }
@@ -656,12 +644,10 @@ public class AttributesTabControl extends TabControl
             _detailsButton.setEnabled(false);
             _editButton.setEnabled(false);
             _graphButton.setEnabled(false);
-            _refreshButton.setEnabled(false);
             return;
         }
         
         _detailsButton.setEnabled(true);
-        _refreshButton.setEnabled(true);
         if (attribute.isWritable())
         {
             _editButton.setEnabled(true);
