@@ -55,10 +55,11 @@ a source distribution:
 to get 1.32 working in the svn tree though that is only recommended as
 a last resort.
 
-Optional cluster functionality requires:
- * openais <http://openais.org/> 	       		(0.80.3)
- 
-Optional XML exchange requires:
+Optional cluster functionality requires ONE of:
+ * openais <http://openais.org> 	       		(0.80.3)
+ * corosync <http://corosync.org>			(1.0.0.rc1)
+
+ Optional XML exchange requires:
  * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)                                  
  * xerces-c <http://xerces.apache.org/xerces-c/>        (2.7.0)  
 
