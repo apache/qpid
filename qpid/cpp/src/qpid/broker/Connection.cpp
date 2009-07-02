@@ -21,6 +21,7 @@
 #include "Connection.h"
 #include "SessionState.h"
 #include "Bridge.h"
+#include "Broker.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
@@ -268,13 +269,15 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
 bool Connection::hasOutput() { return outputTasks.hasOutput(); }
 
 bool Connection::doOutput() {
-    try{
+    try {
         {
-        ScopedLock<Mutex> l(ioCallbackLock);
-        while (!ioCallbacks.empty()) {
-            ioCallbacks.front()(); // Lend the IO thread for management processing
-            ioCallbacks.pop();
-        }
+            ScopedLock<Mutex> l(ioCallbackLock);
+            while (!ioCallbacks.empty()) {
+                boost::function0<void> cb = ioCallbacks.front();
+                ioCallbacks.pop();
+                ScopedUnlock<Mutex> ul(ioCallbackLock);
+                cb(); // Lend the IO thread for management processing
+            }
         }
         if (mgmtClosing)
             close(connection::CLOSE_CODE_CONNECTION_FORCED, "Closed by Management Request");

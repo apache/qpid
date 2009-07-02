@@ -19,6 +19,7 @@
  *
  */
 #include "LinkRegistry.h"
+#include "Link.h"
 #include "Connection.h"
 #include "qpid/log/Statement.h"
 #include <iostream>

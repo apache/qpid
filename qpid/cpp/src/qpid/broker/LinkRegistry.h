@@ -23,17 +23,18 @@
  */
 
 #include <map>
-#include "Link.h"
 #include "Bridge.h"
 #include "MessageStore.h"
 #include "Timer.h"
 #include "qpid/Address.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
 
+    class Link;
     class Broker;
     class Connection;
     class LinkRegistry {
@@ -49,7 +50,7 @@ namespace broker {
             void fire();
         };
 
-        typedef std::map<std::string, Link::shared_ptr> LinkMap;
+        typedef std::map<std::string, boost::shared_ptr<Link> > LinkMap;
         typedef std::map<std::string, Bridge::shared_ptr> BridgeMap;
         typedef std::map<std::string, TcpAddress> AddressMap;
 
@@ -70,12 +71,12 @@ namespace broker {
 
         void periodicMaintenance ();
         bool updateAddress(const std::string& oldKey, const TcpAddress& newAddress);
-        Link::shared_ptr findLink(const std::string& key);
+        boost::shared_ptr<Link> findLink(const std::string& key);
         static std::string createKey(const TcpAddress& address);
 
     public:
         LinkRegistry (Broker* _broker);
-        std::pair<Link::shared_ptr, bool>
+        std::pair<boost::shared_ptr<Link>, bool>
             declare(std::string& host,
                     uint16_t     port,
                     std::string& transport,

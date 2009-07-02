@@ -26,6 +26,7 @@
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
 #include "Exchange.h"
 #include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
@@ -74,6 +75,7 @@ public:
     // Exchange::DynamicBridge methods
     void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin);
     void sendReorigin();
+    void ioThreadPropagateBinding(const string& queue, const string& exchange, const string& key, framing::FieldTable args);
     bool containsLocalTag(const std::string& tagList) const;
     const std::string& getLocalTag() const;
 
@@ -98,6 +100,7 @@ private:
     std::string queueName;
     mutable uint64_t  persistenceId;
     ConnectionState* connState;
+    Connection* conn;
 };
 
 
