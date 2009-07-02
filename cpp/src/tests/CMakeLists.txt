@@ -38,8 +38,6 @@ if (ENABLE_VALGRIND)
 --suppressions=${CMAKE_CURRENT_SOURCE_DIR}/.valgrind.supp
 --num-callers=25
 --log-file=ctest_valgrind.vglog")
-else (ENABLE_VALGRIND)
-  unset (MEMORYCHECK_COMMAND)
 endif (ENABLE_VALGRIND)
 
 # Using the Boost DLLs triggers warning 4275 on Visual Studio
