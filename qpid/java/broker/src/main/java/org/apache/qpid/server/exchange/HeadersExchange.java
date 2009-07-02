@@ -84,8 +84,6 @@ public class HeadersExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
 
-
-
     public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
     {
 
@@ -137,17 +135,15 @@ public class HeadersExchange extends AbstractExchange
          */
         protected void init() throws OpenDataException
         {
-            _bindingItemNames = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
-            _bindingItemIndexNames = new String[]{_bindingItemNames[0]};
 
             _bindingItemTypes = new OpenType[3];
             _bindingItemTypes[0] = SimpleType.INTEGER;
             _bindingItemTypes[1] = SimpleType.STRING;
             _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
             _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
-                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+                    HEADERS_COMPOSITE_ITEM_NAMES, HEADERS_COMPOSITE_ITEM_DESC, _bindingItemTypes);
             _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
-                                                   _bindingDataType, _bindingItemIndexNames);
+                                                   _bindingDataType, HEADERS_TABULAR_UNIQUE_INDEX);
         }
 
         public TabularData bindings() throws OpenDataException
@@ -180,7 +176,7 @@ public class HeadersExchange extends AbstractExchange
 
 
                 Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, HEADERS_COMPOSITE_ITEM_NAMES, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 

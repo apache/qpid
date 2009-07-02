@@ -114,7 +114,7 @@ public class DirectExchange extends AbstractExchange
                 }
 
                 Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[0])};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 

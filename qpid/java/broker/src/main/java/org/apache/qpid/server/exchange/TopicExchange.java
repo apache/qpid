@@ -336,7 +336,7 @@ public class TopicExchange extends AbstractExchange
             for(Map.Entry<String, List<String>> entry : bindingData.entrySet())
             {
                 Object[] bindingItemValues = {entry.getKey(), entry.getValue().toArray(new String[entry.getValue().size()]) };
-                CompositeData bindingCompositeData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
+                CompositeData bindingCompositeData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
                 _bindingList.put(bindingCompositeData);
             }
 

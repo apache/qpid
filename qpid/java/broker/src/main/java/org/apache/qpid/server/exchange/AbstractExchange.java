@@ -69,8 +69,6 @@ public abstract class AbstractExchange implements Exchange, Managable
     protected abstract class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     {
         // open mbean data types for representing exchange bindings
-        protected String[] _bindingItemNames;
-        protected String[] _bindingItemIndexNames;
         protected OpenType[] _bindingItemTypes;
         protected CompositeType _bindingDataType;
         protected TabularType _bindinglistDataType;
@@ -82,17 +80,14 @@ public abstract class AbstractExchange implements Exchange, Managable
         }
 
         protected void init() throws OpenDataException
-        {
-            _bindingItemNames = new String[]{"Binding Key", "Queue Names"};
-            _bindingItemIndexNames = new String[]{_bindingItemNames[0]};
-            
+        {           
             _bindingItemTypes = new OpenType[2];
             _bindingItemTypes[0] = SimpleType.STRING;
             _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
             _bindingDataType = new CompositeType("Exchange Binding", "Binding key and Queue names",
-                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+                    COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS, _bindingItemTypes);
             _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
-                                                   _bindingDataType, _bindingItemIndexNames);
+                                                   _bindingDataType, TABULAR_UNIQUE_INDEX);
         }
 
         public ManagedObject getParentObject()

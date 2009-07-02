@@ -40,6 +40,18 @@ public interface ManagedExchange
 {
     static final String TYPE = "Exchange";
     static final int VERSION = 1;
+    
+    //TabularType and contained CompositeType key/description info for DIRECT/TOPIC/FANOUT exchanges.
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
+    String[] COMPOSITE_ITEM_NAMES = {"Binding Key", "Queue Names"};
+    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Binding Key", "Queue Names"};
+    String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
+
+    //TabularType and contained CompositeType key/description info for HEADERS exchange only.
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
+    String[] HEADERS_COMPOSITE_ITEM_NAMES = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
+    String[] HEADERS_COMPOSITE_ITEM_DESC = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
+    String[] HEADERS_TABULAR_UNIQUE_INDEX = new String[]{HEADERS_COMPOSITE_ITEM_NAMES[0]};
 
     /**
      * Returns the name of the managed exchange.
