@@ -20,7 +20,7 @@
 /*MGEN:Root.Disclaimer*/
 /*MGEN:IF(CMakeLists.QpidBroker)*/
 /*MGEN:mgenDir=${mgen_dir}*/
-/*MGEN:specDir=${qpidc_SOURCE_DIR}/../specs*/
+/*MGEN:specDir=${qpid-cpp_SOURCE_DIR}/../specs*/
 
 set(mgen_generator /*MGEN:CMakeLists.GenSources*/)
 
