@@ -226,13 +226,15 @@ module Qpid::Qmf
 
     # Get the list of known classes within a QMF package
     def classes(package_name)
+      list = []
       @brokers.each { |broker| broker.wait_for_stable }
       if @packages.include?(package_name)
         # FIXME What's the actual structure of @packages[package_name]
-        @packages[package_name].inject([]) do |list, cname, hash|
-          list << [ package_name, cname, hash]
+        @packages[package_name].each do |key, schema_class|
+          list << schema_class.klass_key
         end
       end
+      return list
     end
 
     # Get the schema for a QMF class
@@ -877,7 +879,7 @@ module Qpid::Qmf
     CLASS_KIND_TABLE = 1
     CLASS_KIND_EVENT = 2
 
-    attr_reader :klass_key, :arguments
+    attr_reader :klass_key, :arguments, :super_klass_key
 
     def initialize(session, kind, key, codec)
       @session = session
@@ -912,25 +914,33 @@ module Qpid::Qmf
       end
     end
 
-    def properties
+    def is_table?
+        @kind == CLASS_KIND_TABLE
+    end
+
+    def is_event?
+        @kind == CLASS_KIND_EVENT
+    end
+
+    def properties(include_inherited = true)
         returnValue = @properties
-        if !@super_klass_key.nil?
+        if !@super_klass_key.nil? && include_inherited
             returnValue = @properties + @session.schema(@super_klass_key).properties
         end
         return returnValue
     end
 
-    def statistics
+    def statistics(include_inherited = true)
         returnValue = @statistics
-        if !@super_klass_key.nil?
+        if !@super_klass_key.nil? && include_inherited
             returnValue = @statistics + @session.schema(@super_klass_key).statistics
         end
         return returnValue
     end
 
-    def methods
+    def methods(include_inherited = true)
         returnValue = @methods
-        if !@super_klass_key.nil?
+        if !@super_klass_key.nil? && include_inherited
             returnValue = @methods + @session.schema(@super_klass_key).methods
         end
         return returnValue
@@ -944,16 +954,14 @@ module Qpid::Qmf
       else
         kind_str = "Unsupported"
       end
-      result = "%s Class: %s:%s " % [kind_str, @klass_key.package, @klass_key.klass_name]
-      result += Qpid::UUID::format(@klass_key.hash)
-      return result
+      "#{kind_str} Class: #{klass_key.to_s}" 
     end
   end
 
   class SchemaProperty
 
     attr_reader :name, :type, :access, :index, :optional,
-    :unit, :min, :max, :maxlan, :desc
+    :unit, :min, :max, :maxlen, :desc, :refClass, :refPackage
 
     def initialize(codec)
       map = codec.read_map
@@ -965,8 +973,10 @@ module Qpid::Qmf
       @unit     = map["unit"]
       @min      = map["min"]
       @max      = map["max"]
-      @maxlan   = map["maxlen"]
+      @maxlen   = map["maxlen"]
       @desc     = map["desc"]
+      @refClass = map["refClass"]
+      @refPackage = map["refPackage"]      
     end
 
     def to_s
@@ -976,7 +986,7 @@ module Qpid::Qmf
 
   class SchemaStatistic
 
-    attr_reader :name, :type, :unit, :desc
+    attr_reader :name, :type, :unit, :desc, :refClass, :refPackage
 
     def initialize(codec)
       map = codec.read_map
@@ -984,6 +994,8 @@ module Qpid::Qmf
       @type     = map["type"]
       @unit     = map["unit"]
       @desc     = map["desc"]
+      @refClass = map["refClass"]
+      @refPackage = map["refPackage"]            
     end
 
     def to_s
@@ -1018,7 +1030,7 @@ module Qpid::Qmf
   class SchemaArgument
 
     attr_reader :name, :type, :dir, :unit, :min, :max, :maxlen
-    attr_reader :desc, :default
+    attr_reader :desc, :default, :refClass, :refPackage
 
     def initialize(codec, method_arg)
       map = codec.read_map
@@ -1031,6 +1043,8 @@ module Qpid::Qmf
       @maxlen  = map["maxlen"]
       @desc    = map["desc"]
       @default = map["default"]
+      @refClass = map["refClass"]
+      @refPackage = map["refPackage"]            
     end
   end
 
@@ -1875,4 +1889,91 @@ module Qpid::Qmf
       puts "brokerInfo #{broker}"
     end
   end
+
+  module XML
+      TYPES = {
+        1 => "uint8",
+        2 => "uint16",
+        3 => "uint32",
+        4 => "uint64",
+        5 => "bool",
+        6 => "short-stirng",
+        7 => "long-string",
+        8 => "abs-time",
+        9 => "delta-time",
+        10 => "reference",
+        11 => "boolean",
+        12 => "float",
+        13 => "double",
+        14 => "uuid",
+        15 => "field-table",
+        16 => "int8",
+        17 => "int16",
+        18 => "int32",
+        19 => "int64",
+        20 => "object",
+        21 => "list",
+        22 => "array"  
+      }
+
+      ACCESS_MODES = {
+        1 => "RC",
+        2 => "RW",
+        3 => "RO"
+      }
+
+      def common_attributes(item)
+        attr_string = ""
+        attr_string << " desc='#{item.desc}'" if item.desc
+        attr_string << " desc='#{item.desc}'" if item.desc
+        attr_string << " refPackage='#{item.refPackage}'" if item.refPackage
+        attr_string << " refClass='#{item.refClass}'" if item.refClass
+        attr_string << " unit='#{item.unit}'" if item.unit
+        attr_string << " min='#{item.min}'" if item.min
+        attr_string << " max='#{item.max}'" if item.max
+        attr_string << " maxlen='#{item.maxlen}'" if item.maxlen
+        return attr_string
+      end
+
+      module_function :common_attributes      
+      
+      def schema_xml(session, *packages)
+        schema = "<schemas>\n"
+        packages.each do |package|
+            schema << "\t<schema package='#{package}'>\n"
+            session.classes(package).each do |klass_key|
+                klass = session.schema(klass_key)
+                if klass.is_table?
+                    if klass.super_klass_key
+                        schema << "\t\t<class name='#{klass.klass_key.klass_name}' hash='#{klass.klass_key.hash_string}' extends='#{klass.super_klass_key.to_s}'>\n"
+                    else
+                        schema << "\t\t<class name='#{klass.klass_key.klass_name}' hash='#{klass.klass_key.hash_string}'>\n"
+                    end
+                    klass.properties(false).each do |property|
+                        schema << "\t\t\t<property name='#{property.name}' type='#{TYPES[property.type]}' access='#{ACCESS_MODES[property.access]}' optional='#{property.optional ? "True" : "False"}'#{common_attributes(property)}/>\n"
+                    end
+                    klass.methods(false).each do |method|
+                        schema << "\t\t\t<method name='#{method.name}'>\n"
+                        method.arguments.each do |arg|
+                            schema << "\t\t\t\t<arg name='#{arg.name}' dir='#{arg.dir}' type='#{TYPES[arg.type]}'#{common_attributes(arg)}/>\n" 
+                        end
+                        schema << "\t\t\t</method>\n"                        
+                    end
+                    schema << "\t\t</class>\n"
+                else
+                    schema << "\t\t<event name='#{klass.klass_key.klass_name}' hash='#{klass.klass_key.hash_string}'>\n"
+                    klass.arguments.each do |arg|
+                        schema << "\t\t\t<arg name='#{arg.name}'type='#{TYPES[arg.type]}'#{common_attributes(arg)}/>\n" 
+                    end                    
+                    schema << "\t\t</event>\n"                    
+                end
+            end
+            schema << "\t</package>\n"
+        end    
+        schema << "</schema>"
+      end
+
+      module_function :schema_xml
+  end
+  
 end
