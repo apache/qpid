@@ -37,5 +37,26 @@ namespace test.transport.util
             UUID uuid2 = UUID.randomUUID();
             Assert.AreNotSame(uuid, uuid2);
         }
+
+        [Test]
+        public void ToString_should_override_and_not_hide_base()
+        {
+            UUID uuid = UUID.randomUUID();
+
+            string uuidStr = uuid.ToString();
+            string uuidConcat = "Test." + uuid;
+
+            Assert.AreEqual("Test." + uuidStr, uuidConcat);
+        }
+
+        [Test]
+        public void two_uuid_with_same_value_should_have_same_hash_code()
+        {
+            UUID uuid = UUID.randomUUID();
+            UUID uuid2 = new UUID(uuid.MostSignificantBits, uuid.LeastSignificantBits);
+            
+            Assert.AreEqual(uuid, uuid2);
+            Assert.AreEqual(uuid.GetHashCode(), uuid2.GetHashCode());
+        }
     }
 }
