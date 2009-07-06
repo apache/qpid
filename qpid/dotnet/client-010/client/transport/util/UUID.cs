@@ -28,6 +28,7 @@ namespace org.apache.qpid.transport.util
         private long _mostSigBits;
 
         private long _leastSigBits;
+        private static readonly Random _random = new Random();
 
 
         public UUID(long mostSigBits, long leastSigBits)
@@ -61,8 +62,7 @@ namespace org.apache.qpid.transport.util
         public static UUID randomUUID()
         {
             byte[] randomBytes = new byte[16];
-            Random random = new Random();
-            random.NextBytes(randomBytes);
+            _random.NextBytes(randomBytes);
             randomBytes[6] &= 0x0f;  
             randomBytes[6] |= 0x40; 
             randomBytes[8] &= 0x3f; 
@@ -70,7 +70,7 @@ namespace org.apache.qpid.transport.util
             return new UUID(randomBytes);
         }
 
-        public new String ToString()
+        public override String ToString()
         {
             return (digits(_mostSigBits >> 32, 8) + "-" +
                     digits(_mostSigBits >> 16, 4) + "-" +
@@ -84,5 +84,40 @@ namespace org.apache.qpid.transport.util
             long hi = 1L << (digits * 4);
             return Convert.ToString((hi | (val & (hi - 1))), 16);
         }
+
+        #region equality
+        public bool Equals(UUID other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return other._mostSigBits == _mostSigBits && other._leastSigBits == _leastSigBits;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != typeof (UUID)) return false;
+            return Equals((UUID) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (_mostSigBits.GetHashCode()*397) ^ _leastSigBits.GetHashCode();
+            }
+        }
+
+        public static bool operator ==(UUID left, UUID right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(UUID left, UUID right)
+        {
+            return !Equals(left, right);
+        }
+        #endregion
     }
 }
