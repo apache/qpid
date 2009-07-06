@@ -32,7 +32,7 @@ module Qpid::Spec010
   class Spec
 
     ENCODINGS = {
-      String => "vbin16",
+      String => "str16",
       Fixnum => "int64",
       Bignum => "int64",
       Float => "float",

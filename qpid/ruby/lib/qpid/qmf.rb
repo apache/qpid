@@ -238,9 +238,8 @@ module Qpid::Qmf
     # Get the schema for a QMF class
     def schema(klass_key)
       @brokers.each { |broker| broker.wait_for_stable }
-      pname, cname, hash = klass_key
-      if @packages.include?(pname)
-        @packages[pname][ [cname, hash] ]
+      if @packages.include?(klass_key.package)
+        @packages[klass_key.package][ [klass_key.klass_name, klass_key.hash] ]
       end
     end
 
@@ -272,7 +271,7 @@ module Qpid::Qmf
       unless @user_bindings && @rcv_objects
         raise "userBindings option not set for Session"
       end
-      pname, cname, hash = klass_key
+      pname, cname, hash = klass_key.to_a()
       @brokers.each do |broker|
         args = { :exchange => "qpid.management",
           :queue => broker.topic_name,
@@ -361,9 +360,9 @@ module Qpid::Qmf
       cname = nil
       if kwargs.include?(:schema)
         # FIXME: What kind of object is kwargs[:schema]
-        pname, cname, hash = kwargs[:schema].getKey()
+        pname, cname, hash = kwargs[:schema].getKey().to_a
       elsif kwargs.include?(:key)
-        pname, cname, hash = kwargs[:key]
+        pname, cname, hash = kwargs[:key].to_a
       elsif kwargs.include?(:class)
         pname, cname, hash = [kwargs[:package], kwargs[:class], nil]
       end
@@ -379,7 +378,7 @@ module Qpid::Qmf
       else
         map["_class"] = cname
         map["_package"] = pname if pname
-        map["_hash"]    = hash  if hash
+        map["_hash"]    = hash if hash
         kwargs.each do |k,v|
           @select << [k, v] if k.is_a?(String)
         end
@@ -495,15 +494,14 @@ module Qpid::Qmf
 
     def handle_class_ind(broker, codec, seq)
       kind  = codec.read_uint8
-      pname = codec.read_str8
-      cname = codec.read_str8
-      hash  = codec.read_bin128
+      classKey = ClassKey.new(codec)
       unknown = false
 
       synchronize do
-        return unless @packages.include?(pname)
-        unknown = true unless @packages[pname].include?([cname, hash])
+        return unless @packages.include?(classKey.package)
+        unknown = true unless @packages[classKey.package].include?([classKey.klass_name, classKey.hash])
       end
+
 
       if unknown
         # Send a schema request for the unknown class
@@ -511,9 +509,7 @@ module Qpid::Qmf
         send_codec = Qpid::StringCodec.new(broker.conn.spec)
         seq = @seq_mgr.reserve(CONTEXT_STARTUP)
         broker.set_header(send_codec, ?S, seq)
-        send_codec.write_str8(pname)
-        send_codec.write_str8(cname)
-        send_codec.write_bin128(hash)
+        classKey.encode(send_codec)
         smsg = broker.message(send_codec.encoded)
         broker.emit(smsg)
       end
@@ -572,30 +568,26 @@ module Qpid::Qmf
 
     def handle_schema_resp(broker, codec, seq)
       kind  = codec.read_uint8
-      pname = codec.read_str8
-      cname = codec.read_str8
-      hash  = codec.read_bin128
-      klass_key = [pname, cname, hash]
-      klass = SchemaClass.new(kind, klass_key, codec)
-      synchronize { @packages[pname][ [cname, hash] ] = klass }
+      classKey = ClassKey.new(codec)
+      klass = SchemaClass.new(self, kind, classKey, codec)
+      synchronize { @packages[classKey.package][ [classKey.klass_name, classKey.hash] ] = klass }
 
       @seq_mgr.release(seq)
       broker.dec_outstanding
-      @console.new_class(kind, klass_key) if @console
+      @console.new_class(kind, classKey) if @console
     end
 
     def handle_content_ind(broker, codec, seq, prop=false, stat=false)
-      pname = codec.read_str8
-      cname = codec.read_str8
-      hash  = codec.read_bin128
-      klass_key = [pname, cname, hash]
+      klass_key = ClassKey.new(codec)
+      pname, cname, hash = klass_key.to_a() ;
 
       schema = nil
       synchronize do
-        return unless @packages.include?(pname)
-        return unless @packages[pname].include?([cname, hash])
-        schema = @packages[pname][ [cname, hash] ]
+        return unless @packages.include?(klass_key.package)
+        return unless @packages[klass_key.package].include?([klass_key.klass_name, klass_key.hash])
+        schema = @packages[klass_key.package][ [klass_key.klass_name, klass_key.hash] ]
       end
+
 
       object = Qpid::Qmf::Object.new(self, broker, schema, codec, prop, stat)
       if pname == "org.apache.qpid.broker" && cname == "agent" && prop
@@ -641,15 +633,75 @@ module Qpid::Qmf
       when 12: data = codec.read_float      # FLOAT
       when 13: data = codec.read_double     # DOUBLE
       when 14: data = codec.read_uuid       # UUID
-      when 15: data = codec.read_map        # FTABLE
+      #when 15: data = codec.read_map        # FTABLE
       when 16: data = codec.read_int8       # S8
       when 17: data = codec.read_int16      # S16
       when 18: data = codec.read_int32      # S32
       when 19: data = codec.read_int64      # S64
+      when 15:                              # Ftable
+          data = {}
+          rec_codec = Qpid::StringCodec.new(codec.spec, codec.read_vbin32())
+          if rec_codec.encoded:
+            count = rec_codec.read_uint32()
+            while count > 0 do
+              k = rec_codec.read_str8()
+              code = rec_codec.read_uint8()
+              v = decode_value(rec_codec, code)
+              data[k] = v
+              count -= 1
+            end
+          end
+      when 20:                               # Object
+        inner_type_code = codec.read_uint8()
+        if (inner_type_code == 20)
+            classKey = ClassKey.new(codec)
+            innerSchema = schema(classKey)
+            data = Object.new(self, @broker, innerSchema, codec, true, true, false)  if innerSchema
+        else
+            data = decode_value(codec, inner_type_code)
+        end
+      when 21:
+          data = []
+          rec_codec = Qpid::StringCodec.new(codec.spec, codec.read_vbin32())
+          count = rec_codec.read_uint32()
+          while count > 0 do
+            type = rec_codec.read_uint8()
+            data << (decode_value(rec_codec,type))
+            count -= 1
+          end
+      when 22:
+          data = []
+          rec_codec = Qpid::StringCodec.new(codec.spec, codec.read_vbin32())
+          count = rec_codec.read_uint32()
+          type = rec_codec.read_uint8()
+          while count > 0 do
+            data << (decode_value(rec_codec,type))
+            count -= 1
+          end
       else
         raise ArgumentError, "Invalid type code: #{typecode} - #{typecode.inspect}"
       end
       return data
+    end
+
+    ENCODINGS = {
+      String => 6,
+      Fixnum => 18,
+      Bignum => 19,
+      Float => 12,
+      Array => 21,
+      Hash => 15
+    }
+
+    def encoding(object)
+      klass = object.class
+      if ENCODINGS.has_key?(klass)
+        return ENCODINGS[klass]
+      end
+      for base in klass.__bases__
+        result = encoding(base)
+        return result unless result.nil?
+      end
     end
 
     # Encode, into the codec, a value based on its typecode
@@ -672,11 +724,46 @@ module Qpid::Qmf
       when 12: codec.write_float(value)         # FLOAT
       when 13: codec.write_double(value)        # DOUBLE
       when 14: codec.write_uuid(value)          # UUID
-      when 15: codec.write_map(value)           # FTABLE
+      #when 15: codec.write_map(value)           # FTABLE
       when 16: codec.write_int8(value)          # S8
       when 17: codec.write_int16(value)         # S16
       when 18: codec.write_int32(value)         # S32
       when 19: codec.write_int64(value)         # S64
+      when 20: value.encode(codec)
+      when 15:                                  # FTABLE
+        send_codec = Qpid::StringCodec.new(codec.spec)
+        if !value.nil?
+          send_codec.write_uint32(value.size())
+          value.each do |k,v|
+            mtype = encoding(v)
+            send_codec.write_str8(k.to_s)
+            send_codec.write_uint8(mtype)
+            encode_value(send_codec, v, mtype)
+          end
+        else
+          send_codec.write_uint32(0)
+        codec.write_vbin32(send_codec.encoded)
+        end
+      when 21:                                  # List
+        send_codec = Qpid::StringCodec.new(codec.spec)
+        encode_value(send_codec, value.size, 3)
+        value.each do v
+            ltype = encoding(v)
+            encode_value(send_codec,ltype,1)
+            encode_value(send_codec,v,ltype)
+        end
+        codec.write_vbin32(send_codec.encoded)
+      when 22:                                  # Array
+        send_codec = Qpid::StringCodec.new(codec.spec)
+        encode_value(send_codec, value.size, 3)
+        if value.size > 0
+            ltype = encoding(value[0])
+            encode_value(send_codec,ltype,1)
+            value.each do v
+                encode_value(send_codec,v,ltype)
+            end
+        end
+        codec.write_vbin32(send_codec.encoded)
       else
         raise ValueError, "Invalid type code: %d" % typecode
       end
@@ -702,6 +789,9 @@ module Qpid::Qmf
       when 17: return value.to_s
       when 18: return value.to_s
       when 19: return value.to_s
+      when 20: return value.to_s
+      when 21: return value.to_s
+      when 22: return value.to_s
       else
         raise ValueError, "Invalid type code: %d" % typecode
       end
@@ -751,10 +841,34 @@ module Qpid::Qmf
   class ClassKey
     attr_reader :package, :klass_name, :hash
 
-    def initialize(package, klass_name, hash)
-      @package = package
-      @klass_name = klass_name
-      @hash = hash
+    def initialize(package="", klass_name="", hash=0)
+      if (package.kind_of?(Qpid::Codec))
+        @package = package.read_str8()
+        @klass_name = package.read_str8()
+        @hash = package.read_bin128()
+      else
+        @package = package
+        @klass_name = klass_name
+        @hash = hash
+      end
+    end
+
+    def encode(codec)
+        codec.write_str8(@package)
+        codec.write_str8(@klass_name)
+        codec.write_bin128(@hash)
+    end
+
+    def to_a()
+        return [@package, @klass_name, @hash]
+    end
+
+    def hash_string()
+      "%08x-%08x-%08x-%08x" % hash.unpack("NNNN")
+    end
+
+    def to_s()
+        return "#{@package}:#{@klass_name}(#{hash_string()})"
     end
   end
 
@@ -763,11 +877,13 @@ module Qpid::Qmf
     CLASS_KIND_TABLE = 1
     CLASS_KIND_EVENT = 2
 
-    attr_reader :klass_key, :properties, :statistics, :methods, :arguments
+    attr_reader :klass_key, :arguments
 
-    def initialize(kind, key, codec)
+    def initialize(session, kind, key, codec)
+      @session = session
       @kind = kind
       @klass_key = key
+      @super_klass_key = nil
       @properties = []
       @statistics = []
       @methods = []
@@ -779,9 +895,7 @@ module Qpid::Qmf
         stat_count   = codec.read_uint16
         method_count = codec.read_uint16
         if has_supertype == 1
-          codec.read_str8
-          codec.read_str8
-          codec.read_bin128
+          @super_klass_key = ClassKey.new(codec)
         end
         prop_count.times { |idx|
           @properties << SchemaProperty.new(codec) }
@@ -798,8 +912,31 @@ module Qpid::Qmf
       end
     end
 
+    def properties
+        returnValue = @properties
+        if !@super_klass_key.nil?
+            returnValue = @properties + @session.schema(@super_klass_key).properties
+        end
+        return returnValue
+    end
+
+    def statistics
+        returnValue = @statistics
+        if !@super_klass_key.nil?
+            returnValue = @statistics + @session.schema(@super_klass_key).statistics
+        end
+        return returnValue
+    end
+
+    def methods
+        returnValue = @methods
+        if !@super_klass_key.nil?
+            returnValue = @methods + @session.schema(@super_klass_key).methods
+        end
+        return returnValue
+    end
+
     def to_s
-      pname, cname, hash = @klass_key
       if @kind == CLASS_KIND_TABLE
         kind_str = "Table"
       elsif @kind == CLASS_KIND_EVENT
@@ -807,8 +944,8 @@ module Qpid::Qmf
       else
         kind_str = "Unsupported"
       end
-      result = "%s Class: %s:%s " % [kind_str, pname, cname]
-      result += Qpid::UUID::format(hash)
+      result = "%s Class: %s:%s " % [kind_str, @klass_key.package, @klass_key.klass_name]
+      result += Qpid::UUID::format(@klass_key.hash)
       return result
     end
   end
@@ -966,14 +1103,16 @@ module Qpid::Qmf
     attr_reader :object_id, :schema, :properties, :statistics,
     :current_time, :create_time, :delete_time, :broker
 
-    def initialize(session, broker, schema, codec, prop, stat)
+    def initialize(session, broker, schema, codec, prop, stat, managed=true)
       @session = session
       @broker  = broker
       @schema  = schema
-      @current_time = codec.read_uint64
-      @create_time  = codec.read_uint64
-      @delete_time  = codec.read_uint64
-      @object_id   = ObjectId.new(codec)
+      if managed
+          @current_time = codec.read_uint64
+          @create_time  = codec.read_uint64
+          @delete_time  = codec.read_uint64
+          @object_id   = ObjectId.new(codec)
+      end
       @properties  = []
       @statistics  = []
       if prop
@@ -1036,8 +1175,7 @@ module Qpid::Qmf
     end
 
     def to_s
-      key = klass_key
-      key[0] + ":" + key[1] + "[" + @object_id.to_s() + "] " + index
+      @schema.klass_key.to_s
     end
 
     # This must be defined because ruby has this (deprecated) method built in.
@@ -1078,6 +1216,38 @@ module Qpid::Qmf
       raise "Type Object has no attribute '#{name}'"
     end
 
+        def encode(codec)
+            codec.write_uint8(20)
+            @schema.klass_key.encode(codec)
+
+            # emit presence masks for optional properties
+            mask = 0
+            bit  = 0
+            schema.properties.each do |property|
+            if prop.optional
+                bit = 1 if bit == 0
+                mask |= bit if value
+                bit = bit << 1
+                if bit == 256
+                    bit = 0
+                    codec.write_uint8(mask)
+                    mask = 0
+                end
+                codec.write_uint8(mask) if bit != 0
+            end
+        end
+
+        # encode properties
+        @properties.each do |property, value|
+          @session.encode_value(codec, value, prop.type) if value
+        end
+
+        # encode statistics
+        @statistics.each do |statistic, value|
+          @session.encode_value(codec, value, stat.type)
+        end
+    end
+
     private
 
     def send_method_request(method, name, args, synchronous = false, time_wait = nil)
@@ -1087,10 +1257,7 @@ module Qpid::Qmf
           seq = @session.seq_mgr.reserve([schema_method, synchronous])
           @broker.set_header(send_codec, ?M, seq)
           @object_id.encode(send_codec)
-          pname, cname, hash = @schema.klass_key
-          send_codec.write_str8(pname)
-          send_codec.write_str8(cname)
-          send_codec.write_bin128(hash)
+          @schema.klass_key.encode(send_codec)
           send_codec.write_str8(name)
 
           formals = method.arguments.select { |arg| arg.dir.index(?I) }
@@ -1171,7 +1338,7 @@ module Qpid::Qmf
 
   class MethodResult
 
-    attr_reader :status, :text
+    attr_reader :status, :text, :out_args
 
     def initialize(status, text, out_args)
       @status   = status
@@ -1189,7 +1356,16 @@ module Qpid::Qmf
     end
 
     def to_s
-      "#{text} (#{status}) - #{out_args.inspect}"
+      argsString = ""
+      padding = ""
+      out_args.each do |key,value|
+        argsString += padding
+        padding = " " if padding == ""
+        argsString += key.to_s
+        argsString += " => "
+        argsString += value.to_s()
+      end
+      "MethodResult(Msg: '#{text}' Status: #{status} Return: [#{argsString}])"
     end
   end
 
@@ -1579,13 +1755,12 @@ module Qpid::Qmf
     def initialize(session, broker, codec)
       @session = session
       @broker  = broker
-      pname = codec.read_str8
-      cname = codec.read_str8
-      hash  = codec.read_bin128
-      @klass_key = [pname, cname, hash]
+      @klass_key = ClassKey.new(codec)
       @timestamp = codec.read_int64
       @severity = codec.read_uint8
       @schema = nil
+
+      pname, cname, hash = @klass_key.to_a()
       session.packages.keys.each do |pname|
         k = [cname, hash]
         if session.packages[pname].include?(k)
@@ -1603,7 +1778,7 @@ module Qpid::Qmf
       return "<uninterpretable>" unless @schema
       t = Time.at(self.timestamp / 1000000000)
       out = t.strftime("%c")
-      out += " " + sev_name + " " + @klass_key[0] + ":" + klass_key[1]
+      out += " " + sev_name + " " + @klass_key.package + ":" + @klass_key.klass_name
       out += " broker=" + @broker.url
       @schema.arguments.each do |arg|
         out += " " + arg.name + "=" + @session.display_value(@arguments[arg.name], arg.type)

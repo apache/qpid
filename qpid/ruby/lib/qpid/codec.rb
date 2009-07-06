@@ -26,6 +26,8 @@ module Qpid
 
     include Qpid::Packer
 
+    attr_reader :spec
+    
     def initialize(spec = "")
       @spec = spec
     end
@@ -415,19 +417,19 @@ module Qpid
     end
 
     def read_uuid
-      return unpack("A16", 16)
+      return unpack("a16", 16)
     end
 
     def write_uuid(s)
-      pack("A16", s)
+      pack("a16", s)
     end
 
     def read_bin128
-      return unpack("A16", 16)
+      return unpack("a16", 16)
     end
 
     def write_bin128(b)
-      pack("A16", b)
+      pack("a16", b)
     end
 
   end
