@@ -5,7 +5,7 @@
 ##   ENABLE_TESTING()
 ##   INCLUDE(CTest)
 set(CTEST_PROJECT_NAME "qpid-cpp")
-set(CTEST_NIGHTLY_START_TIME "00:00:00 EST")
+set(CTEST_NIGHTLY_START_TIME "20:00:00 EST")
 
 set(CTEST_DROP_METHOD "http")
 set(CTEST_DROP_SITE "www.riverace.com")
