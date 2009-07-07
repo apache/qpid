@@ -45,8 +45,7 @@ class RecoverableMessageImpl : public RecoverableMessage
     intrusive_ptr<Message> msg;
     const uint64_t stagingThreshold;
 public:
-    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) 
-        : msg(_msg), stagingThreshold(_stagingThreshold) {}
+    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold); 
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
     bool loadContent(uint64_t available);
@@ -158,6 +157,13 @@ void RecoveryManagerImpl::recoveryComplete()
 {
     //notify all queues
     queues.eachQueue(boost::bind(&Queue::recoveryComplete, _1));
+}
+
+RecoverableMessageImpl:: RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) : msg(_msg), stagingThreshold(_stagingThreshold) 
+{
+    if (!msg->isPersistent()) {
+        msg->forcePersistent(); // set so that message will get dequeued from store.
+    }
 }
 
 bool RecoverableMessageImpl::loadContent(uint64_t available)
