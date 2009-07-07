@@ -668,7 +668,7 @@ void Queue::setLastNodeFailure()
     	for ( Messages::iterator i = messages.begin(); i != messages.end(); ++i ) {
             if (lastValueQueue) checkLvqReplace(*i);
             i->payload->forcePersistent();
-            if (i->payload->getPersistenceId() == 0){
+            if (i->payload->isForcedPersistent() ){
             	enqueue(0, i->payload);
             }
     	}
