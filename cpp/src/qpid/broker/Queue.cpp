@@ -99,7 +99,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     eventMode(0),
     eventMgr(0),
     insertSeqNo(0),
-    broker(b)
+    broker(b),
+    lastForcedPosition(0)
 {
     if (parent != 0 && broker != 0)
     {
@@ -659,6 +660,7 @@ bool Queue::canAutoDelete() const
 void Queue::clearLastNodeFailure()
 {
     inLastNodeFailure = false;
+    lastForcedPosition = sequence;
 }
 
 void Queue::setLastNodeFailure()
@@ -666,10 +668,14 @@ void Queue::setLastNodeFailure()
     if (persistLastNode){
         Mutex::ScopedLock locker(messageLock);
     	for ( Messages::iterator i = messages.begin(); i != messages.end(); ++i ) {
-            if (lastValueQueue) checkLvqReplace(*i);
-            i->payload->forcePersistent();
-            if (i->payload->isForcedPersistent() ){
-            	enqueue(0, i->payload);
+            // don't force a message twice to disk.
+            if(i->position > lastForcedPosition) {
+                if (lastValueQueue) checkLvqReplace(*i);
+                i->payload->forcePersistent();
+                if (i->payload->isForcedPersistent() ){
+            	    enqueue(0, i->payload);
+                }
+                lastForcedPosition = i->position;
             }
     	}
         inLastNodeFailure = true;

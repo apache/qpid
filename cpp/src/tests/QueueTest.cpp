@@ -548,6 +548,34 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     queue2->setLastNodeFailure();
     BOOST_CHECK_EQUAL(testStore.enqCnt, 2u);
 
+    // check they don't get stored twice
+    queue1->setLastNodeFailure();
+    queue2->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 2u);
+
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    queue1->deliver(msg2);
+    queue2->deliver(msg2);
+
+    queue1->clearLastNodeFailure();
+    queue2->clearLastNodeFailure();
+    // check only new messages get forced
+    queue1->setLastNodeFailure();
+    queue2->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 4u);
+
+    // check no failure messages are stored
+    queue1->clearLastNodeFailure();
+    queue2->clearLastNodeFailure();
+    
+    intrusive_ptr<Message> msg3 = create_message("e", "B");
+    queue1->deliver(msg3);
+    queue2->deliver(msg3);
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 4u);
+    queue1->setLastNodeFailure();
+    queue2->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 6u);
+    
 }
 
 
