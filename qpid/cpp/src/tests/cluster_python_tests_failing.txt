@@ -1,3 +1,4 @@
+tests_0-10.management.ManagementTest.test_purge_queue
 tests_0-10.dtx.DtxTests.test_bad_resume
 tests_0-10.dtx.DtxTests.test_commit_unknown
 tests_0-10.dtx.DtxTests.test_end
