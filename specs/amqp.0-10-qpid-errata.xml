@@ -121,7 +121,7 @@
 
 -->
 
-<!DOCTYPE amqp SYSTEM "amqp.0-10.dtd">
+<!--<!DOCTYPE amqp SYSTEM "amqp.0-10.dtd">-->
 
 <amqp xmlns="http://www.amqp.org/schema/amqp.xsd"
     major="0" minor="10" port="5672">
