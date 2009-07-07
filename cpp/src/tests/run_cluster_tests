@@ -19,6 +19,12 @@
 # under the License.
 #
 
+if test -z $1; then
+	CLUSTER_TEST=cluster_tests.py
+else
+	CLUSTER_TEST=$1
+	echo "Running ${CLUSTER_TEST}..."
+fi
 
 # Check that top_builddir and srcdir are set
 # If not, assume local run from test dir
@@ -26,10 +32,8 @@ if [ -z ${top_builddir} -o -z ${srcdir} ]; then
 	srcdir=`pwd`
 	top_builddir=${srcdir}/../../
 fi
-	
-
-# Run the cluster tests.
 TEST_DIR=${top_builddir}/src/tests
+
 
 # Check AIS requirements
 id -nG | grep '\<ais\>' > /dev/null || NOGROUP="You are not a member of the ais group."
@@ -52,12 +56,15 @@ EOF
 	exit 0
 fi
 
+
 # Check XML exchange requirements
 XML_LIB=$srcdir/../.libs/xml.so
 if [ -f ${XML_LIB} ]; then
 	export XML_LIB
 fi
 
+
+# Set up environment for python tests
 export PYTHONPATH=${srcdir}:${srcdir}/../../../python
 export QPIDD_EXEC=${top_builddir}/src/qpidd
 export CLUSTER_LIB=${top_builddir}/src/.libs/cluster.so
@@ -67,7 +74,18 @@ export RECEIVER_EXEC=${top_builddir}/src/tests/receiver
 export SENDER_EXEC=${top_builddir}/src/tests/sender
 
 
-#Make sure temp dir exists if this is the first to use it
+# Check for existence of qpid tools (either in svn tree or full install)
+# This prevents make dist / make distcheck from failing without python tools being present
+if test ! -x ${top_builddir}/../python/commands/qpid-config; then
+	path=`which qpid-config`
+	if test $?; then
+		echo "WARNING: qpid tools not found, skipping test ${CLUSTER_TEST}" 
+		exit 0
+	fi
+fi
+
+
+# Make sure temp dir exists if this is the first to use it
 TMP_DATA_DIR=${TEST_DIR}/test_tmp
 if ! test -d ${TMP_DATA_DIR} ; then
    	mkdir -p ${TMP_DATA_DIR}/cluster
@@ -79,11 +97,13 @@ fi
 export TMP_DATA_DIR
 
 
-sg ais -c "${srcdir}/cluster.py -v"
+# Run the test
+sg ais -c "${srcdir}/${CLUSTER_TEST} -v"
 RETCODE=$?
 if test x${RETCODE} != x0; then 
     exit 1;
 fi
+
 
 # Delete cluster store dir if test was successful.
 rm -rf ${TMP_DATA_DIR}
