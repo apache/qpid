@@ -754,9 +754,14 @@ void AsynchIO::completion(AsynchIoResult *result) {
         working = false;
     }
     // Lock released; ok to close if ops are done and close requested.
-    // Layer above will call back to queueForDeletion()
-    if (opsInProgress == 0 && queuedClose) {
-        close();
+    // Layer above will call back to queueForDeletion() if it hasn't
+    // already been done. If it already has, go ahead and delete.
+    if (opsInProgress == 0) {
+        if (queuedClose)
+            // close() may cause a delete; don't trust 'this' on return
+            close();
+        else if (queuedDelete)
+            delete this;
     }
 }
 
