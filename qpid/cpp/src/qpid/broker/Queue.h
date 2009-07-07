@@ -106,6 +106,7 @@ namespace qpid {
             bool insertSeqNo;
             std::string seqNoKey;
             Broker* broker;
+            framing::SequenceNumber lastForcedPosition;
 
             void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
