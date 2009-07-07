@@ -272,20 +272,25 @@ QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 class TestMessageStoreOC : public NullMessageStore
 {
   public:
+
+    uint enqCnt;
+    uint deqCnt;
     
     virtual void dequeue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
                  const PersistableQueue& /*queue*/)
     {
+        deqCnt++;
     }
 
     virtual void enqueue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
                  const PersistableQueue& /* queue */)
     {
+        enqCnt++;
     }
 
-    TestMessageStoreOC() : NullMessageStore() {}
+    TestMessageStoreOC() : NullMessageStore(),enqCnt(0),deqCnt(0) {}
     ~TestMessageStoreOC(){}
 };
 
@@ -520,6 +525,32 @@ QPID_AUTO_TEST_CASE(testQueueCleaner) {
     ::usleep(300*1000);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 0u);
 }
+
+QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
+
+    TestMessageStoreOC  testStore;
+    client::QueueOptions args;
+    args.setPersistLastNode();
+
+    Queue::shared_ptr queue1(new Queue("queue1", true, &testStore ));
+    queue1->configure(args);
+    Queue::shared_ptr queue2(new Queue("queue2", true, &testStore ));
+    queue2->configure(args);
+	
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+
+    queue1->deliver(msg1);
+    queue2->deliver(msg1);
+
+    //change mode
+    queue1->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 1u);
+    queue2->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 2u);
+
+}
+
+
 
 QPID_AUTO_TEST_SUITE_END()
 

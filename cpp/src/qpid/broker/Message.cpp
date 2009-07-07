@@ -59,7 +59,15 @@ Message::~Message()
 
 void Message::forcePersistent()
 {
-    forcePersistentPolicy = true;
+    // only set forced bit if we actually need to force.
+    if (! getAdapter().isPersistent(frames) ){
+        forcePersistentPolicy = true;
+    }
+}
+
+bool Message::isForcedPersistent()
+{
+    return forcePersistentPolicy;
 }
 
 std::string Message::getRoutingKey() const

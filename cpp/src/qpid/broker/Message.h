@@ -147,6 +147,7 @@ public:
     void addTraceId(const std::string& id);
 	
 	void forcePersistent();
+	bool isForcedPersistent();
     
     boost::intrusive_ptr<Message>& getReplacementMessage(const Queue* qfor) const;
     void setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor);
