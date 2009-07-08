@@ -21,6 +21,8 @@
 <project name="AMQ Client" default="build">
 
   <property name="module.depends" value="common"/>
+  <property name="module.genpom" value="true"/>
+  <property name="module.genpom.args" value="-Sgeronimo-jms_1.1_spec=provided"/>
 
   <import file="../module.xml"/>
 

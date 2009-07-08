@@ -20,6 +20,8 @@
  -->
 <project name="AMQ Common" default="build">
 
+  <property name="module.genpom" value="true"/>
+
   <import file="../module.xml"/>
 
   <property name="gentools.home" location="${project.root}/../gentools" />
