@@ -182,6 +182,10 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
 
 void Queue::recover(boost::intrusive_ptr<Message>& msg){
     push(msg, true);
+    if (store){ 
+        // setup synclist for recovered messages, so they don't get re-stored on lastNodeFailure
+        msg->addToSyncList(shared_from_this(), store); 
+    }
     msg->enqueueComplete(); // mark the message as enqueued
     mgntEnqStats(msg);
 
