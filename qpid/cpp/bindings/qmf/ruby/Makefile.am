@@ -31,7 +31,7 @@ rubylibdir = $(RUBY_LIB)
 dist_rubylib_DATA = qmf.rb
 
 $(generated_file_list): $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
-	swig -ruby -c++ -Wall -I/usr/include $(INCLUDES) $(QPID_CXXFLAGS) -o qmfengine.cpp $(srcdir)/ruby.i
+	$(SWIG) -ruby -c++ -Wall -I/usr/include $(INCLUDES) $(QPID_CXXFLAGS) -o qmfengine.cpp $(srcdir)/ruby.i
 
 AM_CPPFLAGS = $(QPID_CXXFLAGS) $(INCLUDES) -I$(srcdir) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
 AM_CXXFLAGS = $(QPID_CXXFLAGS)
