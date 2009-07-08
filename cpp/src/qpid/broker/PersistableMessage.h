@@ -111,6 +111,8 @@ class PersistableMessage : public Persistable
                                          MessageStore* _store);
 
     QPID_BROKER_EXTERN void dequeueAsync();
+    
+    bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
 };
 
 }}
