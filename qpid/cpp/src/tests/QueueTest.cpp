@@ -576,8 +576,25 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     queue2->setLastNodeFailure();
     BOOST_CHECK_EQUAL(testStore.enqCnt, 6u);
     
-}
+    // check requeue 1
+    intrusive_ptr<Message> msg4 = create_message("e", "C");
+    intrusive_ptr<Message> msg5 = create_message("e", "D");
 
+    framing::SequenceNumber sequence(1);
+    QueuedMessage qmsg1(queue1.get(), msg4, sequence);
+    QueuedMessage qmsg2(queue2.get(), msg5, ++sequence);
+    
+    queue1->requeue(qmsg1);
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 7u);
+    
+    // check requeue 2
+    queue2->clearLastNodeFailure();
+    queue2->requeue(qmsg2);
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 7u);
+    queue2->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 8u);
+    
+}
 
 
 QPID_AUTO_TEST_SUITE_END()
