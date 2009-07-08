@@ -118,7 +118,7 @@ def Usage ():
     print "                         accept-mode, and the discard-unroutable delivery property is set to false, and"
     print "                         there is no queue to route to for the given message according to the bindings"
     print "                         on this exchange."
-    print "    --passive            Do not actually change teh broker state (exchange will not be created)"
+    print "    --passive            Do not actually change the broker state (exchange will not be created)"
     print "    --durable            Exchange is durable"
     print "    --sequence           Exchange will insert a 'qpid.msg_sequence' field in the message header"
     print "                         with a value that increments for each message forwarded."
