@@ -1,0 +1,7 @@
+broker.language=java
+broker=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT -c @CONFIG_FILE -l ${test.profiles}/log4j-test.xml
+broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work/derbyDB
+broker.ready=Qpid Broker Ready
+broker.config=${project.root}/build/etc/config-systests-derby.xml
+
+test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/08ExcludeList-nonvm 

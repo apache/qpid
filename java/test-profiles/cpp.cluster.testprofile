@@ -1,6 +1,6 @@
 broker.version=0-10
 broker=${project.root}/../cpp/src/qpidd --load-module ${project.root}/../cpp/src/.libs/cluster.so --cluster-name cpp-java-test-cluster -p @PORT --data-dir ${build.data}/@PORT -t --auth no
-test.excludesfile=${project.root}/ExcludeList ${project.root}/XAExcludeList ${project.root}/010ExcludeList
+test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/010ExcludeList
 
 profile.clustered=true
 profile.failoverMsgCount=10
