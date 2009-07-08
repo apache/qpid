@@ -58,6 +58,10 @@
     </sequential>
   </macrodef>
 
+  <target name="pom" description="generate poms">
+    <iterate target="pom"/>
+  </target>
+
   <target name="compile" description="compile sources">
     <iterate target="compile"/>
   </target>
@@ -157,12 +161,7 @@
 
       <zipfileset dir="${build}" prefix="${project.namever}" excludes="${release.excludes}" filemode="644" dirmode="755">
         <exclude name="bin/**"/>
-	<exclude name="**/*.class"/>
-        <exclude name="broker/**"/>
-        <exclude name="common/**"/>
-        <exclude name="client/**"/>
-        <exclude name="perftests/**"/>
-        <exclude name="systests/**"/>
+	<exclude name="scratch/**"/>
       </zipfileset>
 
       <zipfileset dir="${resources}" prefix="${project.namever}" filemode="644"/>

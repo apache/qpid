@@ -28,6 +28,7 @@
 
   <property name="resources"             location="${project.root}/resources"/>
   <property name="build"                 location="${project.root}/build"/>
+  <property name="build.scratch"         location="${build}/scratch"/>
   <property name="build.bin"             location="${build}/bin"/>
   <property name="build.etc"             location="${build}/etc"/>
   <property name="build.lib"             location="${build}/lib"/>
@@ -36,7 +37,7 @@
   <property name="build.report"          location="${build}/report"/>
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
-  <property name="build.data"            location="${build}/data"/>
+  <property name="build.data"            location="${build.scratch}/data"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
   <property name="build.coveragereport"  location="${build}/coverage"/>
 
@@ -92,13 +93,9 @@
     <attribute name="path"/>
     <element name="args"/>
     <sequential>
-      <java classname="org.python.util.jython" fork="true" failonerror="true">
-        <arg value="-Dpython.cachedir.skip=true"/>
-        <arg value="-Dpython.path=${project.root}/lib/jython-lib.jar/Lib${path.separator}@{path}"/>
+      <java jar="${project.root}/lib/jython-2.5.0.jar" fork="true" failonerror="true">
+        <arg value="-Dpython.path=@{path}"/>
         <args/>
-        <classpath>
-          <pathelement location="${project.root}/lib/jython-2.2-rc2.jar"/>
-        </classpath>
       </java>
     </sequential>
   </macrodef>

@@ -36,7 +36,7 @@
 
   <property file="${project.root}/build.deps"/>
 
-  <property name="module.build"        location="${build}/${module}"/>
+  <property name="module.build"        location="${build.scratch}/${module}"/>
   <property name="module.classes"      location="${module.build}/classes"/>
   <property name="module.instrumented" location="${module.build}/classes-instrumented"/>
   <property name="module.precompiled"  location="${module.build}/src"/>
@@ -49,27 +49,35 @@
   <property name="module.bin"          location="bin"/>
   <property name="module.etc"          location="etc"/>
     
-  <property name="module.namever"              value="${project.name}-${module.name}-${project.version}"/>
-  <property name="module.release.base"	       value="${basedir}/release"/>
-  <property name="module.release"              value="${module.release.base}/${module.namever}"/>
-  <property name="module.release.lib"	       value="${module.release}/lib"/>
-  <property name="module.release.zip"          location="${module.release.base}/${module.namever}.zip"/>
-  <property name="module.release.tar"          location="${module.release.base}/${module.namever}.tar"/>
-  <property name="module.release.tgz"          location="${module.release.base}/${module.namever}.tar.gz"/>
-  <property name="module.release.bz2"          location="${module.release}/${module.namever}.tar.bz2"/>
+  <property name="module.namever"      value="${project.name}-${module.name}-${project.version}"/>
+  <property name="module.release.base" value="${basedir}/release"/>
+  <property name="module.release"      value="${module.release.base}/${module.namever}"/>
+  <property name="module.release.lib"  value="${module.release}/lib"/>
+  <property name="module.release.zip"  location="${module.release.base}/${module.namever}.zip"/>
+  <property name="module.release.tar"  location="${module.release.base}/${module.namever}.tar"/>
+  <property name="module.release.tgz"  location="${module.release.base}/${module.namever}.tar.gz"/>
+  <property name="module.release.bz2"  location="${module.release}/${module.namever}.tar.bz2"/>
+
+  <property name="module.genpom.args"  value=""/>
 
   <property name="module.qpid.jar"     location="${module.release.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${module.qpid.jar}"/>
 
   <property name="module.coverage"     location="${module.build}/coverage"/>
   <property name="cobertura.datafile"  location="${module.instrumented}/cobetura.ser"/>
-  
+
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
 
   <indirect name="module.libs"         variable="${module.name}.libs"/>
+  <condition property="module.libs.empty">
+    <equals trim="true" arg1="${module.libs}" arg2=""/>
+  </condition>
   <indirect name="module.test.libs"    variable="${module.name}.test.libs"/>
+  <condition property="module.test.libs.empty">
+    <equals trim="true" arg1="${module.test.libs}" arg2=""/>
+  </condition>
 
   <path id="module.libs">
     <filelist dir="${project.root}" files="${module.libs}"/>
@@ -102,11 +110,11 @@
   <property name="module.test.excludes" value=""/>
 
   <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build}/*/classes"/>
+    <globmapper from="*" to="${build.scratch}/*/classes"/>
   </map>
 
   <map property="module.test.depends.path" value="${module.test.depends}" join="${path.separator}">
-    <globmapper from="*" to="${build}/*/classes"/>
+    <globmapper from="*" to="${build.scratch}/*/classes"/>
   </map>
 
   <path id="module.class.path">
@@ -153,6 +161,21 @@
     <mkdir dir="${module.api}"/>
     <mkdir dir="${module.test.classes}"/>
     <mkdir dir="${module.results}"/>
+  </target>
+
+  <target name="pom" depends="prepare" if="module.genpom">
+    <jython path="${mllib.dir}">
+      <args>
+        <arg line="${project.root}/genpom"/>
+        <arg line="-s ${project.root}/lib/poms"/>
+        <arg line="-o ${build}/${module.name}.pom"/>
+        <arg line="-g org.apache.qpid"/>
+        <arg line="-a ${module.name}"/>
+        <arg line="-v ${project.version}"/>
+        <arg line="${module.genpom.args}"/>
+        <arg line="${module.libs}"/>
+      </args>
+    </jython>
   </target>
 
   <target name="precompile"/>
@@ -330,7 +353,7 @@
 
   <target name="libs" description="copy dependencies into build tree">
     <copy todir="${build.lib}" failonerror="false" flatten="true">
-      <fileset dir="${project.root}" includes="${module.libs}"/>
+      <filelist dir="${project.root}" files="${module.libs}"/>
     </copy>
   </target>
 
@@ -342,7 +365,7 @@
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
     <copy todir="${module.release}" failonerror="true">
-      <fileset dir="${basedir}${file.separator}.." includes="${module.libs}"/>
+      <filelist dir="${basedir}${file.separator}.." files="${module.libs}"/>
     </copy>
     <!-- Copy the jar for this module -->
     <copy todir="${module.release}/lib" failonerror="true">

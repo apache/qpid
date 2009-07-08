@@ -80,8 +80,7 @@ common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} \
 client.libs=${common.libs}  ${geronimo-jms}
 tools.libs=${client.libs}
 broker.libs=${common.libs} ${commons-cli} ${commons-logging} ${log4j} \
-    ${slf4j-log4j} ${xalan} ${felix.libs} ${derby-db} \
-    ${build.lib}/${project.name}-common-${project.version}.jar
+    ${slf4j-log4j} ${xalan} ${felix.libs} ${derby-db}
 
 broker-plugins.libs=${common.libs} ${felix.libs} 
 management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} ${commons-pool} ${geronimo-servlet} ${muse.libs} ${javassist} ${xalan} ${mina-core} ${mina-filter-ssl}
@@ -131,6 +130,8 @@ ecl-swt-macosx-carbon=lib/org.eclipse.swt.carbon.macosx_3.4.1.v3449c.jar
 ecl-equinox-launcher-macosx-carbon=lib/org.eclipse.equinox.launcher.carbon.macosx_1.0.101.R34x_v20080731/**
 ecl-swt-solaris-gtk-sparc=lib/org.eclipse.swt.gtk.solaris.sparc_3.4.1.v3449c.jar
 ecl-equinox-launcher-solaris-gtk-sparc=lib/org.eclipse.equinox.launcher.gtk.solaris.sparc_1.0.101.R34x_v20080731/**
+
+management-common.libs=
 
 management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} \
     ${ecl-swt-win32-win32-x86} ${ecl-equinox-launcher-win32-win32-x86}
