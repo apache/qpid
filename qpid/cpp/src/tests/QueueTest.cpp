@@ -646,6 +646,48 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     BOOST_CHECK_EQUAL(testStore.enqCnt, 8u);
 }
 
+QPID_AUTO_TEST_CASE(testLastNodeRecoverAndFail){
+/*
+simulate this:
+  1. start two nodes
+  2. create cluster durable queue and add some messages
+  3. kill one node (trigger force-persistent behaviour)
+  4. stop and recover remaining node
+  5. add another node
+  6. kill that new node again
+make sure that an attempt to re-enqueue a message does not happen which will 
+result in the last man standing exiting with an error. 
+
+we need to make sure that recover is safe, i.e. messages are
+not requeued to the store.
+*/
+    TestMessageStoreOC  testStore;
+    client::QueueOptions args;
+    // set queue mode
+    args.setPersistLastNode();
+
+    Queue::shared_ptr queue1(new Queue("my-queue", true, &testStore));
+    intrusive_ptr<Message> received;
+    queue1->configure(args);
+ 	
+    // check requeue 1
+    intrusive_ptr<Message> msg1 = create_message("e", "C");
+    intrusive_ptr<Message> msg2 = create_message("e", "D");
+
+    queue1->recover(msg1);
+
+    queue1->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 0u);
+
+    queue1->clearLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 0u);
+
+    queue1->deliver(msg2);
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 0u);
+    queue1->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 1u);
+
+}
 
 QPID_AUTO_TEST_SUITE_END()
 
