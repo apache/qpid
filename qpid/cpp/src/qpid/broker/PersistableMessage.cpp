@@ -100,13 +100,18 @@ bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
     return false;
 }
 
-void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
+
+void PersistableMessage::addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
     if (_store){
         sys::ScopedLock<sys::Mutex> l(storeLock);
         store = _store;
         boost::weak_ptr<PersistableQueue> q(queue);
         synclist.push_back(q);
     }
+}
+
+void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
+    addToSyncList(queue, _store);
     enqueueAsync();
 }
 
