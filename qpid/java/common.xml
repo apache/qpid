@@ -27,6 +27,7 @@
   <property name="project.namever"       value="${project.name}-${project.version}"/>
 
   <property name="resources"             location="${project.root}/resources"/>
+  <property name="test.profiles"         location="${project.root}/test-profiles"/>
   <property name="build"                 location="${project.root}/build"/>
   <property name="build.scratch"         location="${build}/scratch"/>
   <property name="build.bin"             location="${build}/bin"/>

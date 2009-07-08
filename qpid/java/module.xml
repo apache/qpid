@@ -224,13 +224,13 @@
   <condition property="config" value="${profile}.testprofile" else="default.testprofile">
     <and>
       <isset property="profile"/>
-      <available file="${project.root}/${profile}.testprofile" type="file"/>
+      <available file="${test.profiles}/${profile}.testprofile" type="file"/>
     </and>
   </condition>
 
 
-  <property file="${project.root}/${config}"/>
-  <property file="${project.root}/default.testprofile"/>
+  <property file="${test.profiles}/${config}"/>
+  <property file="${test.profiles}/default.testprofile"/>
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />

@@ -1,0 +1,11 @@
+broker.version=0-10
+broker=${project.root}/../cpp/src/qpidd -p @PORT --load-module ${project.root}/../cpp/src/.libs/ssl.so --ssl-cert-name localhost.localdomain --ssl-cert-password-file ${test.profiles}/test_resources/ssl/pfile --ssl-cert-db ${test.profiles}/test_resources/ssl/server_db/ --ssl-require-client-authentication --data-dir ${build.data}/@PORT -t --auth no
+test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList ${test.profiles}/010ExcludeList-ssl
+test.excludeslist=org.apache.qpid.test.client.failover.FailoverTest#*
+profile.use_ssl=true
+broker.ready= Listening for SSL connections
+
+javax.net.ssl.keyStore=${test.profiles}/test_resources/ssl/keystore.jks
+javax.net.ssl.keyStorePassword=password
+javax.net.ssl.trustStore=${test.profiles}/test_resources/ssl/certstore.jks
+javax.net.ssl.trustStorePassword=password
