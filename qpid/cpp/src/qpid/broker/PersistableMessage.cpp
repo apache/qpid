@@ -90,6 +90,16 @@ void PersistableMessage::enqueueComplete() {
     }
 }
 
+bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
+    if (store && (queue->getPersistenceId()!=0)) {
+        for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
+            PersistableQueue::shared_ptr q(i->lock());
+            if (q && q->getPersistenceId() == queue->getPersistenceId())  return true;
+        } 
+    }            
+    return false;
+}
+
 void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
     if (_store){
         sys::ScopedLock<sys::Mutex> l(storeLock);
