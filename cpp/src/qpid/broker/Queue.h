@@ -300,9 +300,15 @@ namespace qpid {
                 ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
             /** Apply f to each Message on the queue. */
-            template <class F> void eachMessage(F f) const {
+            template <class F> void eachMessage(F f) {
                 sys::Mutex::ScopedLock l(messageLock);
-                std::for_each(messages.begin(), messages.end(), f);
+                if (lastValueQueue) {
+                    for (Messages::iterator i = messages.begin(); i != messages.end(); ++i) {
+                        f(checkLvqReplace(*i));
+                    }
+                } else {
+                    std::for_each(messages.begin(), messages.end(), f);
+                }
             }
 
             /** Apply f to each QueueBinding on the queue */

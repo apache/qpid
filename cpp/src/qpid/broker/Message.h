@@ -160,6 +160,9 @@ public:
     void setDequeueCompleteCallback(MessageCallback& cb);
     void resetDequeueCompleteCallback();
 
+    bool isUpdateMessage();
+    static void setUpdateDestination(const std::string&);
+
   private:
     typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
 
@@ -186,6 +189,7 @@ public:
     mutable boost::intrusive_ptr<Message> empty;
     MessageCallback* enqueueCallback;
     MessageCallback* dequeueCallback;
+    static std::string updateDestination;
 };
 
 }}

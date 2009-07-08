@@ -34,6 +34,7 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/management/IdAllocator.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/client/ConnectionSettings.h"
@@ -136,6 +137,7 @@ struct ClusterPlugin : public Plugin {
         broker->setConnectionFactory(
             boost::shared_ptr<sys::ConnectionCodec::Factory>(
                 new ConnectionCodec::Factory(broker->getConnectionFactory(), *cluster)));
+        broker::Message::setUpdateDestination(UpdateClient::UPDATE);
         ManagementAgent* mgmt = broker->getManagementAgent();
         if (mgmt) {
             std::auto_ptr<IdAllocator> allocator(new UpdateClientIdAllocator());
