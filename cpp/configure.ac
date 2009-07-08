@@ -150,7 +150,8 @@ test -n "$RUBY" && generate=yes
 test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 # Swig binding generator is needed for the script (Ruby, Python, etc.) bindings.
-AC_CHECK_PROG([SWIG], [swig], [swig])
+AC_PROG_SWIG(1.3.26)
+test ! -x "$SWIG" && SWIG=""
 AC_ARG_WITH([swig],
   [AS_HELP_STRING([--with-swig], [Use swig to generate qmf bindings.])],
   [case "$withval" in
