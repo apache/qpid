@@ -674,9 +674,9 @@ void Queue::setLastNodeFailure()
     if (persistLastNode){
         Mutex::ScopedLock locker(messageLock);
     	for ( Messages::iterator i = messages.begin(); i != messages.end(); ++i ) {
+            if (lastValueQueue) checkLvqReplace(*i);
             // don't force a message twice to disk.
             if(!i->payload->isStoredOnQueue(shared_from_this())) {
-                if (lastValueQueue) checkLvqReplace(*i);
                 i->payload->forcePersistent();
                 if (i->payload->isForcedPersistent() ){
             	    enqueue(0, i->payload);
