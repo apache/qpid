@@ -44,28 +44,13 @@ public:
 
     /**
      * Set the condition. Triggers callback to Callback from Poller.
-     * When callback is made, condition is suspended. Call rearm() to
-     * resume reacting to the condition.
      */
     QPID_COMMON_EXTERN void set();
 
     /**
-     * Get the current state of the condition, then clear it.
-     *
-     * @return The state of the condition before it was cleared.
+     * Clear the condition. Stops callbacks from Poller.
      */
-    QPID_COMMON_EXTERN bool clear();
-
-    /**
-     * Temporarily suspend the ability for the poller to react to the
-     * condition. It can be rearm()ed later.
-     */
-    QPID_COMMON_EXTERN void disarm();
-
-    /**
-     * Reset the ability for the poller to react to the condition.
-     */
-    QPID_COMMON_EXTERN void rearm();
+    QPID_COMMON_EXTERN void clear();
 
  private:
     PollableConditionPrivate *impl;
