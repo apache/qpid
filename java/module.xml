@@ -352,9 +352,7 @@
   </target>
 
   <target name="libs" description="copy dependencies into build tree">
-    <copy todir="${build.lib}" failonerror="false" flatten="true">
-      <filelist dir="${project.root}" files="${module.libs}"/>
-    </copy>
+    <copylist todir="${build.lib}" dir="${project.root}" files="${module.libs}"/>
   </target>
 
   <map property="module.depends.jars" value="${module.depends}" join=",">
@@ -364,9 +362,7 @@
  
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
-    <copy todir="${module.release}" failonerror="true">
-      <filelist dir="${basedir}${file.separator}.." files="${module.libs}"/>
-    </copy>
+    <copylist todir="${module.release}" dir="${project.root}" files="${module.libs}"/>
     <!-- Copy the jar for this module -->
     <copy todir="${module.release}/lib" failonerror="true">
         <fileset file="${module.jar}"/>

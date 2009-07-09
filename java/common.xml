@@ -111,6 +111,19 @@
   <taskdef name="foreach" classname="org.apache.qpid.tasks.Foreach"
            classpath="${tasks.classes}"/>
 
+  <macrodef name="copylist">
+    <attribute name="todir"/>
+    <attribute name="dir"/>
+    <attribute name="files"/>
+    <sequential>
+      <foreach property="file" list="@{files}">
+        <copy todir="@{todir}" flatten="true">
+          <fileset dir="@{dir}" includes="${file}"/>
+        </copy>
+      </foreach>
+    </sequential>
+  </macrodef>
+
   <target name="clean-tasks">
     <delete dir="${tasks.classes}"/>
   </target>
