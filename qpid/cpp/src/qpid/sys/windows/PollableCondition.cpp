@@ -107,17 +107,8 @@ void PollableCondition::set() {
     impl->poke();
 }
 
-bool PollableCondition::clear() {
-    return (0 != ::InterlockedExchange(&impl->isSet, 0));
-}
-
-void PollableCondition::disarm() {
-    ::InterlockedExchange(&impl->armed, 0);
-}
-
-void PollableCondition::rearm() {
-    if (0 == ::InterlockedExchange(&impl->armed, 1) && impl->isSet)
-        impl->poke();
+void PollableCondition::clear() {
+    ::InterlockedExchange(&impl->isSet, 0);
 }
 
 }} // namespace qpid::sys

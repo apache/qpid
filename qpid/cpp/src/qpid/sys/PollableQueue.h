@@ -119,7 +119,6 @@ template <class T> void PollableQueue<T>::start() {
     if (!stopped) return;
     stopped = false;
     if (!queue.empty()) condition.set();
-    condition.rearm();
 }
 
 template <class T> PollableQueue<T>::~PollableQueue() {
@@ -139,7 +138,6 @@ template <class T> void PollableQueue<T>::dispatch(PollableCondition& cond) {
     dispatcher = Thread();
     if (queue.empty()) cond.clear();
     if (stopped) lock.notifyAll();
-    else cond.rearm();
 }
 
 template <class T> void PollableQueue<T>::process() {
@@ -166,11 +164,11 @@ template <class T> void PollableQueue<T>::shutdown() {
 template <class T> void PollableQueue<T>::stop() {
     ScopedLock l(lock);
     if (stopped) return;
-    condition.disarm();
+    condition.clear();
     stopped = true;
     // Avoid deadlock if stop is called from the dispatch thread
-    while (dispatcher.id() && dispatcher.id() != Thread::current().id())
-        lock.wait();
+    if (dispatcher.id() != Thread::current().id())
+        while (dispatcher.id()) lock.wait();
 }
 
 }} // namespace qpid::sys

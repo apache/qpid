@@ -38,7 +38,7 @@ const Duration LONG = TIME_SEC/10;
 
 class  Callback {
   public:    
-    enum Action { NONE, DISARM, CLEAR, DISARM_CLEAR };
+    enum Action { NONE, CLEAR };
 
     Callback() : count(), action(NONE) {}
 
@@ -47,9 +47,7 @@ class  Callback {
         ++count;
         switch(action) {
           case NONE: break; 
-          case DISARM:  pc.disarm(); break;
           case CLEAR: pc.clear(); break;
-          case DISARM_CLEAR: pc.disarm(); pc.clear(); break;
         }
         action = NONE;
         lock.notify();
@@ -86,27 +84,19 @@ QPID_AUTO_TEST_CASE(testPollableCondition) {
 
     Thread runner = Thread(*poller);
     
-    BOOST_CHECK(callback.isNotCalling()); // condition is not set or armed.
-
-    pc.rearm();                          
-    BOOST_CHECK(callback.isNotCalling()); // Armed but not set
+    BOOST_CHECK(callback.isNotCalling()); // condition is not set.
 
     pc.set();
-    BOOST_CHECK(callback.isCalling()); // Armed and set.
-    BOOST_CHECK(callback.isCalling()); // Still armed and set.
+    BOOST_CHECK(callback.isCalling()); // Set.
+    BOOST_CHECK(callback.isCalling()); // Still set.
 
-    callback.nextCall(Callback::DISARM);
-    BOOST_CHECK(callback.isNotCalling()); // set but not armed
-
-    pc.rearm();
-    BOOST_CHECK(callback.isCalling()); // Armed and set.
-    callback.nextCall(Callback::CLEAR);    
-    BOOST_CHECK(callback.isNotCalling()); // armed but not set
+    callback.nextCall(Callback::CLEAR);
+    BOOST_CHECK(callback.isNotCalling()); // Cleared
 
     pc.set();
-    BOOST_CHECK(callback.isCalling()); // Armed and set.
-    callback.nextCall(Callback::DISARM_CLEAR);    
-    BOOST_CHECK(callback.isNotCalling()); // not armed or set.
+    BOOST_CHECK(callback.isCalling()); // Set.
+    callback.nextCall(Callback::CLEAR);
+    BOOST_CHECK(callback.isNotCalling()); // Cleared.
 
     poller->shutdown();
     runner.join();
