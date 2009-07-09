@@ -88,7 +88,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
     
     //Test basic delivery:
     intrusive_ptr<Message> msg1 = create_message("e", "A");
-    msg1->enqueueAsync();//this is done on enqueue which is not called from process
+    msg1->enqueueAsync(queue, 0);//this is done on enqueue which is not called from process
     queue->process(msg1);
     sleep(2);
     
@@ -103,7 +103,7 @@ QPID_AUTO_TEST_CASE(testAsyncMessage) {
 QPID_AUTO_TEST_CASE(testAsyncMessageCount){
     Queue::shared_ptr queue(new Queue("my_test_queue", true));
     intrusive_ptr<Message> msg1 = create_message("e", "A");
-    msg1->enqueueAsync();//this is done on enqueue which is not called from process
+    msg1->enqueueAsync(queue, 0);//this is done on enqueue which is not called from process
     
     queue->process(msg1);
     sleep(2);

@@ -73,6 +73,7 @@ QPID_AUTO_TEST_CASE(testProcessSimple)
 
 QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
 {
+    Queue::shared_ptr queue;
     IncompleteMessageList list;
     SequenceNumber counter(1);
     boost::intrusive_ptr<Message> middle;
@@ -82,7 +83,7 @@ QPID_AUTO_TEST_CASE(testProcessWithIncomplete)
         list.add(msg);
         if (i == 2) {
             //mark a message in the middle as incomplete
-            msg->enqueueAsync();
+            msg->enqueueAsync(queue, 0);
             middle = msg;
         }
     }
