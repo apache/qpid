@@ -434,13 +434,16 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
     else if (state >= CATCHUP) {
         LATENCY_TRACK(LatencyScope ls(processLatency));
         map.incrementFrameSeq();
-        QPID_LOG(trace, *this << " DLVR " << map.getFrameSeq() << ":  " << e);
         ConnectionPtr connection = getConnection(e, l);
-        if (connection)
+        if (connection) {
+            QPID_LOG(trace, *this << " DLVR " << map.getFrameSeq() << ":  " << e);
             connection->deliveredFrame(e);
+        }
+        else
+            QPID_LOG(critical, *this << " FIXME DROP (no connection): " << e);
     }
     else // Drop connection frames while state < CATCHUP
-        QPID_LOG(trace, *this << " DROP: " << e);        
+        QPID_LOG(trace, *this << " DROP (joining): " << e);
 }
 
 // Called in deliverFrameQueue thread
