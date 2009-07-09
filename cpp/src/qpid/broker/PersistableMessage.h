@@ -65,6 +65,9 @@ class PersistableMessage : public Persistable
      */
     int asyncDequeueCounter;
 
+    void enqueueAsync();
+    void dequeueAsync();
+
     bool contentReleased;
     syncList synclist;
 
@@ -77,6 +80,7 @@ class PersistableMessage : public Persistable
     void setContentReleased();
 
     MessageStore* store;
+
 
   public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
@@ -101,7 +105,6 @@ class PersistableMessage : public Persistable
     QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
                                          MessageStore* _store);
 
-    QPID_BROKER_EXTERN void enqueueAsync();
 
     QPID_BROKER_EXTERN bool isDequeueComplete();
     
@@ -110,8 +113,6 @@ class PersistableMessage : public Persistable
     QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
                                          MessageStore* _store);
 
-    QPID_BROKER_EXTERN void dequeueAsync();
-    
     bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
     
     void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store);
