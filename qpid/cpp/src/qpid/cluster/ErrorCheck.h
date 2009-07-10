@@ -41,8 +41,8 @@ class Connection;
 /**
  * Error checking logic.
  * 
- * When an error occurs stop processing frames and queue them until we
- * can determine if all nodes experienced the error. If not, we shut down.
+ * When an error occurs queue up frames until we can determine if all
+ * nodes experienced the error. If not, we shut down.
  */
 class ErrorCheck
 {
@@ -59,18 +59,22 @@ class ErrorCheck
     /** Called when a frame is delivered */
     void delivered(const EventFrame&);
 
+    /**@pre canProcess **/
     EventFrame getNext();
 
     bool canProcess() const;
+
     bool isUnresolved() const;
     
   private:
+    typedef std::deque<EventFrame>  FrameQueue;
+    FrameQueue::iterator review(const FrameQueue::iterator&);
     void checkResolved();
     
     Cluster& cluster;
     Multicaster& mcast;
-    std::deque<EventFrame> frames;
-    std::set<MemberId> unresolved;
+    FrameQueue frames;
+    MemberSet unresolved;
     uint64_t frameSeq;
     ErrorType type;
     Connection* connection;
