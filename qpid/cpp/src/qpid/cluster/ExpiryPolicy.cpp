@@ -21,19 +21,19 @@
 
 #include "ExpiryPolicy.h"
 #include "Multicaster.h"
+#include "qpid/broker/Message.h"
 #include "qpid/framing/ClusterMessageExpiredBody.h"
 #include "qpid/sys/Time.h"
-#include "qpid/broker/Message.h"
-#include "qpid/broker/Timer.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace cluster {
 
-ExpiryPolicy::ExpiryPolicy(Multicaster& m, const MemberId& id, broker::Timer& t)
+ExpiryPolicy::ExpiryPolicy(Multicaster& m, const MemberId& id, sys::Timer& t)
     : expiryId(0), expiredPolicy(new Expired), mcast(m), memberId(id), timer(t) {}
 
-struct ExpiryTask : public broker::TimerTask {
+struct ExpiryTask : public sys::TimerTask {
     ExpiryTask(const boost::intrusive_ptr<ExpiryPolicy>& policy, uint64_t id, sys::AbsTime when)
         : TimerTask(when), expiryPolicy(policy), expiryId(id) {}
     void fire() { expiryPolicy->sendExpire(expiryId); }

@@ -24,9 +24,9 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/Options.h"
 #include "qpid/broker/Exchange.h"
-#include "qpid/broker/Timer.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/broker/ConnectionToken.h"
 #include "ManagementObject.h"
 #include "ManagementEvent.h"
@@ -98,7 +98,7 @@ public:
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
                   
 private:
-    struct Periodic : public qpid::broker::TimerTask
+    struct Periodic : public qpid::sys::TimerTask
     {
         ManagementAgent& agent;
 
@@ -183,7 +183,7 @@ private:
     framing::Uuid                uuid;
     sys::Mutex                   addLock;
     sys::Mutex                   userLock;
-    qpid::broker::Timer          timer;
+    qpid::sys::Timer             timer;
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;

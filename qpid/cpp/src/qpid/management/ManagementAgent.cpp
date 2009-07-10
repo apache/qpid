@@ -91,7 +91,7 @@ void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
     broker         = _broker;
     threadPoolSize = _threads;
     ManagementObject::maxThreads = threadPoolSize;
-    timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
+    timer.add (new Periodic(*this, interval));
 
     // Get from file or generate and save to file.
     if (dataDir.empty())

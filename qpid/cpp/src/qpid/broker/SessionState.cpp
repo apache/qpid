@@ -25,7 +25,7 @@
 #include "SessionManager.h"
 #include "SessionHandler.h"
 #include "RateFlowcontrol.h"
-#include "Timer.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQMethodBody.h"
@@ -49,6 +49,7 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::AbsTime;
+//using qpid::sys::Timer;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
@@ -206,10 +207,10 @@ void SessionState::handleCommand(framing::AMQMethodBody* method, const SequenceN
     }
 }
 
-struct ScheduledCreditTask : public TimerTask {
-    Timer& timer;
+struct ScheduledCreditTask : public sys::TimerTask {
+    sys::Timer& timer;
     SessionState& sessionState;
-    ScheduledCreditTask(const qpid::sys::Duration& d, Timer& t,
+    ScheduledCreditTask(const qpid::sys::Duration& d, sys::Timer& t,
                         SessionState& s) :
         TimerTask(d),
         timer(t),
@@ -218,15 +219,13 @@ struct ScheduledCreditTask : public TimerTask {
 
     void fire() {
         // This is the best we can currently do to avoid a destruction/fire race
-        if (!isCancelled()) {
-            sessionState.getConnection().requestIOProcessing(boost::bind(&ScheduledCreditTask::sendCredit, this));
-        }
+        sessionState.getConnection().requestIOProcessing(boost::bind(&ScheduledCreditTask::sendCredit, this));
     }
 
     void sendCredit() {
         if ( !sessionState.processSendCredit(0) ) {
             QPID_LOG(warning, sessionState.getId() << ": Reschedule sending credit");
-            reset();
+            setupNextFire();
             timer.add(this);
         }
     }
@@ -269,7 +268,7 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
     if (rateFlowcontrol && frame.getBof() && frame.getBos()) {
         if ( !processSendCredit(1) ) {
             QPID_LOG(debug, getId() << ": Schedule sending credit");
-            Timer& timer = getBroker().getTimer();
+            sys::Timer& timer = getBroker().getTimer();
             // Use heuristic for scheduled credit of time for 50 messages, but not longer than 500ms
             sys::Duration d = std::min(sys::TIME_SEC * 50 / rateFlowcontrol->getRate(), 500 * sys::TIME_MSEC);
             flowControlTimer = new ScheduledCreditTask(d, timer, *this);
