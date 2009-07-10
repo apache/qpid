@@ -440,7 +440,7 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
             connection->deliveredFrame(e);
         }
         else
-            QPID_LOG(critical, *this << " FIXME DROP (no connection): " << e);
+            QPID_LOG(debug, *this << " DROP (no connection): " << e);
     }
     else // Drop connection frames while state < CATCHUP
         QPID_LOG(trace, *this << " DROP (joining): " << e);
@@ -534,6 +534,7 @@ void Cluster::setReady(Lock&) {
 
 void Cluster::configChange(const MemberId&, const std::string& current, Lock& l) {
     bool memberChange = map.configChange(current);
+    QPID_LOG(debug, *this << " applied config change: " << map);
     if (state == LEFT) return;
     
     if (!map.isAlive(self)) {  // Final config change.
