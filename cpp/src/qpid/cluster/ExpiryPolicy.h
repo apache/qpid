@@ -33,8 +33,11 @@
 namespace qpid {
 
 namespace broker {
-class Timer;
 class Message;
+}
+
+namespace sys {
+class Timer;
 }
 
 namespace cluster {
@@ -46,7 +49,7 @@ class Multicaster;
 class ExpiryPolicy : public broker::ExpiryPolicy
 {
   public:
-    ExpiryPolicy(Multicaster&, const MemberId&, broker::Timer&);
+    ExpiryPolicy(Multicaster&, const MemberId&, sys::Timer&);
 
     void willExpire(broker::Message&);
     bool hasExpired(broker::Message&);
@@ -78,7 +81,7 @@ class ExpiryPolicy : public broker::ExpiryPolicy
     boost::intrusive_ptr<Expired> expiredPolicy;
     Multicaster& mcast;
     MemberId memberId;
-    broker::Timer& timer;
+    sys::Timer& timer;
 };
 
 }} // namespace qpid::cluster

@@ -39,7 +39,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0), passive(false), passiveChanged(false), 
                                                realm(broker ? broker->getOptions().realm : "")
 {
-    timer.add (intrusive_ptr<TimerTask> (new Periodic(*this)));
+    timer.add (new Periodic(*this));
 }
 
 LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
@@ -48,7 +48,7 @@ LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
 void LinkRegistry::Periodic::fire ()
 {
     links.periodicMaintenance ();
-    links.timer.add (intrusive_ptr<TimerTask> (new Periodic(links)));
+    links.timer.add (new Periodic(links));
 }
 
 void LinkRegistry::periodicMaintenance ()
