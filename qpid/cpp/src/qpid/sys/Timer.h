@@ -71,7 +71,7 @@ bool operator<(const boost::intrusive_ptr<TimerTask>& a,
                 const boost::intrusive_ptr<TimerTask>& b);
 
 class Timer : private Runnable {
-    qpid::sys::Monitor monitor;            
+    qpid::sys::Monitor monitor;
     std::priority_queue<boost::intrusive_ptr<TimerTask> > tasks;
     qpid::sys::Thread runner;
     bool active;
