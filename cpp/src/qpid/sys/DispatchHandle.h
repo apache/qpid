@@ -38,14 +38,14 @@ class DispatchHandleRef;
  * you need to:
  * 
  * - Subclass IOHandle, in the constructor supply an appropriate
- *    IOHandlerPrivate object for the platform.
- *    
+ *   IOHandlerPrivate object for the platform.
+ *
  * - Construct a DispatchHandle passing it your IOHandle and 
  *   callback functions for read, write and disconnect events.
  *
  * - Ensure the DispatchHandle is not deleted until the poller is no longer using it.
  *   TODO: astitcher document DispatchHandleRef to simplify this.
- *   
+ *
  * When an event occurs on the handle, the poller calls the relevant callback and
  * stops watching that handle. Your callback can call rewatch() or related functions
  * to re-enable polling.
