@@ -217,4 +217,29 @@ QPID_AUTO_TEST_CASE(testStaging)
     BOOST_CHECK(!builder.getMessage()->isContentLoaded());
 }
 
+QPID_AUTO_TEST_CASE(testNoManagementStaging)
+{
+    // Make sure management messages don't stage
+    MockMessageStore store;
+    MessageBuilder builder(&store, 5);
+    builder.start(SequenceNumber());
+        
+    std::string data1("abcdefg");
+    std::string exchange("qpid.management");
+    std::string key("builder-exchange");
+
+    AMQFrame method(MessageTransferBody(ProtocolVersion(), exchange, 0, 0));
+    AMQFrame header((AMQHeaderBody()));
+    AMQFrame content1((AMQContentBody(data1)));
+
+    header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data1.size());        
+    header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);
+
+    builder.handle(method);
+    builder.handle(header);
+
+    builder.handle(content1);
+    BOOST_CHECK(store.expectationsMet());
+    BOOST_CHECK_EQUAL((uint64_t) 0, builder.getMessage()->getPersistenceId());
+}
 QPID_AUTO_TEST_SUITE_END()
