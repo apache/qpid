@@ -30,12 +30,14 @@ namespace qpid {
 namespace sys {
 
 TimerTask::TimerTask(Duration timeout) :
+    sortTime(AbsTime::FarFuture()),
     period(timeout),
     nextFireTime(AbsTime::now(), timeout),
     cancelled(false)
 {}
 
 TimerTask::TimerTask(AbsTime time) :
+    sortTime(AbsTime::FarFuture()),
     period(0),
     nextFireTime(time),
     cancelled(false)
@@ -60,7 +62,7 @@ void TimerTask::setupNextFire() {
 }
 
 // Only allow tasks to be delayed
-void TimerTask::restart() { nextFireTime = AbsTime(AbsTime::now(), period); }
+void TimerTask::restart() { nextFireTime = max(nextFireTime, AbsTime(AbsTime::now(), period)); }
 void TimerTask::delayTill(AbsTime time) { period = 0; nextFireTime = max(nextFireTime, time); }
 
 void TimerTask::cancel() {
@@ -91,7 +93,7 @@ void Timer::run()
             tasks.pop();
             {
             ScopedLock<Mutex> l(t->callbackLock);
-            if (t->isCancelled()) {
+            if (t->cancelled) {
                 continue;
             } else if(t->readyToFire()) {
                 Monitor::ScopedUnlock u(monitor);
@@ -100,6 +102,9 @@ void Timer::run()
             } else {
                 // If the timer was adjusted into the future it might no longer
                 // be the next event, so push and then get top to make sure
+                // You can only push events into the future
+                assert(!(t->nextFireTime < t->sortTime));
+                t->sortTime = t->nextFireTime;
                 tasks.push(t);
             }
             }
@@ -111,6 +116,7 @@ void Timer::run()
 void Timer::add(intrusive_ptr<TimerTask> task)
 {
     Monitor::ScopedLock l(monitor);
+    task->sortTime = task->nextFireTime;
     tasks.push(task);
     monitor.notify();
 }
@@ -139,7 +145,7 @@ bool operator<(const intrusive_ptr<TimerTask>& a,
                        const intrusive_ptr<TimerTask>& b)
 {
     // Lower priority if time is later
-    return a.get() && b.get() && a->nextFireTime > b->nextFireTime;
+    return a.get() && b.get() && a->sortTime > b->sortTime;
 }
 
 }}
