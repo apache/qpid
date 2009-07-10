@@ -23,8 +23,11 @@ package org.apache.qpid.management.ui.views.queue;
 import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
 import static org.apache.qpid.management.ui.Constants.RESULT;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -37,7 +40,6 @@ import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.NumberVerifyListener;
 import org.apache.qpid.management.ui.views.TabControl;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -67,8 +69,8 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.ScrolledForm;
 
 
 /**
@@ -77,7 +79,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 public class QueueOperationsTabControl extends TabControl
 {
     private FormToolkit _toolkit;
-    private Form        _form;
+    private ScrolledForm _form;
     private Table _table = null;
     private TableViewer _tableViewer = null;
     private Composite _paramsComposite = null;
@@ -97,7 +99,7 @@ public class QueueOperationsTabControl extends TabControl
         _qmb = (ManagedQueue) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedQueue.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
-        _form = _toolkit.createForm(_tabFolder);
+        _form = _toolkit.createScrolledForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
         createComposites();
         createWidgets();
@@ -106,7 +108,7 @@ public class QueueOperationsTabControl extends TabControl
     private void createComposites()
     {
         _paramsComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
-        _paramsComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        _paramsComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         _paramsComposite.setLayout(new GridLayout());
     }
     
@@ -166,25 +168,31 @@ public class QueueOperationsTabControl extends TabControl
     
     private void createWidgets()
     {
-        Group viewMessagesGroup = new Group(_paramsComposite, SWT.SHADOW_NONE);
-        viewMessagesGroup.setBackground(_paramsComposite.getBackground());
-        viewMessagesGroup.setText("View Messages");
-        viewMessagesGroup.setLayout(new GridLayout(2,false));
-        GridData gridData = new GridData(SWT.LEFT, SWT.TOP, true, false);
-        viewMessagesGroup.setLayoutData(gridData);
+        Group messagesGroup = new Group(_paramsComposite, SWT.SHADOW_NONE | SWT.SCROLL_LINE);
+        messagesGroup.setBackground(_paramsComposite.getBackground());
+        messagesGroup.setText("Messages");
+        messagesGroup.setLayout(new GridLayout());
+        GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        messagesGroup.setLayoutData(gridData);
+        
+        Composite tableAndButtonsComposite = _toolkit.createComposite(messagesGroup);
+        gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        gridData.minimumHeight = 220;
+        gridData.heightHint = 220;
+        tableAndButtonsComposite.setLayoutData(gridData);
+        tableAndButtonsComposite.setLayout(new GridLayout(2,false));
                
-        _table = new Table (viewMessagesGroup, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (tableAndButtonsComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
-        GridData data = new GridData(SWT.LEFT, SWT.TOP, true, true);
-        data.heightHint = 325;
+        GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(data);
         
         _tableViewer = new TableViewer(_table);
         final TableSorter tableSorter = new TableSorter();
         
         String[] titles = {"AMQ ID", "Size(bytes)"};
-        int[] bounds = { 110, 110 };
+        int[] bounds = { 175, 175 };
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;
@@ -223,139 +231,46 @@ public class QueueOperationsTabControl extends TabControl
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(tableSorter);
         
-        Composite rightComposite = _toolkit.createComposite(viewMessagesGroup);
-        gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
-        gridData.heightHint = 325;
-        rightComposite.setLayoutData(gridData);
-        rightComposite.setLayout(new GridLayout(2,false));
+        //Side Buttons
+        Composite buttonsComposite = _toolkit.createComposite(tableAndButtonsComposite);
+        gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
+        buttonsComposite.setLayoutData(gridData);
+        buttonsComposite.setLayout(new GridLayout());
         
-        final Text headerText = new Text(rightComposite,SWT.WRAP | SWT.BORDER );
-        headerText.setText("Select a message to view its header.");
-        headerText.setEditable(false);
-        data = new GridData(SWT.FILL, SWT.TOP, true, false);
-        data.widthHint = 440;
-        data.heightHint = 300;
-        data.horizontalSpan = 2;
-        headerText.setLayoutData(data);
-        
-        Composite redeliveryComposite = _toolkit.createComposite(rightComposite);
-        redeliveryComposite.setLayout(new GridLayout(2,false));
-        data = new GridData(SWT.LEFT, SWT.FILL, false, false);
-        data.widthHint = 150;
-        redeliveryComposite.setLayoutData(data);
-        
-        _toolkit.createLabel(redeliveryComposite, "Redelivered: ");
-        final Text redeliveredText = new Text(redeliveryComposite, SWT.BORDER);
-        redeliveredText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        redeliveredText.setText("-");
-        redeliveredText.setEditable(false);
-
-        final Button viewSelectedMsgButton = _toolkit.createButton(rightComposite, "View Selected Message Contents ...", SWT.PUSH);
-        viewSelectedMsgButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        final Button viewSelectedMsgButton = _toolkit.createButton(buttonsComposite, "View Message Content ...", SWT.PUSH);
+        viewSelectedMsgButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
         viewSelectedMsgButton.setEnabled(false);
         viewSelectedMsgButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
             {
+                if (_table.getSelectionIndex() == -1)
+                {
+                    return;
+                }
+                
                 viewMessageContent();
             }
         });
         
-        _table.addMouseListener(new MouseListener()                                              
-        {
-            // MouseListener implementation
-            public void mouseDoubleClick(MouseEvent event)
-            {
-                viewMessageContent();
-            }
-
-            public void mouseDown(MouseEvent e){}
-            public void mouseUp(MouseEvent e){}
-        });
-        
-        _tableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
-            public void selectionChanged(SelectionChangedEvent evt)
-            {
-                int selectionIndex = _table.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                    viewSelectedMsgButton.setEnabled(true);
-                    
-                    final CompositeData selectedMsg = (CompositeData)_table.getItem(selectionIndex).getData();
-                    
-                    Boolean redelivered = (Boolean) selectedMsg.get(MSG_REDELIVERED);
-                    redeliveredText.setText(redelivered.toString());
-                    
-                    String[] msgHeader = (String[]) selectedMsg.get(MSG_HEADER);
-                    headerText.setText("");
-                    for(String s: msgHeader)
-                    {
-                        headerText.append(s + "\n");
-                    }
-                }
-                else
-                {
-                    headerText.setText("Select a message to view its header.");
-                    redeliveredText.setText("-");
-                    viewSelectedMsgButton.setEnabled(false);
-                }
-            }
-        });
-        
-        Composite opsComposite = _toolkit.createComposite(_paramsComposite);
-        gridData = new GridData(SWT.LEFT, SWT.FILL, false, true);
-        opsComposite.setLayoutData(gridData);
-        opsComposite.setLayout(new GridLayout(3,false));
-        
-        Group moveMessagesGroup = new Group(opsComposite, SWT.SHADOW_NONE);
-        moveMessagesGroup.setBackground(opsComposite.getBackground());
-        moveMessagesGroup.setText("Move Messages");
-        gridData = new GridData(SWT.LEFT, SWT.TOP, true, false);
-        moveMessagesGroup.setLayoutData(gridData);
-        moveMessagesGroup.setLayout(new GridLayout(2,false));
-        
-        final Button moveMessagesButton = _toolkit.createButton(moveMessagesGroup, "Move Message(s) ...", SWT.PUSH);
+        final Button moveMessagesButton = _toolkit.createButton(buttonsComposite, "Move Message(s) ...", SWT.PUSH);
+        moveMessagesButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        moveMessagesButton.setEnabled(false);
         moveMessagesButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
             {
+                if (_table.getSelectionIndex() == -1)
+                {
+                    return;
+                }
+                
                 moveMessages(moveMessagesButton.getShell());
             }
         });
-        
-        
-        Group deleteMessagesGroup = new Group(opsComposite, SWT.SHADOW_NONE);
-        deleteMessagesGroup.setBackground(opsComposite.getBackground());
-        deleteMessagesGroup.setText("Delete Messages");
-        gridData = new GridData(SWT.LEFT, SWT.TOP, true, false);
-        deleteMessagesGroup.setLayoutData(gridData);
-        deleteMessagesGroup.setLayout(new GridLayout(2, false));
-
-        final Button deleteFromTopButton = _toolkit.createButton(deleteMessagesGroup, "Delete Message From Top of Queue", SWT.PUSH);
-        deleteFromTopButton.addSelectionListener(new SelectionAdapter()
-        {
-            public void widgetSelected(SelectionEvent e)
-            {
-                int response = ViewUtility.popupOkCancelConfirmationMessage("Delete From Top", 
-                        "Delete message from top of queue?");
-                if (response == SWT.OK)
-                {
-                    try
-                    {
-                        _qmb.deleteMessageFromTop();
-                    }
-                    catch (Exception e1)
-                    {
-                        MBeanUtility.handleException(_mbean, e1);
-                    }
-                    //TODO:display result
-                    refresh(_mbean);;
-                }
-            }
-        });
-        
-        final Button clearQueueButton = _toolkit.createButton(deleteMessagesGroup, "Clear Queue", SWT.PUSH);
+                
+        final Button clearQueueButton = _toolkit.createButton(buttonsComposite, "Clear Queue", SWT.PUSH);
+        clearQueueButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
         clearQueueButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
@@ -377,6 +292,94 @@ public class QueueOperationsTabControl extends TabControl
                 }
             }
         });
+        
+        _toolkit.createLabel(messagesGroup, "Message Header: ");
+        
+        //Redelivered status and header
+        Composite headerEtcComposite = _toolkit.createComposite(messagesGroup);
+        gridData = new GridData(SWT.FILL, SWT.FILL, true, false);
+        headerEtcComposite.setLayoutData(gridData);
+        headerEtcComposite.setLayout(new GridLayout());
+        
+        final Text headerText = new Text(headerEtcComposite, SWT.WRAP | SWT.BORDER );
+        headerText.setText("Select a message to view its header.");
+        headerText.setEditable(false);
+        data = new GridData(SWT.LEFT, SWT.TOP, false, false);
+        data.minimumHeight = 230;
+        data.heightHint = 230;
+        data.minimumWidth = 500;
+        data.widthHint = 500;
+        headerText.setLayoutData(data);
+        
+        Composite redeliveryComposite = _toolkit.createComposite(headerEtcComposite);
+        redeliveryComposite.setLayout(new GridLayout(2,false));
+        data = new GridData(SWT.LEFT, SWT.FILL, false, false);
+        data.minimumWidth = 150;
+        data.widthHint = 150;
+        redeliveryComposite.setLayoutData(data);
+        
+        _toolkit.createLabel(redeliveryComposite, "Redelivered: ");
+        final Text redeliveredText = new Text(redeliveryComposite, SWT.BORDER);
+        redeliveredText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        redeliveredText.setText("-");
+        redeliveredText.setEditable(false);
+        
+        //listener for double clicking to view message content
+        _table.addMouseListener(new MouseListener()                                              
+        {
+            // MouseListener implementation
+            public void mouseDoubleClick(MouseEvent event)
+            {
+                viewMessageContent();
+            }
+
+            public void mouseDown(MouseEvent e){}
+            public void mouseUp(MouseEvent e){}
+        });
+        
+        //selection listener to enable and disable buttons, update header and redelivered info
+        _tableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
+            public void selectionChanged(SelectionChangedEvent evt)
+            {
+                int selectionIndex = _table.getSelectionIndex();
+
+                if (selectionIndex == -1)
+                {
+                    headerText.setText("Select a message to view its header.");
+                    redeliveredText.setText("-");
+                    viewSelectedMsgButton.setEnabled(false);
+                    moveMessagesButton.setEnabled(false);
+                    
+                    return;
+                }
+                else
+                {   
+                    moveMessagesButton.setEnabled(true);
+                    
+                    final CompositeData selectedMsg = (CompositeData)_table.getItem(selectionIndex).getData();
+                    Boolean redelivered = (Boolean) selectedMsg.get(MSG_REDELIVERED);
+                    redeliveredText.setText(redelivered.toString());
+
+                    String[] msgHeader = (String[]) selectedMsg.get(MSG_HEADER);
+                    headerText.setText("");
+                    for(String s: msgHeader)
+                    {
+                        headerText.append(s + "\n");
+                    }
+                }
+                
+                if (_table.getSelectionCount() > 1)
+                {
+                    viewSelectedMsgButton.setEnabled(false);
+                }
+                else
+                {
+                    viewSelectedMsgButton.setEnabled(true);
+                }
+
+            }
+        });
+
     }
 
     
@@ -535,22 +538,21 @@ public class QueueOperationsTabControl extends TabControl
     
     private void moveMessages(final Shell parent)
     {
-        final Shell shell = ViewUtility.createModalDialogShell(parent, "Move Messages");
+        final ArrayList<Long> rangeStarts = new ArrayList<Long>();
+        final ArrayList<Long> rangeEnds = new ArrayList<Long>();
+
+        gatherSelectedAMQMsgIDRanges(rangeStarts,rangeEnds);
+        String rangeString = getRangesString(rangeStarts,rangeEnds);
         
+        final Shell shell = ViewUtility.createModalDialogShell(parent, "Move Messages");
+
         Composite idComposite = _toolkit.createComposite(shell, SWT.NONE);
         idComposite.setBackground(shell.getBackground());
         idComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        idComposite.setLayout(new GridLayout(4,false));
+        idComposite.setLayout(new GridLayout());
         
-        _toolkit.createLabel(idComposite,"From AMQ ID:").setBackground(shell.getBackground());
-        final Text fromText = new Text(idComposite, SWT.BORDER);
-        fromText.addVerifyListener(new NumberVerifyListener());
-        fromText.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false));
-        
-        _toolkit.createLabel(idComposite,"To AMQ ID:").setBackground(shell.getBackground());
-        final Text toText = new Text(idComposite, SWT.BORDER);
-        toText.addVerifyListener(new NumberVerifyListener());
-        toText.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false));
+        _toolkit.createLabel(idComposite,"Move message(s) with AMQ ID:").setBackground(shell.getBackground());
+        _toolkit.createLabel(idComposite,rangeString).setBackground(shell.getBackground());
 
         Composite destinationComposite = _toolkit.createComposite(shell, SWT.NONE);
         destinationComposite.setBackground(shell.getBackground());
@@ -589,38 +591,19 @@ public class QueueOperationsTabControl extends TabControl
         {
             public void widgetSelected(SelectionEvent e)
             {
-                String from = fromText.getText();
-                String to = toText.getText();
                 String destQueue = destinationCombo.getItem(destinationCombo.getSelectionIndex()).toString();
-                
-                if (from == null || from.length() == 0)
-                {                            
-                    ViewUtility.popupErrorMessage("Move Messages", "Please enter a valid 'from' ID");
-                    return;
-                }
-                if (Long.valueOf(from) == 0)
-                {
-                    ViewUtility.popupErrorMessage("Move Messages", "Enter a 'from' ID greater than 0");
-                    return;
-                }
-                
-                if (to == null || to.length() == 0)
-                {                            
-                    ViewUtility.popupErrorMessage("Move Messages", "Please enter a valid 'to' ID");
-                    return;
-                }
-                
-                if (Long.valueOf(to) == 0)
-                {
-                    ViewUtility.popupErrorMessage("Move Messages", "Enter a 'to' ID greater than 0");
-                    return;
-                }
-                                
                 shell.dispose();
 
                 try
                 {
-                    _qmb.moveMessages(Long.valueOf(from), Long.valueOf(to), destQueue);
+                    for(int i=0 ; i < rangeStarts.size() ; i++)
+                    {
+                        Long from = rangeStarts.get(i);
+                        Long to = rangeEnds.get(i);
+                        
+                        _qmb.moveMessages(Long.valueOf(from), Long.valueOf(to), destQueue);
+                    }
+                    
                 }
                 catch (Exception e4)
                 {
@@ -645,4 +628,74 @@ public class QueueOperationsTabControl extends TabControl
         shell.open();
     }
     
+    private void gatherSelectedAMQMsgIDRanges(ArrayList<Long> starts, ArrayList<Long> ends)
+    {
+        SortedSet<Long> amqIDs = new TreeSet<Long>();
+        
+        for(Integer i : _table.getSelectionIndices())
+        {
+            CompositeData selectedMsg = (CompositeData)_table.getItem(i).getData();
+            amqIDs.add((Long)selectedMsg.get(MSG_AMQ_ID));
+        }
+                
+        //initialise the first range
+        Long start = amqIDs.first();
+        Long end = amqIDs.first();
+        
+        for(Long id : amqIDs)
+        {
+            if(id == amqIDs.first())
+            {
+                //skip first check, already initialised range
+                continue;
+            }
+            
+            if(id == end +1)
+            {
+                //part of previous range, append
+                end = id;
+            }
+            else
+            {
+                //not in previous range, record existing start and end msg id values
+                starts.add(start);
+                ends.add(end);
+                
+                //begin new range with this msg id
+                start = id;
+                end = id;
+            }
+        }
+        
+        //record the last range created
+        starts.add(start);
+        ends.add(end);
+    }
+    
+    private String getRangesString(ArrayList<Long> starts, ArrayList<Long> ends)
+    {
+        String idRangesString = new String("");
+
+        for(int i=0 ; i < starts.size() ; i++)
+        {
+            long start = starts.get(i);
+            long end = ends.get(i);
+            
+            if(i != 0)
+            {
+                idRangesString = idRangesString.concat(", ");
+            }
+            
+            if(start == end)
+            {
+                idRangesString = idRangesString.concat(String.valueOf(starts.get(i)));
+            }
+            else
+            {
+                idRangesString = idRangesString.concat(starts.get(i) + "-" + ends.get(i));
+            }
+        }
+        
+        return idRangesString.concat(".");
+    }
 }
