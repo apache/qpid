@@ -37,6 +37,8 @@ namespace
 MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThreshold) : 
     state(DORMANT), store(_store), stagingThreshold(_stagingThreshold), staging(false) {}
 
+static const std::string QPID_MANAGEMENT("qpid.management");
+
 void MessageBuilder::handle(AMQFrame& frame)
 {
     uint8_t type = frame.getBody()->type();
@@ -75,7 +77,8 @@ void MessageBuilder::handle(AMQFrame& frame)
         if (state == CONTENT 
             && stagingThreshold 
             && message->getFrames().getContentSize() >= stagingThreshold
-            && !NullMessageStore::isNullStore(store)) 
+            && !NullMessageStore::isNullStore(store)
+            && message->getExchangeName() != QPID_MANAGEMENT /* don't stage mgnt messages */)   
         {
             message->releaseContent(store); 
             staging = true;
