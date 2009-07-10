@@ -40,4 +40,6 @@ qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(to
 qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
 nodist_qmfengine_la_SOURCES = qmfengine.cpp
 
+CLEANFILES = $(generated_file_list)
+
 endif # HAVE_RUBY_DEVEL
