@@ -72,14 +72,10 @@
         </copy>
     </target>
 
-    <target name="release-bin-qpidmanagementcommon-plugin">
-        <!-- Copy the management common plugin's manifest, creating its plugin directory -->
-        <copy todir="${release.subdir}/plugins/qpid-management-common_1.0.0/META-INF" flatten="true" failonerror="true">
-            <fileset file="${qpidmanagementcommon.manifest}"/>
-        </copy>
-        <!-- Copy the qpid management-common module jar -->
-        <copy tofile="${release.subdir}/plugins/qpid-management-common_1.0.0/qpid-management-common.jar" flatten="true" failonerror="true">
-            <fileset file="${build.lib}/qpid-management-common-${project.version}.jar"/>
+    <target name="release-bin-qpid-management-common-plugin">
+        <!-- Copy the qpid-management-common module osgi jar -->
+        <copy todir="${release.subdir}/plugins" failonerror="true">
+            <fileset file="${build.lib}/qpid-management-common_${project.version}.osgi.jar"/>
         </copy>
     </target>
     
@@ -166,6 +162,6 @@
     
     <!-- override imported module.xml release-bin target -->
     <target name="release-bin" depends="check,release-bin-prepare,release-bin-rcp-deps,release-bin-resources,
-        release-bin-qpid-mc-plugin,release-bin-qpidmanagementcommon-plugin,release-bin-jmxremote-plugin,release-bin-zip,release-bin-gzip"/>
+        release-bin-qpid-mc-plugin,release-bin-qpid-management-common-plugin,release-bin-jmxremote-plugin,release-bin-zip,release-bin-gzip"/>
     
 </project>

@@ -38,14 +38,10 @@
        </copy>
    </target>
 
-   <target name="release-bin-qpidmanagementcommon-plugin">
-       <!-- Copy the management common plugin's manifest, creating its plugin directory -->
-       <copy todir="${release.app}/plugins/qpid-management-common_1.0.0/META-INF" flatten="true" failonerror="true">
-           <fileset file="${qpidmanagementcommon.manifest}"/>
-       </copy>
-        <!-- Copy the qpid management-common module jar -->
-       <copy tofile="${release.app}/plugins/qpid-management-common_1.0.0/qpid-management-common.jar" flatten="true" failonerror="true">
-           <fileset file="${build.lib}/qpid-management-common-${project.version}.jar"/>
+   <target name="release-bin-qpid-management-common-plugin">
+        <!-- Copy the qpid-management-common module osgi jar -->
+       <copy todir="${release.app}/plugins" flatten="true" failonerror="true">
+           <fileset file="${build.lib}/qpid-management-common_${project.version}.osgi.jar"/>
        </copy>
    </target>
 
