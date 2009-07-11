@@ -103,4 +103,5 @@
 
   <target name="precompile" depends="gentools,jython,version"/>
 
+  <target name="bundle" depends="bundle-tasks"/>
 </project>
