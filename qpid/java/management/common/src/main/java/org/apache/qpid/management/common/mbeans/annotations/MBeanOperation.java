@@ -19,7 +19,7 @@
  *
  */
 
-package org.apache.qpid.server.management;
+package org.apache.qpid.management.common.mbeans.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;

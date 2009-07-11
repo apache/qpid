@@ -23,6 +23,7 @@ package org.apache.qpid.server.configuration.management;
 import javax.management.NotCompliantMBeanException;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -41,7 +42,7 @@ public class ConfigurationManagementMBean extends AMQManagedObject implements Co
     }
 
     @Override
-    public void reloadSecurityConfiguration() throws ConfigurationException
+    public void reloadSecurityConfiguration() throws Exception
     {
         ApplicationRegistry.getInstance().getConfiguration().reparseConfigFile();
     }

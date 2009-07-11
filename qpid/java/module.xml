@@ -358,6 +358,9 @@
 
   <map property="module.depends.jars" value="${module.depends}" join=",">
     <globmapper from="*" to="${project.name}-*-${project.version}.jar"/>
+    <filtermapper>
+        <replacestring from="/" to="-"/>
+    </filtermapper>
   </map>
 
  

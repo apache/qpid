@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.security.access.management;
 
-import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanInvocationHandlerImpl;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-import org.apache.qpid.server.security.access.management.UserManagement;
 import org.apache.log4j.Logger;
 import org.apache.commons.configuration.ConfigurationException;
 

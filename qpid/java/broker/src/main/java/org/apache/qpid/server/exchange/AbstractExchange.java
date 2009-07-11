@@ -33,6 +33,7 @@ import javax.management.openmbean.ArrayType;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;

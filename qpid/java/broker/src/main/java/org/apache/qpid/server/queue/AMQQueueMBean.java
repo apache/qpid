@@ -30,9 +30,10 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.store.StoreContext;
 

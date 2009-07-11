@@ -22,8 +22,8 @@ package org.apache.qpid.server;
 
 import junit.framework.TestCase;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;

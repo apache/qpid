@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
 
@@ -27,10 +27,9 @@ import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.management.MBeanAttribute;
-import org.apache.qpid.server.management.MBeanOperation;
-import org.apache.qpid.server.management.MBeanOperationParameter;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 /**
  * The management interface exposed to allow management of a queue.
@@ -201,7 +200,7 @@ public interface ManagedQueue
                     description="Message headers for messages in this queue within given index range. eg. from index 1 - 100")
     TabularData viewMessages(@MBeanOperationParameter(name="from index", description="from index")int fromIndex,
                              @MBeanOperationParameter(name="to index", description="to index")int toIndex)
-            throws IOException, JMException, AMQException;
+            throws IOException, JMException;
 
     @MBeanOperation(name="viewMessageContent", description="The message content for given Message Id")
     CompositeData viewMessageContent(@MBeanOperationParameter(name="Message Id", description="Message Id")long messageId)
@@ -233,7 +232,6 @@ public interface ManagedQueue
      * @param toQueue        where the messages are to be moved
      * @throws IOException
      * @throws JMException
-     * @throws AMQException
      */
     @MBeanOperation(name="moveMessages",
                     description="You can move messages to another queue from this queue ",
@@ -241,5 +239,5 @@ public interface ManagedQueue
     void moveMessages(@MBeanOperationParameter(name="from MessageId", description="from MessageId")long fromMessageId,
                       @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId,
                       @MBeanOperationParameter(name= ManagedQueue.TYPE, description="to Queue Name")String toQueue)
-            throws IOException, JMException, AMQException;
+            throws IOException, JMException;
 }

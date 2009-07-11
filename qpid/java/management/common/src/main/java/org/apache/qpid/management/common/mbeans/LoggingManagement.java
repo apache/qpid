@@ -18,13 +18,13 @@
  *
  * 
  */
-package org.apache.qpid.server.logging.management;
+package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
 
-import org.apache.qpid.server.management.MBeanAttribute;
-import org.apache.qpid.server.management.MBeanOperation;
-import org.apache.qpid.server.management.MBeanOperationParameter;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.TabularData;
