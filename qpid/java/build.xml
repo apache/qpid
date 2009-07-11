@@ -106,7 +106,7 @@
     <iterate target="bundle"/>
   </target>
   
-  <target name="release-bin" description="build a binary release artifact" depends="build">
+  <target name="release-bin" description="build a binary release artifact" depends="build,bundle">
       <iterate  target="release-bin"/>
   </target>
 
