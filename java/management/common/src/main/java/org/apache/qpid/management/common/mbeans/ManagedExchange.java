@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
 
@@ -26,10 +26,9 @@ import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.TabularData;
 
-import org.apache.qpid.server.management.MBeanAttribute;
-import org.apache.qpid.server.management.MBeanOperation;
-import org.apache.qpid.server.management.MBeanOperationParameter;
-import org.apache.qpid.server.queue.ManagedQueue;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 /**
  * The management interface exposed to allow management of an Exchange.

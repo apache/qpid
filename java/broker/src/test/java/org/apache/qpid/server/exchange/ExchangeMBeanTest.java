@@ -21,6 +21,8 @@
 package org.apache.qpid.server.exchange;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;

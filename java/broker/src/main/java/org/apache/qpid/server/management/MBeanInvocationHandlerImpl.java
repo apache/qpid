@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.server.configuration.management.ConfigurationManagement;
-import org.apache.qpid.server.logging.management.LoggingManagement;
-import org.apache.qpid.server.security.access.management.UserManagement;
+import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.log4j.Logger;
 
 import javax.management.remote.MBeanServerForwarder;

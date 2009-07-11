@@ -34,6 +34,7 @@ import javax.management.openmbean.TabularDataSupport;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
 
 import junit.framework.TestCase;
 

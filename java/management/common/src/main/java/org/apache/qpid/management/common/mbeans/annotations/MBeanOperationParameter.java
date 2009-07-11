@@ -19,23 +19,19 @@
  *
  */
 
-package org.apache.qpid.server.management;
+package org.apache.qpid.management.common.mbeans.annotations;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for MBean attributes. This should be used with getter or setter
- * methods of attributes.
+ * Annotation for MBean operation parameters.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-@Inherited
-public @interface MBeanAttribute
-{
+@Target(ElementType.PARAMETER)
+public @interface MBeanOperationParameter {
     String name();
     String description();
 }
