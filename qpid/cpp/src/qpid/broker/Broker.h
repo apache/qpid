@@ -111,6 +111,9 @@ public:
         bool requireEncrypted;
         std::string knownHosts;
         uint32_t maxSessionRate;
+
+      private:
+        std::string getHome();
     };
  
   private:
