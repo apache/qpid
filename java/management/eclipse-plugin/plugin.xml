@@ -94,11 +94,6 @@
             name="Refresh"/>
       <command
             categoryId="org.apache.qpid.management.ui.category"
-            description="pops up the window for editing selected attribute"
-            id="org.apache.qpid.management.ui.actions.cmd_editAttribute"
-            name="Edit Attribute"/>
-      <command
-            categoryId="org.apache.qpid.management.ui.category"
             description="About Qpid Management Console"
             id="qpidmc.about"
             name="About"/>
@@ -127,10 +122,6 @@
             commandId="org.apache.qpid.management.ui.actions.cmd_refresh"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="CTRL+Alt+F5"/>
-      <key
-            commandId="org.apache.qpid.management.ui.actions.cmd_editAttribute"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="CTRL+Alt+E"/>
       <key
             commandId="org.eclipse.ui.file.exit"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
@@ -164,14 +155,6 @@
                label="&amp;Qpid Manager">
             <separator name="qpidActionsGroup"/>
          </menu>
-         <action
-               class="org.apache.qpid.management.ui.actions.EditAttribute"
-               definitionId="org.apache.qpid.management.ui.actions.cmd_editAttribute"
-               id="org.apache.qpid.management.ui.actions.editAttribute"
-               label="Edit Attribute"
-               menubarPath="qpidmanager/mbeanactions"
-               style="push"
-               tooltip="Edit Attribute"/>
          <action
                class="org.apache.qpid.management.ui.actions.Refresh"
                definitionId="org.apache.qpid.management.ui.actions.cmd_refresh"

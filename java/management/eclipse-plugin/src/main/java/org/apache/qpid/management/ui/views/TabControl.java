@@ -33,6 +33,7 @@ import org.eclipse.swt.widgets.TabFolder;
  */
 public abstract class TabControl
 {
+    public static final String CONTROLLER = "controller"; 
     protected ManagedBean _mbean = null;
     protected TabFolder _tabFolder = null;
     
