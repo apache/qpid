@@ -57,7 +57,6 @@
 
 #include <iostream>
 #include <memory>
-#include <stdlib.h>
 
 using qpid::sys::ProtocolFactory;
 using qpid::sys::Poller;
@@ -96,9 +95,9 @@ Broker::Options::Options(const std::string& name) :
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
-    char *home = ::getenv("HOME");
+    std::string home = getHome();
 
-    if (home == 0)
+    if (home.length() == 0)
         dataDir += DEFAULT_DATA_DIR_LOCATION;
     else
         dataDir += home;

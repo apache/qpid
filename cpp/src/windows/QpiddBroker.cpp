@@ -39,6 +39,7 @@ const char *QPIDD_MODULE_DIR = ".";
 #include "qpid/broker/Broker.h"
 
 #include <iostream>
+#include <windows.h>
 
 using namespace qpid::broker;
 
@@ -145,16 +146,16 @@ struct ProcessControlOptions : public qpid::Options {
           quit(false),
           check(false) //, transport(TCP)
     {
-        char *tempDir = ::getenv("TEMP");
-
-        if (tempDir == 0)
-            piddir = "C:\\WINDOWS\\TEMP";
+        const DWORD pathLen = MAX_PATH + 1;
+        char tempDir[pathLen];
+        if (GetTempPath(pathLen, tempDir) == 0)
+            piddir = "C:\\WINDOWS\\TEMP\\";
         else
             piddir = tempDir;
-        piddir += "\\qpidd";
+        piddir += "qpidd";
 
         // Only have TCP for now, so don't need this...
-          //            ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
+        //            ("transport", optValue(transport, "TRANSPORT"), "The transport for which to return the port")
         addOptions()
             ("pid-dir", qpid::optValue(piddir, "DIR"), "Directory where port-specific PID file is stored")
             ("check,c", qpid::optValue(check), "Prints the broker's process ID to stdout and returns 0 if the broker is running, otherwise returns 1")
