@@ -632,6 +632,7 @@ public class NavigationView extends ViewPart
 
         // Add the mbean node now
         TreeObject mbeanNode = new TreeObject(mbean);
+        mbeanNode.setVirtualHost(mbean.getVirtualHostName());
         mbeanNode.setParent(typeNode);
 
         // Add the mbean to the config file

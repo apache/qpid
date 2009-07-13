@@ -27,7 +27,7 @@ package org.apache.qpid.management.ui;
  */
 public class Constants
 {
-    public final static String APPLICATION_NAME = "Qpid Management Console";
+    public final static String APPLICATION_NAME = "Qpid JMX Management Console";
     public static final String DEFAULT_DOMAIN = "org.apache.qpid";
     
     public final static String ACTION_REMOVE_MBEANNODE = "Remove from list";
