@@ -16,6 +16,10 @@ root.logging.level=warn
 log4j.configuration=file:///${test.profiles}/log4j-test.xml
 log4j.debug=false
 
+test.port=15672
+test.port.ssl=15671
+test.port.alt=15673
+
 test.excludes=true
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/08ExcludeList ${test.profiles}/08ExcludeList-nopersistence
 test.fork=no
