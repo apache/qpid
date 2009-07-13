@@ -23,6 +23,7 @@ package org.apache.qpid.management.ui.views;
 import static org.apache.qpid.management.ui.Constants.ATTRIBUTES;
 import static org.apache.qpid.management.ui.Constants.CONNECTION;
 import static org.apache.qpid.management.ui.Constants.EXCHANGE;
+import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
 import static org.apache.qpid.management.ui.Constants.NOTIFICATIONS;
 import static org.apache.qpid.management.ui.Constants.QUEUE;
 
@@ -45,6 +46,8 @@ import org.apache.qpid.management.ui.views.type.ExchangeTypeTabControl;
 import org.apache.qpid.management.ui.views.type.QueueTypeTabControl;
 import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
 import org.apache.qpid.management.ui.views.vhost.VHostTabControl;
+import org.apache.qpid.management.ui.views.exchange.ExchangeOperationsTabControl;
+import org.apache.qpid.management.ui.views.exchange.HeadersExchangeOperationsTabControl;
 import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
 import org.apache.qpid.management.ui.views.logging.RuntimeTabControl;
 import org.eclipse.swt.SWT;
@@ -100,7 +103,24 @@ public class MBeanTabFolderFactory
                 createGenericTabFolder(tabFolder, mbean);
                 break;
             case EXCHANGE:
-                createGenericTabFolder(tabFolder, mbean);
+                createAttributesTab(tabFolder, mbean);
+                
+                if (mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase("headers"))
+                {
+                    tab = new TabItem(tabFolder, SWT.NONE);
+                    tab.setText("Operations");
+                    controller = new HeadersExchangeOperationsTabControl(tabFolder, mbean, mbsc);
+                    tab.setControl(controller.getControl());
+                    tab.setData(TabControl.CONTROLLER, controller);
+                }
+                else
+                {
+                    tab = new TabItem(tabFolder, SWT.NONE);
+                    tab.setText("Operations");
+                    controller = new ExchangeOperationsTabControl(tabFolder, mbean, mbsc);
+                    tab.setControl(controller.getControl());
+                    tab.setData(TabControl.CONTROLLER, controller);
+                }
                 break;
             case VHOST_MANAGER:
                 tab = new TabItem(tabFolder, SWT.NONE);
