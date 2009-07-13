@@ -885,7 +885,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             for (QueueEntry entry : entries)
             {
                 toQueue.enqueue(storeContext, entry.getMessage());
-
+                entry.delete();
             }
         }
         catch (MessageCleanupException e)
