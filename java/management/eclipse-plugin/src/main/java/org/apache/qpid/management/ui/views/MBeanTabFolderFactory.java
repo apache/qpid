@@ -36,6 +36,7 @@ import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
+import org.apache.qpid.management.ui.views.queue.QueueOperationsTabControl;
 import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
 import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
 import org.apache.qpid.management.ui.views.logging.RuntimeTabControl;
@@ -80,7 +81,13 @@ public class MBeanTabFolderFactory
         switch(mbeanType)
         {
             case QUEUE:
-                createGenericTabFolder(tabFolder, mbean);
+                createAttributesTab(tabFolder, mbean);
+                
+                tab = new TabItem(tabFolder, SWT.NONE);
+                tab.setText("Operations");
+                controller = new QueueOperationsTabControl(tabFolder, mbean, mbsc);
+                tab.setControl(controller.getControl());
+                tab.setData(TabControl.CONTROLLER, controller);
                 break;
             case CONNECTION:
                 createGenericTabFolder(tabFolder, mbean);
