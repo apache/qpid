@@ -203,11 +203,11 @@ namespace qpid {
              * available it will be dispatched immediately, else it
              * will be returned to the front of the queue.
              */
-            void requeue(const QueuedMessage& msg);
+            QPID_BROKER_EXTERN void requeue(const QueuedMessage& msg);
             /**
              * Used during recovery to add stored messages back to the queue
              */
-            void recover(boost::intrusive_ptr<Message>& msg);
+            QPID_BROKER_EXTERN void recover(boost::intrusive_ptr<Message>& msg);
 
             QPID_BROKER_EXTERN void consume(Consumer::shared_ptr c,
                                             bool exclusive = false);

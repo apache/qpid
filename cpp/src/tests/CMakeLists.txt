@@ -44,8 +44,10 @@ endif (ENABLE_VALGRIND)
 # (non dll-interface class used as base for dll-interface class).
 # This is ok, so suppress the warning.
 # Also, boost lengthy names trigger warning 4503, decorated name length exceeded
+# and using getenv() triggers insecure CRT warnings which we can silence in the
+# test environment.
 if (MSVC)
-  add_definitions( /wd4275 /wd4503 )
+  add_definitions( /wd4275 /wd4503 /D_CRT_SECURE_NO_WARNINGS)
 endif (MSVC)
 
 # Like this to work with cmake 2.4 on Unix
