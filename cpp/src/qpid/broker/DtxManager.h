@@ -24,9 +24,9 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include "DtxBuffer.h"
 #include "DtxWorkRecord.h"
+#include "Timer.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/sys/Mutex.h"
 
 namespace qpid {
@@ -35,7 +35,7 @@ namespace broker {
 class DtxManager{
     typedef boost::ptr_map<std::string, DtxWorkRecord> WorkMap;
 
-    struct DtxCleanup : public sys::TimerTask
+    struct DtxCleanup : public TimerTask
     {
         DtxManager& mgr;
         const std::string& xid;
@@ -47,14 +47,14 @@ class DtxManager{
     WorkMap work;
     TransactionalStore* store;
     qpid::sys::Mutex lock;
-    qpid::sys::Timer& timer;
+    Timer& timer;
 
     void remove(const std::string& xid);
     DtxWorkRecord* getWork(const std::string& xid);
     DtxWorkRecord* createWork(std::string xid);
 
 public:
-    DtxManager(qpid::sys::Timer&);
+    DtxManager(Timer&);
     ~DtxManager();
     void start(const std::string& xid, DtxBuffer::shared_ptr work);
     void join(const std::string& xid, DtxBuffer::shared_ptr work);

@@ -22,7 +22,7 @@
 #define _DtxTimeout_
 
 #include "qpid/Exception.h"
-#include "qpid/sys/Timer.h"
+#include "Timer.h"
 
 namespace qpid {
 namespace broker {
@@ -31,12 +31,12 @@ class DtxManager;
 
 struct DtxTimeoutException : public Exception {};
 
-struct DtxTimeout : public sys::TimerTask
+struct DtxTimeout : public TimerTask
 {
     const uint32_t timeout;
     DtxManager& mgr;
     const std::string xid;
-
+    
     DtxTimeout(uint32_t timeout, DtxManager& mgr, const std::string& xid);    
     void fire();
 };

@@ -33,7 +33,7 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager(sys::Timer& t) : store(0), timer(t) {}
+DtxManager::DtxManager(Timer& t) : store(0), timer(t) {}
 
 DtxManager::~DtxManager() {}
 
@@ -130,7 +130,8 @@ void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
     }
     timeout = intrusive_ptr<DtxTimeout>(new DtxTimeout(secs, *this, xid));
     record->setTimeout(timeout);
-    timer.add(timeout);
+    timer.add(boost::static_pointer_cast<TimerTask>(timeout));
+    
 }
 
 uint32_t DtxManager::getTimeout(const std::string& xid)
