@@ -34,6 +34,7 @@ LAST_FRM = 0x01
 class Frame:
 
   HEADER = "!2BHxBH4x"
+  HEADER_SIZE = struct.calcsize(HEADER)
   MAX_PAYLOAD = 65535 - struct.calcsize(HEADER)
 
   def __init__(self, flags, type, track, channel, payload):
@@ -57,7 +58,7 @@ class Frame:
   def isLastFrame(self):
     return bool(LAST_FRM & self.flags)
 
-  def __str__(self):
+  def __repr__(self):
     return "%s%s%s%s %s %s %s %r" % (int(self.isFirstSegment()),
                                      int(self.isLastSegment()),
                                      int(self.isFirstFrame()),
