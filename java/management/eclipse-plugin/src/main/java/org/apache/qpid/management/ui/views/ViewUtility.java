@@ -54,7 +54,9 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ScrollBar;
@@ -775,16 +777,49 @@ public class ViewUtility
     public static Shell createPopupShell(String title, int width, int height)
     {
         Display display = Display.getCurrent();
-        Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE | SWT.MIN |SWT.MAX);
+        final Shell shell = new Shell(display, SWT.BORDER | SWT.CLOSE | SWT.MIN |SWT.MAX);
         shell.setText(title);
         shell.setLayout(new GridLayout());       
         int x = display.getBounds().width;
         int y = display.getBounds().height;
         shell.setBounds(x/4, y/4, width, height); 
         
+        shell.addListener(SWT.Traverse, new Listener () {
+            public void handleEvent (Event event) {
+                switch (event.detail) {
+                    case SWT.TRAVERSE_ESCAPE:
+                        shell.close ();
+                        event.detail = SWT.TRAVERSE_NONE;
+                        event.doit = false;
+                        break;
+                }
+            }
+        });
+        
         return shell;
     }
     
+    public static Shell createModalDialogShell(Shell parent, String title)
+    {
+        final Shell shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        shell.setText(title);
+        shell.setLayout(new GridLayout());       
+        
+        shell.addListener(SWT.Traverse, new Listener () {
+            public void handleEvent (Event event) {
+                switch (event.detail) {
+                    case SWT.TRAVERSE_ESCAPE:
+                        shell.close ();
+                        event.detail = SWT.TRAVERSE_NONE;
+                        event.doit = false;
+                        break;
+                }
+            }
+        });
+        
+        return shell;
+    }
+
     /**
      * Creates a List widget for displaying array of strings
      * @param compositeHolder
