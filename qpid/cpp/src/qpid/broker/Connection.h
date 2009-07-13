@@ -152,8 +152,8 @@ class Connection : public sys::ConnectionInputHandler,
     qmf::org::apache::qpid::broker::Connection* mgmtObject;
     LinkRegistry& links;
     management::ManagementAgent* agent;
-    sys::Timer& timer;
-    boost::intrusive_ptr<sys::TimerTask> heartbeatTimer;
+    Timer& timer;
+    boost::intrusive_ptr<TimerTask> heartbeatTimer;
     boost::intrusive_ptr<ConnectionTimeoutTask> timeoutTimer;
     ErrorListener* errorListener;
     bool shadow;

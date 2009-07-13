@@ -25,9 +25,9 @@
 #include <map>
 #include "Bridge.h"
 #include "MessageStore.h"
+#include "Timer.h"
 #include "qpid/Address.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
 
@@ -41,7 +41,7 @@ namespace broker {
 
         // Declare a timer task to manage the establishment of link connections and the
         // re-establishment of lost link connections.
-        struct Periodic : public sys::TimerTask
+        struct Periodic : public TimerTask
         {
             LinkRegistry& links;
 
@@ -62,7 +62,7 @@ namespace broker {
 
         qpid::sys::Mutex lock;
         Broker* broker;
-        sys::Timer& timer;
+        Timer   timer;
         management::Manageable* parent;
         MessageStore* store;
         bool passive;

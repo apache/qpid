@@ -49,25 +49,35 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 
-struct ConnectionTimeoutTask : public sys::TimerTask {
-    sys::Timer& timer;
+struct ConnectionTimeoutTask : public TimerTask {
+    Timer& timer;
     Connection& connection;
+    AbsTime expires;
 
-    ConnectionTimeoutTask(uint16_t hb, sys::Timer& t, Connection& c) :
+    ConnectionTimeoutTask(uint16_t hb, Timer& t, Connection& c) :
         TimerTask(Duration(hb*2*TIME_SEC)),
         timer(t),
-        connection(c)
+        connection(c),
+        expires(AbsTime::now(), duration)
     {}
 
-    void touch() {
-        restart();
+    void touch()
+    {
+        expires = AbsTime(AbsTime::now(), duration);
     }
 
     void fire() {
-        // If we get here then we've not received any traffic in the timeout period
-        // Schedule closing the connection for the io thread
-        QPID_LOG(error, "Connection timed out: closing");
-        connection.abort();
+        // This is the best we can currently do to avoid a destruction/fire race
+        if (isCancelled()) return;
+        if (expires < AbsTime::now()) {
+            // If we get here then we've not received any traffic in the timeout period
+            // Schedule closing the connection for the io thread
+            QPID_LOG(error, "Connection timed out: closing");
+            connection.abort();
+        } else {
+            reset();
+            timer.add(this);
+        }
     }
 };
 
@@ -328,22 +338,25 @@ void Connection::setSecureConnection(SecureConnection* s)
     adapter.setSecureConnection(s);
 }
 
-struct ConnectionHeartbeatTask : public sys::TimerTask {
-    sys::Timer& timer;
+struct ConnectionHeartbeatTask : public TimerTask {
+    Timer& timer;
     Connection& connection;
-    ConnectionHeartbeatTask(uint16_t hb, sys::Timer& t, Connection& c) :
+    ConnectionHeartbeatTask(uint16_t hb, Timer& t, Connection& c) :
         TimerTask(Duration(hb*TIME_SEC)),
         timer(t),
         connection(c)
     {}
 
     void fire() {
-        // Setup next firing
-        setupNextFire();
-        timer.add(this);
+        // This is the best we can currently do to avoid a destruction/fire race
+        if (!isCancelled()) {
+            // Setup next firing
+            reset();
+            timer.add(this);
 
-        // Send Heartbeat
-        connection.sendHeartbeat();
+            // Send Heartbeat
+            connection.sendHeartbeat();
+        }
     }
 };
 

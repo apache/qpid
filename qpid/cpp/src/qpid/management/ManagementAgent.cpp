@@ -61,6 +61,7 @@ ManagementAgent::ManagementAgent () :
 
 ManagementAgent::~ManagementAgent ()
 {
+    timer.stop();
     {
         Mutex::ScopedLock lock (userLock);
 
@@ -88,10 +89,9 @@ void ManagementAgent::configure(const string& _dataDir, uint16_t _interval,
     dataDir        = _dataDir;
     interval       = _interval;
     broker         = _broker;
-    timer          = &_broker->getTimer();
     threadPoolSize = _threads;
     ManagementObject::maxThreads = threadPoolSize;
-    timer->add (new Periodic(*this, interval));
+    timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
 
     // Get from file or generate and save to file.
     if (dataDir.empty())
@@ -218,7 +218,7 @@ ManagementAgent::Periodic::~Periodic () {}
 
 void ManagementAgent::Periodic::fire ()
 {
-    agent.timer->add (new Periodic (agent, agent.interval));
+    agent.timer.add (intrusive_ptr<TimerTask> (new Periodic (agent, agent.interval)));
     agent.periodicProcessing ();
 }
 
