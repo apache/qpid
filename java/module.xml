@@ -72,20 +72,20 @@
   <available property="module.bin.exists" file="${module.bin}"/>
 
   <indirect name="module.libs"         variable="${module.name}.libs"/>
-  <condition property="module.libs.empty">
+  <condition property="module.libs.includes" value="__EMPTY__" else="${module.libs}">
     <equals trim="true" arg1="${module.libs}" arg2=""/>
   </condition>
   <indirect name="module.test.libs"    variable="${module.name}.test.libs"/>
-  <condition property="module.test.libs.empty">
+  <condition property="module.test.libs.includes" value="__EMPTY__" else="${module.test.libs}">
     <equals trim="true" arg1="${module.test.libs}" arg2=""/>
   </condition>
 
   <path id="module.libs">
-    <filelist dir="${project.root}" files="${module.libs}"/>
+    <fileset dir="${project.root}" includes="${module.libs.includes}"/>
   </path>
 
   <path id="module.test.libs">
-    <filelist dir="${project.root}" files="${module.test.libs}"/>
+    <fileset dir="${project.root}" includes="${module.test.libs.includes}"/>
   </path>
 
   <path id="module.src.path">
