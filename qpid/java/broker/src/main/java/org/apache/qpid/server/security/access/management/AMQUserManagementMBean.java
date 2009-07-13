@@ -71,28 +71,22 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     // Setup for the TabularType
     static TabularType _userlistDataType; // Datatype for representing User Lists
-
     static CompositeType _userDataType; // Composite type for representing User
-    static String[] _userItemNames = {"Username", "read", "write", "admin"};
 
     static
     {
-        String[] userItemDesc = {"Broker Login username", "Management Console Read Permission",
-                                 "Management Console Write Permission", "Management Console Admin Permission"};
-
         OpenType[] userItemTypes = new OpenType[4]; // User item types.
         userItemTypes[0] = SimpleType.STRING;  // For Username
         userItemTypes[1] = SimpleType.BOOLEAN; // For Rights - Read
         userItemTypes[2] = SimpleType.BOOLEAN; // For Rights - Write
         userItemTypes[3] = SimpleType.BOOLEAN; // For Rights - Admin
-        String[] userDataIndex = {_userItemNames[0]};
 
         try
         {
             _userDataType =
-                    new CompositeType("User", "User Data", _userItemNames, userItemDesc, userItemTypes);
+                    new CompositeType("User", "User Data", COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS, userItemTypes);
 
-            _userlistDataType = new TabularType("Users", "List of users", _userDataType, userDataIndex);
+            _userlistDataType = new TabularType("Users", "List of users", _userDataType, TABULAR_UNIQUE_INDEX);
         }
         catch (OpenDataException e)
         {
@@ -327,7 +321,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 }
 
                 Object[] itemData = {user.getName(), read, write, admin};
-                CompositeData messageData = new CompositeDataSupport(_userDataType, _userItemNames, itemData);
+                CompositeData messageData = new CompositeDataSupport(_userDataType, COMPOSITE_ITEM_NAMES, itemData);
                 userList.put(messageData);
             }
         }

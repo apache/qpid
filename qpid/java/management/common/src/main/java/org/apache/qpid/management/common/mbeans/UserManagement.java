@@ -20,21 +20,26 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 import javax.management.openmbean.TabularData;
-import javax.management.openmbean.CompositeData;
-import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
-import java.io.IOException;
 
 public interface UserManagement
 {
 
     String TYPE = "UserManagement";
     int VERSION = 2;
+    
+    //TabularType and contained CompositeType key/description information.
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set.
+    String[] COMPOSITE_ITEM_NAMES = {"Username", "read", "write", "admin"};
+    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Broker Login username", 
+                                            "Management Console Read Permission", 
+                                            "Management Console Write Permission", 
+                                            "Management Console Admin Permission"};
+    String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
 
     //********** Operations *****************//
     /**
