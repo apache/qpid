@@ -77,7 +77,7 @@ public class FanoutExchange extends AbstractExchange
                 String queueName = queue.getName().toString();
 
                 Object[] bindingItemValues = {queueName, new String[]{queueName}};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
+                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
                 _bindingList.put(bindingData);
             }
 
