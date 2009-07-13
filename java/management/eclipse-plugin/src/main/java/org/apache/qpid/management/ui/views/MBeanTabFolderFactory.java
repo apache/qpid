@@ -21,7 +21,10 @@
 package org.apache.qpid.management.ui.views;
 
 import static org.apache.qpid.management.ui.Constants.ATTRIBUTES;
+import static org.apache.qpid.management.ui.Constants.CONNECTION;
+import static org.apache.qpid.management.ui.Constants.EXCHANGE;
 import static org.apache.qpid.management.ui.Constants.NOTIFICATIONS;
+import static org.apache.qpid.management.ui.Constants.QUEUE;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -37,6 +40,9 @@ import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 import org.apache.qpid.management.ui.views.queue.QueueOperationsTabControl;
+import org.apache.qpid.management.ui.views.type.ConnectionTypeTabControl;
+import org.apache.qpid.management.ui.views.type.ExchangeTypeTabControl;
+import org.apache.qpid.management.ui.views.type.QueueTypeTabControl;
 import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
 import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
 import org.apache.qpid.management.ui.views.logging.RuntimeTabControl;
@@ -203,6 +209,55 @@ public class MBeanTabFolderFactory
         tab.setControl(controller.getControl());
     }
     
+    /**
+     * Creates TabFolder and tabs for each mbeantype (eg Connection, Queue, Exchange)
+     */
+    public static TabFolder generateMBeanTypeTabFolder(final Composite parent)
+    {
+        TabFolder tabFolder = new TabFolder(parent, SWT.NONE);
+        FormData layoutData = new FormData();
+        layoutData.left = new FormAttachment(0);
+        layoutData.top = new FormAttachment(0);
+        layoutData.right = new FormAttachment(100);
+        layoutData.bottom = new FormAttachment(100);
+        tabFolder.setLayoutData(layoutData);
+
+        TabItem tab;
+        TabControl controller;
+              
+        tab = new TabItem(tabFolder, SWT.NONE);
+        tab.setText(CONNECTION); 
+        controller = new ConnectionTypeTabControl(tabFolder);
+        tab.setData(TabControl.CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+        
+        tab = new TabItem(tabFolder, SWT.NONE);
+        tab.setText(EXCHANGE);      
+        controller = new ExchangeTypeTabControl(tabFolder);
+        tab.setData(TabControl.CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+        
+        tab = new TabItem(tabFolder, SWT.NONE);
+        tab.setText(QUEUE);  
+        controller = new QueueTypeTabControl(tabFolder);
+        tab.setData(TabControl.CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+        
+        tabFolder.addListener(SWT.Selection, new Listener()
+        {
+            public void handleEvent(Event evt)
+            {
+                TabItem tab = (TabItem)evt.item;        
+                TabControl controller = (TabControl)tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(null);
+                }
+            }
+        });
+        
+        return tabFolder;
+    }
 
     private enum QpidMBeanType
     {
