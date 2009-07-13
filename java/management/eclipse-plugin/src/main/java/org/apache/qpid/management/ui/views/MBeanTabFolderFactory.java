@@ -46,6 +46,7 @@ import org.apache.qpid.management.ui.views.type.ExchangeTypeTabControl;
 import org.apache.qpid.management.ui.views.type.QueueTypeTabControl;
 import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
 import org.apache.qpid.management.ui.views.vhost.VHostTabControl;
+import org.apache.qpid.management.ui.views.connection.ConnectionOperationsTabControl;
 import org.apache.qpid.management.ui.views.exchange.ExchangeOperationsTabControl;
 import org.apache.qpid.management.ui.views.exchange.HeadersExchangeOperationsTabControl;
 import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
@@ -100,7 +101,13 @@ public class MBeanTabFolderFactory
                 tab.setData(TabControl.CONTROLLER, controller);
                 break;
             case CONNECTION:
-                createGenericTabFolder(tabFolder, mbean);
+                createAttributesTab(tabFolder, mbean);
+                
+                tab = new TabItem(tabFolder, SWT.NONE);
+                tab.setText("Operations");
+                controller = new ConnectionOperationsTabControl(tabFolder, mbean, mbsc);
+                tab.setControl(controller.getControl());
+                tab.setData(TabControl.CONTROLLER, controller);
                 break;
             case EXCHANGE:
                 createAttributesTab(tabFolder, mbean);
