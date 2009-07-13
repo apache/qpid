@@ -79,9 +79,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private String _name = null;
 
     // openmbean data types for representing the channel attributes
-    private static final String[] _channelAtttibuteNames =
-        { "Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count" };
-    private static final String[] _indexNames = { _channelAtttibuteNames[0] };
+
     private static final OpenType[] _channelAttributeTypes =
         { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER };
     private static CompositeType _channelType = null; // represents the data type for channel data
@@ -119,9 +117,9 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private static void init() throws OpenDataException
     {
         _channelType =
-            new CompositeType("Channel", "Channel Details", _channelAtttibuteNames, _channelAtttibuteNames,
+            new CompositeType("Channel", "Channel Details", COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS,
                 _channelAttributeTypes);
-        _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
+        _channelsType = new TabularType("Channels", "Channels", _channelType, TABULAR_UNIQUE_INDEX);
     }
 
     public String getClientId()
@@ -247,7 +245,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                     channel.getUnacknowledgedMessageMap().size()
                 };
 
-            CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
+            CompositeData channelData = new CompositeDataSupport(_channelType, COMPOSITE_ITEM_NAMES, itemValues);
             channelsList.put(channelData);
         }
 
