@@ -18,42 +18,31 @@
  * under the License.
  *
  */
+package org.apache.qpid.management.ui.views.type;
 
-package org.apache.qpid.management.ui.views;
+import java.util.List;
+
+import static org.apache.qpid.management.ui.Constants.EXCHANGE;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.views.MBeanView;
 import org.eclipse.swt.widgets.TabFolder;
 
-/**
- * Controller class, which takes care of displaying appropriate information and widgets for Connections.
- * This allows user to select Connections and add those to the navigation view
- */
-public class ConnectionTypeTabControl extends MBeanTypeTabControl
+public class ExchangeTypeTabControl extends MBeanTypeTabControl
 {
+    
+    public ExchangeTypeTabControl(TabFolder tabFolder)
+    {
+        super(tabFolder,EXCHANGE);
+    }
 
-    public ConnectionTypeTabControl(TabFolder tabFolder)
+    @Override
+    protected List<ManagedBean> getMbeans()
     {
-        super(tabFolder, Constants.CONNECTION);
-        createWidgets();
-    }
-    
-    protected void createWidgets()
-    {
-        createHeaderComposite(getFormComposite());
-        createButtonsComposite(getFormComposite());
-        createListComposite(getFormComposite());
-    }
-    
-    protected void populateList() throws Exception
-    {
-        // map should be cleared before populating it with new values
-        getMBeansMap().clear();
-        
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
-        java.util.List<ManagedBean> list = serverRegistry.getConnections(MBeanView.getVirtualHost());
-        getListWidget().setItems(getItems(list));  
+        return serverRegistry.getExchanges(MBeanView.getVirtualHost());
     }
+
 }
