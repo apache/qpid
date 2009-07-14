@@ -144,6 +144,22 @@
                value="Qpid Management Console"/>
       </product>
    </extension>
+
+   <extension point="org.eclipse.ui.menus">
+       <menuContribution locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+           <toolbar id="qpidMC">
+               <separator name="qpidActionsGroup" visible="false"/>
+               <separator name="refresh" visible="true"/>
+               <separator name="additions" visible="false"/>
+           </toolbar>
+       </menuContribution>
+       <menuContribution locationURI="toolbar:qpidMC?after=refresh">
+           <control
+               class="org.apache.qpid.management.ui.RefreshIntervalComboPanel">
+           </control>
+       </menuContribution>
+   </extension>
+
    <extension
          point="org.eclipse.ui.actionSets">
       <actionSet
@@ -163,7 +179,7 @@
                label="Refresh"
                menubarPath="qpidmanager/additions"
                style="push"
-               toolbarPath="qpidActionsGroup"
+               toolbarPath="qpidMC/qpidActionsGroup"
                tooltip="Refresh"/>
          <action
                class="org.apache.qpid.management.ui.actions.RemoveServer"
@@ -173,7 +189,8 @@
                label="Remove Connection"
                menubarPath="qpidmanager/additions"
                style="push"
-               toolbarPath="qpidActionsGroup"/>
+               toolbarPath="qpidMC/qpidActionsGroup"
+               tooltip="Remove Server"/>
          <action
                class="org.apache.qpid.management.ui.actions.CloseConnection"
                definitionId="org.apache.qpid.management.ui.actions.cmd_disconnect"
@@ -181,7 +198,7 @@
                id="org.apache.qpid.management.ui.disconnect"
                label="Disconnect"
                menubarPath="qpidmanager/additions"
-               toolbarPath="qpidActionsGroup"
+               toolbarPath="qpidMC/qpidActionsGroup"
                tooltip="Disconnect"/>
          <action
                class="org.apache.qpid.management.ui.actions.ReconnectServer"
@@ -190,7 +207,7 @@
                id="org.apache.qpid.management.ui.reconnect"
                label="Reconnect"
                menubarPath="qpidmanager/additions"
-               toolbarPath="qpidActionsGroup"
+               toolbarPath="qpidMC/qpidActionsGroup"
                tooltip="Reconnect"/>
          <action
                class="org.apache.qpid.management.ui.actions.AddServer"
@@ -199,9 +216,9 @@
                id="org.apache.qpid.management.ui.add"
                label="New Connection"
                menubarPath="qpidmanager/additions"
-               toolbarPath="qpidActionsGroup"
-               tooltip="New Connection"/>         
+               toolbarPath="qpidMC/qpidActionsGroup"
+               tooltip="New Connection"/>        
       </actionSet>
    </extension>
-
+   
 </plugin>
