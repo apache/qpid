@@ -19,5 +19,5 @@
 // Defines test_main function to link with actual unit test code.
 #define BOOST_AUTO_TEST_MAIN	// Boost 1.33
 #define BOOST_TEST_MAIN
-#include "tests/unit_test.h"
+#include "unit_test.h"
 

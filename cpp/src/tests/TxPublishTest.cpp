@@ -21,12 +21,12 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManager.h"
 #include "qpid/broker/TxPublish.h"
-#include "tests/unit_test.h"
+#include "unit_test.h"
 #include <iostream>
 #include <list>
 #include <vector>
-#include "tests/MessageUtils.h"
-#include "tests/TestMessageStore.h"
+#include "MessageUtils.h"
+#include "TestMessageStore.h"
 
 using std::list;
 using std::pair;

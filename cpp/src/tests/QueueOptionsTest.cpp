@@ -22,7 +22,7 @@
 #include "qpid/framing/Array.h"
 #include "qpid/client/QueueOptions.h"
 
-#include "tests/unit_test.h"
+#include "unit_test.h"
 
 using namespace qpid::client;
 

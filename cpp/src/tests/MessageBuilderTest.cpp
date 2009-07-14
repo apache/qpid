@@ -24,7 +24,7 @@
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TypeFilter.h"
-#include "tests/unit_test.h"
+#include "unit_test.h"
 #include <list>
 
 using namespace qpid::broker;

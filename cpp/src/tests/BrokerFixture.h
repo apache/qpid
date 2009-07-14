@@ -22,7 +22,7 @@
  *
  */
 
-#include "tests/SocketProxy.h"
+#include "SocketProxy.h"
 
 #include "qpid/broker/Broker.h"
 #include "qpid/client/Connection.h"

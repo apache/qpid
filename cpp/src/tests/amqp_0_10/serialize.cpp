@@ -19,8 +19,8 @@
  *
  */
 
-#include "tests/amqp_0_10/unit_test.h"
-#include "tests/amqp_0_10/allSegmentTypes.h"
+#include "amqp_0_10/unit_test.h"
+#include "amqp_0_10/allSegmentTypes.h"
 
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/Buffer.h"
@@ -34,7 +34,7 @@
 #include "qpid/amqp_0_10/FrameHeader.h"
 #include "qpid/amqp_0_10/Map.h"
 #include "qpid/amqp_0_10/Unit.h"
-#include "tests/allSegmentTypes.h"
+#include "allSegmentTypes.h"
 
 #include <boost/test/test_case_template.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>

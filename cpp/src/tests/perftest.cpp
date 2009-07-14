@@ -19,7 +19,7 @@
  *
  */
 
-#include "tests/TestOptions.h"
+#include "TestOptions.h"
 
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/SubscriptionManager.h"

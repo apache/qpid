@@ -24,9 +24,9 @@
  * In this case the failed nodes must shut down.
  */
 
-#include "tests/test_tools.h"
-#include "tests/unit_test.h"
-#include "tests/ClusterFixture.h"
+#include "test_tools.h"
+#include "unit_test.h"
+#include "ClusterFixture.h"
 #include <boost/assign.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
