@@ -90,6 +90,7 @@ if test -d ${PYTHON_DIR} && test -e ../.libs/replicating_listener.so && test -e 
     diff replicated.actual replicated.expected || FAIL=1
     if [[ $FAIL ]]; then
         echo reliable replication test failed: expectations not met!
+        exit 1
     else 
         echo replication reliable in the face of link failures
         rm -f replication.actual replication.expected replication-source.log replication-dest.log qpidd-repl.port
