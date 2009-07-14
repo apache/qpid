@@ -62,11 +62,14 @@ class ErrorCheck
     /**@pre canProcess **/
     EventFrame getNext();
 
-    bool canProcess() const;
+    bool canProcess() const { return type == NONE && !frames.empty(); }
 
-    bool isUnresolved() const;
+    bool isUnresolved() const { return type != NONE; }
+
+
     
   private:
+    static const ErrorType NONE = framing::cluster::ERROR_TYPE_NONE;
     typedef std::deque<EventFrame>  FrameQueue;
     FrameQueue::iterator review(const FrameQueue::iterator&);
     void checkResolved();
