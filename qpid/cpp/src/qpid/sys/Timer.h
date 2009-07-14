@@ -42,6 +42,7 @@ class TimerTask : public RefCounted {
     friend bool operator<(const boost::intrusive_ptr<TimerTask>&,
                 const boost::intrusive_ptr<TimerTask>&);
 
+    AbsTime sortTime;
     Duration period;
     AbsTime nextFireTime;
     Mutex callbackLock;
