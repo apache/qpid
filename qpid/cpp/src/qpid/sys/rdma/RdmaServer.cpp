@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "RdmaIO.h"
+#include "qpid/sys/rdma/RdmaIO.h"
 
 #include <arpa/inet.h>
 

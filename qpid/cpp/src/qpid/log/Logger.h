@@ -12,8 +12,8 @@
  *
  */
 
-#include "Selector.h"
-#include "Options.h"
+#include "qpid/log/Selector.h"
+#include "qpid/log/Options.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/noncopyable.hpp>

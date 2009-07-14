@@ -19,14 +19,14 @@
  *
  */
 
-#include "Broker.h"
-#include "Queue.h"
-#include "QueueEvents.h"
-#include "Exchange.h"
-#include "DeliverableMessage.h"
-#include "MessageStore.h"
-#include "NullMessageStore.h"
-#include "QueueRegistry.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueEvents.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/QueueRegistry.h"
 
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"

@@ -23,7 +23,7 @@
  */
 
 #include <string>
-#include "Persistable.h"
+#include "qpid/broker/Persistable.h"
 #include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
 

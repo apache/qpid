@@ -21,7 +21,7 @@
 #ifndef RDMA_FACTORIES_H
 #define RDMA_FACTORIES_H
 
-#include "rdma_exception.h"
+#include "qpid/sys/rdma/rdma_exception.h"
 
 #include <rdma/rdma_cma.h>
 

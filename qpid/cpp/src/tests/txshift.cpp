@@ -23,7 +23,7 @@
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
-#include "TestOptions.h"
+#include "tests/TestOptions.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/FailoverManager.h"
 #include "qpid/client/Message.h"

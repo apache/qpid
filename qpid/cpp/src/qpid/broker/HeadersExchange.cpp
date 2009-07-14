@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "HeadersExchange.h"
+#include "qpid/broker/HeadersExchange.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "QueryImpl.h"
+#include "qmf/QueryImpl.h"
 
 using namespace std;
 using namespace qmf;

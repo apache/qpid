@@ -18,7 +18,7 @@
 //
 
 #include "qpid/sys/PipeHandle.h"
-#include "check.h"
+#include "qpid/sys/windows/check.h"
 #include <io.h>
 #include <fcntl.h>
 #include <errno.h>

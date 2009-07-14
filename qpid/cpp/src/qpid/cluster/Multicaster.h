@@ -22,8 +22,8 @@
  *
  */
 
-#include "types.h"
-#include "Event.h"
+#include "qpid/cluster/types.h"
+#include "qpid/cluster/Event.h"
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/LatencyTracker.h"

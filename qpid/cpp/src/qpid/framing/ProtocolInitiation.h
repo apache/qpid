@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
-#include "Buffer.h"
-#include "AMQDataBlock.h"
-#include "ProtocolVersion.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/AMQDataBlock.h"
+#include "qpid/framing/ProtocolVersion.h"
 #include "qpid/CommonImportExport.h"
 
 #ifndef _ProtocolInitiation_

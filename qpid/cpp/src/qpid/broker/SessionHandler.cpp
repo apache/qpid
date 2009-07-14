@@ -18,9 +18,9 @@
  *
  */
 
-#include "SessionHandler.h"
-#include "SessionState.h"
-#include "Connection.h"
+#include "qpid/broker/SessionHandler.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>

@@ -25,8 +25,8 @@
 #include <functional>
 #include <list>
 #include "qpid/framing/SequenceSet.h"
-#include "DeliveryRecord.h"
-#include "TxOp.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/TxOp.h"
 
 namespace qpid {
     namespace broker {

@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "Connection.h"
-#include "UpdateClient.h"
-#include "Cluster.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/UpdateClient.h"
+#include "qpid/cluster/Cluster.h"
 
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/SemanticState.h"

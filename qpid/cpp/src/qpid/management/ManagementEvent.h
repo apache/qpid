@@ -22,7 +22,7 @@
  *
  */
 
-#include "ManagementObject.h"
+#include "qpid/management/ManagementObject.h"
 #include <qpid/framing/Buffer.h>
 #include <string>
 

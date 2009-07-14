@@ -21,8 +21,8 @@
 #ifndef _QPID_CONSOLE_AGENT_H_
 #define _QPID_CONSOLE_AGENT_H_
 
-#include "Broker.h"
-#include "ConsoleImportExport.h"
+#include "qpid/console/Broker.h"
+#include "qpid/console/ConsoleImportExport.h"
 
 namespace qpid {
 namespace console {

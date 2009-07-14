@@ -17,7 +17,7 @@
 // under the License.
 //
 
-#include "Manageable.h"
+#include "qpid/management/Manageable.h"
 
 using namespace qpid::management;
 using std::string;

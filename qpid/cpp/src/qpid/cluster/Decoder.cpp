@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "Decoder.h"
-#include "EventFrame.h"
+#include "qpid/cluster/Decoder.h"
+#include "qpid/cluster/EventFrame.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/AMQFrame.h"

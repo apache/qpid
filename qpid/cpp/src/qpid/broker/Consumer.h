@@ -21,9 +21,9 @@
 #ifndef _Consumer_
 #define _Consumer_
 
-#include "Message.h"
-#include "QueuedMessage.h"
-#include "OwnershipToken.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/OwnershipToken.h"
 
 namespace qpid {
 namespace broker {

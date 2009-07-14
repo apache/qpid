@@ -22,7 +22,7 @@
  *
  */
 
-#include "built_in_types.h"
+#include "qpid/amqp_0_10/built_in_types.h"
 #include <iosfwd>
 
 namespace qpid {

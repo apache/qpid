@@ -29,9 +29,9 @@
 
 #include <boost/ptr_container/ptr_map.hpp>
 
-#include "ConnectionHandler.h"
-#include "ConnectionState.h"
-#include "SessionHandler.h"
+#include "qpid/broker/ConnectionHandler.h"
+#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/SessionHandler.h"
 #include "qmf/org/apache/qpid/broker/Connection.h"
 #include "qpid/Exception.h"
 #include "qpid/RefCounted.h"

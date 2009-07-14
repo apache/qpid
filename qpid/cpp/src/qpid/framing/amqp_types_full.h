@@ -29,10 +29,10 @@
  * times.
  */
 
-#include "amqp_types.h"
-#include "Array.h"
-#include "FieldTable.h"
-#include "SequenceSet.h"
-#include "Uuid.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Array.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/SequenceSet.h"
+#include "qpid/framing/Uuid.h"
 
 #endif  /*!_framing_amqp_types_decl_h*/

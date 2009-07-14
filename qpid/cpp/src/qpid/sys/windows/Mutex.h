@@ -19,7 +19,7 @@
  *
  */
 
-#include "check.h"
+#include "qpid/sys/windows/check.h"
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION < 103500)

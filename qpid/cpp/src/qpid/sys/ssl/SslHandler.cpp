@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "SslHandler.h"
+#include "qpid/sys/ssl/SslHandler.h"
 
-#include "SslIo.h"
-#include "SslSocket.h"
+#include "qpid/sys/ssl/SslIo.h"
+#include "qpid/sys/ssl/SslSocket.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/log/Statement.h"

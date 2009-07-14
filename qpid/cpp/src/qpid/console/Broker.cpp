@@ -19,11 +19,11 @@
  *
  */
 
-#include "Broker.h"
-#include "Object.h"
-#include "Value.h"
-#include "SessionManager.h"
-#include "ConsoleListener.h"
+#include "qpid/console/Broker.h"
+#include "qpid/console/Object.h"
+#include "qpid/console/Value.h"
+#include "qpid/console/SessionManager.h"
+#include "qpid/console/ConsoleListener.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SystemInfo.h"
 

@@ -24,7 +24,7 @@
 #include <qpid/client/Message.h>
 #include <qpid/client/SubscriptionManager.h>
 #include <qpid/client/SubscriptionSettings.h>
-#include "TestOptions.h"
+#include "tests/TestOptions.h"
 
 #include <iostream>
 #include <fstream>

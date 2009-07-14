@@ -25,8 +25,8 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/Time.h"
-#include "Decimal.h"
-#include "SerializableString.h"
+#include "qpid/amqp_0_10/Decimal.h"
+#include "qpid/amqp_0_10/SerializableString.h"
 #include <boost/array.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <string>

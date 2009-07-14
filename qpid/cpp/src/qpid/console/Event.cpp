@@ -19,11 +19,11 @@
  *
  */
 
-#include "Broker.h"
-#include "ClassKey.h"
-#include "Schema.h"
-#include "Event.h"
-#include "Value.h"
+#include "qpid/console/Broker.h"
+#include "qpid/console/ClassKey.h"
+#include "qpid/console/Schema.h"
+#include "qpid/console/Event.h"
+#include "qpid/console/Value.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/Buffer.h"
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "ValueImpl.h"
+#include "qmf/ValueImpl.h"
 #include <qpid/framing/FieldTable.h>
 
 using namespace std;

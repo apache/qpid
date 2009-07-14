@@ -22,7 +22,7 @@
  *
  */
 
-#include "Time.h"
+#include "qpid/sys/Time.h"
 #include <string>
 #include <limits>
 #include <map>

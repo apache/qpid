@@ -26,11 +26,11 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include "BrokerImportExport.h"
-#include "Persistable.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Persistable.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
-#include "PersistableQueue.h"
+#include "qpid/broker/PersistableQueue.h"
 
 namespace qpid {
 namespace broker {

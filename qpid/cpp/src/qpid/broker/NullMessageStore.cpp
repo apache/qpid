@@ -19,9 +19,9 @@
  *
  */
 
-#include "NullMessageStore.h"
-#include "MessageStoreModule.h"
-#include "RecoveryManager.h"
+#include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/RecoveryManager.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 

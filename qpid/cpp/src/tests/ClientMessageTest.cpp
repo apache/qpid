@@ -19,7 +19,7 @@
 
 /**@file Unit tests for the client::Message class. */
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include "qpid/client/Message.h"
 
 using namespace qpid::client;

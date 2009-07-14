@@ -18,8 +18,8 @@
  *
  */
 
-#include "Exception.h"
-#include "DataDir.h"
+#include "qpid/Exception.h"
+#include "qpid/DataDir.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/FileSysDir.h"
 

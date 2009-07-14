@@ -24,7 +24,7 @@
 #  undef uuid_t
 #endif
 
-#include "uuid.h"
+#include "qpid/sys/windows/uuid.h"
 
 #include <string.h>
 

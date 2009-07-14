@@ -16,9 +16,9 @@
  *
  */
 
-#include "Logger.h"
-#include "Options.h"
-#include "SinkOptions.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
+#include "qpid/log/SinkOptions.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"

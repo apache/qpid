@@ -22,8 +22,8 @@
  *
  */
 
-#include "BrokerImportExport.h"
-#include "QueuedMessage.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/QueuedMessage.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/PollableQueue.h"
 #include <map>

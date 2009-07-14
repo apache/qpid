@@ -16,9 +16,9 @@
  *
  */
 
-#include "Proxy.h"
-#include "AMQFrame.h"
-#include "AMQMethodBody.h"
+#include "qpid/framing/Proxy.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/AMQMethodBody.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {

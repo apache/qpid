@@ -19,7 +19,7 @@
  *
  */
 
-#include "TransferContent.h"
+#include "qpid/framing/TransferContent.h"
 
 namespace qpid {
 namespace framing {

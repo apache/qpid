@@ -21,10 +21,10 @@
 #ifndef _DtxWorkRecord_
 #define _DtxWorkRecord_
 
-#include "BrokerImportExport.h"
-#include "DtxBuffer.h"
-#include "DtxTimeout.h"
-#include "TransactionalStore.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/DtxBuffer.h"
+#include "qpid/broker/DtxTimeout.h"
+#include "qpid/broker/TransactionalStore.h"
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"

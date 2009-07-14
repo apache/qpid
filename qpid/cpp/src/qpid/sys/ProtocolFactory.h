@@ -24,7 +24,7 @@
 
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/SharedObject.h"
-#include "ConnectionCodec.h"
+#include "qpid/sys/ConnectionCodec.h"
 #include <boost/function.hpp>
 
 namespace qpid {

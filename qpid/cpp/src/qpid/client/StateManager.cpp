@@ -19,7 +19,7 @@
  *
  */
 
-#include "StateManager.h"
+#include "qpid/client/StateManager.h"
 #include "qpid/framing/amqp_framing.h"
 
 using namespace qpid::client;

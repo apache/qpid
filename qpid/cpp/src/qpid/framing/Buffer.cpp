@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "Buffer.h"
-#include "FieldTable.h" 
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldTable.h" 
 #include <string.h>
 #include <boost/format.hpp>
 namespace qpid {

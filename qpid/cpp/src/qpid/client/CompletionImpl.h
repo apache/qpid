@@ -23,7 +23,7 @@
  */
 
 #include "qpid/RefCounted.h"
-#include "Future.h"
+#include "qpid/client/Future.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {

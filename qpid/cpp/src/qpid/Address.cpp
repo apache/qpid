@@ -16,7 +16,7 @@
  *
  */
 
-#include "Address.h"
+#include "qpid/Address.h"
 
 #include <ostream>
 

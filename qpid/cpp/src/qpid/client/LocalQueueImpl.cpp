@@ -18,15 +18,15 @@
  * under the License.
  *
  */
-#include "LocalQueueImpl.h"
-#include "MessageImpl.h"
+#include "qpid/client/LocalQueueImpl.h"
+#include "qpid/client/MessageImpl.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "PrivateImplRef.h"
-#include "SubscriptionImpl.h"
-#include "CompletionImpl.h"
+#include "qpid/client/PrivateImplRef.h"
+#include "qpid/client/SubscriptionImpl.h"
+#include "qpid/client/CompletionImpl.h"
 
 namespace qpid {
 namespace client {

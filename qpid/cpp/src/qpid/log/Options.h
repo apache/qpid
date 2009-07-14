@@ -20,7 +20,7 @@
  */
 #include "qpid/Options.h"
 #include "qpid/CommonImportExport.h"
-#include "SinkOptions.h"
+#include "qpid/log/SinkOptions.h"
 #include <iosfwd>
 #include <memory>
 

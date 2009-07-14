@@ -19,7 +19,7 @@
  *
  */
 
-#include "ClassKey.h"
+#include "qpid/console/ClassKey.h"
 #include <string.h>
 #include <cstdio>
 

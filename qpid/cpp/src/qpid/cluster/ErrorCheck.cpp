@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "ErrorCheck.h"
-#include "EventFrame.h"
-#include "ClusterMap.h"
-#include "Cluster.h"
+#include "qpid/cluster/ErrorCheck.h"
+#include "qpid/cluster/EventFrame.h"
+#include "qpid/cluster/ClusterMap.h"
+#include "qpid/cluster/Cluster.h"
 #include "qpid/framing/ClusterErrorCheckBody.h"
 #include "qpid/framing/ClusterConfigChangeBody.h"
 #include "qpid/log/Statement.h"

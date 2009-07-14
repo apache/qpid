@@ -21,11 +21,11 @@
  * under the License.
  *
  */
-#include "AMQDataBlock.h"
-#include "AMQHeaderBody.h"
-#include "AMQContentBody.h"
-#include "AMQHeartbeatBody.h"
-#include "ProtocolVersion.h"
+#include "qpid/framing/AMQDataBlock.h"
+#include "qpid/framing/AMQHeaderBody.h"
+#include "qpid/framing/AMQContentBody.h"
+#include "qpid/framing/AMQHeartbeatBody.h"
+#include "qpid/framing/ProtocolVersion.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
 #include "qpid/CommonImportExport.h"

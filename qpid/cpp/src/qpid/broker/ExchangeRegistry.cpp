@@ -19,11 +19,11 @@
  *
  */
 
-#include "ExchangeRegistry.h"
-#include "DirectExchange.h"
-#include "FanOutExchange.h"
-#include "HeadersExchange.h"
-#include "TopicExchange.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/HeadersExchange.h"
+#include "qpid/broker/TopicExchange.h"
 #include "qpid/management/ManagementExchange.h"
 #include "qpid/framing/reply_exceptions.h"
 

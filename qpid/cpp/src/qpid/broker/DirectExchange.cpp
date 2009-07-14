@@ -19,7 +19,7 @@
  *
  */
 #include "qpid/log/Statement.h"
-#include "DirectExchange.h"
+#include "qpid/broker/DirectExchange.h"
 #include <iostream>
 
 using namespace qpid::broker;

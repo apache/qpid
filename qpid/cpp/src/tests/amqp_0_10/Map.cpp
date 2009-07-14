@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "unit_test.h"
+#include "tests/amqp_0_10/unit_test.h"
 #include "qpid/amqp_0_10/Map.h"
 #include "qpid/amqp_0_10/Array.h"
 #include "qpid/amqp_0_10/Struct32.h"

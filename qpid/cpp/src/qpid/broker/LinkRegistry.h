@@ -23,9 +23,9 @@
  */
 
 #include <map>
-#include "Bridge.h"
-#include "MessageStore.h"
-#include "Timer.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/Timer.h"
 #include "qpid/Address.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"

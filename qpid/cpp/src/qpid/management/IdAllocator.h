@@ -22,7 +22,7 @@
  *
  */
 
-#include "Manageable.h"
+#include "qpid/management/Manageable.h"
 
 namespace qpid {
 namespace management {

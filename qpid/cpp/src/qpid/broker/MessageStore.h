@@ -21,12 +21,12 @@
 #ifndef _MessageStore_
 #define _MessageStore_
 
-#include "PersistableExchange.h"
-#include "PersistableMessage.h"
-#include "PersistableQueue.h"
-#include "PersistableConfig.h"
-#include "RecoveryManager.h"
-#include "TransactionalStore.h"
+#include "qpid/broker/PersistableExchange.h"
+#include "qpid/broker/PersistableMessage.h"
+#include "qpid/broker/PersistableQueue.h"
+#include "qpid/broker/PersistableConfig.h"
+#include "qpid/broker/RecoveryManager.h"
+#include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/FieldTable.h"
 
 #include <qpid/Options.h>

@@ -19,7 +19,7 @@
  *
  */
 
-#include "Agent.h"
+#include "qpid/console/Agent.h"
 
 std::ostream& qpid::console::operator<<(std::ostream& o, const Agent& agent)
 {

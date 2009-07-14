@@ -22,8 +22,8 @@
  *
  */
 
-#include "Connection.h"
-#include "ConnectionSettings.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/Exception.h"
 #include "qpid/client/AsyncSession.h"
 #include "qpid/sys/Monitor.h"

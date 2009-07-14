@@ -18,7 +18,7 @@
 //
 
 #include "qpid/sys/PipeHandle.h"
-#include "check.h"
+#include "qpid/sys/posix/check.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>

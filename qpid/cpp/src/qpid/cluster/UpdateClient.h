@@ -22,7 +22,7 @@
  *
  */
 
-#include "ClusterMap.h"
+#include "qpid/cluster/ClusterMap.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/AsyncSession.h"

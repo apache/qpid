@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpidd.h"
+#include "./qpidd.h"
 #include "qpid/Plugin.h"
 #include "qpid/Version.h"
 #include "qpid/log/Logger.h"

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"

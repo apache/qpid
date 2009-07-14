@@ -24,9 +24,9 @@
 
 #include <string>
 
-#include "ClientImportExport.h"
+#include "qpid/client/ClientImportExport.h"
 #include "qpid/framing/amqp_framing.h"
-#include "FutureCompletion.h"
+#include "qpid/client/FutureCompletion.h"
 
 namespace qpid {
 namespace client {

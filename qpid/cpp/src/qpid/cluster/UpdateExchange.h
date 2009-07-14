@@ -22,7 +22,7 @@
  *
  */
 
-#include "UpdateClient.h"
+#include "qpid/cluster/UpdateClient.h"
 #include "qpid/broker/FanOutExchange.h"
 
 

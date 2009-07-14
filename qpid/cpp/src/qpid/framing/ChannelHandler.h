@@ -21,8 +21,8 @@
  * under the License.
  *
  */
-#include "FrameHandler.h"
-#include "AMQFrame.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
 namespace framing {

@@ -16,7 +16,7 @@
  *
  */
 
-#include "SinkOptions.h"
+#include "qpid/log/posix/SinkOptions.h"
 #include "qpid/log/SinkOptions.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/OstreamOutput.h"

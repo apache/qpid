@@ -22,14 +22,14 @@
  *
  */
 
-#include "Consumer.h"
-#include "Deliverable.h"
-#include "DeliveryAdapter.h"
-#include "DeliveryRecord.h"
-#include "DtxBuffer.h"
-#include "DtxManager.h"
-#include "NameGenerator.h"
-#include "TxBuffer.h"
+#include "qpid/broker/Consumer.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/DeliveryAdapter.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/DtxBuffer.h"
+#include "qpid/broker/DtxManager.h"
+#include "qpid/broker/NameGenerator.h"
+#include "qpid/broker/TxBuffer.h"
 
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
@@ -37,7 +37,7 @@
 #include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/AtomicValue.h"
-#include "AclModule.h"
+#include "qpid/broker/AclModule.h"
 
 #include <list>
 #include <map>

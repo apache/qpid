@@ -21,7 +21,7 @@
 #ifndef RDMA_WRAP_H
 #define RDMA_WRAP_H
 
-#include "rdma_factories.h"
+#include "qpid/sys/rdma/rdma_factories.h"
 
 #include <rdma/rdma_cma.h>
 

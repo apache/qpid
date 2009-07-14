@@ -22,7 +22,7 @@
  *
  */
 
-#include "InlineAllocator.h"
+#include "qpid/InlineAllocator.h"
 #include <vector>
 
 namespace qpid {

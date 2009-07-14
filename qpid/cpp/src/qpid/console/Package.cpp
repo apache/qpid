@@ -19,7 +19,7 @@
  *
  */
 
-#include "Package.h"
+#include "qpid/console/Package.h"
 
 using namespace qpid::console;
 

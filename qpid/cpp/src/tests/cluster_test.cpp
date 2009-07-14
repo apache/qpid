@@ -16,11 +16,11 @@
  *
  */
 
-#include "test_tools.h"
-#include "unit_test.h"
-#include "ForkedBroker.h"
-#include "BrokerFixture.h"
-#include "ClusterFixture.h"
+#include "tests/test_tools.h"
+#include "tests/unit_test.h"
+#include "tests/ForkedBroker.h"
+#include "tests/BrokerFixture.h"
+#include "tests/ClusterFixture.h"
 
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"

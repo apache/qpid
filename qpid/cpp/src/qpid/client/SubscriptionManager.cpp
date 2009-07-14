@@ -19,9 +19,9 @@
  *
  */
 
-#include "SubscriptionManager.h"
-#include "SubscriptionManagerImpl.h"
-#include "PrivateImplRef.h"
+#include "qpid/client/SubscriptionManager.h"
+#include "qpid/client/SubscriptionManagerImpl.h"
+#include "qpid/client/PrivateImplRef.h"
 
 
 namespace qpid {

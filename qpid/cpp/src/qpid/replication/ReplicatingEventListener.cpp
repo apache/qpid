@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "ReplicatingEventListener.h"
-#include "constants.h"
+#include "qpid/replication/ReplicatingEventListener.h"
+#include "qpid/replication/constants.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/QueueEvents.h"

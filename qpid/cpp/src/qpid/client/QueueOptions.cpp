@@ -19,7 +19,7 @@
  *
  */
 
-#include "QueueOptions.h"
+#include "qpid/client/QueueOptions.h"
 
 namespace qpid {
 namespace client {

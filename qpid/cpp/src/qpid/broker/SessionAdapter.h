@@ -19,10 +19,10 @@
  *
  */
 
-#include "HandlerImpl.h"
+#include "qpid/broker/HandlerImpl.h"
 
-#include "ConnectionToken.h"
-#include "OwnershipToken.h"
+#include "qpid/broker/ConnectionToken.h"
+#include "qpid/broker/OwnershipToken.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"

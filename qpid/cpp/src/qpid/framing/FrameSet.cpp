@@ -19,7 +19,7 @@
  *
  */
 
-#include "FrameSet.h"
+#include "qpid/framing/FrameSet.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/MessageProperties.h"

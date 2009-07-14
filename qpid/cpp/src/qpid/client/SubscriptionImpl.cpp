@@ -19,16 +19,16 @@
  *
  */
 
-#include "AsyncSession.h"
-#include "SubscriptionImpl.h"
-#include "SessionImpl.h"
-#include "SubscriptionManagerImpl.h"
-#include "MessageImpl.h"
-#include "CompletionImpl.h"
-#include "SubscriptionManager.h"
-#include "SubscriptionSettings.h"
-#include "SessionBase_0_10Access.h"
-#include "PrivateImplRef.h"
+#include "qpid/client/AsyncSession.h"
+#include "qpid/client/SubscriptionImpl.h"
+#include "qpid/client/SessionImpl.h"
+#include "qpid/client/SubscriptionManagerImpl.h"
+#include "qpid/client/MessageImpl.h"
+#include "qpid/client/CompletionImpl.h"
+#include "qpid/client/SubscriptionManager.h"
+#include "qpid/client/SubscriptionSettings.h"
+#include "qpid/client/SessionBase_0_10Access.h"
+#include "qpid/client/PrivateImplRef.h"
 
 namespace qpid {
 namespace client {

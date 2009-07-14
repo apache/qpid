@@ -19,7 +19,7 @@
  *
  */
 
-#include "ProtocolFactory.h"
+#include "qpid/sys/ProtocolFactory.h"
 
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"

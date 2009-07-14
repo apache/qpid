@@ -22,13 +22,13 @@
  *
  */
 
-#include "types.h"
+#include "qpid/cluster/types.h"
 #include "qpid/RefCountedBuffer.h"
 #include "qpid/framing/AMQFrame.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
 
-#include "types.h"
+#include "qpid/cluster/types.h"
 
 namespace qpid {
 

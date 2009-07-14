@@ -19,9 +19,9 @@
  *
  */
 
-#include "FutureResult.h"
+#include "qpid/client/FutureResult.h"
 
-#include "SessionImpl.h"
+#include "qpid/client/SessionImpl.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;

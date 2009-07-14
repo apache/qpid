@@ -16,7 +16,7 @@
  *
  */
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 #include "qpid/SessionState.h"
 #include "qpid/Exception.h"

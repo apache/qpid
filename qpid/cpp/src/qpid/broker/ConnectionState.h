@@ -28,7 +28,7 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/Url.h"
-#include "Broker.h"
+#include "qpid/broker/Broker.h"
 
 namespace qpid {
 namespace broker {

@@ -25,8 +25,8 @@
 #include <functional>
 #include <list>
 #include <ostream>
-#include "SequenceNumber.h"
-#include "SequenceNumberSet.h"
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceNumberSet.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {

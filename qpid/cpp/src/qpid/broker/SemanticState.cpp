@@ -19,21 +19,21 @@
  *
  */
 
-#include "SessionState.h"
-#include "Connection.h"
-#include "DeliverableMessage.h"
-#include "DtxAck.h"
-#include "DtxTimeout.h"
-#include "Message.h"
-#include "Queue.h"
-#include "SessionContext.h"
-#include "TxAccept.h"
-#include "TxPublish.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/DtxAck.h"
+#include "qpid/broker/DtxTimeout.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/SessionContext.h"
+#include "qpid/broker/TxAccept.h"
+#include "qpid/broker/TxPublish.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"
-#include "AclModule.h"
+#include "qpid/broker/AclModule.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>

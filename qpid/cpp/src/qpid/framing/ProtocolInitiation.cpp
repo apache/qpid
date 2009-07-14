@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ProtocolInitiation.h"
+#include "qpid/framing/ProtocolInitiation.h"
 
 namespace qpid {
 namespace framing {

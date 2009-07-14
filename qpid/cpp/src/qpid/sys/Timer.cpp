@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "Timer.h"
-#include "Mutex.h"
+#include "qpid/sys/Timer.h"
+#include "qpid/sys/Mutex.h"
 #include <iostream>
 #include <numeric>
 

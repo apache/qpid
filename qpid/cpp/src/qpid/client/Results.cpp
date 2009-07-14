@@ -19,8 +19,8 @@
  *
  */
 
-#include "Results.h"
-#include "FutureResult.h"
+#include "qpid/client/Results.h"
+#include "qpid/client/FutureResult.h"
 #include "qpid/framing/SequenceSet.h"
 
 using namespace qpid::framing;

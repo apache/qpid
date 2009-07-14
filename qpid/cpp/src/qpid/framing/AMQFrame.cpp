@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "AMQFrame.h"
+#include "qpid/framing/AMQFrame.h"
 
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/reply_exceptions.h"

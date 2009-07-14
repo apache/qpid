@@ -19,7 +19,7 @@
  *
  */
 
-#include "RefCountedBuffer.h"
+#include "qpid/RefCountedBuffer.h"
 #include <new>
 
 namespace qpid {

@@ -20,7 +20,7 @@
 // under the License.
 //
 
-#include "QmfAgentImportExport.h"
+#include "qpid/agent/QmfAgentImportExport.h"
 #include "qpid/management/ManagementObject.h"
 #include "qpid/management/ManagementEvent.h"
 #include "qpid/management/Manageable.h"

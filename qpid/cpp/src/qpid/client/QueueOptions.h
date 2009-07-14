@@ -19,7 +19,7 @@
  *
  */
 
-#include "ClientImportExport.h"
+#include "qpid/client/ClientImportExport.h"
 #include "qpid/framing/FieldTable.h"
 
 #ifndef _QueueOptions_

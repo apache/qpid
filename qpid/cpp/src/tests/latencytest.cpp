@@ -27,7 +27,7 @@
 #include <sstream>
 #include <vector>
 
-#include "TestOptions.h"
+#include "tests/TestOptions.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"

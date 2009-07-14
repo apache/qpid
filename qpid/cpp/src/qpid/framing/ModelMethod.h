@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "AMQMethodBody.h"
+#include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/Header.h"
 
 namespace qpid {

@@ -20,15 +20,15 @@
  *
  */
 
-#include "ConnectionHandler.h"
-#include "Connection.h"
-#include "SecureConnection.h"
+#include "qpid/broker/ConnectionHandler.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/broker/SecureConnection.h"
 #include "qpid/Url.h"
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
-#include "AclModule.h"
+#include "qpid/broker/AclModule.h"
 #include "qmf/org/apache/qpid/broker/EventClientConnectFail.h"
 
 using namespace qpid;

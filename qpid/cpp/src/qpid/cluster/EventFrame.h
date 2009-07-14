@@ -22,8 +22,8 @@
  *
  */
 
-#include "types.h"
-#include "Event.h"
+#include "qpid/cluster/types.h"
+#include "qpid/cluster/Event.h"
 #include "qpid/framing/AMQFrame.h"
 #include <boost/intrusive_ptr.hpp>
 #include <iosfwd>

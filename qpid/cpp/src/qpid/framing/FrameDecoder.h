@@ -22,7 +22,7 @@
  *
  */
 
-#include "AMQFrame.h"
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {

@@ -22,7 +22,7 @@
  *
  */
 
-#include "IOHandle.h"
+#include "qpid/sys/IOHandle.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/CommonImportExport.h"
 #include <string>

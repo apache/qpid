@@ -462,9 +462,8 @@ EOS
         buffer = "/*buffer*/"
       end
       gen <<EOS
-#include "#{classname}.h"
-
-#include "reply_exceptions.h"
+#include "qpid/framing/#{classname}.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;
 
@@ -605,7 +604,7 @@ EOS
     structs.each { |s| define_struct(s) }
     @amqp.methods_.each { |m| define_struct(m) }
     #generate a single include file containing the list of structs for convenience
-    h_file("qpid/framing/amqp_structs.h") { structs.each { |s| genl "#include \"#{s.cppname}.h\"" } }
+    h_file("qpid/framing/amqp_structs.h") { structs.each { |s| genl "#include \"qpid/framing/#{s.cppname}.h\"" } }
   end
 end
 

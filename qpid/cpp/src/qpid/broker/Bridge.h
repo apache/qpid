@@ -21,14 +21,14 @@
 #ifndef _Bridge_
 #define _Bridge_
 
-#include "PersistableConfig.h"
+#include "qpid/broker/PersistableConfig.h"
 #include "qpid/framing/AMQP_ServerProxy.h"
 #include "qpid/framing/ChannelHandler.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"
-#include "Exchange.h"
+#include "qpid/broker/Exchange.h"
 #include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
 #include "qmf/org/apache/qpid/broker/Bridge.h"
 

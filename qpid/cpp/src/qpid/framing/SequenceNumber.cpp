@@ -19,8 +19,8 @@
  *
  */
 
-#include "SequenceNumber.h"
-#include "Buffer.h"
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/Buffer.h"
 #include <ostream>
 
 using qpid::framing::SequenceNumber;

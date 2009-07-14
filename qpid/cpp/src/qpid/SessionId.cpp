@@ -19,7 +19,7 @@
  *
  */
 
-#include "SessionId.h"
+#include "qpid/SessionId.h"
 #include <sstream>
 
 namespace qpid {

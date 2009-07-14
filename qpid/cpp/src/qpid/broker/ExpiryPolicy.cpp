@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "ExpiryPolicy.h"
-#include "Message.h"
+#include "qpid/broker/ExpiryPolicy.h"
+#include "qpid/broker/Message.h"
 #include "qpid/sys/Time.h"
 
 namespace qpid {

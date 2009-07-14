@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "DtxManager.h"
-#include "DtxTimeout.h"
+#include "qpid/broker/DtxManager.h"
+#include "qpid/broker/DtxTimeout.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"

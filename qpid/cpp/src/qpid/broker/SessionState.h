@@ -28,12 +28,12 @@
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Session.h"
-#include "SessionAdapter.h"
-#include "DeliveryAdapter.h"
-#include "IncompleteMessageList.h"
-#include "MessageBuilder.h"
-#include "SessionContext.h"
-#include "SemanticState.h"
+#include "qpid/broker/SessionAdapter.h"
+#include "qpid/broker/DeliveryAdapter.h"
+#include "qpid/broker/IncompleteMessageList.h"
+#include "qpid/broker/MessageBuilder.h"
+#include "qpid/broker/SessionContext.h"
+#include "qpid/broker/SemanticState.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>

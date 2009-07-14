@@ -17,8 +17,8 @@
 // under the License.
 //
 
-#include "System.h"
-#include "Broker.h"
+#include "qpid/broker/System.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/SystemInfo.h"

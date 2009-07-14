@@ -18,15 +18,15 @@
  * under the License.
  *
  */
-#include "unit_test.h"
-#include "test_tools.h"
+#include "tests/unit_test.h"
+#include "tests/test_tools.h"
 
 #include "qpid/broker/QueuePolicy.h"
 #include "qpid/client/QueueOptions.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "MessageUtils.h"
-#include "BrokerFixture.h"
+#include "tests/MessageUtils.h"
+#include "tests/BrokerFixture.h"
 
 using namespace qpid::broker;
 using namespace qpid::client;

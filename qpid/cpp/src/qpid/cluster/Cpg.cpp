@@ -16,7 +16,7 @@
  *
  */
 
-#include "Cpg.h"
+#include "qpid/cluster/Cpg.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/posix/PrivatePosix.h"

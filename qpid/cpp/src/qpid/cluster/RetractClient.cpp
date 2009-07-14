@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "RetractClient.h"
-#include "UpdateClient.h"
+#include "qpid/cluster/RetractClient.h"
+#include "qpid/cluster/UpdateClient.h"
 #include "qpid/framing/ClusterConnectionRetractOfferBody.h"
 #include "qpid/client/ConnectionAccess.h"
 #include "qpid/client/ConnectionImpl.h"

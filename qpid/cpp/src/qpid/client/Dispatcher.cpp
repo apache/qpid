@@ -18,16 +18,16 @@
  * under the License.
  *
  */
-#include "Dispatcher.h"
-#include "SubscriptionImpl.h"
-#include "SessionImpl.h"
+#include "qpid/client/Dispatcher.h"
+#include "qpid/client/SubscriptionImpl.h"
+#include "qpid/client/SessionImpl.h"
 
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/BlockingQueue.h"
-#include "Message.h"
-#include "MessageImpl.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/MessageImpl.h"
 
 #include <boost/state_saver.hpp>
 

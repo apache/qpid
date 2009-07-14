@@ -22,7 +22,7 @@
  *
  */
 
-#include "Options.h"
+#include "qpid/Options.h"
 #include <string>
 #include <vector>
 #include "qpid/CommonImportExport.h"

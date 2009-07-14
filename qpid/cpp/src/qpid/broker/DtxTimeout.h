@@ -22,7 +22,7 @@
 #define _DtxTimeout_
 
 #include "qpid/Exception.h"
-#include "Timer.h"
+#include "qpid/broker/Timer.h"
 
 namespace qpid {
 namespace broker {

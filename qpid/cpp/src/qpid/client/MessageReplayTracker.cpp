@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "MessageReplayTracker.h"
+#include "qpid/client/MessageReplayTracker.h"
 #include <boost/bind.hpp>
 
 namespace qpid {

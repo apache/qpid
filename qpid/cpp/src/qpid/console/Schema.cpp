@@ -19,8 +19,8 @@
  *
  */
 
-#include "Schema.h"
-#include "Value.h"
+#include "qpid/console/Schema.h"
+#include "qpid/console/Value.h"
 #include "qpid/framing/FieldTable.h"
 
 using namespace qpid::console;

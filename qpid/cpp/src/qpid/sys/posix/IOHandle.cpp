@@ -21,7 +21,7 @@
 
 #include "qpid/sys/IOHandle.h"
 
-#include "PrivatePosix.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 
 namespace qpid {
 namespace sys {

@@ -21,7 +21,7 @@
 #include <iostream>
 #include "qpid/StringUtils.h"
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 QPID_AUTO_TEST_SUITE(StringUtilsTestSuite)
 

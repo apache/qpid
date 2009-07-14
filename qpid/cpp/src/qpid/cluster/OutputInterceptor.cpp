@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "OutputInterceptor.h"
-#include "Connection.h"
-#include "Cluster.h"
+#include "qpid/cluster/OutputInterceptor.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/Cluster.h"
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"

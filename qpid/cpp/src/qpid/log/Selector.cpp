@@ -16,8 +16,8 @@
  *
  */
 
-#include "Selector.h"
-#include "Options.h"
+#include "qpid/log/Selector.h"
+#include "qpid/log/Options.h"
 #include <boost/bind.hpp>
 #include <algorithm>
 #include <string.h>

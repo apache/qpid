@@ -22,9 +22,9 @@
 #define _framing_SequenceNumberSet_h
 
 #include <ostream>
-#include "amqp_types.h"
-#include "Buffer.h"
-#include "SequenceNumber.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/InlineVector.h"
 #include "qpid/CommonImportExport.h"

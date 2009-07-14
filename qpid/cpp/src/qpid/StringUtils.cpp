@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "StringUtils.h"
+#include "qpid/StringUtils.h"
 
 namespace qpid {
 

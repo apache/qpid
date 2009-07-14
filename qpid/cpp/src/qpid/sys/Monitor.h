@@ -22,7 +22,7 @@
  *
  */
 
-#include "Condition.h"
+#include "qpid/sys/Condition.h"
 
 namespace qpid {
 namespace sys {

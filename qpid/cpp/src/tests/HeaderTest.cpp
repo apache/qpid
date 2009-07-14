@@ -21,7 +21,7 @@
 #include <iostream>
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/FieldValue.h"
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 using namespace qpid::framing;
 using namespace std;

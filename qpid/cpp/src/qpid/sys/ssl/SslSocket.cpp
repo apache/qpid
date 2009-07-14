@@ -19,9 +19,9 @@
  *
  */
 
-#include "SslSocket.h"
-#include "check.h"
-#include "util.h"
+#include "qpid/sys/ssl/SslSocket.h"
+#include "qpid/sys/ssl/check.h"
+#include "qpid/sys/ssl/util.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/posix/check.h"
 #include "qpid/sys/posix/PrivatePosix.h"

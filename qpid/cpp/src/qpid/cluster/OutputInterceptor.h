@@ -22,7 +22,7 @@
  *
  */
 
-#include "NoOpConnectionOutputHandler.h"
+#include "qpid/cluster/NoOpConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/broker/ConnectionFactory.h"

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "MessageImpl.h"
+#include "qmf/MessageImpl.h"
 #include <string.h>
 
 using namespace std;

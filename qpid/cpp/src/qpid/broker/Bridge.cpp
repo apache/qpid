@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-#include "Bridge.h"
-#include "ConnectionState.h"
-#include "Connection.h"
-#include "Link.h"
-#include "LinkRegistry.h"
-#include "SessionState.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/broker/Link.h"
+#include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/SessionState.h"
 
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/framing/Uuid.h"

@@ -22,7 +22,7 @@
 #define _ConnectionAdapter_
 
 #include <memory>
-#include "SaslAuthenticator.h"
+#include "qpid/broker/SaslAuthenticator.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_AllOperations.h"
@@ -32,7 +32,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
-#include "AclModule.h"
+#include "qpid/broker/AclModule.h"
 
 namespace qpid {
 namespace broker {

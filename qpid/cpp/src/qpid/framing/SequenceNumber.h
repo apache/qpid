@@ -21,7 +21,7 @@
 #ifndef _framing_SequenceNumber_h
 #define _framing_SequenceNumber_h
 
-#include "amqp_types.h"
+#include "qpid/framing/amqp_types.h"
 #include <boost/operators.hpp>
 #include <iosfwd>
 #include "qpid/CommonImportExport.h"

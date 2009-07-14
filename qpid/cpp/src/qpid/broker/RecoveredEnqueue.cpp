@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "RecoveredEnqueue.h"
+#include "qpid/broker/RecoveredEnqueue.h"
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;

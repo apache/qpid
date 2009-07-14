@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "FailoverManager.h"
+#include "qpid/client/FailoverManager.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"

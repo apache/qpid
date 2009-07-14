@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "SaslFactory.h"
-#include "ConnectionSettings.h"
+#include "qpid/client/SaslFactory.h"
+#include "qpid/client/ConnectionSettings.h"
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"

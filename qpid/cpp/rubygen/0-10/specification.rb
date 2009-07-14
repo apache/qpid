@@ -342,8 +342,8 @@ class Specification < CppGen
     }
     
     cpp_file("#{@dir}/#{name}") {
-      include "#{name}"
-      include "exceptions.h"
+      include "#{@dir}/#{name}"
+      include "#{@dir}/exceptions.h"
       namespace(@ns) {
         genl "using framing::in_place;"
         genl

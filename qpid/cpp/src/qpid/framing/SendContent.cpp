@@ -19,7 +19,7 @@
  *
  */
 
-#include "SendContent.h"
+#include "qpid/framing/SendContent.h"
 
 qpid::framing::SendContent::SendContent(FrameHandler& h, uint16_t mfs, uint efc) : handler(h), 
                                                                                               maxFrameSize(mfs),

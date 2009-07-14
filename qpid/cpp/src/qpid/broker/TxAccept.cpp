@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "TxAccept.h"
+#include "qpid/broker/TxAccept.h"
 #include "qpid/log/Statement.h"
 
 using std::bind1st;

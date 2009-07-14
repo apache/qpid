@@ -19,7 +19,7 @@
  *
  */
 
-#include "SequenceNumberSet.h"
+#include "qpid/framing/SequenceNumberSet.h"
 
 using namespace qpid::framing;
 

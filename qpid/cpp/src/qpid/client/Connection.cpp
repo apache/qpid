@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-#include "Connection.h"
-#include "ConnectionImpl.h"
-#include "ConnectionSettings.h"
-#include "Message.h"
-#include "SessionImpl.h"
-#include "SessionBase_0_10Access.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/ConnectionSettings.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/SessionImpl.h"
+#include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"

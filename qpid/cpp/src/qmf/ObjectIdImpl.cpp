@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "ObjectIdImpl.h"
+#include "qmf/ObjectIdImpl.h"
 #include <stdlib.h>
 
 using namespace std;

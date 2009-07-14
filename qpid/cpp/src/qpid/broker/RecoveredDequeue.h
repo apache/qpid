@@ -21,11 +21,11 @@
 #ifndef _RecoveredDequeue_
 #define _RecoveredDequeue_
 
-#include "Deliverable.h"
-#include "Message.h"
-#include "MessageStore.h"
-#include "Queue.h"
-#include "TxOp.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/TxOp.h"
 
 #include <boost/intrusive_ptr.hpp>
 

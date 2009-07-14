@@ -19,8 +19,8 @@
  *
  */
 
-#include "test_tools.h"
-#include "unit_test.h"
+#include "tests/test_tools.h"
+#include "tests/unit_test.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/PollableCondition.h"
 #include "qpid/sys/Monitor.h"

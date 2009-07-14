@@ -22,7 +22,7 @@
  *
  */
 
-#include "types.h"
+#include "qpid/cluster/types.h"
 #include "qpid/framing/FrameDecoder.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/function.hpp>

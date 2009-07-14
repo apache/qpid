@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "PollerDispatch.h"
+#include "qpid/cluster/PollerDispatch.h"
 
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>

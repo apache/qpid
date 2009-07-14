@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "Connection.h"
-#include "SessionState.h"
-#include "Bridge.h"
-#include "Broker.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/Broker.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/ptr_map.h"

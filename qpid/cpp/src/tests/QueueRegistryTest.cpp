@@ -18,7 +18,7 @@
  */
 
 #include "qpid/broker/QueueRegistry.h"
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include <string>
 
 using namespace qpid::broker;

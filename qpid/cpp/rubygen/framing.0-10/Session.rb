@@ -158,7 +158,7 @@ class SessionNoKeywordGen < CppGen
       }}
 
     cpp_file(@file) { 
-      include @classname
+      include "qpid/client/#{@classname}"
       include "qpid/framing/all_method_bodies.h"
       include "qpid/client/SessionImpl.h"
       include "qpid/client/MessageImpl.h"

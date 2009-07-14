@@ -19,9 +19,9 @@
  *
  */
  
-#include "ManagementAgent.h"
-#include "ManagementObject.h"
-#include "IdAllocator.h"
+#include "qpid/management/ManagementAgent.h"
+#include "qpid/management/ManagementObject.h"
+#include "qpid/management/IdAllocator.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>

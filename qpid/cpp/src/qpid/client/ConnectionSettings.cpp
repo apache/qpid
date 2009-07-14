@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ConnectionSettings.h"
+#include "qpid/client/ConnectionSettings.h"
 
 #include "qpid/log/Logger.h"
 #include "qpid/sys/Socket.h"

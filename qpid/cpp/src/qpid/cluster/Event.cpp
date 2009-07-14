@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "types.h"
-#include "Event.h"
-#include "Cpg.h"
+#include "qpid/cluster/types.h"
+#include "qpid/cluster/Event.h"
+#include "qpid/cluster/Cpg.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/assert.h"

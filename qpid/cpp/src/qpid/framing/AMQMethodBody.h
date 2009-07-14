@@ -21,8 +21,8 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
-#include "AMQBody.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/AMQBody.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/CommonImportExport.h"
 

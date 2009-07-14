@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "QueuePolicy.h"
-#include "Queue.h"
+#include "qpid/broker/QueuePolicy.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"

@@ -21,8 +21,8 @@
 #ifndef _QPID_CONSOLE_OBJECT_H_
 #define _QPID_CONSOLE_OBJECT_H_
 
-#include "ConsoleImportExport.h"
-#include "ObjectId.h"
+#include "qpid/console/ConsoleImportExport.h"
+#include "qpid/console/ObjectId.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
 #include <boost/shared_ptr.hpp>

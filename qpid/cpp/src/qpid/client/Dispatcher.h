@@ -30,9 +30,9 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
-#include "ClientImportExport.h"
-#include "MessageListener.h"
-#include "SubscriptionImpl.h"
+#include "qpid/client/ClientImportExport.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/client/SubscriptionImpl.h"
 
 namespace qpid {
 namespace client {

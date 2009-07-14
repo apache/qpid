@@ -16,7 +16,7 @@
  *
  */
 
-#include "Uuid.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"

@@ -21,8 +21,8 @@
 #ifndef _QueueRegistry_
 #define _QueueRegistry_
 
-#include "BrokerImportExport.h"
-#include "Queue.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
 #include <boost/bind.hpp>

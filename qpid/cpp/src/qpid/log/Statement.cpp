@@ -16,8 +16,8 @@
  *
  */
 
-#include "Statement.h"
-#include "Logger.h"
+#include "qpid/log/Statement.h"
+#include "qpid/log/Logger.h"
 #include <boost/bind.hpp>
 #include <stdexcept>
 #include <algorithm>

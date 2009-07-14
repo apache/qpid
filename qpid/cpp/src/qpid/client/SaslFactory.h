@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "Sasl.h"
+#include "qpid/client/Sasl.h"
 #include "qpid/sys/Mutex.h"
 #include <memory>
 

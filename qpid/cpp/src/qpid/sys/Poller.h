@@ -22,8 +22,8 @@
  *
  */
 
-#include "Time.h"
-#include "Runnable.h"
+#include "qpid/sys/Time.h"
+#include "qpid/sys/Runnable.h"
 #include "qpid/CommonImportExport.h"
 #include <boost/shared_ptr.hpp>
 

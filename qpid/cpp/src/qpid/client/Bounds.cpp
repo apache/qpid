@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Bounds.h"
+#include "qpid/client/Bounds.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Waitable.h"

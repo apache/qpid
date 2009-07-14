@@ -20,8 +20,8 @@
  */
 
 #include "qpid/sys/Socket.h"
-#include "IoHandlePrivate.h"
-#include "check.h"
+#include "qpid/sys/windows/IoHandlePrivate.h"
+#include "qpid/sys/windows/check.h"
 #include "qpid/sys/Time.h"
 
 #include <cstdlib>

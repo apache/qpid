@@ -19,8 +19,8 @@
  *
  */
 
-#include "SessionManager.h"
-#include "SessionState.h"
+#include "qpid/broker/SessionManager.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 #include "qpid/log/Helpers.h"

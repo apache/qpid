@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "unit_test.h"
-#include "test_tools.h"
-#include "BrokerFixture.h"
+#include "tests/unit_test.h"
+#include "tests/test_tools.h"
+#include "tests/BrokerFixture.h"
 
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"

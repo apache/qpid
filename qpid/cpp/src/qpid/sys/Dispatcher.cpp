@@ -19,7 +19,7 @@
  *
  */
 
-#include "Dispatcher.h"
+#include "qpid/sys/Dispatcher.h"
 
 #include <assert.h>
 

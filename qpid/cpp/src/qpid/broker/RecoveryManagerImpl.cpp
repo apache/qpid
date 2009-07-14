@@ -18,14 +18,14 @@
  * under the License.
  *
  */
-#include "RecoveryManagerImpl.h"
+#include "qpid/broker/RecoveryManagerImpl.h"
 
-#include "Message.h"
-#include "Queue.h"
-#include "Link.h"
-#include "Bridge.h"
-#include "RecoveredEnqueue.h"
-#include "RecoveredDequeue.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/Link.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/RecoveredEnqueue.h"
+#include "qpid/broker/RecoveredDequeue.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using boost::dynamic_pointer_cast;

@@ -21,7 +21,7 @@
 
 #include "config.h"
 
-#include "XmlExchange.h"
+#include "qpid/xml/XmlExchange.h"
 
 #include "qpid/broker/DeliverableMessage.h"
 

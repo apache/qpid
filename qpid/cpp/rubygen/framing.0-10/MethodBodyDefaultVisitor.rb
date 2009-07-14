@@ -42,7 +42,7 @@ class MethodBodyDefaultVisitorGen < CppGen
 
     cpp_file(@filename) {
       include(@filename)
-      include("all_method_bodies.h")
+      include("qpid/framing/all_method_bodies.h")
       namespace(@namespace) {
         @amqp.methods_.each { |m|
           genl "void #{@classname}::visit(const #{m.body_name}& b) { defaultVisit(b); }"

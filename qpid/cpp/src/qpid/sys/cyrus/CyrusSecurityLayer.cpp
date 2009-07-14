@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "CyrusSecurityLayer.h"
+#include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 #include <algorithm>
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"

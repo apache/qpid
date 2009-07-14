@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "rdma_factories.h"
+#include "qpid/sys/rdma/rdma_factories.h"
 
 namespace Rdma {
     void acker(::rdma_cm_event* e) throw () {

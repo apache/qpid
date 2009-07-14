@@ -19,7 +19,7 @@
  */
 
 
-#include "SessionHandler.h"
+#include "qpid/amqp_0_10/SessionHandler.h"
 #include "qpid/SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/AllInvoker.h"

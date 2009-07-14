@@ -22,7 +22,7 @@
  *
  */
 
-#include "BrokerImportExport.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/Address.h"
 #include "qpid/Url.h"
 

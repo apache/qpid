@@ -22,7 +22,7 @@
 #define _ConnectionOutputHandler_
 
 #include "qpid/framing/OutputHandler.h"
-#include "OutputControl.h"
+#include "qpid/sys/OutputControl.h"
 
 namespace qpid {
 namespace sys {

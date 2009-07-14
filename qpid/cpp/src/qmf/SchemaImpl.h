@@ -20,7 +20,7 @@
  * under the License.
  */
 
-#include "Schema.h"
+#include "qmf/Schema.h"
 #include <string>
 #include <vector>
 #include <qpid/framing/Buffer.h>

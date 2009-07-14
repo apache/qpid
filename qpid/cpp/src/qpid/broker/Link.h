@@ -23,10 +23,10 @@
  */
 
 #include <boost/shared_ptr.hpp>
-#include "MessageStore.h"
-#include "PersistableConfig.h"
-#include "Bridge.h"
-#include "RetryList.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/PersistableConfig.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/RetryList.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/management/Manageable.h"

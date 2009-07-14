@@ -23,7 +23,7 @@
 #  include "config.h"
 #endif
 
-#include "Connection.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <boost/format.hpp>

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "AMQHeaderBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 

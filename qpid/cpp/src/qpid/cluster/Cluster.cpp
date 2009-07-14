@@ -84,13 +84,13 @@
  *  - Connection control events carrying non-cluster frames: frames sent to the client.
  *    e.g. flow-control frames generated on a timer.
  */
-#include "Cluster.h"
-#include "ClusterSettings.h"
-#include "Connection.h"
-#include "UpdateClient.h"
-#include "RetractClient.h"
-#include "FailoverExchange.h"
-#include "UpdateExchange.h"
+#include "qpid/cluster/Cluster.h"
+#include "qpid/cluster/ClusterSettings.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/UpdateClient.h"
+#include "qpid/cluster/RetractClient.h"
+#include "qpid/cluster/FailoverExchange.h"
+#include "qpid/cluster/UpdateExchange.h"
 
 #include "qpid/assert.h"
 #include "qmf/org/apache/qpid/cluster/ArgsClusterStopClusterNode.h"

@@ -19,10 +19,10 @@
  *
  */
 
-#include "Subscription.h"
-#include "SubscriptionImpl.h"
-#include "CompletionImpl.h"
-#include "PrivateImplRef.h"
+#include "qpid/client/Subscription.h"
+#include "qpid/client/SubscriptionImpl.h"
+#include "qpid/client/CompletionImpl.h"
+#include "qpid/client/PrivateImplRef.h"
 #include "qpid/framing/enum.h"
 
 namespace qpid {

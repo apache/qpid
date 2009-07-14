@@ -22,8 +22,8 @@
  *
  */
 
-#include "ClientImportExport.h"
-#include "Handle.h"
+#include "qpid/client/ClientImportExport.h"
+#include "qpid/client/Handle.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Subscription.h"
 #include "qpid/client/Demux.h"

@@ -21,7 +21,7 @@
 #ifndef _IncompleteMessageList_
 #define _IncompleteMessageList_
 
-#include "BrokerImportExport.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/broker/Message.h"
 #include <boost/intrusive_ptr.hpp>

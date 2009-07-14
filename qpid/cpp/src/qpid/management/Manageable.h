@@ -20,8 +20,8 @@
 // under the License.
 //
 
-#include "ManagementObject.h"
-#include "Args.h"
+#include "qpid/management/ManagementObject.h"
+#include "qpid/management/Args.h"
 #include <string>
 #include "qpid/CommonImportExport.h"
 

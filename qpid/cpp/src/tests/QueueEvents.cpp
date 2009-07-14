@@ -19,9 +19,9 @@
  *
  */
 
-#include "MessageUtils.h"
-#include "unit_test.h"
-#include "BrokerFixture.h"
+#include "tests/MessageUtils.h"
+#include "tests/unit_test.h"
+#include "tests/BrokerFixture.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueEvents.h"

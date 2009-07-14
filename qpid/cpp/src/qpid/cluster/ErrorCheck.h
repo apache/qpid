@@ -22,8 +22,8 @@
  *
  */
 
-#include "types.h"
-#include "Multicaster.h"
+#include "qpid/cluster/types.h"
+#include "qpid/cluster/Multicaster.h"
 #include "qpid/framing/enum.h"
 #include <boost/function.hpp>
 #include <deque>

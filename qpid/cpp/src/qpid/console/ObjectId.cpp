@@ -19,7 +19,7 @@
  *
  */
 
-#include "ObjectId.h"
+#include "qpid/console/ObjectId.h"
 #include "qpid/framing/Buffer.h"
 
 using namespace qpid::console;

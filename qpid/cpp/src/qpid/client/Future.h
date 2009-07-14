@@ -26,9 +26,9 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/Exception.h"
 #include "qpid/framing/SequenceNumber.h"
-#include "FutureCompletion.h"
-#include "FutureResult.h"
-#include "ClientImportExport.h"
+#include "qpid/client/FutureCompletion.h"
+#include "qpid/client/FutureResult.h"
+#include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
 namespace client {

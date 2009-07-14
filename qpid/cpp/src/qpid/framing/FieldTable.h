@@ -22,7 +22,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <map>
-#include "amqp_types.h"
+#include "qpid/framing/amqp_types.h"
 #include "qpid/CommonImportExport.h"
 
 #ifndef _FieldTable_

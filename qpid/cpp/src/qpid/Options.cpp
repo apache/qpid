@@ -16,7 +16,7 @@
  *
  */
 
-#include "Options.h"
+#include "qpid/Options.h"
 #include "qpid/Exception.h"
 
 #include <boost/bind.hpp>

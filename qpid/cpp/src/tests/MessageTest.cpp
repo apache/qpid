@@ -26,7 +26,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/alloca.h"
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 #include <iostream>
 

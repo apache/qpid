@@ -164,7 +164,7 @@ EOS
     h_file("#{@dir}/reply_exceptions") {
       include "qpid/Exception"
       include "qpid/sys/ExceptionHolder"
-      include "enum"
+      include "qpid/framing/enum"
       include "qpid/CommonImportExport.h"
       namespace(@namespace) {
         declare_exceptions("execution", "error-code", "SessionException")

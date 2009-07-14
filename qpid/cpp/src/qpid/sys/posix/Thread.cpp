@@ -22,7 +22,7 @@
 #include "qpid/sys/Thread.h"
 
 #include "qpid/sys/Runnable.h"
-#include "check.h"
+#include "qpid/sys/posix/check.h"
 
 #include <pthread.h>
 

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "RetryList.h"
+#include "qpid/broker/RetryList.h"
 
 namespace qpid {
 namespace broker {

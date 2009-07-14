@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "SessionManager.h"
-#include "Schema.h"
-#include "Agent.h"
+#include "qpid/console/SessionManager.h"
+#include "qpid/console/Schema.h"
+#include "qpid/console/Agent.h"
 #include "qpid/console/ConsoleListener.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"

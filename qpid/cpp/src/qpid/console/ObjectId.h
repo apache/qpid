@@ -22,7 +22,7 @@
 #define _QPID_CONSOLE_OBJECTID_H
 
 #include <iostream>
-#include "ConsoleImportExport.h"
+#include "qpid/console/ConsoleImportExport.h"
 #include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {

@@ -21,12 +21,12 @@
 #ifndef _RecoveryManager_
 #define _RecoveryManager_
 
-#include "RecoverableExchange.h"
-#include "RecoverableQueue.h"
-#include "RecoverableMessage.h"
-#include "RecoverableTransaction.h"
-#include "RecoverableConfig.h"
-#include "TransactionalStore.h"
+#include "qpid/broker/RecoverableExchange.h"
+#include "qpid/broker/RecoverableQueue.h"
+#include "qpid/broker/RecoverableMessage.h"
+#include "qpid/broker/RecoverableTransaction.h"
+#include "qpid/broker/RecoverableConfig.h"
+#include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/Buffer.h"
 
 namespace qpid {

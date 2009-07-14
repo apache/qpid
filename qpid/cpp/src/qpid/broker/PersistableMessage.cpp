@@ -20,8 +20,8 @@
  */
 
 
-#include "PersistableMessage.h"
-#include "MessageStore.h"
+#include "qpid/broker/PersistableMessage.h"
+#include "qpid/broker/MessageStore.h"
 #include <iostream>
 
 using namespace qpid::broker;
