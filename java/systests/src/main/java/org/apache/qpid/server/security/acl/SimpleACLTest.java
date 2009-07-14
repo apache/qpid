@@ -621,6 +621,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 
             if (!(cause instanceof AMQAuthenticationException))
             {
+                cause.printStackTrace(System.out);
                 assertEquals("Incorrect exception", IllegalStateException.class, cause.getClass());
                 System.out.println("QPID-1204 : Session became closed and we got that error rather than the authentication error.");
             }

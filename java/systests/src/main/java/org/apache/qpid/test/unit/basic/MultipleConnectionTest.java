@@ -126,7 +126,7 @@ public class MultipleConnectionTest extends QpidTestCase
             while (expected > _count)
             {
                 long timeLeft = maxWait - timeSince(start);
-                if (timeLeft < 0)
+                if (timeLeft <= 0)
                 {
                     break;
                 }
