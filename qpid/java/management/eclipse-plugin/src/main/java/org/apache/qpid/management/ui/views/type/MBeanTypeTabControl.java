@@ -104,9 +104,9 @@ public abstract class MBeanTypeTabControl extends TabControl
     public void refresh(ManagedBean mbean)
     {
         _mbeans = getMbeans();
-        _form.setVisible(false);
+        
         _tableViewer.setInput(_mbeans);
-        _form.setVisible(true);
+
         layout();
     }
     

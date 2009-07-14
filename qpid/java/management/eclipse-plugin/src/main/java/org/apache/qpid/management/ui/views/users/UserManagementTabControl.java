@@ -113,13 +113,7 @@ public class UserManagementTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;
-        if (_mbean == null)
-        {
-            _tableViewer.setInput(null);
-            return;
-        }
-        
+        _userDetails = null;
         try
         {
             _userDetails = (TabularDataSupport) _ummb.viewUsers();
@@ -127,12 +121,11 @@ public class UserManagementTabControl extends TabControl
         catch(Exception e)
         {
             MBeanUtility.handleException(_mbean, e);
-            _userDetails = null;
+            
         }
 
-        _form.setVisible(false);
         _tableViewer.setInput(_userDetails);
-        _form.setVisible(true);
+        
         layout();
     }
     

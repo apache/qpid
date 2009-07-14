@@ -131,13 +131,6 @@ public class QueueOperationsTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;  
-        if (_mbean == null)
-        {
-            _tableViewer.setInput(null);
-            return;
-        }
-        
         _messages = null;
         try
         {
@@ -154,9 +147,8 @@ public class QueueOperationsTabControl extends TabControl
             MBeanUtility.handleException(mbean,e);
         }
         
-        _form.setVisible(false);
         _tableViewer.setInput(_messages);
-        _form.setVisible(true);
+
         layout();
     }
     

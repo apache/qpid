@@ -117,13 +117,6 @@ public class ConnectionOperationsTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;  
-        if (_mbean == null)
-        {
-            _tableViewer.setInput(null);
-            return;
-        }
-        
         _channels = null;
         try
         {
@@ -135,9 +128,8 @@ public class ConnectionOperationsTabControl extends TabControl
             MBeanUtility.handleException(mbean,e);
         }
         
-        _form.setVisible(false);
         _tableViewer.setInput(_channels);
-        _form.setVisible(true);
+
         layout();
     }
     

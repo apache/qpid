@@ -123,13 +123,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;  
-        if (_mbean == null)
-        {
-            _bindingNumberTableViewer.setInput(null);
-            return;
-        }
-        
+
         _bindings = null;
         try
         {
@@ -141,9 +135,8 @@ public class HeadersExchangeOperationsTabControl extends TabControl
             MBeanUtility.handleException(mbean,e);
         }
 
-        _form.setVisible(false);
         _bindingNumberTableViewer.setInput(_bindings);
-        _form.setVisible(true);
+
         layout();
     }
     

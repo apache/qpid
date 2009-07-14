@@ -122,13 +122,6 @@ public class ExchangeOperationsTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;  
-        if (_mbean == null)
-        {
-            _keysTableViewer.setInput(null);
-            return;
-        }
-        
         _bindings = null;
         try
         {
@@ -140,9 +133,8 @@ public class ExchangeOperationsTabControl extends TabControl
             MBeanUtility.handleException(mbean,e);
         }
 
-        _form.setVisible(false);
         _keysTableViewer.setInput(_bindings);
-        _form.setVisible(true);
+
         layout();
     }
     
