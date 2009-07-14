@@ -16,9 +16,9 @@
  *
  */
 
-#include "Options.h"
-#include "SinkOptions.h"
-#include "Statement.h"
+#include "qpid/log/Options.h"
+#include "qpid/log/SinkOptions.h"
+#include "qpid/log/Statement.h"
 #include "qpid/Options.h"
 #include <map>
 #include <string>

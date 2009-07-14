@@ -24,7 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FieldTable.h"
-#include "ObjectId.h"
+#include "qpid/console/ObjectId.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {

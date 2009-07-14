@@ -19,8 +19,8 @@
  *
  */
 
-#include "SslIo.h"
-#include "SslSocket.h"
+#include "qpid/sys/ssl/SslIo.h"
+#include "qpid/sys/ssl/SslSocket.h"
 
 #include "qpid/sys/Time.h"
 #include "qpid/sys/posix/check.h"

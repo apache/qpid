@@ -19,8 +19,8 @@
  *
  */
 
-#include "Message.h"
-#include "MessageImpl.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/MessageImpl.h"
 
 namespace qpid {
 namespace client {

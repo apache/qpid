@@ -24,8 +24,8 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "RecoverableMessage.h"
-#include "RecoverableQueue.h"
+#include "qpid/broker/RecoverableMessage.h"
+#include "qpid/broker/RecoverableQueue.h"
 
 namespace qpid {
 namespace broker {

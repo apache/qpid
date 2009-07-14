@@ -22,7 +22,7 @@
  *
  */
 
-#include "APRPool.h"
+#include "qpid/sys/apr/APRPool.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"
 

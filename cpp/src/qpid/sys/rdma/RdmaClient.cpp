@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "RdmaIO.h"
+#include "qpid/sys/rdma/RdmaIO.h"
 #include "qpid/sys/Time.h"
 
 #include <netdb.h>

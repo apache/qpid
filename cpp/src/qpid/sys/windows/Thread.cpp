@@ -21,7 +21,7 @@
 
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
-#include "check.h"
+#include "qpid/sys/windows/check.h"
 
 #include <process.h>
 #include <windows.h>

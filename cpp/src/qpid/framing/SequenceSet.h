@@ -21,7 +21,7 @@
 #ifndef _framing_SequenceSet_h
 #define _framing_SequenceSet_h
 
-#include "SequenceNumber.h"
+#include "qpid/framing/SequenceNumber.h"
 #include "qpid/RangeSet.h"
 #include "qpid/CommonImportExport.h"
 

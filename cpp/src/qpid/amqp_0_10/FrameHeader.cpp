@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "FrameHeader.h"
+#include "qpid/amqp_0_10/FrameHeader.h"
 #include <ios>
 #include <iomanip>
 #include <ostream>

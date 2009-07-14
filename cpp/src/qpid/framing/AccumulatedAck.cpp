@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "AccumulatedAck.h"
+#include "qpid/framing/AccumulatedAck.h"
 
 #include <assert.h>
 #include <iostream>

@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "EventFrame.h"
-#include "Connection.h"
+#include "qpid/cluster/EventFrame.h"
+#include "qpid/cluster/Connection.h"
 
 namespace qpid {
 namespace cluster {

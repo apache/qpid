@@ -20,7 +20,7 @@
 
 #include "qpid/sys/SystemInfo.h"
 
-#include "check.h"
+#include "qpid/sys/posix/check.h"
 
 #include <sys/ioctl.h>
 #include <sys/utsname.h>

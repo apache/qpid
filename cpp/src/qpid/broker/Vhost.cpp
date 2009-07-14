@@ -17,8 +17,8 @@
 // under the License.
 //
 
-#include "Vhost.h"
-#include "Broker.h"
+#include "qpid/broker/Vhost.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 
 using namespace qpid::broker;

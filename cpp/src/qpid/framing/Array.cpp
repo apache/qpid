@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "Array.h"
-#include "Buffer.h"
-#include "FieldValue.h"
+#include "qpid/framing/Array.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <assert.h>

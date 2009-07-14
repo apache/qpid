@@ -23,12 +23,12 @@
 
 #include <map>
 #include <vector>
-#include "BrokerImportExport.h"
-#include "Exchange.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/CopyOnWriteArray.h"
 #include "qpid/sys/Mutex.h"
-#include "Queue.h"
+#include "qpid/broker/Queue.h"
 
 namespace qpid {
 namespace broker {

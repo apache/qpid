@@ -22,9 +22,9 @@
 #ifndef _SessionImpl_
 #define _SessionImpl_
 
-#include "Demux.h"
-#include "Execution.h"
-#include "Results.h"
+#include "qpid/client/Demux.h"
+#include "qpid/client/Execution.h"
+#include "qpid/client/Results.h"
 
 #include "qpid/SessionId.h"
 #include "qpid/SessionState.h"

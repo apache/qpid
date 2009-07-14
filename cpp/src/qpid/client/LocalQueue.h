@@ -22,9 +22,9 @@
  *
  */
 
-#include "ClientImportExport.h"
-#include "Handle.h"
-#include "Message.h"
+#include "qpid/client/ClientImportExport.h"
+#include "qpid/client/Handle.h"
+#include "qpid/client/Message.h"
 #include "qpid/sys/Time.h"
 
 namespace qpid {

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "FanOutExchange.h"
+#include "qpid/broker/FanOutExchange.h"
 #include <algorithm>
 
 using namespace qpid::broker;

@@ -22,8 +22,8 @@
  *
  */
 
-#include "Poller.h"
-#include "Mutex.h"
+#include "qpid/sys/Poller.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/CommonImportExport.h"
 #include <boost/function.hpp>
 

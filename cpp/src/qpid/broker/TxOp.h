@@ -21,8 +21,8 @@
 #ifndef _TxOp_
 #define _TxOp_
 
-#include "TxOpVisitor.h"
-#include "TransactionalStore.h"
+#include "qpid/broker/TxOpVisitor.h"
+#include "qpid/broker/TransactionalStore.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {

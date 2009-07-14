@@ -19,8 +19,8 @@
  *
  */
 
-#include "Future.h"
-#include "SessionImpl.h"
+#include "qpid/client/Future.h"
+#include "qpid/client/SessionImpl.h"
 
 namespace qpid {
 namespace client {

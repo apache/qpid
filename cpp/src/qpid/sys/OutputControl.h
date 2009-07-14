@@ -19,7 +19,7 @@
  *
  */
 
-#include "IntegerTypes.h"
+#include "qpid/sys/IntegerTypes.h"
 
 #ifndef _OutputControl_
 #define _OutputControl_

@@ -26,7 +26,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/log/Statement.h"
 
-#include "check.h"
+#include "qpid/sys/posix/check.h"
 
 // TODO The basic algorithm here is not really POSIX specific and with a
 // bit more abstraction could (should) be promoted to be platform portable

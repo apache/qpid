@@ -19,11 +19,11 @@
  *
  */
 
-#include "SubscriptionManager.h"
-#include "SubscriptionManagerImpl.h"
-#include "SubscriptionImpl.h"
-#include "LocalQueueImpl.h"
-#include "PrivateImplRef.h"
+#include "qpid/client/SubscriptionManager.h"
+#include "qpid/client/SubscriptionManagerImpl.h"
+#include "qpid/client/SubscriptionImpl.h"
+#include "qpid/client/LocalQueueImpl.h"
+#include "qpid/client/PrivateImplRef.h"
 #include <qpid/client/Dispatcher.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>

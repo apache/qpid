@@ -22,11 +22,11 @@
 #define _QPID_CONSOLE_CONSOLE_LISTENER_H_
 
 #include <string>
-#include "ConsoleImportExport.h"
-#include "Broker.h"
-#include "ClassKey.h"
-#include "Object.h"
-#include "Event.h"
+#include "qpid/console/ConsoleImportExport.h"
+#include "qpid/console/Broker.h"
+#include "qpid/console/ClassKey.h"
+#include "qpid/console/Object.h"
+#include "qpid/console/Event.h"
 
 namespace qpid {
 namespace console {

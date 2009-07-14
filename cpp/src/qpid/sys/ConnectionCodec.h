@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "Codec.h"
+#include "qpid/sys/Codec.h"
 #include "qpid/framing/ProtocolVersion.h"
 
 namespace qpid {

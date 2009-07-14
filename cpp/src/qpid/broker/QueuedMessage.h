@@ -21,7 +21,7 @@
 #ifndef _QueuedMessage_
 #define _QueuedMessage_
 
-#include "Message.h"
+#include "qpid/broker/Message.h"
 
 namespace qpid {
 namespace broker {

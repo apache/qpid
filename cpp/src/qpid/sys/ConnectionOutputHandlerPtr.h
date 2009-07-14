@@ -22,7 +22,7 @@
  *
  */
 
-#include "ConnectionOutputHandler.h"
+#include "qpid/sys/ConnectionOutputHandler.h"
 
 namespace qpid {
 namespace sys {

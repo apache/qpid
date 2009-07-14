@@ -19,8 +19,8 @@
  *
  */
 
-#include "unit_test.h"
-#include "allSegmentTypes.h"
+#include "tests/amqp_0_10/unit_test.h"
+#include "tests/amqp_0_10/allSegmentTypes.h"
 
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/Buffer.h"

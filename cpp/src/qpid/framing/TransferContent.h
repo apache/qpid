@@ -21,8 +21,8 @@
 #ifndef _TransferContent_
 #define _TransferContent_
 
-#include "FrameSet.h"
-#include "MethodContent.h"
+#include "qpid/framing/FrameSet.h"
+#include "qpid/framing/MethodContent.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/DeliveryProperties.h"

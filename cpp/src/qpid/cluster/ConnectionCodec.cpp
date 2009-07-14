@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "ConnectionCodec.h"
-#include "Connection.h"
-#include "Cluster.h"
-#include "ProxyInputHandler.h"
+#include "qpid/cluster/ConnectionCodec.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/Cluster.h"
+#include "qpid/cluster/ProxyInputHandler.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/framing/ConnectionCloseBody.h"
 #include "qpid/framing/ConnectionCloseOkBody.h"

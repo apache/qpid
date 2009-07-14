@@ -21,10 +21,10 @@
  *
  */
 
-#include "OutputControl.h"
-#include "ConnectionCodec.h"
-#include "AtomicValue.h"
-#include "Mutex.h"
+#include "qpid/sys/OutputControl.h"
+#include "qpid/sys/ConnectionCodec.h"
+#include "qpid/sys/AtomicValue.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {

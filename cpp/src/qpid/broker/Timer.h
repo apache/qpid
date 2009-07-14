@@ -21,7 +21,7 @@
 #ifndef _Timer_
 #define _Timer_
 
-#include "BrokerImportExport.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"

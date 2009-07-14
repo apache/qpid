@@ -19,7 +19,7 @@
  *
  */
 
-#include "unit_test.h"
+#include "tests/amqp_0_10/unit_test.h"
 #include "qpid/Exception.h"
 #include "qpid/amqp_0_10/Unit.h"
 #include "qpid/amqp_0_10/ControlHolder.h"

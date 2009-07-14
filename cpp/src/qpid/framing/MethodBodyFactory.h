@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
+#include "qpid/framing/amqp_types.h"
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {

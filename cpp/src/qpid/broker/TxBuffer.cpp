@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "TxBuffer.h"
+#include "qpid/broker/TxBuffer.h"
 #include "qpid/log/Statement.h"
 
 #include <boost/mem_fn.hpp>

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Connection.h"
+#include "qpid/amqp_0_10/Connection.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/exceptions.h"
 #include "qpid/framing/AMQFrame.h"

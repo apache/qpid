@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "SchemaImpl.h"
+#include "qmf/SchemaImpl.h"
 #include <qpid/framing/Buffer.h>
 #include <qpid/framing/FieldTable.h>
 #include <string>

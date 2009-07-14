@@ -22,7 +22,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/PipeHandle.h"
-#include "ManagementAgentImpl.h"
+#include "qpid/agent/ManagementAgentImpl.h"
 #include <list>
 #include <string.h>
 #include <stdlib.h>

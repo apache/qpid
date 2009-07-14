@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Map.h"
+#include "qpid/amqp_0_10/Map.h"
 #include "qpid/amqp_0_10/Struct32.h"
 #include "qpid/amqp_0_10/Array.h"
 #include <ostream>

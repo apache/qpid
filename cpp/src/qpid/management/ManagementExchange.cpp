@@ -19,7 +19,7 @@
  *
  */
 
-#include "ManagementExchange.h"
+#include "qpid/management/ManagementExchange.h"
 #include "qpid/log/Statement.h"
 
 using namespace qpid::management;

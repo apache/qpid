@@ -19,17 +19,17 @@
  *
  */
 
-#include "Link.h"
-#include "LinkRegistry.h"
-#include "Broker.h"
-#include "Connection.h"
+#include "qpid/broker/Link.h"
+#include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
 #include "qmf/org/apache/qpid/broker/EventBrokerLinkUp.h"
 #include "qmf/org/apache/qpid/broker/EventBrokerLinkDown.h"
 #include "boost/bind.hpp"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "AclModule.h"
+#include "qpid/broker/AclModule.h"
 
 using namespace qpid::broker;
 using qpid::framing::Buffer;

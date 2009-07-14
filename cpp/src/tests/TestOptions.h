@@ -26,7 +26,7 @@
 #include "qpid/Url.h"
 #include "qpid/log/Logger.h"
 #include "qpid/client/Connection.h"
-#include "ConnectionOptions.h"
+#include "tests/ConnectionOptions.h"
 
 #include <iostream>
 #include <exception>

@@ -19,7 +19,7 @@
  *
  */
 
-#include "PrivatePosix.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 
 #include "qpid/sys/Time.h"
 #include <ostream>

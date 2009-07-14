@@ -19,9 +19,9 @@
  *
  */
 
-#include "Completion.h"
-#include "CompletionImpl.h"
-#include "PrivateImplRef.h"
+#include "qpid/client/Completion.h"
+#include "qpid/client/CompletionImpl.h"
+#include "qpid/client/PrivateImplRef.h"
 
 namespace qpid {
 namespace client {

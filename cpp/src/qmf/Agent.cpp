@@ -17,14 +17,14 @@
  * under the License.
  */
 
-#include "Agent.h"
-#include "MessageImpl.h"
-#include "SchemaImpl.h"
-#include "Typecode.h"
-#include "ObjectImpl.h"
-#include "ObjectIdImpl.h"
-#include "QueryImpl.h"
-#include "ValueImpl.h"
+#include "qmf/Agent.h"
+#include "qmf/MessageImpl.h"
+#include "qmf/SchemaImpl.h"
+#include "qmf/Typecode.h"
+#include "qmf/ObjectImpl.h"
+#include "qmf/ObjectIdImpl.h"
+#include "qmf/QueryImpl.h"
+#include "qmf/ValueImpl.h"
 #include <qpid/framing/Buffer.h>
 #include <qpid/framing/Uuid.h>
 #include <qpid/framing/FieldTable.h>

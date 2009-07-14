@@ -19,13 +19,13 @@
  *
  */
 
-#include "Exchange.h"
-#include "ExchangeRegistry.h"
-#include "Broker.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/MessageProperties.h"
-#include "DeliverableMessage.h"
+#include "qpid/broker/DeliverableMessage.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;

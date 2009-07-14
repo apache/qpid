@@ -27,11 +27,11 @@
 #include <vector>
 #include <ostream>
 #include "qpid/framing/SequenceSet.h"
-#include "BrokerImportExport.h"
-#include "Queue.h"
-#include "QueuedMessage.h"
-#include "DeliveryId.h"
-#include "Message.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/DeliveryId.h"
+#include "qpid/broker/Message.h"
 
 namespace qpid {
 namespace broker {

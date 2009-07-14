@@ -19,8 +19,8 @@
  *
  */
 
-#include "SequenceSet.h"
-#include "Buffer.h"
+#include "qpid/framing/SequenceSet.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;

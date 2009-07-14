@@ -23,7 +23,7 @@
  */
 
 #include "qpid/RefCounted.h"
-#include "BrokerImportExport.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
 namespace broker {

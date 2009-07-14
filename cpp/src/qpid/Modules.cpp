@@ -19,8 +19,8 @@
  *
  */
 
-#include "Modules.h"
-#include "Exception.h"
+#include "qpid/Modules.h"
+#include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Shlib.h"
 

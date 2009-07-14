@@ -21,8 +21,8 @@
 #ifndef _DtxBuffer_
 #define _DtxBuffer_
 
-#include "BrokerImportExport.h"
-#include "TxBuffer.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/TxBuffer.h"
 #include "qpid/sys/Mutex.h"
 
 namespace qpid {

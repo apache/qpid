@@ -19,8 +19,8 @@
  *
  */
 
-#include "MessageStoreModule.h"
-#include "NullMessageStore.h"
+#include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/NullMessageStore.h"
 #include <iostream>
 
 // This transfer protects against the unloading of the store lib prior to the handling of the exception

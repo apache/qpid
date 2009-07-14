@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "SecureConnection.h"
+#include "qpid/broker/SecureConnection.h"
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/framing/reply_exceptions.h"
 

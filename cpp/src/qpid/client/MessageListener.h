@@ -24,7 +24,7 @@
 #ifndef _MessageListener_
 #define _MessageListener_
 
-#include "Message.h"
+#include "qpid/client/Message.h"
 
 namespace qpid {
 namespace client {

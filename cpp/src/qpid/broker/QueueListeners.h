@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "Consumer.h"
+#include "qpid/broker/Consumer.h"
 #include <vector>
 
 namespace qpid {

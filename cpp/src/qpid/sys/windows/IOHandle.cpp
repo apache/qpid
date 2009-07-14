@@ -20,7 +20,7 @@
  */
 
 #include "qpid/sys/IOHandle.h"
-#include "IoHandlePrivate.h"
+#include "qpid/sys/windows/IoHandlePrivate.h"
 #include <windows.h>
 
 namespace qpid {

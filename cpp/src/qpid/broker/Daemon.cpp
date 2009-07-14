@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "Daemon.h"
+#include "qpid/broker/Daemon.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/LockFile.h"

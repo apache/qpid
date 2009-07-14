@@ -17,8 +17,8 @@
  */
 
 
-#include "unit_test.h"
-#include "test_tools.h"
+#include "tests/unit_test.h"
+#include "tests/test_tools.h"
 #include "qpid/broker/RetryList.h"
 
 using namespace qpid;

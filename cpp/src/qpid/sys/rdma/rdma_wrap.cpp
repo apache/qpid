@@ -19,7 +19,7 @@
  *
  */
 
-#include "rdma_wrap.h"
+#include "qpid/sys/rdma/rdma_wrap.h"
 
 namespace Rdma {
     const ::rdma_conn_param DEFAULT_CONNECT_PARAM = {

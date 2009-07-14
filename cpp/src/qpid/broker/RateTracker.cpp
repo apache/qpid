@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "RateTracker.h"
+#include "qpid/broker/RateTracker.h"
 
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;

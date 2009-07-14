@@ -21,10 +21,10 @@
 #ifndef _ConnectionHandler_
 #define _ConnectionHandler_
 
-#include "ChainableFrameHandler.h"
-#include "ConnectionSettings.h"
-#include "Sasl.h"
-#include "StateManager.h"
+#include "qpid/client/ChainableFrameHandler.h"
+#include "qpid/client/ConnectionSettings.h"
+#include "qpid/client/Sasl.h"
+#include "qpid/client/StateManager.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/AMQP_ClientOperations.h"

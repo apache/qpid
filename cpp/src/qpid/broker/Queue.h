@@ -22,15 +22,15 @@
  *
  */
 
-#include "BrokerImportExport.h"
-#include "OwnershipToken.h"
-#include "Consumer.h"
-#include "Message.h"
-#include "PersistableQueue.h"
-#include "QueuePolicy.h"
-#include "QueueBindings.h"
-#include "QueueListeners.h"
-#include "RateTracker.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/OwnershipToken.h"
+#include "qpid/broker/Consumer.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/PersistableQueue.h"
+#include "qpid/broker/QueuePolicy.h"
+#include "qpid/broker/QueueBindings.h"
+#include "qpid/broker/QueueListeners.h"
+#include "qpid/broker/RateTracker.h"
 
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"

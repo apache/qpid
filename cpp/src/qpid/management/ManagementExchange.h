@@ -22,7 +22,7 @@
 #define _ManagementExchange_
 
 #include "qpid/broker/TopicExchange.h"
-#include "ManagementAgent.h"
+#include "qpid/management/ManagementAgent.h"
 
 namespace qpid {
 namespace broker {

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "TopicExchange.h"
+#include "qpid/broker/TopicExchange.h"
 #include <algorithm>
 
 

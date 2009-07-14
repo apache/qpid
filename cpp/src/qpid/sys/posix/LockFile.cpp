@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "check.h"
+#include "qpid/sys/posix/check.h"
 
 namespace qpid {
 namespace sys {

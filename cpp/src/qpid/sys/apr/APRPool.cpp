@@ -19,8 +19,8 @@
  *
  */
 
-#include "APRPool.h"
-#include "APRBase.h"
+#include "qpid/sys/apr/APRPool.h"
+#include "qpid/sys/apr/APRBase.h"
 #include <boost/pool/detail/singleton.hpp>
 
 using namespace qpid::sys;

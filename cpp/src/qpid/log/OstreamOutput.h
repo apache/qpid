@@ -12,7 +12,7 @@
  *
  */
 
-#include "Logger.h"
+#include "qpid/log/Logger.h"
 #include <boost/scoped_ptr.hpp>
 #include <fstream>
 #include <ostream>

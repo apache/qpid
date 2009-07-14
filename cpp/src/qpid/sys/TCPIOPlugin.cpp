@@ -19,9 +19,9 @@
  *
  */
 
-#include "ProtocolFactory.h"
-#include "AsynchIOHandler.h"
-#include "AsynchIO.h"
+#include "qpid/sys/ProtocolFactory.h"
+#include "qpid/sys/AsynchIOHandler.h"
+#include "qpid/sys/AsynchIO.h"
 
 #include "qpid/Plugin.h"
 #include "qpid/sys/Socket.h"

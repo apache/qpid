@@ -26,8 +26,8 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/OutputControl.h"
-#include "ConnectionState.h"
-#include "OwnershipToken.h"
+#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/OwnershipToken.h"
 
 
 #include <boost/noncopyable.hpp>

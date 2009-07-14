@@ -18,7 +18,7 @@
  *
  */
 
-#include "Blob.h"
+#include "qpid/framing/Blob.h"
 
 
 namespace qpid {

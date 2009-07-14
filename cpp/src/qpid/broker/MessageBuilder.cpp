@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "MessageBuilder.h"
+#include "qpid/broker/MessageBuilder.h"
 
-#include "Message.h"
-#include "MessageStore.h"
-#include "NullMessageStore.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/NullMessageStore.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/reply_exceptions.h"
 

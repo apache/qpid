@@ -29,9 +29,9 @@
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include <iostream>
-#include "MessageUtils.h"
+#include "tests/MessageUtils.h"
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;

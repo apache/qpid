@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "QueueBindings.h"
-#include "ExchangeRegistry.h"
+#include "qpid/broker/QueueBindings.h"
+#include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using qpid::framing::FieldTable;

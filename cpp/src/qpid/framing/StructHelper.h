@@ -23,7 +23,7 @@
 
 #include "qpid/Exception.h"
 #include "qpid/CommonImportExport.h"
-#include "Buffer.h"
+#include "qpid/framing/Buffer.h"
 
 #include <stdlib.h> // For alloca
 

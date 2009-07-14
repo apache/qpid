@@ -24,8 +24,8 @@
 #include <deque>
 #include <iostream>
 #include <memory>
-#include "BrokerImportExport.h"
-#include "QueuedMessage.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/QueuedMessage.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"

@@ -22,8 +22,8 @@
 #define _QPID_CONSOLE_CLASSKEY_H_
 
 #include <string>
-#include "ConsoleImportExport.h"
-#include "Package.h"
+#include "qpid/console/ConsoleImportExport.h"
+#include "qpid/console/Package.h"
 #include "qpid/framing/Buffer.h"
 
 namespace qpid {

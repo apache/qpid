@@ -19,7 +19,7 @@
  *
  */
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FrameDecoder.h"
 #include "qpid/framing/AMQContentBody.h"

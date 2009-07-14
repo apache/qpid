@@ -22,8 +22,8 @@
  *
  */
 
-#include "Poller.h"
-#include "Runnable.h"
+#include "qpid/sys/Poller.h"
+#include "qpid/sys/Runnable.h"
 #include "qpid/CommonImportExport.h"
 
 namespace qpid {

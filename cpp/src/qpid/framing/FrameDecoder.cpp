@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "FrameDecoder.h"
-#include "Buffer.h"
+#include "qpid/framing/FrameDecoder.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/reply_exceptions.h"
 #include <algorithm>

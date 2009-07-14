@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "QueueRegistry.h"
-#include "QueueEvents.h"
+#include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/QueueEvents.h"
 #include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>

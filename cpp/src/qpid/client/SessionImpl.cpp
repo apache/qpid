@@ -19,10 +19,10 @@
  *
  */
 
-#include "SessionImpl.h"
+#include "qpid/client/SessionImpl.h"
 
-#include "ConnectionImpl.h"
-#include "Future.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/Future.h"
 
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"

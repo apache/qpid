@@ -19,7 +19,7 @@
  *
  */
 
-#include "Monitor.h"
+#include "qpid/sys/Monitor.h"
 
 namespace qpid {
 namespace sys {

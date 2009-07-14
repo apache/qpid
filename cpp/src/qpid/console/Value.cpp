@@ -19,7 +19,7 @@
  *
  */
 
-#include "Value.h"
+#include "qpid/console/Value.h"
 #include "qpid/framing/Buffer.h"
 
 using namespace qpid;

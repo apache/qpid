@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "DtxAck.h"
+#include "qpid/broker/DtxAck.h"
 #include "qpid/log/Statement.h"
 
 using std::bind1st;

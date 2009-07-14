@@ -19,8 +19,8 @@
  *
  */
 
-#include "FrameHandler.h"
-#include "ProtocolVersion.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/ProtocolVersion.h"
 
 #include "qpid/CommonImportExport.h"
 

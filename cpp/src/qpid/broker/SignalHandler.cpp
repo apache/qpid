@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "SignalHandler.h"
-#include "Broker.h"
+#include "qpid/broker/SignalHandler.h"
+#include "qpid/broker/Broker.h"
 #include <signal.h>
 
 namespace qpid {

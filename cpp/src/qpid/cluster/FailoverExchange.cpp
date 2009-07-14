@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "FailoverExchange.h"
+#include "qpid/cluster/FailoverExchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Queue.h"

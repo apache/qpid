@@ -21,7 +21,7 @@
 #ifndef _QPID_CONSOLE_SCHEMA_H_
 #define _QPID_CONSOLE_SCHEMA_H_
 
-#include "ClassKey.h"
+#include "qpid/console/ClassKey.h"
 #include <boost/shared_ptr.hpp>
 #include <vector>
 

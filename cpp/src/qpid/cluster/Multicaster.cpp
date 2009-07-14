@@ -19,8 +19,8 @@
  *
  */
 
-#include "Multicaster.h"
-#include "Cpg.h"
+#include "qpid/cluster/Multicaster.h"
+#include "qpid/cluster/Cpg.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQBody.h"
 #include "qpid/framing/AMQFrame.h"

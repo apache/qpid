@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "QueueEvents.h"
+#include "qpid/broker/QueueEvents.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 

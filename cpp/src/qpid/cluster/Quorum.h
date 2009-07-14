@@ -24,9 +24,9 @@
 #include "config.h"
 
 #if HAVE_LIBCMAN_H
-#include "Quorum_cman.h"
+#include "qpid/cluster/Quorum_cman.h"
 #else
-#include "Quorum_null.h"
+#include "qpid/cluster/Quorum_null.h"
 #endif
 
 #endif  /*!QPID_CLUSTER_QUORUM_H*/

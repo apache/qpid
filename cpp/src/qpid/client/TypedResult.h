@@ -22,7 +22,7 @@
 #ifndef _TypedResult_
 #define _TypedResult_
 
-#include "Completion.h"
+#include "qpid/client/Completion.h"
 #include "qpid/framing/StructHelper.h"
 
 namespace qpid {

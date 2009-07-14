@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "FieldValue.h"
-#include "Array.h"
-#include "Buffer.h"
-#include "Endian.h"
+#include "qpid/framing/FieldValue.h"
+#include "qpid/framing/Array.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/Endian.h"
 #include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {

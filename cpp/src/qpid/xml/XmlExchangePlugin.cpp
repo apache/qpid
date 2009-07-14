@@ -25,7 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility/in_place_factory.hpp>
 
-#include "XmlExchange.h"
+#include "qpid/xml/XmlExchange.h"
 
 namespace qpid {
 namespace broker {  // ACL uses the acl namespace here - should I?

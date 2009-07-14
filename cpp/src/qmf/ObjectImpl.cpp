@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#include "ObjectImpl.h"
-#include "ValueImpl.h"
+#include "qmf/ObjectImpl.h"
+#include "qmf/ValueImpl.h"
 #include <qpid/sys/Time.h>
 
 using namespace std;

@@ -22,9 +22,9 @@
  *
  */
 
-#include "types.h"
+#include "qpid/cluster/types.h"
 #include "qpid/sys/Mutex.h"
-#include "Connection.h"
+#include "qpid/cluster/Connection.h"
 
 namespace qpid {
 namespace cluster {

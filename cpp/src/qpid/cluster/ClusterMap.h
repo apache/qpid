@@ -22,7 +22,7 @@
  *
  */
 
-#include "types.h"
+#include "qpid/cluster/types.h"
 #include "qpid/Url.h"
 #include "qpid/framing/ClusterConnectionMembershipBody.h"
 

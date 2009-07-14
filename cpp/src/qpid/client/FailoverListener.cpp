@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "FailoverListener.h"
-#include "SessionBase_0_10Access.h"
+#include "qpid/client/FailoverListener.h"
+#include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/SubscriptionImpl.h"

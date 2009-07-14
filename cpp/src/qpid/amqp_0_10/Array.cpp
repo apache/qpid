@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Array.h"
+#include "qpid/amqp_0_10/Array.h"
 
 namespace qpid {
 namespace amqp_0_10 {

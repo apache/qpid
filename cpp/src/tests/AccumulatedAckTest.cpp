@@ -20,7 +20,7 @@
  *
  */
 #include "qpid/framing/AccumulatedAck.h"
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include <iostream>
 #include <list>
 

@@ -19,8 +19,8 @@
  *
  */
 
-#include "AsynchIoResult.h"
-#include "IoHandlePrivate.h"
+#include "qpid/sys/windows/AsynchIoResult.h"
+#include "qpid/sys/windows/IoHandlePrivate.h"
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Socket.h"
@@ -29,7 +29,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/log/Statement.h"
 
-#include "check.h"
+#include "qpid/sys/windows/check.h"
 
 #include <boost/thread/once.hpp>
 

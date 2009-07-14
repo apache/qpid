@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "DtxBuffer.h"
+#include "qpid/broker/DtxBuffer.h"
 
 using namespace qpid::broker;
 using qpid::sys::Mutex;

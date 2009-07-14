@@ -19,7 +19,7 @@
  *
  */
 
-#include "MessageAdapter.h"
+#include "qpid/broker/MessageAdapter.h"
 
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageProperties.h"

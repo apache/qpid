@@ -23,11 +23,11 @@
  */
 
 #include <boost/shared_ptr.hpp>
-#include "BrokerImportExport.h"
-#include "Deliverable.h"
-#include "Queue.h"
-#include "MessageStore.h"
-#include "PersistableExchange.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"

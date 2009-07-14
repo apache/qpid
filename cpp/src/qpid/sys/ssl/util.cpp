@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "util.h"
-#include "check.h"
+#include "qpid/sys/ssl/util.h"
+#include "qpid/sys/ssl/check.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/SystemInfo.h"
 

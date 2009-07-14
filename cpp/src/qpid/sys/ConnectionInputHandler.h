@@ -22,8 +22,8 @@
 #define _ConnectionInputHandler_
 
 #include "qpid/framing/InputHandler.h"
-#include "OutputTask.h"
-#include "TimeoutHandler.h"
+#include "qpid/sys/OutputTask.h"
+#include "qpid/sys/TimeoutHandler.h"
 
 namespace qpid {
 namespace sys {

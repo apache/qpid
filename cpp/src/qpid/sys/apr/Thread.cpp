@@ -19,7 +19,7 @@
  *
  */
 
-#include "Thread.h"
+#include "qpid/sys/apr/Thread.h"
 #include "qpid/sys/Runnable.h"
 
 using namespace qpid::sys;

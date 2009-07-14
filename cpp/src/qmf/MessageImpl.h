@@ -20,7 +20,7 @@
  * under the License.
  */
 
-#include "Message.h"
+#include "qmf/Message.h"
 #include <string>
 #include <boost/shared_ptr.hpp>
 

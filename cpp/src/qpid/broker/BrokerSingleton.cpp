@@ -16,7 +16,7 @@
  *
  */
 
-#include "BrokerSingleton.h"
+#include "qpid/broker/BrokerSingleton.h"
 
 namespace qpid {
 namespace broker {

@@ -22,7 +22,7 @@
  *
  */
 
-#include "AsynchIoResult.h"
+#include "qpid/sys/windows/AsynchIoResult.h"
 #include "qpid/CommonImportExport.h"
 
 #include <winsock2.h>

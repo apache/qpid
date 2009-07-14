@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Timer.h"
+#include "qpid/broker/Timer.h"
 #include <iostream>
 
 using boost::intrusive_ptr;

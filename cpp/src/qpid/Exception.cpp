@@ -20,7 +20,7 @@
  */
 
 #include "qpid/log/Statement.h"
-#include "Exception.h"
+#include "qpid/Exception.h"
 #include <typeinfo>
 #include <assert.h>
 #include <string.h>

@@ -21,10 +21,10 @@
 #ifndef _DeliverableMessage_
 #define _DeliverableMessage_
 
-#include "BrokerImportExport.h"
-#include "Deliverable.h"
-#include "Queue.h"
-#include "Message.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/Message.h"
 
 #include <boost/intrusive_ptr.hpp>
 

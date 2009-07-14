@@ -22,10 +22,10 @@
  *
  */
 
-#include "types.h"
-#include "OutputInterceptor.h"
-#include "EventFrame.h"
-#include "McastFrameHandler.h"
+#include "qpid/cluster/types.h"
+#include "qpid/cluster/OutputInterceptor.h"
+#include "qpid/cluster/EventFrame.h"
+#include "qpid/cluster/McastFrameHandler.h"
 
 #include "qpid/broker/Connection.h"
 #include "qpid/amqp_0_10/Connection.h"

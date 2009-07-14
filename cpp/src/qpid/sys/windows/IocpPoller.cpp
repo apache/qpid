@@ -23,9 +23,9 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Dispatcher.h"
 
-#include "AsynchIoResult.h"
-#include "IoHandlePrivate.h"
-#include "check.h"
+#include "qpid/sys/windows/AsynchIoResult.h"
+#include "qpid/sys/windows/IoHandlePrivate.h"
+#include "qpid/sys/windows/check.h"
 
 #include <winsock2.h>
 #include <windows.h>

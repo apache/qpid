@@ -19,7 +19,7 @@
  *
  */
 
-#include "SequenceManager.h"
+#include "qpid/console/SequenceManager.h"
 
 using namespace qpid::console;
 using namespace qpid::sys;

@@ -86,7 +86,7 @@ EOS
   # .cpp file
   cpp_file(@filename) {
       include "<sstream>"
-      include "#{@classname}.h"
+      include "qpid/framing/#{@classname}.h"
       include "qpid/framing/amqp_types_full.h"
       methods_on(@amqp, @chassis).each {
         |m| include "qpid/framing/"+m.body_name

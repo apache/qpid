@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "LinkRegistry.h"
-#include "Link.h"
-#include "Connection.h"
+#include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/Link.h"
+#include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
 #include <iostream>
 #include <boost/format.hpp>

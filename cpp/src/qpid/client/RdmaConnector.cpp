@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "Connector.h"
+#include "qpid/client/Connector.h"
 
-#include "Bounds.h"
-#include "ConnectionImpl.h"
-#include "ConnectionSettings.h"
+#include "qpid/client/Bounds.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/ConnectionSettings.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/AMQFrame.h"

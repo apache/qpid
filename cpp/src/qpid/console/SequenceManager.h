@@ -21,7 +21,7 @@
 #ifndef _QPID_CONSOLE_SEQUENCEMANAGER_H_
 #define _QPID_CONSOLE_SEQUENCEMANAGER_H_
 
-#include "ConsoleImportExport.h"
+#include "qpid/console/ConsoleImportExport.h"
 #include "qpid/sys/Mutex.h"
 #include <map>
 #include <string>

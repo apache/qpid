@@ -22,16 +22,16 @@
  */
 
 #include "qpid/Exception.h"
-#include "amqp_types.h"
-#include "Buffer.h"
-#include "FieldTable.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/CommonImportExport.h"
-
-#include "assert.h"
 
 #include <iostream>
 #include <memory>
 #include <vector>
+
+#include <assert.h>
 
 namespace qpid {
 namespace framing {

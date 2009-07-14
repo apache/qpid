@@ -17,7 +17,7 @@
  */
 
 #include "qpid/sys/LockFile.h"
-#include "check.h"
+#include "qpid/sys/windows/check.h"
 
 #include <windows.h>
 

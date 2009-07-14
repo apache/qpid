@@ -22,8 +22,8 @@
 #ifndef _ConnectionImpl_
 #define _ConnectionImpl_
 
-#include "Bounds.h"
-#include "ConnectionHandler.h"
+#include "qpid/client/Bounds.h"
+#include "qpid/client/ConnectionHandler.h"
 
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"

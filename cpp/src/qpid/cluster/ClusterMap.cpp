@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ClusterMap.h"
+#include "qpid/cluster/ClusterMap.h"
 #include "qpid/Url.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"

@@ -24,8 +24,8 @@
 
 #include "qpid/sys/PollableCondition.h"
 #include "qpid/sys/IOHandle.h"
-#include "AsynchIoResult.h"
-#include "IoHandlePrivate.h"
+#include "qpid/sys/windows/AsynchIoResult.h"
+#include "qpid/sys/windows/IoHandlePrivate.h"
 
 #include <boost/bind.hpp>
 #include <windows.h>

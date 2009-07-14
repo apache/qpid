@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "ReplicationExchange.h"
-#include "constants.h"
+#include "qpid/replication/ReplicationExchange.h"
+#include "qpid/replication/constants.h"
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/ExchangeRegistry.h"

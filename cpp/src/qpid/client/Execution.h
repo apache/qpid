@@ -22,7 +22,7 @@
 #define _Execution_
 
 #include "qpid/framing/SequenceNumber.h"
-#include "Demux.h"
+#include "qpid/client/Demux.h"
 
 namespace qpid {
 namespace client {

@@ -20,7 +20,7 @@
 // under the License.
 //
 
-#include "ManagementAgent.h"
+#include "qpid/agent/ManagementAgent.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/SubscriptionManager.h"

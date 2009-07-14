@@ -19,7 +19,7 @@
  *
  */
 
-#include "DispatchHandle.h"
+#include "qpid/sys/DispatchHandle.h"
 
 #include <algorithm>
 

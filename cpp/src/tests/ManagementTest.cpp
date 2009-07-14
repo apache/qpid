@@ -22,7 +22,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/console/ObjectId.h"
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 QPID_AUTO_TEST_SUITE(ManagementTestSuite)
 

@@ -22,8 +22,8 @@
  *
  */
 
-#include "BrokerImportExport.h"
-#include "Timer.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Timer.h"
 
 namespace qpid {
 namespace broker {

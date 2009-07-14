@@ -21,8 +21,8 @@
 
 #include "qpid/sys/Socket.h"
 
-#include "check.h"
-#include "PrivatePosix.h"
+#include "qpid/sys/posix/check.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 
 #include <fcntl.h>
 #include <sys/types.h>

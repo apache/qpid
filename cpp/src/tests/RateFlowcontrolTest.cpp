@@ -19,7 +19,7 @@
  *
  */
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 #include "qpid/broker/RateFlowcontrol.h"
 #include "qpid/sys/Time.h"

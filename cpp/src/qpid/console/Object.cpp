@@ -19,12 +19,12 @@
  *
  */
 
-#include "SessionManager.h"
-#include "Broker.h"
-#include "Object.h"
-#include "Schema.h"
-#include "ClassKey.h"
-#include "Value.h"
+#include "qpid/console/SessionManager.h"
+#include "qpid/console/Broker.h"
+#include "qpid/console/Object.h"
+#include "qpid/console/Schema.h"
+#include "qpid/console/ClassKey.h"
+#include "qpid/console/Value.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/sys/Mutex.h"
 

@@ -18,7 +18,7 @@
  *
  */
 
-#include "Struct32.h"
+#include "qpid/amqp_0_10/Struct32.h"
 
 namespace qpid {
 namespace amqp_0_10 {

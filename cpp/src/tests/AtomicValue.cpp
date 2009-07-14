@@ -17,8 +17,8 @@
  */
 
 
-#include "unit_test.h"
-#include "test_tools.h"
+#include "tests/unit_test.h"
+#include "tests/test_tools.h"
 #include "qpid/sys/AtomicValue.h"
 
 QPID_AUTO_TEST_SUITE(AtomicValueTestSuite)

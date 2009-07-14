@@ -28,9 +28,9 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/broker/ConnectionToken.h"
-#include "ManagementObject.h"
-#include "ManagementEvent.h"
-#include "Manageable.h"
+#include "qpid/management/ManagementObject.h"
+#include "qpid/management/ManagementEvent.h"
+#include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Agent.h"
 #include <qpid/framing/AMQFrame.h>
 #include <memory>

@@ -22,7 +22,7 @@
  *
  */
 
-#include "Waitable.h"
+#include "qpid/sys/Waitable.h"
 
 #include <queue>
 

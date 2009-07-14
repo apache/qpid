@@ -20,7 +20,7 @@
  * under the License.
  *
  */
-#include "Handler.h"
+#include "qpid/framing/Handler.h"
 
 namespace qpid {
 namespace framing {

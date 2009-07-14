@@ -19,7 +19,7 @@
  *
  */
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include <iostream>
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/SequenceNumberSet.h"

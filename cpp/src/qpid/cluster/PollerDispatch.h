@@ -22,7 +22,7 @@
  *
  */
 
-#include "Cpg.h"
+#include "qpid/cluster/Cpg.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/DispatchHandle.h"
 #include <boost/function.hpp>

@@ -19,8 +19,8 @@
  *
  */
 
-#include "ExpiryPolicy.h"
-#include "Multicaster.h"
+#include "qpid/cluster/ExpiryPolicy.h"
+#include "qpid/cluster/Multicaster.h"
 #include "qpid/framing/ClusterMessageExpiredBody.h"
 #include "qpid/sys/Time.h"
 #include "qpid/broker/Message.h"

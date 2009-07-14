@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-#include "DeliveryRecord.h"
-#include "DeliverableMessage.h"
-#include "SemanticState.h"
-#include "Exchange.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/SemanticState.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/MessageTransferBody.h"

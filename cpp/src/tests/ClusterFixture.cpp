@@ -16,10 +16,10 @@
  *
  */
 
-#include "test_tools.h"
-#include "unit_test.h"
-#include "ForkedBroker.h"
-#include "BrokerFixture.h"
+#include "tests/test_tools.h"
+#include "tests/unit_test.h"
+#include "tests/ForkedBroker.h"
+#include "tests/BrokerFixture.h"
 
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionAccess.h"
@@ -59,7 +59,7 @@ using qpid::cluster::Cluster;
 using boost::assign::list_of;
 
 
-#include "ClusterFixture.h"
+#include "tests/ClusterFixture.h"
 
 ClusterFixture::ClusterFixture(size_t n, const Args& args_, int localIndex_)
     : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_)

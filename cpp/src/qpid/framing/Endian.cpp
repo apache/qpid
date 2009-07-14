@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Endian.h"
+#include "qpid/framing/Endian.h"
 
 namespace qpid {
 namespace framing {

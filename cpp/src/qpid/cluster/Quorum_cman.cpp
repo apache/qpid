@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "Quorum_cman.h"
+#include "qpid/cluster/Quorum_cman.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Options.h"
 #include "qpid/sys/Time.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include "OstreamOutput.h"
+#include "qpid/log/OstreamOutput.h"
 #include <stdexcept>
 
 using namespace std;

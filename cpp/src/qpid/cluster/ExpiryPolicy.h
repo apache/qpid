@@ -22,7 +22,7 @@
  *
  */
 
-#include "types.h"
+#include "qpid/cluster/types.h"
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/sys/Mutex.h"
 #include <boost/function.hpp>

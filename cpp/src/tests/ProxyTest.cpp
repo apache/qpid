@@ -24,7 +24,7 @@
 #include "qpid/framing/ExecutionSyncBody.h"
 #include "qpid/framing/Proxy.h"
 
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 using namespace qpid::framing;
 

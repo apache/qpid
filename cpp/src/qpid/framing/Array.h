@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
-#include "FieldValue.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/framing/TypeCode.h"
 #include <boost/shared_ptr.hpp>
 #include <iostream>

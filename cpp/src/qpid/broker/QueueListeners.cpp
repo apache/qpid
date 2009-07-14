@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "QueueListeners.h"
+#include "qpid/broker/QueueListeners.h"
 #include <boost/bind.hpp>
 
 namespace qpid {

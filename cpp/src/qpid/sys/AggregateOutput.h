@@ -21,9 +21,9 @@
 #ifndef _AggregateOutput_
 #define _AggregateOutput_
 
-#include "Monitor.h"
-#include "OutputControl.h"
-#include "OutputTask.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/sys/OutputControl.h"
+#include "qpid/sys/OutputTask.h"
 #include "qpid/CommonImportExport.h"
 
 #include <algorithm>

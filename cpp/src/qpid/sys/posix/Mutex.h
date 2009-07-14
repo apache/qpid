@@ -19,7 +19,7 @@
  *
  */
 
-#include "check.h"
+#include "qpid/sys/posix/check.h"
 
 #include <pthread.h>
 #include <boost/noncopyable.hpp>

@@ -18,14 +18,14 @@
  * under the License.
  *
  */
-#include "SessionState.h"
-#include "Broker.h"
-#include "ConnectionState.h"
-#include "DeliveryRecord.h"
-#include "SessionManager.h"
-#include "SessionHandler.h"
-#include "RateFlowcontrol.h"
-#include "Timer.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/ConnectionState.h"
+#include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/SessionManager.h"
+#include "qpid/broker/SessionHandler.h"
+#include "qpid/broker/RateFlowcontrol.h"
+#include "qpid/broker/Timer.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQMethodBody.h"

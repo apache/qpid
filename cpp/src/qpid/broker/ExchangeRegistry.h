@@ -22,9 +22,9 @@
  *
  */
 
-#include "BrokerImportExport.h"
-#include "Exchange.h"
-#include "MessageStore.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/MessageStore.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/management/Manageable.h"

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "amqp_types.h"
+#include "qpid/framing/amqp_types.h"
 #include "qpid/Exception.h"
 #include "qpid/CommonImportExport.h"
 #include <boost/iterator/iterator_facade.hpp>

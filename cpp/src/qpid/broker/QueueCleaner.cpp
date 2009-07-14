@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "QueueCleaner.h"
+#include "qpid/broker/QueueCleaner.h"
 
-#include "Broker.h"
+#include "qpid/broker/Broker.h"
 #include <boost/bind.hpp>
 
 namespace qpid {

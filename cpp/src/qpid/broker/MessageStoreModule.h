@@ -21,9 +21,9 @@
 #ifndef _MessageStoreModule_
 #define _MessageStoreModule_
 
-#include "MessageStore.h"
-#include "Queue.h"
-#include "RecoveryManager.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/RecoveryManager.h"
 
 #include <boost/intrusive_ptr.hpp>
 

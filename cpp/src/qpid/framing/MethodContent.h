@@ -22,7 +22,7 @@
 #define _MethodContent_
 
 #include <string>
-#include "AMQHeaderBody.h"
+#include "qpid/framing/AMQHeaderBody.h"
 
 namespace qpid {
 namespace framing {

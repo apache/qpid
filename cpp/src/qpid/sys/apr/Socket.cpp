@@ -22,8 +22,8 @@
 
 #include "qpid/sys/Socket.h"
 
-#include "APRBase.h"
-#include "APRPool.h"
+#include "qpid/sys/apr/APRBase.h"
+#include "qpid/sys/apr/APRPool.h"
 
 #include <apr_network_io.h>
 

@@ -19,7 +19,7 @@
  *
  */
 
-#include "SessionState.h"
+#include "qpid/SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/enum.h"

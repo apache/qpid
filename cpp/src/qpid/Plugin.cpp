@@ -18,7 +18,7 @@
  *
  */
 
-#include "Plugin.h"
+#include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include <boost/bind.hpp>
 #include <algorithm>

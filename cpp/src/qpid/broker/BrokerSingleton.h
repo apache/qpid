@@ -19,8 +19,8 @@
  *
  */
 
-#include "Broker.h"
-#include "BrokerImportExport.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
 namespace broker {

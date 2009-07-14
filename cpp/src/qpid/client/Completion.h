@@ -22,8 +22,8 @@
  *
  */
 
-#include "Handle.h"
-#include "ClientImportExport.h"
+#include "qpid/client/Handle.h"
+#include "qpid/client/ClientImportExport.h"
 #include <string>
 
 namespace qpid {

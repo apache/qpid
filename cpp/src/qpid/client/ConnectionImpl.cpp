@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "ConnectionImpl.h"
-#include "Connector.h"
-#include "ConnectionSettings.h"
-#include "SessionImpl.h"
-#include "FailoverListener.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/Connector.h"
+#include "qpid/client/ConnectionSettings.h"
+#include "qpid/client/SessionImpl.h"
+#include "qpid/client/FailoverListener.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"

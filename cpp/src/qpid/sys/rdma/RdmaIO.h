@@ -21,7 +21,7 @@
 #ifndef Rdma_Acceptor_h
 #define Rdma_Acceptor_h
 
-#include "rdma_wrap.h"
+#include "qpid/sys/rdma/rdma_wrap.h"
 
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Dispatcher.h"

@@ -21,7 +21,7 @@
 #ifndef _ConnectionToken_
 #define _ConnectionToken_
 
-#include "OwnershipToken.h"
+#include "qpid/broker/OwnershipToken.h"
 namespace qpid {
     namespace broker {
         /**

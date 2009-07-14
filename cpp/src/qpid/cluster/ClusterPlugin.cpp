@@ -17,9 +17,9 @@
  */
 
 #include "config.h"
-#include "Connection.h"
-#include "ConnectionCodec.h"
-#include "ClusterSettings.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/ConnectionCodec.h"
+#include "qpid/cluster/ClusterSettings.h"
 
 #include "qpid/cluster/Cluster.h"
 #include "qpid/cluster/ConnectionCodec.h"

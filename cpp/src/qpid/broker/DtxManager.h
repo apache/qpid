@@ -22,10 +22,10 @@
 #define _DtxManager_
 
 #include <boost/ptr_container/ptr_map.hpp>
-#include "DtxBuffer.h"
-#include "DtxWorkRecord.h"
-#include "Timer.h"
-#include "TransactionalStore.h"
+#include "qpid/broker/DtxBuffer.h"
+#include "qpid/broker/DtxWorkRecord.h"
+#include "qpid/broker/Timer.h"
+#include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
 

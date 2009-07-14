@@ -21,7 +21,7 @@
 #ifndef _QPID_CONSOLE_BROKER_H_
 #define _QPID_CONSOLE_BROKER_H_
 
-#include "ConsoleImportExport.h"
+#include "qpid/console/ConsoleImportExport.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/SubscriptionManager.h"

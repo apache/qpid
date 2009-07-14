@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-#include "UpdateClient.h"
-#include "Cluster.h"
-#include "ClusterMap.h"
-#include "Connection.h"
-#include "Decoder.h"
-#include "ExpiryPolicy.h"
+#include "qpid/cluster/UpdateClient.h"
+#include "qpid/cluster/Cluster.h"
+#include "qpid/cluster/ClusterMap.h"
+#include "qpid/cluster/Connection.h"
+#include "qpid/cluster/Decoder.h"
+#include "qpid/cluster/ExpiryPolicy.h"
 #include "qpid/client/SessionBase_0_10Access.h" 
 #include "qpid/client/ConnectionAccess.h" 
 #include "qpid/client/SessionImpl.h" 

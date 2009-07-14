@@ -22,9 +22,9 @@
  *
  */
 
-#include "BrokerImportExport.h"
-#include "PersistableMessage.h"
-#include "MessageAdapter.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/PersistableMessage.h"
+#include "qpid/broker/MessageAdapter.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Time.h"

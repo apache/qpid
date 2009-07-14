@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#include "ResilientConnection.h"
-#include "MessageImpl.h"
+#include "qmf/ResilientConnection.h"
+#include "qmf/MessageImpl.h"
 #include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/SubscriptionManager.h>

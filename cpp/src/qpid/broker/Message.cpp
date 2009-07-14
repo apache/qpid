@@ -19,9 +19,9 @@
  *
  */
 
-#include "Message.h"
-#include "ExchangeRegistry.h"
-#include "ExpiryPolicy.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/StringUtils.h"
 #include "qpid/framing/frame_functors.h"
 #include "qpid/framing/FieldTable.h"

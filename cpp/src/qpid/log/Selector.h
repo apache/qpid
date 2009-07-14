@@ -19,7 +19,7 @@
  *
  */
 
-#include "Statement.h"
+#include "qpid/log/Statement.h"
 #include "qpid/CommonImportExport.h"
 #include <vector>
 

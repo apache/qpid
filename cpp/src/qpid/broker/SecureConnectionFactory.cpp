@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "SecureConnectionFactory.h"
+#include "qpid/broker/SecureConnectionFactory.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/broker/Connection.h"

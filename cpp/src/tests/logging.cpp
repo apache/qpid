@@ -16,7 +16,7 @@
  *
  */
 
-#include "test_tools.h"
+#include "tests/test_tools.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/OstreamOutput.h"
@@ -30,7 +30,7 @@
 
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/format.hpp>
-#include "unit_test.h"
+#include "tests/unit_test.h"
 
 #include <exception>
 #include <fstream>

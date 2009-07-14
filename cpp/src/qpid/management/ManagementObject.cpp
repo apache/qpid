@@ -19,8 +19,8 @@
  *
  */
  
-#include "Manageable.h"
-#include "ManagementObject.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/ManagementObject.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Thread.h"
 

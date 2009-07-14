@@ -21,7 +21,7 @@
  * under the License.
  *
  */
-#include "Message.h"
+#include "qpid/client/Message.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TransferContent.h"

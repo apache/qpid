@@ -22,7 +22,7 @@
  *
  */
 
-#include "Control.h"
+#include "qpid/amqp_0_10/Control.h"
 #include "qpid/amqp_0_10/structs.h"
 
 namespace qpid {

@@ -21,12 +21,12 @@
 #ifndef _TxPublish_
 #define _TxPublish_
 
-#include "BrokerImportExport.h"
-#include "Queue.h"
-#include "Deliverable.h"
-#include "Message.h"
-#include "MessageStore.h"
-#include "TxOp.h"
+#include "qpid/broker/BrokerImportExport.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/Message.h"
+#include "qpid/broker/MessageStore.h"
+#include "qpid/broker/TxOp.h"
 
 #include <algorithm>
 #include <functional>

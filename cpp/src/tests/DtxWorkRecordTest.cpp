@@ -19,10 +19,10 @@
  *
  */
 #include "qpid/broker/DtxWorkRecord.h"
-#include "unit_test.h"
+#include "tests/unit_test.h"
 #include <iostream>
 #include <vector>
-#include "TxMocks.h"
+#include "tests/TxMocks.h"
 
 using namespace qpid::broker;
 using boost::static_pointer_cast;

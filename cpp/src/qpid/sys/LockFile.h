@@ -24,7 +24,7 @@
 #include <string>
 
 #include "qpid/CommonImportExport.h"
-#include "IntegerTypes.h"
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace sys {

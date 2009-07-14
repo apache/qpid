@@ -19,9 +19,9 @@
  *
  */
 
-#include "ConnectionHandler.h"
+#include "qpid/client/ConnectionHandler.h"
 
-#include "SaslFactory.h"
+#include "qpid/client/SaslFactory.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/ClientInvoker.h"

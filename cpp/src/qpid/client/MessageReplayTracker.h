@@ -21,8 +21,8 @@
  * under the License.
  *
  */
-#include "AsyncSession.h"
-#include "Message.h"
+#include "qpid/client/AsyncSession.h"
+#include "qpid/client/Message.h"
 #include "qpid/client/ClientImportExport.h"
 #include <list>
 #include <string>

@@ -22,7 +22,7 @@
  *
  */
 
-#include "Mutex.h"
+#include "qpid/sys/Mutex.h"
 #include <algorithm>
 #include <vector>
 #include <boost/shared_ptr.hpp>

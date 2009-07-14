@@ -21,7 +21,7 @@
 #ifndef _MessageBuilder_
 #define _MessageBuilder_
 
-#include "BrokerImportExport.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/RefCounted.h"

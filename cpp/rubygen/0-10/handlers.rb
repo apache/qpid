@@ -35,7 +35,7 @@ class GenHandlers < CppGen
 
   def generate()
     h_file("#{@dir}/handlers.h") {
-      include "specification"
+      include "#{@dir}/specification"
       namespace("#{@ns}") { 
         action_handler "Command", @amqp.collect_all(AmqpCommand)
         action_handler "Control", @amqp.collect_all(AmqpControl)

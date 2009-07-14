@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "check.h"
+#include "qpid/sys/ssl/check.h"
 #include <nss3/secerr.h>
 #include <nss3/sslerr.h>
 #include <boost/format.hpp>

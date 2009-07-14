@@ -19,7 +19,7 @@
  *
  */
 
-#include "IncompleteMessageList.h"
+#include "qpid/broker/IncompleteMessageList.h"
 
 namespace qpid {
 namespace broker {

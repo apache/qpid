@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/framing/Blob.h"
-#include "apply.h"
+#include "qpid/amqp_0_10/apply.h"
 
 namespace qpid {
 namespace amqp_0_10 {
