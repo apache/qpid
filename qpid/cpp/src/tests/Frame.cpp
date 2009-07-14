@@ -21,7 +21,7 @@
 #include "qpid/framing/Frame.h"
 
 #include <boost/lexical_cast.hpp>
-#include "tests/unit_test.h"
+#include "unit_test.h"
 
 QPID_AUTO_TEST_SUITE(FrameTestSuite)
 

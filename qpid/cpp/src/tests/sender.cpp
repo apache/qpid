@@ -26,7 +26,7 @@
 #include <qpid/client/MessageReplayTracker.h>
 #include <qpid/client/QueueOptions.h>
 #include <qpid/Exception.h>
-#include "tests/TestOptions.h"
+#include "TestOptions.h"
 
 #include <fstream>
 #include <iostream>

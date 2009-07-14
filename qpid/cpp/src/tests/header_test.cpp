@@ -21,7 +21,7 @@
 
 #include <iostream>
 
-#include "tests/TestOptions.h"
+#include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Session.h"

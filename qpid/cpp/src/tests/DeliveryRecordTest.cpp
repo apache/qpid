@@ -20,7 +20,7 @@
  *
  */
 #include "qpid/broker/DeliveryRecord.h"
-#include "tests/unit_test.h"
+#include "unit_test.h"
 #include <iostream>
 #include <memory>
 #include <boost/format.hpp>

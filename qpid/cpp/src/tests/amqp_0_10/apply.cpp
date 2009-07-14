@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "tests/amqp_0_10/unit_test.h"
+#include "amqp_0_10/unit_test.h"
 #include "qpid/amqp_0_10/specification.h"
 #include "qpid/amqp_0_10/ApplyControl.h"
 

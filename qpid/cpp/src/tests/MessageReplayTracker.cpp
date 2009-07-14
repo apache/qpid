@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "tests/unit_test.h"
-#include "tests/BrokerFixture.h"
+#include "unit_test.h"
+#include "BrokerFixture.h"
 #include "qpid/client/MessageReplayTracker.h"
 #include "qpid/sys/Time.h"
 

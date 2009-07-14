@@ -19,9 +19,9 @@
  *
  */
 
-#include "tests/unit_test.h"
-#include "tests/test_tools.h"
-#include "tests/BrokerFixture.h"
+#include "unit_test.h"
+#include "test_tools.h"
+#include "BrokerFixture.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/sys/Runnable.h"

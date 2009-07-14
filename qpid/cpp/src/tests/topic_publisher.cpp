@@ -34,7 +34,7 @@
  * subscriber shutdown.
  */
 
-#include "tests/TestOptions.h"
+#include "TestOptions.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/AsyncSession.h"

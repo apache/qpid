@@ -17,8 +17,8 @@
  */
 
 
-#include "tests/unit_test.h"
-#include "tests/test_tools.h"
+#include "unit_test.h"
+#include "test_tools.h"
 #include "qpid/RangeSet.h"
 
 using namespace std;

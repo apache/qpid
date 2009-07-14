@@ -17,8 +17,8 @@
  * under the License.
  */
 #include "qpid/broker/TopicExchange.h"
-#include "tests/unit_test.h"
-#include "tests/test_tools.h"
+#include "unit_test.h"
+#include "test_tools.h"
 
 using namespace qpid::broker;
 using namespace std;

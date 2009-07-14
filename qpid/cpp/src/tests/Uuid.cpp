@@ -20,7 +20,7 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/sys/alloca.h"
 
-#include "tests/unit_test.h"
+#include "unit_test.h"
 
 #include <set>
 

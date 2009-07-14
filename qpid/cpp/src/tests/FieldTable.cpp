@@ -24,7 +24,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/sys/alloca.h"
 
-#include "tests/unit_test.h"
+#include "unit_test.h"
 
 using namespace qpid::framing;
 

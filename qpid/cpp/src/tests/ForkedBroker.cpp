@@ -19,7 +19,7 @@
  *
  */
 
-#include "tests/ForkedBroker.h"
+#include "ForkedBroker.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 #include <algorithm>

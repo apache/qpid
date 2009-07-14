@@ -23,7 +23,7 @@
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
-#include "tests/unit_test.h"
+#include "unit_test.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;

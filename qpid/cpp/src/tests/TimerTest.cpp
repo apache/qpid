@@ -21,7 +21,7 @@
  */
 #include "qpid/broker/Timer.h"
 #include "qpid/sys/Monitor.h"
-#include "tests/unit_test.h"
+#include "unit_test.h"
 #include <math.h>
 #include <iostream>
 #include <memory>
