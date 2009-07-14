@@ -67,8 +67,8 @@ void ErrorCheck::error(
 }
 
 void ErrorCheck::delivered(const EventFrame& e) {
-    FrameQueue::iterator i = frames.insert(frames.end(), e);
-    review(i);
+    frames.push_back(e);
+    review(frames.end()-1);
 }
 
 // Review a frame in the queue with respect to the current error.
@@ -84,7 +84,7 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
             if (errorCheck->getType() < type) { // my error is worse than his
                 QPID_LOG(critical, cluster << " error " << frameSeq
                          << " did not occur on " << i->getMemberId());
-                throw Exception("Aborted by local failure that did not occur on all replicas");
+                throw Exception("Aborted by failure that did not occur on all replicas");
             }
             else {              // his error is worse/same as mine.
                 QPID_LOG(debug, cluster << " error " << frameSeq
@@ -96,12 +96,12 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
         else {
             const ClusterConfigChangeBody* configChange = 0;
             if (i->frame.getBody())
-                configChange = dynamic_cast<const ClusterConfigChangeBody*>(i->frame.getMethod());
+                configChange = dynamic_cast<const ClusterConfigChangeBody*>(
+                    i->frame.getMethod());
             if (configChange) {
                 MemberSet members(ClusterMap::decode(configChange->getCurrent()));
                 QPID_LOG(debug, cluster << " apply config change to unresolved: "
                          << members);
-
                 MemberSet intersect;
                 set_intersection(members.begin(), members.end(),
                                  unresolved.begin(), unresolved.end(),
@@ -130,12 +130,4 @@ EventFrame ErrorCheck::getNext() {
     return e;
 }
 
-bool ErrorCheck::canProcess() const {
-    return type == ERROR_TYPE_NONE && !frames.empty();
-}
-
-bool ErrorCheck::isUnresolved() const {
-    return type != ERROR_TYPE_NONE;
-}
-    
 }} // namespace qpid::cluster

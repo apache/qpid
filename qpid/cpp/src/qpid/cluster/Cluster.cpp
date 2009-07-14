@@ -414,7 +414,7 @@ LATENCY_TRACK(sys::LatencyTracker<const AMQBody*> doOutputTracker("DoOutput");)
         deliverEventQueue.start(); 
     }
     // Process each frame through the error checker.
-    if (settings.checkErrors) {
+    if (settings.checkErrors && error.isUnresolved()) {
         error.delivered(e);
         while (error.canProcess())  // There is a frame ready to process.
             processFrame(error.getNext(), l);
