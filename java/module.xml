@@ -231,6 +231,9 @@
 
 
   <property file="${test.profiles}/${config}"/>
+  <foreach property="_profile_" list="${profile.inherit}">
+    <property file="${test.profiles}/${_profile_}.testprofile"/>
+  </foreach>
   <property file="${test.profiles}/default.testprofile"/>
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
