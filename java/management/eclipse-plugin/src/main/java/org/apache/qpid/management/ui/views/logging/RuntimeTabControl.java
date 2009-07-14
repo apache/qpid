@@ -124,13 +124,6 @@ public class RuntimeTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;  
-        if (_mbean == null)
-        {
-            _tableViewer.setInput(null);
-            return;
-        }
-        
         String runtimeRootLoggerLevel = "-";
         try
         {
@@ -151,10 +144,9 @@ public class RuntimeTabControl extends TabControl
             MBeanUtility.handleException(_mbean, e2);
         }
         
-        _form.setVisible(false);
         _runtimeRootLoggerLevelLabel.setText(String.valueOf(runtimeRootLoggerLevel));
         _tableViewer.setInput(_runtimeLoggerLevels);
-        _form.setVisible(true);
+
         layout();
     }
     

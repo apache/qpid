@@ -125,10 +125,9 @@ public class VHostTabControl extends TabControl
         queues = serverRegistry.getQueues(MBeanView.getVirtualHost());
         exchanges = serverRegistry.getExchanges(MBeanView.getVirtualHost());
 
-        _form.setVisible(false);
         _queueTableViewer.setInput(queues);
         _exchangeTableViewer.setInput(exchanges);
-        _form.setVisible(true);
+        
         layout();
     }
     

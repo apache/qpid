@@ -557,7 +557,7 @@ public class AttributesTabControl extends TabControl
                         AttributeData data = (AttributeData)button.getParent().getData();
                         MBeanUtility.updateAttribute(_mbean, data, text.getText());
                         button.getShell().close();
-                        refresh();
+                        refresh(_mbean);
                     }
                     catch (Exception ex)
                     {
@@ -569,14 +569,6 @@ public class AttributesTabControl extends TabControl
         return updateButton;
     }    
 
-    // Refresh from the server registry
-    public void refresh()
-    {
-        JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(_mbean);
-        ManagedAttributeModel attributesList = serverRegistry.getAttributeModel(_mbean);
-        _tableViewer.setInput(attributesList);
-    }
-    
     /**
      * Refreshes the attribute tab by querying the mbean server for latest values
      */ 

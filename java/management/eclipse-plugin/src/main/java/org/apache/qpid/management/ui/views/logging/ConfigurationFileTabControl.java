@@ -125,13 +125,6 @@ public class ConfigurationFileTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;
-        if (_mbean == null)
-        {
-            _tableViewer.setInput(null);
-            return;
-        }
-
         String configFileRootLoggerLevel = "-";
         try
         {
@@ -162,7 +155,6 @@ public class ConfigurationFileTabControl extends TabControl
             MBeanUtility.handleException(_mbean, e3);
         }
         
-        _form.setVisible(false);                
         _configFileRootLoggerLevelLabel.setText(String.valueOf(configFileRootLoggerLevel));
         if (log4jLogWatchInterval == 0)
         {
@@ -173,7 +165,7 @@ public class ConfigurationFileTabControl extends TabControl
             _logWatchIntervalLabel.setText(String.valueOf(log4jLogWatchInterval) + " seconds");
         }
         _tableViewer.setInput(_configFileLoggerLevels);
-        _form.setVisible(true);
+
         layout();
     }
     
