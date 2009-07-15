@@ -706,6 +706,7 @@ main ( int argc, char const ** argv )
          if ( ! killFrontBroker ( brokers, verbosity ) )
          {
            allMyChildren.killEverybody();
+           killAllBrokers ( brokers, 5 );
            std::cerr << "END_OF_TEST ERROR_BROKER\n";
            return ERROR_KILLING_BROKER;
          }
