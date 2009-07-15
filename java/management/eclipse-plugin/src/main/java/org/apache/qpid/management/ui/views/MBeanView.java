@@ -32,12 +32,14 @@ import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Form;
@@ -279,6 +281,8 @@ public class MBeanView extends ViewPart
         _typeTabFolder.setVisible(false);
         
         createNotificationsTabFolder();
+        
+        ViewUtility.setMBeanView(this);
     }
     
     private void refreshTab(TabItem tab)
@@ -380,6 +384,7 @@ public class MBeanView extends ViewPart
         }
         
         _form.setText(APPLICATION_NAME);
+        populateStatusBar("");
     }
     
     public void mbeanUnregistered(ManagedBean mbean)
@@ -442,4 +447,15 @@ public class MBeanView extends ViewPart
         }
     }
     
+    public void populateStatusBar(Image icon, String message)
+    {
+        IActionBars bars = getViewSite().getActionBars();
+        bars.getStatusLineManager().setMessage(icon, message);
+    }
+    
+    public void populateStatusBar(String message)
+    {
+        IActionBars bars = getViewSite().getActionBars();
+        bars.getStatusLineManager().setMessage(message);
+    }
 }

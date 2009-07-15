@@ -46,6 +46,10 @@ public abstract class ApplicationRegistry
     
     static
     {
+        imageRegistry.put(Constants.SUCCESS_IMAGE, 
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/success.gif"));
+        imageRegistry.put(Constants.FAILURE_IMAGE, 
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/failure.gif"));
         imageRegistry.put(Constants.CONSOLE_IMAGE, 
                 org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/qpidmc.gif"));
         imageRegistry.put(Constants.CLOSED_FOLDER_IMAGE, 

@@ -352,16 +352,18 @@ public class RuntimeTabControl extends TabControl
                     String level = levelCombo.getItem(levelCombo.getSelectionIndex()).toString();
                     
                     shell.close();
-
+                    
                     try
                     {
-                        _lmmb.setRuntimeLoggerLevel(logger, level);
+                        boolean result = _lmmb.setRuntimeLoggerLevel(logger, level);
+                        ViewUtility.operationResultFeedback(result, 
+                                "Updated Runtime Logger Level", "Failed to update Runtime Logger Level");
                     }
                     catch(Exception e3)
                     {
+                        ViewUtility.operationFailedStatusBarMessage("Error updating Runtime Logger Level");
                         MBeanUtility.handleException(_mbean, e3);
                     }
-                    //TODO: display result?
 
                     refresh(_mbean);
                 }
@@ -414,15 +416,17 @@ public class RuntimeTabControl extends TabControl
                 
                 try
                 {
-                    _lmmb.setRuntimeRootLoggerLevel(selection);
+                    boolean result = _lmmb.setRuntimeRootLoggerLevel(selection);
+                    ViewUtility.operationResultFeedback(result, 
+                            "Updated Runtime RootLogger Level", "Failed to update Runtime Logger Level");
                 }
                 catch(Exception e4)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error updating Runtime Logger Level");
                     MBeanUtility.handleException(_mbean, e4);
                 }
                 
                 refresh(_mbean);
-                //TODO: display result?
             }
         });
 

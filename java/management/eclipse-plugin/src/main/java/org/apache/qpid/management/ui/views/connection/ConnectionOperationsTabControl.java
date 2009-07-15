@@ -227,12 +227,14 @@ public class ConnectionOperationsTabControl extends TabControl
                         try
                         {
                             _cmb.commitTransactions(id);
+                            ViewUtility.operationResultFeedback(null, "Commited transactions", null);
                         }
                         catch (Exception e1)
                         {
+                            ViewUtility.operationFailedStatusBarMessage("Error commiting transactions");
                             MBeanUtility.handleException(_mbean, e1);
                         }
-                        //TODO:display result
+
                         refresh(_mbean);;
                     }
                 }
@@ -261,12 +263,14 @@ public class ConnectionOperationsTabControl extends TabControl
                         try
                         {
                             _cmb.rollbackTransactions(id);
+                            ViewUtility.operationResultFeedback(null, "Rolled back transactions", null);
                         }
                         catch (Exception e1)
                         {
+                            ViewUtility.operationFailedStatusBarMessage("Error rolling back transactions");
                             MBeanUtility.handleException(_mbean, e1);
                         }
-                        //TODO:display result
+
                         refresh(_mbean);;
                     }
                 }

@@ -531,12 +531,13 @@ public class HeadersExchangeOperationsTabControl extends TabControl
                 try
                 {
                     _emb.createNewBinding(destQueue, binding);
+                    ViewUtility.operationResultFeedback(null, "Created new Binding", null);
                 }
                 catch (Exception e4)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error creating new Binding");
                     MBeanUtility.handleException(_mbean, e4);
                 }
-                //TODO: display result?
 
                 refresh(_mbean);
             }

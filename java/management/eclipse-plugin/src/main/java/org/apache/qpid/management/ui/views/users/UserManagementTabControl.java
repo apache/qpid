@@ -233,13 +233,15 @@ public class UserManagementTabControl extends TabControl
                     {
                         try
                         {
-                            _ummb.deleteUser(user);
+                            boolean result = _ummb.deleteUser(user);
+                            ViewUtility.operationResultFeedback(result, "Deleted user", "Failed to delete user");
                         }
                         catch(Exception e1)
                         {
+                            ViewUtility.operationFailedStatusBarMessage("Error deleting user");
                             MBeanUtility.handleException(_mbean, e1);
                         }
-                        //TODO:display result
+
                         refresh(_mbean);;
                     }
                 }
@@ -301,11 +303,12 @@ public class UserManagementTabControl extends TabControl
 
                         try
                         {
-                            _ummb.setPassword(user, password);
-                            //TODO display result
+                            boolean result = _ummb.setPassword(user, password);
+                            ViewUtility.operationResultFeedback(result, "Updated user password", "Failed to update user password");
                         }
                         catch(Exception e2)
                         {
+                            ViewUtility.operationFailedStatusBarMessage("Error updating user password");
                             MBeanUtility.handleException(_mbean, e2);
                         }
                     }
@@ -394,11 +397,12 @@ public class UserManagementTabControl extends TabControl
                 {
                     try
                     {
-                        _ummb.reloadData();
-                        //TODO:display result
+                        boolean result = _ummb.reloadData();
+                        ViewUtility.operationResultFeedback(result, "Reloaded user data", "Failed to reload user data");
                     }
                     catch(Exception e3)
                     {
+                        ViewUtility.operationFailedStatusBarMessage("Error reloading user data");
                         MBeanUtility.handleException(_mbean, e3);
                     }
                     refresh(_mbean);
@@ -588,11 +592,12 @@ public class UserManagementTabControl extends TabControl
                 shell.dispose();
                 try
                 {
-                    _ummb.setRights(user,read,write,admin);
-                    //TODO: display result?
+                    boolean result = _ummb.setRights(user,read,write,admin);
+                    ViewUtility.operationResultFeedback(result, "Updated user rights", "Failed to update user rights");
                 }
                 catch(Exception e4)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error setting user rights");
                     MBeanUtility.handleException(_mbean, e4);
                 }
                 refresh(_mbean);
@@ -686,11 +691,12 @@ public class UserManagementTabControl extends TabControl
                 shell.dispose();
                 try
                 {
-                    _ummb.createUser(username, password.toCharArray(), read, write, admin);
-                    //TODO: display result?
+                    boolean result = _ummb.createUser(username, password.toCharArray(), read, write, admin);
+                    ViewUtility.operationResultFeedback(result, "Created user", "Failed to create user");
                 }
                 catch(Exception e5)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error creating user");
                     MBeanUtility.handleException(_mbean, e5);
                 }
 

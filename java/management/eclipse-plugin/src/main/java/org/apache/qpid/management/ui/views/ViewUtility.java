@@ -40,6 +40,9 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import static org.apache.qpid.management.ui.Constants.FAILURE_IMAGE;
+import static org.apache.qpid.management.ui.Constants.SUCCESS_IMAGE;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
@@ -48,6 +51,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -79,6 +83,8 @@ public class ViewUtility
     public static final String INDEX = "Index";
     
     private static final Comparator tabularDataComparator = new TabularDataComparator();
+    
+    private static MBeanView _mbeanView = null;
     
     private static List<String> SUPPORTED_ARRAY_DATATYPES = new ArrayList<String>();
     static
@@ -950,4 +956,51 @@ public class ViewUtility
             return -1;
         }
     }
+    
+    public static void setMBeanView(MBeanView mbeanView)
+    {
+        _mbeanView = mbeanView;
+    }
+    
+    /**
+     * Report feedback for the operation
+     * @param result true if success, false if unsuccessful, null if invoked but void result type.
+     * @param successMessage
+     * @param failureMessage
+     */
+    public static void operationResultFeedback(Boolean result, String successMessage, String failureMessage)
+    {
+        Image icon;
+        
+        if(_mbeanView != null)
+        {
+            if(result == null)
+            {
+                icon = ApplicationRegistry.getImage(SUCCESS_IMAGE);
+                _mbeanView.populateStatusBar(icon, successMessage);
+            }
+            else if(result)
+            {
+                icon = ApplicationRegistry.getImage(SUCCESS_IMAGE);
+                _mbeanView.populateStatusBar(icon, successMessage);
+            }
+            else
+            {
+                icon = ApplicationRegistry.getImage(FAILURE_IMAGE);
+                _mbeanView.populateStatusBar(icon, failureMessage);
+                popupErrorMessage("Operation Failed", failureMessage);
+            }
+        }
+    }
+    
+    public static void operationFailedStatusBarMessage(String failureMessage)
+    {
+        Image icon = ApplicationRegistry.getImage(FAILURE_IMAGE);
+        
+        if(_mbeanView != null)
+        {
+            _mbeanView.populateStatusBar(icon, failureMessage);            
+        }
+    }
+
 }
