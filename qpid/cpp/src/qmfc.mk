@@ -22,45 +22,33 @@
 # 
 lib_LTLIBRARIES += libqmfconsole.la
 
-module_hdr += \
-  qpid/console/Agent.h \
-  qpid/console/Broker.h \
-  qpid/console/ClassKey.h \
-  qpid/console/ConsoleImportExport.h \
-  qpid/console/ConsoleListener.h \
-  qpid/console/Event.h \
-  qpid/console/Object.h \
-  qpid/console/ObjectId.h \
-  qpid/console/Package.h \
-  qpid/console/Schema.h \
-  qpid/console/SequenceManager.h \
-  qpid/console/SessionManager.h \
-  qpid/console/Value.h
+# Public header files.
+nobase_include_HEADERS +=			\
+  ../include/qpid/console/Agent.h		\
+  ../include/qpid/console/Broker.h		\
+  ../include/qpid/console/ClassKey.h		\
+  ../include/qpid/console/ConsoleImportExport.h	\
+  ../include/qpid/console/ConsoleListener.h	\
+  ../include/qpid/console/Event.h		\
+  ../include/qpid/console/Object.h		\
+  ../include/qpid/console/ObjectId.h		\
+  ../include/qpid/console/Package.h		\
+  ../include/qpid/console/Schema.h		\
+  ../include/qpid/console/SequenceManager.h	\
+  ../include/qpid/console/SessionManager.h	\
+  ../include/qpid/console/Value.h
 
-libqmfconsole_la_SOURCES = \
-  qpid/console/Agent.h \
-  qpid/console/Agent.cpp \
-  qpid/console/Broker.h \
-  qpid/console/Broker.cpp \
-  qpid/console/ClassKey.h \
-  qpid/console/ClassKey.cpp \
-  qpid/console/ConsoleImportExport.h \
-  qpid/console/ConsoleListener.h \
-  qpid/console/Event.h \
-  qpid/console/Event.cpp \
-  qpid/console/Object.h \
-  qpid/console/Object.cpp \
-  qpid/console/ObjectId.h \
-  qpid/console/ObjectId.cpp \
-  qpid/console/Package.h \
-  qpid/console/Package.cpp \
-  qpid/console/Schema.h \
-  qpid/console/Schema.cpp \
-  qpid/console/SequenceManager.h \
-  qpid/console/SequenceManager.cpp \
-  qpid/console/SessionManager.h \
-  qpid/console/SessionManager.cpp \
-  qpid/console/Value.h \
+libqmfconsole_la_SOURCES =			\
+  qpid/console/Agent.cpp			\
+  qpid/console/Broker.cpp			\
+  qpid/console/ClassKey.cpp			\
+  qpid/console/Event.cpp			\
+  qpid/console/Object.cpp			\
+  qpid/console/ObjectId.cpp			\
+  qpid/console/Package.cpp			\
+  qpid/console/Schema.cpp			\
+  qpid/console/SequenceManager.cpp		\
+  qpid/console/SessionManager.cpp		\
   qpid/console/Value.cpp
 
 libqmfconsole_la_LIBADD = libqpidclient.la

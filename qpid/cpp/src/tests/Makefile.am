@@ -18,7 +18,7 @@
 #
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) -DBOOST_TEST_DYN_LINK
-INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
+INCLUDES =  -I$(top_srcdir)/include -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
 
 abs_builddir=@abs_builddir@
 extra_libs = 

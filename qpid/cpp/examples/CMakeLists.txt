@@ -24,7 +24,7 @@ endif(COMMAND cmake_policy)
 
 # This will probably need some fiddling to get right for installed kits.
 get_directory_property(QPIDC_TOP PARENT_DIRECTORY)
-include_directories(${QPIDC_TOP}/src ${CMAKE_CURRENT_BINARY_DIR}/../src/gen)
+include_directories(${QPIDC_TOP}/include ${CMAKE_CURRENT_BINARY_DIR}/../src/gen)
 
 # Shouldn't need this... but there are still client header inclusions of Boost.
 include_directories( ${Boost_INCLUDE_DIR} )
