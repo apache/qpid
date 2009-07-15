@@ -232,15 +232,17 @@ public class VHostTabControl extends TabControl
                         {
                             _vhmb.deleteQueue(queue);
                             
+                            ViewUtility.operationResultFeedback(null, "Deleted Queue", null);
                             //remove queue from list of managed beans
                             ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
                             serverRegistry.removeManagedObject(selectedQueue);
                         }
                         catch(Exception e1)
                         {
+                            ViewUtility.operationFailedStatusBarMessage("Error deleting Queue");
                             MBeanUtility.handleException(_mbean, e1);
                         }
-                        //TODO:display result
+
                         refresh(_mbean);;
                     }
                 }
@@ -355,15 +357,16 @@ public class VHostTabControl extends TabControl
                         {
                             _vhmb.unregisterExchange(exchange);
                             
+                            ViewUtility.operationResultFeedback(null, "Deleted Exchange", null);
                             //remove exchange from list of managed beans
                             ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
                             serverRegistry.removeManagedObject(selectedExchange);
                         }
                         catch(Exception e1)
                         {
+                            ViewUtility.operationFailedStatusBarMessage("Error deleting Exchange");
                             MBeanUtility.handleException(_mbean, e1);
                         }
-                        //TODO:display result
 
                         refresh(_mbean);;
                     }
@@ -564,8 +567,8 @@ public class VHostTabControl extends TabControl
                 try
                 {
                     _vhmb.createNewQueue(name, owner, durable);
-                    //TODO: display result?
                     
+                    ViewUtility.operationResultFeedback(null, "Created Queue", null);
                     try
                     {   
                         //delay to allow mbean registration notification processing
@@ -578,6 +581,7 @@ public class VHostTabControl extends TabControl
                 }
                 catch(Exception e5)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error creating Queue");
                     MBeanUtility.handleException(_mbean, e5);
                 }
 
@@ -673,8 +677,8 @@ public class VHostTabControl extends TabControl
                 try
                 {
                     _vhmb.createNewExchange(name, type, durable);
-                    //TODO: display result?
-                    
+
+                    ViewUtility.operationResultFeedback(null, "Created Exchange", null);
                     try
                     {   
                         //delay to allow mbean registration notification processing
@@ -687,6 +691,7 @@ public class VHostTabControl extends TabControl
                 }
                 catch(Exception e5)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error creating Exchange");
                     MBeanUtility.handleException(_mbean, e5);
                 }
 

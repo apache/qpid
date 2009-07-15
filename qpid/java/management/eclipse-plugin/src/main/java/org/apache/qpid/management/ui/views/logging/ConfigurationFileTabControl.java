@@ -391,12 +391,14 @@ public class ConfigurationFileTabControl extends TabControl
 
                     try
                     {
-                        _lmmb.setConfigFileLoggerLevel(logger, level);
-                        //TODO: display result?
+                        boolean result = _lmmb.setConfigFileLoggerLevel(logger, level);
+                        ViewUtility.operationResultFeedback(result, 
+                                "Updated ConfigFile Logger Level", "Failed to update ConfigFile Logger Level");
                     }
                     catch (Exception e4)
                     {
                         MBeanUtility.handleException(_mbean, e4);
+                        ViewUtility.operationFailedStatusBarMessage("Error updating ConfigFile Logger Level");
                     }
 
                     refresh(_mbean);
@@ -448,11 +450,13 @@ public class ConfigurationFileTabControl extends TabControl
                 shell.dispose();
                 try
                 {
-                    _lmmb.setConfigFileRootLoggerLevel(selection);
-                    //TODO: display result?
+                    boolean result = _lmmb.setConfigFileRootLoggerLevel(selection);
+                    ViewUtility.operationResultFeedback(result, 
+                            "Updated ConfigFile RootLogger Level", "Failed to update ConfigFile RootLogger Level");
                 }
                 catch (Exception e5)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error updating ConfigFile RootLogger Level");
                     MBeanUtility.handleException(_mbean, e5);
                 }
                 refresh(_mbean);

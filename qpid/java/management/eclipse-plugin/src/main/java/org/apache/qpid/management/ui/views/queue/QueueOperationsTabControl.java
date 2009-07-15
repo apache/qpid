@@ -274,12 +274,14 @@ public class QueueOperationsTabControl extends TabControl
                     try
                     {
                         _qmb.clearQueue();
+                        ViewUtility.operationResultFeedback(null, "Queue cleared", null);
                     }
                     catch (Exception e2)
                     {
+                        ViewUtility.operationFailedStatusBarMessage("Error clearing Queue");
                         MBeanUtility.handleException(_mbean, e2);
                     }
-                    //TODO:display result
+
                     refresh(_mbean);;
                 }
             }
@@ -596,12 +598,13 @@ public class QueueOperationsTabControl extends TabControl
                         _qmb.moveMessages(Long.valueOf(from), Long.valueOf(to), destQueue);
                     }
                     
+                    ViewUtility.operationResultFeedback(null, "Messages moved", null);
                 }
                 catch (Exception e4)
                 {
+                    ViewUtility.operationFailedStatusBarMessage("Error moving messages");
                     MBeanUtility.handleException(_mbean, e4);
                 }
-                //TODO: display result?
 
                 refresh(_mbean);
             }

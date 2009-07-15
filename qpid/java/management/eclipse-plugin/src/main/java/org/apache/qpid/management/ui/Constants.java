@@ -96,7 +96,10 @@ public class Constants
     public final static String SUBSCRIBE_BUTTON   = "Subscribe";
     public final static String UNSUBSCRIBE_BUTTON = "Unsubscribe";
     
-    public final static String CONSOLE_IMAGE = "ConsoelImage";
+    
+    public final static String SUCCESS_IMAGE = "SuccessImage";
+    public final static String FAILURE_IMAGE = "FailureImage";
+    public final static String CONSOLE_IMAGE = "ConsoleImage";
     public final static String CLOSED_FOLDER_IMAGE = "ClosedFolderImage";
     public final static String OPEN_FOLDER_IMAGE = "OpenFolderImage";
     public final static String MBEAN_IMAGE = "MBeanImage";
