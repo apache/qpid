@@ -2,5 +2,5 @@ broker.version=0-10
 broker.command=${project.root}/../cpp/src/qpidd
 broker.modules=
 broker.args=
-broker=${broker.command} -p @PORT --data-dir ${build.data}/@PORT -t --auth no ${broker.modules} ${broker.args}
+broker=${broker.command} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList
