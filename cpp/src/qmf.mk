@@ -20,46 +20,47 @@
 #
 # qmf agent library makefile fragment, to be included in Makefile.am
 # 
-lib_LTLIBRARIES += \
-  libqmfcommon.la \
+lib_LTLIBRARIES +=				\
+  libqmfcommon.la				\
   libqmfagent.la
 
-module_hdr += \
-  qpid/agent/ManagementAgent.h \
-  qpid/agent/ManagementAgentImpl.h \
-  qpid/agent/QmfAgentImportExport.h \
-  qmf/Agent.h \
-  qmf/Console.h \
-  qmf/Event.h \
-  qmf/Message.h \
-  qmf/MessageImpl.h \
-  qmf/Object.h \
-  qmf/ObjectId.h \
-  qmf/ObjectIdImpl.h \
-  qmf/ObjectImpl.h \
-  qmf/Query.h \
-  qmf/QueryImpl.h \
-  qmf/ResilientConnection.h \
-  qmf/Schema.h \
-  qmf/SchemaImpl.h \
-  qmf/Typecode.h \
-  qmf/Value.h \
+# Public header files
+nobase_include_HEADERS +=			\
+  ../include/qpid/agent/ManagementAgent.h	\
+  ../include/qpid/agent/QmfAgentImportExport.h
+
+
+libqmfcommon_la_SOURCES =			\
+  qmf/Agent.cpp					\
+  qmf/Agent.h					\
+  qmf/Console.h					\
+  qmf/Event.h					\
+  qmf/Message.h					\
+  qmf/MessageImpl.cpp				\
+  qmf/MessageImpl.h				\
+  qmf/Object.h					\
+  qmf/ObjectId.h				\
+  qmf/ObjectIdImpl.cpp				\
+  qmf/ObjectIdImpl.h				\
+  qmf/ObjectImpl.cpp				\
+  qmf/ObjectImpl.h				\
+  qmf/Query.h					\
+  qmf/QueryImpl.cpp				\
+  qmf/QueryImpl.h				\
+  qmf/ResilientConnection.cpp			\
+  qmf/ResilientConnection.h			\
+  qmf/Schema.h					\
+  qmf/SchemaImpl.cpp				\
+  qmf/SchemaImpl.h				\
+  qmf/Typecode.h				\
+  qmf/Value.h					\
+  qmf/ValueImpl.cpp				\
   qmf/ValueImpl.h
 
-libqmfcommon_la_SOURCES = \
-  qmf/Agent.cpp \
-  qmf/ResilientConnection.cpp \
-  qmf/MessageImpl.cpp \
-  qmf/SchemaImpl.cpp \
-  qmf/ValueImpl.cpp \
-  qmf/ObjectIdImpl.cpp \
-  qmf/ObjectImpl.cpp \
-  qmf/QueryImpl.cpp
-
-libqmfagent_la_SOURCES = \
-  qpid/agent/ManagementAgent.h \
-  qpid/agent/ManagementAgentImpl.cpp \
-  qpid/agent/ManagementAgentImpl.h \
+libqmfagent_la_SOURCES =			\
+  ../include/qpid/agent/ManagementAgent.h	\
+  qpid/agent/ManagementAgentImpl.cpp		\
+  qpid/agent/ManagementAgentImpl.h		\
   qmf/Agent.cpp
 
 libqmfagent_la_LIBADD = libqpidclient.la

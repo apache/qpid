@@ -195,6 +195,7 @@ endif (MSVC)
 include_directories( ${Boost_INCLUDE_DIR} )
 
 include_directories( . )
+include_directories( ../include )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gen)
 
 link_directories( ${Boost_LIBRARY_DIRS} )
@@ -511,7 +512,7 @@ set (libqpidclient_SOURCES
      qpid/client/QueueOptions.cpp
      qpid/client/Results.cpp
      qpid/client/SessionBase_0_10.cpp
-     qpid/client/SessionBase_0_10.h
+     ../include/qpid/client/SessionBase_0_10.h
      qpid/client/SessionBase_0_10Access.h
      qpid/client/ConnectionAccess.h
      qpid/client/SessionImpl.cpp
@@ -615,7 +616,7 @@ target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRA
 #  qpid/agent/ManagementAgent.h \
 #  qpid/agent/ManagementAgentImpl.h
 set (qmfagent_SOURCES
-     qpid/agent/ManagementAgent.h
+     ../include/qpid/agent/ManagementAgent.h
      qpid/agent/ManagementAgentImpl.cpp
      qpid/agent/ManagementAgentImpl.h
      qmf/Agent.cpp
@@ -656,29 +657,29 @@ set_target_properties (qmfcommon PROPERTIES
 #  qpid/console/SessionManager.h \
 #  qpid/console/Value.h
 set (qmfconsole_SOURCES
-     qpid/console/Agent.h
+     ../include/qpid/console/Agent.h
+     ../include/qpid/console/Broker.h
+     ../include/qpid/console/ClassKey.h
+     ../include/qpid/console/ConsoleImportExport.h
+     ../include/qpid/console/ConsoleListener.h
+     ../include/qpid/console/Event.h
+     ../include/qpid/console/Object.h
+     ../include/qpid/console/ObjectId.h
+     ../include/qpid/console/Package.h
+     ../include/qpid/console/Schema.h
+     ../include/qpid/console/SequenceManager.h
+     ../include/qpid/console/SessionManager.h
+     ../include/qpid/console/Value.h
      qpid/console/Agent.cpp
-     qpid/console/Broker.h
      qpid/console/Broker.cpp
-     qpid/console/ClassKey.h
      qpid/console/ClassKey.cpp
-     qpid/console/ConsoleImportExport.h
-     qpid/console/ConsoleListener.h
-     qpid/console/Event.h
      qpid/console/Event.cpp
-     qpid/console/Object.h
      qpid/console/Object.cpp
-     qpid/console/ObjectId.h
      qpid/console/ObjectId.cpp
-     qpid/console/Package.h
      qpid/console/Package.cpp
-     qpid/console/Schema.h
      qpid/console/Schema.cpp
-     qpid/console/SequenceManager.h
      qpid/console/SequenceManager.cpp
-     qpid/console/SessionManager.h
      qpid/console/SessionManager.cpp
-     qpid/console/Value.h
      qpid/console/Value.cpp
     )
 add_library (qmfconsole SHARED ${qmfconsole_SOURCES})
