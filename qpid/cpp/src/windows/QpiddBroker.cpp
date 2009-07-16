@@ -29,7 +29,7 @@ const char *QPIDD_CONF_FILE = "qpid_broker.conf";
 const char *QPIDD_MODULE_DIR = ".";
 }
 #endif
-#include "windows/qpidd.h"
+#include "qpidd.h"
 #include "qpid/Exception.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
