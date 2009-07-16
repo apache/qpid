@@ -25,4 +25,4 @@ class Test:
   def configure(self, config):
     self.config = config
 
-import messaging
+import messaging, framing

@@ -22,7 +22,7 @@
 
 import time
 from qpid.tests import Test
-from qpid.messaging import Connection, Disconnected, Empty, Message, UNLIMITED, uuid4
+from qpid.messaging import Connection, ConnectError, Disconnected, Empty, Message, UNLIMITED, uuid4
 from Queue import Queue, Empty as QueueEmpty
 
 class Base(Test):
@@ -98,6 +98,13 @@ class SetupTests(Base):
     self.conn = Connection(self.broker.host, self.broker.port)
     self.conn.connect()
     self.ping(self.conn.session())
+
+  def testConnectError(self):
+    try:
+      self.conn = Connection.open("localhost", 0)
+      assert False, "connect succeeded"
+    except ConnectError:
+      pass
 
 class ConnectionTests(Base):
 
