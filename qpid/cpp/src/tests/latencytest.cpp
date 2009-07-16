@@ -57,18 +57,18 @@ struct Args : public qpid::TestOptions {
     bool durable;
     string base;
     bool singleConnect;
-    uint queues;
 
     Args() : size(256), count(1000), rate(0), reportFrequency(1000),
 	     timeLimit(0), concurrentConnections(1),
              prefetch(100), ack(0),
-             durable(false), base("latency-test"), singleConnect(false), queues(1)
+             durable(false), base("latency-test"), singleConnect(false)
 
     {
         addOptions()            
 
             ("size", optValue(size, "N"), "message size")
-            ("concurrentTests", optValue(concurrentConnections, "N"), "number of concurrent test setup")
+            ("concurrentTests", optValue(concurrentConnections, "N"), "number of concurrent test setups, will create another publisher,\
+ subcriber, queue, and connections")
             ("single-connection", optValue(singleConnect, "yes|no"), "Use one connection for multiple sessions.")
             ("count", optValue(count, "N"), "number of messages to send")
             ("rate", optValue(rate, "N"), "target message rate (causes count to be ignored)")
@@ -82,8 +82,7 @@ struct Args : public qpid::TestOptions {
             ("durable", optValue(durable, "yes|no"), "use durable messages")
             ("csv", optValue(csv), "print stats in csv format (rate,min,max,avg)")
             ("cumulative", optValue(cumulative), "cumulative stats in csv format")
-            ("queue-base-name", optValue(base, "<name>"), "base name for queues")
-            ("queues", optValue(queues, "N"), "declare N queues & bindings to test routing");
+            ("queue-base-name", optValue(base, "<name>"), "base name for queues");
     }
 };
 
@@ -419,26 +418,6 @@ int main(int argc, char** argv)
 
         Connection localConnection;
         AsyncSession session;
-        if (opts.queues > 1){
-            opts.open(localConnection);
-            session = localConnection.newSession();
-            std::cout << "More than one queue being used, creating..." << std::endl;
-            // use default binding
-            for (uint i=0;i<opts.queues;i++){
-
-                std::ostringstream out;
-                out << opts.base << "-" << (i+1);
-                session.queueDeclare(arg::queue=out.str(), arg::durable=opts.durable, arg::autoDelete=true);
-                uint msgCount = session.queueQuery(arg::queue=out.str()).get().getMessageCount();
-                if (msgCount) {
-                    std::cout << "Warning: found " << msgCount << " msgs on " << out.str() << ". Purging..." << std::endl;
-                    session.queuePurge(arg::queue=out.str());
-                }
-
-            }
-            session.sync();
-            std::cout << "Complete..." << std::endl;
-        }
 
         boost::ptr_vector<Test> tests(opts.concurrentConnections);
         for (uint i = 0; i < opts.concurrentConnections; i++) {
@@ -461,11 +440,6 @@ int main(int argc, char** argv)
             for (boost::ptr_vector<Test>::iterator i = tests.begin(); i != tests.end(); i++) {
                 i->join();
             }
-        }
-
-        if (opts.queues > 1){
-            session.close();
-            localConnection.close();
         }
 
         return 0;
