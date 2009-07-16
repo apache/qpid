@@ -253,6 +253,7 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
 
 # Check for optional cluster requirements.
 tmp_LIBS=$LIBS
+tmp_LDFLAGS=$LDFLAGS
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais -L/usr/lib/corosync -L/usr/lib64/corosync"
 AC_CHECK_LIB([cpg],[cpg_local_get],[have_libcpg=yes],)
 AC_CHECK_HEADERS([openais/cpg.h corosync/cpg.h],[have_cpg_h=yes],)
@@ -272,6 +273,8 @@ AC_ARG_WITH([cpg],
    ]
 )
 AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_cpg = xyes])
+# Clean up unnceccassary flags if we don't use clustering
+AS_IF([test ! x$with_cpg = xyes], [LDFLAGS=$tmp_LDFLAGS])
 
 AC_CHECK_LIB([cman],[cman_is_quorate],have_libcman=yes,)
 AC_CHECK_HEADERS([libcman.h],have_libcman_h=yes,)
