@@ -30,7 +30,7 @@ Areas that still need work:
   - protocol negotiation/multiprotocol impl
 """
 
-import connection, time, sys, traceback
+import connection, time, socket, sys, traceback
 from codec010 import StringCodec
 from datatypes import timestamp, uuid4, RangedSet, Message as Message010
 from logging import getLogger
@@ -100,6 +100,9 @@ class Constant:
     return self.name
 
 UNLIMITED = Constant("UNLIMITED", 0xFFFFFFFFL)
+
+class ConnectError(Exception):
+  pass
 
 class Connection(Lockable):
 
@@ -185,7 +188,10 @@ class Connection(Lockable):
     """
     if self._conn is not None:
       return
-    self._socket = connect(self.host, self.port)
+    try:
+      self._socket = connect(self.host, self.port)
+    except socket.error, e:
+      raise ConnectError(*e.args)
     self._conn = connection.Connection(self._socket)
     self._conn.start()
 
