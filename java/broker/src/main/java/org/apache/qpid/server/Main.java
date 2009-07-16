@@ -50,6 +50,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.information.management.ServerInformationMBean;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
@@ -272,6 +273,10 @@ public class Main
 
         ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
         configMBean.register();
+        
+        ServerInformationMBean sysInfoMBean = 
+            new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
+        sysInfoMBean.register();
         
         //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
         // that are causing the broker build to pick up the wrong properties file and hence say
