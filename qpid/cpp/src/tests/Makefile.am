@@ -132,7 +132,7 @@ libshlibtest_la_SOURCES = shlibtest.cpp
 
 tmodule_LTLIBRARIES += test_store.la
 test_store_la_SOURCES = test_store.cpp
-test_store_la_LIBADD = $(lib_broker) # FIXME aconway 2009-04-03: required?
+test_store_la_LIBADD = $(lib_broker)
 test_store_la_LDFLAGS = -module
 
 include cluster.mk
@@ -286,7 +286,8 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
 
-LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test run_failover_soak stop_broker \
+LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
+ run_failover_soak  \
  federated_cluster_test_with_node_failure
 # TODO: renable the temporarily disabled the failing reliable_replication_test when QPID-1984 is resolved.
 

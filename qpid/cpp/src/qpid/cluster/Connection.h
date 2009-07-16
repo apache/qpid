@@ -22,12 +22,14 @@
  *
  */
 
-#include "qpid/cluster/types.h"
-#include "qpid/cluster/OutputInterceptor.h"
-#include "qpid/cluster/EventFrame.h"
-#include "qpid/cluster/McastFrameHandler.h"
+#include "types.h"
+#include "OutputInterceptor.h"
+#include "EventFrame.h"
+#include "McastFrameHandler.h"
+#include "UpdateReceiver.h"
 
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/SemanticState.h"
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/ConnectionInputHandler.h"
@@ -103,7 +105,7 @@ class Connection :
     // Called for data delivered from the cluster.
     void deliveredFrame(const EventFrame&);
 
-    void consumerState(const std::string& name, bool blocked, bool notifyEnabled, bool isInListener);
+    void consumerState(const std::string& name, bool blocked, bool notifyEnabled);
     
     // ==== Used in catch-up mode to build initial state.
     // 
@@ -113,7 +115,8 @@ class Connection :
                       const framing::SequenceSet& sentIncomplete,
                       const framing::SequenceNumber& expected,
                       const framing::SequenceNumber& received,
-                      const framing::SequenceSet& unknownCompleted, const SequenceSet& receivedIncomplete);
+                      const framing::SequenceSet& unknownCompleted,
+                      const SequenceSet& receivedIncomplete);
     
     void outputTask(uint16_t channel, const std::string& name);
     
@@ -143,9 +146,9 @@ class Connection :
     void txAccept(const framing::SequenceSet&);
     void txDequeue(const std::string&);
     void txEnqueue(const std::string&);
-    void txPublish(const qpid::framing::Array&, bool);
+    void txPublish(const framing::Array&, bool);
     void txEnd();
-    void accumulatedAck(const qpid::framing::SequenceSet&);
+    void accumulatedAck(const framing::SequenceSet&);
 
     // Encoded queue/exchange replication.
     void queue(const std::string& encoded);
@@ -157,6 +160,8 @@ class Connection :
     void deliverClose();
 
     OutputInterceptor& getOutput() { return output; }
+
+    void addQueueListener(const std::string& queue, uint32_t listener);
 
   private:
     struct NullFrameHandler : public framing::FrameHandler {
@@ -190,6 +195,7 @@ class Connection :
     boost::shared_ptr<broker::TxBuffer> txBuffer;
     bool expectProtocolHeader;
     McastFrameHandler mcastFrameHandler;
+    UpdateReceiver::ConsumerNumbering& consumerNumbering;
 
     static qpid::sys::AtomicValue<uint64_t> catchUpId;
     

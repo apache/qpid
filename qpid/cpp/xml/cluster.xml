@@ -108,8 +108,6 @@
       <field name="name" type="str8"/>
       <field name="blocked" type="bit"/>
       <field name="notifyEnabled" type="bit"/>
-      <!-- Flag set if the consumer is in its queue's listener set. -->
-      <field name="is-in-listener" type="bit"/>
     </control>
 
     <!-- Delivery-record for outgoing messages sent but not yet accepted. -->
@@ -191,5 +189,10 @@
     <!-- Set expiry-id for subsequent messages. -->
     <control name="expiry-id" code="0x33"><field name="expiry-id" type="uint64"/></control>
 
+    <!-- Add a listener to a queue -->
+    <control name="add-queue-listener" code="0x34">
+      <field name="queue" type="str8"/>
+      <field name="consumer" type="uint32"/>
+    </control>
   </class>
 </amqp>

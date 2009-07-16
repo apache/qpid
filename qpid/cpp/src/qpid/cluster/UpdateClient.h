@@ -23,6 +23,7 @@
  */
 
 #include "qpid/cluster/ClusterMap.h"
+#include "qpid/cluster/Numbering.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/AsyncSession.h"
@@ -94,7 +95,10 @@ class UpdateClient : public sys::Runnable {
     void updateTxState(broker::SemanticState& s);
     void updateOutputTask(const sys::OutputTask* task);
     void updateConsumer(const broker::SemanticState::ConsumerImpl::shared_ptr&);
+    void updateQueueListeners(const boost::shared_ptr<broker::Queue>&);
+    void updateQueueListener(std::string& q, const boost::shared_ptr<broker::Consumer>& c);
 
+    Numbering<broker::SemanticState::ConsumerImpl::shared_ptr> consumerNumbering;
     MemberId updaterId;
     MemberId updateeId;
     Url updateeUrl;

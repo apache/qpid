@@ -19,21 +19,22 @@
  *
  */
 
-#include "qpid/cluster/ClusterMap.h"
-#include "qpid/cluster/ClusterSettings.h"
-#include "qpid/cluster/Cpg.h"
-#include "qpid/cluster/Decoder.h"
-#include "qpid/cluster/ErrorCheck.h"
-#include "qpid/cluster/Event.h"
-#include "qpid/cluster/EventFrame.h"
-#include "qpid/cluster/ExpiryPolicy.h"
-#include "qpid/cluster/FailoverExchange.h"
-#include "qpid/cluster/LockedConnectionMap.h"
-#include "qpid/cluster/Multicaster.h"
-#include "qpid/cluster/NoOpConnectionOutputHandler.h"
-#include "qpid/cluster/PollableQueue.h"
-#include "qpid/cluster/PollerDispatch.h"
-#include "qpid/cluster/Quorum.h"
+#include "ClusterMap.h"
+#include "ClusterSettings.h"
+#include "Cpg.h"
+#include "Decoder.h"
+#include "ErrorCheck.h"
+#include "Event.h"
+#include "EventFrame.h"
+#include "ExpiryPolicy.h"
+#include "FailoverExchange.h"
+#include "LockedConnectionMap.h"
+#include "Multicaster.h"
+#include "NoOpConnectionOutputHandler.h"
+#include "PollableQueue.h"
+#include "PollerDispatch.h"
+#include "Quorum.h"
+#include "UpdateReceiver.h"
 
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
 #include "qpid/Url.h"
@@ -113,6 +114,8 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Decoder& getDecoder() { return decoder; }
 
     ExpiryPolicy& getExpiryPolicy() { return *expiryPolicy; }
+
+    UpdateReceiver& getUpdateReceiver() { return updateReceiver; }
 
   private:
     typedef sys::Monitor::ScopedLock Lock;
@@ -258,6 +261,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     boost::optional<ClusterMap> updatedMap;
     bool updateRetracted;
     ErrorCheck error;
+    UpdateReceiver updateReceiver;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend class ClusterDispatcher;
