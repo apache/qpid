@@ -26,8 +26,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
+import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -88,6 +93,14 @@ public class NavigationView extends ViewPart
     private PreferenceStore _preferences;
     // Map of connected servers
     private HashMap<ManagedServer, TreeObject> _managedServerMap = new HashMap<ManagedServer, TreeObject>();
+    
+    private static HashSet<String> _serverTopLevelMBeans = new HashSet<String>();
+    {
+        _serverTopLevelMBeans.add(UserManagement.TYPE); 
+        _serverTopLevelMBeans.add(LoggingManagement.TYPE);
+        _serverTopLevelMBeans.add(ConfigurationManagement.TYPE);
+        _serverTopLevelMBeans.add(ServerInformation.TYPE);
+    }
 
     private void createTreeViewer(Composite parent)
     {
@@ -566,6 +579,14 @@ public class NavigationView extends ViewPart
         for (int i = 0; i < types.length; i++)
         {
             String type = types[i];
+            
+            if(types.length == 1 && _serverTopLevelMBeans.contains(type))
+            {
+                //This mbean is not to be contained in a type hierarchy
+                //Just add it as a child of the server node.
+                break;
+            }
+            
             String valueOftype = mbean.getProperty(type);
             // If value is not null, then there will be a parent node for this mbean
             // eg. for type=VirtualHost the value is "test"
