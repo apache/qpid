@@ -46,6 +46,7 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
 {
     if (mgmtObject != 0)
         mgmtObject->resourceDestroy();
+    QPID_LOG(debug, "Remote Agent removed bank=[" << brokerBank << "." << agentBank << "]");
 }
 
 ManagementAgent::ManagementAgent () :
@@ -345,6 +346,8 @@ void ManagementAgent::periodicProcessing (void)
          baseIter != managementObjects.end();
          baseIter++) {
         ManagementObject* baseObject = baseIter->second;
+        uint32_t pcount = 0;
+        uint32_t scount = 0;
 
         //
         //  Skip until we find a base object requiring a sent message.
@@ -369,11 +372,13 @@ void ManagementAgent::periodicProcessing (void)
                 if (object->getConfigChanged() || object->getForcePublish() || object->isDeleted()) {
                     encodeHeader(msgBuffer, 'c');
                     object->writeProperties(msgBuffer);
+                    pcount++;
                 }
         
                 if (object->hasInst() && (object->getInstChanged() || object->getForcePublish())) {
                     encodeHeader(msgBuffer, 'i');
                     object->writeStatistics(msgBuffer);
+                    scount++;
                 }
 
                 if (object->isDeleted())
@@ -391,7 +396,7 @@ void ManagementAgent::periodicProcessing (void)
             stringstream key;
             key << "console.obj.1.0." << baseObject->getPackageName() << "." << baseObject->getClassName();
             sendBuffer(msgBuffer, contentSize, mExchange, key.str());
-            QPID_LOG(debug, "SEND Multicast ContentInd to=" << key.str());
+            QPID_LOG(debug, "SEND Multicast ContentInd to=" << key.str() << " props=" << pcount << " stats=" << scount);
         }
     }
 
@@ -864,6 +869,8 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
     addObject (agent->mgmtObject);
 
     remoteAgents[connectionRef] = agent;
+
+    QPID_LOG(debug, "Remote Agent registered bank=[" << brokerBank << "." << assignedBank << "] replyTo=" << replyToKey);
 
     // Send an Attach Response
     Buffer   outBuffer (outputBuffer, MA_BUFFER_SIZE);
