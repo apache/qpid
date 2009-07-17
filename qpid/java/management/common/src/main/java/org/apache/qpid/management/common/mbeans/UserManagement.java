@@ -43,7 +43,9 @@ public interface UserManagement
 
     //********** Operations *****************//
     /**
-     * set password for user
+     * set password for user.
+     * 
+     * Since Qpid JMX API 1.2 this operation expects plain text passwords to be provided. Prior to this, MD5 hashed passwords were supplied.
      *
      * @param username The username to create
      * @param password The password for the user
@@ -75,6 +77,8 @@ public interface UserManagement
     /**
      * Create users with given details
      *
+     * Since Qpid JMX API 1.2 this operation expects plain text passwords to be provided. Prior to this, MD5 hashed passwords were supplied.
+     * 
      * @param username The username to create
      * @param password The password for the user
      * @param read     The set of permission to give the new user
@@ -105,10 +109,12 @@ public interface UserManagement
 
     /**
      * Reload the date from disk
+     * 
+     * Since Qpid JMX API 1.2 this operation reloads the password and authorisation files. Prior to this, only the authorisation file was reloaded.
      *
      * @return The result of the operation
      */
-    @MBeanOperation(name = "reloadData", description = "Reload the authentication file from disk.",
+    @MBeanOperation(name = "reloadData", description = "Reload the authentication and authorisation files from disk.",
                     impact = MBeanOperationInfo.ACTION)
     boolean reloadData();
 
