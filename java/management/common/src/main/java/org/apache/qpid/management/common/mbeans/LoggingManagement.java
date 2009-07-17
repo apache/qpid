@@ -29,6 +29,10 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.TabularData;
 
+/**
+ * Interface for the LoggingManagement MBean
+ * @since Qpid JMX API 1.2
+ */
 public interface LoggingManagement
 {
     String TYPE = "LoggingManagement";
@@ -43,6 +47,7 @@ public interface LoggingManagement
     /**
      * Attribute to represent the log4j xml configuration file's LogWatch interval.
      * @return The logwatch interval in seconds.
+     * @since Qpid JMX API 1.2
      */
     @MBeanAttribute(name="Log4jLogWatchInterval", 
                     description = "The log4j xml configuration file LogWatch interval (in seconds). 0 indicates not being checked.")
@@ -51,6 +56,7 @@ public interface LoggingManagement
     /**
      * Attribute to represent the available log4j logger output levels.
      * @return The logging level names.
+     * @since Qpid JMX API 1.2
      */
     @MBeanAttribute(name="AvailableLoggerLevels", description = "The values to which log output level can be set.")
     String[] getAvailableLoggerLevels();
@@ -63,6 +69,7 @@ public interface LoggingManagement
      * @param logger The name of the logger
      * @param level The level to set the logger to
      * @return True if successful, false if unsuccessful (eg if an invalid level is specified) 
+     * @since Qpid JMX API 1.2
      */
     @MBeanOperation(name = "setRuntimeLoggerLevel", description = "Set the runtime logging level for an active log4j logger.",
                     impact = MBeanOperationInfo.ACTION)
@@ -72,6 +79,7 @@ public interface LoggingManagement
     /**
      * Retrieves a TabularData set of the active log4j loggers and their levels
      * @return TabularData set of CompositeData rows with logger name and level, or null if there is a problem with the TabularData type 
+     * @since Qpid JMX API 1.2
      */
     @MBeanOperation(name = "viewEffectiveRuntimeLoggerLevels", description = "View the effective runtime logging level " +
     		        "for active log4j logger's.", impact = MBeanOperationInfo.INFO)
@@ -81,6 +89,7 @@ public interface LoggingManagement
      * Sets the level of the active Log4J RootLogger
      * @param level The level to set the RootLogger to
      * @return True if successful, false if unsuccessful (eg if an invalid level is specified) 
+     * @since Qpid JMX API 1.2
      */
     @MBeanOperation(name = "setRuntimeRootLoggerLevel", description = "Set the runtime logging level for the active log4j Root Logger.",
                     impact = MBeanOperationInfo.ACTION)
@@ -89,6 +98,7 @@ public interface LoggingManagement
     /**
      * Attribute to represent the level of the active Log4J RootLogger
      * @return The level of the RootLogger.
+     * @since Qpid JMX API 1.2
      */
     @MBeanAttribute(name = "getRuntimeRootLoggerLevel", description = "Get the runtime logging level for the active log4j Root Logger.")
     String getRuntimeRootLoggerLevel();
@@ -102,6 +112,7 @@ public interface LoggingManagement
      * @param level The level to set the logger to
      * @return True if successful, false if unsuccessful (eg if an invalid logger or level is specified) 
      * @throws IOException if there is an error parsing the configuration file.
+     * @since Qpid JMX API 1.2
      */
     @MBeanOperation(name = "setConfigFileLoggerLevel", description = "Set the logging level for an existing logger " +
     		         "in the log4j xml configuration file", impact = MBeanOperationInfo.ACTION)
@@ -112,6 +123,7 @@ public interface LoggingManagement
      * Retrieves a TabularData set of the existing Log4J loggers within the xml configuration file
      * @return TabularData set of CompositeData rows with logger name and level, or null if there is a problem with the TabularData type 
      * @throws IOException if there is an error parsing the configuration file.
+     * @since Qpid JMX API 1.2
      */
     @MBeanOperation(name = "viewConfigFileLoggerLevels", description = "Get the logging level defined for the logger's " +
     		        "in the log4j xml configuration file.", impact = MBeanOperationInfo.INFO)
@@ -122,6 +134,7 @@ public interface LoggingManagement
      * @param level The level to set the logger to
      * @return True if successful, false if not (eg an invalid level is specified, or root logger level isnt already defined) 
      * @throws IOException if there is an error parsing the configuration file.
+     * @since Qpid JMX API 1.2
      */
     @MBeanOperation(name = "setConfigFileRootLoggerLevel", description = "Set the logging level for the Root Logger " +
     		        "in the log4j xml configuration file.", impact = MBeanOperationInfo.ACTION)
@@ -130,6 +143,7 @@ public interface LoggingManagement
     /**
      * Attribute to represent the level of the Log4J RootLogger within the xml configuration file
      * @return The level of the RootLogger, or null if it is not present
+     * @since Qpid JMX API 1.2
      */
     @MBeanAttribute(name = "getConfigFileRootLoggerLevel", description = "Get the logging level for the Root Logger " +
                     "in the log4j xml configuration file.")

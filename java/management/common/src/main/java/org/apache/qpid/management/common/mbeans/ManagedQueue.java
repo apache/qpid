@@ -80,6 +80,8 @@ public interface ManagedQueue
 
     /**
      * Size of messages in the queue
+     * 
+     * Since Qpid JMX API 1.2 this operation returns in units of bytes. Prior to this, the result was in units of kilobytes.
      * @return
      * @throws IOException
      */
@@ -181,6 +183,8 @@ public interface ManagedQueue
     /**
      * This is useful for setting notifications or taking required action if the size of messages
      * stored in the queue increases over this limit.
+     * 
+     * Since Qpid JMX API 1.2 this operation returns in units of bytes. Prior to this, the result was in units of kilobytes.
      * @return threshold high value for Queue Depth
      * @throws IOException
      */
@@ -220,9 +224,12 @@ public interface ManagedQueue
 
     /**
      * Deletes the first message from top.
+     * 
+     * Deprecated as of Qpid JMX API 1.3
      * @throws IOException
      * @throws JMException
      */
+    @Deprecated
     @MBeanOperation(name="deleteMessageFromTop", description="Deletes the first message from top",
                     impact= MBeanOperationInfo.ACTION)
     void deleteMessageFromTop() throws IOException, JMException;
