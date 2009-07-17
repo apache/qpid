@@ -609,6 +609,12 @@ class Session:
       brokerList = self.brokers
     for broker in brokerList:
       broker._waitForStable()
+      if broker.isConnected():
+        if "_package" not in kwargs or "_class" not in kwargs or \
+              kwargs["_package"] != "org.apache.qpid.broker" or \
+              kwargs["_class"] != "agent":
+          self.getObjects(_package = "org.apache.qpid.broker", _class = "agent",
+                     _agent = broker.getAgent(1,0))
 
     agentList = []
     if "_agent" in kwargs:

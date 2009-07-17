@@ -333,7 +333,12 @@ module Qpid::Qmf
       else
         broker_list = @brokers
       end
-      broker_list.each { |broker| broker.wait_for_stable }
+      broker_list.each { |broker|
+        broker.wait_for_stable
+        if kwargs[:package] != "org.apache.qpid.broker" or kwargs[:class] != "agent"
+          objects(:agent => broker.agent(1,0), :package => "org.apache.qpid.broker", :class => "agent") if broker.connected?
+        end
+      }
 
       agent_list = []
       if kwargs.include?(:agent)
