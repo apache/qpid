@@ -23,30 +23,42 @@ package org.apache.qpid.agent;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.qpid.agent.binding.BindingUtils;
 import org.apache.qpid.agent.binding.MethodBinding;
 import org.apache.qpid.agent.binding.PropertyBinding;
 
 /**
- * Wrapper classe for adding EJBS which are to be 
- * managed by the QMF Agent. The jndi location and the
- * public interface to exposed are used to generate the schema.
+ * Wrapper classe for adding EJBS which are to be managed by the QMF Agent. The
+ * jndi location and the public interface to exposed are used to generate the
+ * schema.
  */
 public class ManagedEJB extends ManagedObjectBase
 {
+    private Log log = LogFactory.getLog(ManagedEJB.class);
     protected String className;
     protected String jndiLocation;
+    protected ClassLoader classLoader;
 
     protected Object getEJB()
     {
+        ClassLoader previousCL = Thread.currentThread().getContextClassLoader();
         try
         {
+            if (classLoader != null)
+            {
+                Thread.currentThread().setContextClassLoader(classLoader);
+            }
             InitialContext ctx = new InitialContext();
             return ctx.lookup(jndiLocation);
         } catch (NamingException e)
         {
             throw new AgentException("Error looking up EJB at " + jndiLocation,
                     e);
+        } finally
+        {
+            Thread.currentThread().setContextClassLoader(previousCL);
         }
     }
 
@@ -67,7 +79,14 @@ public class ManagedEJB extends ManagedObjectBase
     {
         try
         {
-            return Class.forName(className);
+            if (classLoader != null)
+            {
+                log.debug("Using the classloader");
+                return classLoader.loadClass(className);
+            } else
+            {
+                return Class.forName(className);
+            }
         } catch (ClassNotFoundException e)
         {
             throw new AgentException(String.format(
@@ -105,5 +124,15 @@ public class ManagedEJB extends ManagedObjectBase
     public void setJndiLocation(String jndiLocation)
     {
         this.jndiLocation = jndiLocation;
+    }
+
+    public ClassLoader getClassLoader()
+    {
+        return classLoader;
+    }
+
+    public void setClassLoader(ClassLoader cloader)
+    {
+        this.classLoader = cloader;
     }
 }

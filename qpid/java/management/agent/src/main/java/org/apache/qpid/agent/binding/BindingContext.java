@@ -33,8 +33,8 @@ import org.apache.qpid.agent.annotations.QMFSeeAlso;
 import org.apache.qpid.agent.annotations.QMFType;
 
 /**
- * Contains the mappings from java classes to QMF schema and back.
- * There is one context per agent, and it contains all the metadata.
+ * Contains the mappings from java classes to QMF schema and back. There is one
+ * context per agent, and it contains all the metadata.
  */
 public class BindingContext
 {

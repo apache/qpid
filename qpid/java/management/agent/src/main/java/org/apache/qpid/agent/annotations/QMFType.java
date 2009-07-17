@@ -28,9 +28,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Tells the QMF Agent that this object will be a type only
- * This will cause only properties to be sent across
- * the wire.
+ * Tells the QMF Agent that this object will be a type only This will cause only
+ * properties to be sent across the wire.
  */
 @Target(TYPE)
 @Retention(RUNTIME)

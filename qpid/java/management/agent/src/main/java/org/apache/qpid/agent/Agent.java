@@ -54,33 +54,34 @@ import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.Decoder;
 
 /**
- * The main class for interacting with the QMF bus. Objects which are
- * to be managed can be registered with the agent, as can classes
- * to be exposed via the schema.
+ * The main class for interacting with the QMF bus. Objects which are to be
+ * managed can be registered with the agent, as can classes to be exposed via
+ * the schema.
  */
 public class Agent implements MessageListener
 {
     // The following are settings to configure the Agent
-    private AMQConnection connection;
-    private boolean sessionTransacted = false;
-    private int acknowledgeMode = Session.AUTO_ACKNOWLEDGE;
-    private String label;
-    private UUID systemId;
+    protected AMQConnection connection;
+    protected boolean sessionTransacted = false;
+    protected int acknowledgeMode = Session.AUTO_ACKNOWLEDGE;
+    protected String label;
+    protected UUID systemId;
     // this list holds the objects until the agent is started
-    private List managedObjects = new ArrayList();
-    private List registeredClasses = new ArrayList();
+    protected List managedObjects = new ArrayList();
+    protected List registeredClasses = new ArrayList();
     // The following instance variables are not
     // able to be set by the end user.
-    private Session session;
-    private MessageProducer prod;
-    private MessageConsumer cons;
-    private Queue reply;
-    private BindingContext bctx = new BindingContext();
-    private Map<Long, ManagedObject> objects = new Hashtable<Long, ManagedObject>();
-    private long bbank;
-    private long abank;
-    private static Log log = LogFactory.getLog(Agent.class);
-    private volatile boolean inside = false;
+    protected Session session;
+    protected MessageProducer prod;
+    protected MessageConsumer cons;
+    protected Queue reply;
+    protected BindingContext bctx = new BindingContext();
+    protected Map<Long, ManagedObject> objects = new Hashtable<Long, ManagedObject>();
+    protected long bbank;
+    protected long abank;
+    protected static Log log = LogFactory.getLog(Agent.class);
+    protected volatile boolean inside = false;
+    protected ClassLoader classLoader = null;
 
     public Agent()
     {
@@ -96,7 +97,6 @@ public class Agent implements MessageListener
         log.debug(String.format("Agent with name %s and uid %s created", label,
                 systemId.toString()));
     }
-
 
     public void register(ManagedObject managedObject)
     {
@@ -123,8 +123,26 @@ public class Agent implements MessageListener
     }
 
     /**
-     * Starts up the agent. Many bean containers may call this by
-     * default which aids in deployment
+     * Stops the agents connection to the bus
+     */
+    public void stop()
+    {
+        try
+        {
+            cons.close();
+            prod.close();
+            connection.stop();
+            connection.close();
+            session.close();
+        } catch (JMSException e)
+        {
+            log.error("Exception:", e);
+        }
+    }
+
+    /**
+     * Starts up the agent. Many bean containers may call this by default which
+     * aids in deployment
      */
     public void start()
     {
@@ -134,7 +152,14 @@ public class Agent implements MessageListener
         {
             try
             {
-                Class cls = Class.forName(clsName.toString());
+                Class cls = null;
+                if (String.class.isAssignableFrom(clsName.getClass()))
+                {
+                    cls = getClass(clsName.toString());
+                } else
+                {
+                    cls = (Class) clsName;
+                }
                 this.registerClass(cls);
             } catch (Exception e)
             {
@@ -149,7 +174,11 @@ public class Agent implements MessageListener
         {
             session = connection.createSession(sessionTransacted,
                     acknowledgeMode);
-            reply = session.createQueue(String.format("direct://amq.direct//%s-%s?exclusive='True'&autodelete='True'",label,systemId));
+            reply = session
+                    .createQueue(String
+                            .format(
+                                    "direct://amq.direct//%s-%s?exclusive='True'&autodelete='True'",
+                                    label, systemId));
             cons = session.createConsumer(reply);
             cons.setMessageListener(this);
             prod = session.createProducer(null);
@@ -360,10 +389,11 @@ public class Agent implements MessageListener
                 } catch (BindingException ex)
                 {
                     log
-                            .error(String
-                                    .format(
-                                            "An exception occured invoking method %s. Stack trace sent to console.",
-                                            method.getName()));
+                            .error(
+                                    String
+                                            .format(
+                                                    "An exception occured invoking method %s. Stack trace sent to console.",
+                                                    method.getName()), ex);
                     StringWriter str = new StringWriter();
                     PrintWriter writer = new PrintWriter(str);
                     ex.printStackTrace(writer);
@@ -492,7 +522,7 @@ public class Agent implements MessageListener
         }
     }
 
-    private void attachRequest(String label, UUID systemId)
+    protected void attachRequest(String label, UUID systemId)
     {
         BBEncoder enc = init('A');
         enc.writeStr8(label);
@@ -502,14 +532,14 @@ public class Agent implements MessageListener
         send(enc);
     }
 
-    private void packageIndication(String pkg)
+    protected void packageIndication(String pkg)
     {
         BBEncoder enc = init('p');
         enc.writeStr8(pkg);
         send(enc);
     }
 
-    private void classIndication(ClassBinding cb)
+    protected void classIndication(ClassBinding cb)
     {
         BBEncoder enc = init('q');
         enc.writeUint8(cb.getKind());
@@ -519,14 +549,14 @@ public class Agent implements MessageListener
         send(enc);
     }
 
-    private void schemaResponse(long seq, ClassBinding cb)
+    protected void schemaResponse(long seq, ClassBinding cb)
     {
         BBEncoder enc = init('s', seq);
         cb.encode(enc);
         send(enc);
     }
 
-    private void content(char c, long seq, Destination dest, ManagedObject mo)
+    protected void content(char c, long seq, Destination dest, ManagedObject mo)
     {
         BBEncoder enc = init(c, seq);
         ClassBinding cb = getClassBinding(mo);
@@ -555,7 +585,7 @@ public class Agent implements MessageListener
         }
     }
 
-    private void complete(long seq, Destination dest)
+    protected void complete(long seq, Destination dest)
     {
         BBEncoder enc = init('z', seq);
         enc.writeUint32(0);
@@ -563,13 +593,13 @@ public class Agent implements MessageListener
         send(dest, enc);
     }
 
-    private void methodResponse(long seq, Destination dest, int status,
+    protected void methodResponse(long seq, Destination dest, int status,
             String text)
     {
         methodResponse(seq, dest, status, text, null, null);
     }
 
-    private void methodResponse(long seq, Destination dest, int status,
+    protected void methodResponse(long seq, Destination dest, int status,
             String text, MethodBinding method, Object[] result)
     {
         BBEncoder enc = init('m', seq);
@@ -584,6 +614,24 @@ public class Agent implements MessageListener
             }
         }
         send(dest, enc);
+    }
+
+    protected Class getClass(String className)
+    {
+        try
+        {
+            if (classLoader != null)
+            {
+                return classLoader.loadClass(className);
+            } else
+            {
+                return Class.forName(className);
+            }
+        } catch (ClassNotFoundException e)
+        {
+            throw new AgentException(String.format(
+                    "No class named %s was found", className), e);
+        }
     }
 
     public String getLabel()

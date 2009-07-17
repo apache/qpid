@@ -22,10 +22,12 @@ package org.apache.qpid.agent;
 
 /**
  * AgentException
- * 
+ *
  */
 public class AgentException extends RuntimeException
 {
+    private static final long serialVersionUID = 1L;
+
     public AgentException(String msg)
     {
         super(msg);
