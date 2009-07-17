@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -37,10 +37,15 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -438,6 +443,71 @@ public class MBeanUtility
         }
         
         return mbeans;
+    }
+    
+    /**
+     * Classifies the management API version of the given server
+     * @return list of ManagedBeans
+     * @throws NullPointerException 
+     * @throws ManagementConsoleException
+     * @throws MalformedObjectNameException 
+     * @throws IOException 
+     */
+    public static void classifyManagementApiVersion(ManagedServer server, JMXServerRegistry serverRegistry) 
+         throws ManagementConsoleException, MalformedObjectNameException, NullPointerException, IOException
+    {
+        MBeanServerConnection mbsc = serverRegistry.getServerConnection();
+        
+        //Detect if the ServerInformation MBean is present, and use it to retrieve the API version.
+        ObjectName objName = new ObjectName(server.getDomain() + ":type="+ ServerInformation.TYPE + ",*");
+        Set<ObjectName> objectInstances = mbsc.queryNames(objName, null);
+        
+        if(objectInstances.size() != 0)
+        {
+            for (Iterator<ObjectName> itr = objectInstances.iterator(); itr.hasNext();)
+            {
+                ObjectName instance = (ObjectName)itr.next();
+                ServerInformation simb = (ServerInformation)
+                                         MBeanServerInvocationHandler.newProxyInstance(mbsc, 
+                                                     instance, ServerInformation.class, false);
+
+                    int major = simb.getManagementApiMajorVersion();
+                    int minor = simb.getManagementApiMinorVersion();
+                    
+                    serverRegistry.setManagementApiVersion(new ApiVersion(major, minor));
+            }
+            
+            return;
+        }
+        
+        //ServerInformation mbean was not present, so this is a older pre-v1.3 API server.
+        
+        //Detect the value of the 'version' key property on the UserManagement MBean ObjectName.
+        //If present, we have a v1.2 API server. If null, we have a v1.1 API server.
+        objName = new ObjectName(server.getDomain() + ":type="+ UserManagement.TYPE + ",*");
+        objectInstances = mbsc.queryNames(objName, null);
+        
+        if(objectInstances.size() != 0)
+        {
+            for (Iterator<ObjectName> itr = objectInstances.iterator(); itr.hasNext();)
+            {
+                ObjectName instance = (ObjectName)itr.next();
+                String version = instance.getKeyProperty("version");
+                
+                if(version != null)
+                {
+                    serverRegistry.setManagementApiVersion(new ApiVersion(1, 2));
+                }
+                else
+                {
+                    serverRegistry.setManagementApiVersion(new ApiVersion(1, 1));
+                }
+            }
+            
+            return;
+        }
+        
+        throw new ManagementConsoleException("Unable to classify the server management API version");
     }
     
     public static void printOutput(String statement)
