@@ -23,6 +23,7 @@ Remove-Item qpidd.port
 
 # Piping the output makes the script wait for qpidd to finish.
 ..\Debug\qpidd --quit --port $qpid_port | Write-Output
+$stopped = $?
 
 # Check qpidd.log.
 filter bad_stuff {
@@ -33,7 +34,8 @@ $qpidd_errors = $false
 Get-Content -path qpidd.log | where { bad_stuff } | Out-Default | Set-Variable -name qpidd_errors -value $true
 if ($qpidd_errors -eq $true) {
   "WARNING: Suspicious broker log entries in qpidd.log, above."
-  exit 1
 }
-
-exit 0
+if ($stopped -eq $true) {
+  exit 0
+}
+exit 1
