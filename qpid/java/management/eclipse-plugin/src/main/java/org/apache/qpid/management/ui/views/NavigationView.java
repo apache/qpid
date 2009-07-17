@@ -33,11 +33,13 @@ import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
+import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.preference.PreferenceStore;
@@ -234,7 +236,34 @@ public class NavigationView extends ViewPart
     private void createJMXServerConnection(ManagedServer server) throws Exception
     {
         // Currently Qpid Management Console only supports JMX MBeanServer
-        ServerRegistry serverRegistry = new JMXServerRegistry(server);
+        JMXServerRegistry serverRegistry = new JMXServerRegistry(server);
+        
+        try
+        {
+          //determine the management API version of the server just connected to
+            MBeanUtility.classifyManagementApiVersion(server, serverRegistry);
+        }
+        catch (Exception e)
+        {
+            //Exception classifying the server API, clean up the connection and rethrow
+            serverRegistry.closeServerConnection();
+            throw e;
+        }
+        
+        //check that the console supports the API major version encountered, otherwise abort.
+        ApiVersion serverAPI = serverRegistry.getManagementApiVersion();
+        
+        int serverMajor = serverAPI.getMajor();
+        int supportedMajor = ApplicationRegistry.SUPPORTED_QPID_JMX_API_MAJOR_VERSION;
+        
+        if(serverMajor > supportedMajor)
+        {
+            serverRegistry.closeServerConnection();
+            throw new ManagementConsoleException("The server management API version encountered is not supported"
+            		+ " by this console release. Please check for an updated console release.");
+        }
+
+        //connection succeeded, add the ServerRegistry to the ApplicationRegistry
         ApplicationRegistry.addServer(server, serverRegistry);
     }
 
@@ -294,6 +323,8 @@ public class NavigationView extends ViewPart
 
         expandInitialMBeanView(serverNode);
         
+        //(re)select the server node now that it is connected to force a selectionEvent
+        _treeViewer.setSelection(new StructuredSelection(serverNode));
         _treeViewer.refresh();
 
         // save server address in file
@@ -777,7 +808,7 @@ public class NavigationView extends ViewPart
         managedServer.setUser(user);
         managedServer.setPassword(password);
         createJMXServerConnection(managedServer);
-
+        
         // put the server in the managed server map
         _managedServerMap.put(managedServer, selectedNode);
 
@@ -798,6 +829,8 @@ public class NavigationView extends ViewPart
 
         expandInitialMBeanView(selectedNode);
         
+        //(re)select the server node now that it is connected to force a selectionEvent
+        _treeViewer.setSelection(new StructuredSelection(selectedNode));
         _treeViewer.refresh();
     }
     

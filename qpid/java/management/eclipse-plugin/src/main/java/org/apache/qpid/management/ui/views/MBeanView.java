@@ -23,9 +23,12 @@ package org.apache.qpid.management.ui.views;
 import javax.management.MBeanServerConnection;
 
 import static org.apache.qpid.management.ui.Constants.*;
+
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
+import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
@@ -95,8 +98,14 @@ public class MBeanView extends ViewPart
             }
             
             setServer();
+            
+            if (MBEAN.equals(_selectedNode.getType()))
+            {
+                _mbean = (ManagedBean)_selectedNode.getManagedObject();
+            }
+            
+            setFormTitle();                
             showRelevantTabView();
-            setFormTitle();
         }
     }
     
@@ -154,7 +163,7 @@ public class MBeanView extends ViewPart
     {
         try
         {
-            if (_selectedNode == null || NODE_TYPE_SERVER.equals(_selectedNode.getType()))
+            if (_selectedNode == null)
             {
                 return;
             }
@@ -176,8 +185,32 @@ public class MBeanView extends ViewPart
             }
             else if (MBEAN.equals(mbeanType))
             {
-                _mbean = (ManagedBean)_selectedNode.getManagedObject(); 
                 showMBean(_mbean);
+            }
+            else if(NODE_TYPE_SERVER.equals(mbeanType))
+            {
+                ServerRegistry serverReg = ApplicationRegistry.getServerRegistry(_server);
+                
+                //check the server is connected
+                if(serverReg != null)
+                {
+                    //post a message if the server supports a newer API version.
+                    ApiVersion serverAPI = serverReg.getManagementApiVersion();
+                    int supportedMajor = ApplicationRegistry.SUPPORTED_QPID_JMX_API_MAJOR_VERSION;
+                    int supportedMinor = ApplicationRegistry.SUPPORTED_QPID_JMX_API_MINOR_VERSION;
+                    
+                    if(serverAPI.greaterThan(supportedMajor, supportedMinor))
+                    {
+                        _form.setText("The server supports an updated management API and may offer " +
+                        		"functionality not available with this console. " +
+                        		"Please check for an updated console release.");
+                    }
+                    
+                }
+            }
+            else
+            {
+                return;
             }
             
             _form.layout(true);

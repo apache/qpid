@@ -32,6 +32,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.Constants;
+import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.core.runtime.IStatus;
@@ -165,6 +166,12 @@ public class AbstractAction
                 //SecurityException when providing incorrect login credentials
                 msg = SECURITY_FAILURE;
                 //Display error dialogue and return
+                displayErrorDialogue(msg, title);
+                return;
+            }
+            else if (ex instanceof ManagementConsoleException)
+            {
+                msg = ex.getMessage();
                 displayErrorDialogue(msg, title);
                 return;
             }

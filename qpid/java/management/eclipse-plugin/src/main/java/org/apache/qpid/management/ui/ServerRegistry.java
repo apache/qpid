@@ -35,6 +35,9 @@ public abstract class ServerRegistry
 {
     private ManagedServer _managedServer = null;
     
+    // API version for the management interface on the broker
+    private ApiVersion _managementApiVersion = new ApiVersion(0,0);
+    
     // list of virtual hosts for this server
     private List<String> _virtualHosts = new ArrayList<String>();
     // map of all Connection mbeans
@@ -52,6 +55,16 @@ public abstract class ServerRegistry
     public ServerRegistry(ManagedServer server)
     {
         _managedServer = server;
+    }
+    
+    public void setManagementApiVersion(ApiVersion mgmtApiVersion)
+    {
+        _managementApiVersion = mgmtApiVersion;  
+    }
+    
+    public ApiVersion getManagementApiVersion()
+    {
+        return _managementApiVersion;  
     }
     
     public ManagedServer getManagedServer()
