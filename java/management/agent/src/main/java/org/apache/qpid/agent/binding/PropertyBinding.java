@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.qpid.transport.codec.Encoder;
 
-
 /**
  * Metadata for mapping a java property (getter/setter) to a QMF schema
  */

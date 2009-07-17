@@ -20,23 +20,15 @@
  */
 package org.apache.qpid.agent.annotations;
 
-import static java.lang.annotation.ElementType.TYPE;
+import java.lang.annotation.Target;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-/**
- * Tells the QMF Agent that this object will be passed as a QMF event. This will
- * cause only properties to be sent across the wire.
- */
-@Target(TYPE)
+@Target(ElementType.FIELD)
 @Retention(RUNTIME)
 @Documented
-public @interface QMFEvent
+public @interface QMFAgent
 {
-    String eventName();
-
-    String packageName();
 }

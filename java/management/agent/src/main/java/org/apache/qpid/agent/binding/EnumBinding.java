@@ -65,17 +65,20 @@ public class EnumBinding extends ClassBinding
     {
         // FIXME This only works with POJOs
         Object instance = null;
-        String value = null ;        
+        String value = null;
         try
         {
             value = dec.readStr16();
-            if ((value != null ) && (!value.isEmpty())) {
-                instance = Enum.valueOf((Class<Enum>) this.getJavaClass(), value);
-            } 
+            if ((value != null) && (!value.isEmpty()))
+            {
+                instance = Enum.valueOf((Class<Enum>) this.getJavaClass(),
+                        value);
+            }
         } catch (Exception e)
         {
-            log.error(String.format("Could not create an enum of type %s with value %s",
-                    this.javaClass.getName(),value ));
+            log.error(String.format(
+                    "Could not create an enum of type %s with value %s",
+                    this.javaClass.getName(), value));
             throw new BindingException(e);
         }
         return instance;

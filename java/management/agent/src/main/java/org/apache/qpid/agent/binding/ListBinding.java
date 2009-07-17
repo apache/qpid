@@ -49,7 +49,8 @@ public class ListBinding implements TypeBinding
     {
         List list = (List) value;
         BBEncoder newEncoder = new BBEncoder(10);
-        if (list != null) {
+        if (list != null)
+        {
             newEncoder.writeUint32(list.size());
             for (Object obj : list)
             {
@@ -57,9 +58,9 @@ public class ListBinding implements TypeBinding
                 newEncoder.writeUint8(type.getCode());
                 type.encode(newEncoder, obj);
             }
-        }
-        else {
-            newEncoder.writeUint32(0) ;
+        } else
+        {
+            newEncoder.writeUint32(0);
         }
         enc.writeVbin32(newEncoder.buffer().array());
     }

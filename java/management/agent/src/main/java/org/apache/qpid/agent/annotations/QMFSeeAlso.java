@@ -28,8 +28,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Augements the schema generation process to look for known
- * subclasses of a type. Modeled after the JAXB @XMLSeeAlso.
+ * Augements the schema generation process to look for known subclasses of a
+ * type. Modeled after the JAXB @XMLSeeAlso.
  */
 @Target(TYPE)
 @Retention(RUNTIME)
