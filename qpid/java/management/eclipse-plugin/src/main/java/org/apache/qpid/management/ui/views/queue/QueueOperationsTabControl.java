@@ -35,6 +35,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
@@ -84,6 +85,8 @@ public class QueueOperationsTabControl extends TabControl
     private TableViewer _tableViewer = null;
     private Composite _paramsComposite = null;
             
+    private ApiVersion _ApiVersion;
+    
     private TabularDataSupport _messages = null;
     private ManagedQueue _qmb;
     
@@ -91,11 +94,13 @@ public class QueueOperationsTabControl extends TabControl
     static final String MSG_HEADER = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[1];
     static final String MSG_SIZE = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[2];
     static final String MSG_REDELIVERED = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[3];
+    static final String MSG_QUEUE_POS = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[4];
     
     public QueueOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
         super(tabFolder);
         _mbean = mbean;
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _qmb = (ManagedQueue) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedQueue.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
@@ -184,7 +189,13 @@ public class QueueOperationsTabControl extends TabControl
         final TableSorter tableSorter = new TableSorter();
         
         String[] titles = {"AMQ ID", "Size(bytes)"};
-        int[] bounds = { 175, 175 };
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+           //if server management API is >= 1.3, show message's queue position
+           titles = new String[]{"AMQ ID", "Size(bytes)", "Queue Position"};
+        }
+
+        int[] bounds = { 175, 175, 140 };
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;
@@ -415,6 +426,8 @@ public class QueueOperationsTabControl extends TabControl
                     return String.valueOf(((CompositeDataSupport) element).get(MSG_AMQ_ID));
                 case 1 : // msg size column 
                     return String.valueOf(((CompositeDataSupport) element).get(MSG_SIZE));
+                case 2 : // msg position in queue 
+                    return String.valueOf(((CompositeDataSupport) element).get(MSG_QUEUE_POS));
                 default :
                     return "-";
             }
@@ -475,6 +488,9 @@ public class QueueOperationsTabControl extends TabControl
                     break;
                 case 1:
                     comparison = ((Long) msg1.get(MSG_SIZE)).compareTo((Long)msg2.get(MSG_SIZE));
+                    break;
+                case 2:
+                    comparison = ((Long) msg1.get(MSG_QUEUE_POS)).compareTo((Long)msg2.get(MSG_QUEUE_POS));
                     break;
                 default:
                     comparison = 0;
