@@ -344,19 +344,11 @@ public class QpidTestCase extends TestCase
 
     private String getBrokerCommand(int port) throws MalformedURLException
     {
-        if (_brokerLanguage.equals(JAVA))
-        {
-            return _broker
-                .replace("@PORT", "" + port)
-                .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)))
-                .replace("@CONFIG_FILE", _configFile.toString());
-        }
-        else
-        {
-            return _broker
-                .replace("@PORT", "" + port)
-                .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)));
-        }
+        return _broker
+            .replace("@PORT", "" + port)
+            .replace("@SSL_PORT", "" + (port - 1))
+            .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)))
+            .replace("@CONFIG_FILE", _configFile.toString());
     }
 
     public void startBroker(int port) throws Exception

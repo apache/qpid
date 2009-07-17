@@ -1,3 +1,5 @@
-profile.inherit=cpp
-broker.modules=--load-module ${project.root}/../../cppStore/cpp/lib/.libs/msgstore.so
+include=cpp
+
+broker.modules=--load-module ${broker.module.store}
+
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList-store
