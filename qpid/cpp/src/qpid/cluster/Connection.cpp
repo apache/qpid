@@ -67,23 +67,29 @@ struct NullFrameHandler : public framing::FrameHandler {
 
 namespace {
 sys::AtomicValue<uint64_t> idCounter;
+const std::string shadowPrefix("[shadow]");
 }
+
 
 // Shadow connection
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out, const std::string& logId, const ConnectionId& id)
     : cluster(c), self(id), catchUp(false), output(*this, out),
-      connection(&output, cluster.getBroker(), logId), expectProtocolHeader(false),
+      connection(&output, cluster.getBroker(), shadowPrefix+logId), expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
       consumerNumbering(c.getUpdateReceiver().consumerNumbering)
 { init(); }
 
 // Local connection
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
-                       const std::string& logId, MemberId member, bool isCatchUp, bool isLink)
-    : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), output(*this, out),
-      connection(&output, cluster.getBroker(), logId, isLink, catchUp ? ++catchUpId : 0),
-      expectProtocolHeader(isLink), mcastFrameHandler(cluster.getMulticast(), self),
-      consumerNumbering(c.getUpdateReceiver().consumerNumbering)
+                       const std::string& logId, MemberId member,
+                       bool isCatchUp, bool isLink
+) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), output(*this, out),
+    connection(&output, cluster.getBroker(),
+               isCatchUp ? shadowPrefix+logId : logId,
+               isLink,
+               isCatchUp ? ++catchUpId : 0),
+    expectProtocolHeader(isLink), mcastFrameHandler(cluster.getMulticast(), self),
+    consumerNumbering(c.getUpdateReceiver().consumerNumbering)
 { init(); }
 
 void Connection::init() {
