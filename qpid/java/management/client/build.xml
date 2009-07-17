@@ -180,7 +180,7 @@
 	
 	<target name="test" depends="build,compile-tests" if="module.test.src.exists" unless="${dontruntest}" description="execute unit tests">
 		<delete file="${module.failed}"/>
-		<echo message="Using config:${config}" level="info"/>
+		<echo message="Using profile:${profile}" level="info"/>
 	     <junit fork="${test.fork}" maxmemory="1024M" reloading="no"
 			haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
 	        failureproperty="test.failures" printsummary="on" timeout="600000" >

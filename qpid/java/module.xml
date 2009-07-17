@@ -222,19 +222,23 @@
     </copy>
   </target>
 
-  <condition property="config" value="${profile}.testprofile" else="default.testprofile">
-    <and>
-      <isset property="profile"/>
-      <available file="${test.profiles}/${profile}.testprofile" type="file"/>
-    </and>
+
+  <property name="profile" value="default"/>
+  <property file="${test.profiles}/${profile}.testprofile" prefix="preload"/>
+  <property name="preload.include" value=""/>
+  <condition property="profiles"
+             value="${preload.include} ${profile}"
+             else="default ${preload.include} ${profile}">
+    <equals arg1="${profile}" arg2="default"/>
   </condition>
+  <map property="_profile_files" value="${profiles}" join=" ">
+    <globmapper from="*" to="*.testprofile"/>
+  </map>
+  <concat destfile="${build.scratch}/test-${profile}.properties" force="no" fixlastline="yes">
+    <filelist dir="${test.profiles}" files="${_profile_files}"/>
+  </concat>
+  <property file="${build.scratch}/test-${profile}.properties"/>
 
-
-  <property file="${test.profiles}/${config}"/>
-  <foreach property="_profile_" list="${profile.inherit}">
-    <property file="${test.profiles}/${_profile_}.testprofile"/>
-  </foreach>
-  <property file="${test.profiles}/default.testprofile"/>
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />
@@ -245,7 +249,7 @@
 
     <delete file="${module.failed}"/>
 
-    <echo message="Using config:${config}" level="info"/>
+    <echo message="Using profile:${profile}" level="info"/>
     <junit fork="${test.fork}" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
            failureproperty="test.failures" printsummary="on" timeout="600000" >

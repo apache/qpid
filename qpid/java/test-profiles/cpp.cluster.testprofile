@@ -1,5 +1,7 @@
-profile.inherit=cpp
-broker.modules=--load-module ${project.root}/../cpp/src/.libs/cluster.so --cluster-name cpp-java-test-cluster
+include=cpp
+
+broker.modules=--load-module ${broker.module.cluster} --cluster-name cpp-java-test-cluster
+
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/010ExcludeList
 
 profile.clustered=true

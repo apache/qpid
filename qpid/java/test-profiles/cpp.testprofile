@@ -1,6 +1,17 @@
 broker.version=0-10
-broker.command=${project.root}/../cpp/src/qpidd
+
+broker.dir=${project.root}/../cpp/src
+module.dir=${broker.dir}/.libs
+store.dir=${project.root}/../../cppStore/cpp/lib/.libs
+
+broker.executable=${broker.dir}/qpidd
+broker.module.ssl=${module.dir}/ssl.so
+broker.module.cluster=${module.dir}/cluster.so
+broker.module.store=${store.dir}/msgstore.so
+
 broker.modules=
 broker.args=
-broker=${broker.command} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
+
+broker=${broker.executable} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
+
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList

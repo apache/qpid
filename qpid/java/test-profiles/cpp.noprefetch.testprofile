@@ -1,4 +1,3 @@
-profile.inherit=cpp
-broker.modules=--load-module ${project.root}/../../cppStore/cpp/lib/.libs/msgstore.so
+include=cpp cpp.async
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList-noPrefetch
 max_prefetch=0
