@@ -82,7 +82,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private String _queueName = null;
     // OpenMBean data types for viewMessages method
 
-    private static OpenType[] _msgAttributeTypes = new OpenType[4]; // AMQ message attribute types.
+    private static OpenType[] _msgAttributeTypes = new OpenType[5]; // AMQ message attribute types.
     private static CompositeType _messageDataType = null; // Composite type for representing AMQ Message data.
     private static TabularType _messagelistDataType = null; // Datatype for representing AMQ messages list.
 
@@ -139,6 +139,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgAttributeTypes[1] = new ArrayType(1, SimpleType.STRING); // For header attributes
         _msgAttributeTypes[2] = SimpleType.LONG; // For size
         _msgAttributeTypes[3] = SimpleType.BOOLEAN; // For redelivered
+        _msgAttributeTypes[4] = SimpleType.LONG; // For queue position
 
         _messageDataType = new CompositeType("Message", "AMQ Message", VIEW_MSGS_COMPOSITE_ITEM_NAMES, 
                                 VIEW_MSGS_COMPOSITE_ITEM_DESCRIPTIONS, _msgAttributeTypes);
@@ -396,11 +397,12 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             // Create the tabular list of message header contents
             for (int i = beginIndex; (i <= endIndex) && (i <= list.size()); i++)
             {
+                long position = i;
                 AMQMessage msg = list.get(i - 1).getMessage();
                 ContentHeaderBody headerBody = msg.getContentHeaderBody();
                 // Create header attributes list
                 String[] headerAttributes = getMessageHeaderProperties(headerBody);
-                Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered() };
+                Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered(), position};
                 CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
                 _messageList.put(messageData);
             }
