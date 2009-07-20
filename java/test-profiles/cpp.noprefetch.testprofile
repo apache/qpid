@@ -1,3 +1,3 @@
-include=cpp cpp.async
+include=cpp
 test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList-noPrefetch
 max_prefetch=0
