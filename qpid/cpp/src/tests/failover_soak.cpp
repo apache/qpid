@@ -45,7 +45,6 @@
 
 
 
-
 using namespace std;
 using boost::assign::list_of;
 using namespace qpid::framing;
