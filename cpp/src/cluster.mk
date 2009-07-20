@@ -69,11 +69,13 @@ cluster_la_SOURCES =				\
   qpid/cluster/FailoverExchange.cpp		\
   qpid/cluster/FailoverExchange.h		\
   qpid/cluster/UpdateExchange.h			\
+  qpid/cluster/UpdateReceiver.h			\
   qpid/cluster/LockedConnectionMap.h		\
   qpid/cluster/Multicaster.cpp			\
   qpid/cluster/Multicaster.h			\
   qpid/cluster/McastFrameHandler.h		\
   qpid/cluster/NoOpConnectionOutputHandler.h	\
+  qpid/cluster/Numbering.h			\
   qpid/cluster/OutputInterceptor.cpp		\
   qpid/cluster/OutputInterceptor.h		\
   qpid/cluster/PollerDispatch.cpp		\
