@@ -195,10 +195,11 @@ public class DiagnosticExchange extends AbstractExchange
         
         Long value = new Long(SizeOf.getUsedMemory());
         AMQShortString key = new AMQShortString("memory");
-        
-        FieldTable headers = ((BasicContentHeaderProperties)payload.getMessageHeader().properties).getHeaders();
+
+        //TODO shouldn't modify messages... perhaps put a new message on the queue?
+/*        FieldTable headers = ((BasicContentHeaderProperties)payload.getMessageHeader().properties).getHeaders();
         headers.put(key, value);
-        ((BasicContentHeaderProperties)payload.getMessageHeader().properties).setHeaders(headers);
+        ((BasicContentHeaderProperties)payload.getMessageHeader().properties).setHeaders(headers);*/
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
 
         ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();
