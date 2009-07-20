@@ -33,28 +33,28 @@ windows_dist = \
   qpid/client/windows/SaslFactory.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
-  qpid/sys/windows/check.h \
+  ../include/qpid/sys/windows/check.h \
   qpid/sys/windows/AsynchIO.cpp \
   qpid/sys/windows/AsynchIoResult.h \
-  qpid/sys/windows/Condition.h \
+  ../include/qpid/sys/windows/Condition.h \
   qpid/sys/windows/FileSysDir.cpp \
-  qpid/sys/windows/IntegerTypes.h \
+  ../include/qpid/sys/windows/IntegerTypes.h \
   qpid/sys/windows/IocpPoller.cpp \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
   qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/PipeHandle.cpp \
-  qpid/sys/windows/Mutex.h \
+  ../include/qpid/sys/windows/Mutex.h \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/Socket.cpp \
   qpid/sys/windows/StrError.cpp \
   qpid/sys/windows/SystemInfo.cpp \
   qpid/sys/windows/Thread.cpp \
   qpid/sys/windows/Time.cpp \
-  qpid/sys/windows/Time.h \
+  ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
-  qpid/sys/windows/uuid.h \
+  ../include/qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp
