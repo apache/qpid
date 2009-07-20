@@ -113,7 +113,7 @@ FULL_PATH_NAMES        = YES
 # If left blank the directory from which doxygen is run is used as the 
 # path to strip.
 
-STRIP_FROM_PATH        = ../../src/  ../..
+STRIP_FROM_PATH = @top_builddir@/include @top_builddir@/src/gen
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of 
 # the path mentioned in the documentation of a class, which tells 
@@ -456,8 +456,7 @@ WARN_LOGFILE           = doxygen.log
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-# INPUT      		= ../../src/qpid ../../src/gen/qpid
-INPUT      		= ../../src/qpid/client/  ../../src/gen/qpid/client/no_keyword/ ../../src/qpid/framing/  ../../src/gen/qpid/client/ . ../../src/gen/qpid/framing/ ../../src/qpid/Exception.h
+INPUT = @top_srcdir@/include @top_builddir@/src/gen/qpid/client @top_builddir@/src/gen/qpid/framing
 
 
 # If the value of the INPUT tag contains directories, you can use the 
