@@ -338,6 +338,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public boolean isRedelivered()
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public Subscription getDeliveredSubscription()
                 {
                     return null;  //To change body of implemented methods use File | Settings | File Templates.

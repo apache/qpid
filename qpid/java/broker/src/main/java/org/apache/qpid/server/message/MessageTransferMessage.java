@@ -23,6 +23,7 @@ package org.apache.qpid.server.message;
 import org.apache.qpid.transport.*;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.nio.ByteBuffer;
 
 
 public class MessageTransferMessage implements InboundMessage, ServerMessage
@@ -96,4 +97,17 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
     {
         return _arrivalTime;
     }
+
+    public Header getHeader()
+    {
+        return _xfr.getHeader();
+
+    }
+
+    public ByteBuffer getBody()
+    {
+        return _xfr.getBody();
+    }
+
+
 }

@@ -30,13 +30,19 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.flow.*;
 import org.apache.qpid.AMQException;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.nio.ByteBuffer;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
     private final IApplicationRegistry _appRegistry;
+    private Map<String, Subscription_0_10> _subscriptions = new HashMap<String, Subscription_0_10>();
 
     public ServerSessionDelegate(IApplicationRegistry appRegistry)
     {
@@ -76,7 +82,31 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageSubscribe(Session session, MessageSubscribe method)
     {
-        super.messageSubscribe(session, method);
+        String destination = method.getDestination();
+        String queueName = method.getQueue();
+        QueueRegistry queueRegistry = getQueueRegistry(session);
+
+        AMQQueue queue = queueRegistry.getQueue(queueName);
+
+        //TODO null check
+
+        FlowCreditManager creditManager = new MessageOnlyCreditManager(0L);
+
+        // TODO filters
+
+        Subscription_0_10 sub = new Subscription_0_10((ServerSession)session, destination,method.getAcceptMode(),method.getAcquireMode(), creditManager, null);
+
+        _subscriptions.put(destination, sub);
+        try
+        {
+            queue.registerSubscription(sub, method.getExclusive());
+        }
+        catch (AMQException e)
+        {
+            // TODO
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }        
+
     }
 
 
@@ -398,5 +428,22 @@ public class ServerSessionDelegate extends SessionDelegate
     public void queueQuery(Session session, QueueQuery method)
     {
         super.queueQuery(session, method);
+    }
+
+
+    @Override
+    public void messageFlow(Session ssn, MessageFlow flow)
+    {
+        String destination = flow.getDestination();
+
+        Subscription_0_10 sub = _subscriptions.get(destination);
+
+        FlowCreditManager creditManager = sub.getCreditManager();
+
+        if(flow.getUnit() == MessageCreditUnit.MESSAGE)
+        {
+            creditManager.addCredit(flow.getValue(), 0L);
+        }
+
     }
 }

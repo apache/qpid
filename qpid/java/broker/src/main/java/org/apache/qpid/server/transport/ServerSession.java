@@ -57,4 +57,9 @@ public class ServerSession extends Session
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
+
+    public void sendMessage(MessageTransfer xfr)
+    {
+        invoke(xfr);
+    }
 }

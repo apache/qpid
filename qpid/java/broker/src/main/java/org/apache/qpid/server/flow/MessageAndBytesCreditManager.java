@@ -27,14 +27,24 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
     private long _messageCredit;
     private long _bytesCredit;
 
-    MessageAndBytesCreditManager(final long messageCredit, final long bytesCredit)
+    public MessageAndBytesCreditManager(final long messageCredit, final long bytesCredit)
     {
         _messageCredit = messageCredit;
         _bytesCredit = bytesCredit;
     }
 
-    public synchronized void addCredit(long messageCredit, long bytesCredit)
+    public synchronized long getMessageCredit()
     {
+        return _messageCredit;
+    }
+
+    public synchronized long getBytesCredit()
+    {
+        return _bytesCredit;
+    }
+
+    public synchronized void addCredit(long messageCredit, long bytesCredit)
+    {        
         _messageCredit += messageCredit;
         _bytesCredit += bytesCredit;
         setSuspended(hasCredit());
@@ -73,5 +83,10 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
             return true;
         }
         
+    }
+
+    public synchronized void setBytesCredit(long bytesCredit)
+    {
+        _bytesCredit = bytesCredit;
     }
 }

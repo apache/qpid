@@ -99,6 +99,11 @@ public class MockSubscription implements Subscription
         return true;
     }
 
+    public void confirmAutoClose()
+    {
+        
+    }
+
     public boolean isAutoClose()
     {
         return false;

@@ -81,6 +81,16 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
     }
 
 
+    public long getMessageCredit()
+    {
+        return _messageCredit;
+    }
+
+    public long getBytesCredit()
+    {
+        return _bytesCredit;
+    }
+
     public synchronized void addCredit(final long messageCredit, final long bytesCredit)
     {
         final long messageCreditLimit = _messageCreditLimit;

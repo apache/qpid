@@ -160,6 +160,8 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     void setRedelivered(boolean b);
 
+    boolean isRedelivered();
+
     Subscription getDeliveredSubscription();
 
     void reject();

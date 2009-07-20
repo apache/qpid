@@ -30,6 +30,7 @@ public interface Subscription
 {
 
 
+
     public static enum State
     {
         ACTIVE,
@@ -48,8 +49,6 @@ public interface Subscription
 
     void setQueue(AMQQueue queue);
 
-    AMQChannel getChannel();
-
     AMQShortString getConsumerTag();
 
     boolean isSuspended();
@@ -64,8 +63,6 @@ public interface Subscription
 
     void close();
 
-    boolean filtersMessages();
-
     void send(QueueEntry msg) throws AMQException;
 
     void queueDeleted(AMQQueue queue); 
@@ -74,9 +71,8 @@ public interface Subscription
     boolean wouldSuspend(QueueEntry msg);
 
     void getSendLock();
-    void releaseSendLock();
 
-    void resend(final QueueEntry entry) throws AMQException;
+    void releaseSendLock();
 
     void restoreCredit(final QueueEntry queueEntry);
 
@@ -91,6 +87,7 @@ public interface Subscription
 
     boolean isActive();
 
+    void confirmAutoClose();
 
 
 }

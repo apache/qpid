@@ -24,6 +24,16 @@ import org.apache.qpid.server.message.ServerMessage;
 */
 public class LimitlessCreditManager extends AbstractFlowCreditManager implements FlowCreditManager
 {
+    public long getMessageCredit()
+    {
+        return -1L;
+    }
+
+    public long getBytesCredit()
+    {
+        return -1L;
+    }
+
     public void addCredit(long messageCredit, long bytesCredit)
     {
     }

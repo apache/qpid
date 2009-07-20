@@ -33,10 +33,21 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
         _messageCredit = new AtomicLong(initialCredit);
     }
 
+    public long getMessageCredit()
+    {
+        return _messageCredit.get();
+    }
+
+    public long getBytesCredit()
+    {
+        return -1L;
+    }
+
     public void addCredit(long messageCredit, long bytesCredit)
     {
-        setSuspended(false);
         _messageCredit.addAndGet(messageCredit);
+        setSuspended(false);
+
     }
 
     public void removeAllCredit()
@@ -73,4 +84,5 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
         }
                 
     }
+
 }

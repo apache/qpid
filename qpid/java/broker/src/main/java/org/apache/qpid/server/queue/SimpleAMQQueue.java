@@ -1214,8 +1214,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 {
                     unregisterSubscription(sub);
 
-                    ProtocolOutputConverter converter = sub.getChannel().getProtocolSession().getProtocolOutputConverter();
-                    converter.confirmConsumerAutoClose(sub.getChannel().getChannelId(), sub.getConsumerTag());
+                    sub.confirmAutoClose();
+
                 }
                 else if (!atTail)
                 {
@@ -1396,8 +1396,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                             {
                                 unregisterSubscription(sub);
 
-                                ProtocolOutputConverter converter = sub.getChannel().getProtocolSession().getProtocolOutputConverter();
-                                converter.confirmConsumerAutoClose(sub.getChannel().getChannelId(), sub.getConsumerTag());
+                                sub.confirmAutoClose();
                             }
                         }
                         else

@@ -32,6 +32,7 @@ import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -374,6 +375,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public boolean hasInterest(QueueEntry entry)
     {
+
+        // TODO 0-10 to 0-8 conversion
+        if(!(entry.getMessage() instanceof AMQMessage))
+        {
+            return false;
+        }
+
+
         //check that the message hasn't been rejected
         if (entry.isRejectedBy(this))
         {
@@ -516,11 +525,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _stateChangeLock.unlock();
     }
 
-    public void resend(final QueueEntry entry) throws AMQException
-    {
-        _queue.resend(entry, this);
-    }
-
     public AMQChannel getChannel()
     {
         return _channel;
@@ -617,4 +621,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _owningState;
     }
 
+    public void confirmAutoClose()
+    {
+        ProtocolOutputConverter converter = getChannel().getProtocolSession().getProtocolOutputConverter();
+        converter.confirmConsumerAutoClose(getChannel().getChannelId(), getConsumerTag());
+    }
 }

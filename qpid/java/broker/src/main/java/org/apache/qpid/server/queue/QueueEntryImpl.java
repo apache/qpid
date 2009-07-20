@@ -199,6 +199,11 @@ public class QueueEntryImpl implements QueueEntry
         _redelivered = b;
     }
 
+    public boolean isRedelivered()
+    {
+        return _redelivered;
+    }
+
     public Subscription getDeliveredSubscription()
     {
             EntryState state = _state;

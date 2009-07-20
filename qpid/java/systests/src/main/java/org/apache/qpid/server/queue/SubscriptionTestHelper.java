@@ -146,6 +146,11 @@ public class SubscriptionTestHelper implements Subscription
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public void confirmAutoClose()
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public AMQQueue getQueue()
     {
         return null;

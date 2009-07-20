@@ -33,6 +33,16 @@ public class BytesOnlyCreditManager extends AbstractFlowCreditManager
         _bytesCredit = new AtomicLong(initialCredit);
     }
 
+    public long getMessageCredit()
+    {
+        return -1L;
+    }
+
+    public long getBytesCredit()
+    {
+        return _bytesCredit.get();
+    }
+
     public void addCredit(long messageCredit, long bytesCredit)
     {
         _bytesCredit.addAndGet(bytesCredit);
@@ -70,5 +80,10 @@ public class BytesOnlyCreditManager extends AbstractFlowCreditManager
             return false;
         }
 
+    }
+
+    public void setBytesCredit(long bytesCredit)
+    {
+        _bytesCredit.set( bytesCredit );
     }
 }

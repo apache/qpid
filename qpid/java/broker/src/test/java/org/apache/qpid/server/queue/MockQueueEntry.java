@@ -177,7 +177,12 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    
+    public boolean isRedelivered()
+    {
+        return false;  
+    }
+
+
     public int compareTo(QueueEntry o)
     {
 

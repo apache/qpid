@@ -25,6 +25,9 @@ import org.apache.qpid.server.message.ServerMessage;
 */
 public interface FlowCreditManager
 {
+    long getMessageCredit();
+
+    long getBytesCredit();
 
     public static interface FlowCreditManagerListener
     {
