@@ -27,8 +27,9 @@ EXTRA_DIST = html user.doxygen developer.doxygen html.timestamp
 
 html: html.timestamp
 
+
 html.timestamp:
-	cp $(srcdir)/header.html $(srcdir)/footer.html .
+	test $(srcdir) = . || cp $(srcdir)/header.html $(srcdir)/footer.html .
 	doxygen user.doxygen
 	touch $@
 
