@@ -385,7 +385,10 @@ void ResilientConnectionImpl::EnqueueEvent(ResilientConnectionEvent::EventKind k
 
     eventQueue.push_back(event);
     if (notifyFd != -1)
-        ::write(notifyFd, ".", 1);
+    {
+        int unused_ret;    //Suppress warnings about ignoring return value.
+        unused_ret = ::write(notifyFd, ".", 1);
+    }
 }
 
 

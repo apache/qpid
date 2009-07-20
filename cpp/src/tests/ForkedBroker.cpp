@@ -51,7 +51,10 @@ ForkedBroker::~ForkedBroker() {
         QPID_LOG(error, QPID_MSG("Killing forked broker: " << e.what()));
     }
     if (!dataDir.empty())
-        ::system(("rm -rf "+dataDir).c_str());
+    {
+        int unused_ret; // Suppress warnings about ignoring return value.
+        unused_ret = ::system(("rm -rf "+dataDir).c_str());
+    }
 }
 
 void ForkedBroker::kill(int sig) {
