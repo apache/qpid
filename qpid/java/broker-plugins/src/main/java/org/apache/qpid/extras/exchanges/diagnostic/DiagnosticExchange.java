@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.extras.exchanges.diagnostic;
 
-import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.Collection;
 
 import javax.management.JMException;
 import javax.management.openmbean.OpenDataException;
@@ -34,8 +31,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.AbstractExchange;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.message.InboundMessage;
 
 import org.apache.qpid.junit.extensions.util.SizeOf;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
@@ -193,20 +190,20 @@ public class DiagnosticExchange extends AbstractExchange
         return false;
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
     {
         
         Long value = new Long(SizeOf.getUsedMemory());
         AMQShortString key = new AMQShortString("memory");
         
-        FieldTable headers = ((BasicContentHeaderProperties)payload.getContentHeaderBody().properties).getHeaders();
+        FieldTable headers = ((BasicContentHeaderProperties)payload.getMessageHeader().properties).getHeaders();
         headers.put(key, value);
-        ((BasicContentHeaderProperties)payload.getContentHeaderBody().properties).setHeaders(headers);
+        ((BasicContentHeaderProperties)payload.getMessageHeader().properties).setHeaders(headers);
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
 
         ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();
         queues.add(q);
-        payload.enqueue(queues);
+        return queues;
         
     }
 

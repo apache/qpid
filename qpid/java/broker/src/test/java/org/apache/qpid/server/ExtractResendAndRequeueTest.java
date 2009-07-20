@@ -89,7 +89,7 @@ public class ExtractResendAndRequeueTest extends TestCase
         while(queueEntries.advance())
         {
             QueueEntry entry = queueEntries.getNode();
-            _unacknowledgedMessageMap.add(entry.getMessage().getMessageId(), entry);
+            _unacknowledgedMessageMap.add(entry.getMessage().getMessageNumber(), entry);
 
             // Store the entry for future inspection
             _referenceList.add(entry);

@@ -68,4 +68,9 @@ public class DefaultQueueRegistry implements QueueRegistry
     {
         return _queueMap.values();
     }
+
+    public AMQQueue getQueue(String queue)
+    {
+        return getQueue(new AMQShortString(queue));
+    }
 }

@@ -1,11 +1,8 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.Set;
-import java.util.HashSet;
 
 /*
 *
@@ -52,7 +49,7 @@ public class BytesOnlyCreditManager extends AbstractFlowCreditManager
         return _bytesCredit.get() > 0L;
     }
 
-    public boolean useCreditForMessage(AMQMessage msg)
+    public boolean useCreditForMessage(ServerMessage msg)
     {
         final long msgSize = msg.getSize();
         if(hasCredit())

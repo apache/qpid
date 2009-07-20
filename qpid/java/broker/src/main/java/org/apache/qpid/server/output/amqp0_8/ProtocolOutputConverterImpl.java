@@ -36,8 +36,6 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.AMQException;
 
-import org.apache.mina.common.ByteBuffer;
-
 import java.util.Iterator;
 
 public class ProtocolOutputConverterImpl implements ProtocolOutputConverter

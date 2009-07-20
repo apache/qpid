@@ -904,10 +904,13 @@ public class FieldTable
         }
     }
 
+    public Object get(String key)
+    {
+        return get(new AMQShortString(key));
+    }
 
     public Object get(AMQShortString key)
     {
-
         return getObject(key);
     }
 

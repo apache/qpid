@@ -90,8 +90,13 @@ public class NonTransactionalContext implements TransactionalContext
 
     public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
     {
-        QueueEntry entry = queue.enqueue(_storeContext, message);
-        
+        StoreContext.setCurrentContext(getStoreContext());
+
+        QueueEntry entry = queue.enqueue(message);
+
+        StoreContext.clearCurrentContext();
+
+
         //following check implements the functionality
         //required by the 'immediate' flag:
         if(entry.immediateAndNotDelivered())
@@ -128,7 +133,7 @@ public class NonTransactionalContext implements TransactionalContext
                     {
                         if (debug)
                         {
-                            _log.debug("Discarding message: " + message.getMessage().getMessageId());
+                            _log.debug("Discarding message: " + message.getMessage().getMessageNumber());
                         }
                         if(message.getMessage().isPersistent())
                         {
@@ -171,7 +176,7 @@ public class NonTransactionalContext implements TransactionalContext
 
             if (debug)
             {
-                _log.debug("Discarding message: " + msg.getMessage().getMessageId());
+                _log.debug("Discarding message: " + msg.getMessage().getMessageNumber());
             }
             if(msg.getMessage().isPersistent())
             {
@@ -187,7 +192,7 @@ public class NonTransactionalContext implements TransactionalContext
             if (debug)
             {
                 _log.debug("Received non-multiple ack for messaging with delivery tag " + deliveryTag + " msg id " +
-                           msg.getMessage().getMessageId());
+                           msg.getMessage().getMessageNumber());
             }
         }
         if(_inTran)

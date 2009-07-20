@@ -24,12 +24,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
 
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 
 public interface Exchange
 {
@@ -54,7 +53,7 @@ public interface Exchange
 
     void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
-    void route(IncomingMessage message) throws AMQException;
+    ArrayList<AMQQueue> route(InboundMessage message) throws AMQException;
 
 
     /**
@@ -93,6 +92,8 @@ public interface Exchange
      */
     boolean hasBindings();
 
-    
 
+    boolean isBound(String bindingKey, AMQQueue queue);
+
+    boolean isBound(String bindingKey);
 }

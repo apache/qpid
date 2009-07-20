@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.message.AMQMessageHeader;
 
 /**
  * Defines binding and matching based on a set of headers.
@@ -139,7 +140,7 @@ class HeadersBinding
      * @return true if the headers define any required keys and match any required
      * values
      */
-    public boolean matches(FieldTable headers)
+    public boolean matches(AMQMessageHeader headers)
     {
         if(headers == null)
         {
@@ -151,13 +152,13 @@ class HeadersBinding
         }
     }
 
-    private boolean and(FieldTable headers)
+    private boolean and(AMQMessageHeader headers)
     {
-        if(headers.keys().containsAll(required))
+        if(headers.containsHeaders(required))
         {
             for(Map.Entry<String, Object> e : matches.entrySet())
             {
-                if(!e.getValue().equals(headers.getObject(e.getKey())))
+                if(!e.getValue().equals(headers.getHeader(e.getKey())))
                 {
                     return false;
                 }
@@ -171,17 +172,43 @@ class HeadersBinding
     }
 
 
-    private boolean or(final FieldTable headers)
+    private boolean or(final AMQMessageHeader headers)
     {
-        if(required.isEmpty() || !(Boolean) headers.processOverElements(new RequiredOrProcessor()))
+        if(required.isEmpty() || passesRequiredOr(headers))
         {
-            return ((!matches.isEmpty()) && (Boolean) headers.processOverElements(new MatchesOrProcessor()))
+            return ((!matches.isEmpty()) && passesMatchesOr(headers))
                     || (required.isEmpty() && matches.isEmpty());
         }
         else
         {
             return true;
         }
+    }
+
+    private boolean passesMatchesOr(AMQMessageHeader headers)
+    {
+        for(Map.Entry<String,Object> entry : matches.entrySet())
+        {
+            if(!headers.containsHeader(entry.getKey())
+               || !((entry.getValue() == null && headers.getHeader(entry.getKey()) == null)
+                   || (entry.getValue().equals(headers.getHeader(entry.getKey())))))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean passesRequiredOr(AMQMessageHeader headers)
+    {
+        for(String name : required)
+        {
+            if(headers.containsHeader(name))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void processSpecial(String key, Object value)

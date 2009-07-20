@@ -33,6 +33,8 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.log4j.Logger;
@@ -255,9 +257,9 @@ public class AbstractHeadersExchangeTestBase extends TestCase
          * @throws AMQException
          */
         @Override
-        public QueueEntry enqueue(StoreContext context, AMQMessage msg) throws AMQException
+        public QueueEntry enqueue(ServerMessage msg) throws AMQException
         {
-            messages.add( new HeadersExchangeTest.Message(msg));
+            messages.add( new HeadersExchangeTest.Message((AMQMessage) msg));
             return new QueueEntry()
             {
 
@@ -324,11 +326,6 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 public void release()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public String debugIdentity()
-                {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 public boolean immediateAndNotDelivered()
@@ -438,7 +435,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             }
 
 
-            public ContentHeaderBody getContentHeaderBody()
+            public ContentHeaderBody getContentHeader()
             {
                 try
                 {
@@ -522,7 +519,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
         void route(Exchange exchange) throws AMQException
         {
-            exchange.route(_incoming);
+            _incoming.enqueue(exchange.route(_incoming));
         }
 
 

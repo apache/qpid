@@ -28,14 +28,13 @@ import org.apache.qpid.server.queue.Filterable;
  * A BooleanExpression is an expression that always
  * produces a Boolean result.
  */
-public interface BooleanExpression<E extends Exception> extends Expression<E>
+public interface BooleanExpression extends Expression
 {
 
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
-     * @throws E
      */
-    public boolean matches(Filterable<E> message) throws E;
+    public boolean matches(Filterable message);
 
 }

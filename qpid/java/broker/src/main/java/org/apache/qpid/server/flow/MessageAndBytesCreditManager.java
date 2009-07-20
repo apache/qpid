@@ -1,8 +1,6 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
-
-import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -54,7 +52,7 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
         return (_messageCredit > 0L) && ( _bytesCredit > 0L );
     }
 
-    public synchronized boolean useCreditForMessage(AMQMessage msg)
+    public synchronized boolean useCreditForMessage(ServerMessage msg)
     {
         if(_messageCredit == 0L)
         {

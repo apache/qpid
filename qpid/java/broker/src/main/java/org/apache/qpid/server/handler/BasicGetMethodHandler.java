@@ -41,6 +41,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -130,8 +131,16 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
             throws AMQException
             {
                 singleMessageCredit.useCreditForMessage(entry.getMessage());
-                session.getProtocolOutputConverter().writeGetOk(entry.getMessage(), channel.getChannelId(),
-                                                                        deliveryTag, queue.getMessageCount());
+                if(entry.getMessage() instanceof AMQMessage)
+                {
+                    session.getProtocolOutputConverter().writeGetOk((AMQMessage)(entry.getMessage()), channel.getChannelId(),
+                                                                            deliveryTag, queue.getMessageCount());
+                }
+                else
+                {
+                    //TODO Convert AMQP 0-10 message
+                    throw new RuntimeException("Not implemented conversion of 0-10 message");
+                }
 
             }
         };

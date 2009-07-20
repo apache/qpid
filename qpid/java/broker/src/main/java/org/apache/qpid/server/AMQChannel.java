@@ -57,6 +57,7 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.message.ServerMessage;
 
 public class AMQChannel
 {
@@ -157,27 +158,35 @@ public class AMQChannel
     public void publishContentHeader(ContentHeaderBody contentHeaderBody)
             throws AMQException
     {
-        if (_currentMessage == null)
+        StoreContext.setCurrentContext(_storeContext);
+        try
         {
-            throw new AMQException("Received content header without previously receiving a BasicPublish frame");
-        }
-        else
-        {
-            if (_log.isDebugEnabled())
+            if (_currentMessage == null)
             {
-                _log.debug("Content header received on channel " + _channelId);
+                throw new AMQException("Received content header without previously receiving a BasicPublish frame");
             }
+            else
+            {
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug("Content header received on channel " + _channelId);
+                }
 
-            _currentMessage.setContentHeaderBody(contentHeaderBody);
+                _currentMessage.setContentHeaderBody(contentHeaderBody);
 
-            _currentMessage.setExpiration();
+                _currentMessage.setExpiration();
 
-            routeCurrentMessage();
+                routeCurrentMessage();
 
-            _currentMessage.routingComplete(_messageStore, _messageHandleFactory);
+                _currentMessage.routingComplete(_messageStore, _messageHandleFactory);
 
-            deliverCurrentMessageIfComplete();
+                deliverCurrentMessageIfComplete();
 
+            }
+        }
+        finally
+        {
+            StoreContext.clearCurrentContext();
         }
     }
 
@@ -212,6 +221,7 @@ public class AMQChannel
 
     public void publishContentBody(ContentBody contentBody) throws AMQException
     {
+        StoreContext.setCurrentContext(_storeContext);
         if (_currentMessage == null)
         {
             throw new AMQException("Received content body without previously receiving a JmsPublishBody");
@@ -231,6 +241,7 @@ public class AMQChannel
                     _session.getMethodRegistry().getProtocolVersionMethodConverter().convertToContentChunk(
                             contentBody));
 
+
             deliverCurrentMessageIfComplete();
         }
         catch (AMQException e)
@@ -239,6 +250,10 @@ public class AMQChannel
             // event of an error
             _currentMessage = null;
             throw e;
+        }
+        finally
+        {
+            StoreContext.clearCurrentContext();
         }
     }
 
@@ -425,7 +440,7 @@ public class AMQChannel
         {
             if (entry.getQueue() == null)
             {
-                _log.debug("Adding unacked message with a null queue:" + entry.debugIdentity());
+                _log.debug("Adding unacked message with a null queue:" + entry);
             }
             else
             {
@@ -487,7 +502,7 @@ public class AMQChannel
             if (!unacked.isQueueDeleted())
             {
                 // Mark message redelivered
-                unacked.getMessage().setRedelivered(true);
+                unacked.setRedelivered(true);
 
                 // Ensure message is released for redelivery
                 unacked.release();
@@ -518,7 +533,7 @@ public class AMQChannel
         if (unacked != null)
         {
             // Mark message redelivered
-            unacked.getMessage().setRedelivered(true);
+            unacked.setRedelivered(true);
 
             // Ensure message is released for redelivery
             if (!unacked.isQueueDeleted())
@@ -551,7 +566,7 @@ public class AMQChannel
             }
             else
             {
-                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.getMessage().debugIdentity()
+                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked
                           + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
 
                 unacked.discard(_storeContext);
@@ -612,7 +627,7 @@ public class AMQChannel
 
 
 
-            AMQMessage msg = message.getMessage();
+            ServerMessage msg = message.getMessage();
             AMQQueue queue = message.getQueue();
 
             // Our Java Client will always suspend the channel when resending!
@@ -631,7 +646,7 @@ public class AMQChannel
 
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
-            msg.setRedelivered(true);
+            message.setRedelivered(true);
 
             Subscription sub = message.getDeliveredSubscription();
 
@@ -829,14 +844,25 @@ public class AMQChannel
     {
         if (!_returnMessages.isEmpty())
         {
+            StoreContext sc =StoreContext.setCurrentContext(_storeContext);
             for (RequiredDeliveryException bouncedMessage : _returnMessages)
             {
-                AMQMessage message = bouncedMessage.getAMQMessage();
-                _session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
-                                                                 new AMQShortString(bouncedMessage.getMessage()));
+                ServerMessage serverMessage = bouncedMessage.getAMQMessage();
+                if(serverMessage instanceof AMQMessage)
+                {
+                    AMQMessage message = (AMQMessage) serverMessage;
+                    _session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
+                                                                     new AMQShortString(bouncedMessage.getMessage()));
 
-                message.decrementReference(_storeContext);
+                }
+                else
+                {
+                    // TODO AMQP 0-10 Message
+                    throw new RuntimeException("not yet implemented conversion of 0-10 messages");
+                }
+                bouncedMessage.release();
             }
+            StoreContext.setCurrentContext(sc);
 
             _returnMessages.clear();
         }
@@ -884,8 +910,18 @@ public class AMQChannel
             public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
                     throws AMQException
             {
-               getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannelId(), deliveryTag, sub.getConsumerTag());
+                ServerMessage msg = entry.getMessage();
+                if(msg instanceof AMQMessage)
+                {
+                    getProtocolSession().getProtocolOutputConverter().writeDeliver((AMQMessage)msg, getChannelId(),
+                                                                                   deliveryTag, sub.getConsumerTag());
+                }
+                else
+                {
+                    //TODO - Convert 0-10 Message into 0-8/9 message
+                }
             }
+
         };
 
     public ClientDeliveryMethod getClientDeliveryMethod()

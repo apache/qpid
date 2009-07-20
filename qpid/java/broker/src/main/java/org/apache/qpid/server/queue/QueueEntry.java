@@ -3,6 +3,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -133,7 +134,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     AMQQueue getQueue();
 
-    AMQMessage getMessage();
+    ServerMessage getMessage();
 
     long getSize();
 
@@ -154,8 +155,6 @@ public interface QueueEntry extends Comparable<QueueEntry>
     void setDeliveredToSubscription();
 
     void release();
-
-    String debugIdentity();
 
     boolean immediateAndNotDelivered();
 

@@ -24,7 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
-public interface MessageFilter<E extends Exception>
+public interface MessageFilter
 {
-    boolean matches(Filterable<E> message) throws E;
+    boolean matches(Filterable message);
 }

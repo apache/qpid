@@ -26,7 +26,7 @@ import org.apache.qpid.server.queue.Filterable;
 /**
  * An expression which performs an operation on two expression values
  */
-public abstract class ArithmeticExpression<E extends Exception> extends BinaryExpression<E>
+public abstract class ArithmeticExpression extends BinaryExpression
 {
 
     protected static final int INTEGER = 1;
@@ -248,7 +248,7 @@ public abstract class ArithmeticExpression<E extends Exception> extends BinaryEx
         }
     }
 
-    public Object evaluate(Filterable<E> message) throws E
+    public Object evaluate(Filterable message)
     {
         Object lvalue = left.evaluate(message);
         if (lvalue == null)

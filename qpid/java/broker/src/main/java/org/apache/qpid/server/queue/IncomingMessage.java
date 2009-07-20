@@ -28,16 +28,20 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.ContentHeaderBodyAdapter;
+import org.apache.qpid.server.message.AMQMessageReference;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
-public class IncomingMessage implements Filterable<RuntimeException>
+public class IncomingMessage implements Filterable, InboundMessage
 {
 
     /** Used for debugging purposes. */
@@ -73,6 +77,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     private long _expiration;
     
     private Exchange _exchange;
+    private AMQMessageHeader _messageHeader;
 
 
     public IncomingMessage(final Long messageId,
@@ -90,6 +95,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
     public void setContentHeaderBody(final ContentHeaderBody contentHeaderBody) throws AMQException
     {
         _contentHeaderBody = contentHeaderBody;
+        _messageHeader = new ContentHeaderBodyAdapter(contentHeaderBody);
     }
 
     public void setExpiration()
@@ -158,17 +164,19 @@ public class IncomingMessage implements Filterable<RuntimeException>
         }
 
         AMQMessage message = null;
+        AMQMessageReference ref = null;
 
         try
         {
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
             _messageHandle.setPublishAndContentHeaderBody(_txnContext.getStoreContext(),
-                                                          _messagePublishInfo, getContentHeaderBody());
+                                                          _messagePublishInfo, getContentHeader());
 
             
             
             message = new AMQMessage(_messageHandle,_txnContext.getStoreContext(), _messagePublishInfo);
+            ref = (AMQMessageReference) message.newReference();
 
             message.setExpiration(_expiration);
             message.setClientIdentifier(_publisher.getSessionIdentifier());
@@ -177,8 +185,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
             // now that it has all been received, before we attempt delivery
             _txnContext.messageFullyReceived(isPersistent());
             
-            AMQShortString userID = getContentHeaderBody().properties instanceof BasicContentHeaderProperties ?
-                     ((BasicContentHeaderProperties) getContentHeaderBody().properties).getUserId() : null; 
+            AMQShortString userID = getContentHeader().properties instanceof BasicContentHeaderProperties ?
+                     ((BasicContentHeaderProperties) getContentHeader().properties).getUserId() : null;
             
             if (MSG_AUTH && !_publisher.getAuthorizedID().getName().equals(userID == null? "" : userID.toString()))
             {
@@ -202,7 +210,7 @@ public class IncomingMessage implements Filterable<RuntimeException>
             {
                 int offset;
                 final int queueCount = _destinationQueues.size();
-                message.incrementReference(queueCount);
+
                 if(queueCount == 1)
                 {
                     offset = 0;
@@ -233,7 +241,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
         finally
         {
             // Remove refence for routing process . Reference count should now == delivered queue count
-            if(message != null) message.decrementReference(_txnContext.getStoreContext());
+
+            if(ref != null) ref.release();
         }
 
     }
@@ -250,46 +259,62 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
     public boolean allContentReceived()
     {
-        return (_bodyLengthReceived == getContentHeaderBody().bodySize);
+        return (_bodyLengthReceived == getContentHeader().bodySize);
     }
 
-    public AMQShortString getExchange() throws AMQException
+    public AMQShortString getExchange()
     {
         return _messagePublishInfo.getExchange();
     }
 
-    public AMQShortString getRoutingKey() throws AMQException
+    public String getRoutingKey()
     {
-        return _messagePublishInfo.getRoutingKey();
+        return _messagePublishInfo.getRoutingKey() == null ? null : _messagePublishInfo.getRoutingKey().toString();
     }
 
-    public boolean isMandatory() throws AMQException
+    public String getBinding()
+    {
+        return _messagePublishInfo.getRoutingKey() == null ? null : _messagePublishInfo.getRoutingKey().toString();
+    }
+
+
+    public boolean isMandatory()
     {
         return _messagePublishInfo.isMandatory();
     }
 
 
-    public boolean isImmediate() throws AMQException
+    public boolean isImmediate()
     {
         return _messagePublishInfo.isImmediate();
     }
 
-    public ContentHeaderBody getContentHeaderBody()
+    public ContentHeaderBody getContentHeader()
     {
         return _contentHeaderBody;
     }
 
 
+    public AMQMessageHeader getMessageHeader()
+    {
+        return _messageHeader;
+    }
+
     public boolean isPersistent()
     {
-        return getContentHeaderBody().properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) getContentHeaderBody().properties).getDeliveryMode() == 
+        return getContentHeader().properties instanceof BasicContentHeaderProperties &&
+             ((BasicContentHeaderProperties) getContentHeader().properties).getDeliveryMode() ==
                                                              BasicContentHeaderProperties.PERSISTENT;
     }
     
     public boolean isRedelivered()
     {
         return false;
+    }
+
+    public long getSize()
+    {
+        return getContentHeader().bodySize;
     }
 
     public void setMessageStore(final MessageStore messageStore)
@@ -309,7 +334,8 @@ public class IncomingMessage implements Filterable<RuntimeException>
 
     public void route() throws AMQException
     {
-        _exchange.route(this);
+        enqueue(_exchange.route(this));
+
     }
 
     public void enqueue(final ArrayList<AMQQueue> queues)

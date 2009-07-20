@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.message.ServerMessage;
 
 /**
  * NoConsumersException is a {@link RequiredDeliveryException} that represents the failure case where an immediate
@@ -35,7 +36,7 @@ import org.apache.qpid.server.RequiredDeliveryException;
  */
 public class NoConsumersException extends RequiredDeliveryException
 {
-    public NoConsumersException(AMQMessage message)
+    public NoConsumersException(ServerMessage message)
     {
         super("Immediate delivery is not possible.", message);
     }

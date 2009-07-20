@@ -31,9 +31,10 @@ import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
 
 import javax.management.JMException;
 import javax.management.openmbean.ArrayType;
@@ -50,7 +51,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -237,31 +237,31 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
     {
-        FieldTable headers = getHeaders(payload.getContentHeaderBody());
+        AMQMessageHeader header = payload.getMessageHeader();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Exchange " + getName() + ": routing message with headers " + headers);
+            _logger.debug("Exchange " + getName() + ": routing message with headers " + header);
         }
         boolean routed = false;
         ArrayList<AMQQueue> queues = new ArrayList<AMQQueue>();
         for (Registration e : _bindings)
         {
 
-            if (e.binding.matches(headers))
+            if (e.binding.matches(header))
             {
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Exchange " + getName() + ": delivering message with headers " +
-                                  headers + " to " + e.queue.getName());
+                                  header + " to " + e.queue.getName());
                 }
                 queues.add(e.queue);
 
                 routed = true;
             }
         }
-        payload.enqueue(queues);
+        return queues;
     }
 
     public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)

@@ -185,7 +185,7 @@ public class SimpleAMQQueueTest extends TestCase
         
         // Check sending a message ends up with the subscriber
         AMQMessage messageA = createMessage(new Long(24));
-        _queue.enqueue(null, messageA);
+        _queue.enqueue(messageA);
         assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
         
         // Check removing the subscription removes it's information from the queue
@@ -196,7 +196,7 @@ public class SimpleAMQQueueTest extends TestCase
                 1 == _queue.getActiveConsumerCount());
         
         AMQMessage messageB = createMessage(new Long (25));
-        _queue.enqueue(null, messageB);
+        _queue.enqueue(messageB);
         QueueEntry entry = _subscription.getLastSeenEntry();
         assertNull(entry);
     }
@@ -204,7 +204,7 @@ public class SimpleAMQQueueTest extends TestCase
     public void testQueueNoSubscriber() throws AMQException, InterruptedException
     {
         AMQMessage messageA = createMessage(new Long(24));
-        _queue.enqueue(null, messageA);
+        _queue.enqueue(messageA);
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
         assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
@@ -223,7 +223,7 @@ public class SimpleAMQQueueTest extends TestCase
 
         // Check sending a message ends up with the subscriber
         AMQMessage messageA = createMessage(new Long(24));
-        _queue.enqueue(null, messageA);
+        _queue.enqueue(messageA);
         assertEquals(messageA, _subscription.getLastSeenEntry().getMessage());
         
         // Check we cannot add a second subscriber to the queue
@@ -261,7 +261,7 @@ public class SimpleAMQQueueTest extends TestCase
        _queue = new SimpleAMQQueue(_qname, false, _owner, true, _virtualHost);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));
-       _queue.enqueue(null, message);
+       _queue.enqueue(message);
        _queue.unregisterSubscription(_subscription);
        assertTrue("Queue was not deleted when subscription was removed",
                   _queue.isDeleted());
@@ -272,7 +272,7 @@ public class SimpleAMQQueueTest extends TestCase
         _queue.registerSubscription(_subscription, false);
         Long id = new Long(26);
         AMQMessage message = createMessage(id);
-        _queue.enqueue(null, message);
+        _queue.enqueue(message);
         QueueEntry entry = _subscription.getLastSeenEntry();
         entry.setRedelivered(true);
         _queue.resend(entry, _subscription);
@@ -286,7 +286,7 @@ public class SimpleAMQQueueTest extends TestCase
         AMQMessage message = createMessage(messageId);
 
         // Put message on queue
-        _queue.enqueue(null, message);
+        _queue.enqueue(message);
         // Get message id
         Long testmsgid = _queue.getMessagesOnTheQueue(1).get(0);
 
@@ -302,7 +302,7 @@ public class SimpleAMQQueueTest extends TestCase
             Long messageId = new Long(i);
             AMQMessage message = createMessage(messageId);
             // Put message on queue
-            _queue.enqueue(null, message);
+            _queue.enqueue(message);
         }
         // Get message ids
         List<Long> msgids = _queue.getMessagesOnTheQueue(5);
@@ -323,7 +323,7 @@ public class SimpleAMQQueueTest extends TestCase
             Long messageId = new Long(i);
             AMQMessage message = createMessage(messageId);
             // Put message on queue
-            _queue.enqueue(null, message);
+            _queue.enqueue(message);
         }
         // Get message ids
         List<Long> msgids = _queue.getMessagesOnTheQueue(5, 5);

@@ -44,6 +44,7 @@ public class TestReferenceCounting extends TestCase
     {
         super.setUp();
         _store = new TestMemoryMessageStore();
+        StoreContext.setCurrentContext(_storeContext);
     }
 
     /**
@@ -96,7 +97,7 @@ public class TestReferenceCounting extends TestCase
 
 
         assertEquals(1, _store.getMessageMetaDataMap().size());
-        message.decrementReference(_storeContext);
+        message.decrementReference();
         assertEquals(1, _store.getMessageMetaDataMap().size());
     }
 
@@ -158,7 +159,7 @@ public class TestReferenceCounting extends TestCase
 
         assertEquals(1, _store.getMessageMetaDataMap().size());
         message = message.takeReference();
-        message.decrementReference(_storeContext);
+        message.decrementReference();
         assertEquals(1, _store.getMessageMetaDataMap().size());
     }
 

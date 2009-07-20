@@ -26,9 +26,9 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.tools.utils.Console;
 
@@ -337,30 +337,24 @@ public class Show extends AbstractCommand
         //Add create the table of data
         for (QueueEntry entry : messages)
         {
-            AMQMessage msg = entry.getMessage();
+            ServerMessage msg = entry.getMessage();
             if (!includeMsg(msg, msgids))
             {
                 continue;
             }
 
-            id.add(msg.getMessageId().toString());
+            id.add(msg.getMessageNumber().toString());
 
             size.add("" + msg.getSize());
 
             arrival.add("" + msg.getArrivalTime());
 
-            try
-            {
-                ispersitent.add(msg.isPersistent() ? "true" : "false");
-            }
-            catch (AMQException e)
-            {
-                ispersitent.add("n/a");
-            }
+            ispersitent.add(msg.isPersistent() ? "true" : "false");
+
 
             isredelivered.add(msg.isRedelivered() ? "true" : "false");
 
-            isdelivered.add(msg.getDeliveredToConsumer() ? "true" : "false");
+            isdelivered.add(entry.getDeliveredToConsumer() ? "true" : "false");
 
 //        msg.getMessageHandle();
 
@@ -368,7 +362,10 @@ public class Show extends AbstractCommand
 
             try
             {
-                headers = ((BasicContentHeaderProperties) msg.getContentHeaderBody().properties);
+                if(msg instanceof AMQMessage)
+                {
+                    headers = ((BasicContentHeaderProperties) ((AMQMessage)msg).getContentHeaderBody().properties);
+                }
             }
             catch (AMQException e)
             {
@@ -417,7 +414,11 @@ public class Show extends AbstractCommand
                 MessagePublishInfo info = null;
                 try
                 {
-                    info = msg.getMessagePublishInfo();
+                    if(msg instanceof AMQMessage)
+                    {
+                        info = ((AMQMessage)msg).getMessagePublishInfo();
+                    }
+
                 }
                 catch (AMQException e)
                 {
@@ -457,14 +458,14 @@ public class Show extends AbstractCommand
         return data;
     }
 
-    protected boolean includeMsg(AMQMessage msg, List<Long> msgids)
+    protected boolean includeMsg(ServerMessage msg, List<Long> msgids)
     {
         if (msgids == null)
         {
             return true;
         }
 
-        Long msgid = msg.getMessageId();
+        Long msgid = msg.getMessageNumber();
 
         boolean found = false;
 

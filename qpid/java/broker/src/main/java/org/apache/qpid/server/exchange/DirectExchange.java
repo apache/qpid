@@ -40,9 +40,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
 
 public class DirectExchange extends AbstractExchange
 {
@@ -192,10 +192,10 @@ public class DirectExchange extends AbstractExchange
         }
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
     {
 
-        final AMQShortString routingKey = payload.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : payload.getRoutingKey();
+        final AMQShortString routingKey = payload.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : new AMQShortString(payload.getRoutingKey());
 
         final ArrayList<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
 
@@ -204,7 +204,8 @@ public class DirectExchange extends AbstractExchange
             _logger.debug("Publishing message to queue " + queues);
         }
 
-        payload.enqueue(queues);
+        return queues;
+
 
 
     }

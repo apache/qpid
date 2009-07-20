@@ -31,6 +31,7 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.AMQException;
 import org.apache.commons.configuration.Configuration;
 
@@ -160,7 +161,7 @@ public class MockAMQQueue implements AMQQueue
        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
+    public QueueEntry enqueue(ServerMessage message) throws AMQException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -280,7 +281,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
+
     public void checkMessageStatus() throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -321,7 +322,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
+
     public void setMinimumAlertRepeatGap(long value)
     {
         

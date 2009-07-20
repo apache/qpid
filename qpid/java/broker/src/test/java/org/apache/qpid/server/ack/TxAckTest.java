@@ -38,7 +38,6 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 
@@ -163,7 +162,9 @@ public class TxAckTest extends TestCase
                 };
 
                 TestMessage message = new TestMessage(deliveryTag, i, info, txnContext.getStoreContext());
-                _map.add(deliveryTag, _queue.enqueue(new StoreContext(), message));
+                StoreContext sc = StoreContext.setCurrentContext(new StoreContext());
+                _map.add(deliveryTag, _queue.enqueue(message));
+                StoreContext.setCurrentContext(sc);
             }
             _acked = acked;
             _unacked = unacked;

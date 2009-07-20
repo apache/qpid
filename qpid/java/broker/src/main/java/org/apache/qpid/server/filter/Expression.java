@@ -27,12 +27,12 @@ import org.apache.qpid.server.queue.Filterable;
 /**
  * Represents an expression
  */
-public interface Expression<E extends Exception>
+public interface Expression
 {
 
     /**
      * @return the value of this expression
      */
-    public Object evaluate(Filterable<E> message) throws E;
+    public Object evaluate(Filterable message);
 
 }

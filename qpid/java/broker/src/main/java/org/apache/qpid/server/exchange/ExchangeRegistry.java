@@ -48,4 +48,6 @@ public interface ExchangeRegistry extends MessageRouter
     Collection<AMQShortString> getExchangeNames();
 
     void initialise() throws AMQException;
+
+    Exchange getExchange(String exchangeName);
 }

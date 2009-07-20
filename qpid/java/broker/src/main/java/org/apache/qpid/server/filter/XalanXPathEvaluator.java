@@ -43,7 +43,7 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
         this.xpath = xpath;
     }
     
-    public boolean evaluate(Filterable m) throws AMQException
+    public boolean evaluate(Filterable m) 
     {
         // TODO - we would have to check the content type and then evaluate the content
         //        here... is this really a feature we wish to implement? - RobG

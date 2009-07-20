@@ -42,19 +42,19 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     {
 
         // Enqueue messages in order
-        _queue.enqueue(null, createMessage(1L, (byte) 10));
-        _queue.enqueue(null, createMessage(2L, (byte) 4));
-        _queue.enqueue(null, createMessage(3L, (byte) 0));
+        _queue.enqueue(createMessage(1L, (byte) 10));
+        _queue.enqueue(createMessage(2L, (byte) 4));
+        _queue.enqueue(createMessage(3L, (byte) 0));
         
         // Enqueue messages in reverse order
-        _queue.enqueue(null, createMessage(4L, (byte) 0));
-        _queue.enqueue(null, createMessage(5L, (byte) 4));
-        _queue.enqueue(null, createMessage(6L, (byte) 10));
+        _queue.enqueue(createMessage(4L, (byte) 0));
+        _queue.enqueue(createMessage(5L, (byte) 4));
+        _queue.enqueue(createMessage(6L, (byte) 10));
         
         // Enqueue messages out of order
-        _queue.enqueue(null, createMessage(7L, (byte) 4));
-        _queue.enqueue(null, createMessage(8L, (byte) 10));
-        _queue.enqueue(null, createMessage(9L, (byte) 0));
+        _queue.enqueue(createMessage(7L, (byte) 4));
+        _queue.enqueue(createMessage(8L, (byte) 10));
+        _queue.enqueue(createMessage(9L, (byte) 0));
         
         // Register subscriber
         _queue.registerSubscription(_subscription, false);
@@ -63,17 +63,17 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         ArrayList<QueueEntry> msgs = _subscription.getMessages();
         try
         {
-            assertEquals(new Long(1L), msgs.get(0).getMessage().getMessageId());
-            assertEquals(new Long(6L), msgs.get(1).getMessage().getMessageId());
-            assertEquals(new Long(8L), msgs.get(2).getMessage().getMessageId());
+            assertEquals(new Long(1L), msgs.get(0).getMessage().getMessageNumber());
+            assertEquals(new Long(6L), msgs.get(1).getMessage().getMessageNumber());
+            assertEquals(new Long(8L), msgs.get(2).getMessage().getMessageNumber());
 
-            assertEquals(new Long(2L), msgs.get(3).getMessage().getMessageId());
-            assertEquals(new Long(5L), msgs.get(4).getMessage().getMessageId());
-            assertEquals(new Long(7L), msgs.get(5).getMessage().getMessageId());
+            assertEquals(new Long(2L), msgs.get(3).getMessage().getMessageNumber());
+            assertEquals(new Long(5L), msgs.get(4).getMessage().getMessageNumber());
+            assertEquals(new Long(7L), msgs.get(5).getMessage().getMessageNumber());
 
-            assertEquals(new Long(3L), msgs.get(6).getMessage().getMessageId());
-            assertEquals(new Long(4L), msgs.get(7).getMessage().getMessageId());
-            assertEquals(new Long(9L), msgs.get(8).getMessage().getMessageId());
+            assertEquals(new Long(3L), msgs.get(6).getMessage().getMessageNumber());
+            assertEquals(new Long(4L), msgs.get(7).getMessage().getMessageNumber());
+            assertEquals(new Long(9L), msgs.get(8).getMessage().getMessageNumber());
         }
         catch (AssertionFailedError afe)
         {
@@ -81,7 +81,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
             int index = 1;
             for (QueueEntry qe : msgs)
             {
-                System.err.println(index + ":" + qe.getMessage().getMessageId());
+                System.err.println(index + ":" + qe.getMessage().getMessageNumber());
                 index++;
             }
 

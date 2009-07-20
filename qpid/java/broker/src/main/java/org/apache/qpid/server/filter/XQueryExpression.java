@@ -36,7 +36,7 @@ public final class XQueryExpression implements BooleanExpression {
         this.xpath = xpath;
     }
 
-    public Object evaluate(Filterable message) throws AMQException {
+    public Object evaluate(Filterable message) {
         return Boolean.FALSE;
     }
 
@@ -49,7 +49,7 @@ public final class XQueryExpression implements BooleanExpression {
      * @return true if the expression evaluates to Boolean.TRUE.
      * @throws AMQException
      */
-    public boolean matches(Filterable message) throws AMQException
+    public boolean matches(Filterable message) 
     {
         Object object = evaluate(message);
         return object!=null && object==Boolean.TRUE;            

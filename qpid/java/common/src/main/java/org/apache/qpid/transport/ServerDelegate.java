@@ -52,13 +52,28 @@ public class ServerDelegate extends ConnectionDelegate
 {
 
     private SaslServer saslServer;
+    private List<Object> _locales;
+    private List<Object> _mechanisms;
+    private Map<String, Object> _clientProperties;
+
+
+    public ServerDelegate()
+    {
+        this(null, Collections.EMPTY_LIST, Collections.singletonList((Object)"utf8"));
+    }
+
+    protected ServerDelegate(Map<String, Object> clientProperties, List<Object> mechanisms, List<Object> locales)
+    {
+        _clientProperties = clientProperties;
+        _mechanisms = mechanisms;
+        _locales = locales;
+    }
 
     public void init(Connection conn, ProtocolHeader hdr)
     {
         conn.send(new ProtocolHeader(1, 0, 10));
-        List<Object> utf8 = new ArrayList<Object>();
-        utf8.add("utf8");
-        conn.connectionStart(null, Collections.EMPTY_LIST, utf8);
+
+        conn.connectionStart(_clientProperties, _mechanisms, _locales);
     }
 
     @Override public void connectionStartOk(Connection conn, ConnectionStartOk ok)
@@ -77,8 +92,8 @@ public class ServerDelegate extends ConnectionDelegate
 
         try
         {
-            SaslServer ss = Sasl.createSaslServer
-                (mechanism, "AMQP", "localhost", null, null);
+            
+            SaslServer ss = createSaslServer(mechanism);
             if (ss == null)
             {
                 conn.connectionClose
@@ -93,6 +108,14 @@ public class ServerDelegate extends ConnectionDelegate
         {
             conn.exception(e);
         }
+    }
+
+    protected SaslServer createSaslServer(String mechanism)
+            throws SaslException
+    {
+        SaslServer ss = Sasl.createSaslServer
+            (mechanism, "AMQP", "localhost", null, null);
+        return ss;
     }
 
     private void secure(Connection conn, byte[] response)
@@ -133,8 +156,15 @@ public class ServerDelegate extends ConnectionDelegate
     @Override public void connectionOpen(Connection conn, ConnectionOpen open)
     {
         conn.connectionOpenOk(Collections.EMPTY_LIST);
+
         conn.setState(OPEN);
     }
+
+    protected Session getSession(Connection conn, SessionDelegate delegate, SessionAttach atc)
+    {
+        return new Session(conn, delegate, new Binary(atc.getName()), 0);
+    }
+
 
     public Session getSession(Connection conn, SessionAttach atc)
     {

@@ -1,5 +1,8 @@
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.ServerMessage;
+
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /*
@@ -74,7 +77,7 @@ public class SimpleQueueEntryList implements QueueEntryList
     }
 
 
-    public QueueEntry add(AMQMessage message)
+    public QueueEntry add(ServerMessage message)
     {
         QueueEntryImpl node = new QueueEntryImpl(this, message);
         for (;;)

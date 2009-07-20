@@ -32,8 +32,10 @@ import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.filter.FilterManager;
@@ -377,16 +379,19 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Subscription:" + debugIdentity() + " rejected message:" + entry.debugIdentity());
+                _logger.debug("Subscription:" + this + " rejected message:" + entry);
             }
 //            return false;
         }
 
         if (_noLocal)
         {
-            //todo - client id should be recoreded so we don't have to handle
+
+            AMQMessage message = (AMQMessage) entry.getMessage();
+
+            //todo - client id should be recorded so we don't have to handle
             // the case where this is null.
-            final Object publisherId = entry.getMessage().getPublisherClientInstance();
+            final Object publisherId = message.getPublisherClientInstance();
 
             // We don't want local messages so check to see if message is one we sent
             Object localInstance;
@@ -404,8 +409,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
                 localInstance = getProtocolSession().getClientIdentifier();
 
-                //todo - client id should be recoreded so we don't have to do the null check
-                if (localInstance != null && localInstance.equals(entry.getMessage().getPublisherIdentifier()))
+                //todo - client id should be recorded so we don't have to do the null check
+                if (localInstance != null && localInstance.equals(message.getPublisherIdentifier()))
                 {
                     return false;
                 }
@@ -417,7 +422,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("(" + debugIdentity() + ") checking filters for message (" + entry.debugIdentity());
+            _logger.debug("(" + this + ") checking filters for message (" + entry);
         }
         return checkFilters(entry);
 

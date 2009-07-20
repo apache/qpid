@@ -45,6 +45,9 @@ import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.NewThreadExecutor;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.transport.network.io.IoTransport;
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.*;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
@@ -56,6 +59,9 @@ import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.transport.ServerConnection;
 
 /**
  * Main entry point for AMQPD.
@@ -314,6 +320,29 @@ public class Main
         }
         
         bind(port, serverConfig);
+
+
+        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
+
+        final ConnectionDelegate delegate =
+                new org.apache.qpid.server.transport.ServerConnectionDelegate(appRegistry, "localhost");
+
+
+        ConnectionBinding cb = new ConnectionBinding()
+        {
+            public Connection connection()
+            {
+                ServerConnection conn = new ServerConnection();
+                conn.setConnectionDelegate(delegate);
+                return conn;
+            }
+        };
+
+        int port_0_10 = port + 1;
+
+        org.apache.qpid.transport.network.io.IoAcceptor ioa = new org.apache.qpid.transport.network.io.IoAcceptor
+            ("0.0.0.0", port_0_10, cb);
+        ioa.start();
     }
 
     /**

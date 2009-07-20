@@ -23,6 +23,9 @@ package org.apache.qpid.server;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.AMQMessageReference;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
 
 /**
  * Signals that a required delivery could not be made. This could be bacuse of the immediate flag being set and the
@@ -39,9 +42,9 @@ import org.apache.qpid.server.queue.AMQMessage;
  */
 public abstract class RequiredDeliveryException extends AMQException
 {
-    private AMQMessage _amqMessage;
+    private MessageReference _amqMessage;
 
-    public RequiredDeliveryException(String message, AMQMessage payload)
+    public RequiredDeliveryException(String message, ServerMessage payload)
     {
         super(message);
 
@@ -54,20 +57,20 @@ public abstract class RequiredDeliveryException extends AMQException
         super(message);
     }
 
-    public void setMessage(final AMQMessage payload)
+    public void setMessage(final ServerMessage payload)
     {
 
         // Increment the reference as this message is in the routing phase
         // and so will have the ref decremented as routing fails.
         // we need to keep this message around so we can return it in the
         // handler. So increment here.
-        _amqMessage = payload.takeReference();
+        _amqMessage = payload.newReference();
 
     }
 
-    public AMQMessage getAMQMessage()
+    public ServerMessage getAMQMessage()
     {
-        return _amqMessage;
+        return _amqMessage.getMessage();
     }
 
     public AMQConstant getErrorCode()
@@ -76,4 +79,9 @@ public abstract class RequiredDeliveryException extends AMQException
     }
 
     public abstract AMQConstant getReplyCode();
+
+    public void release()
+    {
+        _amqMessage.release();
+    }
 }

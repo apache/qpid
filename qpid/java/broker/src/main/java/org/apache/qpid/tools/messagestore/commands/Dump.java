@@ -26,6 +26,7 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.tools.utils.Console;
 
@@ -100,7 +101,7 @@ public class Dump extends Show
 
         for (QueueEntry entry : messages)
         {
-            AMQMessage msg = entry.getMessage();
+            ServerMessage msg = entry.getMessage();
             if (!includeMsg(msg, msgids))
             {
                 continue;
@@ -112,7 +113,7 @@ public class Dump extends Show
 
             // Show general message information
             hex.add(Show.Columns.ID.name());
-            ascii.add(msg.getMessageId().toString());
+            ascii.add(msg.getMessageNumber().toString());
 
             hex.add(Console.ROW_DIVIDER);
             ascii.add(Console.ROW_DIVIDER);
@@ -136,110 +137,114 @@ public class Dump extends Show
             hex.add(Console.ROW_DIVIDER);
             ascii.add(Console.ROW_DIVIDER);
 
-            Iterator bodies = msg.getContentBodyIterator();
-            if (bodies.hasNext())
+            if(msg instanceof AMQMessage)
             {
 
-                hex.add("Hex");
-                hex.add(Console.ROW_DIVIDER);
-
-
-                ascii.add("ASCII");
-                ascii.add(Console.ROW_DIVIDER);
-
-                while (bodies.hasNext())
+                Iterator bodies = ((AMQMessage)msg).getContentBodyIterator();
+                if (bodies.hasNext())
                 {
-                    ContentChunk chunk = (ContentChunk) bodies.next();
 
-                    //Duplicate so we don't destroy original data :)
-                    ByteBuffer hexBuffer = chunk.getData().duplicate();
+                    hex.add("Hex");
+                    hex.add(Console.ROW_DIVIDER);
 
-                    ByteBuffer charBuffer = hexBuffer.duplicate();
 
-                    Hex hexencoder = new Hex();
+                    ascii.add("ASCII");
+                    ascii.add(Console.ROW_DIVIDER);
 
-                    while (hexBuffer.hasRemaining())
+                    while (bodies.hasNext())
                     {
-                        byte[] line = new byte[LINE_SIZE];
+                        ContentChunk chunk = (ContentChunk) bodies.next();
 
-                        int bufsize = hexBuffer.remaining();
-                        if (bufsize < LINE_SIZE)
+                        //Duplicate so we don't destroy original data :)
+                        ByteBuffer hexBuffer = chunk.getData().duplicate();
+
+                        ByteBuffer charBuffer = hexBuffer.duplicate();
+
+                        Hex hexencoder = new Hex();
+
+                        while (hexBuffer.hasRemaining())
                         {
-                            hexBuffer.get(line, 0, bufsize);
-                        }
-                        else
-                        {
-                            bufsize = line.length;
-                            hexBuffer.get(line);
-                        }
+                            byte[] line = new byte[LINE_SIZE];
 
-                        byte[] encoded = hexencoder.encode(line);
-
-                        try
-                        {
-                            String encStr = new String(encoded, 0, bufsize * 2, DEFAULT_ENCODING);
-                            String hexLine = "";
-
-                            int strKength = encStr.length();
-                            for (int c = 0; c < strKength; c++)
+                            int bufsize = hexBuffer.remaining();
+                            if (bufsize < LINE_SIZE)
                             {
-                                hexLine += encStr.charAt(c);
-
-                                if (c % 2 == 1 && SPACE_BYTES)
-                                {
-                                    hexLine += BYTE_SPACER;
-                                }
-                            }
-
-                            hex.add(hexLine);
-                        }
-                        catch (UnsupportedEncodingException e)
-                        {
-                            _console.println(e.getMessage());
-                            return null;
-                        }
-                    }
-
-                    while (charBuffer.hasRemaining())
-                    {
-                        String asciiLine = "";
-
-                        for (int pos = 0; pos < LINE_SIZE; pos++)
-                        {
-                            if (charBuffer.hasRemaining())
-                            {
-                                byte ch = charBuffer.get();
-
-                                if (isPrintable(ch))
-                                {
-                                    asciiLine += (char) ch;
-                                }
-                                else
-                                {
-                                    asciiLine += NON_PRINTING_ASCII_CHAR;
-                                }
-
-                                if (SPACE_BYTES)
-                                {
-                                    asciiLine += BYTE_SPACER;
-                                }
+                                hexBuffer.get(line, 0, bufsize);
                             }
                             else
                             {
-                                break;
+                                bufsize = line.length;
+                                hexBuffer.get(line);
+                            }
+
+                            byte[] encoded = hexencoder.encode(line);
+
+                            try
+                            {
+                                String encStr = new String(encoded, 0, bufsize * 2, DEFAULT_ENCODING);
+                                String hexLine = "";
+
+                                int strKength = encStr.length();
+                                for (int c = 0; c < strKength; c++)
+                                {
+                                    hexLine += encStr.charAt(c);
+
+                                    if (c % 2 == 1 && SPACE_BYTES)
+                                    {
+                                        hexLine += BYTE_SPACER;
+                                    }
+                                }
+
+                                hex.add(hexLine);
+                            }
+                            catch (UnsupportedEncodingException e)
+                            {
+                                _console.println(e.getMessage());
+                                return null;
                             }
                         }
 
-                        ascii.add(asciiLine);
+                        while (charBuffer.hasRemaining())
+                        {
+                            String asciiLine = "";
+
+                            for (int pos = 0; pos < LINE_SIZE; pos++)
+                            {
+                                if (charBuffer.hasRemaining())
+                                {
+                                    byte ch = charBuffer.get();
+
+                                    if (isPrintable(ch))
+                                    {
+                                        asciiLine += (char) ch;
+                                    }
+                                    else
+                                    {
+                                        asciiLine += NON_PRINTING_ASCII_CHAR;
+                                    }
+
+                                    if (SPACE_BYTES)
+                                    {
+                                        asciiLine += BYTE_SPACER;
+                                    }
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            ascii.add(asciiLine);
+                        }
                     }
                 }
-            }
-            else
-            {
-                List<String> result = new LinkedList<String>();
+                else
+                {
+                    List<String> result = new LinkedList<String>();
 
-                display.add(result);
-                result.add("No ContentBodies");
+                    display.add(result);
+                    result.add("No ContentBodies");
+                }
             }
         }
 
@@ -252,7 +257,7 @@ public class Dump extends Show
         return display;
     }
 
-    private void addShowInformation(List<String> column1, List<String> column2, AMQMessage msg,
+    private void addShowInformation(List<String> column1, List<String> column2, ServerMessage msg,
                                     String title, boolean routing, boolean headers, boolean messageHeaders)
     {
         List<QueueEntry> single = new LinkedList<QueueEntry>();

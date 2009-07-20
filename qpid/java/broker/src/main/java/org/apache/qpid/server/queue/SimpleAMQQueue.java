@@ -29,6 +29,8 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -319,7 +321,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     // ------ Enqueue / Dequeue
 
-    public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
+    public QueueEntry enqueue(ServerMessage message) throws AMQException
     {
 
         incrementQueueCount();
@@ -406,8 +408,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
         }
 
+
         if (entry.immediateAndNotDelivered())
         {
+            StoreContext storeContext = StoreContext.getCurrentContext();
             dequeue(storeContext, entry);
             entry.dispose(storeContext);
         }
@@ -462,7 +466,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         // Simple Queues don't :-)
     }
 
-    private void incrementQueueSize(final AMQMessage message)
+    private void incrementQueueSize(final ServerMessage message)
     {
         getAtomicQueueSize().addAndGet(message.getSize());
     }
@@ -573,10 +577,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         try
         {
-            AMQMessage msg = entry.getMessage();
+            ServerMessage msg = entry.getMessage();
             if (msg.isPersistent())
             {
-                _virtualHost.getMessageStore().dequeueMessage(storeContext, this, msg.getMessageId());
+                _virtualHost.getMessageStore().dequeueMessage(storeContext, this, msg.getMessageNumber());
             }
             //entry.dispose(storeContext);
 
@@ -767,7 +771,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                final long messageId = entry.getMessage().getMessageId();
+                final long messageId = entry.getMessage().getMessageNumber();
                 return messageId >= fromMessageId && messageId <= toMessageId;
             }
 
@@ -786,7 +790,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                _complete = entry.getMessage().getMessageId() == messageId;
+                _complete = entry.getMessage().getMessageNumber() == messageId;
                 return _complete;
             }
 
@@ -828,7 +832,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                final long messageId = entry.getMessage().getMessageId();
+                final long messageId = entry.getMessage().getMessageNumber();
                 return (messageId >= fromMessageId)
                        && (messageId <= toMessageId)
                        && entry.acquire();
@@ -847,11 +851,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Move the messages in on the message store.
             for (QueueEntry entry : entries)
             {
-                AMQMessage message = entry.getMessage();
+                ServerMessage message = entry.getMessage();
 
                 if (message.isPersistent() && toQueue.isDurable())
                 {
-                    store.enqueueMessage(storeContext, toQueue, message.getMessageId());
+                    store.enqueueMessage(storeContext, toQueue, message.getMessageNumber());
                 }
                 // dequeue does not decrement the refence count
                 entry.dequeue(storeContext);
@@ -882,9 +886,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         try
         {
+            StoreContext.setCurrentContext(storeContext);
+
             for (QueueEntry entry : entries)
             {
-                toQueue.enqueue(storeContext, entry.getMessage());
+                toQueue.enqueue(entry.getMessage());
                 entry.delete();
             }
         }
@@ -895,6 +901,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         catch (AMQException e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            StoreContext.clearCurrentContext();
+
         }
 
     }
@@ -912,17 +923,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             public boolean accept(QueueEntry entry)
             {
-                final long messageId = entry.getMessage().getMessageId();
-                if ((messageId >= fromMessageId)
-                    && (messageId <= toMessageId))
-                {
-                    if (!entry.isDeleted())
-                    {
-                        return entry.getMessage().incrementReference();
-                    }
-                }
-
-                return false;
+                final long messageId = entry.getMessage().getMessageNumber();
+                return ((messageId >= fromMessageId)
+                    && (messageId <= toMessageId));
             }
 
             public boolean filterComplete()
@@ -938,11 +941,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // Move the messages in on the message store.
             for (QueueEntry entry : entries)
             {
-                AMQMessage message = entry.getMessage();
+                ServerMessage message = entry.getMessage();
 
-                if (message.isReferenced() && message.isPersistent() && toQueue.isDurable())
+                if (message.isPersistent() && toQueue.isDurable())
                 {
-                    store.enqueueMessage(storeContext, toQueue, message.getMessageId());
+
+                    StoreContext sc = StoreContext.setCurrentContext(storeContext);
+                    store.enqueueMessage(storeContext, toQueue, message.getMessageNumber());
+                    StoreContext.setCurrentContext(sc);
+
                 }
             }
 
@@ -973,9 +980,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             for (QueueEntry entry : entries)
             {
-                if (entry.getMessage().isReferenced())
+
+                ServerMessage message = entry.getMessage();
+                if (message != null)
                 {
-                    toQueue.enqueue(storeContext, entry.getMessage());
+                    toQueue.enqueue(entry.getMessage());
                 }
             }
         }
@@ -1001,7 +1010,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 QueueEntry node = queueListIterator.getNode();
 
-                final long messageId = node.getMessage().getMessageId();
+                final long messageId = node.getMessage().getMessageNumber();
 
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId)
@@ -1418,7 +1427,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    @Override
+
     public void checkMessageStatus() throws AMQException
     {
 
@@ -1581,7 +1590,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         for (int i = 0; i < num && !it.atTail(); i++)
         {
             it.advance();
-            ids.add(it.getNode().getMessage().getMessageId());
+            ids.add(it.getNode().getMessage().getMessageNumber());
         }
         return ids;
     }

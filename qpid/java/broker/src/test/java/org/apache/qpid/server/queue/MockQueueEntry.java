@@ -49,11 +49,6 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    public String debugIdentity()
-    {
-        return null;
-    }
-
     public boolean delete()
     {
         return false;

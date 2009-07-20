@@ -82,7 +82,7 @@ public class Session extends SessionInvoker
     private Binary name;
     private long expiry;
     private int channel;
-    private SessionDelegate delegate = new SessionDelegate();
+    private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
     private long timeout = 60000;
     private boolean autoSync = false;
@@ -112,9 +112,15 @@ public class Session extends SessionInvoker
 
     private Thread resumer = null;
 
-    Session(Connection connection, Binary name, long expiry)
+    protected Session(Connection connection, Binary name, long expiry)
+    {
+        this(connection, new SessionDelegate(), name, expiry);
+    }
+
+    protected Session(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         this.connection = connection;
+        this.delegate = delegate;
         this.name = name;
         this.expiry = expiry;
         initReceiver();

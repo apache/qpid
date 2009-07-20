@@ -26,6 +26,7 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
@@ -56,9 +57,8 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 
     public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
     {
-
-        AMQMessage msg = message.getMessage();
-        msg.setRedelivered(true);
+        
+        message.setRedelivered(true);
         final Subscription subscription = message.getDeliveredSubscription();
         if (subscription != null)
         {

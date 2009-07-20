@@ -55,7 +55,7 @@ public class Connection extends ConnectionInvoker
 
     private static final Logger log = Logger.get(Connection.class);
 
-    enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
+    public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
 
     class DefaultConnectionListener implements ConnectionListener
     {
@@ -118,7 +118,7 @@ public class Connection extends ConnectionInvoker
         sender.setIdleTimeout(idleTimeout);         
     }
 
-    void setState(State state)
+    protected void setState(State state)
     {
         synchronized (lock)
         {

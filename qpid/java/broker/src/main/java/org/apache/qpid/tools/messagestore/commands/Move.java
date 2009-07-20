@@ -172,7 +172,7 @@ public class Move extends AbstractCommand
             {
                 for (QueueEntry msg : messages)
                 {
-                    ids.add(msg.getMessage().getMessageId());
+                    ids.add(msg.getMessage().getMessageNumber());
                 }
             }
         }

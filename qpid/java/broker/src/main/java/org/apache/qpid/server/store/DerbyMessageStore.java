@@ -1352,7 +1352,10 @@ public class DerbyMessageStore implements MessageStore
 
         public void process() throws AMQException
         {
-            _queue.enqueue(_context, _message);
+            StoreContext.setCurrentContext(_context);
+            _queue.enqueue(_message);
+            StoreContext.clearCurrentContext();
+
 
         }
 
@@ -1414,7 +1417,7 @@ public class DerbyMessageStore implements MessageStore
 
                 if(message != null)
                 {
-                    message.incrementReference();
+//                    message.incrementReference();
                 }
                 else
                 {

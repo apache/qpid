@@ -27,15 +27,15 @@ import org.apache.qpid.server.queue.Filterable;
 /**
  * A filter performing a comparison of two objects
  */
-public abstract class LogicExpression<E extends Exception> extends BinaryExpression<E> implements BooleanExpression<E>
+public abstract class LogicExpression extends BinaryExpression implements BooleanExpression
 {
 
-    public static<E extends Exception> BooleanExpression createOR(BooleanExpression<E> lvalue, BooleanExpression<E> rvalue)
+    public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue)
     {
         return new OrExpression(lvalue, rvalue);
     }
 
-    public static<E extends Exception> BooleanExpression createAND(BooleanExpression<E> lvalue, BooleanExpression<E> rvalue)
+    public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue)
     {
         return new AndExpression(lvalue, rvalue);
     }
@@ -49,23 +49,23 @@ public abstract class LogicExpression<E extends Exception> extends BinaryExpress
         super(left, right);
     }
 
-    public abstract Object evaluate(Filterable<E> message) throws E;
+    public abstract Object evaluate(Filterable message);
 
-    public boolean matches(Filterable<E> message) throws E
+    public boolean matches(Filterable message)
     {
         Object object = evaluate(message);
 
         return (object != null) && (object == Boolean.TRUE);
     }
 
-    private static class OrExpression<E extends Exception> extends LogicExpression<E>
+    private static class OrExpression extends LogicExpression
     {
-        public OrExpression(final BooleanExpression<E> lvalue, final BooleanExpression<E> rvalue)
+        public OrExpression(final BooleanExpression lvalue, final BooleanExpression rvalue)
         {
             super(lvalue, rvalue);
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
 
             Boolean lv = (Boolean) left.evaluate(message);
@@ -86,14 +86,14 @@ public abstract class LogicExpression<E extends Exception> extends BinaryExpress
         }
     }
 
-    private static class AndExpression<E extends Exception> extends LogicExpression<E>
+    private static class AndExpression extends LogicExpression
     {
-        public AndExpression(final BooleanExpression<E> lvalue, final BooleanExpression<E> rvalue)
+        public AndExpression(final BooleanExpression lvalue, final BooleanExpression rvalue)
         {
             super(lvalue, rvalue);
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
 
             Boolean lv = (Boolean) left.evaluate(message);

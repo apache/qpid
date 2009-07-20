@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -55,6 +54,11 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void initialise() throws AMQException
     {
         new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this);
+    }
+
+    public Exchange getExchange(String exchangeName)
+    {
+        return getExchange(new AMQShortString(exchangeName));
     }
 
     public MessageStore getMessageStore()
@@ -134,6 +138,6 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             throw new AMQException("Exchange '" + exchange + "' does not exist");
         }
-        exch.route(payload);
+        payload.enqueue(exch.route(payload));
     }
 }

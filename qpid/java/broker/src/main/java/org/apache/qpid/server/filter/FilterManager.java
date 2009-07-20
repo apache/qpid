@@ -27,13 +27,13 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 import org.apache.qpid.AMQException;
 
-public interface FilterManager<E extends Exception>
+public interface FilterManager
 {
-    void add(MessageFilter<E> filter);
+    void add(MessageFilter filter);
 
-    void remove(MessageFilter<E> filter);
+    void remove(MessageFilter filter);
 
-    boolean allAllow(Filterable<E>  msg);
+    boolean allAllow(Filterable  msg);
 
     boolean hasFilters();
 }

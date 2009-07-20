@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -88,7 +86,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     int delete() throws AMQException;
 
 
-    QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
+    QueueEntry enqueue(ServerMessage message) throws AMQException;
 
     void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
 

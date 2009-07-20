@@ -22,16 +22,85 @@ package org.apache.qpid.server.exchange;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 import junit.framework.TestCase;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.message.AMQMessageHeader;
 
 /**
  */
 public class HeadersBindingTest extends TestCase
 {
+
+    private class MockHeader implements AMQMessageHeader
+    {
+
+        private final Map<String, Object> _headers = new HashMap<String, Object>();
+
+        public String getCorrelationId()
+        {
+            return null;
+        }
+
+        public long getExpiration()
+        {
+            return 0;
+        }
+
+        public String getMessageId()
+        {
+            return null;
+        }
+
+        public byte getPriority()
+        {
+            return 0;
+        }
+
+        public long getTimestamp()
+        {
+            return 0;
+        }
+
+        public String getType()
+        {
+            return null;
+        }
+
+        public String getReplyTo()
+        {
+            return null;
+        }
+
+        public Object getHeader(String name)
+        {
+            return _headers.get(name);
+        }
+
+        public boolean containsHeaders(Set<String> names)
+        {
+            return _headers.keySet().containsAll(names);
+        }
+
+        public boolean containsHeader(String name)
+        {
+            return _headers.containsKey(name);
+        }
+
+        public void setString(String key, String value)
+        {
+            setObject(key,value);
+        }
+
+        public void setObject(String key, Object value)
+        {
+            _headers.put(key,value);
+        }
+    }
+
     private FieldTable bindHeaders = new FieldTable();
-    private FieldTable matchHeaders = new FieldTable();
+    private MockHeader matchHeaders = new MockHeader();
 
     public void testDefault_1()
     {

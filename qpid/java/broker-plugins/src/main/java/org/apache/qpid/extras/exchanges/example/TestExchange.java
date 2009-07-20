@@ -23,14 +23,15 @@ package org.apache.qpid.extras.exchanges.example;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
 
 public class TestExchange implements Exchange
 {
@@ -59,6 +60,16 @@ public class TestExchange implements Exchange
     }
 
     public boolean hasBindings()
+    {
+        return false;
+    }
+
+    public boolean isBound(String bindingKey, AMQQueue queue)
+    {
+        return false;
+    }
+
+    public boolean isBound(String bindingKey)
     {
         return false;
     }
@@ -102,8 +113,9 @@ public class TestExchange implements Exchange
     {
     }
 
-    public void route(IncomingMessage message) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage message) throws AMQException
     {
+        return new ArrayList<AMQQueue>();
     }
 
     public int getTicket()

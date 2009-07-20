@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.ack.TxAck;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -93,10 +94,11 @@ public class LocalTransactionalContext implements TransactionalContext
         public void process() throws AMQException
         {
 
-            _message.incrementReference();
+            MessageReference ref = _message.newReference();
             try
             {
-                QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
+                StoreContext.setCurrentContext(getStoreContext());
+                QueueEntry entry = _queue.enqueue(_message);
 
                 if(entry.immediateAndNotDelivered())
                 {
@@ -105,7 +107,8 @@ public class LocalTransactionalContext implements TransactionalContext
             }
             finally
             {
-                _message.decrementReference(getStoreContext());
+                ref.release();
+                StoreContext.clearCurrentContext();
             }
         }
     }

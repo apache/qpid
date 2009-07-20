@@ -33,6 +33,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.message.*;
 
 
 import java.util.Iterator;
@@ -41,12 +42,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A deliverable message.
  */
-public class AMQMessage implements Filterable<AMQException>
+public class AMQMessage implements Filterable, ServerMessage
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
-    private final AtomicInteger _referenceCount = new AtomicInteger(1);
+    private final AtomicInteger _referenceCount = new AtomicInteger(0);
 
     private final AMQMessageHandle _messageHandle;
 
@@ -72,7 +73,7 @@ public class AMQMessage implements Filterable<AMQException>
 
     private AMQProtocolSession.ProtocolSessionIdentifier _sessionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
-
+    private final AMQMessageHeader _messageHeader;
 
 
     /**
@@ -202,6 +203,7 @@ public class AMQMessage implements Filterable<AMQException>
         _messageHandle = factory.createMessageHandle(messageId, store, true);
         _storeContext = txnConext.getStoreContext();
         _size = _messageHandle.getBodySize(txnConext.getStoreContext());
+        _messageHeader = new ContentHeaderBodyAdapter(_messageHandle.getContentHeaderBody(txnConext.getStoreContext()));
     }
 
         /**
@@ -221,6 +223,7 @@ public class AMQMessage implements Filterable<AMQException>
     {
         _messageHandle = messageHandle;
         _storeContext = storeConext;
+        _messageHeader = new ContentHeaderBodyAdapter(_messageHandle.getContentHeaderBody(storeConext));
 
         if(info.isImmediate())
         {
@@ -234,6 +237,7 @@ public class AMQMessage implements Filterable<AMQException>
     protected AMQMessage(AMQMessage msg) throws AMQException
     {
         _messageHandle = msg._messageHandle;
+        _messageHeader = msg._messageHeader;
         _storeContext = msg._storeContext;
         _flags = msg._flags;
         _size = msg._size;
@@ -315,12 +319,11 @@ public class AMQMessage implements Filterable<AMQException>
      * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
      * message store.
      *
-     * @param storeContext
      *
      * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
      */
-    public void decrementReference(StoreContext storeContext) throws MessageCleanupException
+    public void decrementReference() throws MessageCleanupException
     {
 
         int count = _referenceCount.decrementAndGet();
@@ -342,13 +345,12 @@ public class AMQMessage implements Filterable<AMQException>
                 // and the handle has not yet been constructed
                 if (_messageHandle != null)
                 {
-                    _messageHandle.removeMessage(storeContext);
+                    _messageHandle.removeMessage(StoreContext.getCurrentContext());
                 }
             }
             catch (AMQException e)
             {
-                // to maintain consistency, we revert the count
-                incrementReference();
+
                 throw new MessageCleanupException(getMessageId(), e);
             }
         }
@@ -373,7 +375,18 @@ public class AMQMessage implements Filterable<AMQException>
         return (_flags & DELIVERED_TO_CONSUMER) != 0;
     }
 
-    public boolean isPersistent() throws AMQException
+    public String getRoutingKey()
+    {
+        // TODO
+        return null;
+    }
+
+    public AMQMessageHeader getMessageHeader()
+    {
+        return _messageHeader;
+    }
+
+    public boolean isPersistent()
     {
         return _messageHandle.isPersistent();
     }
@@ -453,6 +466,26 @@ public class AMQMessage implements Filterable<AMQException>
     {
         return _size;
 
+    }
+
+    public boolean isImmediate()
+    {
+        return (_flags & IMMEDIATE) == IMMEDIATE;
+    }
+
+    public long getExpiration()
+    {
+        return _expiration;
+    }
+
+    public MessageReference newReference()
+    {
+        return new AMQMessageReference(this);
+    }
+
+    public Long getMessageNumber()
+    {
+        return getMessageId();
     }
 
     public Object getPublisherClientInstance()

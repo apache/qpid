@@ -28,9 +28,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.InboundMessage;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -182,7 +182,7 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
     {
 
     
@@ -191,7 +191,7 @@ public class FanoutExchange extends AbstractExchange
             _logger.debug("Publishing message to queue " + _queues);
         }
 
-        payload.enqueue(new ArrayList(_queues));
+        return new ArrayList(_queues);
 
     }
 

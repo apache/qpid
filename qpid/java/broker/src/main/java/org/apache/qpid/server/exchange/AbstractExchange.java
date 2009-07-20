@@ -39,6 +39,7 @@ import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -204,4 +205,15 @@ public abstract class AbstractExchange implements Exchange, Managable
     {
         return getVirtualHost().getQueueRegistry();
     }
+
+    public boolean isBound(String bindingKey, AMQQueue queue)
+    {
+        return isBound(new AMQShortString(bindingKey), queue);
+    }
+
+    public boolean isBound(String bindingKey)
+    {
+        return isBound(new AMQShortString(bindingKey));
+    }
+
 }
