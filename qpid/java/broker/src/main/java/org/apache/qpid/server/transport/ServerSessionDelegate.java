@@ -50,10 +50,22 @@ public class ServerSessionDelegate extends SessionDelegate
     }
 
     @Override
+    public void command(Session session, Method method)
+    {
+        super.command(session, method);
+        if (method.isSync())
+        {
+            session.flushProcessed();
+        }
+    }
+
+    @Override
     public void messageAccept(Session session, MessageAccept method)
     {
         super.messageAccept(session, method);
     }
+
+
 
     @Override
     public void messageReject(Session session, MessageReject method)
@@ -130,9 +142,6 @@ public class ServerSessionDelegate extends SessionDelegate
             ArrayList<AMQQueue> queues = exchange.route(message);
 
             ((ServerSession) ssn).enqueue(message, queues);
-
-
-            System.out.println(queues);
 
             ssn.processed(xfr);
         }

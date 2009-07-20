@@ -76,7 +76,7 @@ public abstract class Method extends Struct implements ProtocolEvent
         return sync;
     }
 
-    final void setSync(boolean value)
+    public final void setSync(boolean value)
     {
         this.sync = value;
     }
