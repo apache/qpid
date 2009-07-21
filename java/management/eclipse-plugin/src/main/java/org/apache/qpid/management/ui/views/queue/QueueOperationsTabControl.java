@@ -417,6 +417,30 @@ public class QueueOperationsTabControl extends TabControl
         {
             copyMessagesButton = null;
         }
+
+        final Button deleteMessagesButton;
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))//if the server supports Qpid JMX API 1.3
+        {
+            deleteMessagesButton = _toolkit.createButton(buttonsComposite, "Delete Message(s) ...", SWT.PUSH);
+            deleteMessagesButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            deleteMessagesButton.setEnabled(false);
+            deleteMessagesButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    if (_table.getSelectionIndex() == -1)
+                    {
+                        return;
+                    }
+
+                    deleteMessages(deleteMessagesButton.getShell());
+                }
+            });
+        }
+        else
+        {
+            deleteMessagesButton = null;
+        }
                 
         final Button clearQueueButton = _toolkit.createButton(buttonsComposite, "Clear Queue", SWT.PUSH);
         clearQueueButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
@@ -504,6 +528,10 @@ public class QueueOperationsTabControl extends TabControl
                     {
                         copyMessagesButton.setEnabled(false);
                     }
+                    if(deleteMessagesButton != null)
+                    {
+                        deleteMessagesButton.setEnabled(false);
+                    }
 
                     return;
                 }
@@ -513,6 +541,10 @@ public class QueueOperationsTabControl extends TabControl
                     if(copyMessagesButton != null)
                     {
                         copyMessagesButton.setEnabled(true);
+                    }
+                    if(deleteMessagesButton != null)
+                    {
+                        deleteMessagesButton.setEnabled(true);
                     }
                     
                     final CompositeData selectedMsg = (CompositeData)_table.getItem(selectionIndex).getData();
@@ -830,6 +862,75 @@ public class QueueOperationsTabControl extends TabControl
                 catch (Exception e4)
                 {
                     ViewUtility.operationFailedStatusBarMessage(failureFeedBackMessage);
+                    MBeanUtility.handleException(_mbean, e4);
+                }
+
+                refresh(_mbean);
+            }
+        });
+
+        cancelButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                shell.dispose();
+            }
+        });
+
+        shell.setDefaultButton(okButton);
+        shell.pack();
+        shell.open();
+    }
+    
+    private void deleteMessages(final Shell parent)
+    {
+        final ArrayList<Long> rangeStarts = new ArrayList<Long>();
+        final ArrayList<Long> rangeEnds = new ArrayList<Long>();
+
+        gatherSelectedAMQMsgIDRanges(rangeStarts,rangeEnds);
+        String rangeString = getRangesString(rangeStarts,rangeEnds);
+        
+        final Shell shell = ViewUtility.createModalDialogShell(parent, "Delete Messages");
+
+        Composite idComposite = _toolkit.createComposite(shell, SWT.NONE);
+        idComposite.setBackground(shell.getBackground());
+        idComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        idComposite.setLayout(new GridLayout());
+        
+        _toolkit.createLabel(idComposite,"Delete message(s) with AMQ ID:").setBackground(shell.getBackground());
+        _toolkit.createLabel(idComposite,rangeString).setBackground(shell.getBackground());
+
+        Composite okCancelButtonsComp = _toolkit.createComposite(shell);
+        okCancelButtonsComp.setBackground(shell.getBackground());
+        okCancelButtonsComp.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, true));
+        okCancelButtonsComp.setLayout(new GridLayout(2,false));
+        
+        Button okButton = _toolkit.createButton(okCancelButtonsComp, "OK", SWT.PUSH);
+        okButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
+        Button cancelButton = _toolkit.createButton(okCancelButtonsComp, "Cancel", SWT.PUSH);
+        cancelButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
+        
+        okButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                shell.dispose();
+                
+                try
+                {
+                    for(int i=0 ; i < rangeStarts.size() ; i++)
+                    {
+                        Long from = rangeStarts.get(i);
+                        Long to = rangeEnds.get(i);
+                        
+                        _qmb.deleteMessages(Long.valueOf(from), Long.valueOf(to));
+                    }
+
+                    ViewUtility.operationResultFeedback(null, "Messages deleted", null);
+                }
+                catch (Exception e4)
+                {
+                    ViewUtility.operationFailedStatusBarMessage("Error deleting messages");
                     MBeanUtility.handleException(_mbean, e4);
                 }
 
