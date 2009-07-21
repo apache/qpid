@@ -106,21 +106,24 @@ public class RefreshIntervalComboPanel extends WorkbenchWindowControlContributio
         @Override
         public void run()
         {
-            IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
-            final MBeanView mbView = (MBeanView)window.getActivePage().findView(MBeanView.ID);
-
-            final NavigationView navView = (NavigationView)window.getActivePage().findView(NavigationView.ID);
-            try
+            IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+            if(window != null)
             {
-                mbView.refresh();
-                navView.refresh();
-            }
-            catch (Exception ex)
-            {
-                MBeanUtility.handleException(ex);
-            }
+                final MBeanView mbView = (MBeanView)window.getActivePage().findView(MBeanView.ID);
 
-            _display.timerExec(1000 * seconds, this);
+                final NavigationView navView = (NavigationView)window.getActivePage().findView(NavigationView.ID);
+                try
+                {
+                    mbView.refresh();
+                    navView.refresh();
+                }
+                catch (Exception ex)
+                {
+                    MBeanUtility.handleException(ex);
+                }
+
+                _display.timerExec(1000 * seconds, this);
+            }
         }
         
     }
