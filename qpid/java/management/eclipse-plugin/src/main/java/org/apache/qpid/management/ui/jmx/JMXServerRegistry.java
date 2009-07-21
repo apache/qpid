@@ -248,6 +248,33 @@ public class JMXServerRegistry extends ServerRegistry
         }
     }
     
+    public List<NotificationObject> getNotifications(String virtualhost)
+    {
+        List<NotificationObject> vhostNotificationsList = new ArrayList<NotificationObject>();
+
+        //iterate over all the notification lists for mbeans with subscribed notifications
+        for (List<NotificationObject> list : _notificationsMap.values())
+        {
+            //Check the source vhost of the first notification
+            NotificationObject notification  = list.get(0);
+            
+            if (notification != null)
+            {
+                String sourceVhost = notification.getSourceVirtualHost();
+                if(sourceVhost != null)
+                {
+                    if(sourceVhost.equalsIgnoreCase(virtualhost))
+                    {
+                        //If it matches, add the entire list as they are from the same vhost (same source mbean)
+                        vhostNotificationsList.addAll(list);
+                    }
+                }
+            }
+        }
+
+        return vhostNotificationsList;
+    }
+    
     public void clearNotifications(ManagedBean mbean, List<NotificationObject> list)
     {
         if (mbean == null)
