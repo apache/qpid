@@ -390,9 +390,33 @@ public class QueueOperationsTabControl extends TabControl
                     return;
                 }
                 
-                moveMessages(moveMessagesButton.getShell());
+                moveOrCopyMessages(moveMessagesButton.getShell(), QueueOperations.MOVE);
             }
         });
+        
+        final Button copyMessagesButton;
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))//if the server supports Qpid JMX API 1.3
+        {
+            copyMessagesButton= _toolkit.createButton(buttonsComposite, "Copy Message(s) ...", SWT.PUSH);
+            copyMessagesButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            copyMessagesButton.setEnabled(false);
+            copyMessagesButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    if (_table.getSelectionIndex() == -1)
+                    {
+                        return;
+                    }
+
+                    moveOrCopyMessages(copyMessagesButton.getShell(), QueueOperations.COPY);
+                }
+            });
+        }
+        else
+        {
+            copyMessagesButton = null;
+        }
                 
         final Button clearQueueButton = _toolkit.createButton(buttonsComposite, "Clear Queue", SWT.PUSH);
         clearQueueButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
@@ -476,12 +500,20 @@ public class QueueOperationsTabControl extends TabControl
                     redeliveredText.setText("-");
                     viewSelectedMsgButton.setEnabled(false);
                     moveMessagesButton.setEnabled(false);
-                    
+                    if(copyMessagesButton != null)
+                    {
+                        copyMessagesButton.setEnabled(false);
+                    }
+
                     return;
                 }
                 else
                 {   
                     moveMessagesButton.setEnabled(true);
+                    if(copyMessagesButton != null)
+                    {
+                        copyMessagesButton.setEnabled(true);
+                    }
                     
                     final CompositeData selectedMsg = (CompositeData)_table.getItem(selectionIndex).getData();
                     Boolean redelivered = (Boolean) selectedMsg.get(MSG_REDELIVERED);
@@ -697,7 +729,7 @@ public class QueueOperationsTabControl extends TabControl
         shell.dispose();
     }
     
-    private void moveMessages(final Shell parent)
+    private void moveOrCopyMessages(final Shell parent, final QueueOperations op)
     {
         final ArrayList<Long> rangeStarts = new ArrayList<Long>();
         final ArrayList<Long> rangeEnds = new ArrayList<Long>();
@@ -705,14 +737,34 @@ public class QueueOperationsTabControl extends TabControl
         gatherSelectedAMQMsgIDRanges(rangeStarts,rangeEnds);
         String rangeString = getRangesString(rangeStarts,rangeEnds);
         
-        final Shell shell = ViewUtility.createModalDialogShell(parent, "Move Messages");
+        String windowTitle;
+        String dialogueMessage;
+        final String feedBackMessage;
+        final String failureFeedBackMessage;
+        
+        if(op.equals(QueueOperations.MOVE))
+        {
+            windowTitle = "Move Messages";
+            dialogueMessage = "Move message(s) with AMQ ID:";
+            feedBackMessage = "Messages moved";
+            failureFeedBackMessage = "Error moving messages";
+        }
+        else
+        {
+            windowTitle = "Copy Messages";
+            dialogueMessage = "Copy message(s) with AMQ ID:";
+            feedBackMessage = "Messages copied";
+            failureFeedBackMessage = "Error copying messages";
+        }
+        
+        final Shell shell = ViewUtility.createModalDialogShell(parent, windowTitle);
 
         Composite idComposite = _toolkit.createComposite(shell, SWT.NONE);
         idComposite.setBackground(shell.getBackground());
         idComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         idComposite.setLayout(new GridLayout());
         
-        _toolkit.createLabel(idComposite,"Move message(s) with AMQ ID:").setBackground(shell.getBackground());
+        _toolkit.createLabel(idComposite,dialogueMessage).setBackground(shell.getBackground());
         _toolkit.createLabel(idComposite,rangeString).setBackground(shell.getBackground());
 
         Composite destinationComposite = _toolkit.createComposite(shell, SWT.NONE);
@@ -762,14 +814,22 @@ public class QueueOperationsTabControl extends TabControl
                         Long from = rangeStarts.get(i);
                         Long to = rangeEnds.get(i);
                         
-                        _qmb.moveMessages(Long.valueOf(from), Long.valueOf(to), destQueue);
+                        switch(op)
+                        {
+                            case COPY:
+                                _qmb.copyMessages(Long.valueOf(from), Long.valueOf(to), destQueue);
+                                break;
+                            case MOVE:
+                                _qmb.moveMessages(Long.valueOf(from), Long.valueOf(to), destQueue);
+                                break;
+                        }
                     }
                     
-                    ViewUtility.operationResultFeedback(null, "Messages moved", null);
+                    ViewUtility.operationResultFeedback(null, feedBackMessage, null);
                 }
                 catch (Exception e4)
                 {
-                    ViewUtility.operationFailedStatusBarMessage("Error moving messages");
+                    ViewUtility.operationFailedStatusBarMessage(failureFeedBackMessage);
                     MBeanUtility.handleException(_mbean, e4);
                 }
 
@@ -859,5 +919,11 @@ public class QueueOperationsTabControl extends TabControl
         }
         
         return idRangesString.concat(".");
+    }
+    
+    private enum QueueOperations
+    {
+        MOVE,
+        COPY;
     }
 }
