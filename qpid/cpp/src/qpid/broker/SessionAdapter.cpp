@@ -57,6 +57,8 @@ SessionAdapter::SessionAdapter(SemanticState& s) :
     dtxImpl(s)
 {}
 
+static const std::string TRUE("true");
+static const std::string FALSE("false");
 
 void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const string& type, 
                                                   const string& alternateExchange, 
@@ -67,8 +69,8 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_TYPE, type));
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? "true" : "false") ));
-        params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? "true" : "false")));
+        params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? TRUE : FALSE) ));
+        params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? TRUE : FALSE)));
         if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchange,&params) )
             throw NotAllowedException(QPID_MSG("ACL denied exhange declare request from " << getConnection().getUserId()));
     }
@@ -325,10 +327,10 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
     if (acl) {
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? "true" : "false") ));
-        params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? "true" : "false")));
-        params.insert(make_pair(acl::PROP_EXCLUSIVE, std::string(exclusive ? "true" : "false")));
-        params.insert(make_pair(acl::PROP_AUTODELETE, std::string(autoDelete ? "true" : "false")));
+        params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? TRUE : FALSE) ));
+        params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? TRUE : FALSE)));
+        params.insert(make_pair(acl::PROP_EXCLUSIVE, std::string(exclusive ? TRUE : FALSE)));
+        params.insert(make_pair(acl::PROP_AUTODELETE, std::string(autoDelete ? TRUE : FALSE)));
         if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
             throw NotAllowedException(QPID_MSG("ACL denied queue create request from " << getConnection().getUserId()));
     }
