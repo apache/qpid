@@ -19,9 +19,6 @@
 
 #include "qpid/sys/PipeHandle.h"
 #include "qpid/sys/windows/check.h"
-#include <io.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <winsock2.h>
 
 namespace qpid {
@@ -29,14 +26,53 @@ namespace sys {
 
 PipeHandle::PipeHandle(bool nonBlocking) {
 
-    int pair[2];
-    pair[0] = pair[1] = -1;
+    SOCKET listener, pair[2];
+    struct sockaddr_in addr;
+    int err;
+    int addrlen = sizeof(addr);
+    pair[0] = pair[1] = INVALID_SOCKET;
+    if ((listener = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+        throw QPID_WINDOWS_ERROR(WSAGetLastError());
 
-    if (_pipe(pair, 128, O_BINARY) == -1)
-        throw qpid::Exception(QPID_MSG("Creation of pipe failed"));
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;
 
-    writeFd = pair[0];
-    readFd = pair[1]; 
+    err = bind(listener, (const struct sockaddr*) &addr, sizeof(addr));
+    if (err == SOCKET_ERROR) {
+        err = WSAGetLastError();
+        closesocket(listener);
+        throw QPID_WINDOWS_ERROR(err);
+    }
+
+    err = getsockname(listener, (struct sockaddr*) &addr, &addrlen);
+    if (err == SOCKET_ERROR) {
+        err = WSAGetLastError();
+        closesocket(listener);
+        throw QPID_WINDOWS_ERROR(err);
+    }
+
+    try {
+        if (listen(listener, 1) == SOCKET_ERROR)
+            throw QPID_WINDOWS_ERROR(WSAGetLastError());
+        if ((pair[0] = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+            throw QPID_WINDOWS_ERROR(WSAGetLastError());
+        if (connect(pair[0], (const struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR)
+            throw QPID_WINDOWS_ERROR(WSAGetLastError());
+        if ((pair[1] = accept(listener, NULL, NULL)) == INVALID_SOCKET)
+            throw QPID_WINDOWS_ERROR(WSAGetLastError());
+
+        closesocket(listener);
+        writeFd = pair[0];
+        readFd = pair[1]; 
+    }
+    catch (...) {
+        closesocket(listener);
+        if (pair[0] != INVALID_SOCKET)
+            closesocket(pair[0]);
+        throw;
+    }
 
     // Set the socket to non-blocking
     if (nonBlocking) {
@@ -46,16 +82,16 @@ PipeHandle::PipeHandle(bool nonBlocking) {
 }
 
 PipeHandle::~PipeHandle() {
-    close(readFd);
-    close(writeFd);
+    closesocket(readFd);
+    closesocket(writeFd);
 }
 
 int PipeHandle::read(void* buf, size_t bufSize) {
-    return ::read(readFd, buf, bufSize);
+    return ::recv(readFd, (char *)buf, bufSize, 0);
 }
 
 int PipeHandle::write(const void* buf, size_t bufSize) {
-    return ::write(writeFd, buf, bufSize);
+    return ::send(writeFd, (const char *)buf, bufSize, 0);
 }
 
 int PipeHandle::getReadHandle() {
