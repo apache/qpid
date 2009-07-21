@@ -298,4 +298,20 @@ public interface ManagedQueue
     void deleteMessages(@MBeanOperationParameter(name="from MessageId", description="from MessageId")long fromMessageId,
                       @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId)
             throws IOException, JMException;
+    
+    /**
+     * Copies the messages in given range of AMQ message Ids to a given Queue.
+     * @param fromMessageId  first in the range of message ids
+     * @param toMessageId    last in the range of message ids
+     * @param toQueue        where the messages are to be copied
+     * @throws IOException
+     * @throws JMException
+     */
+    @MBeanOperation(name="copyMessages",
+                    description="Copies a range of messages to a specified queue",
+                    impact= MBeanOperationInfo.ACTION)
+    void copyMessages(@MBeanOperationParameter(name="from MessageId", description="from MessageId")long fromMessageId,
+                      @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId,
+                      @MBeanOperationParameter(name= ManagedQueue.TYPE, description="to Queue Name")String toQueue)
+            throws IOException, JMException;
 }
