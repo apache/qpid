@@ -501,6 +501,23 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     }
     
     /**
+     * @see ManagedQueue#copyMessages
+     * @param fromMessageId
+     * @param toMessageId
+     * @param toQueueName
+     * @throws JMException
+     */
+    public void copyMessages(long fromMessageId, long toMessageId, String toQueueName) throws JMException
+    {
+        if ((fromMessageId > toMessageId) || (fromMessageId < 1))
+        {
+            throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
+        }
+
+        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, _storeContext);
+    }
+    
+    /**
      * returns Notifications sent by this MBean.
      */
     @Override
