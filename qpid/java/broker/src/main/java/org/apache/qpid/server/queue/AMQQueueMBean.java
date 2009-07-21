@@ -380,25 +380,45 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     /**
      * Returns the header contents of the messages stored in this queue in tabular form.
+     * Deprecated as of Qpid JMX API 1.3
      */
+    @Deprecated
     public TabularData viewMessages(int beginIndex, int endIndex) throws JMException
     {
-        if ((beginIndex > endIndex) || (beginIndex < 1))
+        return viewMessages((long)beginIndex,(long)endIndex);
+    }
+    
+    
+    /**
+     * Returns the header contents of the messages stored in this queue in tabular form.
+     * @param startPosition The queue position of the first message to be viewed
+     * @param endPosition The queue position of the last message to be viewed
+     */
+    public TabularData viewMessages(long startPosition, long endPosition) throws JMException
+    {
+        if ((startPosition > endPosition) || (startPosition < 1))
         {
-            throw new OperationsException("From Index = " + beginIndex + ", To Index = " + endIndex
+            throw new OperationsException("From Index = " + startPosition + ", To Index = " + endPosition
                 + "\n\"From Index\" should be greater than 0 and less than \"To Index\"");
         }
+        
+        if ((endPosition - startPosition) > Integer.MAX_VALUE)
+        {
+            throw new OperationsException("Specified MessageID interval is too large. Intervals must be less than 2^31 in size");
+        }
 
-        List<QueueEntry> list = _queue.getMessagesOnTheQueue();
+        List<QueueEntry> list = _queue.getMessagesRangeOnTheQueue(startPosition,endPosition);
         TabularDataSupport _messageList = new TabularDataSupport(_messagelistDataType);
 
         try
         {
             // Create the tabular list of message header contents
-            for (int i = beginIndex; (i <= endIndex) && (i <= list.size()); i++)
+            int size = list.size();
+
+            for (int i = 0; i < size ; i++)
             {
-                long position = i;
-                AMQMessage msg = list.get(i - 1).getMessage();
+                long position = startPosition + i;
+                AMQMessage msg = list.get(i).getMessage();
                 ContentHeaderBody headerBody = msg.getContentHeaderBody();
                 // Create header attributes list
                 String[] headerAttributes = getMessageHeaderProperties(headerBody);

@@ -209,6 +209,11 @@ public class MockAMQQueue implements AMQQueue
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
+    
+    public List<QueueEntry> getMessagesRangeOnTheQueue(long fromPosition, long toPosition)
+    {
+        return null;
+    }
 
     public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext)
     {

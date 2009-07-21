@@ -207,18 +207,42 @@ public interface ManagedQueue
     /**
      * Returns a subset of all the messages stored in the queue. The messages
      * are returned based on the given index numbers.
+     * 
+     * Deprecated as of Qpid JMX API 1.3
      * @param fromIndex
      * @param toIndex
      * @return
      * @throws IOException
      * @throws JMException
      */
+    @Deprecated
     @MBeanOperation(name="viewMessages",
                     description="Message headers for messages in this queue within given index range. eg. from index 1 - 100")
     TabularData viewMessages(@MBeanOperationParameter(name="from index", description="from index")int fromIndex,
                              @MBeanOperationParameter(name="to index", description="to index")int toIndex)
             throws IOException, JMException;
+    
+    /**
+     * Returns a subset (up to 2^31 messages at a time) of all the messages stored on the queue. 
+     * The messages are returned based on the given queue position range.
+     * @param startPosition
+     * @param endPosition
+     * @return
+     * @throws IOException
+     * @throws JMException
+     */
+    @MBeanOperation(name="viewMessages",
+                    description="Message headers for messages in this queue within given queue positions range. eg. from index 1 - 100")
+    TabularData viewMessages(@MBeanOperationParameter(name="start position", description="start position")long startPosition,
+                             @MBeanOperationParameter(name="end position", description="end position")long endPosition)
+            throws IOException, JMException;
 
+    /**
+     * Returns the content for the given AMQ Message ID.
+     * 
+     * @throws IOException
+     * @throws JMException
+     */
     @MBeanOperation(name="viewMessageContent", description="The message content for given Message Id")
     CompositeData viewMessageContent(@MBeanOperationParameter(name="Message Id", description="Message Id")long messageId)
         throws IOException, JMException;

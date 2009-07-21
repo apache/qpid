@@ -187,7 +187,7 @@ public class AMQQueueMBeanTest extends TestCase
     {
         try
         {
-            _queueMBean.viewMessages(0, 3);
+            _queueMBean.viewMessages(0L, 3L);
             fail();
         }
         catch (JMException ex)
@@ -197,7 +197,7 @@ public class AMQQueueMBeanTest extends TestCase
 
         try
         {
-            _queueMBean.viewMessages(2, 1);
+            _queueMBean.viewMessages(2L, 1L);
             fail();
         }
         catch (JMException ex)
@@ -207,8 +207,20 @@ public class AMQQueueMBeanTest extends TestCase
 
         try
         {
-            _queueMBean.viewMessages(-1, 1);
+            _queueMBean.viewMessages(-1L, 1L);
             fail();
+        }
+        catch (JMException ex)
+        {
+
+        }
+        
+        try
+        {
+            long end = Integer.MAX_VALUE;
+            end+=2;
+            _queueMBean.viewMessages(1L, end);
+            fail("Expected Exception due to oversized(> 2^31) message range");
         }
         catch (JMException ex)
         {
