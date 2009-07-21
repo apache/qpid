@@ -284,4 +284,18 @@ public interface ManagedQueue
                       @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId,
                       @MBeanOperationParameter(name= ManagedQueue.TYPE, description="to Queue Name")String toQueue)
             throws IOException, JMException;
+    
+    /**
+     * Deletes the messages in given range of AMQ message Ids in the given Queue.
+     * @param fromMessageId  first in the range of message ids
+     * @param toMessageId    last in the range of message ids
+     * @throws IOException
+     * @throws JMException
+     */
+    @MBeanOperation(name="deleteMessages",
+                    description="Delete a range of messages from a specified queue",
+                    impact= MBeanOperationInfo.ACTION)
+    void deleteMessages(@MBeanOperationParameter(name="from MessageId", description="from MessageId")long fromMessageId,
+                      @MBeanOperationParameter(name="to MessageId", description="to MessageId")long toMessageId)
+            throws IOException, JMException;
 }

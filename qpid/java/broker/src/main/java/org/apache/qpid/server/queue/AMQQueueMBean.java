@@ -478,12 +478,28 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     {
         if ((fromMessageId > toMessageId) || (fromMessageId < 1))
         {
-            throw new OperationsException("\"From MessageId\" should be greater then 0 and less then \"To MessageId\"");
+            throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
         _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, _storeContext);
     }
 
+    /**
+     * @see ManagedQueue#deleteMessages
+     * @param fromMessageId
+     * @param toMessageId
+     * @throws JMException
+     */
+    public void deleteMessages(long fromMessageId, long toMessageId) throws JMException
+    {
+        if ((fromMessageId > toMessageId) || (fromMessageId < 1))
+        {
+            throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
+        }
+
+        _queue.removeMessagesFromQueue(fromMessageId, toMessageId, _storeContext);
+    }
+    
     /**
      * returns Notifications sent by this MBean.
      */
