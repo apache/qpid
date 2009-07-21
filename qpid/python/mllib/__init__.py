@@ -24,6 +24,8 @@ both SGML and XML.
 
 import os, dom, transforms, parsers, sys
 import xml.sax, types
+from xml.sax.handler import ErrorHandler
+from xml.sax.xmlreader import InputSource
 from cStringIO import StringIO
 
 def transform(node, *args):
@@ -49,15 +51,33 @@ def sgml_parse(source):
   p.close()
   return p.parser.tree
 
-def xml_parse(filename):
+class Resolver:
+
+  def __init__(self, path):
+    self.path = path
+
+  def resolveEntity(self, publicId, systemId):
+    for p in self.path:
+      fname = os.path.join(p, systemId)
+      if os.path.exists(fname):
+        source = InputSource(systemId)
+        source.setByteStream(open(fname))
+        return source
+    return InputSource(systemId)
+
+def xml_parse(filename, path=()):
   if sys.version_info[0:2] == (2,3):
     # XXX: this is for older versions of python
-    source = "file://%s" % os.path.abspath(filename) 
+    source = "file://%s" % os.path.abspath(filename)
   else:
     source = filename
-  p = parsers.XMLParser()
-  xml.sax.parse(source, p)
-  return p.parser.tree
+  h = parsers.XMLParser()
+  p = xml.sax.make_parser()
+  p.setContentHandler(h)
+  p.setErrorHandler(ErrorHandler())
+  p.setEntityResolver(Resolver(path))
+  p.parse(source)
+  return h.parser.tree
 
 def sexp(node):
   s = transforms.Sexp()
