@@ -233,7 +233,7 @@ public class MBeanTabFolderFactory
             return;
         }
         
-        NotificationsTabControl controller = new NotificationsTabControl(tabFolder);
+        NotificationsTabControl controller = new NotificationsTabControl(tabFolder, mbean);
         
         TabItem tab = new TabItem(tabFolder, SWT.NONE);
         tab.setText(NOTIFICATIONS);

@@ -21,7 +21,6 @@
 package org.apache.qpid.management.ui.views;
 
 import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
-import static org.apache.qpid.management.ui.Constants.BUTTON_REFRESH;
 import static org.apache.qpid.management.ui.Constants.DESCRIPTION;
 import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
 import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
@@ -50,7 +49,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TabFolder;
 
@@ -65,23 +63,25 @@ public class NotificationsTabControl extends VHNotificationsTabControl
     private SelectionListener selectionListener;
     private SelectionListener comboListener;    
     
-    private Combo notificationNameCombo = null;
-    private Combo typesCombo = null;
-    private Label descriptionLabel = null;
-    private Button _subscribeButton   = null;
-    private Button _unsubscribeButton = null;
+    private Combo _notificationNameCombo;
+    private Combo _typesCombo;
+    private Label _descriptionLabel;
+    private Button _subscribeButton;
+    private Button _unsubscribeButton;
     
-    public NotificationsTabControl(TabFolder tabFolder)
+    public NotificationsTabControl(TabFolder tabFolder, ManagedBean mbean)
     {
         super(tabFolder);
+        _mbean = mbean;
+        
+        populateNotificationInfo();
     }
     
     protected void createWidgets()
-    {       
+    {            
         selectionListener = new SelectionListenerImpl();
         comboListener = new ComboSelectionListener();
         createNotificationInfoComposite();
-        //addFilterComposite();
         addButtons();  
         createTableViewer();
     }
@@ -103,21 +103,21 @@ public class NotificationsTabControl extends VHNotificationsTabControl
         formData.left = new FormAttachment(0, 10);
         label.setLayoutData(formData);
         
-        notificationNameCombo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
+        _notificationNameCombo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
         formData = new FormData();
         formData.top = new FormAttachment(label, 10);
         formData.left = new FormAttachment(0, 10);
         formData.right = new FormAttachment(40);
-        notificationNameCombo.setLayoutData(formData);
-        notificationNameCombo.addSelectionListener(comboListener);
+        _notificationNameCombo.setLayoutData(formData);
+        _notificationNameCombo.addSelectionListener(comboListener);
         
-        typesCombo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
+        _typesCombo = new Combo(composite, SWT.READ_ONLY | SWT.DROP_DOWN);
         formData = new FormData();
         formData.top = new FormAttachment(label, 10);
-        formData.left = new FormAttachment(notificationNameCombo, 5);
+        formData.left = new FormAttachment(_notificationNameCombo, 5);
         formData.right = new FormAttachment(65);
-        typesCombo.setLayoutData(formData);
-        typesCombo.addSelectionListener(comboListener);
+        _typesCombo.setLayoutData(formData);
+        _typesCombo.addSelectionListener(comboListener);
         
         _subscribeButton = new Button(composite, SWT.PUSH | SWT.CENTER);
         _subscribeButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
@@ -141,30 +141,30 @@ public class NotificationsTabControl extends VHNotificationsTabControl
         
         Label fixedLabel = _toolkit.createLabel(composite, "");
         formData = new FormData();
-        formData.top = new FormAttachment(notificationNameCombo, 5);
+        formData.top = new FormAttachment(_notificationNameCombo, 5);
         formData.left = new FormAttachment(0, 10);
         fixedLabel.setLayoutData(formData);
         fixedLabel.setText(DESCRIPTION + " : ");
         fixedLabel.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         
-        descriptionLabel = _toolkit.createLabel(composite, "");
+        _descriptionLabel = _toolkit.createLabel(composite, "");
         formData = new FormData();
-        formData.top = new FormAttachment(notificationNameCombo, 5);
+        formData.top = new FormAttachment(_notificationNameCombo, 5);
         formData.left = new FormAttachment(fixedLabel, 10);
         formData.right = new FormAttachment(100);
-        descriptionLabel.setLayoutData(formData);
-        descriptionLabel.setText("      ");
-        descriptionLabel.setFont(ApplicationRegistry.getFont(FONT_ITALIC));
+        _descriptionLabel.setLayoutData(formData);
+        _descriptionLabel.setText("      ");
+        _descriptionLabel.setFont(ApplicationRegistry.getFont(FONT_ITALIC));
     }
     
     /**
-     * Creates clear buttin and refresh button
+     * Creates clear button
      */
     protected void addButtons()
     {    
         Composite composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        composite.setLayout(new GridLayout(2, true));
+        composite.setLayout(new GridLayout());
         
         // Add Clear Button
         _clearButton = _toolkit.createButton(composite, BUTTON_CLEAR, SWT.PUSH | SWT.CENTER);
@@ -182,74 +182,14 @@ public class NotificationsTabControl extends VHNotificationsTabControl
                     IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
                     ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
                     serverRegistry.clearNotifications(_mbean, ss.toList());
-                    refresh();
-                }
-            });
-        
-        // Add Refresh Button
-        _refreshButton = _toolkit.createButton(composite, BUTTON_REFRESH, SWT.PUSH | SWT.CENTER);
-        _refreshButton.setFont(ApplicationRegistry.getFont(FONT_BUTTON));
-        gridData = new GridData(SWT.TRAIL, SWT.TOP, true, false);
-        gridData.widthHint = 80;
-        _refreshButton.setLayoutData(gridData);
-        _refreshButton.addSelectionListener(new SelectionAdapter()
-            {
-                public void widgetSelected(SelectionEvent e)
-                {    
-                    if (_mbean == null)
-                        return;
-                    
-                    refresh();
                 }
             });
     }
-  
+
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbean = mbean;
-        _notifications = null;
-        _table.deselectAll();
-        _tableViewer.getTable().clearAll();
-        
-        if (_mbean == null)
-        {            
-            _tableViewer.getTable().clearAll();
-            _subscribeButton.setEnabled(false);
-            _unsubscribeButton.setEnabled(false);
-            return;
-        }        
-        
-        if (!doesMBeanSendsNotification())
-        {
-            Control[] children = _form.getBody().getChildren();        
-            for (int i = 0; i < children.length; i++)
-            {
-                children[i].setVisible(false);
-            }
-            
-            String name = (_mbean.getName() != null) ? _mbean.getName() : _mbean.getType();
-            _form.setText(name + " does not send any notification");
-            return;
-        }
-        
-        Control[] children = _form.getBody().getChildren();        
-        for (int i = 0; i < children.length; i++)
-        {
-            children[i].setVisible(true);
-        }
-        
-        populateNotificationInfo();        
-        workerRunning = true;
-        _form.layout(true);   
-        _form.getBody().layout(true, true);
-    }
-    
-    public void refresh()
-    {
-        _notifications = null;
-        _table.deselectAll();
-        _tableViewer.getTable().clearAll();
+        refresh();
     }
     
     /**
@@ -257,26 +197,26 @@ public class NotificationsTabControl extends VHNotificationsTabControl
      */
     private void populateNotificationInfo()
     {
-        notificationNameCombo.removeAll();
+        _notificationNameCombo.removeAll();
         NotificationInfoModel[] items = MBeanUtility.getNotificationInfo(_mbean);
         if (items.length > 1)
         {
-            notificationNameCombo.add(SELECT_NOTIFICATIONNAME);
+            _notificationNameCombo.add(SELECT_NOTIFICATIONNAME);
         }
         
         for (int i = 0; i < items.length; i++)
         {
-            notificationNameCombo.add(items[i].getName());
-            notificationNameCombo.setData(items[i].getName(), items[i]);
+            _notificationNameCombo.add(items[i].getName());
+            _notificationNameCombo.setData(items[i].getName(), items[i]);
         } 
-        notificationNameCombo.select(0);
+        _notificationNameCombo.select(0);
         
-        typesCombo.removeAll();
-        typesCombo.add("Select Type", 0);
-        typesCombo.select(0);
-        typesCombo.setEnabled(false);
+        _typesCombo.removeAll();
+        _typesCombo.add("Select Type", 0);
+        _typesCombo.select(0);
+        _typesCombo.setEnabled(false);
         
-        populateNotificationType(notificationNameCombo.getItem(0));
+        populateNotificationType(_notificationNameCombo.getItem(0));
         checkForEnablingButtons();
     }
     
@@ -285,18 +225,18 @@ public class NotificationsTabControl extends VHNotificationsTabControl
      */
     private void checkForEnablingButtons()
     {
-        int nameIndex = notificationNameCombo.getSelectionIndex();
-        int itemCount = notificationNameCombo.getItems().length;
+        int nameIndex = _notificationNameCombo.getSelectionIndex();
+        int itemCount = _notificationNameCombo.getItems().length;
         if ((itemCount > 1) && (nameIndex == 0))
         {
             _subscribeButton.setEnabled(false);
             _unsubscribeButton.setEnabled(false);
-            descriptionLabel.setText("");
+            _descriptionLabel.setText("");
             return;
         }
         
-        int typeIndex = typesCombo.getSelectionIndex();
-        itemCount = typesCombo.getItems().length;
+        int typeIndex = _typesCombo.getSelectionIndex();
+        itemCount = _typesCombo.getItems().length;
         if ((itemCount > 1) && (typeIndex == 0))
         {
             _subscribeButton.setEnabled(false);
@@ -304,8 +244,8 @@ public class NotificationsTabControl extends VHNotificationsTabControl
             return;
         }
         
-        String type = typesCombo.getItem(typeIndex);
-        String name = notificationNameCombo.getItem(nameIndex);
+        String type = _typesCombo.getItem(typeIndex);
+        String name = _notificationNameCombo.getItem(nameIndex);
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
         
         if (serverRegistry.hasSubscribedForNotifications(_mbean, name, type))
@@ -320,15 +260,6 @@ public class NotificationsTabControl extends VHNotificationsTabControl
         }
     }
     
-    private boolean doesMBeanSendsNotification()
-    {
-        NotificationInfoModel[] items = MBeanUtility.getNotificationInfo(_mbean);
-        if (items == null || items.length == 0)
-            return false;
-        else
-            return true;
-    }
-    
     /**
      * Selection listener for subscribing or unsubscribing the notifications
      */
@@ -340,8 +271,8 @@ public class NotificationsTabControl extends VHNotificationsTabControl
                 return;
             
             Button source = (Button)e.getSource();
-            String type = typesCombo.getItem(typesCombo.getSelectionIndex());
-            String name = notificationNameCombo.getItem(notificationNameCombo.getSelectionIndex());
+            String type = _typesCombo.getItem(_typesCombo.getSelectionIndex());
+            String name = _notificationNameCombo.getItem(_notificationNameCombo.getSelectionIndex());
             if (source == _unsubscribeButton)
             {
                 try
@@ -380,7 +311,7 @@ public class NotificationsTabControl extends VHNotificationsTabControl
                 return;
             
             Combo combo = (Combo)e.getSource();
-            if (combo == notificationNameCombo)
+            if (combo == _notificationNameCombo)
             {
                 String selectedItem = combo.getItem(combo.getSelectionIndex());                
                 populateNotificationType(selectedItem);
@@ -391,23 +322,23 @@ public class NotificationsTabControl extends VHNotificationsTabControl
     
     private void populateNotificationType(String notificationName)
     {
-        NotificationInfoModel data = (NotificationInfoModel)notificationNameCombo.getData(notificationName);
+        NotificationInfoModel data = (NotificationInfoModel)_notificationNameCombo.getData(notificationName);
         if (data == null)
         {
-            descriptionLabel.setText("");
-            typesCombo.select(0);
-            typesCombo.setEnabled(false);
+            _descriptionLabel.setText("");
+            _typesCombo.select(0);
+            _typesCombo.setEnabled(false);
             return;
         }
-        descriptionLabel.setText(data.getDescription());
-        typesCombo.removeAll();       
-        typesCombo.setItems(data.getTypes());
-        if (typesCombo.getItemCount() > 1)
+        _descriptionLabel.setText(data.getDescription());
+        _typesCombo.removeAll();       
+        _typesCombo.setItems(data.getTypes());
+        if (_typesCombo.getItemCount() > 1)
         {
-            typesCombo.add(SELECT_NOTIFICATIONTYPE, 0);
+            _typesCombo.add(SELECT_NOTIFICATIONTYPE, 0);
         }
-        typesCombo.select(0);
-        typesCombo.setEnabled(true);
+        _typesCombo.select(0);
+        _typesCombo.setEnabled(true);
     }
     
     /**
@@ -417,11 +348,8 @@ public class NotificationsTabControl extends VHNotificationsTabControl
     {
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);        
         List<NotificationObject> newList = serverRegistry.getNotifications(_mbean);
-        if (newList == null)
-            return;
-        
         _notifications = newList;
+        
         _tableViewer.setInput(_notifications);
-        _tableViewer.refresh();
     }
 }
