@@ -41,6 +41,7 @@ import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.NumberVerifyListener;
 import org.apache.qpid.management.ui.views.TabControl;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -52,6 +53,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -87,14 +90,23 @@ public class QueueOperationsTabControl extends TabControl
             
     private ApiVersion _ApiVersion;
     
+    private Text _fromMsgText;
+    private Text _toMsgText;
+    private Long _fromMsg = new Long(FROM_DEFAULT);
+    private Long _toMsg = new Long(TO_DEFAULT);
+    
     private TabularDataSupport _messages = null;
     private ManagedQueue _qmb;
     
-    static final String MSG_AMQ_ID = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[0];
-    static final String MSG_HEADER = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[1];
-    static final String MSG_SIZE = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[2];
-    static final String MSG_REDELIVERED = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[3];
-    static final String MSG_QUEUE_POS = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[4];
+    private static final String FROM_DEFAULT = "1";
+    private static final String TO_DEFAULT = "50";
+    private long INTERVAL = 50;
+    
+    private static final String MSG_AMQ_ID = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[0];
+    private static final String MSG_HEADER = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[1];
+    private static final String MSG_SIZE = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[2];
+    private static final String MSG_REDELIVERED = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[3];
+    private static final String MSG_QUEUE_POS = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[4];
     
     public QueueOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -139,19 +151,31 @@ public class QueueOperationsTabControl extends TabControl
         _messages = null;
         try
         {
-            //gather a list of all messages on the queue for display and selection
-            _messages = (TabularDataSupport) _qmb.viewMessages(1,Integer.MAX_VALUE);
-            
-            //TODO - viewMessages takes int args, limiting number of messages which can be viewed
-            //to the first 2^32 messages on the queue at the time of invocation.
-            //For consistency with other methods, expand values to Long by introducing a new method.
-            //Use AMQ ID or current 'position in queue' numbering scheme ??
+            if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+            { //broker supports Qpid JMX API 1.3 and takes Long values
+                
+                //gather a list of all messages on the queue for display and selection
+                _messages = (TabularDataSupport) _qmb.viewMessages(_fromMsg,_toMsg);
+            }
+            else
+            { //broker supports Qpid JMX API 1.2 or below and takes int values
+
+                if(_toMsg > Integer.MAX_VALUE || _toMsg > Integer.MAX_VALUE)
+                {
+                    ViewUtility.popupErrorMessage("Error", "This broker only supports viewing up to message " + Integer.MAX_VALUE);
+                    _tableViewer.setInput(null);
+                    return;
+                }
+                
+                //gather a list of all messages on the queue for display and selection
+                _messages = (TabularDataSupport) _qmb.viewMessages(_fromMsg.intValue(), _toMsg.intValue());
+            }
         }
         catch (Exception e)
         {
             MBeanUtility.handleException(mbean,e);
         }
-        
+
         _tableViewer.setInput(_messages);
 
         layout();
@@ -172,6 +196,104 @@ public class QueueOperationsTabControl extends TabControl
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         messagesGroup.setLayoutData(gridData);
         
+        //from and to fields for selecting the viewing range
+        Composite viewMessageRangeComposite = _toolkit.createComposite(messagesGroup);
+        gridData = new GridData(SWT.LEFT, SWT.FILL, false, false);
+        viewMessageRangeComposite.setLayoutData(gridData);
+        viewMessageRangeComposite.setLayout(new GridLayout(8,false));
+        
+        _toolkit.createLabel(viewMessageRangeComposite, "Queue pos: ");
+        _fromMsgText = new Text(viewMessageRangeComposite, SWT.BORDER);
+        _fromMsgText.setText(FROM_DEFAULT);
+        gridData = new GridData(SWT.LEFT, SWT.FILL, false, false);
+        gridData.widthHint = 75;
+        _fromMsgText.setLayoutData(gridData);
+        _fromMsgText.addVerifyListener(new NumberVerifyListener());
+        _fromMsgText.addKeyListener(new KeyAdapter()
+        {
+            public void keyPressed(KeyEvent event)
+            {
+                if (event.character == SWT.CR)
+                {
+                    updateMessageInterval();
+                }
+            }
+        });
+
+        _toolkit.createLabel(viewMessageRangeComposite, "to");
+
+        _toMsgText = new Text(viewMessageRangeComposite, SWT.BORDER);
+        _toMsgText.setText(TO_DEFAULT);
+        gridData = new GridData(SWT.LEFT, SWT.FILL, false, false);
+        gridData.widthHint = 75;
+        _toMsgText.setLayoutData(gridData);
+        _toMsgText.addVerifyListener(new NumberVerifyListener());
+        _toMsgText.addKeyListener(new KeyAdapter()
+        {
+            public void keyPressed(KeyEvent event)
+            {
+                if (event.character == SWT.CR)
+                {
+                    updateMessageInterval();
+                }
+            }
+        });
+        
+        final Button setButton = _toolkit.createButton(viewMessageRangeComposite, "Set", SWT.PUSH);
+        setButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+        setButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                updateMessageInterval();
+            }
+        });
+        
+        _toolkit.createLabel(viewMessageRangeComposite, "     "); //spacer
+        
+        final Button previousButton = _toolkit.createButton(viewMessageRangeComposite, "< Prev " + INTERVAL, SWT.PUSH);
+        previousButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+        previousButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                //make 'to' be 'from - 1' unless from is 1 (ie there are no previous messages)
+                if(_fromMsg > 1)
+                {
+                    _toMsg = _fromMsg - 1;
+                    _toMsgText.setText(_toMsg.toString());
+                }
+                
+                //make 'from' be 'from - INTERVAL', or make it 1 if that would make it 0 or less 
+                _fromMsg = (_fromMsg - INTERVAL < 1) ? 1 : _fromMsg - INTERVAL;
+                _fromMsgText.setText(_fromMsg.toString());
+                
+                refresh(_mbean);
+            }
+        });
+        
+        final Button nextButton = _toolkit.createButton(viewMessageRangeComposite, "Next " + INTERVAL + " >", SWT.PUSH);
+        nextButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+        nextButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                //make 'from' be 'to + 1' unless 'to' is already Long.MAX_VALUE
+                if(_toMsg != Long.MAX_VALUE)
+                {
+                    _fromMsg = _toMsg + 1;
+                    _fromMsgText.setText(_fromMsg.toString());
+                }
+                
+                //make 'to' be 'to + INTERVAL', or make it Long.MAX_VALUE if that would too large
+                _toMsg = (Long.MAX_VALUE - _toMsg > INTERVAL) ? _toMsg + INTERVAL : Long.MAX_VALUE;
+                _toMsgText.setText(_toMsg.toString());
+                
+                refresh(_mbean);
+            }
+        });
+        
+        //message table
         Composite tableAndButtonsComposite = _toolkit.createComposite(messagesGroup);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         gridData.minimumHeight = 220;
@@ -386,7 +508,6 @@ public class QueueOperationsTabControl extends TabControl
         });
 
     }
-
     
     /**
      * Content Provider class for the table viewer
@@ -502,6 +623,36 @@ public class QueueOperationsTabControl extends TabControl
             }
             return comparison;
         }
+    }
+    
+    private void updateMessageInterval()
+    {
+        Long from;
+        try
+        {
+            from = Long.valueOf(_fromMsgText.getText());
+        }
+        catch(Exception e1)
+        {
+            ViewUtility.popupErrorMessage("Invalid Value", "Please enter a valid 'from' number");
+            return;
+        }
+        
+        Long to;
+        try
+        {
+            to = Long.valueOf(_toMsgText.getText());
+        }
+        catch(Exception e1)
+        {
+            ViewUtility.popupErrorMessage("Invalid Value", "Please enter a valid 'to' number");
+            return;
+        }
+
+        _fromMsg = from;
+        _toMsg = to;
+        
+        refresh(_mbean);
     }
     
     private void viewMessageContent()
