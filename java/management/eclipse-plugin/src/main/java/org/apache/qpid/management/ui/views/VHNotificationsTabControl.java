@@ -466,16 +466,16 @@ public class VHNotificationsTabControl extends TabControl
     }
     
     /**
-     * Updates the table with new notifications received from mbean server for all mbeans
+     * Updates the table with new notifications received from mbean server for all mbeans in this virtual host
      */
     protected void updateTableViewer()
     {
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());        
-        List<NotificationObject> newList = serverRegistry.getNotifications(null);
-        if (newList == null)
-            return;
+        String virtualhost = MBeanView.getVirtualHost();
         
+        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());        
+        List<NotificationObject> newList = serverRegistry.getNotifications(virtualhost);
         _notifications = newList;
+        
         _tableViewer.setInput(_notifications);
         _tableViewer.refresh();
     }

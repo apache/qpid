@@ -26,6 +26,8 @@ import java.util.TimeZone;
 
 import javax.management.ObjectName;
 
+import static org.apache.qpid.management.ui.Constants.VIRTUAL_HOST;
+
 public class NotificationObject
 {
 
@@ -60,6 +62,16 @@ public class NotificationObject
         if (_source instanceof ObjectName)
         {
             return ((ObjectName)_source).getKeyProperty("name");
+        }
+        
+        return null;
+    }
+    
+    public String getSourceVirtualHost()
+    {
+        if (_source instanceof ObjectName)
+        {
+            return ((ObjectName)_source).getKeyProperty(VIRTUAL_HOST);
         }
         
         return null;
