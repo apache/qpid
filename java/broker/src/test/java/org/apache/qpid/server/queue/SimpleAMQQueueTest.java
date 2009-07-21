@@ -335,6 +335,69 @@ public class SimpleAMQQueueTest extends TestCase
             assertEquals("Message ID was wrong", messageId, msgids.get(i));
         }
     }
+    
+    public void testGetMessagesRangeOnTheQueue() throws Exception
+    {
+        for (int i = 1 ; i <= 10; i++)
+        {
+            // Create message
+            Long messageId = new Long(i);
+            AMQMessage message = createMessage(messageId);
+            // Put message on queue
+            _queue.enqueue(null, message);
+        }
+        
+        // Get non-existent 0th QueueEntry & check returned list was empty
+        // (the position parameters in this method are indexed from 1)
+        List<QueueEntry> entries = _queue.getMessagesRangeOnTheQueue(0, 0);
+        assertTrue(entries.size() == 0);
+        
+        // Check that when 'from' is 0 it is ignored and the range continues from 1
+        entries = _queue.getMessagesRangeOnTheQueue(0, 2);
+        assertTrue(entries.size() == 2);
+        long msgID = entries.get(0).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 1L);
+        msgID = entries.get(1).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 2L);
+
+        // Check that when 'from' is greater than 'to' the returned list is empty
+        entries = _queue.getMessagesRangeOnTheQueue(5, 4);
+        assertTrue(entries.size() == 0);
+        
+        // Get first QueueEntry & check id 
+        entries = _queue.getMessagesRangeOnTheQueue(1, 1);
+        assertTrue(entries.size() == 1);
+        msgID = entries.get(0).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 1L);
+        
+        // Get 5th,6th,7th entries and check id's
+        entries = _queue.getMessagesRangeOnTheQueue(5, 7);
+        assertTrue(entries.size() == 3);
+        msgID = entries.get(0).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 5L);
+        msgID = entries.get(1).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 6L);
+        msgID = entries.get(2).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 7L);
+        
+        // Get 10th QueueEntry & check id
+        entries = _queue.getMessagesRangeOnTheQueue(10, 10);
+        assertTrue(entries.size() == 1);
+        msgID = entries.get(0).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 10L);
+        
+        // Get non-existent 11th QueueEntry & check returned set was empty
+        entries = _queue.getMessagesRangeOnTheQueue(11, 11);
+        assertTrue(entries.size() == 0);
+        
+        // Get 9th,10th, and non-existent 11th entries & check result is of size 2 with correct IDs
+        entries = _queue.getMessagesRangeOnTheQueue(9, 11);
+        assertTrue(entries.size() == 2);
+        msgID = entries.get(0).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 9L);
+        msgID = entries.get(1).getMessage().getMessageId();
+        assertEquals("Message ID was wrong", msgID, 10L);
+    }
   
     public void testEnqueueDequeueOfPersistentMessageToNonDurableQueue() throws AMQException
     {
