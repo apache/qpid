@@ -94,6 +94,7 @@ public class ServerConfiguration implements SignalHandler
         envVarMap.put("QPID_SOCKETWRITEBUFFER", "connector.socketWriteBuffer");
         envVarMap.put("QPID_TCPNODELAY", "connector.tcpNoDelay");
         envVarMap.put("QPID_ENABLEPOOLEDALLOCATOR", "advanced.enablePooledAllocator");
+        envVarMap.put("QPID_STATUS-UPDATES", "status-updates");
     }
     
     public ServerConfiguration(File configurationURL) throws ConfigurationException
@@ -186,7 +187,12 @@ public class ServerConfiguration implements SignalHandler
         }
         return conf;
     }
-    
+
+    public boolean getStatusEnabled()
+    {
+        return getConfig().getBoolean("status-updates", true);
+    }
+
     // Our configuration class needs to make the interpolate method
     // public so it can be called below from the config method.
     private static class MyConfiguration extends CompositeConfiguration
@@ -541,4 +547,13 @@ public class ServerConfiguration implements SignalHandler
                    getConfig().getLong("housekeeping.expiredMessageCheckPeriod", 
                            DEFAULT_HOUSEKEEPING_PERIOD));
     }
+
+    public boolean getStatusUpdates()
+    {
+        // Retrieve the setting from configuration but default to on.
+        String value = getConfig().getString("status-updates", "on");
+
+        return value.equalsIgnoreCase("on");
+    }
+
 }

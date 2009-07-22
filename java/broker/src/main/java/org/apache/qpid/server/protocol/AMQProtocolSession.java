@@ -36,6 +36,7 @@ import java.security.Principal;
 
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 {
+    long getSessionID();
 
     public static final class ProtocolSessionIdentifier
     {
@@ -197,6 +198,8 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 
     /** @return a Principal that was used to authorized this session */
     Principal getAuthorizedID();
+
+    public java.net.SocketAddress getRemoteAddress();
 
     public MethodRegistry getMethodRegistry();
 

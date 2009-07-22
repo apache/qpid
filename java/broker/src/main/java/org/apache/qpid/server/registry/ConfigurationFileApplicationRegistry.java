@@ -33,6 +33,8 @@ import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalD
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
@@ -44,9 +46,12 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration, 
+                                                       new Log4jMessageLogger());
+
         initialiseManagedObjectRegistry();
 
-        _virtualHostRegistry = new VirtualHostRegistry();
+        _virtualHostRegistry = new VirtualHostRegistry(this);
 
         _pluginManager = new PluginManager(_configuration.getPluginDirectory());
 

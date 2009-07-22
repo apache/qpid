@@ -21,16 +21,17 @@ package org.apache.qpid.server.subscription;
 *
 */
 
-import java.util.ArrayList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
+
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MockSubscription implements Subscription
 {
@@ -43,6 +44,10 @@ public class MockSubscription implements Subscription
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();
+
+    private static final AtomicLong idGenerator = new AtomicLong(0);
+    // Create a simple ID that increments for ever new Subscription
+    private final long _subscriptionID = idGenerator.getAndIncrement();
 
     public void close()
     {
@@ -66,7 +71,12 @@ public class MockSubscription implements Subscription
 
     public AMQShortString getConsumerTag()
     {
-        return tag ;
+        return tag;
+    }
+
+    public long getSubscriptionID()
+    {
+        return _subscriptionID;
     }
 
     public QueueEntry getLastSeenEntry()

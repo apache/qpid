@@ -34,7 +34,9 @@ import org.apache.qpid.transport.Sender;
 import javax.security.sasl.SaslServer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.security.Principal;
+import java.net.SocketAddress;
 
 /**
  * A protocol session that can be used for testing purposes.
@@ -45,9 +47,19 @@ public class MockProtocolSession implements AMQProtocolSession
 
     private Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
 
+    private static final AtomicLong idGenerator = new AtomicLong(0);
+
+    private final long _sessionID = idGenerator.getAndIncrement();
+    private VirtualHost _virtualHost;
+
     public MockProtocolSession(MessageStore messageStore)
     {
         _messageStore = messageStore;
+    }
+
+    public long getSessionID()
+    {
+        return _sessionID;
     }
 
     public void dataBlockReceived(AMQDataBlock message) throws Exception
@@ -158,12 +170,12 @@ public class MockProtocolSession implements AMQProtocolSession
 
     public VirtualHost getVirtualHost()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _virtualHost;
     }
 
     public void setVirtualHost(VirtualHost virtualHost)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _virtualHost = virtualHost;
     }
 
     public void addSessionCloseTask(Task task)
@@ -187,6 +199,18 @@ public class MockProtocolSession implements AMQProtocolSession
     }
 
     public Principal getAuthorizedID()
+    {
+        return new Principal()
+        {
+            public String getName()
+            {
+                return "MockProtocolSessionUser";
+            }
+        };
+
+    }
+
+    public SocketAddress getRemoteAddress()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
