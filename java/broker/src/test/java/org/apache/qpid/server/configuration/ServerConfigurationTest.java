@@ -20,31 +20,25 @@
  */
 package org.apache.qpid.server.configuration;
 
+import junit.framework.TestCase;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.codec.AMQCodecFactory;
+import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.TestIoSession;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.List;
-
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.TestIoSession;
-import org.apache.qpid.server.queue.MockProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
-import junit.framework.TestCase;
 
 public class ServerConfigurationTest extends TestCase
 {
@@ -200,7 +194,7 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(false, serverConfig.getProtectIOEnabled());
 
         // Check value we set
-        _config.setProperty("broker.connector.protectio.enabled", true);
+        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_ENABLED, true);
         serverConfig = new ServerConfiguration(_config);
         assertEquals(true, serverConfig.getProtectIOEnabled());
     }
@@ -212,7 +206,7 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(262144, serverConfig.getBufferReadLimit());
 
         // Check value we set
-        _config.setProperty("broker.connector.protectio.readBufferLimitSize", 23);
+        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, 23);
         serverConfig = new ServerConfiguration(_config);
         assertEquals(23, serverConfig.getBufferReadLimit());
     }
@@ -224,7 +218,7 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(262144, serverConfig.getBufferWriteLimit());
 
         // Check value we set
-        _config.setProperty("broker.connector.protectio.writeBufferLimitSize", 23);
+        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, 23);
         serverConfig = new ServerConfiguration(_config);
         assertEquals(23, serverConfig.getBufferWriteLimit());
     }

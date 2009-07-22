@@ -35,6 +35,8 @@
         <qpidnio>false</qpidnio>
         <protectio>
             <enabled>false</enabled>
+            <readBufferLimitSize>262144</readBufferLimitSize>
+            <writeBufferLimitSize>262144</writeBufferLimitSize>
         </protectio>
         <transport>nio</transport>
         <port>5672</port>
