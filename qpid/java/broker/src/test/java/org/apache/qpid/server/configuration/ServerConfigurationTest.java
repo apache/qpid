@@ -223,6 +223,24 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(23, serverConfig.getBufferWriteLimit());
     }
 
+
+    public void testGetStatusEnabled() throws ConfigurationException
+    {
+        // Check default
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(true, serverConfig.getStatusUpdatesEnabled());
+
+        // Check disabling we set
+        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "off");
+        serverConfig = new ServerConfiguration(_config);
+        assertEquals(false, serverConfig.getStatusUpdatesEnabled());
+
+        // Check invalid values don't cause error but result in disabled
+        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "Yes Please");
+        serverConfig = new ServerConfiguration(_config);
+        assertEquals(false, serverConfig.getStatusUpdatesEnabled());
+
+    }
     public void testGetSynchedClocks() throws ConfigurationException
     {
         // Check default

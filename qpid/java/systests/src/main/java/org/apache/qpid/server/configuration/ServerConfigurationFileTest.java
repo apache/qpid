@@ -29,7 +29,6 @@ import org.apache.qpid.test.utils.QpidTestCase;
  *
  * All configuration values should be set in the systest config file so that
  * the ability to load them can be validated.
- *
  */
 public class ServerConfigurationFileTest extends QpidTestCase
 {
@@ -72,4 +71,10 @@ public class ServerConfigurationFileTest extends QpidTestCase
     {
         validatePropertyDefinedInFile(ServerConfiguration.CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE);
     }
+
+    public void testStatusUpdates() throws ConfigurationException
+    {
+        validatePropertyDefinedInFile(ServerConfiguration.STATUS_UPDATES);
+    }
+
 }
