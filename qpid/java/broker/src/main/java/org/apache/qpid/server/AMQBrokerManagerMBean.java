@@ -37,6 +37,9 @@
  */
 package org.apache.qpid.server;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
@@ -50,6 +53,7 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -91,6 +95,22 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         return _virtualHostMBean.getVirtualHost().getName();
     }
 
+    /**
+     * Returns an array of the exchange types available for creation.
+     * @since Qpid JMX API 1.3
+     * @throws IOException
+     */
+    public String[] getExchangeTypes() throws IOException
+    {
+        ArrayList<String> exchangeTypes = new ArrayList<String>();
+        for(ExchangeType<? extends Exchange> ex : _exchangeFactory.getRegisteredTypes())
+        {
+            exchangeTypes.add(ex.getName().toString());
+        }
+        
+        return exchangeTypes.toArray(new String[0]);
+    }
+    
     /**
      * Creates new exchange and registers it with the registry.
      *

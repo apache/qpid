@@ -78,7 +78,7 @@ public class Constants
     public final static String CONNECTION ="Connection";
     public final static String EXCHANGE = "Exchange";
     public final static String EXCHANGE_TYPE = "ExchangeType";
-    public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
+    public final static String[] DEFAULT_EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
     public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
     

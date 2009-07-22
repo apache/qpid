@@ -20,13 +20,15 @@
  */
 package org.apache.qpid.management.ui.views.vhost;
 
-import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE_VALUES;
+import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALUES;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ServerRegistry;
@@ -78,11 +80,13 @@ public class VHostTabControl extends TabControl
     private Composite _paramsComposite = null;
 
     private ManagedBroker _vhmb;
+    private ApiVersion _ApiVersion;
 
     public VHostTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
         super(tabFolder);
         _mbean = mbean;
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _vhmb = (ManagedBroker) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedBroker.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
@@ -620,11 +624,27 @@ public class VHostTabControl extends TabControl
         typeComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         typeComposite.setLayout(new GridLayout(2,false));
         
-        //TODO: get exchange types from broker instead of hardcoded
+        String[] exchangeTypes;
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))//if the server supports Qpid JMX API 1.3
+        {//request the current exchange types from the broker
+            try
+            {
+                exchangeTypes = _vhmb.getExchangeTypes();
+            }
+            catch (IOException e1)
+            {
+                exchangeTypes = DEFAULT_EXCHANGE_TYPE_VALUES;
+            }
+        }
+        else //use the fallback defaults.
+        {
+            exchangeTypes = DEFAULT_EXCHANGE_TYPE_VALUES;
+        }
+
         _toolkit.createLabel(typeComposite,"Type:").setBackground(shell.getBackground());
         final org.eclipse.swt.widgets.List typeList = new org.eclipse.swt.widgets.List(typeComposite, SWT.SINGLE | SWT.BORDER);
         typeList.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        typeList.setItems(EXCHANGE_TYPE_VALUES);
+        typeList.setItems(exchangeTypes);
         
         Composite durableComposite = _toolkit.createComposite(shell, SWT.NONE);
         durableComposite.setBackground(shell.getBackground());
