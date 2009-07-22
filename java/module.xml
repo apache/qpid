@@ -373,7 +373,7 @@
  
   <target name="libs-release" description="copy dependencies into module release">
     <!-- Copy the module dependencies -->
-    <copylist todir="${module.release}" dir="${project.root}" files="${module.libs}"/>
+    <copylist todir="${module.release}/lib" dir="${project.root}" files="${module.libs}"/>
     <!-- Copy the jar for this module -->
     <copy todir="${module.release}/lib" failonerror="true">
         <fileset file="${module.jar}"/>
