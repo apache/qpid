@@ -35,6 +35,7 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.logging.RootMessageLogger;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -69,6 +70,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     protected PrincipalDatabaseManager _databaseManager;
 
     protected PluginManager _pluginManager;
+
+    protected RootMessageLogger _rootMessageLogger;
 
     static
     {
@@ -287,4 +290,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _pluginManager;
     }
 
+    public RootMessageLogger getRootMessageLogger()
+    {
+        return _rootMessageLogger;
+    }
+    
 }

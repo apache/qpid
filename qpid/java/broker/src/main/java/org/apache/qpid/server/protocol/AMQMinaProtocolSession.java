@@ -21,26 +21,39 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.log4j.Logger;
-
+import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.common.CloseFuture;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
-
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
+import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -54,7 +67,6 @@ import org.apache.qpid.transport.Sender;
 
 import javax.management.JMException;
 import javax.security.sasl.SaslServer;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
@@ -64,12 +76,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
 
     private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
+
+    private static final AtomicLong idGenerator = new AtomicLong(0);
 
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
@@ -120,6 +135,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private static final long LAST_WRITE_FUTURE_JOIN_TIMEOUT = 60000L;
     private org.apache.mina.common.WriteFuture _lastWriteFuture;
 
+    // Create a simple ID that increments for ever new Session
+    private final long _sessionID = idGenerator.getAndIncrement();
+
+    private AMQPConnectionActor _actor;
+
     public ManagedObject getManagedObject()
     {
         return _managedObject;
@@ -133,6 +153,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         session.setAttachment(this);
 
         _codecFactory = codecFactory;
+
+        _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
         try
         {
@@ -158,6 +180,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
         _codecFactory = codecFactory;
 
+        _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -181,6 +204,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public static AMQProtocolSession getAMQProtocolSession(IoSession minaProtocolSession)
     {
         return (AMQProtocolSession) minaProtocolSession.getAttachment();
+    }
+
+    public long getSessionID()
+    {
+        return _sessionID;
     }
 
     public void dataBlockReceived(AMQDataBlock message) throws Exception
@@ -235,6 +263,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             }
         }
 
+        CurrentActor.set(_actor);
         try
         {
             body.handle(channelId, this);
@@ -244,7 +273,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             closeChannel(channelId);
             throw e;
         }
-
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     private void protocolInitiationReceived(ProtocolInitiation pi)
@@ -796,6 +828,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         _virtualHost = virtualHost;
 
+        _actor.virtualHostSelected(this);
+
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
         _managedObject = createMBean();
@@ -820,11 +854,19 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public void setAuthorizedID(Principal authorizedID)
     {
         _authorizedID = authorizedID;
+
+        // Let the actor know that this connection is now Authorized
+        _actor.connectionAuthorized(this);
     }
 
     public Principal getAuthorizedID()
     {
         return _authorizedID;
+    }
+
+    public SocketAddress getRemoteAddress()
+    {
+        return _minaProtocolSession.getRemoteAddress();
     }
 
     public MethodRegistry getMethodRegistry()

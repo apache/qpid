@@ -21,30 +21,31 @@
 package org.apache.qpid.server.util;
 
 import junit.framework.TestCase;
-
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.ConsumerTagNotUniqueException;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.MockChannel;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.exchange.ExchangeDefaults;
+
+import java.security.Principal;
 
 public class InternalBrokerBaseCase extends TestCase
 {
@@ -64,7 +65,7 @@ public class InternalBrokerBaseCase extends TestCase
         configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
         _registry = new TestApplicationRegistry(new ServerConfiguration(configuration));
         ApplicationRegistry.initialise(_registry);
-        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");        
+        _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost("test");
 
         _messageStore = _virtualHost.getMessageStore();
 
@@ -79,6 +80,14 @@ public class InternalBrokerBaseCase extends TestCase
         _queue.bind(defaultExchange, QUEUE_NAME, null);
 
         _session = new InternalTestProtocolSession();
+
+        _session.setAuthorizedID(new Principal()
+        {
+            public String getName()
+            {
+                return "InternalBrokerBaseCaseUser";
+            }
+        });
 
         _session.setVirtualHost(_virtualHost);
 
@@ -176,7 +185,7 @@ public class InternalBrokerBaseCase extends TestCase
 
         for (int count = 0; count < messages; count++)
         {
-            channel.setPublishFrame(info,  _virtualHost.getExchangeRegistry().getExchange(info.getExchange()));
+            channel.setPublishFrame(info, _virtualHost.getExchangeRegistry().getExchange(info.getExchange()));
 
             //Set the body size
             ContentHeaderBody _headerBody = new ContentHeaderBody();

@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Properties;
-
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -40,6 +35,10 @@ import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Properties;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
@@ -51,9 +50,11 @@ public class NullApplicationRegistry extends ApplicationRegistry
     public void initialise() throws Exception
     {
         _logger.info("Initialising NullApplicationRegistry");
-        
+
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration, new Log4jMessageLogger());
+
         _configuration.setHousekeepingExpiredMessageCheckPeriod(200);
-        
+
         Properties users = new Properties();
 
         users.put("guest", "guest");
@@ -65,7 +66,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
-        _virtualHostRegistry = new VirtualHostRegistry();
+        _virtualHostRegistry = new VirtualHostRegistry(this);
         PropertiesConfiguration vhostProps = new PropertiesConfiguration();
         VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
         VirtualHost dummyHost = new VirtualHost(hostConfig);

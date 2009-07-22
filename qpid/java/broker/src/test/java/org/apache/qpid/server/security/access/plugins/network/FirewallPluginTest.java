@@ -40,6 +40,7 @@ import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class FirewallPluginTest extends TestCase
 {
@@ -89,11 +90,13 @@ public class FirewallPluginTest extends TestCase
     public void setUp() throws Exception
     {
         _store = new TestableMemoryMessageStore();
-        PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env));
         TestIoSession iosession = new TestIoSession();
         iosession.setAddress("127.0.0.1");
-        VirtualHostRegistry virtualHostRegistry = null;
+
+        // Retreive VirtualHost from the Registry
+        VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
+        _virtualHost = virtualHostRegistry.getVirtualHost("test");
+
         AMQCodecFactory codecFactory = new AMQCodecFactory(true);
         _session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);        
     }

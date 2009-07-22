@@ -30,6 +30,8 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
+import java.security.Principal;
+
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
 {
@@ -40,6 +42,16 @@ public class MaxChannelsTest extends TestCase
     {
         _session = new AMQMinaProtocolSession(new TestIoSession(), _appRegistry
 				.getVirtualHostRegistry(), new AMQCodecFactory(true), null);
+
+        // Need to authenticate session for it to work, (well for logging to work)
+        _session.setAuthorizedID(new Principal()
+        {
+            public String getName()
+            {
+                return "AMQProtocolSessionMBeanTestUser";
+            }
+        });
+
         _session.setVirtualHost(_appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
 
         // check the channel count is correct

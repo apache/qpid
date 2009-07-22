@@ -33,6 +33,7 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.mina.common.IoAcceptor;
 
 public interface IApplicationRegistry
@@ -68,6 +69,8 @@ public interface IApplicationRegistry
     ACLManager getAccessManager() throws ConfigurationException;
 
     PluginManager getPluginManager();
+
+    RootMessageLogger getRootMessageLogger();
 
     /**
      * Register any acceptors for this registry

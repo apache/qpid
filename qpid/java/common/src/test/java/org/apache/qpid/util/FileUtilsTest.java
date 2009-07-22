@@ -22,11 +22,12 @@ package org.apache.qpid.util;
 
 import junit.framework.TestCase;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
 
 public class FileUtilsTest extends TestCase
 {
@@ -47,7 +48,7 @@ public class FileUtilsTest extends TestCase
 
         //Create initial file
         File test = createTestFile(fileName, TEST_DATA);
-        
+
         try
         {
             //Check number of files before copy
@@ -136,7 +137,6 @@ public class FileUtilsTest extends TestCase
             //Ensure the JVM cleans up if cleanup failues
             testSubDir.deleteOnExit();
             testDir.deleteOnExit();
-
 
             //Perform Copy
             File copyDir = new File(testDir.toString() + COPY);
@@ -282,7 +282,7 @@ public class FileUtilsTest extends TestCase
 
     public void testDeleteNonExistentFile()
     {
-        File test = new File("FileUtilsTest-testDelete-"+System.currentTimeMillis());
+        File test = new File("FileUtilsTest-testDelete-" + System.currentTimeMillis());
 
         assertTrue("File exists", !test.exists());
         assertFalse("File is a directory", test.isDirectory());
@@ -302,7 +302,6 @@ public class FileUtilsTest extends TestCase
             // expected path
         }
     }
-
 
     /**
      * Given two lists of File arrays ensure they are the same length and all entries in Before are in After
@@ -541,6 +540,73 @@ public class FileUtilsTest extends TestCase
                 fail(e.getMessage());
             }
         }
+    }
+
+    public static final String SEARCH_STRING = "testSearch";
+
+    /**
+     * Test searchFile(File file, String search) will find a match when it
+     * exists.
+     *
+     * @throws java.io.IOException if unable to perform test setup
+     */
+    public void testSearchSucceed() throws IOException
+    {
+        File _logfile = File.createTempFile("FileUtilsTest-testSearchSucceed", ".out");
+
+        prepareFileForSearchTest(_logfile);
+
+        List<String> results = FileUtils.searchFile(_logfile, SEARCH_STRING);
+
+        assertNotNull("Null result set returned", results);
+
+        assertEquals("Results do not contain expected count", 1, results.size());
+    }
+
+    /**
+     * Test searchFile(File file, String search) will not find a match when the
+     * test string does not exist.
+     *
+     * @throws java.io.IOException if unable to perform test setup
+     */
+    public void testSearchFail() throws IOException
+    {
+        File _logfile = File.createTempFile("FileUtilsTest-testSearchFail", ".out");
+
+        prepareFileForSearchTest(_logfile);
+
+        List<String> results = FileUtils.searchFile(_logfile, "Hello");
+
+        assertNotNull("Null result set returned", results);
+
+        //Validate we only got one message
+        if (results.size() > 0)
+        {
+            System.err.println("Unexpected messages");
+
+            for (String msg : results)
+            {
+                System.err.println(msg);
+            }
+        }
+
+        assertEquals("Results contains data when it was not expected",
+                     0, results.size());
+    }
+
+    /**
+     * Write the SEARCH_STRING in to the given file.
+     *
+     * @param logfile The file to write the SEARCH_STRING into
+     *
+     * @throws IOException if an error occurs
+     */
+    private void prepareFileForSearchTest(File logfile) throws IOException
+    {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(logfile));
+        writer.append(SEARCH_STRING);
+        writer.flush();
+        writer.close();
     }
 
 }

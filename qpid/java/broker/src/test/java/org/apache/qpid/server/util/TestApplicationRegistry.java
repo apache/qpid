@@ -87,7 +87,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
         _messageStore = new TestableMemoryMessageStore();
 
-        _virtualHostRegistry = new VirtualHostRegistry();
+        _virtualHostRegistry = new VirtualHostRegistry(this);
         
         PropertiesConfiguration vhostProps = new PropertiesConfiguration();
         VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
