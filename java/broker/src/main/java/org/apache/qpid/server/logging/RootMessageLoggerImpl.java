@@ -31,7 +31,7 @@ public class RootMessageLoggerImpl implements RootMessageLogger
 
     public RootMessageLoggerImpl(ServerConfiguration configuration, RawMessageLogger rawLogger)
     {
-        _enabled = configuration.getStatusUpdates();
+        _enabled = configuration.getStatusUpdatesEnabled();
         _rawLogger = rawLogger;
     }
 

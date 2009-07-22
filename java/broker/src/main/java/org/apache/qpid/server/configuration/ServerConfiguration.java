@@ -54,6 +54,7 @@ public class ServerConfiguration implements SignalHandler
     public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
+    public static final String DEFAULT_STATUS_UPDATES = "on";
 
     private static final int DEFAULT_FRAME_SIZE = 65536;
     private static final int DEFAULT_PORT = 5672;
@@ -81,6 +82,7 @@ public class ServerConfiguration implements SignalHandler
     public static final String CONNECTOR_PROTECTIO_ENABLED = "connector.protectio.enabled";
     public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
     public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
+    public static final String STATUS_UPDATES = "status-updates";
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
@@ -198,9 +200,16 @@ public class ServerConfiguration implements SignalHandler
         return conf;
     }
 
-    public boolean getStatusEnabled()
+    /**
+     * Check the configuration file to see if status updates are enabled.  
+     * @return true if status updates are enabled
+     */
+    public boolean getStatusUpdatesEnabled()
     {
-        return getConfig().getBoolean("status-updates", true);
+        // Retrieve the setting from configuration but default to on.
+        String value = getConfig().getString(STATUS_UPDATES, DEFAULT_STATUS_UPDATES);
+
+        return value.equalsIgnoreCase("on");
     }
 
     // Our configuration class needs to make the interpolate method
@@ -557,13 +566,4 @@ public class ServerConfiguration implements SignalHandler
                    getConfig().getLong("housekeeping.expiredMessageCheckPeriod",
                            DEFAULT_HOUSEKEEPING_PERIOD));
     }
-
-    public boolean getStatusUpdates()
-    {
-        // Retrieve the setting from configuration but default to on.
-        String value = getConfig().getString("status-updates", "on");
-
-        return value.equalsIgnoreCase("on");
-    }
-
 }
