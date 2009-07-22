@@ -221,7 +221,7 @@ public class OperationTabControl extends TabControl
         
         // Customised parameter widgets        
         if (_mbean.isExchange() &&
-            EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
+            DEFAULT_EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
             _opData.getName().equalsIgnoreCase(OPERATION_CREATE_BINDING))
         {                                  
             customCreateNewBinding(); 
@@ -274,7 +274,7 @@ public class OperationTabControl extends TabControl
             }
             else if (param.getName().equals(EXCHANGE_TYPE))
             {
-                items = EXCHANGE_TYPE_VALUES;
+                items = DEFAULT_EXCHANGE_TYPE_VALUES;
             }
             else if (isUserListParameter(param))
             {

@@ -26,6 +26,7 @@ import java.io.IOException;
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
 
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
@@ -42,6 +43,14 @@ public interface ManagedBroker
 
     static final int VERSION = 1 ;
 
+    /**
+     * Returns an array of the exchange types available for creation.
+     * @since Qpid JMX API 1.3
+     * @throws IOException 
+     */
+    @MBeanAttribute(name="ExchangeTypes", description = "The types of Exchange available for creation.")
+    String[] getExchangeTypes() throws IOException;
+    
     /**
      * Creates a new Exchange.
      * @param name
