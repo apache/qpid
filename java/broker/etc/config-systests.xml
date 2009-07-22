@@ -61,6 +61,7 @@
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
         <enableJMSXUserID>false</enableJMSXUserID>
+        <locale>en_US</locale>
     </advanced>
 
     <security>

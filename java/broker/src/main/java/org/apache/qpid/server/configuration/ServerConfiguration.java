@@ -55,6 +55,7 @@ public class ServerConfiguration implements SignalHandler
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
     public static final String DEFAULT_STATUS_UPDATES = "on";
+    public static final String DEFAULT_ADVANCED_LOCALE = Locale.US.toString();
 
     private static final int DEFAULT_FRAME_SIZE = 65536;
     private static final int DEFAULT_PORT = 5672;
@@ -83,6 +84,7 @@ public class ServerConfiguration implements SignalHandler
     public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
     public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
     public static final String STATUS_UPDATES = "status-updates";
+    public static final String ADVANCED_LOCALE = "advanced.locale";
 
     {
         envVarMap.put("QPID_PORT", "connector.port");
@@ -210,6 +212,46 @@ public class ServerConfiguration implements SignalHandler
         String value = getConfig().getString(STATUS_UPDATES, DEFAULT_STATUS_UPDATES);
 
         return value.equalsIgnoreCase("on");
+    }
+
+    /**
+     * The currently defined {@see Locale} for this broker
+     * @return the configuration defined locale
+     */
+    public Locale getLocale()
+    {
+
+        String localeString = getConfig().getString(ADVANCED_LOCALE, DEFAULT_ADVANCED_LOCALE);
+        // Expecting locale of format langauge_country_variant
+
+        String[] parts = localeString.split("_");
+
+        Locale locale = null;
+        switch (parts.length)
+        {
+            case 1:
+                locale = new Locale(localeString);
+                break;
+            case 2:
+                locale = new Locale(parts[0], parts[1]);
+                break;
+            default:
+                String variant = parts[2];
+                // If we have a variant such as the Java doc suggests for Spanish
+                // Traditional_WIN we may end up with more than 3 parts on a
+                // split with '_'. So we should recombine the variant.
+                if (parts.length > 3)
+                {
+                    for (int index = 3; index < parts.length; index++)
+                    {
+                        variant = variant + "_" + parts[index];
+                    }
+                }
+
+                locale = new Locale(parts[0], parts[1], variant);
+        }
+
+        return locale;
     }
 
     // Our configuration class needs to make the interpolate method
