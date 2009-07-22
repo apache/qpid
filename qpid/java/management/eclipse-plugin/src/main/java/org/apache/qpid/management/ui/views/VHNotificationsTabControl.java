@@ -386,14 +386,15 @@ public class VHNotificationsTabControl extends TabControl
         public void run()
         {
             final Display display = _tabFolder.getDisplay();
-            if (display == null)
-            {
-                setWorkerRunning(false);
-                return; //stop the thread
-            }
             
             while(keepGoing)
             {
+                if (display == null || display.isDisposed())
+                {
+                    setWorkerRunning(false);
+                    break; //stop the thread
+                }
+                
                 display.syncExec(new Runnable()
                 {
                     public void run()
