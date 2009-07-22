@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 public class ServerConfigurationTest extends TestCase
 {
@@ -252,6 +253,38 @@ public class ServerConfigurationTest extends TestCase
         serverConfig = new ServerConfiguration(_config);
         assertEquals(true, serverConfig.getSynchedClocks());
     }
+
+    public void testGetLocale() throws ConfigurationException
+    {
+        // Check default
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+
+        String defaultParts[] = ServerConfiguration.DEFAULT_ADVANCED_LOCALE.split("_");
+        // The Default is en_US so will split well
+        Locale defaultLocale = new Locale(defaultParts[0],defaultParts[1]);
+
+        assertEquals(defaultLocale, serverConfig.getLocale());
+
+
+        //Test Language only
+        Locale update = new Locale("es");
+        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es");
+        serverConfig = new ServerConfiguration(_config);
+        assertEquals(update, serverConfig.getLocale());
+
+        //Test Language and Country
+        update = new Locale("es","ES");
+        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES");
+        serverConfig = new ServerConfiguration(_config);
+        assertEquals(update, serverConfig.getLocale());
+
+        //Test Language and Country and Variant
+        update = new Locale("es","ES", "Traditional_WIN");
+        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES_Traditional_WIN");
+        serverConfig = new ServerConfiguration(_config);
+        assertEquals(update, serverConfig.getLocale());
+    }
+
 
     public void testGetMsgAuth() throws ConfigurationException
     {

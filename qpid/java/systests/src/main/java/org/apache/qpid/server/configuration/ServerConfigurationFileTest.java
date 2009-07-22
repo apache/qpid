@@ -77,4 +77,9 @@ public class ServerConfigurationFileTest extends QpidTestCase
         validatePropertyDefinedInFile(ServerConfiguration.STATUS_UPDATES);
     }
 
+    public void testLocale() throws ConfigurationException
+    {
+        validatePropertyDefinedInFile(ServerConfiguration.ADVANCED_LOCALE);
+    }
+
 }
