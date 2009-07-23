@@ -206,8 +206,11 @@
 		      datafile="${build.coveragereport}/cobertura.ser"
 		      >
       <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
+      <fileset dir="${project.root}/build/scratch/common/src" includes="**/*.java" />
       <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
+      <fileset dir="${project.root}/build/scratch/broker/src" includes="**/*.java" />
       <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
+      <fileset dir="${project.root}/build/scratch/client/src" includes="**/*.java" />
     </cobertura-report>
   </target>
 
