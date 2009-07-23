@@ -18,32 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.messages;
+package org.apache.qpid.server.logging.subjects;
 
-import java.util.List;
-
-public class BindingMessagesTest extends AbstractTestMessages
+public class TestBlankSubject extends AbstractLogSubject
 {
-
-    public void testMessage1001()
+    public TestBlankSubject()
     {
-        _logMessage = BindingMessages.BND_1001();
-        List<Object> log = performLog();
-
-        String[] expected = {"Create"};
-
-        validateLogMessage(log, "BND-1001", expected);
+       logString = "[TestBlankSubject]";
     }
-
-    public void testMessage1002()
-    {
-        _logMessage = BindingMessages.BND_1002();
-
-        List<Object> log = performLog();
-
-        String[] expected = {"Deleted"};
-
-        validateLogMessage(log, "BND-1002", expected);       
-    }
-
+        
 }

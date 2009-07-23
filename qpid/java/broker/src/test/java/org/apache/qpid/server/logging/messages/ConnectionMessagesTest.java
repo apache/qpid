@@ -22,28 +22,30 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
-public class BindingMessagesTest extends AbstractTestMessages
+public class ConnectionMessagesTest extends AbstractTestMessages
 {
-
     public void testMessage1001()
     {
-        _logMessage = BindingMessages.BND_1001();
+        String clientID = "client";
+        String protocolVersion = "8-0";
+
+        _logMessage = ConnectionMessages.CON_1001(clientID, protocolVersion);
         List<Object> log = performLog();
 
-        String[] expected = {"Create"};
+        String[] expected = {"Open :", "Client ID", clientID,
+                             ": Protocol Version :", protocolVersion};
 
-        validateLogMessage(log, "BND-1001", expected);
+        validateLogMessage(log, "CON-1001", expected);
     }
 
     public void testMessage1002()
     {
-        _logMessage = BindingMessages.BND_1002();
-
+        _logMessage = ConnectionMessages.CON_1002();
         List<Object> log = performLog();
 
-        String[] expected = {"Deleted"};
+        String[] expected = {"Close"};
 
-        validateLogMessage(log, "BND-1002", expected);       
+        validateLogMessage(log, "CON-1002", expected);
     }
 
 }
