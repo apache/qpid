@@ -56,10 +56,10 @@ public class ${type.name}Messages
      * Log a ${type.name} message of the Format:
      * <pre>${message.format}</pre> 
      */
-    public static LogMessage ${message.methodName}(#foreach($parameter in ${message.parameters})${parameter.type} ${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ),#end
+    public static LogMessage ${message.methodName}(#foreach($parameter in ${message.parameters})${parameter.type} ${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end
 #end)
     {
-        final Object[] messageArguments = {#foreach($parameter in ${message.parameters})${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ),#end#end};
+        final Object[] messageArguments = {#foreach($parameter in ${message.parameters})${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end#end};
 
         _formatter.applyPattern(_messages.getString("${message.name}"));
         return new LogMessage()
