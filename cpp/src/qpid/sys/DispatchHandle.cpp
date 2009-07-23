@@ -242,7 +242,6 @@ void DispatchHandle::doDelete() {
 }
 
 void DispatchHandle::processEvent(Poller::EventType type) {
-    CallbackQueue callbacks;
 
     // Phase I
     {
