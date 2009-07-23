@@ -20,30 +20,39 @@
  */
 package org.apache.qpid.server.logging.messages;
 
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+
 import java.util.List;
 
-public class BindingMessagesTest extends AbstractTestMessages
+public class ExchangeMessagesTest extends AbstractTestMessages
 {
-
     public void testMessage1001()
     {
-        _logMessage = BindingMessages.BND_1001();
+        // Get the Default Exchange on the Test Vhost for testing
+        Exchange exchange = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHost("test").
+                getExchangeRegistry().getDefaultExchange();
+
+        String type = exchange.getType().toString();
+        String name = exchange.getName().toString();
+
+        _logMessage = ExchangeMessages.EXH_1001(type, name);
         List<Object> log = performLog();
 
-        String[] expected = {"Create"};
+        String[] expected = {"Create :", "Type:", type, "Name:", name};
 
-        validateLogMessage(log, "BND-1001", expected);
+        validateLogMessage(log, "EXH-1001", expected);
     }
 
     public void testMessage1002()
     {
-        _logMessage = BindingMessages.BND_1002();
-
+        _logMessage = ExchangeMessages.EXH_1002();
         List<Object> log = performLog();
 
         String[] expected = {"Deleted"};
 
-        validateLogMessage(log, "BND-1002", expected);       
+        validateLogMessage(log, "EXH-1002", expected);
     }
 
 }

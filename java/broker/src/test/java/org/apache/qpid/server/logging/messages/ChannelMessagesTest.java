@@ -20,30 +20,46 @@
  */
 package org.apache.qpid.server.logging.messages;
 
+import java.text.MessageFormat;
 import java.util.List;
 
-public class BindingMessagesTest extends AbstractTestMessages
+public class ChannelMessagesTest extends AbstractTestMessages
 {
-
     public void testMessage1001()
     {
-        _logMessage = BindingMessages.BND_1001();
+        Integer prefetch = 12345;
+
+        _logMessage = ChannelMessages.CHN_1001(prefetch);
         List<Object> log = performLog();
 
-        String[] expected = {"Create"};
+        // We use the MessageFormat here as that is what the ChannelMessage
+        // will do, this makes the resulting value 12,345
+        String[] expected = {"Create", "Prefetch",
+                             MessageFormat.format("{0, number}", prefetch)};
 
-        validateLogMessage(log, "BND-1001", expected);
+        validateLogMessage(log, "CHN-1001", expected);
     }
 
     public void testMessage1002()
     {
-        _logMessage = BindingMessages.BND_1002();
+        String flow = "ON";
 
+        _logMessage = ChannelMessages.CHN_1002(flow);
         List<Object> log = performLog();
 
-        String[] expected = {"Deleted"};
+        String[] expected = {"Flow", flow};
 
-        validateLogMessage(log, "BND-1002", expected);       
+        validateLogMessage(log, "CHN-1002", expected);
+    }
+
+    public void testMessage1003()
+    {
+        _logMessage = ChannelMessages.CHN_1003();
+        List<Object> log = performLog();
+
+        String[] expected = {"Close"};
+
+        validateLogMessage(log, "CHN-1003", expected);
     }
 
 }

@@ -22,28 +22,27 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
-public class BindingMessagesTest extends AbstractTestMessages
+public class VirtualHostMessagesTest extends AbstractTestMessages
 {
-
     public void testMessage1001()
     {
-        _logMessage = BindingMessages.BND_1001();
+        String name = "test";
+        _logMessage = VirtualHostMessages.VHT_1001(name);
         List<Object> log = performLog();
 
-        String[] expected = {"Create"};
+        String[] expected = {"Created :", name};
 
-        validateLogMessage(log, "BND-1001", expected);
+        validateLogMessage(log, "VHT-1001", expected);
     }
 
     public void testMessage1002()
     {
-        _logMessage = BindingMessages.BND_1002();
-
+        _logMessage = VirtualHostMessages.VHT_1002();
         List<Object> log = performLog();
 
-        String[] expected = {"Deleted"};
+        String[] expected = {"Closed"};
 
-        validateLogMessage(log, "BND-1002", expected);       
+        validateLogMessage(log, "VHT-1002", expected);
     }
 
 }
