@@ -23,7 +23,12 @@ package org.apache.qpid.management.ui.views.type;
 
 import java.util.List;
 
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedServer;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.NavigationView;
@@ -64,13 +69,20 @@ public abstract class MBeanTypeTabControl extends TabControl
     protected Table _table = null;
     protected TableViewer _tableViewer = null;
 
-    private List<ManagedBean> _mbeans = null;
+    protected List<ManagedBean> _mbeans = null;
     private String _type;
+    protected ApiVersion _ApiVersion;
+    protected JMXManagedObject _vhostMbean;
+    protected String _virtualHost;
+    protected JMXServerRegistry _serverRegistry;
     
-    
-    public MBeanTypeTabControl(TabFolder tabFolder, String type)
+    public MBeanTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost, String type)
     {
         super(tabFolder);
+        _virtualHost = virtualHost;
+        _serverRegistry = (JMXServerRegistry) ApplicationRegistry.getServerRegistry(server);
+        _ApiVersion = _serverRegistry.getManagementApiVersion();
+        _vhostMbean = (JMXManagedObject) _serverRegistry.getVirtualHostManagerMBean(_virtualHost);
         _type = type;
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createForm(_tabFolder);
@@ -194,24 +206,7 @@ public abstract class MBeanTypeTabControl extends TabControl
         {
             public void widgetSelected(SelectionEvent e)
             {
-                int selectionIndex = _table.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                    final ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
-                    
-                    IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
-                    NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
-                    try
-                    {
-                        view.addManagedBean(selectedMBean);
-                    }
-                    catch (Exception ex)
-                    {
-                        MBeanUtility.handleException(selectedMBean, ex);
-                    }
-
-                }
+                addMBeanToFavourites();
             }
         });
         
@@ -222,23 +217,7 @@ public abstract class MBeanTypeTabControl extends TabControl
         {
             public void widgetSelected(SelectionEvent e)
             {
-                int selectionIndex = _table.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                    final ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
-                    
-                    IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
-                    MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
-                    try
-                    {
-                        view.openMBean(selectedMBean);
-                    }
-                    catch (Exception ex)
-                    {
-                        MBeanUtility.handleException(selectedMBean, ex);
-                    }
-                }
+                openMBean();
             }
         });
         
@@ -275,23 +254,7 @@ public abstract class MBeanTypeTabControl extends TabControl
             // MouseListener implementation
             public void mouseDoubleClick(MouseEvent event)
             {
-                int selectionIndex = _table.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                    final ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
-                    
-                    IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
-                    MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
-                    try
-                    {
-                        view.openMBean(selectedMBean);
-                    }
-                    catch (Exception ex)
-                    {
-                        MBeanUtility.handleException(selectedMBean, ex);
-                    }
-                }
+                openMBean();
             }
 
             public void mouseDown(MouseEvent e){}
@@ -401,6 +364,50 @@ public abstract class MBeanTypeTabControl extends TabControl
                 comparison = -comparison;
             }
             return comparison;
+        }
+    }
+    
+    protected void addMBeanToFavourites()
+    {
+        int selectionIndex = _table.getSelectionIndex();
+
+        if (selectionIndex != -1)
+        {
+            final ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
+            
+            IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+            NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
+            try
+            {
+                view.addManagedBean(selectedMBean);
+            }
+            catch (Exception ex)
+            {
+                MBeanUtility.handleException(selectedMBean, ex);
+            }
+        }
+    }
+    
+    protected void openMBean()
+    {
+        int selectionIndex = _table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        final ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
+        
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
+        try
+        {
+            view.openMBean(selectedMBean);
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(selectedMBean, ex);
         }
     }
 }

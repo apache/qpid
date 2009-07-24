@@ -24,25 +24,22 @@ import java.util.List;
 
 import static org.apache.qpid.management.ui.Constants.EXCHANGE;
 
-import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.ManagedServer;
 import org.eclipse.swt.widgets.TabFolder;
 
 public class ExchangeTypeTabControl extends MBeanTypeTabControl
 {
     
-    public ExchangeTypeTabControl(TabFolder tabFolder)
+    public ExchangeTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost)
     {
-        super(tabFolder,EXCHANGE);
+        super(tabFolder, server, virtualHost, EXCHANGE);
     }
 
     @Override
     protected List<ManagedBean> getMbeans()
     {
-        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
-        return serverRegistry.getExchanges(MBeanView.getVirtualHost());
+        return _serverRegistry.getExchanges(_virtualHost);
     }
 
 }

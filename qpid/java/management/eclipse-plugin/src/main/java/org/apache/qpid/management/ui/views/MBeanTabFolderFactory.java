@@ -34,6 +34,7 @@ import java.util.Map;
 import javax.management.MBeanServerConnection;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
@@ -242,9 +243,9 @@ public class MBeanTabFolderFactory
     }
     
     /**
-     * Creates TabFolder and tabs for each mbeantype (eg Connection, Queue, Exchange)
+     * Creates TabFolder and tabs for all mbeantype (Connection, Queue, and Exchange)
      */
-    public static TabFolder generateMBeanTypeTabFolder(final Composite parent)
+    public static TabFolder generateMBeanTypeTabFolder(final Composite parent, ManagedServer server, String virtualHost)
     {
         TabFolder tabFolder = new TabFolder(parent, SWT.NONE);
         FormData layoutData = new FormData();
@@ -254,24 +255,25 @@ public class MBeanTabFolderFactory
         layoutData.bottom = new FormAttachment(100);
         tabFolder.setLayoutData(layoutData);
 
+        
         TabItem tab;
         TabControl controller;
               
         tab = new TabItem(tabFolder, SWT.NONE);
         tab.setText(CONNECTION); 
-        controller = new ConnectionTypeTabControl(tabFolder);
+        controller = new ConnectionTypeTabControl(tabFolder,server,virtualHost);
         tab.setData(TabControl.CONTROLLER, controller);
         tab.setControl(controller.getControl());
         
         tab = new TabItem(tabFolder, SWT.NONE);
         tab.setText(EXCHANGE);      
-        controller = new ExchangeTypeTabControl(tabFolder);
+        controller = new ExchangeTypeTabControl(tabFolder,server,virtualHost);
         tab.setData(TabControl.CONTROLLER, controller);
         tab.setControl(controller.getControl());
         
         tab = new TabItem(tabFolder, SWT.NONE);
         tab.setText(QUEUE);  
-        controller = new QueueTypeTabControl(tabFolder);
+        controller = new QueueTypeTabControl(tabFolder,server,virtualHost);
         tab.setData(TabControl.CONTROLLER, controller);
         tab.setControl(controller.getControl());
         
@@ -291,6 +293,120 @@ public class MBeanTabFolderFactory
         return tabFolder;
     }
 
+    /**
+     * Creates TabFolder and tab for the Connection selection view
+     */
+    public static TabFolder generateConnectionTypeTabFolder(final Composite parent, ManagedServer server, String virtualHost)
+    {
+        TabFolder tabFolder = new TabFolder(parent, SWT.NONE);
+        FormData layoutData = new FormData();
+        layoutData.left = new FormAttachment(0);
+        layoutData.top = new FormAttachment(0);
+        layoutData.right = new FormAttachment(100);
+        layoutData.bottom = new FormAttachment(100);
+        tabFolder.setLayoutData(layoutData);
+
+        TabItem tab;
+        TabControl controller;
+              
+        tab = new TabItem(tabFolder, SWT.NONE);
+        tab.setText(CONNECTION); 
+        controller = new ConnectionTypeTabControl(tabFolder,server,virtualHost);
+        tab.setData(TabControl.CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+                
+        tabFolder.addListener(SWT.Selection, new Listener()
+        {
+            public void handleEvent(Event evt)
+            {
+                TabItem tab = (TabItem)evt.item;        
+                TabControl controller = (TabControl)tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(null);
+                }
+            }
+        });
+        
+        return tabFolder;
+    }
+    
+    /**
+     * Creates TabFolder and tab for the Exchange selection view
+     */
+    public static TabFolder generateExchangeTypeTabFolder(final Composite parent, ManagedServer server, String virtualHost)
+    {
+        TabFolder tabFolder = new TabFolder(parent, SWT.NONE);
+        FormData layoutData = new FormData();
+        layoutData.left = new FormAttachment(0);
+        layoutData.top = new FormAttachment(0);
+        layoutData.right = new FormAttachment(100);
+        layoutData.bottom = new FormAttachment(100);
+        tabFolder.setLayoutData(layoutData);
+
+        TabItem tab;
+        TabControl controller;
+
+        tab = new TabItem(tabFolder, SWT.NONE);
+        tab.setText(EXCHANGE);      
+        controller = new ExchangeTypeTabControl(tabFolder,server,virtualHost);
+        tab.setData(TabControl.CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+        
+        tabFolder.addListener(SWT.Selection, new Listener()
+        {
+            public void handleEvent(Event evt)
+            {
+                TabItem tab = (TabItem)evt.item;        
+                TabControl controller = (TabControl)tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(null);
+                }
+            }
+        });
+        
+        return tabFolder;
+    }
+    
+    /**
+     * Creates TabFolder and tab for the Queue selection view
+     */
+    public static TabFolder generateQueueTypeTabFolder(final Composite parent, ManagedServer server, String virtualHost)
+    {
+        TabFolder tabFolder = new TabFolder(parent, SWT.NONE);
+        FormData layoutData = new FormData();
+        layoutData.left = new FormAttachment(0);
+        layoutData.top = new FormAttachment(0);
+        layoutData.right = new FormAttachment(100);
+        layoutData.bottom = new FormAttachment(100);
+        tabFolder.setLayoutData(layoutData);
+
+        TabItem tab;
+        TabControl controller;
+        
+        tab = new TabItem(tabFolder, SWT.NONE);
+        tab.setText(QUEUE);  
+        controller = new QueueTypeTabControl(tabFolder,server,virtualHost);
+        tab.setData(TabControl.CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+        
+        tabFolder.addListener(SWT.Selection, new Listener()
+        {
+            public void handleEvent(Event evt)
+            {
+                TabItem tab = (TabItem)evt.item;        
+                TabControl controller = (TabControl)tab.getData(TabControl.CONTROLLER);
+                if(controller != null)
+                {
+                    controller.refresh(null);
+                }
+            }
+        });
+        
+        return tabFolder;
+    }
+    
     private enum QpidMBeanType
     {
         QUEUE (MBEANTYPE_QUEUE),
