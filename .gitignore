@@ -28,7 +28,7 @@ qpid/cpp/managementgen/management-types.xml
 
 #Java
 *.class
-velocity.log
+velocity.log*
 qpid/java/build
 release
 .classpath
