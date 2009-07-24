@@ -74,6 +74,9 @@ bool QueuePolicy::checkLimit(const QueuedMessage& m)
     } else {
         if (policyExceeded) {
             policyExceeded = false;
+            if (m.queue) {
+                QPID_LOG(info, "Queue cumulative message size and message count within policy for " << m.queue->getName());
+            }
         }
     }
     return !exceeded;
