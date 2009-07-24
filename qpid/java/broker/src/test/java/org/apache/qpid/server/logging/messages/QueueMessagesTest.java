@@ -24,14 +24,114 @@ import java.util.List;
 
 public class QueueMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testMessage1001ALL()
+    {
+        String owner = "guest";
+        Integer priority = 3;
+
+        _logMessage = QueueMessages.QUE_1001(owner, priority, true, true, true, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete",
+                             "Durable", "Transient", "Priority:",
+                             String.valueOf(priority)};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001AutoDelete()
     {
         String owner = "guest";
 
-        _logMessage = QueueMessages.QUE_1001(owner);
+        _logMessage = QueueMessages.QUE_1001(owner, null, true, false, false, false);
         List<Object> log = performLog();
 
-        String[] expected = {"Create :", "Owner:", owner};
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete"};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001Priority()
+    {
+        String owner = "guest";
+        Integer priority = 3;
+
+        _logMessage = QueueMessages.QUE_1001(owner, priority, false, false, false, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "Priority:",
+                             String.valueOf(priority)};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001AutoDeletePriority()
+    {
+        String owner = "guest";
+        Integer priority = 3;
+
+        _logMessage = QueueMessages.QUE_1001(owner, priority, true, false, false, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete",
+                             "Priority:",
+                             String.valueOf(priority)};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001AutoDeleteTransient()
+    {
+        String owner = "guest";
+
+        _logMessage = QueueMessages.QUE_1001(owner, null, true, false, true, false);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete",
+                            "Transient"};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001AutoDeleteTransientPriority()
+    {
+        String owner = "guest";
+        Integer priority = 3;
+
+        _logMessage = QueueMessages.QUE_1001(owner, priority, true, false, true, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete",
+                             "Transient", "Priority:",
+                             String.valueOf(priority)};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001AutoDeleteDurable()
+    {
+        String owner = "guest";
+
+        _logMessage = QueueMessages.QUE_1001(owner, null, true, true, false, false);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete",
+                             "Durable"};
+
+        validateLogMessage(log, "QUE-1001", expected);
+    }
+
+    public void testMessage1001AutoDeleteDurablePriority()
+    {
+        String owner = "guest";
+        Integer priority = 3;
+
+        _logMessage = QueueMessages.QUE_1001(owner, priority, true, true, false, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Owner:", owner, "AutoDelete",
+                             "Durable", "Priority:",
+                             String.valueOf(priority)};
 
         validateLogMessage(log, "QUE-1001", expected);
     }

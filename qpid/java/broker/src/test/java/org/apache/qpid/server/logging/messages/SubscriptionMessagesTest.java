@@ -24,16 +24,40 @@ import java.util.List;
 
 public class SubscriptionMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testMessage1001ALL()
     {
+        String arguments = "arguments";
 
-        _logMessage = SubscriptionMessages.SUB_1001();
+        _logMessage = SubscriptionMessages.SUB_1001(arguments, true, true);
         List<Object> log = performLog();
 
-        String[] expected = {"Create :"};
+        String[] expected = {"Create :", "Durable", "Arguments :", arguments};
 
         validateLogMessage(log, "SUB-1001", expected);
     }
+
+    public void testMessage1001Durable()
+    {
+        _logMessage = SubscriptionMessages.SUB_1001(null, true, false);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Durable"};
+
+        validateLogMessage(log, "SUB-1001", expected);
+    }
+
+    public void testMessage1001Arguments()
+    {
+        String arguments = "arguments";
+
+        _logMessage = SubscriptionMessages.SUB_1001(arguments, false, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :","Arguments :", arguments};
+
+        validateLogMessage(log, "SUB-1001", expected);
+    }
+
 
     public void testMessage1002()
     {

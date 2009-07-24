@@ -24,12 +24,12 @@ import java.util.List;
 
 public class ConnectionMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testMessage1001_WithProtocolVersion()
     {
         String clientID = "client";
         String protocolVersion = "8-0";
 
-        _logMessage = ConnectionMessages.CON_1001(clientID, protocolVersion);
+        _logMessage = ConnectionMessages.CON_1001(clientID, protocolVersion, true);
         List<Object> log = performLog();
 
         String[] expected = {"Open :", "Client ID", clientID,
@@ -37,6 +37,19 @@ public class ConnectionMessagesTest extends AbstractTestMessages
 
         validateLogMessage(log, "CON-1001", expected);
     }
+
+    public void testMessage1001_NoProtocolVersion()
+    {
+        String clientID = "client";        
+
+        _logMessage = ConnectionMessages.CON_1001(clientID, null, false);
+        List<Object> log = performLog();
+
+        String[] expected = {"Open :", "Client ID", clientID};
+
+        validateLogMessage(log, "CON-1001", expected);
+    }
+
 
     public void testMessage1002()
     {

@@ -81,24 +81,35 @@ public abstract class AbstractTestMessages extends TestCase
     {
         assertEquals("Log has incorrect message count", 1, logs.size());
 
-        String log = String.valueOf(logs.get(0));
+        //We trim() here as we don't care about extra white space at the end of the log message
+        // but we do care about the ability to easily check we don't have unexpected text at
+        // the end.
+        String log = String.valueOf(logs.get(0)).trim();
 
-        int index = log.indexOf(_logSubject.toString());
+        // Simple switch to print out all the logged messages 
+        //System.err.println(log);
 
-        assertTrue("Unable to locate Subject:" + log, index != -1);
+        int msgIndex = log.indexOf(_logSubject.toString())+_logSubject.toString().length();
 
-        String message = log.substring(index + _logSubject.toString().length());
+        assertTrue("Unable to locate Subject:" + log, msgIndex != -1);
+
+        String message = log.substring(msgIndex);
 
         assertTrue("Message does not start with tag:" + tag + ":" + message,
                    message.startsWith(tag));
 
         // Test that the expected items occur in order.
-        index = 0;
+        int index = 0;
         for (String text : expected)
         {
             index = message.indexOf(text, index);
             assertTrue("Message does not contain expected (" + text + ") text :" + message, index != -1);
+            index = index + text.length();
         }
+
+        //Check there is nothing left on the log message
+        assertEquals("Message has more text. '" + log.substring(msgIndex + index) + "'",
+                     log.length(), msgIndex +  index);
     }
 
 }

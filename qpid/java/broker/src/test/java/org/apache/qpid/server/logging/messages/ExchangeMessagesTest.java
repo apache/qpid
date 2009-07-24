@@ -27,7 +27,7 @@ import java.util.List;
 
 public class ExchangeMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testMessage1001_Transient()
     {
         // Get the Default Exchange on the Test Vhost for testing
         Exchange exchange = ApplicationRegistry.getInstance().
@@ -37,13 +37,32 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         String type = exchange.getType().toString();
         String name = exchange.getName().toString();
 
-        _logMessage = ExchangeMessages.EXH_1001(type, name);
+        _logMessage = ExchangeMessages.EXH_1001(type, name, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create :", "Type:", type, "Name:", name};
 
         validateLogMessage(log, "EXH-1001", expected);
     }
+
+    public void testMessage1001_Persistent()
+    {
+        // Get the Default Exchange on the Test Vhost for testing
+        Exchange exchange = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHost("test").
+                getExchangeRegistry().getDefaultExchange();
+
+        String type = exchange.getType().toString();
+        String name = exchange.getName().toString();
+
+        _logMessage = ExchangeMessages.EXH_1001(type, name, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create :", "Durable", "Type:", type, "Name:", name};
+
+        validateLogMessage(log, "EXH-1001", expected);
+    }
+
 
     public void testMessage1002()
     {
