@@ -21,6 +21,7 @@
 package org.apache.qpid.management.ui.views.type;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.qpid.management.ui.ApiVersion;
@@ -132,7 +133,7 @@ public abstract class MBeanTypeTabControl extends TabControl
     
     protected void createTable(Composite tableComposite)
     {
-        _table = new Table (tableComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -199,7 +200,7 @@ public abstract class MBeanTypeTabControl extends TabControl
         buttonComposite.setLayout(new GridLayout(2,true));
         
         final Button favouritesButton = _toolkit.createButton(buttonComposite, 
-                                                    "<-- Add " + _type + " to favourites", SWT.PUSH);
+                                                    "<-- Add " + _type + "(s) to favourites", SWT.PUSH);
         gridData = new GridData(SWT.LEFT, SWT.CENTER, true, false);
         favouritesButton.setLayoutData(gridData);
         favouritesButton.addSelectionListener(new SelectionAdapter()
@@ -236,15 +237,24 @@ public abstract class MBeanTypeTabControl extends TabControl
             {
                 int selectionIndex = _table.getSelectionIndex();
 
-                if (selectionIndex != -1)
-                {
-                    favouritesButton.setEnabled(true);
-                    openButton.setEnabled(true);
-                }
-                else
+                if (selectionIndex == -1)
                 {
                     favouritesButton.setEnabled(false);
                     openButton.setEnabled(false);
+                    return;
+                }
+                else
+                {
+                    favouritesButton.setEnabled(true);
+                }
+                
+                if(_table.getSelectionCount() > 1)
+                {
+                    openButton.setEnabled(false);
+                }
+                else
+                {
+                    openButton.setEnabled(true);
                 }
             }
         });
@@ -371,20 +381,35 @@ public abstract class MBeanTypeTabControl extends TabControl
     {
         int selectionIndex = _table.getSelectionIndex();
 
-        if (selectionIndex != -1)
+        if (selectionIndex == -1)
         {
-            final ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
-            
-            IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
-            NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
-            try
+            return;
+        }
+
+        int[] selectedIndices = _table.getSelectionIndices();
+        
+        ArrayList<ManagedBean> selectedMBeans = new ArrayList<ManagedBean>();
+        
+        for(int index = 0; index < selectedIndices.length ; index++)
+        {
+            ManagedBean selectedMBean = (ManagedBean)_table.getItem(selectedIndices[index]).getData();
+            selectedMBeans.add(selectedMBean);
+        }
+        
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
+        
+        ManagedBean bean = null;
+        try
+        {
+            for(ManagedBean mbean: selectedMBeans)
             {
-                view.addManagedBean(selectedMBean);
+                view.addManagedBean(mbean);
             }
-            catch (Exception ex)
-            {
-                MBeanUtility.handleException(selectedMBean, ex);
-            }
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(bean, ex);
         }
     }
     

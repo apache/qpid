@@ -142,7 +142,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     @Override
     protected void createTable(Composite tableComposite)
     {
-        _table = new Table (tableComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -488,38 +488,46 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         {
             return;
         }
+
+        int[] selectedIndices = _table.getSelectionIndices();
         
-        ManagedBean selectedMBean;
+        ArrayList<ManagedBean> selectedMBeans = new ArrayList<ManagedBean>();
         
         if(_ApiVersion.greaterThanOrEqualTo(1, 3))
         {
             //if we have Qpid JMX API 1.3+ the entries are created from Map.Entry<String,Long>
-            Map.Entry<String, Long> queueEntry = (Map.Entry<String, Long>) _table.getItem(selectionIndex).getData();
-
-            String queueName = queueEntry.getKey();
-            selectedMBean = _serverRegistry.getQueue(queueName, _virtualHost);
+            for(int index = 0; index < selectedIndices.length ; index++)
+            {
+                Map.Entry<String, Long> queueEntry = (Map.Entry<String, Long>) _table.getItem(selectedIndices[index]).getData();
+                String queueName = queueEntry.getKey();
+                selectedMBeans.add(_serverRegistry.getQueue(queueName, _virtualHost));
+            }
         }
         else
         {
             //if we have a Qpid JMX API 1.2 or less server, entries are created from ManagedBeans directly
-            selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
-        }
-
-        if(selectedMBean == null)
-        {
-            ViewUtility.popupErrorMessage("Error", "Unable to retrieve the selected MBean to add it to favourites");
-            return;
+            for(int index = 0; index < selectedIndices.length ; index++)
+            {
+                ManagedBean mbean = (ManagedBean) _table.getItem(selectedIndices[index]).getData();
+                selectedMBeans.add(mbean);
+            }
         }
 
         IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
         NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
+        
+        ManagedBean bean = null;
         try
         {
-            view.addManagedBean(selectedMBean);
+            for(ManagedBean mbean: selectedMBeans)
+            {
+                bean = mbean;
+                view.addManagedBean(mbean);
+            }
         }
         catch (Exception ex)
         {
-            MBeanUtility.handleException(selectedMBean, ex);
+            MBeanUtility.handleException(bean, ex);
         }
     }
     
