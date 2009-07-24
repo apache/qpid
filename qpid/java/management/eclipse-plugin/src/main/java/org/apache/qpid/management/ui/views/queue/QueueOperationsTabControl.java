@@ -553,9 +553,10 @@ public class QueueOperationsTabControl extends TabControl
 
                     String[] msgHeader = (String[]) selectedMsg.get(MSG_HEADER);
                     headerText.setText("");
+                    String lineSeperator = System.getProperty("line.separator");
                     for(String s: msgHeader)
                     {
-                        headerText.append(s + "\n");
+                        headerText.append(s + lineSeperator);
                     }
                 }
                 
