@@ -46,6 +46,8 @@ public abstract class ServerRegistry
     private ConcurrentMap<String,List<ManagedBean>> _exchanges = new ConcurrentHashMap<String,List<ManagedBean>>();
     // map of all queue mbenas
     private ConcurrentMap<String,List<ManagedBean>> _queues = new ConcurrentHashMap<String,List<ManagedBean>>();
+    // map of all virtual host manager mbeans
+    private ConcurrentMap<String,ManagedBean> _vhostManagers = new ConcurrentHashMap<String,ManagedBean>();
     
     public ServerRegistry()
     {
@@ -98,6 +100,22 @@ public abstract class ServerRegistry
         _queues.get(vHost).add(mbean);
     }
     
+    protected void addVirtualHostManagerMBean(ManagedBean mbean)
+    {
+        String vHost = mbean.getVirtualHostName();
+        _vhostManagers.put(vHost, mbean);
+    }
+    
+    protected void removeVirtualHostManagerMBean(ManagedBean mbean)
+    {
+        _vhostManagers.remove(mbean);
+    }
+    
+    public ManagedBean getVirtualHostManagerMBean(String virtualHost)
+    {
+        return _vhostManagers.get(virtualHost);
+    }
+    
     protected void removeConnectionMBean(ManagedBean mbean)
     {
         _connections.get(mbean.getVirtualHostName()).remove(mbean);
@@ -126,6 +144,23 @@ public abstract class ServerRegistry
     public List<ManagedBean> getQueues(String virtualHost)
     {
         return _queues.get(virtualHost);
+    }
+    
+    //returns the requested ManagedBean, or null if it cant be found
+    public ManagedBean getQueue(String queueName, String virtualHost)
+    {
+        ManagedBean requestedQueue = null;
+        
+        for(ManagedBean queue : _queues.get(virtualHost))
+        {
+            if(queueName.equals(queue.getName()))
+            {
+                requestedQueue = queue;
+                break;
+            }
+        }
+        
+        return requestedQueue;
     }
     
     public void addVirtualHost(String name)

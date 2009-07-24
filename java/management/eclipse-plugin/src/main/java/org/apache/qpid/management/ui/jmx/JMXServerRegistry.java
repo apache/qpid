@@ -157,6 +157,10 @@ public class JMXServerRegistry extends ServerRegistry
         {
             addConnectionMBean(mbean);
         }
+        else if (mbean.isVirtualHostManager())
+        {
+            addVirtualHostManagerMBean(mbean);
+        }
         
         addVirtualHost(mbean.getVirtualHostName());
         _mbeansMap.put(mbean.getUniqueName(), mbean);
@@ -182,6 +186,10 @@ public class JMXServerRegistry extends ServerRegistry
         else if (mbean.isConnection())
         {
             removeConnectionMBean(mbean);
+        }
+        else if (mbean.isVirtualHostManager())
+        {
+            removeVirtualHostManagerMBean(mbean);
         }
     }
     

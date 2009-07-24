@@ -24,10 +24,8 @@ import java.util.List;
 
 import static org.apache.qpid.management.ui.Constants.CONNECTION;
 
-import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.ManagedServer;
 import org.eclipse.swt.widgets.TabFolder;
 
 /**
@@ -38,16 +36,15 @@ import org.eclipse.swt.widgets.TabFolder;
 public class ConnectionTypeTabControl extends MBeanTypeTabControl
 {
 
-    public ConnectionTypeTabControl(TabFolder tabFolder)
+    public ConnectionTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost)
     {
-        super(tabFolder,CONNECTION);
+        super(tabFolder, server, virtualHost, CONNECTION);
     }
 
-        @Override
-        protected List<ManagedBean> getMbeans()
-        {
-            ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
-            return serverRegistry.getConnections(MBeanView.getVirtualHost());
-        }
+    @Override
+    protected List<ManagedBean> getMbeans()
+    {
+        return _serverRegistry.getConnections(_virtualHost);
+    }
 
 }
