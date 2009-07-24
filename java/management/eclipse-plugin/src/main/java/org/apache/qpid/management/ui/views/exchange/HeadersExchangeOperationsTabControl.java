@@ -132,7 +132,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         }
         catch (Exception e)
         {
-            MBeanUtility.handleException(mbean,e);
+            MBeanUtility.handleException(_mbean,e);
         }
 
         _bindingNumberTableViewer.setInput(_bindings);

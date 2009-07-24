@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.management.ui.views.exchange;
 
+import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
+import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALUES;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -29,6 +32,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
@@ -79,6 +83,7 @@ public class ExchangeOperationsTabControl extends TabControl
             
     private TabularDataSupport _bindings = null;
     private ManagedExchange _emb;
+    private ApiVersion _ApiVersion;
     
     static final String BINDING_KEY = ManagedExchange.COMPOSITE_ITEM_NAMES[0];
     static final String QUEUES = ManagedExchange.COMPOSITE_ITEM_NAMES[1];
@@ -87,6 +92,7 @@ public class ExchangeOperationsTabControl extends TabControl
     {
         super(tabFolder);
         _mbean = mbean;
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _emb = (ManagedExchange) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedExchange.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
@@ -130,10 +136,26 @@ public class ExchangeOperationsTabControl extends TabControl
         }
         catch (Exception e)
         {
-            MBeanUtility.handleException(mbean,e);
+            MBeanUtility.handleException(_mbean,e);
         }
 
         _keysTableViewer.setInput(_bindings);
+        
+        //if we have a Qpid JMX API 1.3+ server
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            //if it is a fanout exchange
+            if(isFanoutExchange())
+            {
+                //if there are any queue bindings, there is a single wildcard binding key
+                //auto-select it to show all the queues bound to the exchange
+                if (_keysTable.getItemCount() == 1)
+                {
+                    _keysTable.setSelection(0);
+                    updateQueuesTable();
+                }
+            }
+        }
 
         layout();
     }
@@ -263,19 +285,7 @@ public class ExchangeOperationsTabControl extends TabControl
         _keysTableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
             public void selectionChanged(SelectionChangedEvent evt)
             {
-                int selectionIndex = _keysTable.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                	final CompositeData selectedMsg = (CompositeData)_keysTable.getItem(selectionIndex).getData();
-
-                	String[] queues = (String[]) selectedMsg.get(QUEUES);
-                	_queuesTableViewer.setInput(queues);
-                }
-                else
-                {
-                	_queuesTableViewer.setInput(new String[]{"Select a binding key to view queues"});
-                }
+                updateQueuesTable();
             }
         });
         
@@ -296,6 +306,28 @@ public class ExchangeOperationsTabControl extends TabControl
         
     }
 
+    private void updateQueuesTable()
+    {
+        int selectionIndex = _keysTable.getSelectionIndex();
+
+        if (selectionIndex != -1)
+        {
+            final CompositeData selectedMsg = (CompositeData)_keysTable.getItem(selectionIndex).getData();
+
+            String[] queues = (String[]) selectedMsg.get(QUEUES);
+            _queuesTableViewer.setInput(queues);
+        }
+        else
+        {
+            _queuesTableViewer.setInput(new String[]{"Select a binding key to view queues"});
+        }
+    }
+    
+    private boolean isFanoutExchange()
+    {
+        return _mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase(DEFAULT_EXCHANGE_TYPE_VALUES[1]);
+
+    }
     
     /**
      * Content Provider class for the table viewer
@@ -477,6 +509,10 @@ public class ExchangeOperationsTabControl extends TabControl
         _toolkit.createLabel(bindingComposite,"Binding:").setBackground(shell.getBackground());
         final Text bindingText = new Text(bindingComposite, SWT.BORDER);
         bindingText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        if(isFanoutExchange())
+        {
+            bindingText.setText("*");
+        }
 
         Composite okCancelButtonsComp = _toolkit.createComposite(shell);
         okCancelButtonsComp.setBackground(shell.getBackground());
@@ -507,7 +543,7 @@ public class ExchangeOperationsTabControl extends TabControl
             {
                 String binding = bindingText.getText();
                 
-                if (binding == null || binding.length() == 0)
+                if (!isFanoutExchange() && (binding == null || binding.length() == 0))
                 {                            
                     ViewUtility.popupErrorMessage("Create New Binding", "Please enter a valid binding");
                     return;
