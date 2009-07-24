@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.openmbean.CompositeData;
@@ -55,6 +58,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 
@@ -188,7 +192,7 @@ public class RuntimeTabControl extends TabControl
         GridLayout gridLayout = new GridLayout();
         tableComposite.setLayout(gridLayout);
         
-        _table = new Table (tableComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -311,18 +315,36 @@ public class RuntimeTabControl extends TabControl
 
         if (selectionIndex != -1)
         {
-            final CompositeData selectedLogger = (CompositeData)_table.getItem(selectionIndex).getData();
-            String loggerName = selectedLogger.get(LOGGER_NAME).toString();
+            int[] selectedIndices = _table.getSelectionIndices();
             
+            final ArrayList<String> selectedLoggers = new ArrayList<String>();
+            
+            for(int index = 0; index < selectedIndices.length ; index++)
+            {
+                CompositeData selectedLogger = (CompositeData)_table.getItem(selectedIndices[index]).getData();
+                String user = (String) selectedLogger.get(LOGGER_NAME);
+                selectedLoggers.add(user);
+            }
+
             final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Runtime Logger Level");
             
-            Composite loggerComp = _toolkit.createComposite(shell);
-            loggerComp.setBackground(shell.getBackground());
-            loggerComp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-            loggerComp.setLayout(new GridLayout(2,false));
+            _toolkit.createLabel(shell, "Logger(s): ").setBackground(shell.getBackground());
 
-            _toolkit.createLabel(loggerComp, "Logger: ").setBackground(shell.getBackground());
-            _toolkit.createLabel(loggerComp, loggerName).setBackground(shell.getBackground());
+            final Text headerText = new Text(shell, SWT.WRAP | SWT.V_SCROLL |  SWT.BORDER );
+            headerText.setEditable(false);
+            GridData data = new GridData(SWT.FILL, SWT.FILL, false, false);
+            data.minimumHeight = 125;
+            data.heightHint = 125;
+            data.minimumWidth = 575;
+            data.widthHint = 575;
+            headerText.setLayoutData(data);
+
+            String lineSeperator = System.getProperty("line.separator");
+            for(String loggerName : selectedLoggers)
+            {
+                headerText.append(loggerName + lineSeperator);
+            }
+            headerText.setSelection(0);
 
             Composite levelComp = _toolkit.createComposite(shell);
             levelComp.setBackground(shell.getBackground());
@@ -348,20 +370,62 @@ public class RuntimeTabControl extends TabControl
             {
                 public void widgetSelected(SelectionEvent e)
                 {
-                    String logger = selectedLogger.get(LOGGER_NAME).toString(); 
                     String level = levelCombo.getItem(levelCombo.getSelectionIndex()).toString();
                     
                     shell.close();
-                    
+
                     try
                     {
-                        boolean result = _lmmb.setRuntimeLoggerLevel(logger, level);
-                        ViewUtility.operationResultFeedback(result, 
-                                "Updated Runtime Logger Level", "Failed to update Runtime Logger Level");
+                        HashMap<String,Boolean> results = new HashMap<String,Boolean>();
+                        
+                        //perform the updates, save the results.
+                        for(String logger : selectedLoggers)
+                        {
+                            boolean result = _lmmb.setRuntimeLoggerLevel(logger, level);
+                            results.put(logger, result);
+                        }
+                        
+                        //categorise the overall result
+                        boolean overallResult = true;
+                        for(boolean result : results.values())
+                        {
+                            if (!result)
+                            {
+                                overallResult = false;
+                            }
+                        }
+                        
+                        //output the result to status bar if all succeed, and dialogue if not
+                        if(overallResult)
+                        {
+                            ViewUtility.operationResultFeedback(overallResult, "Updated Runtime Logger Level(s)", null);
+                        }
+                        else
+                        {
+                            String failedToSetLevelOfLoggers = "";
+                            for(String logger : results.keySet())
+                            {
+                                if(!results.get(logger))
+                                {
+                                    failedToSetLevelOfLoggers = failedToSetLevelOfLoggers.concat(logger + ", ");
+                                }
+                            }
+                            
+                            //cut off last ", "
+                            int lastIndex = failedToSetLevelOfLoggers.lastIndexOf(',');
+                            if (lastIndex != -1)
+                            {
+                                failedToSetLevelOfLoggers = failedToSetLevelOfLoggers.substring(0, lastIndex);
+                            }
+                            
+                            ViewUtility.operationResultFeedback(overallResult, null, 
+                                                                "Failed to update Runtime Logger Level(s): "
+                                                                + failedToSetLevelOfLoggers);
+                        }
                     }
                     catch(Exception e3)
                     {
-                        ViewUtility.operationFailedStatusBarMessage("Error updating Runtime Logger Level");
+                        ViewUtility.operationFailedStatusBarMessage("Error updating Runtime Logger Level(s)");
                         MBeanUtility.handleException(_mbean, e3);
                     }
 
