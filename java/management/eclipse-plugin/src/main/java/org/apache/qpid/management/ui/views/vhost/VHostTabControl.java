@@ -25,6 +25,7 @@ import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALU
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
@@ -48,6 +49,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -62,6 +65,8 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
@@ -243,6 +248,18 @@ public class VHostTabControl extends TabControl
             }
         });
 
+        //listener for double clicking to open the selection mbean
+        _queueTable.addMouseListener(new MouseListener()                                              
+        {
+            // MouseListener implementation
+            public void mouseDoubleClick(MouseEvent event)
+            {
+                openMBean(_queueTable);
+            }
+            
+            public void mouseDown(MouseEvent e){}
+            public void mouseUp(MouseEvent e){}
+        });
         
         Group exchangesGroup = new Group(_paramsComposite, SWT.SHADOW_NONE);
         exchangesGroup.setBackground(_paramsComposite.getBackground());
@@ -340,6 +357,18 @@ public class VHostTabControl extends TabControl
             }
         });
         
+        //listener for double clicking to open the selection mbean
+        _exchangeTable.addMouseListener(new MouseListener()                                              
+        {
+            // MouseListener implementation
+            public void mouseDoubleClick(MouseEvent event)
+            {
+                openMBean(_exchangeTable);
+            }
+            
+            public void mouseDown(MouseEvent e){}
+            public void mouseUp(MouseEvent e){}
+        });
     }
 
     
@@ -807,4 +836,26 @@ public class VHostTabControl extends TabControl
         DELETE_EXCHANGE;
     }
     
+    private void openMBean(Table table)
+    {
+        int selectionIndex = table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        ManagedBean selectedMBean = (ManagedBean) table.getItem(selectionIndex).getData();
+
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
+        try
+        {
+            view.openMBean(selectedMBean);
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(selectedMBean, ex);
+        }
+    }
 }
