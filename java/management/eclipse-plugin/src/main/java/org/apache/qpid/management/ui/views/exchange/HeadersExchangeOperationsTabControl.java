@@ -31,9 +31,11 @@ import javax.management.openmbean.TabularDataSupport;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.TabControl;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -45,6 +47,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -60,6 +64,8 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 
@@ -82,7 +88,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
     
     static final String BINDING_NUM = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[0];
     static final String QUEUE_NAME = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[1];
-    static final String QUEUE_BINDINGS = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[2];
+    static final String HEADER_BINDINGS = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[2];
     
     public HeadersExchangeOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -224,7 +230,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         _headersTable.setLayoutData(data);
         
         _headersTableViewer = new TableViewer(_headersTable);
-        final TableSorter queuesTableSorter = new TableSorter(QUEUE_BINDINGS);
+        final TableSorter queuesTableSorter = new TableSorter(HEADER_BINDINGS);
         
         titles = new String[]{"Header Bindings"};
         bounds = new int[]{225};
@@ -262,8 +268,8 @@ public class HeadersExchangeOperationsTabControl extends TabControl
 
         }
         
-        _headersTableViewer.setContentProvider(new ContentProviderImpl(QUEUE_BINDINGS));
-        _headersTableViewer.setLabelProvider(new LabelProviderImpl(QUEUE_BINDINGS));
+        _headersTableViewer.setContentProvider(new ContentProviderImpl(HEADER_BINDINGS));
+        _headersTableViewer.setLabelProvider(new LabelProviderImpl(HEADER_BINDINGS));
         _headersTableViewer.setSorter(queuesTableSorter);
         _headersTableViewer.setInput(new String[]{"Select a binding to view key-value pairs"});
         
@@ -276,7 +282,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
                 {
                 	final CompositeData selectedMsg = (CompositeData)_bindingNumberTable.getItem(selectionIndex).getData();
 
-                	String[] bindings = (String[]) selectedMsg.get(QUEUE_BINDINGS);
+                	String[] bindings = (String[]) selectedMsg.get(HEADER_BINDINGS);
                 	_headersTableViewer.setInput(bindings);
                 }
                 else
@@ -284,6 +290,19 @@ public class HeadersExchangeOperationsTabControl extends TabControl
                 	_headersTableViewer.setInput(new String[]{"Select a binding to view key-value pairs"});
                 }
             }
+        });
+        
+        //listener for double clicking to open the selection mbean
+        _bindingNumberTable.addMouseListener(new MouseListener()                                              
+        {
+            // MouseListener implementation
+            public void mouseDoubleClick(MouseEvent event)
+            {
+                openMBean(_bindingNumberTable);
+            }
+            
+            public void mouseDown(MouseEvent e){}
+            public void mouseUp(MouseEvent e){}
         });
         
         //Side Buttons
@@ -554,5 +573,37 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         shell.setDefaultButton(okButton);
         shell.pack();
         shell.open();
+    }
+    
+    private void openMBean(Table table)
+    {
+        int selectionIndex = table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        CompositeData bindingResult = (CompositeData) table.getItem(selectionIndex).getData();
+        String queueName = (String) bindingResult.get(QUEUE_NAME);
+        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
+        ManagedBean selectedMBean = serverRegistry.getQueue(queueName, _mbean.getVirtualHostName());
+
+        if(selectedMBean == null)
+        {
+            ViewUtility.popupErrorMessage("Error", "Unable to retrieve the selected MBean to open it");
+            return;
+        }
+
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
+        try
+        {
+            view.openMBean(selectedMBean);
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(selectedMBean, ex);
+        }
     }
 }
