@@ -59,6 +59,8 @@ public class FanoutExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Fanout Exchange")
     private final class FanoutExchangeMBean extends ExchangeMBean
     {
+        private static final String BINDING_KEY_SUBSTITUTE = "*";
+        
         @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
         public FanoutExchangeMBean() throws JMException
         {
@@ -71,15 +73,23 @@ public class FanoutExchange extends AbstractExchange
         {
 
             _bindingList = new TabularDataSupport(_bindinglistDataType);
+            
+            if(_queues.isEmpty())
+            {
+                return _bindingList;
+            }
+
+            ArrayList<String> queueNames = new ArrayList<String>();
 
             for (AMQQueue queue : _queues)
             {
                 String queueName = queue.getName().toString();
-
-                Object[] bindingItemValues = {queueName, new String[]{queueName}};
-                CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
-                _bindingList.put(bindingData);
+                queueNames.add(queueName);
             }
+            
+            Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
+            CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
+            _bindingList.put(bindingData);
 
             return _bindingList;
         }
@@ -94,7 +104,7 @@ public class FanoutExchange extends AbstractExchange
 
             try
             {
-                queue.bind(FanoutExchange.this, new AMQShortString(binding), null);
+                queue.bind(FanoutExchange.this, new AMQShortString(BINDING_KEY_SUBSTITUTE), null);
             }
             catch (AMQException ex)
             {
