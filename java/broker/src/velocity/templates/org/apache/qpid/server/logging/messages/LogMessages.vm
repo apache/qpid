@@ -33,7 +33,10 @@ import java.util.ResourceBundle;
  * This file is based on the content of LogMessages.properties
  *
  * It is generated so that we can provide compile time validation of the
- * message parameters
+ * message parameters.
+ *
+ * DO NOT EDIT DIRECTLY THIS FILE IS GENERATED.
+ *      
  */
 public class ${type.name}Messages
 {
@@ -51,25 +54,105 @@ public class ${type.name}Messages
         _formatter.setLocale(currentLocale);
     }
 
+##
+## The list stored under key 'list' in the 'type' HashMap contains all the
+## log messages that this class should contain. So for each entry in the list
+## this template will create a new log method.
+##
 #foreach( $message in ${type.list} )
     /**
      * Log a ${type.name} message of the Format:
-     * <pre>${message.format}</pre> 
+     * <pre>${message.format}</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
      */
+## There is a lot in the method header here. To make it more readable/understandable
+##  This is the same text laid out to be easier to read:
+##  public static LogMessage ${message.methodName} (
+##          #foreach($parameter in ${message.parameters})
+##                ${parameter.type} ${parameter.name}
+##                #if (${velocityCount} != ${message.parameters.size()} )
+##                   ,
+##                #end
+##          #end
+##          #if(${message.parameters.size()} > 0 && ${message.options.size()} > 0)
+##          ,
+##          #end
+##          #foreach($option in ${message.options})
+##          boolean ${option.name}
+##          #if (${velocityCount} != ${message.options.size()} )
+##             ,
+##          #end
+##          #end
+##         )
+##
+## What is going on is that we set the method name based on the HashMap lookup
+## for 'methodName' Then for each entry(another HashMap) in the list stored
+## in the HashMap under 'parameters' build the argument list of from the 'type'
+## and 'name' values. Ensuring that we add a ', ' between each entry.
+##
+## However, check that we are not at the last entry of the list as we don't
+## want to add ', ' at then end.
+##
+## Before we go on to the options we perform a check to see if we had any
+## parameters. If we did and we have options to add then we add ', ' to keep
+## the syntax correct.
+##
+## We then go on to the options that are again retrieved from the top HashMap
+## with key 'options'. For each option a boolean argument is created and the
+## name is retrieved from the option HashMap with key 'name'
+##
     public static LogMessage ${message.methodName}(#foreach($parameter in ${message.parameters})${parameter.type} ${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end
-#end)
+#end#if(${message.parameters.size()} > 0 && ${message.options.size()} > 0), #end#foreach($option in ${message.options})boolean ${option.name}#if (${velocityCount} != ${message.options.size()} ), #end#end)
     {
         final Object[] messageArguments = {#foreach($parameter in ${message.parameters})${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end#end};
-
         _formatter.applyPattern(_messages.getString("${message.name}"));
+             
+        ## If we have some options then we need to build the message based
+        ## on those values so only provide that logic if we need it.
+#if(${message.options.size()} > 0)
+        String rawMessage = _formatter.format(messageArguments);
+
+        StringBuffer msg =new StringBuffer("${message.name} : ");
+
+        // Split the formatted message up on the option values so we can
+        // rebuild the message based on the configured options.     
+        String[] parts = rawMessage.split("\\[");
+        msg.append(parts[0]);
+
+        int end;
+        if (parts.length > 1)
+        {
+            ## For Each Optional value check if it has been enabled and then
+            ## append it to the log.
+#foreach($option in ${message.options})
+
+            // Add Option : ${option.value}
+            end = parts[${velocityCount}].indexOf(']');
+            if (${option.name})
+            {
+                msg.append(parts[${velocityCount}].substring(0, end));
+            }
+
+            // Use 'end + 1' to remove the ']' from the output 
+            msg.append(parts[${velocityCount}].substring(end + 1));
+#end
+        }
+
+        final String message = msg.toString();
+#else
+        ## If we have no options then we can just format and set the log
+        final String message = "${message.name} : " + _formatter.format(messageArguments);
+#end
+
         return new LogMessage()
         {
             public String toString()
             {
-                return "${message.name} : " + _formatter.format(messageArguments);
+                return message;
             }
         };
-
     }
              
 #end

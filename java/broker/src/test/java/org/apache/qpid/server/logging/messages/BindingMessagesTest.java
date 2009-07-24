@@ -25,9 +25,9 @@ import java.util.List;
 public class BindingMessagesTest extends AbstractTestMessages
 {
 
-    public void testMessage1001()
+    public void testMessage1001_NoArgs()
     {
-        _logMessage = BindingMessages.BND_1001();
+        _logMessage = BindingMessages.BND_1001(null, false);
         List<Object> log = performLog();
 
         String[] expected = {"Create"};
@@ -35,6 +35,18 @@ public class BindingMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BND-1001", expected);
     }
 
+    public void testMessage1001_Args()
+    {
+        String arguments = "arguments";
+
+        _logMessage = BindingMessages.BND_1001(arguments, true);
+        List<Object> log = performLog();
+
+        String[] expected = {"Create", ": Arguments :", arguments};
+
+        validateLogMessage(log, "BND-1001", expected);
+    }
+        
     public void testMessage1002()
     {
         _logMessage = BindingMessages.BND_1002();

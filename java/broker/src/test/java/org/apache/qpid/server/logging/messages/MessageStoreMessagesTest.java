@@ -61,7 +61,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 
     public void testMessage1004()
     {
-        _logMessage = MessageStoreMessages.MST_1004();
+        _logMessage = MessageStoreMessages.MST_1004(null,false);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Start"};
@@ -69,24 +69,24 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1004", expected);
     }
 
-    public void testMessage1005()
+    public void testMessage1004_withQueue()
     {
         String queueName = "testQueue";
 
-        _logMessage = MessageStoreMessages.MST_1005(queueName);
+        _logMessage = MessageStoreMessages.MST_1004(queueName, true);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Start :", queueName};
 
-        validateLogMessage(log, "MST-1005", expected);
+        validateLogMessage(log, "MST-1004", expected);
     }
 
-    public void testMessage1006()
+    public void testMessage1005()
     {
         String queueName = "testQueue";
         Integer messasgeCount = 2000;
 
-        _logMessage = MessageStoreMessages.MST_1006(messasgeCount, queueName);
+        _logMessage = MessageStoreMessages.MST_1005(messasgeCount, queueName);
         List<Object> log = performLog();
 
         // Here we use MessageFormat to ensure the messasgeCount of 2000 is
@@ -95,29 +95,29 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
                              MessageFormat.format("{0,number}", messasgeCount),
                              "messages for queue", queueName};
 
-        validateLogMessage(log, "MST-1006", expected);
+        validateLogMessage(log, "MST-1005", expected);
     }
 
-    public void testMessage1007()
+    public void testMessage1006()
     {
-        _logMessage = MessageStoreMessages.MST_1007();
+        _logMessage = MessageStoreMessages.MST_1006(null,false);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Complete"};
 
-        validateLogMessage(log, "MST-1007", expected);
+        validateLogMessage(log, "MST-1006", expected);
     }
 
-    public void testMessage1008()
+    public void testMessage1006_withQueue()
     {
         String queueName = "testQueue";
 
-        _logMessage = MessageStoreMessages.MST_1008(queueName);
+        _logMessage = MessageStoreMessages.MST_1006(queueName, true);
         List<Object> log = performLog();
 
         String[] expected = {"Recovery Complete :", queueName};
 
-        validateLogMessage(log, "MST-1008", expected);
+        validateLogMessage(log, "MST-1006", expected);
     }
 
 }
