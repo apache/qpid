@@ -20,13 +20,17 @@
  */
 package org.apache.qpid.management.ui.views.users;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
@@ -75,6 +79,7 @@ public class UserManagementTabControl extends TabControl
 
     private TabularDataSupport _userDetails = null;
     private UserManagement _ummb;
+    private ApiVersion _ApiVersion;
     
     static final String USERNAME = UserManagement.COMPOSITE_ITEM_NAMES[0];
     static final String RIGHTS_READ_ONLY = UserManagement.COMPOSITE_ITEM_NAMES[1];
@@ -85,6 +90,7 @@ public class UserManagementTabControl extends TabControl
     {
         super(tabFolder);
         _mbean = mbean;
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _ummb = (UserManagement)
                 MBeanServerInvocationHandler.newProxyInstance(mbsc, mbean.getObjectName(),
                                                             UserManagement.class, false);
@@ -154,7 +160,7 @@ public class UserManagementTabControl extends TabControl
         tableComposite.setLayoutData(gridData);
         tableComposite.setLayout(new GridLayout(2,false));
         
-        _table = new Table (tableComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -207,16 +213,29 @@ public class UserManagementTabControl extends TabControl
         _table.setSortDirection(SWT.UP);
         
         Composite buttonsComposite = _toolkit.createComposite(tableComposite);
-        gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
+        gridData = new GridData(SWT.FILL, SWT.TOP, false, false);
+        gridData.heightHint = 165;
         buttonsComposite.setLayoutData(gridData);
         buttonsComposite.setLayout(new GridLayout());
         
-        final Button deleteUserButton = _toolkit.createButton(buttonsComposite, "Delete User", SWT.PUSH);
-        gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
+        final Button addUserButton = _toolkit.createButton(buttonsComposite, "Add New User ...", SWT.PUSH);
+        gridData = new GridData(SWT.CENTER, SWT.TOP, false, true);
         gridData.widthHint = 125;
-        deleteUserButton.setLayoutData(gridData);
-        deleteUserButton.setEnabled(false);
-        deleteUserButton.addSelectionListener(new SelectionAdapter()
+        addUserButton.setLayoutData(gridData);
+        addUserButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                addUser(addUserButton.getShell());
+            }
+        });
+        
+        final Button deleteUsersButton = _toolkit.createButton(buttonsComposite, "Delete User(s)", SWT.PUSH);
+        gridData = new GridData(SWT.CENTER, SWT.BOTTOM, false, false);
+        gridData.widthHint = 125;
+        deleteUsersButton.setLayoutData(gridData);
+        deleteUsersButton.setEnabled(false);
+        deleteUsersButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
             {
@@ -224,32 +243,13 @@ public class UserManagementTabControl extends TabControl
 
                 if (selectionIndex != -1)
                 {
-                    final CompositeData selectedLogger = (CompositeData)_table.getItem(selectionIndex).getData();
-                    String user = selectedLogger.get(USERNAME).toString(); 
-
-                    int response = ViewUtility.popupOkCancelConfirmationMessage("User Management", 
-                                                                    "Delete user: " + user + " ?");
-                    if (response == SWT.OK)
-                    {
-                        try
-                        {
-                            boolean result = _ummb.deleteUser(user);
-                            ViewUtility.operationResultFeedback(result, "Deleted user", "Failed to delete user");
-                        }
-                        catch(Exception e1)
-                        {
-                            ViewUtility.operationFailedStatusBarMessage("Error deleting user");
-                            MBeanUtility.handleException(_mbean, e1);
-                        }
-
-                        refresh(_mbean);;
-                    }
+                    deleteUsers();
                 }
             }
         });
         
         final Button setPasswordButton = _toolkit.createButton(buttonsComposite, "Set Password ...", SWT.PUSH);
-        gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
+        gridData = new GridData(SWT.CENTER, SWT.BOTTOM, false, false);
         gridData.widthHint = 125;
         setPasswordButton.setLayoutData(gridData);
         setPasswordButton.setEnabled(false);
@@ -317,7 +317,7 @@ public class UserManagementTabControl extends TabControl
         });
         
         final Button setRightsButton = _toolkit.createButton(buttonsComposite, "Set Rights ...", SWT.PUSH);
-        gridData = new GridData(SWT.CENTER, SWT.TOP, false, false);
+        gridData = new GridData(SWT.CENTER, SWT.BOTTOM, false, false);
         gridData.widthHint = 125;
         setRightsButton.setLayoutData(gridData);
         setRightsButton.setEnabled(false);
@@ -329,24 +329,8 @@ public class UserManagementTabControl extends TabControl
 
                 if (selectionIndex != -1)
                 {
-                    final CompositeData selectedLogger = (CompositeData)_table.getItem(
-                                                                        selectionIndex).getData();
-                    String user = selectedLogger.get(USERNAME).toString();
-                    
-                    setRights(setRightsButton.getShell(), user);
+                    setRights(setRightsButton.getShell());
                 }
-            }
-        });
-        
-        final Button addUserButton = _toolkit.createButton(buttonsComposite, "Add New User ...", SWT.PUSH);
-        gridData = new GridData(SWT.CENTER, SWT.BOTTOM, false, true);
-        gridData.widthHint = 125;
-        addUserButton.setLayoutData(gridData);
-        addUserButton.addSelectionListener(new SelectionAdapter()
-        {
-            public void widgetSelected(SelectionEvent e)
-            {
-                addUser(addUserButton.getShell());
             }
         });
         
@@ -355,17 +339,26 @@ public class UserManagementTabControl extends TabControl
             {
                 int selectionIndex = _table.getSelectionIndex();
 
-                if (selectionIndex != -1)
+                if (selectionIndex == -1)
                 {
-                    deleteUserButton.setEnabled(true);
-                    setPasswordButton.setEnabled(true);
-                    setRightsButton.setEnabled(true);
+                    deleteUsersButton.setEnabled(false);
+                    setRightsButton.setEnabled(false);
+                    setPasswordButton.setEnabled(false);
+                    return;
                 }
                 else
                 {
-                    deleteUserButton.setEnabled(false);
+                    deleteUsersButton.setEnabled(true);
+                    setRightsButton.setEnabled(true);
+                }
+                
+                if (_table.getSelectionCount() > 1)
+                {
                     setPasswordButton.setEnabled(false);
-                    setRightsButton.setEnabled(false);
+                }
+                else
+                {
+                    setPasswordButton.setEnabled(true);
                 }
             }
         });
@@ -379,12 +372,14 @@ public class UserManagementTabControl extends TabControl
 
         final Button reloadUserDetails = _toolkit.createButton(miscGroup, 
                                                                 "Reload User Details", SWT.PUSH);
-        if(_mbean.getVersion() == 1)
+        if(_ApiVersion.lessThan(1, 2))
         {
+            //this only reloaded the JMX rights file before Qpid JMX API 1.2
             _toolkit.createLabel(miscGroup, " Loads the current management rights file from disk");
         }
         else
         {
+            //since Qpid JMX API 1.2 it also reloads the password file
             _toolkit.createLabel(miscGroup, " Loads the current password and management rights files from disk");
         }
         reloadUserDetails.addSelectionListener(new SelectionAdapter()
@@ -549,13 +544,48 @@ public class UserManagementTabControl extends TabControl
         }
     }
     
-    private void setRights(final Shell parent, final String user)
+    private void setRights(final Shell parent)
     {
+        
+        int selectionIndex = _table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+
+        int[] selectedIndices = _table.getSelectionIndices();
+
+        final ArrayList<String> selectedUsers = new ArrayList<String>();
+
+        for(int index = 0; index < selectedIndices.length ; index++)
+        {
+            CompositeData selectedUser = (CompositeData)_table.getItem(selectedIndices[index]).getData();
+            String user = selectedUser.get(USERNAME).toString();
+            selectedUsers.add(user);
+        }
+
+        String selectedUsersString = "";
+        for(String user : selectedUsers)
+        {
+            selectedUsersString = selectedUsersString.concat(user + ", ");
+        }
+        //cut off last ", "
+        int lastIndex = selectedUsersString.lastIndexOf(',');
+        if (lastIndex != -1)
+        {
+            selectedUsersString = selectedUsersString.substring(0,lastIndex);
+        }
+
+
+        
         final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Rights");
         
-        Label overview = _toolkit.createLabel(shell,"Select rights for user '" + user + "':");
+        Label overview = _toolkit.createLabel(shell,"Select rights for user(s): ");
         overview.setBackground(shell.getBackground());
-        
+        Label userNamesLabel= _toolkit.createLabel(shell,selectedUsersString);
+        userNamesLabel.setBackground(shell.getBackground());
+
         Composite buttons = _toolkit.createComposite(shell, SWT.NONE);
         buttons.setBackground(shell.getBackground());
         buttons.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
@@ -590,14 +620,56 @@ public class UserManagementTabControl extends TabControl
                 boolean admin = adminButton.getSelection();
                 
                 shell.dispose();
+
+                HashMap<String,Boolean> results = new HashMap<String,Boolean>();
                 try
                 {
-                    boolean result = _ummb.setRights(user,read,write,admin);
-                    ViewUtility.operationResultFeedback(result, "Updated user rights", "Failed to update user rights");
+                    //perform the rights updates, save the results.
+                    for(String user : selectedUsers)
+                    {
+                        boolean result = _ummb.setRights(user,read,write,admin);
+                        results.put(user, result);
+                    }
+
+                    //categorise the overall result
+                    boolean overallResult = true;
+                    for(boolean result : results.values())
+                    {
+                        if (!result)
+                        {
+                            overallResult = false;
+                        }
+                    }
+
+                    //output the result to status bar if all success, and dialogue if not
+                    if(overallResult)
+                    {
+                        ViewUtility.operationResultFeedback(overallResult, "Updated user rights", null);
+                    }
+                    else
+                    {
+                        String failedToUpdateRightsUsers = "";
+                        for(String user : results.keySet())
+                        {
+                            if(!results.get(user))
+                            {
+                                failedToUpdateRightsUsers = failedToUpdateRightsUsers.concat(user + ", ");
+                            }
+                        }
+
+                        //cut off last ", "
+                        int lastIndex2 = failedToUpdateRightsUsers.lastIndexOf(',');
+                        if (lastIndex2 != -1)
+                        {
+                            failedToUpdateRightsUsers = failedToUpdateRightsUsers.substring(0, lastIndex2);
+                        }
+
+                        ViewUtility.operationResultFeedback(overallResult, null, "Failed to update user(s) rights: " + failedToUpdateRightsUsers);
+                    }
                 }
                 catch(Exception e4)
                 {
-                    ViewUtility.operationFailedStatusBarMessage("Error setting user rights");
+                    ViewUtility.operationFailedStatusBarMessage("Error updating user rights");
                     MBeanUtility.handleException(_mbean, e4);
                 }
                 refresh(_mbean);
@@ -715,5 +787,98 @@ public class UserManagementTabControl extends TabControl
         shell.setDefaultButton(okButton);
         shell.pack();
         shell.open();
+    }
+    
+    private void deleteUsers()
+    {
+        int selectionIndex = _table.getSelectionIndex();
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        int[] selectedIndices = _table.getSelectionIndices();
+        
+        ArrayList<String> selectedUsers = new ArrayList<String>();
+        
+        for(int index = 0; index < selectedIndices.length ; index++)
+        {
+            CompositeData selectedUser = (CompositeData)_table.getItem(selectedIndices[index]).getData();
+            String user = selectedUser.get(USERNAME).toString();
+            selectedUsers.add(user);
+        }
+
+        String selectedUsersString = "";
+        for(String user : selectedUsers)
+        {
+            selectedUsersString = selectedUsersString.concat(user + ", ");
+        }
+        //cut off last ", "
+        int lastIndex = selectedUsersString.lastIndexOf(',');
+        if (lastIndex != -1)
+        {
+            selectedUsersString = selectedUsersString.substring(0,lastIndex);
+        }
+        
+        int response = ViewUtility.popupOkCancelConfirmationMessage(
+                "User Management", "Delete user(s): " + selectedUsersString + " ?");
+        
+        if (response == SWT.OK)
+        {
+            HashMap<String,Boolean> results = new HashMap<String,Boolean>();
+            try
+            {
+                //perform the deletes, save the results.
+                for(String user : selectedUsers)
+                {
+                    boolean result = _ummb.deleteUser(user);
+                    results.put(user, result);
+                }
+                
+                //categorise the overall result
+                boolean overallResult = true;
+                for(boolean result : results.values())
+                {
+                    if (!result)
+                    {
+                        overallResult = false;
+                    }
+                }
+                
+                //output the result to status bar if all success, and dialogue if not
+                if(overallResult)
+                {
+                    ViewUtility.operationResultFeedback(overallResult, "Deleted user(s)", null);
+                }
+                else
+                {
+                    String failedToDeleteUsers = "";
+                    for(String user : results.keySet())
+                    {
+                        if(!results.get(user))
+                        {
+                            failedToDeleteUsers = failedToDeleteUsers.concat(user + ", ");
+                        }
+                    }
+                    
+                    //cut off last ", "
+                    lastIndex = failedToDeleteUsers.lastIndexOf(',');
+                    if (lastIndex != -1)
+                    {
+                        failedToDeleteUsers = failedToDeleteUsers.substring(0, lastIndex);
+                    }
+                    
+                    ViewUtility.operationResultFeedback(overallResult, null, "Failed to delete user(s): " + failedToDeleteUsers);
+                }
+                
+            }
+            catch(Exception e1)
+            {
+                ViewUtility.operationFailedStatusBarMessage("Error deleting user(s)");
+                MBeanUtility.handleException(_mbean, e1);
+            }
+
+            refresh(_mbean);;
+        }
     }
 }
