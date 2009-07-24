@@ -23,6 +23,7 @@ package org.apache.qpid.management.ui.views.vhost;
 import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALUES;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.management.MBeanServerConnection;
@@ -81,12 +82,16 @@ public class VHostTabControl extends TabControl
 
     private ManagedBroker _vhmb;
     private ApiVersion _ApiVersion;
+    private List<ManagedBean> _queues;
+    private List<ManagedBean> _exchanges;
+    private ServerRegistry _serverRegistry;
 
     public VHostTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
         super(tabFolder);
         _mbean = mbean;
-        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
+        _serverRegistry = ApplicationRegistry.getServerRegistry(mbean);
+        _ApiVersion = _serverRegistry.getManagementApiVersion();
         _vhmb = (ManagedBroker) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedBroker.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
@@ -122,15 +127,12 @@ public class VHostTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        List<ManagedBean> queues = null;
-        List<ManagedBean> exchanges = null;
-        
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
-        queues = serverRegistry.getQueues(MBeanView.getVirtualHost());
-        exchanges = serverRegistry.getExchanges(MBeanView.getVirtualHost());
+        _queues = serverRegistry.getQueues(MBeanView.getVirtualHost());
+        _exchanges = serverRegistry.getExchanges(MBeanView.getVirtualHost());
 
-        _queueTableViewer.setInput(queues);
-        _exchangeTableViewer.setInput(exchanges);
+        _queueTableViewer.setInput(_queues);
+        _exchangeTableViewer.setInput(_exchanges);
         
         layout();
     }
@@ -150,7 +152,7 @@ public class VHostTabControl extends TabControl
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         queuesGroup.setLayoutData(gridData);
                
-        _queueTable = new Table (queuesGroup, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _queueTable = new Table (queuesGroup, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _queueTable.setLinesVisible (true);
         _queueTable.setHeaderVisible (true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -221,35 +223,7 @@ public class VHostTabControl extends TabControl
         {
             public void widgetSelected(SelectionEvent e)
             {
-                int selectionIndex = _queueTable.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                    final ManagedBean selectedQueue = (ManagedBean)_queueTable.getItem(selectionIndex).getData();
-                    String queue = selectedQueue.getName(); 
-
-                    int response = ViewUtility.popupOkCancelConfirmationMessage("VirtualHost Manager", 
-                                                                    "Delete queue: " + queue + " ?");
-                    if (response == SWT.OK)
-                    {
-                        try
-                        {
-                            _vhmb.deleteQueue(queue);
-                            
-                            ViewUtility.operationResultFeedback(null, "Deleted Queue", null);
-                            //remove queue from list of managed beans
-                            ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
-                            serverRegistry.removeManagedObject(selectedQueue);
-                        }
-                        catch(Exception e1)
-                        {
-                            ViewUtility.operationFailedStatusBarMessage("Error deleting Queue");
-                            MBeanUtility.handleException(_mbean, e1);
-                        }
-
-                        refresh(_mbean);;
-                    }
-                }
+                deleteQueuesOrExchanges(deleteQueueButton.getShell(), VhostOperations.DELETE_QUEUE);
             }
         });
   
@@ -277,7 +251,7 @@ public class VHostTabControl extends TabControl
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         exchangesGroup.setLayoutData(gridData);
                
-        _exchangeTable = new Table (exchangesGroup, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _exchangeTable = new Table (exchangesGroup, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _exchangeTable.setLinesVisible (true);
         _exchangeTable.setHeaderVisible (true);
         data = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -346,35 +320,7 @@ public class VHostTabControl extends TabControl
         {
             public void widgetSelected(SelectionEvent e)
             {
-                int selectionIndex = _exchangeTable.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                    final ManagedBean selectedExchange = (ManagedBean)_exchangeTable.getItem(selectionIndex).getData();
-                    String exchange = selectedExchange.getName(); 
-
-                    int response = ViewUtility.popupOkCancelConfirmationMessage("VirtualHost Manager", 
-                                                                    "Delete exchange: " + exchange + " ?");
-                    if (response == SWT.OK)
-                    {
-                        try
-                        {
-                            _vhmb.unregisterExchange(exchange);
-                            
-                            ViewUtility.operationResultFeedback(null, "Deleted Exchange", null);
-                            //remove exchange from list of managed beans
-                            ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
-                            serverRegistry.removeManagedObject(selectedExchange);
-                        }
-                        catch(Exception e1)
-                        {
-                            ViewUtility.operationFailedStatusBarMessage("Error deleting Exchange");
-                            MBeanUtility.handleException(_mbean, e1);
-                        }
-
-                        refresh(_mbean);;
-                    }
-                }
+                deleteQueuesOrExchanges(deleteExchangeButton.getShell(), VhostOperations.DELETE_EXCHANGE);
             }
         });
   
@@ -730,6 +676,135 @@ public class VHostTabControl extends TabControl
         shell.setDefaultButton(okButton);
         shell.pack();
         shell.open();
+    }
+    
+    private void deleteQueuesOrExchanges(Shell parent, final VhostOperations op)
+    {
+        Table table;
+        String windowTitle;
+        String dialogueMessage;
+        final String feedBackMessage;
+        final String failureFeedBackMessage;
+        
+        if(op.equals(VhostOperations.DELETE_QUEUE))
+        {
+            table = _queueTable;
+            windowTitle = "Delete Queue(s)";
+            dialogueMessage = "Delete Queue(s): ";
+            feedBackMessage = "Queue(s) deleted";
+            failureFeedBackMessage = "Error deleting Queue(s)";
+        }
+        else
+        {
+            table = _exchangeTable;
+            windowTitle = "Delete Exchange(s)";
+            dialogueMessage = "Delete Exchange(s): ";
+            feedBackMessage = "Exchange(s) deleted";
+            failureFeedBackMessage = "Error deleting Exchange(s)";
+        }
+        
+        int selectionIndex = table.getSelectionIndex();
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        int[] selectedIndices = table.getSelectionIndices();
+        
+        final ArrayList<ManagedBean> selectedMBeans = new ArrayList<ManagedBean>();
+        
+        for(int index = 0; index < selectedIndices.length ; index++)
+        {
+            ManagedBean selectedMBean = (ManagedBean)table.getItem(selectedIndices[index]).getData();
+            selectedMBeans.add(selectedMBean);
+        }
+        
+        
+        final Shell shell = ViewUtility.createModalDialogShell(parent, windowTitle);
+
+        _toolkit.createLabel(shell, dialogueMessage).setBackground(shell.getBackground());
+        
+        final Text headerText = new Text(shell, SWT.WRAP | SWT.V_SCROLL |  SWT.BORDER );
+        headerText.setEditable(false);
+        GridData data = new GridData(SWT.FILL, SWT.FILL, false, false);
+        data.minimumHeight = 150;
+        data.heightHint = 150;
+        data.minimumWidth = 400;
+        data.widthHint = 400;
+        headerText.setLayoutData(data);
+
+        String lineSeperator = System.getProperty("line.separator");
+        for(ManagedBean mbean : selectedMBeans)
+        {
+            headerText.append(mbean.getName() + lineSeperator);
+        }
+        headerText.setSelection(0);
+        
+        Composite okCancelButtonsComp = _toolkit.createComposite(shell);
+        okCancelButtonsComp.setBackground(shell.getBackground());
+        okCancelButtonsComp.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, true));
+        okCancelButtonsComp.setLayout(new GridLayout(2,false));
+        
+        Button okButton = _toolkit.createButton(okCancelButtonsComp, "OK", SWT.PUSH);
+        okButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
+        Button cancelButton = _toolkit.createButton(okCancelButtonsComp, "Cancel", SWT.PUSH);
+        cancelButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
+
+        okButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                shell.dispose();
+                
+                try
+                {
+                    //perform the deletes
+                    for(ManagedBean mbean : selectedMBeans)
+                    {
+                        switch(op)
+                        {
+                            case DELETE_QUEUE:
+                                _vhmb.deleteQueue(mbean.getName());
+                                _serverRegistry.removeManagedObject(mbean);
+                                break;
+                            case DELETE_EXCHANGE:
+                                _vhmb.unregisterExchange(mbean.getName());
+                                break;
+                        }
+                        //remove the mbean from the server registry now instead of
+                        //waiting for an mbean Unregistration Notification to do it
+                        _serverRegistry.removeManagedObject(mbean);
+                    }
+
+                    ViewUtility.operationResultFeedback(null, feedBackMessage, null);
+                }
+                catch(Exception e1)
+                {
+                    ViewUtility.operationFailedStatusBarMessage(failureFeedBackMessage);
+                    MBeanUtility.handleException(_mbean, e1);
+                }
+
+                refresh(_mbean);;
+            }
+        });
+        
+        cancelButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                shell.dispose();
+            }
+        });
+
+        shell.setDefaultButton(okButton);
+        shell.pack();
+        shell.open();
+    }
+    
+    private enum VhostOperations
+    {
+        DELETE_QUEUE,
+        DELETE_EXCHANGE;
     }
     
 }
