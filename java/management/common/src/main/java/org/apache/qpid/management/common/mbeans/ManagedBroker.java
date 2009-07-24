@@ -22,9 +22,12 @@
 package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
 
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
@@ -50,6 +53,15 @@ public interface ManagedBroker
      */
     @MBeanAttribute(name="ExchangeTypes", description = "The types of Exchange available for creation.")
     String[] getExchangeTypes() throws IOException;
+    
+    /**
+     * Returns a Map keyed by QueueName, detailing its associated QueueDepth in bytes.
+     * @since Qpid JMX API 1.3
+     * @throws IOException
+     */
+    @MBeanOperation(name = "viewQueueNamesDepths", description = "View the queue names and depths in this virtualhost", 
+                    impact = MBeanOperationInfo.INFO)
+    Map<String,Long> viewQueueNamesDepths() throws IOException;
     
     /**
      * Creates a new Exchange.
