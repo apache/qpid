@@ -59,7 +59,7 @@ class ReplicationExchange : public qpid::broker::Exchange
 
     bool isDuplicate(const qpid::framing::FieldTable* args);
     void handleEnqueueEvent(const qpid::framing::FieldTable* args, qpid::broker::Deliverable& msg);
-    void handleDequeueEvent(const qpid::framing::FieldTable* args);
+    void handleDequeueEvent(const qpid::framing::FieldTable* args, qpid::broker::Deliverable& msg);
     void encode(framing::Buffer& buffer) const;
 };
 }} // namespace qpid::replication
