@@ -41,7 +41,6 @@ import static org.apache.qpid.transport.Session.State.*;
 import static org.apache.qpid.transport.util.Functions.*;
 import static org.apache.qpid.util.Serial.*;
 import static org.apache.qpid.util.Strings.*;
-import java.util.UUID;
 
 /**
  * Session
@@ -226,7 +225,6 @@ public class Session extends SessionInvoker
     void attach()
     {
         initReceiver();
-        name = new Binary(toUTF8(UUID.randomUUID().toString()));
         sessionAttach(name.getBytes());
         // XXX: when the broker and client support full session
         // recovery we should use expiry as the requested timeout
