@@ -1,24 +1,14 @@
 org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 org.apache.qpid.client.ResetMessageListenerTest#*
-// those tests should be run with prefetch off
-org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveC2Only
-org.apache.qpid.client.MessageListenerMultiConsumerTest#testRecieveBoth
-org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
-// those tests need durable subscribe states to be persisted
-org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurSubRestoredAfterNonPersistentMessageSent
-// those tests require broker recovery
-org.apache.qpid.test.unit.ct.DurableSubscriberTest#*
-org.apache.qpid.test.unit.xa.TopicTest#testDurSubCrash
-org.apache.qpid.test.unit.xa.TopicTest#testMultiMessagesDurSubCrash
-org.apache.qpid.test.unit.xa.TopicTest#testRecover
-org.apache.qpid.test.unit.xa.QueueTest#testRecover
-org.apache.qpid.test.unit.xa.QueueTest#testSendAndRecover
+
 //These tests are for the java broker
 org.apache.qpid.server.security.acl.SimpleACLTest#*
 org.apache.qpid.server.plugins.PluginTest#*
+
 // This test is not finished
 org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
+
 // Those tests are testing 0.8 specific semantics
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
@@ -35,29 +25,37 @@ org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFails
 org.apache.qpid.test.client.FlowControlTest#*
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testDefaultExchanges
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnresolvedVirtualHostFailure
+
 // the 0.10 c++ broker does not implement forget
 org.apache.qpid.test.unit.xa.FaultTest#testForget
+
 // the 0-10 c++ broker does not implement priority / this test depends on a Java broker extension for queue creation
 org.apache.qpid.server.queue.PriorityTest
+
 //this test checks explicitly for 0-8 flow control semantics
 org.apache.qpid.test.client.FlowControlTest
+
 // 0-10 c++ broker doesn't implement virtual hosts, or those wackhy exchanges
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnresolvedVirtualHostFailure
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testDefaultExchanges
+
 // 0-10 c++ broker in cpp.testprofile is started with no auth so won't pass this test
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection
+
 // c++ broker doesn't do selectors, so this will fail
 org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFillQueue
-// QPID-1225 : Temporary remove this test until the problem has been addressed
-org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
+
 // InVM Broker tests
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
+
 // QPID-1262, QPID-1119 : This test fails occasionally due to potential protocol issue.
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
+
 // c++ broker doesn't support priorities, TTL or message bouncing
 org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
 org.apache.qpid.server.queue.PriorityTest#*
 org.apache.qpid.server.queue.TimeToLiveTest#*
+
 // QPID-1727 , QPID-1726 :c++ broker does not support flow to disk on transient queues. Also it requries a persistent store impl. for Apache
 org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
 
@@ -70,12 +68,12 @@ org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
 //QPID-1818 : 0-10 Client code path does not correctly restore a transacted session after failover.
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 
-// QPID-1823: this takes ages to run
-org.apache.qpid.client.SessionCreateTest#*
-
 // QPID-1730: the C++ server has a totally different logging mechanism. We should split this file differently
 org.apache.qpid.server.AlertingTest#*
 
 // The C++ server has a totally different persistence mechanism
 org.apache.qpid.server.store.PersistentStoreTest#*
+
+// QPID-1225 : Temporary remove this test until the problem has been addressed
+org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 
