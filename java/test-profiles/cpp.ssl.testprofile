@@ -2,9 +2,6 @@ include=cpp
 
 broker.modules=--load-module ${broker.module.ssl} --ssl-cert-name localhost.localdomain --ssl-cert-password-file ${test.profiles}/test_resources/ssl/pfile --ssl-cert-db ${test.profiles}/test_resources/ssl/server_db/ --ssl-require-client-authentication --ssl-port @SSL_PORT
 
-test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList ${test.profiles}/010ExcludeList-ssl
-test.excludeslist=org.apache.qpid.test.client.failover.FailoverTest#*
-
 profile.use_ssl=true
 broker.ready= Listening for SSL connections
 

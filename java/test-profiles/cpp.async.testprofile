@@ -1,5 +1,2 @@
 include=cpp
-
 broker.modules=--load-module ${broker.module.store}
-
-test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/010ExcludeList-store
