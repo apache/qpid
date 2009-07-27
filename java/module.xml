@@ -239,6 +239,10 @@
   </concat>
   <property file="${build.scratch}/test-${profile}.properties"/>
 
+  <map property="test.excludefiles" value="${test.excludes}">
+    <globmapper from="*" to="${test.profiles}/*"/>
+  </map>
+
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />
@@ -535,9 +539,10 @@
       <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />
-      <sysproperty key="test.excludes" value="${test.excludes}"/>
-      <sysproperty key="test.excludesfile" value="${test.excludesfile}"/>
       <sysproperty key="test.output" value="${module.results}"/>
+      <syspropertyset>
+        <propertyref prefix="test"/>
+      </syspropertyset>
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
       <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
       <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>

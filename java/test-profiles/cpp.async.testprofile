@@ -1,2 +1,3 @@
 include=cpp
+profile.excludes=010PrefetchExcludes
 broker.modules=--load-module ${broker.module.store}
