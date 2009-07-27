@@ -77,11 +77,11 @@ public class QpidTestCase extends TestCase
 
     static
     {
-        if (Boolean.getBoolean("test.excludes"))
+        if (Boolean.getBoolean("test.exclude"))
         {
             _logger.info("Some tests should be excluded, building the exclude list");
-            String exclusionListURIs = System.getProperties().getProperty("test.excludesfile", "");
-            String exclusionListString = System.getProperties().getProperty("test.excludeslist", "");
+            String exclusionListURIs = System.getProperties().getProperty("test.excludefiles", "");
+            String exclusionListString = System.getProperties().getProperty("test.excludelist", "");
             List<String> exclusionList = new ArrayList<String>();
 
             for (String uri : exclusionListURIs.split("\\s+"))

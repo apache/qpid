@@ -4,4 +4,4 @@ broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=Qpid Broker Ready
 broker.config=${project.root}/build/etc/config-systests-derby.xml
 
-test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/08ExcludeList-nonvm 
+profile.excludes=08StandaloneExcludes
