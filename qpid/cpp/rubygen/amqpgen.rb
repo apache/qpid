@@ -318,7 +318,7 @@ class AmqpFakeMethod < AmqpMethod
   def content() return "1" if @action.is_a? AmqpCommand and @action.segments end
   def index() @action.code end
   def code() @action.code end
-  def synchronous() end         # FIXME aconway 2008-04-10: ???
+  def synchronous() end     
   def on_chassis?(chassis)
     @action.received_by?(chassis)
   end
@@ -464,9 +464,12 @@ end
 
 # Collect information about generated files.
 class GenFiles
-  @@files = Set.new 
-  def GenFiles.add(f) @@files.add f; end
+  @@files = Set.new
+  @@public_api = []
+  def GenFiles.add(f) @@files.add(f); end
   def GenFiles.get() @@files; end
+  def GenFiles.public_api(file) @@public_api << file; end
+  def GenFiles.public_api?(file) @@public_api.find { |f| f == file }; end
 end
 
 # Base class for code generators.
@@ -476,27 +479,27 @@ class Generator
   # Takes directory for output or "-", meaning print file names that
   # would be generated.
   def initialize (outdir, amqp)
+    @outdir=outdir[0]
+    @apidir=outdir[1]
     @amqp=amqp
-    @outdir=outdir
+    raise "outdir is not an array" unless outdir.class == Array
     @prefix=['']                # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
-    Pathname.new(@outdir).mkpath unless @outdir=="-"
   end
 
+  # Declare next file to be public API
+  def public_api(file) GenFiles.public_api(file); end
+  
   # Create a new file, set @out. 
   def file(file, &block)
-    GenFiles.add file
-    if (@outdir != "-")         
-      @path=Pathname.new "#{@outdir}/#{file}"
+    GenFiles.add(file)
+    dir = GenFiles.public_api?(file) ? @apidir : @outdir
+    if (dir != "-")         
+      @path=Pathname.new "#{dir}/#{file}"
       @path.parent.mkpath
       @out=String.new           # Generate in memory first
-      if block then yield; endfile; end
-    end
-  end
-
-  def endfile()
-    if @outdir != "-"
+      yield if block
       if @path.exist? and @path.read == @out  
         puts "Skipped #{@path} - unchanged" # Dont generate if unchanged
       else

@@ -112,6 +112,6 @@ class OperationsInvokerGen < CppGen
   end
 end
 
-OperationsInvokerGen.new("client",ARGV[0], $amqp).generate()
-OperationsInvokerGen.new("server",ARGV[0], $amqp).generate()
-OperationsInvokerGen.new("all",ARGV[0], $amqp).generate()
+OperationsInvokerGen.new("client",$outdir, $amqp).generate()
+OperationsInvokerGen.new("server",$outdir, $amqp).generate()
+OperationsInvokerGen.new("all",$outdir, $amqp).generate()

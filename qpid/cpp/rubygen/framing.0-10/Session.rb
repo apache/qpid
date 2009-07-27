@@ -136,6 +136,7 @@ class SessionNoKeywordGen < CppGen
   end
 
   def generate()
+    public_api("#{@file}.h")
     h_file(@file) {
       include "qpid/client/#{@version_base}.h"
       include "qpid/client/ClientImportExport.h"
@@ -222,6 +223,7 @@ class SessionGen < CppGen
     keyword_methods=session_methods(sync_default).reject { |m| m.fields_c.empty? }
     max_arity = keyword_methods.map{ |m| m.fields_c.size }.max
 
+    public_api("qpid/client/arg.h")
     h_file("qpid/client/arg.h") {
       # Generate keyword tag declarations.
       genl "#define BOOST_PARAMETER_MAX_ARITY #{max_arity}"
@@ -231,7 +233,7 @@ class SessionGen < CppGen
           genl "BOOST_PARAMETER_KEYWORD(keyword_tags, #{k})"
         }}
     }    
-    
+    public_api("#{@fqclass.file}.h")
     h_file(@fqclass.file) {
       include @fqbase.file
       include "qpid/client/arg"
@@ -408,8 +410,8 @@ EOS
   end
 end
 
-SessionNoKeywordGen.new(ARGV[0], $amqp, true).generate()
-SessionNoKeywordGen.new(ARGV[0], $amqp, false).generate()
-SessionGen.new(ARGV[0], $amqp, true).generate()
-SessionGen.new(ARGV[0], $amqp, false).generate()
+SessionNoKeywordGen.new($outdir, $amqp, true).generate()
+SessionNoKeywordGen.new($outdir, $amqp, false).generate()
+SessionGen.new($outdir, $amqp, true).generate()
+SessionGen.new($outdir, $amqp, false).generate()
 

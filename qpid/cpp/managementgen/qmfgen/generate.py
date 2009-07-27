@@ -163,7 +163,7 @@ class Makefile:
       stream.write("dist_" + name + "_HEADERS = ")
       first = True
       for file in self.filelists["h"]:
-        if file.find("gen/qmf/" + package) == 0:
+        if file.find("qmf/" + package) == 0:
           if first:
             first = False
           else:
@@ -243,7 +243,7 @@ class CMakeLists(Makefile):
       first = True
       for file in self.filelists["h"]:
         file = self.unNormCase(file)
-        if file.find("gen/qmf/" + package) == 0:
+        if file.find("qmf/" + package) == 0:
           if first:
             first = False
           else:

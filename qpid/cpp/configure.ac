@@ -237,7 +237,6 @@ AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$S
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
-test -f $AMQP_FINAL_XML || test -d $srcdir/src/gen || AC_MSG_ERROR([Neither AMQP specs nor spec-generated code present; cannot build.])
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
 
