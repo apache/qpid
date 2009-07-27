@@ -18,7 +18,8 @@
 #
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) -DBOOST_TEST_DYN_LINK
-INCLUDES =  -I$(top_srcdir)/include -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
+PUBLIC_INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include # Use public API only
 
 abs_builddir=@abs_builddir@
 extra_libs = 
@@ -160,65 +161,81 @@ sender_LDADD = $(lib_client)
 #
 check_PROGRAMS+=perftest
 perftest_SOURCES=perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
+perftest_INCLUDES=$(PUBLIC_INCLUDES)
 perftest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=txtest
+txtest_INCLUDES=$(PUBLIC_INCLUDES)
 txtest_SOURCES=txtest.cpp  TestOptions.h ConnectionOptions.h
 txtest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=latencytest
+latencytest_INCLUDES=$(PUBLIC_INCLUDES)
 latencytest_SOURCES=latencytest.cpp TestOptions.h ConnectionOptions.h
 latencytest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=echotest
+echotest_INCLUDES=$(PUBLIC_INCLUDES)
 echotest_SOURCES=echotest.cpp TestOptions.h ConnectionOptions.h
 echotest_LDADD=$(lib_client) 
 
 check_PROGRAMS+=client_test
+client_test_INCLUDES=$(PUBLIC_INCLUDES)
 client_test_SOURCES=client_test.cpp TestOptions.h ConnectionOptions.h
 client_test_LDADD=$(lib_client) 
 
 check_PROGRAMS+=topic_listener
+topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
 topic_listener_SOURCES=topic_listener.cpp TestOptions.h ConnectionOptions.h
 topic_listener_LDADD=$(lib_client) 
 
 check_PROGRAMS+=topic_publisher
+topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 topic_publisher_SOURCES=topic_publisher.cpp TestOptions.h ConnectionOptions.h
 topic_publisher_LDADD=$(lib_client) 
 
 check_PROGRAMS+=publish
+publish_INCLUDES=$(PUBLIC_INCLUDES)
 publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
 publish_LDADD=$(lib_client) 
 
 check_PROGRAMS+=consume
+consume_INCLUDES=$(PUBLIC_INCLUDES)
 consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
 consume_LDADD=$(lib_client) 
 
 check_PROGRAMS+=header_test
+header_test_INCLUDES=$(PUBLIC_INCLUDES)
 header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 header_test_LDADD=$(lib_client) 
 
 check_PROGRAMS+=failover_soak
+failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
 failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 failover_soak_LDADD=$(lib_client) $(lib_broker)
 
 check_PROGRAMS+=declare_queues
+declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
 declare_queues_SOURCES=declare_queues.cpp  
 declare_queues_LDADD=$(lib_client) 
 
 check_PROGRAMS+=replaying_sender
+replaying_sender_INCLUDES=$(PUBLIC_INCLUDES)
 replaying_sender_SOURCES=replaying_sender.cpp  
 replaying_sender_LDADD=$(lib_client) 
 
 check_PROGRAMS+=resuming_receiver
+resuming_receiver_INCLUDES=$(PUBLIC_INCLUDES)
 resuming_receiver_SOURCES=resuming_receiver.cpp  
 resuming_receiver_LDADD=$(lib_client) 
 
 check_PROGRAMS+=txshift
+txshift_INCLUDES=$(PUBLIC_INCLUDES)
 txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
 txshift_LDADD=$(lib_client) 
 
 check_PROGRAMS+=txjob
+txjob_INCLUDES=$(PUBLIC_INCLUDES)
 txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
 txjob_LDADD=$(lib_client) 
 
@@ -231,6 +248,7 @@ DispatcherTest_SOURCES=DispatcherTest.cpp
 DispatcherTest_LDADD=$(lib_common) $(SOCKLIBS)
 
 check_PROGRAMS+=qpid_ping
+qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_ping_SOURCES=qpid_ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_ping_LDADD=$(lib_client) 
 

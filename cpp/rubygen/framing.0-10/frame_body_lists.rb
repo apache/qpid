@@ -44,6 +44,6 @@ EOS
   end
 end
 
-FrameBodyListsGen.new(ARGV[0], $amqp).generate;
+FrameBodyListsGen.new($outdir, $amqp).generate;
 
     

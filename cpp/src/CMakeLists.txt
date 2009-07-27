@@ -67,7 +67,7 @@ if (EXISTS ${AMQP_SPEC})
   endforeach (spec_file ${specs})
   if (regen_amqp)
     message(STATUS "Regenerating AMQP protocol sources")
-execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate ${CMAKE_CURRENT_BINARY_DIR}/gen ${specs} all rubygen.cmake
+execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/../include  ${specs} all rubygen.cmake
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   else (regen_amqp)
     message(STATUS "No need to generate AMQP protocol sources")
@@ -86,7 +86,7 @@ execute_process(COMMAND ${RUBY_EXECUTABLE} -I ${rgen_dir} ${rgen_dir}/generate $
   endforeach (spec_file ${mgmt_specs})
   if (regen_mgmt)
     message(STATUS "Regenerating Qpid Management Framework sources")
-execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -q -o ${CMAKE_CURRENT_BINARY_DIR}/gen/qmf ${mgmt_specs}
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementgen.cmake -b -q -o ${CMAKE_CURRENT_BINARY_DIR}/qmf ${mgmt_specs}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   else (regen_mgmt)
     message(STATUS "No need to generate Qpid Management Framework sources")
@@ -194,9 +194,10 @@ endif (MSVC)
 
 include_directories( ${Boost_INCLUDE_DIR} )
 
-include_directories( . )
-include_directories( ../include )
-include_directories( ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gen)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../include )
+include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
+include_directories( ${CMAKE_CURRENT_BINARY_DIR}/../include )
 
 link_directories( ${Boost_LIBRARY_DIRS} )
 

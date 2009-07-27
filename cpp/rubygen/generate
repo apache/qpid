@@ -25,15 +25,14 @@ require 'amqpgen'
 #
 if ARGV.size < 3
   puts <<EOS
-Usage: #{ARGV[0]} OUTDIR  SPEC.xml [ ... ] TEMPLATE.rb [ ... ]
-or:    #{ARGV[0]} OUTDIR  SPEC.xml [ ... ] all [ makefragment.mk |
-                                                 makefragment.cmake ]
+Usage: #{ARGV[0]} SRCDIR APIDIR SPEC.xml [ ... ] TEMPLATE.rb [ ... ]
+or:    #{ARGV[0]} SRCDIR APIDIR SPEC.xml [ ... ] all [ makefragment.mk | makefragment.cmake ]
 
 Parse all SPEC.xml files to create an AMQP model, run each TEMPLATE
-putting the resulting files under OUTDIR. Prints a list of files
-generated to standard output.
+putting the resulting files under SRCDIR, public API files in APIdir.
+Prints a list of files generated to standard output.
 
-If OUTDIR is '-'  then just prints file list without generating files.
+If SRCDIR and APIDIR are '-'  then just prints file list without generating files.
 EOS
   exit 1
 end
@@ -58,15 +57,16 @@ gendir=File.dirname(__FILE__)
 if ARGV.any? { |arg| arg=="all" }
   templates=Dir["#{gendir}/*/*.rb"]
 else
-  templates=ARGV.grep(/\.rb$/)
+templates=ARGV.grep(/\.rb$/)
   ARGV.each { |arg|
     d=File.join gendir,arg
     templates += Dir["#{d}/*.rb"] if File.directory? d
   }
 end
 
-$outdir=ARGV[0]
+$outdir=[ ARGV[0], ARGV[1] ]
 $models=parse_specs(ARGV.grep(/\.xml$/))
+
 templates.each { |t|
   ver=Pathname.new(t).dirname.basename.to_s.split('.')[-1]
   $amqp=$models[ver]
@@ -84,17 +84,18 @@ def make_continue(lines) lines.join(" \\\n    "); end
 makefile=ARGV.grep(/.mk$/)[0]
 cmakefile=ARGV.grep(/.cmake$/)[0]
 if cmakefile || makefile
+  srcdir,apidir=$outdir
   dir=Dir.getwd
   Dir.chdir File.dirname(__FILE__)
   generator_files=Dir["**/*.rb"] << File.basename(__FILE__)
   Dir.chdir dir
   rgen_generator=generator_files.map{ |f| "$(rgen_dir)/#{f}" }
   cmake_rgen_generator=generator_files.map{ |f| "${rgen_dir}/#{f}" }
-  rgen_srcs=GenFiles.get.map{ |f| "#{$outdir}/#{f}" }
+  rgen_srcs=GenFiles.get.map{ |f| "#{GenFiles.public_api?(f) ? apidir : srcdir}/#{f}" }
   rgen_subdirs={}
   rgen_srcs.each { |src|
-    if src.match(%r{#{$outdir}/qpid/([^/]+)/})
-      subdir=$1
+    if src.match(%r{(#{srcdir}|#{apidir})/qpid/([^/]+)/})
+      subdir=$2
       rgen_subdirs[subdir] ||= []
       rgen_subdirs[subdir] << src
     end

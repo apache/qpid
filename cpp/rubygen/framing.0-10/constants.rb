@@ -29,7 +29,8 @@ class ConstantsGen < CppGen
   end
 
   def constants_h()
-    h_file("#{@dir}/constants") {
+    public_api("#{@dir}/constants.h")
+    h_file("#{@dir}/constants.h") {
       namespace(@namespace) {
         # Constants for class/method names.
         scope("enum AmqpConstant {","};") {
@@ -50,6 +51,7 @@ class ConstantsGen < CppGen
 
   def typecode_h_cpp
     path="#{@dir}/TypeCode"
+    public_api(path+".h") 
     h_file(path) {
       include("<iosfwd>")
       include("\"qpid/sys/IntegerTypes.h\"")
@@ -104,7 +106,8 @@ EOS
   end
   
   def enum_h()
-    h_file("#{@dir}/enum") {
+    public_api("#{@dir}/enum.h")
+    h_file("#{@dir}/enum.h") {
       # Constants for enum domains.
       namespace(@namespace) {
         @amqp.domains.each { |d| declare_enum(d.enum) if d.enum }
@@ -161,7 +164,8 @@ EOS
   end
 
   def reply_exceptions_h()
-    h_file("#{@dir}/reply_exceptions") {
+    public_api("#{@dir}/reply_exceptions.h")
+    h_file("#{@dir}/reply_exceptions.h") {
       include "qpid/Exception"
       include "qpid/sys/ExceptionHolder"
       include "qpid/framing/enum"
