@@ -236,3 +236,12 @@
    fun:_sasl_load_plugins
    fun:sasl_client_init
 }
+
+{
+   Seems like a use after delete issue in boost unit_test
+   Memcheck:Addr8
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:exit
+   fun:(below main)
+}
+
