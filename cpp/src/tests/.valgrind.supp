@@ -245,3 +245,11 @@
    fun:(below main)
 }
 
+{
+   Seems like a use after delete issue in boost unit_test
+   Memcheck:Addr4
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:exit
+   fun:(below main)
+}
+
