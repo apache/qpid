@@ -50,7 +50,7 @@ LinkRegistry::LinkRegistry () :
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker),
     parent(0), store(0), passive(false), passiveChanged(false), 
-    realm("")
+    realm(broker->getOptions().realm)
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this)));
 }
