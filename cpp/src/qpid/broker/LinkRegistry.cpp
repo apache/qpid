@@ -36,8 +36,21 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 #define LINK_MAINT_INTERVAL 2
 
-LinkRegistry::LinkRegistry (Broker* _broker) : broker(_broker), parent(0), store(0), passive(false), passiveChanged(false), 
-                                               realm(broker ? broker->getOptions().realm : "")
+// TODO: This constructor is only used by the store unit tests -
+// That probably indicates that LinkRegistry isn't correctly
+// factored: The persistence element and maintenance element
+// should be factored separately
+LinkRegistry::LinkRegistry () :
+    broker(0),
+    parent(0), store(0), passive(false), passiveChanged(false),
+    realm("")
+{
+}
+
+LinkRegistry::LinkRegistry (Broker* _broker) :
+    broker(_broker),
+    parent(0), store(0), passive(false), passiveChanged(false), 
+    realm("")
 {
     timer.add (intrusive_ptr<TimerTask> (new Periodic(*this)));
 }
