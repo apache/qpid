@@ -1,0 +1,2 @@
+// the C++ broker doesn't implement selectors, so they are not persisted with the subscription
+org.apache.qpid.test.unit.ct.DurableSubscriberTest#testDurSubRestoresMessageSelector
