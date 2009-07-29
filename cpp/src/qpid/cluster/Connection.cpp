@@ -439,13 +439,13 @@ void Connection::accumulatedAck(const qpid::framing::SequenceSet& s) {
 void Connection::exchange(const std::string& encoded) {
     Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     broker::Exchange::shared_ptr ex = broker::Exchange::decode(cluster.getBroker().getExchanges(), buf);
-    QPID_LOG(debug, cluster << " decoded exchange " << ex->getName());    
+    QPID_LOG(debug, cluster << " updated exchange " << ex->getName());
 }
 
 void Connection::queue(const std::string& encoded) {
     Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     broker::Queue::shared_ptr q = broker::Queue::decode(cluster.getBroker().getQueues(), buf);
-    QPID_LOG(debug, cluster << " decoded queue " << q->getName());    
+    QPID_LOG(debug, cluster << " updated queue " << q->getName());
 }
 
 void Connection::sessionError(uint16_t , const std::string& msg) {

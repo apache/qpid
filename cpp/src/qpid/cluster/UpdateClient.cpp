@@ -124,7 +124,8 @@ void UpdateClient::run() {
 }
 
 void UpdateClient::update() {
-    QPID_LOG(debug, updaterId << " updating state to " << updateeId << " at " << updateeUrl);
+    QPID_LOG(debug, updaterId << " updating state to " << updateeId
+             << " at " << updateeUrl);
     Broker& b = updaterBroker;
     b.getExchanges().eachExchange(boost::bind(&UpdateClient::updateExchange, this, _1));
     b.getQueues().eachQueue(boost::bind(&UpdateClient::updateNonExclusiveQueue, this, _1));

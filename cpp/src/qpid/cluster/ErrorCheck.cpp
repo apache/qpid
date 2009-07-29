@@ -57,7 +57,7 @@ void ErrorCheck::error(
     QPID_LOG(error, cluster
              << (type == ERROR_TYPE_SESSION ? " channel" : " connection")
              << " error " << frameSeq << " on " << c << ": " << msg
-             << " (unresolved: " << unresolved << ")");
+             << " must be resolved with: " << unresolved);
     mcast.mcastControl(
         ClusterErrorCheckBody(ProtocolVersion(), type, frameSeq), c.getId().getMember());
     // If there are already frames queued up by a previous error, review
@@ -87,8 +87,8 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
                 throw Exception("Aborted by failure that did not occur on all replicas");
             }
             else {              // his error is worse/same as mine.
-                QPID_LOG(debug, cluster << " error " << frameSeq
-                         << " outcome agrees with " << i->getMemberId());
+                QPID_LOG(notice, cluster << " error " << frameSeq
+                         << " resolved with " << i->getMemberId());
                 unresolved.erase(i->getMemberId());
                 checkResolved();
             }
@@ -117,10 +117,11 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
 void ErrorCheck::checkResolved() {
     if (unresolved.empty()) {   // No more potentially conflicted members, we're clear.
         type = ERROR_TYPE_NONE;
-        QPID_LOG(debug, cluster << " Error " << frameSeq << " resolved.");
+        QPID_LOG(notice, cluster << " error " << frameSeq << " resolved.");
     }
     else 
-        QPID_LOG(debug, cluster << " Error " << frameSeq << " still unresolved: " << unresolved);
+        QPID_LOG(notice, cluster << " error " << frameSeq
+                 << " must be resolved with " << unresolved);
 }
 
 EventFrame ErrorCheck::getNext() {
