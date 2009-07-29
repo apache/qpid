@@ -477,7 +477,10 @@ public class ConfigurationFileTabControl extends TabControl
                 }
             });
             
+            shell.setDefaultButton(okButton);
             shell.pack();
+            ViewUtility.centerChildInParentShell(parent, shell);
+            
             shell.open();
         }
     }
@@ -537,6 +540,8 @@ public class ConfigurationFileTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+
         shell.open();
     }
 }

@@ -1003,4 +1003,22 @@ public class ViewUtility
         }
     }
 
+    public static void centerChildInParentShell(Shell parent, Shell child)
+    {
+        //get current parent shell size and location
+        int parentLocX = parent.getBounds().x;
+        int parentLocY = parent.getBounds().y;
+        int parentWidth = parent.getBounds().width;
+        int parentHeight = parent.getBounds().height;
+
+        //get current child size
+        int childWidth = child.getSize().x;
+        int childHeight = child.getSize().y;
+
+        //centre the child within/over the parent
+        child.setBounds((parentWidth - childWidth)/2  + parentLocX, 
+                        (parentHeight - childHeight)/2 + parentLocY, 
+                        childWidth, childHeight);
+    }
+
 }

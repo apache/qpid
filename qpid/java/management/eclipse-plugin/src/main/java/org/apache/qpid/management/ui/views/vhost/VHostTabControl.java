@@ -578,6 +578,8 @@ public class VHostTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     
@@ -704,6 +706,8 @@ public class VHostTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     
@@ -827,6 +831,8 @@ public class VHostTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     
