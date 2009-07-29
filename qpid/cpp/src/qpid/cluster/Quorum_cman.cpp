@@ -31,7 +31,6 @@ Quorum::Quorum() : enable(false), cman(0) {}
 Quorum::~Quorum() { if (cman) cman_finish(cman); }
 
 void Quorum::init() {
-    QPID_LOG(info, "Waiting for cluster quorum");
     enable = true;
     cman = cman_init(0);
     if (cman == 0) throw ErrnoException("Can't connect to cman service");
