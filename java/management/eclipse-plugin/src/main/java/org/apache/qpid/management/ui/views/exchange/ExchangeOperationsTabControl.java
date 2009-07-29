@@ -24,6 +24,7 @@ import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
 import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALUES;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import javax.management.MBeanServerConnection;
@@ -552,6 +553,7 @@ public class ExchangeOperationsTabControl extends TabControl
         }
         else
         {
+            Collections.sort(queueList);
             destinationCombo.setItems(queueList.toArray(new String[0]));
         }
         destinationCombo.select(0);
