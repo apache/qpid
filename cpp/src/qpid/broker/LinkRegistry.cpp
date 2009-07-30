@@ -41,18 +41,18 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 // factored: The persistence element and maintenance element
 // should be factored separately
 LinkRegistry::LinkRegistry () :
-    broker(0),
+    broker(0), timer(0),
     parent(0), store(0), passive(false), passiveChanged(false),
     realm("")
 {
 }
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
-    broker(_broker),
-    parent(0), store(0), passive(false), passiveChanged(false), 
+    broker(_broker), timer(&broker->getTimer()),
+    parent(0), store(0), passive(false), passiveChanged(false),
     realm(broker->getOptions().realm)
 {
-    timer.add (new Periodic(*this));
+    timer->add (new Periodic(*this));
 }
 
 LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
@@ -61,7 +61,7 @@ LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
 void LinkRegistry::Periodic::fire ()
 {
     links.periodicMaintenance ();
-    links.timer.add (new Periodic(links));
+    links.timer->add (new Periodic(links));
 }
 
 void LinkRegistry::periodicMaintenance ()

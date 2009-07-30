@@ -183,12 +183,12 @@ private:
     framing::Uuid                uuid;
     sys::Mutex                   addLock;
     sys::Mutex                   userLock;
-    qpid::sys::Timer             timer;
     qpid::broker::Exchange::shared_ptr mExchange;
     qpid::broker::Exchange::shared_ptr dExchange;
     std::string                  dataDir;
     uint16_t                     interval;
     qpid::broker::Broker*        broker;
+    qpid::sys::Timer*            timer;
     uint16_t                     bootSequence;
     uint32_t                     nextObjectId;
     uint32_t                     brokerBank;
