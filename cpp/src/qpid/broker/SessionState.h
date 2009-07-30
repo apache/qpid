@@ -48,6 +48,10 @@ namespace framing {
 class AMQP_ClientProxy;
 }
 
+namespace sys {
+struct TimerTask;
+}
+
 namespace broker {
 
 class Broker;
@@ -56,7 +60,6 @@ class Message;
 class SessionHandler;
 class SessionManager;
 class RateFlowcontrol;
-struct TimerTask;
 
 /**
  * Broker-side session state includes session's handler chains, which
@@ -153,7 +156,7 @@ class SessionState : public qpid::SessionState,
     // State used for producer flow control (rate limited)
     qpid::sys::Mutex rateLock;
     boost::scoped_ptr<RateFlowcontrol> rateFlowcontrol;
-    boost::intrusive_ptr<TimerTask> flowControlTimer;
+    boost::intrusive_ptr<sys::TimerTask> flowControlTimer;
 
     friend class SessionManager;
 };
