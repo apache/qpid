@@ -31,7 +31,8 @@ namespace amqp_0_10 {
 using sys::Mutex;
 
 Connection::Connection(sys::OutputControl& o, const std::string& id, bool _isClient)
-    : frameQueueClosed(false), output(o), identifier(id), initialized(false), isClient(_isClient), buffered(0)
+    : frameQueueClosed(false), output(o), identifier(id), initialized(false),
+      isClient(_isClient), buffered(0), version(0,10)
 {}
 
 void Connection::setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c) {
@@ -44,7 +45,9 @@ size_t  Connection::decode(const char* buffer, size_t size) {
         //read in protocol header
         framing::ProtocolInitiation pi;
         if (pi.decode(in)) {
-            //TODO: check the version is correct
+            if(!(pi==version))
+                throw Exception(QPID_MSG("Unsupported version: " << pi
+                                         << " supported version " << version));
             QPID_LOG(trace, "RECV " << identifier << " INIT(" << pi << ")");
         }
         initialized = true;
@@ -128,7 +131,11 @@ void Connection::send(framing::AMQFrame& f) {
 }
 
 framing::ProtocolVersion Connection::getVersion() const {
-    return framing::ProtocolVersion(0,10);
+    return version;
+}
+
+void Connection::setVersion(const framing::ProtocolVersion& v)  {
+    version = v;
 }
 
 size_t Connection::getBuffered() const {

@@ -55,6 +55,7 @@ class Connection  : public sys::ConnectionCodec,
     bool initialized;
     bool isClient;
     size_t buffered;
+    framing::ProtocolVersion version;
 
   public:
     QPID_BROKER_EXTERN Connection(sys::OutputControl&, const std::string& id, bool isClient);
@@ -71,6 +72,10 @@ class Connection  : public sys::ConnectionCodec,
     void send(framing::AMQFrame&);
     framing::ProtocolVersion getVersion() const;
     size_t getBuffered() const;
+
+    /** Used by cluster code to set a special version on "update" connections. */
+    // FIXME aconway 2009-07-30: find a cleaner mechanism for this.
+    void setVersion(const framing::ProtocolVersion&);
 };
 
 }} // namespace qpid::amqp_0_10

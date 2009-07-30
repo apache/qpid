@@ -362,7 +362,8 @@ size_t TCPConnector::decode(const char* buffer, size_t size)
         if (protocolInit.decode(in)) {
             QPID_LOG(debug, "RECV " << identifier << " INIT(" << protocolInit << ")");
             if(!(protocolInit==version)){
-                throw Exception(QPID_MSG("Unsupported version: " << protocolInit));
+                throw Exception(QPID_MSG("Unsupported version: " << protocolInit
+                                         << " supported version " << version));
             }
         }
         initiated = true;
