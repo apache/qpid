@@ -1012,6 +1012,10 @@ void Queue::setPosition(SequenceNumber n) {
     sequence = n;
 }
 
+SequenceNumber Queue::getPosition() {
+    return sequence;
+}
+
 int Queue::getEventMode() { return eventMode; }
 
 void Queue::setQueueEventManager(QueueEvents& mgr)

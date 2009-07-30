@@ -98,7 +98,6 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     ./receiver --port $BROKER_B --queue queue-b > queue-b-backup.repl
     ./receiver --port $BROKER_B --queue queue-c > queue-c-backup.repl
 
-    stop_brokers
 
     tail -5 queue-a-input.repl > queue-a-expected.repl
     tail -10 queue-b-input.repl > queue-b-expected.repl
@@ -107,6 +106,54 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     diff queue-c-backup.repl queue-c-input.repl || FAIL=1
 
     grep 'queue-d does not exist' replication-dest.log > /dev/null || echo "WARNING: Expected error to be logged!"
+
+    stop_brokers
+
+    # now check offsets working (enqueue based on position being set, not queue abs position)
+    
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable info+ --log-to-file replication-source.log  --log-to-stderr 0 > qpidd.port 
+    BROKER_A=`cat qpidd.port`
+
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
+    BROKER_B=`cat qpidd.port`
+
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
+    $PYTHON_DIR/commands/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
+
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-e --generate-queue-events 2
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-e
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 2
+
+    i=1
+    while [ $i -le 10 ]; do
+        echo Message $i for A >> queue-e-input.repl
+        i=`expr $i + 1`
+    done
+
+    ./sender --port $BROKER_A --routing-key queue-e --send-eos 1 < queue-e-input.repl
+    ./receiver --port $BROKER_A --queue queue-e --messages 10 > /dev/null
+    # now check offsets working
+
+    ../qpidd -q --port $BROKER_B
+    unset BROKER_B
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
+    BROKER_B=`cat qpidd.port`
+
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-e
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
+    $PYTHON_DIR/commands/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
+    # now send another 15
+    i=11
+    while [ $i -le 15 ]; do
+        echo Message $i for A >> queue-e1-input.repl
+        i=`expr $i + 1`
+    done
+    ./sender --port $BROKER_A --routing-key queue-e --send-eos 1 < queue-e1-input.repl
+    
+    ./receiver --port $BROKER_B --queue queue-e > queue-e-backup.repl
+    diff queue-e-backup.repl queue-e1-input.repl || FAIL=1
+    
+    stop_brokers
 
     if [ x$FAIL != x ]; then
         echo replication test failed: expectations not met!

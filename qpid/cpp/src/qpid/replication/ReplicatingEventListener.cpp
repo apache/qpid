@@ -72,6 +72,7 @@ void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueu
     FieldTable& headers = msg->getProperties<MessageProperties>()->getApplicationHeaders();
     headers.setString(REPLICATION_TARGET_QUEUE, enqueued.queue->getName());
     headers.setInt(REPLICATION_EVENT_TYPE, ENQUEUE);
+    headers.setInt(QUEUE_MESSAGE_POSITION,enqueued.position);
     route(msg);
 }
 
