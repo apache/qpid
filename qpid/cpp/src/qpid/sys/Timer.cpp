@@ -108,7 +108,7 @@ void Timer::run()
                 tasks.push(t);
             }
             }
-            monitor.wait(tasks.top()->nextFireTime);
+            monitor.wait(tasks.top()->sortTime);
         }
     }
 }
