@@ -56,7 +56,8 @@ class ConnectionCodec : public sys::ConnectionCodec {
         sys::ConnectionCodec* create(sys::OutputControl&, const std::string& id);
     };
 
-    ConnectionCodec(sys::OutputControl& out, const std::string& logId, Cluster& c, bool catchUp, bool isLink);
+    ConnectionCodec(const framing::ProtocolVersion&, sys::OutputControl& out,
+                    const std::string& logId, Cluster& c, bool catchUp, bool isLink);
     ~ConnectionCodec();
 
     // ConnectionCodec functions.

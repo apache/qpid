@@ -38,24 +38,27 @@ using namespace framing;
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
     if (v == ProtocolVersion(0, 10))
-        return new ConnectionCodec(out, id, cluster, false, false);
-    else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10))
-        return new ConnectionCodec(out, id, cluster, true, false); // Catch-up connection
+        return new ConnectionCodec(v, out, id, cluster, false, false);
+    else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10)) // Catch-up connection
+        return new ConnectionCodec(v, out, id, cluster, true, false); 
     return 0;
 }
 
 // Used for outgoing Link connections
 sys::ConnectionCodec*
 ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& logId) {
-    return new ConnectionCodec(out, logId, cluster, false, true);
+    return new ConnectionCodec(ProtocolVersion(0,10), out, logId, cluster, false, true);
 }
 
-ConnectionCodec::ConnectionCodec(sys::OutputControl& out, const std::string& logId, Cluster& cluster, bool catchUp, bool isLink)
-    : codec(out, logId, isLink),
-      interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink))
+ConnectionCodec::ConnectionCodec(
+    const ProtocolVersion& v, sys::OutputControl& out,
+    const std::string& logId, Cluster& cluster, bool catchUp, bool isLink
+) : codec(out, logId, isLink),
+    interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink))
 {
     std::auto_ptr<sys::ConnectionInputHandler> ih(new ProxyInputHandler(interceptor));
     codec.setInputHandler(ih);
+    codec.setVersion(v);
 }
 
 ConnectionCodec::~ConnectionCodec() {}
