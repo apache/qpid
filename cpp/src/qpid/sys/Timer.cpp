@@ -20,7 +20,8 @@
  */
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/Mutex.h"
-#include <iostream>
+#include "qpid/log/Statement.h"
+
 #include <numeric>
 
 using boost::intrusive_ptr;
@@ -58,6 +59,8 @@ void TimerTask::setupNextFire() {
     if (period && readyToFire()) {
         nextFireTime = AbsTime(nextFireTime, period);
         cancelled = false;
+    } else {
+        QPID_LOG(error, "Couldn't setup next timer firing: " << Duration(nextFireTime, AbsTime::now()) << "[" << period << "]");
     }
 }
 
@@ -91,19 +94,34 @@ void Timer::run()
         } else {
             intrusive_ptr<TimerTask> t = tasks.top();
             tasks.pop();
+            assert(!(t->nextFireTime < t->sortTime));
+
+            // warn on extreme lateness
+            AbsTime start(AbsTime::now());
+            Duration late(t->sortTime, start);
+            if (late > 500 * TIME_MSEC) {
+                QPID_LOG(warning, "Timer delayed by " << late / TIME_MSEC << "ms");
+            }
             {
             ScopedLock<Mutex> l(t->callbackLock);
             if (t->cancelled) {
                 continue;
-            } else if(t->readyToFire()) {
+            } else if(Duration(t->nextFireTime, start) >= 0) {
                 Monitor::ScopedUnlock u(monitor);
                 t->fireTask();
+                // Warn on callback overrun
+                AbsTime end(AbsTime::now());
+                Duration overrun(tasks.top()->nextFireTime, end);
+                if (overrun > 1 * TIME_MSEC) {
+                    QPID_LOG(warning,
+                        "Timer callback overran by " << overrun / TIME_MSEC << "ms [taking "
+                        << Duration(start, end) << "]");
+                }
                 continue;
             } else {
                 // If the timer was adjusted into the future it might no longer
                 // be the next event, so push and then get top to make sure
                 // You can only push events into the future
-                assert(!(t->nextFireTime < t->sortTime));
                 t->sortTime = t->nextFireTime;
                 tasks.push(t);
             }
