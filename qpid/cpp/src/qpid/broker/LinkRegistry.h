@@ -62,7 +62,7 @@ namespace broker {
 
         qpid::sys::Mutex lock;
         Broker* broker;
-        sys::Timer timer;
+        sys::Timer* timer;
         management::Manageable* parent;
         MessageStore* store;
         bool passive;

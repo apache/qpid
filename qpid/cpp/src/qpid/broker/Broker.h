@@ -122,6 +122,7 @@ public:
     void declareStandardExchange(const std::string& name, const std::string& type);
 
     boost::shared_ptr<sys::Poller> poller;
+    sys::Timer timer;
     Options config;
     ProtocolFactoryMap protocolFactories;
     std::auto_ptr<MessageStore> store;
@@ -132,7 +133,6 @@ public:
     ExchangeRegistry exchanges;
     LinkRegistry links;
     boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
-    sys::Timer timer;
     DtxManager dtxManager;
     SessionManager sessionManager;
     management::ManagementAgent* managementAgent;
