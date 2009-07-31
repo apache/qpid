@@ -46,8 +46,8 @@ class AMQFrame : public AMQDataBlock
     QPID_COMMON_EXTERN AMQBody* getBody();
     QPID_COMMON_EXTERN const AMQBody* getBody() const;
 
-    AMQMethodBody* getMethod() { return getBody()->getMethod(); }
-    const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
+    AMQMethodBody* getMethod() { return getBody() ? getBody()->getMethod() : 0; }
+    const AMQMethodBody* getMethod() const { return getBody() ? getBody()->getMethod() : 0; }
 
     void setMethod(ClassId c, MethodId m);
 
