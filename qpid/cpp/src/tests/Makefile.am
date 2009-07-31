@@ -65,6 +65,7 @@ unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
 	$(lib_client) $(lib_broker) $(lib_console)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
+	ClientSessionTest.cpp \
 	BrokerFixture.h SocketProxy.h \
 	exception_test.cpp \
 	RefCounted.cpp \
@@ -75,7 +76,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	QueueOptionsTest.cpp \
 	InlineAllocator.cpp \
 	InlineVector.cpp \
-	ClientSessionTest.cpp \
 	SequenceSet.cpp \
 	StringUtils.cpp \
 	IncompleteMessageList.cpp \
