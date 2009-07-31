@@ -122,7 +122,8 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
 
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-e --generate-queue-events 2
     $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-e
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 2
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 1
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-d
 
     i=1
     while [ $i -le 10 ]; do
@@ -133,6 +134,8 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     ./sender --port $BROKER_A --routing-key queue-e --send-eos 1 < queue-e-input.repl
     ./receiver --port $BROKER_A --queue queue-e --messages 10 > /dev/null
     # now check offsets working
+    echo dummy | ./sender --port $BROKER_A --routing-key queue-d --send-eos 1
+    ./receiver --port $BROKER_B --queue queue-d --messages 1 > /dev/null
 
     ../qpidd -q --port $BROKER_B
     unset BROKER_B
