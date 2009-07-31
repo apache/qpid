@@ -25,6 +25,7 @@
 #include "qpid/cluster/types.h"
 #include "qpid/Url.h"
 #include "qpid/framing/ClusterConnectionMembershipBody.h"
+#include "qpid/framing/SequenceNumber.h"
 
 #include <boost/function.hpp>
 #include <boost/optional.hpp>
@@ -53,7 +54,7 @@ class ClusterMap {
         
     ClusterMap();
     ClusterMap(const MemberId& id, const Url& url, bool isReady);
-    ClusterMap(const framing::FieldTable& joiners, const framing::FieldTable& members, uint64_t frameSeq);
+    ClusterMap(const framing::FieldTable& joiners, const framing::FieldTable& members, framing::SequenceNumber frameSeq);
 
     /** Update from config change.
      *@return true if member set changed.
@@ -92,8 +93,8 @@ class ClusterMap {
      */
     static Set intersection(const Set& a, const Set& b);
 
-    uint64_t getFrameSeq() { return frameSeq; }
-    uint64_t incrementFrameSeq() { return ++frameSeq; }
+    framing::SequenceNumber getFrameSeq() { return frameSeq; }
+    framing::SequenceNumber incrementFrameSeq() { return ++frameSeq; }
     
     /** Clear out all knowledge of joiners & members, just keep alive set */
     void clearStatus() { joiners.clear(); members.clear(); }
@@ -103,7 +104,7 @@ class ClusterMap {
     
     Map joiners, members;
     Set alive;
-    uint64_t frameSeq;
+    framing::SequenceNumber frameSeq;
 
   friend std::ostream& operator<<(std::ostream&, const Map&);
   friend std::ostream& operator<<(std::ostream&, const ClusterMap&);

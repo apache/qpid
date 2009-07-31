@@ -82,10 +82,31 @@ void queueAndSub(Client& c) {
     c.subs.subscribe(c.lq, c.name);
 }
 
+// Handle near-simultaneous errors
+QPID_AUTO_TEST_CASE(testCoincidentErrors) {
+    ClusterFixture cluster(2, updateArgs, -1);
+    Client c0(cluster[0], "c0");
+    Client c1(cluster[1], "c1");
+
+    c0.session.queueDeclare("q", durable=true);
+    {
+        ScopedSuppressLogging allQuiet;
+        async(c0.session).messageTransfer(content=pMessage("TEST_STORE_DO: s0[exception]", "q"));
+        async(c1.session).messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception]", "q"));
+
+        int alive=0;
+        try { Client c00(cluster[0], "c00"); ++alive; } catch (...) {}
+        try { Client c11(cluster[1], "c11"); ++alive; } catch (...) {}
+
+        BOOST_CHECK_EQUAL(alive, 1);
+    }
+}
+
+#if 0                           // FIXME aconway 2009-07-30:
 // Verify normal cluster-wide errors.
 QPID_AUTO_TEST_CASE(testNormalErrors) {
     // FIXME aconway 2009-04-10: Would like to put a scope just around
-    // the statements expected to fail (in BOOST_CHECK_THROW) but that
+    // the statements expected to fail (in BOOST_CHECK_yTHROW) but that
     // sproadically lets out messages, possibly because they're in
     // Connection thread.
 
@@ -96,7 +117,7 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
 
     {
         ScopedSuppressLogging allQuiet;
-        queueAndSub(c0);
+        queueAndsub(c0);
         c0.session.messageTransfer(content=Message("x", "c0"));
         BOOST_CHECK_EQUAL(c0.lq.get(TIMEOUT).getData(), "x");
 
@@ -234,5 +255,5 @@ QPID_AUTO_TEST_CASE(testPartialFailureMemberLeaves) {
     }
 }
 #endif
-
+#endif  // FIXME aconway 2009-07-30:
 QPID_AUTO_TEST_SUITE_END()

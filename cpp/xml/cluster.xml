@@ -68,7 +68,7 @@
     <!-- Check for error consistency across the cluster -->
     <control name="error-check" code="0x14">
       <field name="type" type="error-type"/>
-      <field name="frame-seq" type="uint64"/>
+      <field name="frame-seq" type="sequence-no"/>
     </control>
     
 
@@ -170,7 +170,7 @@
     <control name="membership" code="0x21" label="Cluster membership details.">
       <field name="joiners" type="map"/> <!-- member-id -> URL -->
       <field name="members" type="map"/> <!-- member-id -> state -->
-      <field name="frame-seq" type="uint64"/>	 <!-- frame sequence number -->
+      <field name="frame-seq" type="sequence-no"/> <!-- frame sequence number -->
     </control>
 
     <!-- Updater cannot fulfill an update offer. -->

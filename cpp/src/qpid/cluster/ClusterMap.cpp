@@ -71,7 +71,7 @@ ClusterMap::ClusterMap(const MemberId& id, const Url& url , bool isMember) : fra
         joiners[id] = url;
 }
 
-ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt, uint64_t frameSeq_)
+ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt, framing::SequenceNumber frameSeq_)
   : frameSeq(frameSeq_)
 {
     std::for_each(joinersFt.begin(), joinersFt.end(), boost::bind(&addFieldTableValue, _1, boost::ref(joiners), boost::ref(alive)));
