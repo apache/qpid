@@ -49,7 +49,7 @@ class AMQP_ClientProxy;
 }
 
 namespace sys {
-struct TimerTask;
+class TimerTask;
 }
 
 namespace broker {
