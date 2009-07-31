@@ -19,6 +19,7 @@
  *
  */
 #include "unit_test.h"
+#include "test_tools.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
@@ -275,11 +276,13 @@ class TestMessageStoreOC : public NullMessageStore
 
     uint enqCnt;
     uint deqCnt;
+    bool error;
     
     virtual void dequeue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
                  const PersistableQueue& /*queue*/)
     {
+        if (error) throw Exception("Dequeue error test");
         deqCnt++;
     }
 
@@ -287,10 +290,16 @@ class TestMessageStoreOC : public NullMessageStore
                  const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
                  const PersistableQueue& /* queue */)
     {
+        if (error) throw Exception("Enqueue error test");
         enqCnt++;
     }
 
-    TestMessageStoreOC() : NullMessageStore(),enqCnt(0),deqCnt(0) {}
+    void createError()
+    {
+        error=true;
+    }
+    
+    TestMessageStoreOC() : NullMessageStore(),enqCnt(0),deqCnt(0),error(false) {}
     ~TestMessageStoreOC(){}
 };
 
@@ -689,6 +698,30 @@ not requeued to the store.
 
 }
 
-QPID_AUTO_TEST_SUITE_END()
+QPID_AUTO_TEST_CASE(testLastNodeJournalError){
+/*
+simulate store excption going into last node standing
+
+*/
+    TestMessageStoreOC  testStore;
+    client::QueueOptions args;
+    // set queue mode
+    args.setPersistLastNode();
+
+    Queue::shared_ptr queue1(new Queue("my-queue", true, &testStore));
+    intrusive_ptr<Message> received;
+    queue1->configure(args);
+ 	
+    // check requeue 1
+    intrusive_ptr<Message> msg1 = create_message("e", "C");
+
+    queue1->deliver(msg1);
+    testStore.createError();
+    
+    ScopedSuppressLogging sl; // Suppress messages for expected errors.
+    queue1->setLastNodeFailure();
+    BOOST_CHECK_EQUAL(testStore.enqCnt, 0u);
+
+}QPID_AUTO_TEST_SUITE_END()
 
 
