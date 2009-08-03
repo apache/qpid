@@ -26,7 +26,7 @@
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/SubscriptionManager.h>
 
-
+#include <stdio.h>
 #include <cstdlib>
 #include <iostream>
 
