@@ -56,6 +56,7 @@ import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -205,6 +206,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         return _sessionID;
     }
 
+    public LogActor getLogActor()
+    {
+        return _actor;
+    }
+
     public void dataBlockReceived(AMQDataBlock message) throws Exception
     {
         _lastReceived = message;
@@ -230,7 +236,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
 
-        CurrentActor.set(_actor);
+        //Look up the Channel's Actor and set that as the current actor
+        // If that is not available then we can use the ConnectionActor
+        // that is associated with this AMQMPSession.
+        LogActor channelActor = null;
+        if (_channelMap.get(channelId) != null)
+        {
+            channelActor = _channelMap.get(channelId).getLogActor();
+        }
+        CurrentActor.set(channelActor == null ? _actor : channelActor);
+
         try
         {
             if (_logger.isDebugEnabled())

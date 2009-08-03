@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -60,6 +61,11 @@ public class MockProtocolSession implements AMQProtocolSession
     public long getSessionID()
     {
         return _sessionID;
+    }
+
+    public LogActor getLogActor()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void dataBlockReceived(AMQDataBlock message) throws Exception
