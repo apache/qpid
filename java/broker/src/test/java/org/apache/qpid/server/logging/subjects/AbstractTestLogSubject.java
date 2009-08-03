@@ -36,6 +36,9 @@ import org.apache.qpid.server.logging.actors.TestBlankActor;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.List;
 
@@ -43,6 +46,19 @@ public abstract class AbstractTestLogSubject extends TestCase
 {
     protected Configuration _config = new PropertiesConfiguration();
     protected LogSubject _subject = null;
+
+    AMQProtocolSession _session;
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
+        // Create a single session for this test.
+        _session = new InternalTestProtocolSession(virtualHost);
+    }
 
     protected List<Object> performLog() throws ConfigurationException
     {

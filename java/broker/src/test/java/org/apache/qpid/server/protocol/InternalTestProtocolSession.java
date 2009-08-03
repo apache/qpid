@@ -26,7 +26,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.net.SocketAddress;
+import java.security.Principal;
 
 public class InternalTestProtocolSession extends AMQMinaProtocolSession implements ProtocolOutputConverter
 {
@@ -42,7 +42,7 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
     final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
 
-    public InternalTestProtocolSession() throws AMQException
+    public InternalTestProtocolSession(VirtualHost virtualHost) throws AMQException
     {
         super(new TestIoSession(),
               ApplicationRegistry.getInstance().getVirtualHostRegistry(),
@@ -50,6 +50,16 @@ public class InternalTestProtocolSession extends AMQMinaProtocolSession implemen
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 
+        // Need to authenticate session for it to be representative testing.
+        setAuthorizedID(new Principal()
+        {
+            public String getName()
+            {
+                return "InternalTestProtocolSession";
+            }
+        });
+
+        setVirtualHost(virtualHost);
     }
 
     public ProtocolOutputConverter getProtocolOutputConverter()

@@ -32,6 +32,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ConsumerTagNotUniqueException;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
@@ -79,17 +80,8 @@ public class InternalBrokerBaseCase extends TestCase
 
         _queue.bind(defaultExchange, QUEUE_NAME, null);
 
-        _session = new InternalTestProtocolSession();
-
-        _session.setAuthorizedID(new Principal()
-        {
-            public String getName()
-            {
-                return "InternalBrokerBaseCaseUser";
-            }
-        });
-
-        _session.setVirtualHost(_virtualHost);
+        _session = new InternalTestProtocolSession(_virtualHost);
+        CurrentActor.set(_session.getLogActor());
 
         _channel = new MockChannel(_session, 1, _messageStore);
 
@@ -98,6 +90,7 @@ public class InternalBrokerBaseCase extends TestCase
 
     public void tearDown() throws Exception
     {
+        CurrentActor.remove();
         ApplicationRegistry.remove(1);
         super.tearDown();
     }

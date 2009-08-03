@@ -26,18 +26,16 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.MockProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
-import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.List;
 
@@ -56,39 +54,32 @@ public class AMQPConnectionActorTest extends TestCase
     LogActor _amqpActor;
     UnitTestMessageLogger _rawLogger;
 
-    public void setUp() throws ConfigurationException
+    public void setUp() throws ConfigurationException, AMQException
     {
         Configuration config = new PropertiesConfiguration();
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
-
-        // Create a single session for this test.
-        // Re-use is ok as we are testing the LogActor object is set correctly,
-        // not the value of the output.
-        AMQProtocolSession session = new MockProtocolSession(new MemoryMessageStore());
-        // Use the first Virtualhost that has been defined to initialise
-        // the MockProtocolSession. This prevents a NPE when the
-        // AMQPActor attempts to lookup the name of the VHost.
-        try
-        {
-            session.setVirtualHost(ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().
-                    toArray(new VirtualHost[1])[0]);
-        }
-        catch (AMQException e)
-        {
-            fail("Unable to set virtualhost on session:" + e.getMessage());
-        }
-
-        _amqpActor = new AMQPConnectionActor(session, rootLogger);
+        setUpWithConfig(serverConfig);
     }
 
     public void tearDown()
     {
         _rawLogger.clearLogMessages();
+    }
+
+    private void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    {
+        _rawLogger = new UnitTestMessageLogger();
+        RootMessageLogger rootLogger =
+                new RootMessageLoggerImpl(serverConfig, _rawLogger);
+
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
+        // Create a single session for this test.
+        AMQProtocolSession session = new InternalTestProtocolSession(virtualHost);
+
+        _amqpActor = new AMQPConnectionActor(session, rootLogger);
     }
 
     /**
@@ -98,26 +89,10 @@ public class AMQPConnectionActorTest extends TestCase
      *
      * The log message should be fully repalaced (no '{n}' values) and should
      * not contain any channel identification.
-     *
      */
     public void testConnection()
     {
-        final String message = "test logging";
-
-        _amqpActor.message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[AMQPActorTest]";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
-        });
+        final String message = sendLogMessage();
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -129,7 +104,7 @@ public class AMQPConnectionActorTest extends TestCase
 
         // Verify that the message has the correct type
         assertTrue("Message contains the [con: prefix",
-                   logs.get(0).toString().contains("[con:"));        
+                   logs.get(0).toString().contains("[con:"));
 
         // Verify that all the values were presented to the MessageFormatter
         // so we will not end up with '{n}' entries in the log.
@@ -138,10 +113,8 @@ public class AMQPConnectionActorTest extends TestCase
 
         // Verify that the logged message does not contains the 'ch:' marker
         assertFalse("Message was logged with a channel identifier." + logs.get(0),
-                   logs.get(0).toString().contains("/ch:"));
+                    logs.get(0).toString().contains("/ch:"));
     }
-
-
 
     public void testConnectionLoggingOff() throws ConfigurationException, AMQException
     {
@@ -150,31 +123,18 @@ public class AMQPConnectionActorTest extends TestCase
 
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
+        setUpWithConfig(serverConfig);
 
-        // Create a single session for this test.
-        // Re-use is ok as we are testing the LogActor object is set correctly,
-        // not the value of the output.
-        AMQProtocolSession session = new MockProtocolSession(new MemoryMessageStore());
-        // Use the first Virtualhost that has been defined to initialise
-        // the MockProtocolSession. This prevents a NPE when the
-        // AMQPActor attempts to lookup the name of the VHost.
-        try
-        {
-            session.setVirtualHost(ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().
-                    toArray(new VirtualHost[1])[0]);
-        }
-        catch (AMQException e)
-        {
-            fail("Unable to set virtualhost on session:" + e.getMessage());
-        }
+        sendLogMessage();
 
+        List<Object> logs = _rawLogger.getLogMessages();
 
-        _amqpActor = new AMQPConnectionActor(session, rootLogger);
+        assertEquals("Message log size not as expected.", 0, logs.size());
 
+    }
+
+    private String sendLogMessage()
+    {
         final String message = "test logging";
 
         _amqpActor.message(new LogSubject()
@@ -191,12 +151,7 @@ public class AMQPConnectionActorTest extends TestCase
                 return message;
             }
         });
-
-        List<Object> logs = _rawLogger.getLogMessages();
-
-        assertEquals("Message log size not as expected.", 0, logs.size());
-
+        return message;
     }
-
 
 }

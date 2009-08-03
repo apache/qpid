@@ -175,7 +175,8 @@ public class AMQQueueMBeanTest extends TestCase
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
 
 
-        InternalTestProtocolSession protocolSession = new InternalTestProtocolSession();
+        InternalTestProtocolSession protocolSession = new InternalTestProtocolSession(_virtualHost);
+
         AMQChannel channel = new AMQChannel(protocolSession, 1, _messageStore);
         protocolSession.addChannel(channel);
 
@@ -372,7 +373,7 @@ public class AMQQueueMBeanTest extends TestCase
                                                     null);
         _queueMBean = new AMQQueueMBean(_queue);
 
-        _protocolSession = new InternalTestProtocolSession();
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
     }
 
     public void tearDown()

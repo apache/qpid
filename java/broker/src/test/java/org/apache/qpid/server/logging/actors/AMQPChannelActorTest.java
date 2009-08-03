@@ -27,11 +27,9 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.MockProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
@@ -56,38 +54,33 @@ public class AMQPChannelActorTest extends TestCase
 
     LogActor _amqpActor;
     UnitTestMessageLogger _rawLogger;
+    AMQProtocolSession _session;
+    AMQChannel _channel;
 
     public void setUp() throws ConfigurationException, AMQException
     {
         Configuration config = new PropertiesConfiguration();
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
+        setUpWithConfig(serverConfig);
+    }
+
+    private void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException
+    {
         _rawLogger = new UnitTestMessageLogger();
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, _rawLogger);
 
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().
+                    getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
         // Create a single session for this test.
-        // Re-use is ok as we are testing the LogActor object is set correctly,
-        // not the value of the output.
-        AMQProtocolSession session = new MockProtocolSession(new MemoryMessageStore());
-        // Use the first Virtualhost that has been defined to initialise
-        // the MockProtocolSession. This prevents a NPE when the
-        // AMQPActor attempts to lookup the name of the VHost.
-        try
-        {
-            session.setVirtualHost(ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().
-                    toArray(new VirtualHost[1])[0]);
-        }
-        catch (AMQException e)
-        {
-            fail("Unable to set virtualhost on session:" + e.getMessage());
-        }
+        _session = new InternalTestProtocolSession(virtualHost);
 
 
-        AMQChannel channel = new AMQChannel(session, 1, session.getVirtualHost().getMessageStore());
+        _channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
 
-        _amqpActor = new AMQPChannelActor(channel, rootLogger);
+        _amqpActor = new AMQPChannelActor(_channel, rootLogger);
 
     }
 
@@ -105,22 +98,7 @@ public class AMQPChannelActorTest extends TestCase
      */
     public void testChannel()
     {
-        final String message = "test logging";
-
-        _amqpActor.message(new LogSubject()
-        {
-            public String toString()
-            {
-                return "[AMQPActorTest]";
-            }
-
-        }, new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
-        });
+        final String message = sendTestMessage();
 
         List<Object> logs = _rawLogger.getLogMessages();
 
@@ -146,40 +124,12 @@ public class AMQPChannelActorTest extends TestCase
 
     }
 
-    public void testChannelLoggingOff() throws ConfigurationException, AMQException
+    /**
+     * Log a message using the test Actor
+     * @return the logged message
+     */
+    private String sendTestMessage()
     {
-        Configuration config = new PropertiesConfiguration();
-        config.addProperty("status-updates", "OFF");
-
-        ServerConfiguration serverConfig = new ServerConfiguration(config);
-
-        _rawLogger = new UnitTestMessageLogger();
-        RootMessageLogger rootLogger =
-                new RootMessageLoggerImpl(serverConfig, _rawLogger);
-
-        // Create a single session for this test.
-        // Re-use is ok as we are testing the LogActor object is set correctly,
-        // not the value of the output.
-        AMQProtocolSession session = new MockProtocolSession(new MemoryMessageStore());
-        // Use the first Virtualhost that has been defined to initialise
-        // the MockProtocolSession. This prevents a NPE when the
-        // AMQPActor attempts to lookup the name of the VHost.
-        try
-        {
-            session.setVirtualHost(ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().
-                    toArray(new VirtualHost[1])[0]);
-        }
-        catch (AMQException e)
-        {
-            fail("Unable to set virtualhost on session:" + e.getMessage());
-        }
-
-
-        AMQChannel channel = new AMQChannel(session, 1, session.getVirtualHost().getMessageStore());
-
-        _amqpActor = new AMQPChannelActor(channel, rootLogger);
-
         final String message = "test logging";
 
         _amqpActor.message(new LogSubject()
@@ -196,6 +146,152 @@ public class AMQPChannelActorTest extends TestCase
                 return message;
             }
         });
+        return message;
+    }
+
+    /**
+     * Test that if logging is configured to be off in the configuration that
+     * no logging is presented
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testChannelLoggingOFF() throws ConfigurationException, AMQException
+    {
+        Configuration config = new PropertiesConfiguration();
+        config.addProperty("status-updates", "OFF");
+
+        ServerConfiguration serverConfig = new ServerConfiguration(config);
+
+        _rawLogger = new UnitTestMessageLogger();
+
+        setUpWithConfig(serverConfig);
+
+        sendTestMessage();
+
+        List<Object> logs = _rawLogger.getLogMessages();
+
+        assertEquals("Message log size not as expected.", 0, logs.size());
+
+    }
+
+      /**
+     * Test that if logging is configured to be off in the configuration that
+     * no logging is presented
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testChannelLoggingOfF() throws ConfigurationException, AMQException
+    {
+        Configuration config = new PropertiesConfiguration();
+        config.addProperty("status-updates", "OfF");
+
+        ServerConfiguration serverConfig = new ServerConfiguration(config);
+
+        _rawLogger = new UnitTestMessageLogger();
+
+        setUpWithConfig(serverConfig);
+
+        sendTestMessage();
+
+        List<Object> logs = _rawLogger.getLogMessages();
+
+        assertEquals("Message log size not as expected.", 0, logs.size());
+
+    }
+
+    /**
+     * Test that if logging is configured to be off in the configuration that
+     * no logging is presented
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testChannelLoggingOff() throws ConfigurationException, AMQException
+    {
+        Configuration config = new PropertiesConfiguration();
+        config.addProperty("status-updates", "Off");
+
+        ServerConfiguration serverConfig = new ServerConfiguration(config);
+
+        _rawLogger = new UnitTestMessageLogger();
+
+        setUpWithConfig(serverConfig);
+
+        sendTestMessage();
+
+        List<Object> logs = _rawLogger.getLogMessages();
+
+        assertEquals("Message log size not as expected.", 0, logs.size());
+
+    }
+
+    /**
+     * Test that if logging is configured to be off in the configuration that
+     * no logging is presented
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testChannelLoggingofF() throws ConfigurationException, AMQException
+    {
+        Configuration config = new PropertiesConfiguration();
+        config.addProperty("status-updates", "ofF");
+
+        ServerConfiguration serverConfig = new ServerConfiguration(config);
+
+        _rawLogger = new UnitTestMessageLogger();
+
+        setUpWithConfig(serverConfig);
+
+        sendTestMessage();
+
+        List<Object> logs = _rawLogger.getLogMessages();
+
+        assertEquals("Message log size not as expected.", 0, logs.size());
+
+    }
+
+    /**
+     * Test that if logging is configured to be off in the configuration that
+     * no logging is presented
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testChannelLoggingoff() throws ConfigurationException, AMQException
+    {
+        Configuration config = new PropertiesConfiguration();
+        config.addProperty("status-updates", "off");
+
+        ServerConfiguration serverConfig = new ServerConfiguration(config);
+
+        _rawLogger = new UnitTestMessageLogger();
+
+        setUpWithConfig(serverConfig);
+
+        sendTestMessage();
+
+        List<Object> logs = _rawLogger.getLogMessages();
+
+        assertEquals("Message log size not as expected.", 0, logs.size());
+
+    }
+
+    /**
+     * Test that if logging is configured to be off in the configuration that
+     * no logging is presented
+     * @throws ConfigurationException
+     * @throws AMQException
+     */
+    public void testChannelLoggingoFf() throws ConfigurationException, AMQException
+    {
+        Configuration config = new PropertiesConfiguration();
+        config.addProperty("status-updates", "oFf");
+
+        ServerConfiguration serverConfig = new ServerConfiguration(config);
+
+        _rawLogger = new UnitTestMessageLogger();
+
+        setUpWithConfig(serverConfig);
+
+        sendTestMessage();
 
         List<Object> logs = _rawLogger.getLogMessages();
 

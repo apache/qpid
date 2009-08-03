@@ -20,38 +20,12 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.MockProtocolSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-
 public class ConnectionLogSubjectTest extends AbstractTestLogSubject
 {
-    AMQProtocolSession _session;
 
     public void setUp() throws Exception
     {
         super.setUp();
-
-        // Create a single session for this test.
-        // Re-use is ok as we are testing the LogActor object is set correctly,
-        // not the value of the output.
-        _session = new MockProtocolSession(new MemoryMessageStore());
-        // Use the first Virtualhost that has been defined to initialise
-        // the MockProtocolSession. This prevents a NPE when the
-        // AMQPActor attempts to lookup the name of the VHost.
-        try
-        {
-            _session.setVirtualHost(ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().
-                    toArray(new VirtualHost[1])[0]);
-        }
-        catch (AMQException e)
-        {
-            fail("Unable to set virtualhost on session:" + e.getMessage());
-        }
 
         _subject = new ConnectionLogSubject(_session);
     }
@@ -63,7 +37,7 @@ public class ConnectionLogSubjectTest extends AbstractTestLogSubject
      */
     protected void validateLogStatement(String message)
     {
-        verifyConnection(_session.getSessionID(), "MockProtocolSessionUser", "null", "test", message);
+        verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
     }
 
 }

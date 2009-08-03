@@ -352,7 +352,7 @@ public class MessageStoreTest extends TestCase
                                                  messageInfo,
                                                  new NonTransactionalContext(_virtualHost.getMessageStore(),
                                                                              new StoreContext(), null, null),
-                                                 new InternalTestProtocolSession());
+                                                 new InternalTestProtocolSession(_virtualHost));
         }
         catch (AMQException e)
         {

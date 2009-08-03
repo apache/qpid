@@ -57,7 +57,7 @@ public class DestWildExchangeTest extends TestCase
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _store = new MemoryMessageStore();
         _context = new StoreContext();
-        _protocolSession = new InternalTestProtocolSession();
+        _protocolSession = new InternalTestProtocolSession(_vhost);
     }
 
     public void tearDown()
