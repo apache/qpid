@@ -77,8 +77,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         String log = results.get(0);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
         //1 & 2
-        assertTrue("CON-1001 is not the first CON message",
-                   log.contains("CON-1001"));
+        validateMessageID("CON-1001",log);
 
         //We get the size so that we can validate the last three CON- messages
         int resultsSize = results.size();
@@ -88,28 +87,28 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // 3 - Assert the options are correct
         log = results.get(resultsSize - 1);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
-        assertTrue("Incorrect CON message, not CON-1001", log.contains("CON-1001"));
-        assertTrue("Client ID option is not present", log.contains("Client ID :"));
-        assertTrue("Client ID value is not present", log.contains(connection.getClientID()));
+        validateMessageID("CON-1001",log);
+        assertTrue("Client ID option is not present", fromMessage(log).contains("Client ID :"));
+        assertTrue("Client ID value is not present", fromMessage(log).contains(connection.getClientID()));
 
-        assertTrue("Protocol Version option is not present", log.contains("Protocol Version :"));
+        assertTrue("Protocol Version option is not present", fromMessage(log).contains("Protocol Version :"));
         //fixme there is no way currently to find out the negotiated protocol version
         // The delegate is the versioned class ((AMQConnection)connection)._delegate
 
         log = results.get(resultsSize - 2);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
-        assertTrue("Incorrect CON message, not CON-1001", log.contains("CON-1001"));
-        assertTrue("Protocol Version option is not present", log.contains("Protocol Version :"));
+        validateMessageID("CON-1001",log);
+        assertTrue("Protocol Version option is not present", fromMessage(log).contains("Protocol Version :"));
         //fixme agani we should check the version
         // Check that client ID is not present in log
-        assertTrue("Client ID option is present", !log.contains("Client ID :"));
+        assertTrue("Client ID option is present", !fromMessage(log).contains("Client ID :"));
 
         log = results.get(resultsSize - 3);
-        assertTrue("Incorrect CON message, not CON-1001", log.contains("CON-1001"));
+        validateMessageID("CON-1001",log);
         // Check that PV is not present in log
-        assertTrue("Protocol Version option is present", !log.contains("Protocol Version :"));
+        assertTrue("Protocol Version option is present", !fromMessage(log).contains("Protocol Version :"));
         // Check that client ID is not present in log
-        assertTrue("Client ID option is present", !log.contains("Client ID :"));
+        assertTrue("Client ID option is present", !fromMessage(log).contains("Client ID :"));
 
         connection.close();
     }
@@ -149,7 +148,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         // Validate Close message occurs
         String log = results.get(resultsSize - 1);
-        assertTrue("Incorrect CON message, not CON-1002", log.contains("CON-1002"));
+        validateMessageID("CON-1002",log);
         assertTrue("Message does not end with close:" + log, log.endsWith("Close"));
 
         // Extract connection ID to validate there is a CON-1001 messasge for it
@@ -158,7 +157,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         //Previous log message should be the open
         log = results.get(resultsSize - 2);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
-        assertTrue("Incorrect CON message, not CON-1001", log.contains("CON-1001"));
-        assertEquals("Connection IDs do not match", connectionID, extractConnectionID(log));
+        validateMessageID("CON-1001",log);
+        assertEquals("Connection IDs do not match", connectionID, extractConnectionID(fromActor(log)));
     }
 }
