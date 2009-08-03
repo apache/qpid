@@ -136,10 +136,21 @@ public class VHNotificationsTabControl extends TabControl
                 IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
                 if(!ss.isEmpty())
                 {
+                    //clear selected Notifications
                     serverRegistry.clearNotifications(null, ss.toList());
                 }
                 else if(_notifications != null)
                 {
+                    //clear all the notifications, if there are any
+                    
+                    //check the user is certain of this clear-all operation
+                    int response = ViewUtility.popupOkCancelConfirmationMessage(
+                            "Clear Notifications", "Clear all Notifications for this VirtualHost?");
+                    if(response != SWT.OK)
+                    {
+                        return;
+                    }
+                    
                     synchronized(this)
                     {
                         serverRegistry.clearNotifications(null, _notifications);
