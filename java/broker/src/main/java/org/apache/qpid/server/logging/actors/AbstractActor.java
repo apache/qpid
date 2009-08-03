@@ -42,4 +42,13 @@ public abstract class AbstractActor implements LogActor
             _rootLogger.rawMessage(_logString + String.valueOf(subject) + message);
         }
     }
+
+    public void message(LogMessage message)
+    {
+        if (_rootLogger.isMessageEnabled(this))
+        {
+            _rootLogger.rawMessage(_logString + message);
+        }
+    }
+
 }
