@@ -93,15 +93,17 @@ public class QueueOperationsTabControl extends TabControl
     
     private Text _fromMsgText;
     private Text _toMsgText;
+    private static final String FROM_DEFAULT = "1";
+    private static final String TO_DEFAULT = "50";
+    private long _interval = 50; //(to-from)+1
     private Long _fromMsg = new Long(FROM_DEFAULT);
     private Long _toMsg = new Long(TO_DEFAULT);
     
     private TabularDataSupport _messages = null;
     private ManagedQueue _qmb;
     
-    private static final String FROM_DEFAULT = "1";
-    private static final String TO_DEFAULT = "50";
-    private long INTERVAL = 50;
+    private Button _previousButton;
+    private Button _nextButton;
     
     private static final String MSG_AMQ_ID = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[0];
     private static final String MSG_HEADER = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[1];
@@ -252,9 +254,9 @@ public class QueueOperationsTabControl extends TabControl
         
         _toolkit.createLabel(viewMessageRangeComposite, "     "); //spacer
         
-        final Button previousButton = _toolkit.createButton(viewMessageRangeComposite, "< Prev " + INTERVAL, SWT.PUSH);
-        previousButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
-        previousButton.addSelectionListener(new SelectionAdapter()
+        _previousButton = _toolkit.createButton(viewMessageRangeComposite, "< Prev " + _interval, SWT.PUSH);
+        _previousButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+        _previousButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
             {
@@ -266,16 +268,16 @@ public class QueueOperationsTabControl extends TabControl
                 }
                 
                 //make 'from' be 'from - INTERVAL', or make it 1 if that would make it 0 or less 
-                _fromMsg = (_fromMsg - INTERVAL < 1) ? 1 : _fromMsg - INTERVAL;
+                _fromMsg = (_fromMsg - _interval < 1) ? 1 : _fromMsg - _interval;
                 _fromMsgText.setText(_fromMsg.toString());
                 
                 refresh(_mbean);
             }
         });
         
-        final Button nextButton = _toolkit.createButton(viewMessageRangeComposite, "Next " + INTERVAL + " >", SWT.PUSH);
-        nextButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
-        nextButton.addSelectionListener(new SelectionAdapter()
+        _nextButton = _toolkit.createButton(viewMessageRangeComposite, "Next " + _interval + " >", SWT.PUSH);
+        _nextButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false));
+        _nextButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
             {
@@ -287,7 +289,7 @@ public class QueueOperationsTabControl extends TabControl
                 }
                 
                 //make 'to' be 'to + INTERVAL', or make it Long.MAX_VALUE if that would too large
-                _toMsg = (Long.MAX_VALUE - _toMsg > INTERVAL) ? _toMsg + INTERVAL : Long.MAX_VALUE;
+                _toMsg = (Long.MAX_VALUE - _toMsg > _interval) ? _toMsg + _interval : Long.MAX_VALUE;
                 _toMsgText.setText(_toMsg.toString());
                 
                 refresh(_mbean);
@@ -717,6 +719,10 @@ public class QueueOperationsTabControl extends TabControl
 
         _fromMsg = from;
         _toMsg = to;
+        
+        _interval = (to - from) + 1;
+        _previousButton.setText("< Prev " + _interval);
+        _nextButton.setText("Next " + _interval + " >");
         
         refresh(_mbean);
     }
