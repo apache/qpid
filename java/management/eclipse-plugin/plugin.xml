@@ -150,6 +150,7 @@
            <toolbar id="qpidMC">
                <separator name="qpidActionsGroup" visible="false"/>
                <separator name="refresh" visible="true"/>
+               <separator name="refresh2" visible="false"/>
                <separator name="additions" visible="false"/>
            </toolbar>
        </menuContribution>
@@ -179,8 +180,8 @@
                label="Refresh"
                menubarPath="qpidmanager/additions"
                style="push"
-               toolbarPath="qpidMC/qpidActionsGroup"
-               tooltip="Refresh"/>
+               toolbarPath="qpidMC/refresh2"
+               tooltip="Refresh Now"/>
          <action
                class="org.apache.qpid.management.ui.actions.RemoveServer"
                definitionId="org.apache.qpid.management.ui.actions.cmd_remove"
