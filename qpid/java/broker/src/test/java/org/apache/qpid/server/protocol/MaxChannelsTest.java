@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.AMQException;
@@ -42,6 +43,9 @@ public class MaxChannelsTest extends TestCase
     {
         _session = new AMQMinaProtocolSession(new TestIoSession(), _appRegistry
 				.getVirtualHostRegistry(), new AMQCodecFactory(true));
+
+        // Set the current Actor for these tests
+        CurrentActor.set(_session.getLogActor());
 
         // Need to authenticate session for it to work, (well for logging to work)
         _session.setAuthorizedID(new Principal()
@@ -92,6 +96,11 @@ public class MaxChannelsTest extends TestCase
 			// Yikes
 			fail(e.getMessage());
 		}
+        finally
+        {
+            //Remove the actor set during the test
+            CurrentActor.remove();
+        }
     	ApplicationRegistry.remove(1);
     }
 

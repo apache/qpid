@@ -65,6 +65,8 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 
@@ -185,6 +187,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void commitTransactions(int channelId) throws JMException
     {
+        CurrentActor.set(getLogActor());
         try
         {
             AMQChannel channel = _session.getChannel(channelId);
@@ -199,6 +202,10 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         {
             throw new MBeanException(ex, ex.toString());
         }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     /**
@@ -209,6 +216,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void rollbackTransactions(int channelId) throws JMException
     {
+        CurrentActor.set(getLogActor());
         try
         {
             AMQChannel channel = _session.getChannel(channelId);
@@ -222,6 +230,10 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         catch (AMQException ex)
         {
             throw new MBeanException(ex, ex.toString());
+        }
+        finally
+        {
+            CurrentActor.remove();
         }
     }
 
@@ -269,16 +281,36 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                                                          0,
                                                          0);
 
-        _session.writeFrame(responseBody.generateFrame(0));
-
+        CurrentActor.set(getLogActor());
         try
         {
-            _session.closeSession();
+            _session.writeFrame(responseBody.generateFrame(0));
+
+            try
+            {
+
+                _session.closeSession();
+            }
+            catch (AMQException ex)
+            {
+                throw new MBeanException(ex, ex.toString());
+            }
         }
-        catch (AMQException ex)
+        finally
         {
-            throw new MBeanException(ex, ex.toString());
+            CurrentActor.remove();
         }
+    }
+
+    /**
+     * Return the LogActor for this MBean Session
+     * //fixme currently simply returning the managed sessions LogActor, should
+     * be the ManagementActor
+     * @return
+     */
+    private LogActor getLogActor()
+    {
+        return _session.getLogActor();
     }
 
     @Override
