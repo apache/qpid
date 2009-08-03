@@ -106,14 +106,26 @@ public class ${type.name}Messages
     public static LogMessage ${message.methodName}(#foreach($parameter in ${message.parameters})${parameter.type} ${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end
 #end#if(${message.parameters.size()} > 0 && ${message.options.size()} > 0), #end#foreach($option in ${message.options})boolean ${option.name}#if (${velocityCount} != ${message.options.size()} ), #end#end)
     {
+##
+## If we don't have any parameters then we don't need the overhead of using the
+## message formatter so we can just set our return message to the retreived
+## fixed string.
+## So we don't need to update the _formatter with the new pattern.
+##
+## Here we setup rawMessage to be the formatted message ready for direct return
+## with the message.name or further processing to remove options.
+##
+#if(${message.parameters.size()} > 0)
         final Object[] messageArguments = {#foreach($parameter in ${message.parameters})${parameter.name}#if (${velocityCount} != ${message.parameters.size()} ), #end#end};
         _formatter.applyPattern(_messages.getString("${message.name}"));
-             
-        ## If we have some options then we need to build the message based
-        ## on those values so only provide that logic if we need it.
-#if(${message.options.size()} > 0)
         String rawMessage = _formatter.format(messageArguments);
+#else
+        String rawMessage = _messages.getString("${message.name}");
+#end
 
+## If we have some options then we need to build the message based
+## on those values so only provide that logic if we need it.
+#if(${message.options.size()} > 0)
         StringBuffer msg =new StringBuffer("${message.name} : ");
 
         // Split the formatted message up on the option values so we can
@@ -124,8 +136,8 @@ public class ${type.name}Messages
         int end;
         if (parts.length > 1)
         {
-            ## For Each Optional value check if it has been enabled and then
-            ## append it to the log.
+## For Each Optional value check if it has been enabled and then
+## append it to the log.
 #foreach($option in ${message.options})
 
             // Add Option : ${option.value}
@@ -142,8 +154,8 @@ public class ${type.name}Messages
 
         final String message = msg.toString();
 #else
-        ## If we have no options then we can just format and set the log
-        final String message = "${message.name} : " + _formatter.format(messageArguments);
+## If we have no options then we can just format and set the log
+        final String message = "${message.name} : " + rawMessage;            
 #end
 
         return new LogMessage()
