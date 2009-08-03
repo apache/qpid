@@ -23,14 +23,21 @@ package org.apache.qpid.server.exchange;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
-import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
+    AMQProtocolSession _protocolSession;
+
     protected void setUp() throws Exception
     {
         super.setUp();
         ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
+        // Just use the first vhost.
+        VirtualHost virtualHost = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHosts().iterator().next();
+        _protocolSession = new InternalTestProtocolSession(virtualHost);
     }
 
     protected void tearDown()
@@ -49,21 +56,21 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         TestQueue q7 = bindDefault("F0000", "F0001=Bear");
         TestQueue q8 = bindDefault("F0000=Aardvark", "F0001");
 
-        routeAndTest(new Message("Message1", "F0000"), q1);
-        routeAndTest(new Message("Message2", "F0000=Aardvark"), q1, q2);
-        routeAndTest(new Message("Message3", "F0000=Aardvark", "F0001"), q1, q2, q3, q5, q8);
-        routeAndTest(new Message("Message4", "F0000", "F0001=Bear"), q1, q3, q4, q5, q7);
-        routeAndTest(new Message("Message5", "F0000=Aardvark", "F0001=Bear"),
+        routeAndTest(new Message(_protocolSession, "Message1", "F0000"), q1);
+        routeAndTest(new Message(_protocolSession, "Message2", "F0000=Aardvark"), q1, q2);
+        routeAndTest(new Message(_protocolSession, "Message3", "F0000=Aardvark", "F0001"), q1, q2, q3, q5, q8);
+        routeAndTest(new Message(_protocolSession, "Message4", "F0000", "F0001=Bear"), q1, q3, q4, q5, q7);
+        routeAndTest(new Message(_protocolSession, "Message5", "F0000=Aardvark", "F0001=Bear"),
                      q1, q2, q3, q4, q5, q6, q7, q8);
-        routeAndTest(new Message("Message6", "F0002"));
+        routeAndTest(new Message(_protocolSession, "Message6", "F0002"));
 
-        Message m7 = new Message("Message7", "XXXXX");
+        Message m7 = new Message(_protocolSession, "Message7", "XXXXX");
 
         MessagePublishInfoImpl pb7 = (MessagePublishInfoImpl) (m7.getMessagePublishInfo());
         pb7.setMandatory(true);
         routeAndTest(m7,true);
 
-        Message m8 = new Message("Message8", "F0000");
+        Message m8 = new Message(_protocolSession, "Message8", "F0000");
         MessagePublishInfoImpl pb8 = (MessagePublishInfoImpl)(m8.getMessagePublishInfo());
         pb8.setMandatory(true);
         routeAndTest(m8,false,q1);
@@ -79,19 +86,19 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
         TestQueue q4 = bindDefault("F0000=Aardvark", "F0001", "X-match=any");
         TestQueue q6 = bindDefault("F0000=Apple", "F0001", "X-match=any");
 
-        routeAndTest(new Message("Message1", "F0000"), q1, q3);
-        routeAndTest(new Message("Message2", "F0000=Aardvark"), q1, q2, q3, q4);
-        routeAndTest(new Message("Message3", "F0000=Aardvark", "F0001"), q1, q2, q3, q4, q6);
-        routeAndTest(new Message("Message4", "F0000", "F0001=Bear"), q1, q2, q3, q4, q6);
-        routeAndTest(new Message("Message5", "F0000=Aardvark", "F0001=Bear"), q1, q2, q3, q4, q6);
-        routeAndTest(new Message("Message6", "F0002"));
+        routeAndTest(new Message(_protocolSession, "Message1", "F0000"), q1, q3);
+        routeAndTest(new Message(_protocolSession, "Message2", "F0000=Aardvark"), q1, q2, q3, q4);
+        routeAndTest(new Message(_protocolSession, "Message3", "F0000=Aardvark", "F0001"), q1, q2, q3, q4, q6);
+        routeAndTest(new Message(_protocolSession, "Message4", "F0000", "F0001=Bear"), q1, q2, q3, q4, q6);
+        routeAndTest(new Message(_protocolSession, "Message5", "F0000=Aardvark", "F0001=Bear"), q1, q2, q3, q4, q6);
+        routeAndTest(new Message(_protocolSession, "Message6", "F0002"));
     }
 
     public void testMandatory() throws AMQException
     {
         bindDefault("F0000");
-        Message m1 = new Message("Message1", "XXXXX");
-        Message m2 = new Message("Message2", "F0000");
+        Message m1 = new Message(_protocolSession, "Message1", "XXXXX");
+        Message m2 = new Message(_protocolSession, "Message2", "F0000");
         MessagePublishInfoImpl pb1 = (MessagePublishInfoImpl) (m1.getMessagePublishInfo());
         pb1.setMandatory(true);
         MessagePublishInfoImpl pb2 = (MessagePublishInfoImpl) (m2.getMessagePublishInfo());

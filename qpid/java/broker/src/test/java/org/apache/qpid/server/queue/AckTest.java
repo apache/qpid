@@ -29,6 +29,9 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
@@ -55,7 +58,7 @@ public class AckTest extends TestCase
 
     private Subscription _subscription;
 
-    private MockProtocolSession _protocolSession;
+    private AMQProtocolSession _protocolSession;
 
     private TestMemoryMessageStore _messageStore;
 
@@ -66,19 +69,21 @@ public class AckTest extends TestCase
     private AMQQueue _queue;
 
     private static final AMQShortString DEFAULT_CONSUMER_TAG = new AMQShortString("conTag");
+    private VirtualHost _virtualHost;
 
     protected void setUp() throws Exception
     {
         super.setUp();
         ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
 
+        _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = new TestMemoryMessageStore();
-        _protocolSession = new MockProtocolSession(_messageStore);
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
         _channel = new AMQChannel(_protocolSession,5, _messageStore /*dont need exchange registry*/);
 
         _protocolSession.addChannel(_channel);
 
-        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test"),
+        _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("myQ"), false, new AMQShortString("guest"), true, _virtualHost,
                                                     null);
     }
 

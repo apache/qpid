@@ -32,6 +32,7 @@ import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
@@ -49,6 +50,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Set;
+import java.security.Principal;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
@@ -184,7 +186,6 @@ public class AMQQueueAlertTest extends TestCase
     */
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
-        _protocolSession = new InternalTestProtocolSession();
         AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
         _protocolSession.addChannel(channel);
 
@@ -295,12 +296,13 @@ public class AMQQueueAlertTest extends TestCase
         super.setUp();
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
-        _protocolSession = new InternalTestProtocolSession();
-
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        CurrentActor.set(_protocolSession.getLogActor());
     }
 
     protected void tearDown()
     {
+        CurrentActor.remove();
         ApplicationRegistry.remove(1);
     }
 
