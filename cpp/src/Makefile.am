@@ -406,6 +406,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/log/OstreamOutput.h			\
   qpid/log/Selector.cpp				\
   qpid/log/Statement.cpp			\
+  qpid/management/Manageable.cpp		\
+  qpid/management/ManagementObject.cpp		\
   qpid/memory.h					\
   qpid/pointer_to_other.h			\
   qpid/ptr_map.h				\
@@ -616,13 +618,11 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.cpp \
   qpid/broker/Vhost.h \
-  qpid/management/IdAllocator.h			\
-  qpid/management/Manageable.cpp		\
+  qpid/management/IdAllocator.h \
   qpid/management/ManagementAgent.cpp \
-  qpid/management/ManagementAgent.h		\
+  qpid/management/ManagementAgent.h \
   qpid/management/ManagementExchange.cpp \
-  qpid/management/ManagementExchange.h		\
-  qpid/management/ManagementObject.cpp		\
+  qpid/management/ManagementExchange.h \
   qpid/sys/TCPIOPlugin.cpp
 
 
