@@ -54,6 +54,9 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -139,6 +142,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private final long _sessionID = idGenerator.getAndIncrement();
 
     private AMQPConnectionActor _actor;
+    private LogSubject _logSubject;
 
     public ManagedObject getManagedObject()
     {
@@ -156,6 +160,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
+        _actor.message(ConnectionMessages.CON_1001(null, null, false, false));
+
         try
         {
             IoServiceConfig config = session.getServiceConfig();
@@ -171,6 +177,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
+    // This is only used by two tests that do provide null values for stateManager
+    // so we can safely remove this and refactor.
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory,
                                   AMQStateManager stateManager) throws AMQException
     {
@@ -236,42 +244,45 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
 
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Frame Received: " + frame);
-        }
-
-        // Check that this channel is not closing
-        if (channelAwaitingClosure(channelId))
-        {
-            if ((frame.getBodyFrame() instanceof ChannelCloseOkBody))
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
-                }
-            }
-            else
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure. Should close socket as client did not close-ok :" + frame);
-                }
-
-                closeProtocolSession();
-                return;
-            }
-        }
-
         CurrentActor.set(_actor);
         try
         {
-            body.handle(channelId, this);
-        }
-        catch (AMQException e)
-        {
-            closeChannel(channelId);
-            throw e;
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Frame Received: " + frame);
+            }
+
+            // Check that this channel is not closing
+            if (channelAwaitingClosure(channelId))
+            {
+                if ((frame.getBodyFrame() instanceof ChannelCloseOkBody))
+                {
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
+                    }
+                }
+                else
+                {
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Channel[" + channelId + "] awaiting closure. Should close socket as client did not close-ok :" + frame);
+                    }
+
+                    closeProtocolSession();
+                    return;
+                }
+            }
+
+            try
+            {
+                body.handle(channelId, this);
+            }
+            catch (AMQException e)
+            {
+                closeChannel(channelId);
+                throw e;
+            }
         }
         finally
         {
@@ -285,6 +296,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         ((AMQDecoder) _codecFactory.getDecoder()).setExpectProtocolInitiation(false);
         try
         {
+            // Log incomming protocol negotiation request
+            _actor.message(ConnectionMessages.CON_1001(null, pi._protocolMajor + "-" + pi._protocolMinor, false, true));
+
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
             // This sets the protocol version (and hence framing classes) for this session.
@@ -643,6 +657,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         if (!_closed)
         {
             _closed = true;
+            
+            _actor.message(ConnectionMessages.CON_1002());
 
             if (_virtualHost != null)
             {
@@ -770,7 +786,11 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         {
             if (_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE) != null)
             {
-                setContextKey(new AMQShortString(_clientProperties.getString(CLIENT_PROPERTIES_INSTANCE)));
+                String clientID = _clientProperties.getString(CLIENT_PROPERTIES_INSTANCE);
+                setContextKey(new AMQShortString(clientID));
+
+                // Log the Opening of the connection for this client
+                _actor.message(ConnectionMessages.CON_1001(clientID, _protocolVersion.toString(), true, true));
             }
 
             if (_clientProperties.getString(ClientProperties.version.toString()) != null)
@@ -829,6 +849,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         _virtualHost = virtualHost;
 
         _actor.virtualHostSelected(this);
+        _logSubject = new ConnectionLogSubject(this);
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
