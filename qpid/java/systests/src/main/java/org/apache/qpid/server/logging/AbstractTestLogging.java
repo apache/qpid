@@ -24,6 +24,9 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.LogMonitor;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 public class AbstractTestLogging extends QpidTestCase
 {
@@ -53,7 +56,7 @@ public class AbstractTestLogging extends QpidTestCase
 
     protected void validateMessageID(String id, String log)
     {
-        assertEquals("Incorrect CHN message",id, getMessageID(log));
+        assertEquals("Incorrect message",id, getMessageID(log));
     }
 
     protected String getMessageID(String log)
@@ -219,4 +222,41 @@ public class AbstractTestLogging extends QpidTestCase
         return rawLog.substring(start);
     }
 
+    /**
+       * Given a list of messages that have been pulled out of a log file
+       * Process the results splitting the log statements in to lists based on the
+       * actor's connection ID.
+       *
+       * So for each log entry extract the Connecition ID from the Actor of the log
+       *
+       * Then use that as a key to a HashMap storing the list of log messages for
+       * that connection.
+       *
+       * @param logMessages The list of mixed connection log messages
+       * @return Map indexed by connection id to a list of log messages just for that connection.
+       */
+      protected HashMap<Integer,List<String>> splitResultsOnConnectionID(List<String> logMessages)
+      {
+          HashMap<Integer,List<String>> connectionSplitList = new HashMap<Integer, List<String>>();
+
+          for (String log : logMessages)
+          {
+              // Get the connectionID from the Actor in the Message Log.
+              int cID = extractConnectionID(fromActor(getLog(log)));
+
+              List<String> connectionData = connectionSplitList.get(cID);
+
+              // Create the initial List if we don't have one already
+              if (connectionData == null)
+              {
+                  connectionData = new LinkedList<String>();
+                  connectionSplitList.put(cID, connectionData);
+              }
+
+              // Store the log
+              connectionData.add(log);
+          }
+
+          return connectionSplitList;
+      }
 }
