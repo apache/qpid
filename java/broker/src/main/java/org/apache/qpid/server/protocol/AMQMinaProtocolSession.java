@@ -177,20 +177,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    // This is only used by two tests that do provide null values for stateManager
-    // so we can safely remove this and refactor.
-    public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory,
-                                  AMQStateManager stateManager) throws AMQException
-    {
-        _stateManager = stateManager;
-        _minaProtocolSession = session;
-        session.setAttachment(this);
-
-        _codecFactory = codecFactory;
-
-        _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
-    }
-
     private AMQProtocolSessionMBean createMBean() throws AMQException
     {
         try

@@ -41,7 +41,7 @@ public class MaxChannelsTest extends TestCase
     public void testChannels() throws Exception
     {
         _session = new AMQMinaProtocolSession(new TestIoSession(), _appRegistry
-				.getVirtualHostRegistry(), new AMQCodecFactory(true), null);
+				.getVirtualHostRegistry(), new AMQCodecFactory(true));
 
         // Need to authenticate session for it to work, (well for logging to work)
         _session.setAuthorizedID(new Principal()

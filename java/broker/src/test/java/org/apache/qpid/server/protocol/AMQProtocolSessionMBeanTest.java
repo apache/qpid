@@ -111,8 +111,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         _protocolSession =
-                new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
-                                           null);
+                new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true));
         // Need to authenticate session for it to work, (well for logging to work)
         _protocolSession.setAuthorizedID(new Principal()
         {
