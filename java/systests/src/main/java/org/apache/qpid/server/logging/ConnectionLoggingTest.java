@@ -20,9 +20,16 @@
 */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.test.unit.client.forwardall.Client;
+
 import javax.jms.Connection;
 import java.io.File;
 import java.util.List;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.SortedSet;
+import java.util.Collections;
+import java.util.TreeSet;
 
 public class ConnectionLoggingTest extends AbstractTestLogging
 {
@@ -65,11 +72,26 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
 
         // Validation
+        // We should have at least three messages when running InVM but when running External
+        // we will get 0-10 negotiation on con:0 whcih may close at some random point
+        // MESSAGE [con:0(/127.0.0.1:46926)] CON-1001 : Open
+        // MESSAGE [con:0(/127.0.0.1:46926)] CON-1001 : Open : Protocol Version : 0-10
+        // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open
+        // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Protocol Version : 0-9
+        // MESSAGE [con:0(/127.0.0.1:46926)] CON-1002 : Close
+        // MESSAGE [con:1(/127.0.0.1:46927)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
 
-        // We should have at least three messages
-        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
-        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
-        //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
+        //So check how many connections we have in the result set and extract the last one.
+        // When running InVM we will have con:0 and externally con:1
+
+        HashMap<Integer, List<String>> connectionData = splitResultsOnConnectionID(results);
+
+        // Get the last Integer from keySet of the ConnectionData
+        int connectionID = new TreeSet<Integer>(connectionData.keySet()).last();
+
+        //Use just the data from the last connection for the test
+        results = connectionData.get(connectionID);
+
         // If we are running inVM we will get three open messagse, if running externally weN will also have
         // open and close messages from the failed 0-10 negotiation 
         assertTrue("CON messages not logged:" + results.size(), results.size() >= 3);
