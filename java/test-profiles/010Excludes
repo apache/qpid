@@ -77,3 +77,5 @@ org.apache.qpid.server.store.PersistentStoreTest#*
 // QPID-1225 : Temporary remove this test until the problem has been addressed
 org.apache.qpid.server.security.acl.SimpleACLTest#testClientPublishInvalidQueueSuccess
 
+// CPP Broker does not follow the same Logging convention as the Java broker
+org.apache.qpid.server.logging.*
