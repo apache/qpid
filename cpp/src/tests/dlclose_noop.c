@@ -26,5 +26,5 @@
  */
 
 #include <stdio.h>
-void* dlclose(void* handle) {}
+void* dlclose(void* handle) { return 0; }
 
