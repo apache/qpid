@@ -88,7 +88,7 @@ public class VirtualHost implements Accessable
 
     private final Timer _houseKeepingTimer;
     private VirtualHostConfiguration _configuration;
-     
+
     public void setAccessableName(String name)
     {
         _logger.warn("Setting Accessable Name for VirualHost is not allowed. ("
@@ -384,11 +384,6 @@ public class VirtualHost implements Accessable
     public ExchangeFactory getExchangeFactory()
     {
         return _exchangeFactory;
-    }
-
-    public ApplicationRegistry getApplicationRegistry()
-    {
-        throw new UnsupportedOperationException();
     }
 
     public MessageStore getMessageStore()
