@@ -172,7 +172,7 @@ public abstract class AbstractTestLogSubject extends TestCase
      * @param message the message to search
      * @param vhost   the vhostName to check against
      */
-    protected void verifyVirtualHost(String message, VirtualHost vhost)
+    static public void verifyVirtualHost(String message, VirtualHost vhost)
     {
         String vhostSlice = getSlice("vh", message);
 
@@ -199,7 +199,7 @@ public abstract class AbstractTestLogSubject extends TestCase
      *
      * @return the slice if found otherwise null is returned
      */
-    protected String getSlice(String sliceID, String message)
+    static public String getSlice(String sliceID, String message)
     {
         int indexOfSlice = message.indexOf(sliceID + "(");
 
