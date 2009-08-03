@@ -25,7 +25,7 @@ OUT_FILE    = $(SRC_DIR)/qmf-agent
 
 CC           = gcc
 LIB_DIR      = $(QPID_DIR)/cpp/src/.libs
-CC_INCLUDES  = -I$(SRC_DIR) -I$(QPID_DIR)/cpp/src -I$(QPID_DIR)/cpp/src/gen -I$(GEN_DIR)
+CC_INCLUDES  = -I$(SRC_DIR) -I$(QPID_DIR)/cpp/include -I$(GEN_DIR)
 CC_FLAGS     = -g -O3
 LD_FLAGS     = -lqmfagent -lqmfcommon -L$(LIB_DIR)
 SPEC_DIR     = $(QPID_DIR)/specs
