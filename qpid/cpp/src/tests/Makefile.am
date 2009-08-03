@@ -256,6 +256,18 @@ check_PROGRAMS+=datagen
 datagen_SOURCES=datagen.cpp
 datagen_LDADD=$(lib_common)
 
+check_PROGRAMS+=qrsh_server
+qrsh_server_SOURCES=qrsh_server.cpp
+qrsh_server_LDADD=$(lib_client)
+
+check_PROGRAMS+=qrsh_run
+qrsh_run_SOURCES=qrsh_run.cpp
+qrsh_run_LDADD=$(lib_client)
+
+check_PROGRAMS+=qrsh
+qrsh_SOURCES=qrsh.cpp
+qrsh_LDADD=$(lib_client)
+
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
