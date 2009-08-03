@@ -28,19 +28,31 @@ import javax.jms.Message;
 import javax.jms.JMSException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.net.MalformedURLException;
+
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.jms.BrokerDetails;
@@ -490,6 +502,119 @@ public class QpidTestCase extends TestCase
         }
     }
 
+
+    /**
+     * Attempt to set the Java Broker to use the BDBMessageStore for persistence
+     * Falling back to the DerbyMessageStore if
+     *
+     * @param virtualhost - The virtualhost to modify
+     *
+     * @throws ConfigurationException - when reading/writing existing configuration
+     * @throws IOException            - When creating a temporary file.
+     */
+    protected void makeVirtualHostPersistent(String virtualhost)
+            throws ConfigurationException, IOException
+    {
+        Class storeClass = DerbyMessageStore.class;
+
+        Class bdb = null;
+        try
+        {
+            bdb = Class.forName("org.apache.qpid.store.berkleydb.BDBMessageStore");
+        }
+        catch (ClassNotFoundException e)
+        {
+            // No BDB store, we'll use Derby instead.
+        }
+
+        if (bdb != null)
+        {
+            storeClass = bdb;
+        }
+
+        // First we munge the config file and, if we're in a VM, set up an additional logfile
+        XMLConfiguration configuration = new XMLConfiguration(_configFile);
+        configuration.setProperty("virtualhosts.virtualhost." + virtualhost +
+                                  ".store.class", storeClass.getName());
+        configuration.setProperty("virtualhosts.virtualhost." + virtualhost +
+                                  ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
+                                  "${work}");
+
+        File tmpFile = File.createTempFile("configFile", "test");
+        tmpFile.deleteOnExit();
+        configuration.save(tmpFile);
+        _configFile = tmpFile;
+    }
+
+    /**
+     * Set a configuration Property for this test run.
+     *
+     * This creates a new configuration based on the current configuration
+     * with the specified property change.
+     *
+     * Multiple calls to this method will result in multiple temporary
+     * configuration files being created.
+     *
+     * @param property the configuration property to set
+     * @param value the new value
+     * @throws ConfigurationException when loading the current config file
+     * @throws IOException when writing the new config file
+     */
+    protected void setConfigurationProperty(String property, String value)
+            throws ConfigurationException, IOException
+    {
+        XMLConfiguration configuration = new XMLConfiguration(_configFile);
+
+        // If we are modifying a virtualhost value then we need to do so in
+        // the virtualhost.xml file as these values overwrite the values in
+        // the main config.xml file
+        if (property.startsWith("virtualhosts"))
+        {
+            // So locate the virtualhost.xml file and use the ServerConfiguration
+            // flatConfig method to get the interpolated value.
+            String vhostConfigFile = ServerConfiguration.
+                    flatConfig(_configFile).getString("virtualhosts");
+
+            // Load the vhostConfigFile
+            XMLConfiguration vhostConfiguration = new XMLConfiguration(vhostConfigFile);
+
+            // Set the value specified in to the vhostConfig.
+            // Remembering that property will be 'virtualhosts.virtulhost....'
+            // so we need to take off the 'virtualhosts.' from the start.
+            vhostConfiguration.setProperty(property.substring(property.indexOf(".") + 1), value);
+
+            // Write out the new virtualhost config file
+            File tmpFile = File.createTempFile("virtualhost-configFile", ".xml");
+            tmpFile.deleteOnExit();
+            vhostConfiguration.save(tmpFile);
+
+            // Change the property and value to be the new virtualhosts file
+            // so that then update the value in the main config file.
+            property = "virtualhosts";
+            value = tmpFile.getAbsolutePath();
+        }
+
+        configuration.setProperty(property, value);
+
+        // Write the new server config file
+        File tmpFile = File.createTempFile("configFile", ".xml");
+        tmpFile.deleteOnExit();
+        configuration.save(tmpFile);
+
+        _logger.info("Qpid Test Case now using configuration File:"
+                     + tmpFile.getAbsolutePath());
+
+        _configFile = tmpFile;
+    }
+
+    /**
+     * Set a System property for the duration of this test.
+     *
+     * When the test run is complete the value will be reverted.
+
+     * @param property the property to set
+     * @param value the new value to use
+     */
     protected void setSystemProperty(String property, String value)
     {
         if (!_setProperties.containsKey(property))
@@ -530,6 +655,21 @@ public class QpidTestCase extends TestCase
     {
         return _brokerVersion.equals(VERSION_010);
     }
+
+    protected boolean isJavaBroker()
+    {
+        return _brokerLanguage.equals("java");
+    }
+
+    protected boolean isCppBroker()
+    {
+        return _brokerLanguage.equals("cpp");
+    }
+
+    protected boolean isExternalBroker()
+    {
+        return !_broker.equals("vm");
+    }    
 
     public void restartBroker() throws Exception
     {
