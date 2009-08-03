@@ -32,6 +32,10 @@ public abstract class AbstractActor implements LogActor
 
     public AbstractActor(RootMessageLogger rootLogger)
     {
+        if(rootLogger == null)
+        {
+            throw new NullPointerException("RootMessageLogger cannot be null");
+        }
         _rootLogger = rootLogger;
     }
 

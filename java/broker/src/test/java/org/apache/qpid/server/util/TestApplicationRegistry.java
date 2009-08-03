@@ -39,6 +39,8 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -73,6 +75,9 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
+                                                       new Log4jMessageLogger());
+        
         Properties users = new Properties();
 
         users.put("guest", "guest");

@@ -77,10 +77,8 @@ public class Log4jMessageLoggerTest extends TestCase
      * Verify that the default configuraion of Log4jMessageLogger will
      * log a message.
      *
-     * @throws IOException
-     * @throws InterruptedException
      */
-    public void testDefaultLogsMessage() throws IOException, InterruptedException
+    public void testDefaultLogsMessage()
     {
         // Create a logger to test
         Log4jMessageLogger logger = new Log4jMessageLogger();
@@ -95,28 +93,17 @@ public class Log4jMessageLoggerTest extends TestCase
     }
 
     /**
-     * This test checks that if the Root Logger level is set such that the INFO
-     * messages would not be logged then the  Log4jMessageLogger default of INFO
-     * will result in logging not being presented.
+     * This test verifies that the Log4jMessageLogger does not inherit a logging
+     * level from the RootLogger. The Log4jMessageLogger default of INFO
+     * will result in logging being presented.
      *
-     * @throws IOException
-     * @throws InterruptedException
      */
-    public void testDefaultsLogsAtInfo() throws IOException, InterruptedException
+    public void testLoggerDoesNotInheritRootLevel()
     {
-        // Create a logger to test
-        Log4jMessageLogger logger = new Log4jMessageLogger();
-
-        //Create Message for test
-        String message = "testDefaults";
-
         //Set default logger level to off
-        Logger.getRootLogger().setLevel(Level.WARN);
+        Logger.getRootLogger().setLevel(Level.OFF);
 
-        // Log the message
-        logger.rawMessage(message);
-
-        verifyNoLog(message);
+        testDefaultLogsMessage();
     }
 
     /**
@@ -125,10 +112,8 @@ public class Log4jMessageLoggerTest extends TestCase
      * Test this by setting the default logger level to off which has been
      * verified to work by test 'testDefaultsLevelObeyed'
      *
-     * @throws IOException
-     * @throws InterruptedException
      */
-    public void testDefaultLoggerAdjustment() throws IOException, InterruptedException
+    public void testDefaultLoggerAdjustment()
     {
         String loggerName = "TestLogger";
         // Create a logger to test
@@ -150,41 +135,6 @@ public class Log4jMessageLoggerTest extends TestCase
         Logger.getLogger(Log4jMessageLogger.DEFAULT_LOGGER).setLevel(originalLevel);
     }
 
-    /**
-     * Test that changing the log level has an effect.
-     * Set the level to be debug
-     * but only set the logger to log at INFO
-     * there should be no data printed
-     * subsequently changing the root logger to allow DEBUG should
-     * show the message
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public void testDefaultsLevelObeyed() throws IOException, InterruptedException
-    {
-        // Create a logger to test
-        Log4jMessageLogger logger = new Log4jMessageLogger("DEBUG", Log4jMessageLogger.DEFAULT_LOGGER);
-
-        //Create Message for test
-        String message = "testDefaults";
-
-        //Set root logger to INFO only
-        Logger.getRootLogger().setLevel(Level.INFO);
-
-        // Log the message
-        logger.rawMessage(message);
-
-        verifyNoLog(message);
-
-        //Set root logger to INFO only
-        Logger.getRootLogger().setLevel(Level.DEBUG);
-
-        // Log the message
-        logger.rawMessage(message);
-
-        verifyLogPresent(message);
-    }
 
     /**
      * Check that the Log Message reached log4j

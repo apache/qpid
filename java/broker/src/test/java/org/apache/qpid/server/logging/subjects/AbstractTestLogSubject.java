@@ -112,15 +112,19 @@ public abstract class AbstractTestLogSubject extends TestCase
         assertEquals("Username not as expected", userNameParts[0], user);
 
         // Extract IP.
+        // The connection will be of the format - guest@/127.0.0.1:1/test
+        // and so our userNamePart will be '/127.0.0.1:1/test'
         String[] ipParts = userNameParts[1].split("/");
 
+        // We will have three sections
         assertEquals("Unable to split IP from rest of Connection:"
-                     + userNameParts[1], 2, ipParts.length);
+                     + userNameParts[1], 3, ipParts.length);
 
-        assertEquals("IP not as expected", ipParts[0], ipString);
+        // We need to skip the first '/' split will be empty so validate 1 as IP
+        assertEquals("IP not as expected", ipString, ipParts[1]);
 
-        //Finally check vhost
-        assertEquals("Virtualhost name not as expected.", vhost, ipParts[1]);
+        //Finally check vhost which is section 2
+        assertEquals("Virtualhost name not as expected.", vhost, ipParts[2]);
     }
 
     /**
