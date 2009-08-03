@@ -34,7 +34,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import java.io.File;
 
-public class AlertingTest extends QpidTestCase
+public class AlertingTest extends AbstractTestLogging
 {
     private String VIRTUALHOST = "test";
     private Session _session;
@@ -42,7 +42,6 @@ public class AlertingTest extends QpidTestCase
     private Queue _destination;
     private int _numMessages;
 
-    private LogMonitor _monitor;
     private static final int ALERT_LOG_WAIT_PERIOD = 5000;
     private static final String MESSAGE_COUNT_ALERT = "MESSAGE_COUNT_ALERT";
 
@@ -57,9 +56,6 @@ public class AlertingTest extends QpidTestCase
 
         // Update the configuration to make our virtualhost Persistent.
         makeVirtualHostPersistent(VIRTUALHOST);
-
-        //Create a log file monitor
-        _monitor = new LogMonitor(_outputFile);
 
         _numMessages = 50;
 
@@ -193,8 +189,7 @@ public class AlertingTest extends QpidTestCase
         assertEquals("Broker has invalid message count for test", 2, messageCount);
 
         // Ensure the alert has not occured yet
-        assertEquals("Alert has already occured", 0,
-                     _monitor.findMatches(MESSAGE_COUNT_ALERT).size());
+        assertLoggingNotYetOccured(MESSAGE_COUNT_ALERT);
 
         // Trigger the new value
         sendMessage(_session, _destination, 3);
