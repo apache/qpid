@@ -51,4 +51,9 @@ public abstract class AbstractActor implements LogActor
         }
     }
 
+    public RootMessageLogger getRootMessageLogger()
+    {
+        return _rootLogger;
+    }
+
 }
