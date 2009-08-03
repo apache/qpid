@@ -75,11 +75,11 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         assertEquals("CHN messages not logged", 1, results.size());
 
-        String log = results.get(0);
+        String log = getLog(results.get(0));
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1001 : Create
         //1 & 2
         validateMessageID("CHN-1001", log);
-        assertEquals("Incorrect Channel in actor", 1, getChannelID(fromActor(log)));
+        assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
 
         connection.close();
     }
@@ -125,7 +125,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         // Verify
         int resultSize = results.size();
-        String log = results.get(resultSize - 1);
+        String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1002", log);
         assertTrue("Message should be Flow Stopped", fromMessage(log).endsWith("Flow Stopped"));
@@ -178,7 +178,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Verify
 
         int resultSize = results.size();
-        String log = results.get(resultSize - 1);
+        String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1002", log);
         assertTrue("Message should be Flow Started", fromMessage(log).endsWith("Flow Started"));
@@ -225,7 +225,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Verify
 
         int resultSize = results.size();
-        String log = results.get(resultSize - 1);
+        String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1003", log);
         assertTrue("Message should be Close:" + fromMessage(log), fromMessage(log).endsWith("Close"));
@@ -270,10 +270,10 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Verify
 
         int resultSize = results.size();
-        String log = results.get(resultSize - 1);
+        String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1003", log);
-        assertTrue("Message should be Close:" + fromMessage(log), fromMessage(log).endsWith("Close"));
+        assertTrue("Message should be Close:" + fromMessage(getLog(log)), fromMessage(log).endsWith("Close"));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromActor(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromSubject(log)));
     }

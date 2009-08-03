@@ -96,9 +96,7 @@ public class AbstractTestLogging extends QpidTestCase
 
     protected String fromMessage(String log)
     {
-        int messageStart = log.indexOf("MESSAGE");
-
-        int startSubject = log.indexOf("]", messageStart) + 1;
+        int startSubject = log.indexOf("]") + 1;
         int start = log.indexOf("]", startSubject) + 1;
 
         // If we don't have a subject then the second indexOf will return 0
@@ -111,6 +109,19 @@ public class AbstractTestLogging extends QpidTestCase
         return log.substring(start).trim();
     }
 
+    /**
+     * Extract the Subject from the Log Message.
+     *
+     * The subject is the second block inclosed in brackets '[ ]'.
+     *
+     * If there is no Subject or the second block of brackets '[ ]' cannot be
+     * identified then an empty String ("") is returned.
+     *
+     * The brackets '[ ]' are not included in the returned String.
+     *
+     * @param log The log message to process
+     * @return the Subject string or the empty string ("") if the subject can't be identified.
+     */
     protected String fromSubject(String log)
     {
         int start = log.indexOf("[") + 1;
@@ -118,27 +129,94 @@ public class AbstractTestLogging extends QpidTestCase
         start = log.indexOf("[", start) + 1;
 
         // There may not be a subject so in that case return nothing.
-        if (start == -1)
+        if (start == 0)
         {
             return "";
         }
 
         int end = log.indexOf("]", start);
-        return log.substring(start, end);
+        try
+        {
+            return log.substring(start, end);
+        }
+        catch (IndexOutOfBoundsException iobe)
+        {
+            return "";
+        }
     }
 
+    /**
+     * Extract the actor segment from the log message.
+     * The Actor segment is the first section enclosed in '[ ]'.
+     *
+     * No analysis is performed to ensure that the first '[ ]' section of the
+     * given log is really an Actor segment.
+     *
+     * The brackets '[ ]' are not included in the returned String.
+     *
+     * @param log the Log Message
+     * @return the Actor segment or "" if unable to locate '[ ]' section
+     */
     protected String fromActor(String log)
     {
         int start = log.indexOf("[") + 1;
         int end = log.indexOf("]", start);
-        return log.substring(start, end).trim();
+        try
+        {
+            return log.substring(start, end).trim();
+        }
+        catch (IndexOutOfBoundsException iobe)
+        {
+            return "";
+        }
     }
 
+    /**
+     * Given our log message extract the connection ID:
+     *
+     * The log string will contain the connectionID identified by 'con:'
+     *
+     * So extract the value shown here by X:
+     *
+     * 'con:X('
+     *
+     * Extract the value between the ':' and '(' and process it as an Integer
+     *
+     * If we are unable to find the right index or process the substring as an
+     * Integer then return -1.
+     *
+     * @param log the log String to process
+     * @return the connection ID or -1.
+     */
     protected int extractConnectionID(String log)
     {
         int conIDStart = log.indexOf("con:") + 4;
         int conIDEnd = log.indexOf("(", conIDStart);
-        return Integer.parseInt(log.substring(conIDStart, conIDEnd));
+        try
+        {
+            return Integer.parseInt(log.substring(conIDStart, conIDEnd));
+        }
+        catch (Exception e)
+        {
+            return -1;
+        }
+    }
+
+    /**
+     * Extract the log entry from the raw log line which will contain other
+     * log4j formatting.
+     *
+     * This formatting may impead our testing process so extract the log message
+     * as we know it to be formatted.
+     *
+     * This starts with the string MESSAGE
+     * @param rawLog the raw log
+     * @return the log we are expecting to be printed without the log4j prefixes
+     */
+    protected String getLog(String rawLog)
+    {
+        int start = rawLog.indexOf("MESSAGE");
+        return rawLog.substring(start);
     }
 
 }

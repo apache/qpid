@@ -74,7 +74,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // open and close messages from the failed 0-10 negotiation 
         assertTrue("CON messages not logged:" + results.size(), results.size() >= 3);
 
-        String log = results.get(0);
+        String log = getLog(results.get(0));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
         //1 & 2
         validateMessageID("CON-1001",log);
@@ -85,7 +85,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // 0-10 negotiation messages
 
         // 3 - Assert the options are correct
-        log = results.get(resultsSize - 1);
+        log = getLog(results.get(resultsSize - 1));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
         validateMessageID("CON-1001",log);
         assertTrue("Client ID option is not present", fromMessage(log).contains("Client ID :"));
@@ -95,7 +95,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         //fixme there is no way currently to find out the negotiated protocol version
         // The delegate is the versioned class ((AMQConnection)connection)._delegate
 
-        log = results.get(resultsSize - 2);
+        log = getLog(results.get(resultsSize - 2));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
         validateMessageID("CON-1001",log);
         assertTrue("Protocol Version option is not present", fromMessage(log).contains("Protocol Version :"));
@@ -103,7 +103,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         // Check that client ID is not present in log
         assertTrue("Client ID option is present", !fromMessage(log).contains("Client ID :"));
 
-        log = results.get(resultsSize - 3);
+        log = getLog(results.get(resultsSize - 3));
         validateMessageID("CON-1001",log);
         // Check that PV is not present in log
         assertTrue("Protocol Version option is present", !fromMessage(log).contains("Protocol Version :"));
@@ -147,7 +147,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         int resultsSize = results.size();
 
         // Validate Close message occurs
-        String log = results.get(resultsSize - 1);
+        String log = getLog(results.get(resultsSize - 1));
         validateMessageID("CON-1002",log);
         assertTrue("Message does not end with close:" + log, log.endsWith("Close"));
 
@@ -155,7 +155,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         int connectionID = extractConnectionID(log);
 
         //Previous log message should be the open
-        log = results.get(resultsSize - 2);
+        log = getLog(results.get(resultsSize - 2));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
         validateMessageID("CON-1001",log);
         assertEquals("Connection IDs do not match", connectionID, extractConnectionID(fromActor(log)));
