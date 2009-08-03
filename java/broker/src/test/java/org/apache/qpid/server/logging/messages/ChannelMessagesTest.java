@@ -27,15 +27,12 @@ public class ChannelMessagesTest extends AbstractTestMessages
 {
     public void testMessage1001()
     {
-        Integer prefetch = 12345;
-
-        _logMessage = ChannelMessages.CHN_1001(prefetch);
+        _logMessage = ChannelMessages.CHN_1001();
         List<Object> log = performLog();
 
         // We use the MessageFormat here as that is what the ChannelMessage
         // will do, this makes the resulting value 12,345
-        String[] expected = {"Create", "Prefetch",
-                             MessageFormat.format("{0, number}", prefetch)};
+        String[] expected = {"Create"};
 
         validateLogMessage(log, "CHN-1001", expected);
     }
