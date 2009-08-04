@@ -68,7 +68,7 @@ class Cpg : public sys::IOHandle {
         virtual ~Handler() {};
         virtual void deliver(
             cpg_handle_t /*handle*/,
-            struct cpg_name *group,
+            const struct cpg_name *group,
             uint32_t /*nodeid*/,
             uint32_t /*pid*/,
             void* /*msg*/,
@@ -76,10 +76,10 @@ class Cpg : public sys::IOHandle {
 
         virtual void configChange(
             cpg_handle_t /*handle*/,
-            struct cpg_name */*group*/,
-            struct cpg_address */*members*/, int /*nMembers*/,
-            struct cpg_address */*left*/, int /*nLeft*/,
-            struct cpg_address */*joined*/, int /*nJoined*/
+            const struct cpg_name */*group*/,
+            const struct cpg_address */*members*/, int /*nMembers*/,
+            const struct cpg_address */*left*/, int /*nLeft*/,
+            const struct cpg_address */*joined*/, int /*nJoined*/
         ) = 0;
     };
 
@@ -122,6 +122,24 @@ class Cpg : public sys::IOHandle {
 
     static Cpg* cpgFromHandle(cpg_handle_t);
 
+    // New versions for corosync 1.0 and higher
+    static void globalDeliver(
+        cpg_handle_t handle,
+        const struct cpg_name *group,
+        uint32_t nodeid,
+        uint32_t pid,
+        void* msg,
+        size_t msg_len);
+
+    static void globalConfigChange(
+        cpg_handle_t handle,
+        const struct cpg_name *group,
+        const struct cpg_address *members, size_t nMembers,
+        const struct cpg_address *left, size_t nLeft,
+        const struct cpg_address *joined, size_t nJoined
+    );
+
+    // Old versions for openais
     static void globalDeliver(
         cpg_handle_t handle,
         struct cpg_name *group,

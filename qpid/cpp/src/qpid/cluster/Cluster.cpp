@@ -315,7 +315,7 @@ void Cluster::leave(Lock&) {
 // Deliver CPG message.
 void Cluster::deliver(
     cpg_handle_t /*handle*/,
-    cpg_name* /*group*/,
+    const cpg_name* /*group*/,
     uint32_t nodeid,
     uint32_t pid,
     void* msg,
@@ -507,10 +507,10 @@ ostream& operator<<(ostream& o, const AddrList& a) {
 
 void Cluster::configChange ( 
     cpg_handle_t /*handle*/,
-    cpg_name */*group*/,
-    cpg_address *current, int nCurrent,
-    cpg_address *left, int nLeft,
-    cpg_address */*joined*/, int /*nJoined*/)
+    const cpg_name */*group*/,
+    const cpg_address *current, int nCurrent,
+    const cpg_address *left, int nLeft,
+    const cpg_address */*joined*/, int /*nJoined*/)
 {
     Mutex::ScopedLock l(lock);
     if (state == INIT) {        // First config change.
@@ -521,7 +521,7 @@ void Cluster::configChange (
     QPID_LOG(notice, *this << " membership change: " << AddrList(current, nCurrent)
              << AddrList(left, nLeft, "left: "));
     std::string addresses;
-    for (cpg_address* p = current; p < current+nCurrent; ++p) 
+    for (const cpg_address* p = current; p < current+nCurrent; ++p) 
         addresses.append(MemberId(*p).str());
     deliverEvent(Event::control(ClusterConfigChangeBody(ProtocolVersion(), addresses), self));
 }
