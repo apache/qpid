@@ -49,6 +49,28 @@ Cpg* Cpg::cpgFromHandle(cpg_handle_t handle) {
 // Global callback functions.
 void Cpg::globalDeliver (
     cpg_handle_t handle,
+    const struct cpg_name *group,
+    uint32_t nodeid,
+    uint32_t pid,
+    void* msg,
+    size_t msg_len)
+{
+    cpgFromHandle(handle)->handler.deliver(handle, group, nodeid, pid, msg, msg_len);
+}
+
+void Cpg::globalConfigChange(
+    cpg_handle_t handle,
+    const struct cpg_name *group,
+    const struct cpg_address *members, size_t nMembers,
+    const struct cpg_address *left, size_t nLeft,
+    const struct cpg_address *joined, size_t nJoined
+)
+{
+    cpgFromHandle(handle)->handler.configChange(handle, group, members, nMembers, left, nLeft, joined, nJoined);
+}
+
+void Cpg::globalDeliver (
+    cpg_handle_t handle,
     struct cpg_name *group,
     uint32_t nodeid,
     uint32_t pid,
