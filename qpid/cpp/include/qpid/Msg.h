@@ -43,14 +43,29 @@ struct Msg {
     Msg(const Msg& m) : os(m.str()) {}
     std::string str() const { return os.str(); }
     operator std::string() const { return str(); }
+
+    Msg& operator<<(long n) { os << n; return *this; }
+    Msg& operator<<(unsigned long n) { os << n; return *this; }
+    Msg& operator<<(bool n) { os << n; return *this; }
+    Msg& operator<<(short n) { os << n; return *this; }
+    Msg& operator<<(unsigned short n) { os << n; return *this; }
+    Msg& operator<<(int n) { os << n; return *this; }
+    Msg& operator<<(unsigned int n) { os << n; return *this; }
+#ifdef _GLIBCXX_USE_LONG_LONG
+    Msg& operator<<(long long n) { os << n; return *this; }
+    Msg& operator<<(unsigned long long n) { os << n; return *this; }
+#endif
+    Msg& operator<<(double n) { os << n; return *this; }
+    Msg& operator<<(float n) { os << n; return *this; }
+    Msg& operator<<(long double n) { os << n; return *this; }
+
+    template <class T> Msg& operator<<(const T& t) { os <<t; return *this; }
 };
 
-template <class T> const Msg& operator<<(const Msg& m, const T& t) {
-    const_cast<std::ostringstream&>(m.os)<<t; return m;
-}
+
 
 inline std::ostream& operator<<(std::ostream& o, const Msg& m) {
-    return o<<m.str();
+    return o << m.str();
 }
 
 /** Construct a message using operator << and append (file:line) */
