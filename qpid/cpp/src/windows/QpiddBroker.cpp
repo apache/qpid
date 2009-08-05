@@ -223,6 +223,17 @@ int QpiddBroker::execute (QpiddOptions *options) {
         options->broker.port = brokerPtr->getPort("");
     std::cout << options->broker.port << std::endl;
 
+    // Make sure the pid directory exists, creating if needed. LockFile
+    // will throw an exception that makes little sense if it can't create
+    // the file.
+    if (!CreateDirectory(myOptions->control.piddir.c_str(), 0)) {
+        DWORD err = GetLastError();
+        if (err != ERROR_ALREADY_EXISTS)
+            throw qpid::Exception(QPID_MSG("Can't create pid-dir " +
+                                           myOptions->control.piddir +
+                                           ": " +
+                                           qpid::sys::strError(err)));
+    }
     qpid::sys::LockFile myPid(brokerPidFile(myOptions->control.piddir,
                                             options->broker.port),
                               true);

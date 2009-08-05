@@ -43,7 +43,8 @@ LockFile::LockFile(const std::string& path_, bool create)
                           create ? OPEN_ALWAYS : OPEN_EXISTING,
                           FILE_FLAG_DELETE_ON_CLOSE, /* Delete file when closed */
                           NULL);
-    QPID_WINDOWS_CHECK_NOT(h, INVALID_HANDLE_VALUE);
+    if (h == INVALID_HANDLE_VALUE)
+        throw qpid::Exception(path + qpid::sys::strError(GetLastError()));
     impl.reset(new LockFilePrivate(h));
 }
 
