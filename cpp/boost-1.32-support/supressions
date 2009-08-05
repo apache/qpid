@@ -788,9 +788,4 @@
    fun:gaih_inet
    fun:getaddrinfo
    fun:_ZNK4qpid3sys6Socket7connectERKSst
-   fun:_ZN4qpid6client12TCPConnector7connectERKSsi
-   fun:_ZN4qpid6client14ConnectionImpl4openEv
-   fun:_ZN4qpid6client10Connection4openERKNS0_18ConnectionSettingsE
-   fun:_ZN6ClientC2Ev
-   fun:main
 }
