@@ -99,12 +99,12 @@ void Timer::run()
             // warn on extreme lateness
             AbsTime start(AbsTime::now());
             Duration late(t->sortTime, start);
-            if (late > 500 * TIME_MSEC) {
-                QPID_LOG(warning, "Timer delayed by " << late / TIME_MSEC << "ms");
-            }
             {
             ScopedLock<Mutex> l(t->callbackLock);
             if (t->cancelled) {
+                if (late > 500 * TIME_MSEC) {
+                    QPID_LOG(debug, "cancelled Timer woken up late by " << late / TIME_MSEC << "ms");
+                }
                 continue;
             } else if(Duration(t->nextFireTime, start) >= 0) {
                 Monitor::ScopedUnlock u(monitor);
@@ -112,7 +112,9 @@ void Timer::run()
                 // Warn on callback overrun
                 AbsTime end(AbsTime::now());
                 Duration overrun(tasks.top()->nextFireTime, end);
-                if (overrun > 1 * TIME_MSEC) {
+                if (late > 1 * TIME_MSEC) {
+                    QPID_LOG(warning, "Timer woken up late by " << late / TIME_MSEC << "ms");
+                } else if (overrun > 1 * TIME_MSEC) {
                     QPID_LOG(warning,
                         "Timer callback overran by " << overrun / TIME_MSEC << "ms [taking "
                         << Duration(start, end) << "]");
