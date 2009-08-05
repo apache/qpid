@@ -54,7 +54,7 @@ NullMessageStore::NullMessageStore() : nextPersistenceId(1) {
 
 bool NullMessageStore::init(const Options* /*options*/) {return true;}
 
-void NullMessageStore::discardInit(const bool /*pushDownStoreFiles*/) {}
+void NullMessageStore::truncateInit(const bool /*pushDownStoreFiles*/) {}
 
 void NullMessageStore::create(PersistableQueue& queue, const framing::FieldTable& /*args*/)
 {

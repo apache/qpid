@@ -63,7 +63,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
      * @param pushDownStoreFiles If true, will move content of the store dir into a
      *                           subdir, leaving the store dir otherwise empty.
      */
-    virtual void discardInit(const bool pushDownStoreFiles = false) = 0;
+    virtual void truncateInit(const bool pushDownStoreFiles = false) = 0;
 
     /**
      * Record the existence of a durable queue
