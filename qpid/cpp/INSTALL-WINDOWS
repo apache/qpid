@@ -102,8 +102,9 @@ files that are part of the build.
   CMakeSetup on the desktop - it is named CMake.
 - The CMakeSetup window has 2 directory selection areas at the top; one for
   where the source is located (C:\qpid\trunk\qpid\cpp) and one for where you
-  wish to place the build. A subdirectory of the source directory is generally
-  preferred (C:\qpid\trunk\qpid\cpp\build)
+  wish to place the build. A directory separate from the source directory is
+  generally preferred; it can be, but need not be, a subdirectory to the
+  source. (C:\qpid\trunk\qpid\cpp\build)
 - The first time you run CMakeSetup it will ask you to select a generator.
   You should select the method you prefer to build with: Visual Studio 2008
   or NMake Makefiles.
@@ -145,4 +146,7 @@ Linux. To try it out "make doxygen" then open doxygen/html/index.html.
 7. Troubleshooting
 ==================
 
-There are currently two JIRAs open against Windows.
+When the broker is executed it will try to store a file in the "qpidd"
+subdirectory of the current user's temporary file directory, or in
+C:\WINDOWS\TEMP. If the qpidd directory can't be created or accessed the
+broker startup will fail.
