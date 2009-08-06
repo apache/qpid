@@ -540,7 +540,7 @@ public class QpidTestCase extends TestCase
                                   ".store.class", storeClass.getName());
         configuration.setProperty("virtualhosts.virtualhost." + virtualhost +
                                   ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
-                                  "${work}");
+                                  "${work}/"+virtualhost);
 
         File tmpFile = File.createTempFile("configFile", "test");
         tmpFile.deleteOnExit();
