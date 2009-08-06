@@ -27,7 +27,7 @@ public class TestLogActor extends AbstractActor
     public TestLogActor(RootMessageLogger rootLogger)
     {
         super(rootLogger);
-        _logString = "[Test Actor]";
+        _logString = "[Test Actor] ";
     }
 }
     
