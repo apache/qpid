@@ -183,6 +183,7 @@ public class QpidTestCase extends TestCase
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
+    public static final String TOPIC = "topic";
 
     public QpidTestCase(String name)
     {
