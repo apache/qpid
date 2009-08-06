@@ -45,6 +45,9 @@ public class LogMonitor
     // The file that the log statements will be written to.
     private File _logfile;
 
+    // The appender we added to the get messages
+    private FileAppender _appender;
+
     /**
      * Create a new LogMonitor that creates a new Log4j Appender and monitors
      * all log4j output via the current configuration.
@@ -78,11 +81,11 @@ public class LogMonitor
         {
             // This is mostly for running the test outside of the ant setup
             _logfile = File.createTempFile("LogMonitor", ".log");
-            FileAppender appender = new FileAppender(new SimpleLayout(),
+            _appender = new FileAppender(new SimpleLayout(),
                                                      _logfile.getAbsolutePath());
-            appender.setFile(_logfile.getAbsolutePath());
-            appender.setImmediateFlush(true);
-            Logger.getRootLogger().addAppender(appender);
+            _appender.setFile(_logfile.getAbsolutePath());
+            _appender.setImmediateFlush(true);
+            Logger.getRootLogger().addAppender(_appender);
         }
     }
 
@@ -173,4 +176,22 @@ public class LogMonitor
         writer.write("Log Monitor Reset\n");
         writer.close();
     }
+
+    /**
+     * Stop monitoring this file.
+     *
+     * This is required to be called incase we added a new logger.
+     *
+     * If we don't call close then the new logger will continue to get log entries
+     * after our desired test has finished. 
+     */
+    public void close()
+    {
+        //Remove the custom appender we added for this logger
+        if (_appender != null)
+        {
+            Logger.getRootLogger().removeAppender(_appender);
+        }
+    }
+
 }
