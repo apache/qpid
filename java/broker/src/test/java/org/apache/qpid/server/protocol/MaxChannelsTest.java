@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -36,27 +37,12 @@ import java.security.Principal;
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
 {
-	private IApplicationRegistry _appRegistry;
 	private AMQMinaProtocolSession _session;
 
     public void testChannels() throws Exception
     {
-        _session = new AMQMinaProtocolSession(new TestIoSession(), _appRegistry
-				.getVirtualHostRegistry(), new AMQCodecFactory(true));
-
-        // Set the current Actor for these tests
-        CurrentActor.set(_session.getLogActor());
-
-        // Need to authenticate session for it to work, (well for logging to work)
-        _session.setAuthorizedID(new Principal()
-        {
-            public String getName()
-            {
-                return "AMQProtocolSessionMBeanTestUser";
-            }
-        });
-
-        _session.setVirtualHost(_appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
+        VirtualHost vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        _session = new InternalTestProtocolSession(vhost);
 
         // check the channel count is correct
         int channelCount = _session.getChannels().size();
@@ -84,11 +70,12 @@ public class MaxChannelsTest extends TestCase
     @Override
     public void setUp()
     {
-        _appRegistry = ApplicationRegistry.getInstance(1);
+        //Highlight that this test will cause a new AR to be created
+        ApplicationRegistry.getInstance();
     }
     
     @Override
-    public void tearDown()
+    public void tearDown() throws Exception
     {
     	try {
 			_session.closeSession();
@@ -98,10 +85,9 @@ public class MaxChannelsTest extends TestCase
 		}
         finally
         {
-            //Remove the actor set during the test
-            CurrentActor.remove();
-        }
-    	ApplicationRegistry.remove(1);
+            // Correctly Close the AR we created
+            ApplicationRegistry.remove();
+        }        
     }
 
 }

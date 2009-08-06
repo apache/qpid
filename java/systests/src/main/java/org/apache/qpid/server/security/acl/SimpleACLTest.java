@@ -38,7 +38,7 @@ import java.io.File;
 
 public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 {
-    private String BROKER = "vm://:1";//"tcp://localhost:5672";
+    private String BROKER = "vm://:"+ApplicationRegistry.DEFAULT_INSTANCE;//"tcp://localhost:5672";
 
     public void setUp() throws Exception
     {
@@ -61,14 +61,14 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
-        ApplicationRegistry.initialise(config, 1);
-        TransportConnection.createVMBroker(1);
+        ApplicationRegistry.initialise(config, ApplicationRegistry.DEFAULT_INSTANCE);
+        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
     }
 
     public void tearDown()
     {
         TransportConnection.killAllVMBrokers();
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove(ApplicationRegistry.DEFAULT_INSTANCE);
     }
 
     public String createConnectionString(String username, String password, String broker)

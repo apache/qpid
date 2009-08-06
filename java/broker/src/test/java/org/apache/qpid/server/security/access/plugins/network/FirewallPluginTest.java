@@ -89,6 +89,7 @@ public class FirewallPluginTest extends TestCase
     @Override
     public void setUp() throws Exception
     {
+        super.setUp();
         _store = new TestableMemoryMessageStore();
         TestIoSession iosession = new TestIoSession();
         iosession.setAddress("127.0.0.1");
@@ -100,7 +101,14 @@ public class FirewallPluginTest extends TestCase
         AMQCodecFactory codecFactory = new AMQCodecFactory(true);
         _session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);        
     }
-    
+
+    public void tearDown() throws Exception
+    {
+        // Correctly Close the AR that we created above
+        ApplicationRegistry.remove();
+        super.tearDown();
+    }
+
     private FirewallPlugin initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
     {
         // Create sample config file

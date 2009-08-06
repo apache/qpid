@@ -294,7 +294,7 @@ public class AMQQueueAlertTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _protocolSession = new InternalTestProtocolSession(_virtualHost);
         CurrentActor.set(_protocolSession.getLogActor());
@@ -302,8 +302,9 @@ public class AMQQueueAlertTest extends TestCase
 
     protected void tearDown()
     {
+        // Remove the Protocol Session Actor set above
         CurrentActor.remove();
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
 

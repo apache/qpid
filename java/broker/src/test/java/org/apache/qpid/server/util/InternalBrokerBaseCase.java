@@ -91,7 +91,7 @@ public class InternalBrokerBaseCase extends TestCase
     public void tearDown() throws Exception
     {
         CurrentActor.remove();
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
         super.tearDown();
     }
 

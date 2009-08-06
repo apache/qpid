@@ -360,7 +360,7 @@ public class AMQQueueMBeanTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance(1);
+        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = _virtualHost.getMessageStore();
 
@@ -378,7 +378,7 @@ public class AMQQueueMBeanTest extends TestCase
 
     public void tearDown()
     {
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
     private void sendMessages(int messageCount, boolean persistent) throws AMQException
