@@ -49,16 +49,6 @@ public class BrokerLoggingTest extends AbstractTestLogging
 {
     public void setUp() throws Exception
     {
-        // set QPID_WORK to be [QPID_WORK|io.tmpdir]/<testName>
-        setSystemProperty("QPID_WORK",
-                          System.getProperty("QPID_WORK",
-                                             System.getProperty("java.io.tmpdir"))
-                          + File.separator + getName());
-
-//        makeVirtualHostPersistent("test");
-
-        _monitor = new LogMonitor(_outputFile);
-
         //We explicitly do not call super.setUp as starting up the broker is
         //part of the test case.
     }
@@ -91,6 +81,10 @@ public class BrokerLoggingTest extends AbstractTestLogging
         if (isJavaBroker() && isExternalBroker())
         {
             startBroker();
+
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
 
             String configFilePath = _configFile.toString();
 
@@ -159,10 +153,11 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             startBroker();
 
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
             // Ensure broker has fully started up.
             getConnection();
-
-            String configFilePath = _configFile.toString();
 
             List<String> results = _monitor.findMatches("BRK-");
             try
@@ -255,6 +250,10 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             startBroker();
 
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
+
             // Ensure broker has fully started up.
             getConnection();
 
@@ -341,6 +340,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             startBroker();
 
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
             List<String> results = _monitor.findMatches("BRK-");
             try
             {
@@ -417,6 +419,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
             String TESTID = "BRK-1002";
 
             startBroker();
+
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
 
             // Ensure broker has fully started up.
             getConnection();
@@ -514,6 +519,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
             Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.sslport"));
 
             startBroker();
+
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
 
             // Ensure broker has fully started up.
             getConnection();
@@ -693,6 +701,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             startBroker();
 
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
             stopBroker();
 
             //Give broker time to shutdown and flush log
@@ -794,6 +805,10 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             startBroker();
 
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
+
 //            //Clear any startup messages as we don't need them for validation
 //            _monitor.reset();
             //Stop the broker to get the log messages for testing
@@ -874,6 +889,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             startBroker();
 
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
+
             getConnection().close();
 
             stopBroker();
@@ -931,6 +949,14 @@ public class BrokerLoggingTest extends AbstractTestLogging
         }
     }
 
+    /**
+     * Test that a socket on the given port is closed.
+     *
+     * Does this by attempting to connect to the port and expecting a
+     * ConnectionRefused IOException or a ConnectionException
+     *
+     * @param port the port number
+     */
     private void checkSocketClosed(int port)
     {
         try
@@ -953,6 +979,15 @@ public class BrokerLoggingTest extends AbstractTestLogging
         }
     }
 
+    /**
+     * Test that a socket on the given port is open.
+     *
+     * Does this by attempting to connect to the port and expecting a
+     * The connection to succeed.
+     * It then closes the socket and expects that to work cleanly.
+     *
+     * @param port the port number
+     */
     private void testSocketOpen(int port)
     {
         try
@@ -962,7 +997,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
         }
         catch (IOException e)
         {
-            fail("Unable to open and close socket to port:" + port + ". Due to:" + e.getMessage());
+            fail("Unable to open and close socket to port:" + port
+                 + ". Due to:" + e.getMessage());
         }
     }
 }
