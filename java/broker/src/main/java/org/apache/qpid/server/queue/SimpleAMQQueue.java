@@ -296,7 +296,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         if (!isDeleted())
         {
-            subscription.setQueue(this);
+            subscription.setQueue(this, exclusive);
             _subscriptionList.add(subscription);
             if (isDeleted())
             {

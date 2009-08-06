@@ -56,7 +56,7 @@ public class SubscriptionTestHelper implements Subscription
         return messages;
     }
 
-    public void setQueue(AMQQueue queue)
+    public void setQueue(AMQQueue queue, boolean exclusive)
     {
         
     }

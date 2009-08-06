@@ -63,7 +63,7 @@ public class SubscriptionLogSubjectTest extends AbstractTestLogSubject
                                                    _acks, _filters, _noLocal,
                                                    new LimitlessCreditManager());
 
-        _subscription.setQueue(_queue);
+        _subscription.setQueue(_queue, false);
 
         _subject = new SubscriptionLogSubject(_subscription);
     }
