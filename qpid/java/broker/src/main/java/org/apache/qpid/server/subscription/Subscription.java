@@ -46,7 +46,7 @@ public interface Subscription
 
     QueueEntry.SubscriptionAcquiredState getOwningState();
 
-    void setQueue(AMQQueue queue);
+    void setQueue(AMQQueue queue, boolean exclusive);
 
     AMQChannel getChannel();
 

@@ -24,6 +24,7 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
@@ -163,7 +164,7 @@ public class MockSubscription implements Subscription
         return result;
     }
 
-    public void setQueue(AMQQueue queue)
+    public void setQueue(AMQQueue queue, boolean exclusive)
     {
         this.queue = queue;
     }
