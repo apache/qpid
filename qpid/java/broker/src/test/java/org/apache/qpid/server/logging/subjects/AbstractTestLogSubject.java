@@ -81,7 +81,7 @@ public abstract class AbstractTestLogSubject extends TestCase
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, logger);
 
-        LogActor actor = new TestBlankActor(rootLogger);
+        LogActor actor = new TestLogActor(rootLogger);
 
         actor.message(_subject, new LogMessage()
         {
