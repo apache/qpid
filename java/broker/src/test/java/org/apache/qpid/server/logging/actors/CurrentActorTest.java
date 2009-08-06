@@ -83,7 +83,7 @@ public class CurrentActorTest extends TestCase
     }
 
 
-    public void testFIFO() throws AMQException
+    public void testLIFO() throws AMQException
     {
         // Create a new actor using retrieving the rootMessageLogger from
         // the default ApplicationRegistry.

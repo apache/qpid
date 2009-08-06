@@ -26,7 +26,6 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
@@ -42,6 +41,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.NoSuchElementException;
 
 public class NullApplicationRegistry extends ApplicationRegistry
 {
@@ -79,9 +79,10 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _virtualHostRegistry.registerVirtualHost(dummyHost);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
         _pluginManager = new PluginManager("");
+        _startup = new Exception("NAR");
 
     }
-
+       private Exception _startup;
     public Collection<String> getVirtualHostNames()
     {
         String[] hosts = {"test"};
@@ -91,8 +92,23 @@ public class NullApplicationRegistry extends ApplicationRegistry
     @Override
     public void close() throws Exception
     {
-        super.close();
-        CurrentActor.remove();
+        try
+        {
+            super.close();                                                  
+        }
+        finally
+        {
+            try
+            {
+                CurrentActor.remove();
+            }
+            catch (NoSuchElementException npe)
+            {
+                _startup.printStackTrace();
+                _startup.printStackTrace(System.err);
+            }
+
+        }
     }
 }
 

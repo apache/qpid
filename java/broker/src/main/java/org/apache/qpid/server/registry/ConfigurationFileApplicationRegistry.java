@@ -71,8 +71,23 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         initialiseVirtualHosts();
 
-        // Startup complete pop the current actor 
+        // Startup complete pop the current actor
         CurrentActor.remove();
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        //Set the Actor for Broker Shutdown
+        CurrentActor.set(new BrokerActor(_rootMessageLogger));
+        try
+        {
+            super.close();
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     private void initialiseVirtualHosts() throws Exception

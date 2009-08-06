@@ -146,8 +146,14 @@ public class TestApplicationRegistry extends ApplicationRegistry
     @Override
     public void close() throws Exception
     {
-        super.close();
-        CurrentActor.remove();
+        try
+        {
+            super.close();
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
     
 }
