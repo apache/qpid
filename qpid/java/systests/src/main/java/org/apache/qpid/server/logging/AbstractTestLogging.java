@@ -191,7 +191,7 @@ public class AbstractTestLogging extends QpidTestCase
      * @param log the log String to process
      * @return the connection ID or -1.
      */
-    protected int extractConnectionID(String log)
+    protected int getConnectionID(String log)
     {
         int conIDStart = log.indexOf("con:") + 4;
         int conIDEnd = log.indexOf("(", conIDStart);
@@ -242,7 +242,7 @@ public class AbstractTestLogging extends QpidTestCase
           for (String log : logMessages)
           {
               // Get the connectionID from the Actor in the Message Log.
-              int cID = extractConnectionID(fromActor(getLog(log)));
+              int cID = getConnectionID(fromActor(getLog(log)));
 
               List<String> connectionData = connectionSplitList.get(cID);
 
