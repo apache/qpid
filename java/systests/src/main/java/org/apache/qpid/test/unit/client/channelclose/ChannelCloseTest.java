@@ -59,8 +59,8 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
      */
     public void testReusingChannelAfterFullClosure() throws Exception
     {
-        // this is testing an 0.8 conneciton 
-        if(isBroker08())
+        // this is testing an inVM Connetion conneciton 
+        if (isJavaBroker() && !isExternalBroker())
         {
             _connection=newConnection();
 
