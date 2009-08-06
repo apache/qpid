@@ -25,7 +25,6 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.util.LogMonitor;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -50,13 +49,6 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
 
     public void setUp() throws Exception
     {
-        // set QPID_WORK to be [QPID_WORK|io.tmpdir]/<testName>
-        setSystemProperty("QPID_WORK",
-                          System.getProperty("QPID_WORK",
-                                             System.getProperty("java.io.tmpdir"))
-                          + File.separator + getName());
-
-
         //We explicitly do not call super.setUp as starting up the broker is
         //part of the test case.
         // So we have to make the new Log Monitor here
