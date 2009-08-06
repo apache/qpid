@@ -47,8 +47,6 @@ import java.util.List;
  */
 public class BrokerLoggingTest extends AbstractTestLogging
 {
-    LogMonitor _monitor;
-
     public void setUp() throws Exception
     {
         // set QPID_WORK to be [QPID_WORK|io.tmpdir]/<testName>
