@@ -41,6 +41,10 @@ import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ExchangeMessages;
+import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
+import org.apache.qpid.server.logging.LogSubject;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
@@ -60,6 +64,9 @@ public abstract class AbstractExchange implements Exchange, Managable
      * Whether the exchange is automatically deleted once all queues have detached from it
      */
     protected boolean _autoDelete;
+
+    //The logSubject for ths exchange
+    private LogSubject _logSubject;
 
     /**
      * Abstract MBean class. This has some of the methods implemented from
@@ -160,6 +167,10 @@ public abstract class AbstractExchange implements Exchange, Managable
         _ticket = ticket;
         _exchangeMbean = createMBean();
         _exchangeMbean.register();
+        _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
+
+        // Log Exchange creation
+        CurrentActor.get().message(ExchangeMessages.EXH_1001(String.valueOf(getType()), String.valueOf(name), durable));
     }
 
     public boolean isDurable()
@@ -183,6 +194,8 @@ public abstract class AbstractExchange implements Exchange, Managable
         {
             _exchangeMbean.unregister();
         }
+
+        CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_1002());
     }    
 
     public String toString()
