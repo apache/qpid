@@ -148,18 +148,6 @@ public class MultipleConnectionTest extends QpidTestCase
         }
     }
 
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        TransportConnection.createVMBroker(1);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        TransportConnection.killAllVMBrokers();
-    }
-
     private static void waitForCompletion(int expected, long wait, Receiver[] receivers) throws InterruptedException
     {
         for (int i = 0; i < receivers.length; i++)

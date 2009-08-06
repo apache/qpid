@@ -54,18 +54,6 @@ public class ChannelCloseTest extends QpidTestCase implements ExceptionListener,
     private static final long SYNC_TIMEOUT = 500;
     private int TEST = 0;
 
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        TransportConnection.createVMBroker(1);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-        TransportConnection.killAllVMBrokers();
-    }
-
     /*
           close channel, use chanel with same id ensure error.
      */

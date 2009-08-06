@@ -67,13 +67,11 @@ public class ChannelCloseOkTest extends QpidTestCase
     private final List<Message> _received2 = new ArrayList<Message>();
 
     private static final Logger _log = LoggerFactory.getLogger(ChannelCloseOkTest.class);
-    public String _connectionString = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
 
-        TransportConnection.createVMBroker(1);
         _connection =  (AMQConnection) getConnection("guest", "guest");
 
         _destination1 = new AMQQueue(_connection, "q1", true);

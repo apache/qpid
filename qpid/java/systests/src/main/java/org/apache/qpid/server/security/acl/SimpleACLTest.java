@@ -67,7 +67,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 
     public void tearDown()
     {
-        TransportConnection.killAllVMBrokers();
+        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
         ApplicationRegistry.remove(ApplicationRegistry.DEFAULT_INSTANCE);
     }
 

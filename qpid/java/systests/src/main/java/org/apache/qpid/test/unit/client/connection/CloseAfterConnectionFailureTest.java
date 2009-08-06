@@ -24,8 +24,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -44,36 +42,41 @@ public class CloseAfterConnectionFailureTest extends QpidTestCase implements Exc
     private CountDownLatch _latch = new CountDownLatch(1);
     private JMSException _fail;
 
-    public void testNoFailover() throws URLSyntaxException, AMQVMBrokerCreationException,
+    public void testNoFailover() throws URLSyntaxException, Exception,
                                         InterruptedException, JMSException
     {
-        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='500',retries='3'',failover='nofailover'";
-
-        AMQConnectionURL url = new AMQConnectionURL(connectionString);
-
-        try
+        //This test uses hard coded connection string so only runs on InVM case
+        if (!isExternalBroker())
         {
-            //Start the connection so it will use the retries
-            connection = new AMQConnection(url, null);
+            String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='500',retries='3'',failover='nofailover'";
 
-            connection.setExceptionListener(this);
+            AMQConnectionURL url = new AMQConnectionURL(connectionString);
 
-            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            consumer = session.createConsumer(session.createQueue(this.getName()));
-
-            //Kill connection
-            TransportConnection.killAllVMBrokers();
-            _latch.await();
-
-            if (_fail != null)
+            try
             {
-                _fail.printStackTrace(System.out);
-                fail("Exception thrown:" + _fail.getMessage());
+                //Start the connection so it will use the retries
+                connection = new AMQConnection(url, null);
+
+                connection.setExceptionListener(this);
+
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                consumer = session.createConsumer(session.createQueue(this.getName()));
+
+                //Kill connection
+                stopBroker();
+
+                _latch.await();
+
+                if (_fail != null)
+                {
+                    _fail.printStackTrace(System.out);
+                    fail("Exception thrown:" + _fail.getMessage());
+                }
             }
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
+            catch (AMQException e)
+            {
+                fail(e.getMessage());
+            }
         }
     }
 
