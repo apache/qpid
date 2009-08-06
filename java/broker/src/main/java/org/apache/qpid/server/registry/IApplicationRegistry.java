@@ -34,6 +34,7 @@ import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.mina.common.IoAcceptor;
 
 public interface IApplicationRegistry
@@ -77,6 +78,6 @@ public interface IApplicationRegistry
      * @param bindAddress The address that the acceptor has been bound with
      * @param acceptor The acceptor in use
      */
-    void addAcceptor(InetSocketAddress bindAddress, IoAcceptor acceptor);
+    void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor);
 
 }
