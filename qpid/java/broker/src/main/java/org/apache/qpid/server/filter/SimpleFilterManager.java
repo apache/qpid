@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
 public class SimpleFilterManager implements FilterManager<AMQException>
@@ -32,6 +31,7 @@ public class SimpleFilterManager implements FilterManager<AMQException>
     private final Logger _logger = Logger.getLogger(SimpleFilterManager.class);
 
     private final ConcurrentLinkedQueue<MessageFilter<AMQException>> _filters;
+    private String _toString = "";
 
     public SimpleFilterManager()
     {
@@ -42,11 +42,13 @@ public class SimpleFilterManager implements FilterManager<AMQException>
     public void add(MessageFilter<AMQException> filter)
     {
         _filters.add(filter);
+        updateStringValue();
     }
 
     public void remove(MessageFilter<AMQException> filter)
     {
         _filters.remove(filter);
+        updateStringValue();
     }
 
     public boolean allAllow(Filterable<AMQException> msg)
@@ -73,5 +75,29 @@ public class SimpleFilterManager implements FilterManager<AMQException>
     public boolean hasFilters()
     {
         return !_filters.isEmpty();
+    }
+
+
+    @Override
+    public String toString()
+    {
+       return _toString;
+    }
+
+    private void updateStringValue()
+    {
+        StringBuilder toString = new  StringBuilder();
+        for (MessageFilter<AMQException> filter : _filters)
+        {
+            toString.append(filter.toString());
+            toString.append(",");
+        }
+
+        if (_filters.size() > 0)
+        {
+            //Remove the last ','
+            toString.deleteCharAt(toString.length()-1);
+        }
+        _toString = toString.toString();
     }
 }
