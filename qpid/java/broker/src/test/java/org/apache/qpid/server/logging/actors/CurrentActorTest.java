@@ -62,8 +62,9 @@ public class CurrentActorTest extends TestCase
     // Create a single session for this test.
     AMQProtocolSession _session;
 
-    public void setUp() throws AMQException
+    public void setUp() throws Exception
     {
+        super.setUp();
         // Create a single session for this test.
         VirtualHost virtualHost = ApplicationRegistry.getInstance().
                 getVirtualHostRegistry().getVirtualHosts().iterator().next();
@@ -71,6 +72,16 @@ public class CurrentActorTest extends TestCase
         // Create a single session for this test.
         _session = new InternalTestProtocolSession(virtualHost);
     }
+
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        // Correctly Close the AR we created
+        ApplicationRegistry.remove();
+        super.tearDown();
+    }
+
 
     public void testFIFO() throws AMQException
     {
@@ -143,11 +154,11 @@ public class CurrentActorTest extends TestCase
         assertEquals("Retrieved actor is not as expected ",
                      connectionActor, CurrentActor.get());
 
-        // Verify that removing the last actor returns us to a null value.
+        // Verify that removing the our last actor it returns us to the test
+        // default that the ApplicationRegistry sets.
         CurrentActor.remove();
 
-        assertNull("CurrentActor should be null", CurrentActor.get());
-
+        assertEquals("CurrentActor not the Test default", TestLogActor.class ,CurrentActor.get().getClass());
     }
 
     public void testThreadLocal()

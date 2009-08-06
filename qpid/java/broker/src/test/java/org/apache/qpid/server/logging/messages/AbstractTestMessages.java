@@ -30,9 +30,10 @@ import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.actors.TestBlankActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.List;
 
@@ -44,15 +45,26 @@ public abstract class AbstractTestMessages extends TestCase
     protected UnitTestMessageLogger _logger;
     protected LogSubject _logSubject = new TestBlankSubject();
 
-    public void setUp() throws ConfigurationException
+    public void setUp() throws Exception
     {
+        super.setUp();
+        // Highlight that we create a new AR here
+        ApplicationRegistry.getInstance();
+
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
 
         _logger = new UnitTestMessageLogger();
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, _logger);
 
-        _actor = new TestBlankActor(rootLogger);
+        _actor = new TestLogActor(rootLogger);
+    }
+
+    public void tearDown() throws Exception
+    {
+        // Correctly Close the AR that we created above
+        ApplicationRegistry.remove();
+        super.tearDown();
     }
 
     protected List<Object> performLog()

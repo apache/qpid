@@ -36,6 +36,7 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -115,11 +116,18 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     }
 
     /**
+     * Method to cleanly shutdown the default registry running in this JVM
+     */
+    public static void remove()
+    {
+        remove(DEFAULT_INSTANCE);
+    }
+
+    /**
      * Method to cleanly shutdown specified registry running in this JVM
      *
      * @param instanceID the instance to shutdown
      */
-
     public static void remove(int instanceID)
     {
         try

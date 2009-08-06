@@ -22,9 +22,9 @@ package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.RootMessageLogger;
 
-public class TestBlankActor extends AbstractActor
+public class TestLogActor extends AbstractActor
 {
-    public TestBlankActor(RootMessageLogger rootLogger)
+    public TestLogActor(RootMessageLogger rootLogger)
     {
         super(rootLogger);
         _logString = "[Blank]";

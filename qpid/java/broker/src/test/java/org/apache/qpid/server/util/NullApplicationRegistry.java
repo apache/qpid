@@ -25,6 +25,9 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -53,6 +56,9 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration, new Log4jMessageLogger());
 
+        //We should use a Test Actor Here not the Broker Actor
+        CurrentActor.set(new TestLogActor(_rootMessageLogger));
+
         _configuration.setHousekeepingExpiredMessageCheckPeriod(200);
 
         Properties users = new Properties();
@@ -80,6 +86,13 @@ public class NullApplicationRegistry extends ApplicationRegistry
     {
         String[] hosts = {"test"};
         return Arrays.asList(hosts);
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        super.close();
+        CurrentActor.remove();
     }
 }
 

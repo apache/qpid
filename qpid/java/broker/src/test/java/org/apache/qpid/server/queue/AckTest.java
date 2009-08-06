@@ -74,8 +74,8 @@ public class AckTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
-
+        // The NullApplicationRegistry will be created by default when
+        // calling AR.getInstance
         _virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = new TestMemoryMessageStore();
         _protocolSession = new InternalTestProtocolSession(_virtualHost);
@@ -89,7 +89,7 @@ public class AckTest extends TestCase
 
     protected void tearDown()
     {
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
     private void publishMessages(int count) throws AMQException

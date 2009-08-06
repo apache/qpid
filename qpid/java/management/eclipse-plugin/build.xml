@@ -21,6 +21,7 @@
 <project name="Eclipse Plugin" default="build">
 
     <property name="module.depends" value="broker common management/common"/>
+    <property name="module.test.depends" value="broker/test" />
 
     <import file="../../module.xml"/>
 

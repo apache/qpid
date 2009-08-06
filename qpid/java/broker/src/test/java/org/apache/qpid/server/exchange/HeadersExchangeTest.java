@@ -22,7 +22,6 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -34,15 +33,16 @@ public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
     protected void setUp() throws Exception
     {
         super.setUp();
-        ApplicationRegistry.initialise(new NullApplicationRegistry(), 1);
+        // AR will use the NullAR by default
         // Just use the first vhost.
-        VirtualHost virtualHost = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHosts().iterator().next();
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _protocolSession = new InternalTestProtocolSession(virtualHost);
     }
 
     protected void tearDown()
     {
-        ApplicationRegistry.remove(1);
+        // Correctly Close the AR that we created above
+        ApplicationRegistry.remove();
     }
 
     public void testSimple() throws AMQException
