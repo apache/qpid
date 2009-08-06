@@ -52,6 +52,7 @@ import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.transport.QpidAcceptor;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +72,7 @@ public class Main
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
-    private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
+    public static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     private static final int IPV4_ADDRESS_LENGTH = 4;
 
@@ -273,6 +274,11 @@ public class Main
 
         ApplicationRegistry.initialise(config);
 
+        // We have already loaded the BrokerMessages class by this point so we
+        // need to refresh the locale setting incase we had a different value in
+        // the configuration.
+        BrokerMessages.reload();
+
         // AR.initialise() sets its own actor so we now need to set the actor
         // for the remainder of the startup        
         CurrentActor.set(new BrokerActor(config.getRootMessageLogger()));
@@ -291,6 +297,8 @@ public class Main
             // Starting Qpid Client
             _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
+
+            CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
 
             ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
 
@@ -400,7 +408,7 @@ public class Main
                     bindAddress = new InetSocketAddress(InetAddress.getByAddress(parseIP(bindAddr)), port);
                 }
 
-                bind(acceptor, bindAddress, handler, sconfig);
+                bind(new QpidAcceptor(acceptor,"TCP"), bindAddress, handler, sconfig);
 
                 //fixme  qpid.AMQP should be using qpidproperties to get value
                 _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
@@ -412,7 +420,7 @@ public class Main
                 try
                 {
 
-                    bind(acceptor, new InetSocketAddress(config.getSSLPort()), handler, sconfig);
+                    bind(new QpidAcceptor(acceptor, "TCP/SSL"), new InetSocketAddress(config.getSSLPort()), handler, sconfig);
 
                     //fixme  qpid.AMQP should be using qpidproperties to get value
                     _brokerLogger.info("Qpid.AMQP listening on SSL port " + config.getSSLPort());
@@ -427,6 +435,9 @@ public class Main
             //fixme  qpid.AMQP should be using qpidproperties to get value
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
+
+            CurrentActor.get().message(BrokerMessages.BRK_1004());
+
         }
         catch (Exception e)
         {
@@ -446,9 +457,11 @@ public class Main
      *
      * @throws IOException from the acceptor.bind command
      */
-    private void bind(IoAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
+    private void bind(QpidAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
     {
-        acceptor.bind(bindAddress, handler, sconfig);
+        acceptor.getIoAcceptor().bind(bindAddress, handler, sconfig);
+
+        CurrentActor.get().message(BrokerMessages.BRK_1002(acceptor.toString(), bindAddress.getPort()));
 
         ApplicationRegistry.getInstance().addAcceptor(bindAddress, acceptor);
     }
@@ -491,6 +504,7 @@ public class Main
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
+            CurrentActor.get().message(BrokerMessages.BRK_1007(logConfigFile.getAbsolutePath()));            
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {

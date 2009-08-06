@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
-import org.apache.mina.common.IoAcceptor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -36,7 +35,9 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.transport.QpidAcceptor;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -58,7 +59,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     public static final String DEFAULT_APPLICATION_REGISTRY = "org.apache.qpid.server.util.NullApplicationRegistry";
     public static String _APPLICATION_REGISTRY = DEFAULT_APPLICATION_REGISTRY;
 
-    protected final Map<InetSocketAddress, IoAcceptor> _acceptors = new HashMap<InetSocketAddress, IoAcceptor>();
+    protected final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
 
     protected ManagedObjectRegistry _managedObjectRegistry;
 
@@ -113,6 +114,16 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             remove(instanceID);
         }
+    }
+
+    public static boolean isConfigured()
+    {
+        return isConfigured(DEFAULT_INSTANCE);
+    }
+
+    public static boolean isConfigured(int instanceID)
+    {
+        return _instanceMap.containsKey(instanceID);
     }
 
     /**
@@ -236,6 +247,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
 
 //        _pluginManager.close();
+
+        CurrentActor.get().message(BrokerMessages.BRK_1005());        
     }
 
     private void unbind()
@@ -244,8 +257,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             for (InetSocketAddress bindAddress : _acceptors.keySet())
             {
-                IoAcceptor acceptor = _acceptors.get(bindAddress);
-                acceptor.unbind(bindAddress);
+                QpidAcceptor acceptor = _acceptors.get(bindAddress);
+                acceptor.getIoAcceptor().unbind(bindAddress);
+                CurrentActor.get().message(BrokerMessages.BRK_1003(acceptor.toString(), bindAddress.getPort()));
             }
         }
     }
@@ -255,7 +269,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _configuration;
     }
 
-    public void addAcceptor(InetSocketAddress bindAddress, IoAcceptor acceptor)
+    public void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor)
     {
         synchronized (_acceptors)
         {

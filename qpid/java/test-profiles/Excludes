@@ -5,3 +5,13 @@ org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskValidNoSize
 org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalid
 org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalidSize
 
+//
+// QPID-2031 : Broker is not cleanly shutdown by QpidTestCase
+//
+org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPDefault
+org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPSSL
+org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownStopped
+org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClose
+
+// Disabled as Derby seems to open a very large number of files which are not closed potentially due to QPID-2031
+org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*

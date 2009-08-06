@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.configuration.Configuration;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.AMQConnection;
@@ -55,6 +56,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 
@@ -340,6 +342,15 @@ public class QpidTestCase extends TestCase
         startBroker(0);
     }
 
+    /**
+     * Get the Port that is use by the current broker
+     * @return the current port
+     */
+    protected int getPort()
+    {
+        return getPort(0);
+    }
+
     private int getPort(int port)
     {
         if (_broker.equals(VM))
@@ -546,6 +557,22 @@ public class QpidTestCase extends TestCase
         tmpFile.deleteOnExit();
         configuration.save(tmpFile);
         _configFile = tmpFile;
+    }
+
+    /**
+     * Get a property value from the current configuration file.
+     *
+     * @param property the property to lookup
+     *
+     * @return the requested String Value
+     *
+     * @throws org.apache.commons.configuration.ConfigurationException
+     *
+     */
+    protected String getConfigurationStringProperty(String property) throws ConfigurationException
+    {
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        return configuration.getConfig().getString(property);
     }
 
     /**

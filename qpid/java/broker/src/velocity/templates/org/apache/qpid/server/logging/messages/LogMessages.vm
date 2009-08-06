@@ -45,7 +45,21 @@ public class ${type.name}Messages
 
     static
     {
-        Locale currentLocale = ApplicationRegistry.getInstance().getConfiguration().getLocale();
+        reload();
+    }
+
+    public static void reload()
+    {
+        Locale currentLocale;
+             
+        if (ApplicationRegistry.isConfigured())
+        {
+            currentLocale = ApplicationRegistry.getInstance().getConfiguration().getLocale();
+        }
+        else
+        {
+            currentLocale = Locale.getDefault();
+        }
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages",
                                                            currentLocale);
@@ -53,6 +67,7 @@ public class ${type.name}Messages
         _formatter = new MessageFormat("");
         _formatter.setLocale(currentLocale);
     }
+
 
 ##
 ## The list stored under key 'list' in the 'type' HashMap contains all the
