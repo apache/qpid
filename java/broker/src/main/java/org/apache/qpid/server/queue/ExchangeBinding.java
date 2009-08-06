@@ -21,6 +21,10 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.BindingMessages;
+import org.apache.qpid.server.logging.subjects.BindingLogSubject;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
@@ -31,23 +35,26 @@ public class ExchangeBinding
     private final AMQShortString _routingKey;
     private final FieldTable _arguments;
 
-    private static final FieldTable EMPTY_ARGUMENTS = new FieldTable();    
+    private static final FieldTable EMPTY_ARGUMENTS = new FieldTable();
+    private LogSubject _logSubject;
 
-    ExchangeBinding(AMQShortString routingKey, Exchange exchange)
-    {
-        this(routingKey, exchange, EMPTY_ARGUMENTS);
-    }
-
-    ExchangeBinding(AMQShortString routingKey, Exchange exchange, FieldTable arguments)
+    ExchangeBinding(AMQShortString routingKey, Exchange exchange, AMQQueue queue, FieldTable arguments)
     {
         _routingKey = routingKey == null ? AMQShortString.EMPTY_STRING : routingKey;
         _exchange = exchange;
         _arguments = arguments == null ? EMPTY_ARGUMENTS : arguments;
+        _logSubject = new BindingLogSubject(routingKey,exchange,queue);
+
+        CurrentActor.get().message(_logSubject, BindingMessages.BND_1001(_arguments.toString(), arguments != null));
     }
+
+
 
     void unbind(AMQQueue queue) throws AMQException
     {
         _exchange.deregisterQueue(_routingKey, queue, _arguments);
+
+        CurrentActor.get().message(_logSubject, BindingMessages.BND_1002());
     }
 
     public Exchange getExchange()
