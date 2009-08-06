@@ -119,6 +119,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last channel message should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Off
@@ -171,6 +173,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last two channel messages should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
@@ -218,6 +222,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last two channel messages should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
@@ -262,6 +268,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
+
+        assertTrue("No CHN messages logged", results.size() > 0);
 
         // The last two channel messages should be:
         //

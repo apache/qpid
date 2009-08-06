@@ -66,6 +66,8 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
 
+        assertTrue("No CON messages logged", results.size() > 0);        
+
         // Validation
         // We should have at least three messages when running InVM but when running External
         // we will get 0-10 negotiation on con:0 whcih may close at some random point
