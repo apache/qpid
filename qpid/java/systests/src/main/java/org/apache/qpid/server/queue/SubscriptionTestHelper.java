@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -149,6 +150,11 @@ public class SubscriptionTestHelper implements Subscription
     public boolean isActive()
     {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public LogActor getLogActor()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public AMQQueue getQueue()
