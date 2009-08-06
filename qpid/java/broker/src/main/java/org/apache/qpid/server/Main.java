@@ -20,14 +20,6 @@
  */
 package org.apache.qpid.server;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-
-import javax.management.NotCompliantMBeanException;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -51,11 +43,21 @@ import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.information.management.ServerInformationMBean;
+import org.apache.qpid.server.logging.StartupRootMessageLogger;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /**
  * Main entry point for AMQPD.
@@ -191,7 +193,9 @@ public class Main
         {
             try
             {
+                CurrentActor.set(new BrokerActor(new StartupRootMessageLogger()));
                 startup();
+                CurrentActor.remove();
             }
             catch (InitException e)
             {
@@ -233,7 +237,7 @@ public class Main
         }
         else
         {
-            System.out.println("Using configuration file " + configFile.getAbsolutePath());
+            CurrentActor.get().message(BrokerMessages.BRK_1006(configFile.getAbsolutePath()));
         }
 
         String logConfig = commandLine.getOptionValue("l");
@@ -268,52 +272,62 @@ public class Main
         updateManagementPort(serverConfig, commandLine.getOptionValue("m"));
 
         ApplicationRegistry.initialise(config);
-        
-        configureLoggingManagementMBean(logConfigFile, logWatchTime);
 
-        ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
-        configMBean.register();
-        
-        ServerInformationMBean sysInfoMBean = 
-            new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
-        sysInfoMBean.register();
-        
-        //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
-        // that are causing the broker build to pick up the wrong properties file and hence say
-        // Starting Qpid Client 
-        _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
-                           + " build: " + QpidProperties.getBuildVersion());
+        // AR.initialise() sets its own actor so we now need to set the actor
+        // for the remainder of the startup        
+        CurrentActor.set(new BrokerActor(config.getRootMessageLogger()));
+        try{
+            configureLoggingManagementMBean(logConfigFile, logWatchTime);
 
-        ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
+            ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
+            configMBean.register();
 
-        // the MINA default is currently to use the pooled allocator although this may change in future
-        // once more testing of the performance of the simple allocator has been done
-        if (!serverConfig.getEnablePooledAllocator())
-        {
-            ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
-        }
+            ServerInformationMBean sysInfoMBean =
+                    new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
+            sysInfoMBean.register();
 
-        if(serverConfig.getUseBiasedWrites())
-        {
-            System.setProperty("org.apache.qpid.use_write_biased_pool","true");
-        }
+            //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
+            // that are causing the broker build to pick up the wrong properties file and hence say
+            // Starting Qpid Client
+            _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
+                               + " build: " + QpidProperties.getBuildVersion());
 
-        int port = serverConfig.getPort();
+            ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
 
-        String portStr = commandLine.getOptionValue("p");
-        if (portStr != null)
-        {
-            try
+            // the MINA default is currently to use the pooled allocator although this may change in future
+            // once more testing of the performance of the simple allocator has been done
+            if (!serverConfig.getEnablePooledAllocator())
             {
-                port = Integer.parseInt(portStr);
+                ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
             }
-            catch (NumberFormatException e)
+
+            if (serverConfig.getUseBiasedWrites())
             {
-                throw new InitException("Invalid port: " + portStr, e);
+                System.setProperty("org.apache.qpid.use_write_biased_pool", "true");
             }
+
+            int port = serverConfig.getPort();
+
+            String portStr = commandLine.getOptionValue("p");
+            if (portStr != null)
+            {
+                try
+                {
+                    port = Integer.parseInt(portStr);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new InitException("Invalid port: " + portStr, e);
+                }
+            }
+
+            bind(port, serverConfig);
         }
-        
-        bind(port, serverConfig);
+        finally
+        {
+            // Startup is complete so remove the AR initialised Startup actor
+            CurrentActor.remove();
+        }
     }
 
     /**

@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.io.File;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -33,8 +35,8 @@ import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalD
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
+
+import java.io.File;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
@@ -48,6 +50,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     {
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration, 
                                                        new Log4jMessageLogger());
+        // Set the Actor for current log messages
+        CurrentActor.set(new BrokerActor(_rootMessageLogger));
 
         initialiseManagedObjectRegistry();
 
@@ -67,6 +71,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         initialiseVirtualHosts();
 
+        // Startup complete pop the current actor 
+        CurrentActor.remove();
     }
 
     private void initialiseVirtualHosts() throws Exception
