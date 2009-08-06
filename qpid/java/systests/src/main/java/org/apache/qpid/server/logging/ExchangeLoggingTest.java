@@ -96,19 +96,18 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(EXH_PREFIX);
 
-        for (String rawLog : results)
-        {
-            String log = getLog(rawLog);
+        assertTrue("No Results found for Exchange.", results.size()>0);
 
-            validateMessageID("EXH-1001", log);
+        String log = getLog(results.get(0));
 
-            String message = getMessageString(fromMessage(log));
-            assertTrue("Log Message does not start with create:" + message,
-                       message.startsWith("Create"));
+        validateMessageID("EXH-1001", log);
 
-            assertTrue("Log Message does not contain Durable:" + message,
-                       message.contains("Durable"));
-        }
+        String message = getMessageString(fromMessage(log));
+        assertTrue("Log Message does not start with create:" + message,
+                   message.startsWith("Create"));
+
+        assertTrue("Log Message does not contain Durable:" + message,
+                   message.contains("Durable"));
 
     }
 
