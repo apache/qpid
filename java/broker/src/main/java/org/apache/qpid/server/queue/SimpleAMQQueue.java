@@ -236,15 +236,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
         _bindings.addBinding(routingKey, arguments, exchange);
-//        ExchangeBinding binding = new ExchangeBinding(routingKey, exchange, arguments);
-
-        //fixme MR logging in progress
-//        _bindings.addBinding(binding);
-//
-//        if (_logger.isMessageEnabled(binding))
-//        {
-//            _logger.message(binding, "QM-1001 : Created Binding");
-//        }
     }
 
     public void unBind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
@@ -1238,6 +1229,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             boolean complete = false;
             try
             {
+                CurrentActor.set(_sub.getLogActor());
                 complete = flushSubscription(_sub, new Long(MAX_ASYNC_DELIVERIES));
 
             }
@@ -1245,10 +1237,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 _logger.error(e);
             }
+            finally
+            {
+                CurrentActor.remove();
+            }
             if (!complete && !_sub.isSuspended())
             {
                 _asyncDelivery.execute(this);
             }
+
 
         }
 

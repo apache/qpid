@@ -23,12 +23,13 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
 public interface Subscription
 {
-
+    LogActor getLogActor();
 
     public static enum State
     {

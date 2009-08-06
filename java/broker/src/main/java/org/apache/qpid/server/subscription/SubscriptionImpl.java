@@ -34,12 +34,13 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.SubscriptionActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -75,6 +76,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     // Create a simple ID that increments for ever new Subscription
     private final long _subscriptionID = idGenerator.getAndIncrement();
     private LogSubject _logSubject;
+    private LogActor _logActor;
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -340,6 +342,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         _queue = queue;
 
         _logSubject = new SubscriptionLogSubject(this);
+        _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
 
         if (CurrentActor.get().getRootMessageLogger().
                 isMessageEnabled(CurrentActor.get(), _logSubject))
@@ -570,6 +573,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public AMQProtocolSession getProtocolSession()
     {
         return _channel.getProtocolSession();
+    }
+
+    public LogActor getLogActor()
+    {
+        return _logActor;
     }
 
     public AMQQueue getQueue()
