@@ -20,7 +20,6 @@
  */
 
 #include "qpid/Exception.h"
-#include "qpid/cluster/Dispatchable.h"
 #include "qpid/cluster/types.h"
 #include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Mutex.h"

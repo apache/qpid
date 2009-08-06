@@ -51,6 +51,7 @@ class PollerDispatch  {
     boost::shared_ptr<sys::Poller> poller;
     boost::function<void()> onError;
     sys::DispatchHandleRef dispatchHandle;
+    bool started;
 
 
 };

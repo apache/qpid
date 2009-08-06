@@ -46,7 +46,6 @@ extern sys::LatencyTracker<const AMQBody*> doOutputTracker;
 
 void OutputInterceptor::send(framing::AMQFrame& f) {
     LATENCY_TRACK(doOutputTracker.finish(f.getBody()));
-    parent.getCluster().checkQuorum();
     {
         sys::Mutex::ScopedLock l(lock);
         next->send(f);
