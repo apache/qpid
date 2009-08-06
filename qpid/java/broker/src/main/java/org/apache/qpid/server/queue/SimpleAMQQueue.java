@@ -160,10 +160,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         // Extract the number of priorities for this Queue.
         // Leave it as 0 if we are a SimpleQueueEntryList
         int priorities = 0;
-        if (entryListFactory instanceof PriorityQueueList)
+        if (entryListFactory instanceof PriorityQueueList.Factory)
         {
-            PriorityQueueList priorityFactory = (PriorityQueueList) entryListFactory;
-            priorities = priorityFactory.getPriorities();
+            priorities = ((PriorityQueueList)_entries).getPriorities();
         }
 
         // Log the creation of this Queue.
@@ -1165,6 +1164,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             _deleteTaskList.clear();
             stop();
+            
+            //Log Queue Deletion
+            CurrentActor.get().message(_logSubject, QueueMessages.QUE_1002());
+
         }
         return getMessageCount();
 

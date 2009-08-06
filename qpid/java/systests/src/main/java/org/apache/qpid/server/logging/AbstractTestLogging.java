@@ -175,6 +175,20 @@ public class AbstractTestLogging extends QpidTestCase
     }
 
     /**
+     * Return the message String from the given message section
+     * @param log the Message Section
+     * @return the Message String.
+     */
+    protected String getMessageString(String log)
+    {
+        // Remove the Log ID from the returned String
+        int start = log.indexOf(":") + 1;
+
+        return log.substring(start).trim();
+    }
+
+
+    /**
      * Given our log message extract the connection ID:
      *
      * The log string will contain the connectionID identified by 'con:'
