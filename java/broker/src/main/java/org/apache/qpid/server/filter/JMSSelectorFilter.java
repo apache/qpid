@@ -53,4 +53,10 @@ public class JMSSelectorFilter<E extends Exception> implements MessageFilter<E>
     {
         return _selector;
     }
+
+    @Override
+    public String toString()
+    {
+        return "JMSSelector("+_selector+")";
+    }
 }
