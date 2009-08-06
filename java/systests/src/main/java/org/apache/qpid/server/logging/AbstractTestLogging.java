@@ -38,6 +38,14 @@ public class AbstractTestLogging extends QpidTestCase
         super.setUp();
         _monitor = new LogMonitor(_outputFile);
     }
+    
+    @Override
+    public void tearDown() throws Exception
+    {
+        _monitor.close();
+        super.tearDown();
+    }
+
 
     /**
      * assert that the requested log message has not occured
