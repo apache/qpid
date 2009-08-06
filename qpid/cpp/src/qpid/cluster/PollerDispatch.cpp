@@ -33,15 +33,18 @@ PollerDispatch::PollerDispatch(Cpg& c, boost::shared_ptr<sys::Poller> p,
                      boost::bind(&PollerDispatch::dispatch, this, _1), // read
                      0,         // write
                      boost::bind(&PollerDispatch::disconnect, this, _1) // disconnect
-      )
+      ),
+      started(false)
 {}
     
 PollerDispatch::~PollerDispatch() {
-    dispatchHandle.stopWatch();
+    if (started)
+        dispatchHandle.stopWatch();
 }
 
 void PollerDispatch::start() {
     dispatchHandle.startWatch(poller);
+    started = true;
 }
 
 // Entry point: called by IO to dispatch CPG events.

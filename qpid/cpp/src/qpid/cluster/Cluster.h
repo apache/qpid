@@ -101,8 +101,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     broker::Broker& getBroker() const;
     Multicaster& getMulticast() { return mcast; }
 
-    void checkQuorum();
-
     const ClusterSettings& getSettings() const { return settings; }
 
     void deliverFrame(const EventFrame&);

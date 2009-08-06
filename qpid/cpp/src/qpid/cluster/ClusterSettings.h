@@ -37,7 +37,7 @@ struct ClusterSettings {
     bool checkErrors;
 
     ClusterSettings() : quorum(false), readMax(10),
-                        checkErrors(true) // FIXME aconway 2009-05-20: temporary
+                        checkErrors(true) // TODO aconway 2009-05-20: remove this option.
     {}
   
     Url getUrl(uint16_t port) const {
