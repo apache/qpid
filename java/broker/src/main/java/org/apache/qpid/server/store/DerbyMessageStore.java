@@ -20,49 +20,51 @@
 */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.MessageMetaData;
-import org.apache.qpid.server.queue.QueueRegistry;
-
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
+import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.io.File;
 import java.io.ByteArrayInputStream;
-import java.sql.DriverManager;
-import java.sql.Driver;
+import java.io.File;
+import java.sql.Blob;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Blob;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 
-public class DerbyMessageStore implements MessageStore
+public class DerbyMessageStore extends AbstractMessageStore
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
@@ -145,6 +147,8 @@ public class DerbyMessageStore implements MessageStore
 
     public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
+        super.configure(virtualHost,base,config);
+
         stateTransition(State.INITIAL, State.CONFIGURING);
 
         initialiseDriver();
@@ -167,11 +171,14 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1002(environmentPath.getAbsolutePath()));
+
         createOrOpenDatabase(databasePath);
 
         // this recovers durable queues and persistent messages
 
         recover();
+
 
         stateTransition(State.RECOVERING, State.STARTED);
 
@@ -187,6 +194,7 @@ public class DerbyMessageStore implements MessageStore
 
     private void createOrOpenDatabase(final String environmentPath) throws SQLException
     {
+        //fixme this the _vhost name should not be added here.
         _connectionURL = "jdbc:derby:" + environmentPath + "/" + _virtualHost.getName() + ";create=true";
 
         Connection conn = newConnection();
@@ -309,7 +317,8 @@ public class DerbyMessageStore implements MessageStore
     {
         stateTransition(State.CONFIGURING, State.RECOVERING);
 
-        _logger.info("Recovering persistent state...");
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1004(null, false));
+
         StoreContext context = new StoreContext();
 
         try
@@ -324,9 +333,10 @@ public class DerbyMessageStore implements MessageStore
                 beginTran(context);
 
                 deliverMessages(context, queues);
-                _logger.info("Persistent state recovered successfully");
                 commitTran(context);
 
+                //Recovery Complete
+                CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1006(null, false));
             }
             finally
             {
@@ -335,12 +345,14 @@ public class DerbyMessageStore implements MessageStore
                     abortTran(context);
                 }
             }
+
         }
         catch (SQLException e)
         {
 
             throw new AMQException("Error recovering persistent state: " + e, e);
         }
+
 
     }
 
@@ -486,6 +498,8 @@ public class DerbyMessageStore implements MessageStore
     public void close() throws Exception
     {
         _closed.getAndSet(true);
+        
+        super.close();        
     }
 
     public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
@@ -1353,7 +1367,6 @@ public class DerbyMessageStore implements MessageStore
         public void process() throws AMQException
         {
             _queue.enqueue(_context, _message);
-
         }
 
     }
@@ -1371,7 +1384,6 @@ public class DerbyMessageStore implements MessageStore
         Connection conn = null;
         try
         {
-
             if(inLocaltran)
             {
                 conn = getConnection(context);
@@ -1381,7 +1393,6 @@ public class DerbyMessageStore implements MessageStore
                 conn = newConnection();
             }
 
-
             MessageHandleFactory messageHandleFactory = new MessageHandleFactory();
             long maxId = 1;
 
@@ -1390,14 +1401,9 @@ public class DerbyMessageStore implements MessageStore
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
 
-
             while (rs.next())
             {
-
-
-
                 AMQShortString queueName = new AMQShortString(rs.getString(1));
-
 
                 AMQQueue queue = queues.get(queueName);
                 if (queue == null)
@@ -1406,6 +1412,9 @@ public class DerbyMessageStore implements MessageStore
 
                     _virtualHost.getQueueRegistry().registerQueue(queue);
                     queues.put(queueName, queue);
+
+                    //Log Recovery Start
+                    CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1004(String.valueOf(queue.getName()), true));
                 }
 
                 long messageId = rs.getLong(2);
@@ -1436,11 +1445,9 @@ public class DerbyMessageStore implements MessageStore
                     }
 
                     queueRecoveries.put(queueName, ++count);
-
                 }
 
                 actions.add(new ProcessAction(queue, context, message));
-
             }
 
             for(ProcessAction action : actions)

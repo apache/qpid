@@ -23,7 +23,7 @@ package org.apache.qpid.server.logging.subjects;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
 
-public class MessagesStoreLogSubject extends AbstractLogSubject
+public class MessageStoreLogSubject extends AbstractLogSubject
 {
 
     /**
@@ -37,7 +37,7 @@ public class MessagesStoreLogSubject extends AbstractLogSubject
     protected static String BINDING_FORMAT = "vh(/{0})/ms({1})";
 
     /** Create an ExchangeLogSubject that Logs in the following format. */
-    public MessagesStoreLogSubject(VirtualHost vhost, MessageStore store)
+    public MessageStoreLogSubject(VirtualHost vhost, MessageStore store)
     {
         setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
                                store.getClass().getSimpleName());

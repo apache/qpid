@@ -96,6 +96,7 @@
             <localhost>
                 <store>
                     <class>org.apache.qpid.server.store.DerbyMessageStore</class>
+                    <environment-path>${work}/derbyDB/localhost-store</environment-path>
                 </store>
 
                 <housekeeping>
@@ -110,6 +111,7 @@
             <development>
                 <store>
                     <class>org.apache.qpid.server.store.DerbyMessageStore</class>
+                    <environment-path>${work}/derbyDB/development-store</environment-path>                                        
                 </store>
             </development>
         </virtualhost>
@@ -119,6 +121,7 @@
             <test>
                 <store>
                     <class>org.apache.qpid.server.store.DerbyMessageStore</class>
+                    <environment-path>${work}/derbyDB/test-store</environment-path>
                 </store>
             </test>
         </virtualhost>

@@ -31,6 +31,10 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.messages.MessageStoreMessages;
+import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** A simple message store that stores the messages in a threadsafe structure in memory. */
-public class MemoryMessageStore implements MessageStore
+public class MemoryMessageStore extends AbstractMessageStore
 {
     private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
 
@@ -55,25 +59,16 @@ public class MemoryMessageStore implements MessageStore
 
     private final AtomicLong _messageId = new AtomicLong(1);
     private AtomicBoolean _closed = new AtomicBoolean(false);
+    private LogSubject _logSubject;
 
-    public void configure()
+    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
     {
-        _log.info("Using capacity " + DEFAULT_HASHTABLE_CAPACITY + " for hash tables");
-        _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(DEFAULT_HASHTABLE_CAPACITY);
-        _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(DEFAULT_HASHTABLE_CAPACITY);
-    }
+        super.configure(virtualHost,base,config);
 
-    public void configure(String base, VirtualHostConfiguration config)
-    {
         int hashtableCapacity = config.getStoreConfiguration().getInt(base + "." + HASHTABLE_CAPACITY_CONFIG, DEFAULT_HASHTABLE_CAPACITY);
         _log.info("Using capacity " + hashtableCapacity + " for hash tables");
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>(hashtableCapacity);
         _contentBodyMap = new ConcurrentHashMap<Long, List<ContentChunk>>(hashtableCapacity);
-    }
-
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
-    {
-        configure(base, config);
     }
 
     public void close() throws Exception
@@ -89,6 +84,8 @@ public class MemoryMessageStore implements MessageStore
             _contentBodyMap.clear();
             _contentBodyMap = null;
         }
+
+        super.close();
     }
 
     public void removeMessage(StoreContext context, Long messageId) throws AMQException
