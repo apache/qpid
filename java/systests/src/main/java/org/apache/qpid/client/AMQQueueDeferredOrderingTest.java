@@ -87,7 +87,6 @@ public class AMQQueueDeferredOrderingTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
 
         _logger.info("Create Connection");
         con = getConnection();
@@ -135,7 +134,6 @@ public class AMQQueueDeferredOrderingTest extends QpidTestCase
         _logger.info("Closing connection");
         con.close();
 
-        TransportConnection.killAllVMBrokers();
         super.tearDown();
     }
 

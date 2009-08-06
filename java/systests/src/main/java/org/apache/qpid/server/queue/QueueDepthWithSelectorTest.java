@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -88,6 +89,7 @@ public class QueueDepthWithSelectorTest extends TestCase
 
         if (BROKER.startsWith("vm://"))
         {
+            ApplicationRegistry.getInstance(1);
             TransportConnection.createVMBroker(1);
         }
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
@@ -120,7 +122,8 @@ public class QueueDepthWithSelectorTest extends TestCase
 
         if (BROKER.startsWith("vm://"))
         {
-            TransportConnection.killAllVMBrokers();
+            TransportConnection.killVMBroker(1);
+            ApplicationRegistry.remove(1);
         }
     }
 

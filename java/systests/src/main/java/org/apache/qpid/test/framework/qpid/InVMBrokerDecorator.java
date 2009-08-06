@@ -88,6 +88,7 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                             // Ensure that the in-vm broker is created.
                             try
                             {
+                                ApplicationRegistry.getInstance(1);
                                 TransportConnection.createVMBroker(1);
                             }
                             catch (AMQVMBrokerCreationException e)
