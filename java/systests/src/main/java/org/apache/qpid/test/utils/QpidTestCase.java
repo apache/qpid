@@ -19,15 +19,28 @@ package org.apache.qpid.test.utils;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.store.DerbyMessageStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
-import javax.jms.Session;
-import javax.jms.MessageProducer;
-import javax.jms.Message;
 import javax.jms.JMSException;
-import javax.jms.Queue;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.BufferedReader;
@@ -40,30 +53,11 @@ import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.commons.configuration.Configuration;
-
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.store.DerbyMessageStore;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -152,6 +146,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION = "broker.version";
     private static final String BROKER_READY = "broker.ready";
+    private static final String BROKER_STOPPED = "broker.stopped";
     private static final String TEST_OUTPUT = "test.output";
 
     // values
@@ -166,6 +161,7 @@ public class QpidTestCase extends TestCase
 
     protected static int DEFAULT_VM_PORT = 1;
     protected static int DEFAULT_PORT = Integer.getInteger("test.port", 5672);
+    protected static int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", 8999);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
@@ -175,7 +171,7 @@ public class QpidTestCase extends TestCase
 
     protected File _outputFile;
 
-    private Map<Integer,Process> _brokers = new HashMap<Integer,Process>();
+    private Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
     private InitialContext _initialContext;
     private AMQConnectionFactory _connectionFactory;
@@ -186,6 +182,7 @@ public class QpidTestCase extends TestCase
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
     public static final String TOPIC = "topic";
+
 
     public QpidTestCase(String name)
     {
@@ -209,7 +206,7 @@ public class QpidTestCase extends TestCase
         boolean redirected = _output != null && _output.length() > 0;
         if (redirected)
         {
-            _outputFile = new File (String.format("%s/TEST-%s.out", _output, qname));
+            _outputFile = new File(String.format("%s/TEST-%s.out", _output, qname));
             out = new PrintStream(_outputFile);
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
             System.setOut(out);
@@ -276,12 +273,21 @@ public class QpidTestCase extends TestCase
         private String ready;
         private CountDownLatch latch;
         private boolean seenReady;
+        private String stopped;
+        private String stopLine;
 
         public Piper(InputStream in, String ready)
         {
+            this(in, ready, null);
+        }
+
+        public Piper(InputStream in, String ready, String stopped)
+        {
             this.in = new LineNumberReader(new InputStreamReader(in));
             this.ready = ready;
+            this.stopped = stopped;
             this.seenReady = false;
+
             if (this.ready != null && !this.ready.equals(""))
             {
                 this.latch = new CountDownLatch(1);
@@ -323,6 +329,11 @@ public class QpidTestCase extends TestCase
                         seenReady = true;
                         latch.countDown();
                     }
+
+                    if (latch != null && line.contains(stopped))
+                    {
+                        stopLine = line;
+                    }
                 }
             }
             catch (IOException e)
@@ -338,6 +349,11 @@ public class QpidTestCase extends TestCase
                 }
             }
         }
+
+        public String getStopLine()
+        {
+            return stopLine;
+        }
     }
 
     public void startBroker() throws Exception
@@ -347,6 +363,7 @@ public class QpidTestCase extends TestCase
 
     /**
      * Get the Port that is use by the current broker
+     *
      * @return the current port
      */
     protected int getPort()
@@ -373,10 +390,10 @@ public class QpidTestCase extends TestCase
     private String getBrokerCommand(int port) throws MalformedURLException
     {
         return _broker
-            .replace("@PORT", "" + port)
-            .replace("@SSL_PORT", "" + (port - 1))
-            .replace("@MPORT", "" + (port + (8999 - DEFAULT_PORT)))
-            .replace("@CONFIG_FILE", _configFile.toString());
+                .replace("@PORT", "" + port)
+                .replace("@SSL_PORT", "" + (port - 1))
+                .replace("@MPORT", "" + (port + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT)))
+                .replace("@CONFIG_FILE", _configFile.toString());
     }
 
     public void startBroker(int port) throws Exception
@@ -411,17 +428,19 @@ public class QpidTestCase extends TestCase
             process = pb.start();
 
             Piper p = new Piper(process.getInputStream(),
-                                System.getProperty(BROKER_READY));
+                                System.getProperty(BROKER_READY),
+                                System.getProperty(BROKER_STOPPED));
 
             p.start();
 
             if (!p.await(30, TimeUnit.SECONDS))
             {
-                _logger.info("broker failed to become ready");
+                _logger.info("broker failed to become ready:" + p.getStopLine());
                 //Ensure broker has stopped
                 process.destroy();
                 cleanBroker();
-                throw new RuntimeException("broker failed to become ready");
+                throw new RuntimeException("broker failed to become ready:"
+                                           + p.getStopLine());
             }
 
             try
@@ -506,7 +525,7 @@ public class QpidTestCase extends TestCase
         }
         else
         {
-            String command = "pkill -KILL -f "+getBrokerCommand(getPort(port));
+            String command = "pkill -KILL -f " + getBrokerCommand(getPort(port));
             try
             {
                 Runtime.getRuntime().exec(command);
@@ -514,12 +533,11 @@ public class QpidTestCase extends TestCase
             catch (Exception e)
             {
                 // Can't do that, try the old fashioned way
-                _logger.warn("Could not run "+command+", killing with stopBroker()");
+                _logger.warn("Could not run " + command + ", killing with stopBroker()");
                 stopBroker(port);
             }
         }
     }
-
 
     /**
      * Attempt to set the Java Broker to use the BDBMessageStore for persistence
@@ -556,7 +574,7 @@ public class QpidTestCase extends TestCase
                                   ".store.class", storeClass.getName());
         configuration.setProperty("virtualhosts.virtualhost." + virtualhost +
                                   ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
-                                  "${work}/"+virtualhost);
+                                  "${work}/" + virtualhost);
 
         File tmpFile = File.createTempFile("configFile", "test");
         tmpFile.deleteOnExit();
@@ -590,9 +608,10 @@ public class QpidTestCase extends TestCase
      * configuration files being created.
      *
      * @param property the configuration property to set
-     * @param value the new value
+     * @param value    the new value
+     *
      * @throws ConfigurationException when loading the current config file
-     * @throws IOException when writing the new config file
+     * @throws IOException            when writing the new config file
      */
     protected void setConfigurationProperty(String property, String value)
             throws ConfigurationException, IOException
@@ -645,9 +664,9 @@ public class QpidTestCase extends TestCase
      * Set a System property for the duration of this test.
      *
      * When the test run is complete the value will be reverted.
-
+     *
      * @param property the property to set
-     * @param value the new value to use
+     * @param value    the new value to use
      */
     protected void setSystemProperty(String property, String value)
     {
@@ -845,14 +864,16 @@ public class QpidTestCase extends TestCase
      * persistent tests don't leave data behind.
      *
      * @param queue the queue to purge
-     * @throws Exception if a problem occurs
+     *
      * @return the count of messages drained
+     *
+     * @throws Exception if a problem occurs
      */
     protected int drainQueue(Queue queue) throws Exception
     {
         Connection connection = getConnection();
 
-        Session session = connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         MessageConsumer consumer = session.createConsumer(queue);
 
@@ -872,11 +893,11 @@ public class QpidTestCase extends TestCase
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count) throws Exception
     {
-       return sendMessage(session, destination, count, 0);
+        return sendMessage(session, destination, count, 0);
     }
 
     public List<Message> sendMessage(Session session, Destination destination,
-                                     int count,int batchSize) throws Exception
+                                     int count, int batchSize) throws Exception
     {
         List<Message> messages = new ArrayList<Message>(count);
 
@@ -919,7 +940,6 @@ public class QpidTestCase extends TestCase
     {
         return getConnectionFactory().getConnectionURL();
     }
-
 
     public BrokerDetails getBroker()
     {
