@@ -28,6 +28,8 @@ import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
 import java.util.List;
+import java.util.LinkedList;
+import java.util.Iterator;
 
 /**
  * The MessageStore test suite validates that the follow log messages as
@@ -299,6 +301,11 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1004 : Recovery Start :");
 
+        // We are only looking for the default queue defined in local host being
+        // recovered. If other tests have made queues in test then we want to
+        // exclude them here.
+        results = filterResultsByVirtualHost(results, "/localhost");
+
         assertEquals("Recovered test queue not found.", 1, results.size());
 
         String result = getLog(results.get(0));
@@ -359,6 +366,12 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1006 : Recovery Complete :");
 
+        // We are only looking for the default queue defined in local host being
+        // recovered. If other tests have made queues in test then we want to
+        // exclude them here.
+        results = filterResultsByVirtualHost(results, "/localhost");
+
+
         assertEquals("Recovered test queue not found.", 1, results.size());
 
         String result = getLog(results.get(0));
@@ -409,7 +422,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
     {
         assertLoggingNotYetOccured(MESSAGES_STORE_PREFIX);
 
-        String queueName = "queueCountTest";
+        String queueName = getTestQueueName();
 
         startBroker();
         Connection connetion = getConnection();
