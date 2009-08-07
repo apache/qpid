@@ -17,6 +17,7 @@ log4j.configuration=file:///${test.profiles}/log4j-test.xml
 log4j.debug=false
 
 test.port=15672
+test.mport=18999
 test.port.ssl=15671
 test.port.alt=15673
 
