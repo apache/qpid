@@ -58,9 +58,7 @@ public:
 
     QPID_COMMON_EXTERN void setupNextFire();
     QPID_COMMON_EXTERN void restart();
-    QPID_COMMON_EXTERN void delayTill(AbsTime fireTime);
     QPID_COMMON_EXTERN void cancel();
-    QPID_COMMON_EXTERN bool isCancelled() const;
 
 protected:
     // Must be overridden with callback
