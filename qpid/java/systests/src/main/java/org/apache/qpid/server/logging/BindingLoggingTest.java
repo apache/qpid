@@ -230,7 +230,9 @@ public class BindingLoggingTest extends AbstractTestLogging
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
 
-        String exchange = "direct/<<default>>";
+        String DEFAULT = "direct/<<default>>";
+        String DIRECT = "direct/amq.direct";
+
         messageID = "BND-1002";
         message = "Deleted";
 
@@ -243,12 +245,12 @@ public class BindingLoggingTest extends AbstractTestLogging
                      AbstractTestLogSubject.getSlice("rk", subject).startsWith("TempQueue"));
         assertEquals("Virtualhost not correct.", "/test",
                      AbstractTestLogSubject.getSlice("vh", subject));
-        assertEquals("Exchange not correct.", exchange,
-                     AbstractTestLogSubject.getSlice("ex", subject));
+
+        boolean defaultFirst = DEFAULT.equals(AbstractTestLogSubject.getSlice("ex", subject));
+        boolean directFirst = DIRECT.equals(AbstractTestLogSubject.getSlice("ex", subject));
 
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
-        exchange = "direct/amq.direct";
         log = getLog(results.get(3));
 
         validateMessageID(messageID, log);
@@ -259,8 +261,17 @@ public class BindingLoggingTest extends AbstractTestLogging
                      AbstractTestLogSubject.getSlice("rk", subject).startsWith("TempQueue"));
         assertEquals("Virtualhost not correct.", "/test",
                      AbstractTestLogSubject.getSlice("vh", subject));
-        assertEquals("Exchange not correct.", exchange,
-                     AbstractTestLogSubject.getSlice("ex", subject));
+
+        if (!defaultFirst)
+        {
+            assertEquals(DEFAULT, AbstractTestLogSubject.getSlice("ex", subject));
+            assertTrue("First Exchange Log was not a direct exchange delete",directFirst);
+        }
+        else
+        {
+            assertEquals(DIRECT, AbstractTestLogSubject.getSlice("ex", subject));
+            assertTrue("First Exchange Log was not a default exchange delete",defaultFirst);
+        }
 
         assertEquals("Log Message not as expected", message, getMessageString(fromMessage(log)));
 
