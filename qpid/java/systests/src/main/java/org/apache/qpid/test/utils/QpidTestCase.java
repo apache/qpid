@@ -418,6 +418,8 @@ public class QpidTestCase extends TestCase
             if (!p.await(30, TimeUnit.SECONDS))
             {
                 _logger.info("broker failed to become ready");
+                //Ensure broker has stopped
+                process.destroy();
                 cleanBroker();
                 throw new RuntimeException("broker failed to become ready");
             }
