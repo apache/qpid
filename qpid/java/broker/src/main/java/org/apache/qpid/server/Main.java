@@ -298,8 +298,6 @@ public class Main
             _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
 
-            CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
-
             ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
 
             // the MINA default is currently to use the pooled allocator although this may change in future
