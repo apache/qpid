@@ -53,11 +53,11 @@ public class QueueLoggingTest extends AbstractTestLogging
     public void setUp() throws Exception
     {
         super.setUp();
-        _connection = getConnection();
-        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                
         //Remove broker startup logging messages
         _monitor.reset();
+        
+        _connection = getConnection();
+        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     /**

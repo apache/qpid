@@ -51,6 +51,8 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
     public void setUp() throws Exception
     {
         super.setUp();
+        //Remove broker startup logging messages
+        _monitor.reset();
 
         _connection = getConnection();
 
@@ -58,8 +60,6 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         _queue = (Queue) getInitialContext().lookup(QUEUE);
         _topic = (Topic) getInitialContext().lookup(TOPIC);
-        
-        _monitor.reset();
     }
 
     /**
