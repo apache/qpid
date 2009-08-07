@@ -13,5 +13,3 @@ org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPS
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownStopped
 org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClose
 
-// Disabled as Derby seems to open a very large number of files which are not closed potentially due to QPID-2031
-org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
