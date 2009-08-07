@@ -83,8 +83,8 @@ public class QueueLoggingTest extends AbstractTestLogging
      */
     public void testQueueDelete() throws NamingException, JMSException, IOException, FailoverException, AMQException
     {
-               // To force a queue Creation Event we need to create a consumer.
-        Queue queue = (Queue) getInitialContext().lookup(QUEUE);
+        // To force a queue Creation Event we need to create a consumer.
+        Queue queue = _session.createQueue(getTestQueueName());
 
         _session.createConsumer(queue);
 
