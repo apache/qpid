@@ -334,10 +334,6 @@ void Broker::shutdown() {
 Broker::~Broker() {
     shutdown();
     queueEvents.shutdown();
-    //TODO: timer clients should really remove any registered tasks
-    //before the are destroyed; until that is the case, this prevents
-    //their failure to do from crashing the broker
-    timer.stop();
     finalize();                 // Finalize any plugins.
     if (config.auth)
         SaslAuthenticator::fini();
