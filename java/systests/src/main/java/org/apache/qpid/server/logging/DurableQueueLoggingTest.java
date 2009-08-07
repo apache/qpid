@@ -87,8 +87,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
      */
     public void testQueueCreateDurableExclusive() throws NamingException, JMSException, IOException
     {
+        String queueName= getTestQueueName();
         // To force a queue Creation Event we need to create a consumer.
-        Queue queue = (Queue) _session.createQueue("direct://amq.direct/testQueue/testQueue?durable='"+_durable+"'&exclusive='true'");
+        Queue queue = (Queue) _session.createQueue("direct://amq.direct/" + queueName + "/" + queueName + "?durable='" + _durable + "'&exclusive='true'");
 
         _session.createConsumer(queue);
 
@@ -136,9 +137,10 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
      */
     public void testQueueCreateDurable() throws NamingException, JMSException, IOException
     {
-        // To force a queue Creation Event we need to create a consumer.
+        String queueName = getTestQueueName();
 
-        Queue queue = (Queue) _session.createQueue("direct://amq.direct/testQueue/testQueue?durable='"+_durable+"'");
+        // To force a queue Creation Event we need to create a consumer.
+        Queue queue = (Queue) _session.createQueue("direct://amq.direct/" + queueName + "/" + queueName + "?durable='" + _durable + "'");
 
         _session.createConsumer(queue);
 
@@ -187,9 +189,9 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
      */
     public void testQueueCreatePersistentAutoDelete() throws NamingException, JMSException, IOException
     {
+        String queueName = getTestQueueName();
         // To force a queue Creation Event we need to create a consumer.
-
-        Queue queue = (Queue) _session.createQueue("direct://amq.direct/testQueue/testQueue?durable='"+_durable+"'&autodelete='true'");
+        Queue queue = (Queue) _session.createQueue("direct://amq.direct/"+queueName+"/"+queueName+"?durable='"+_durable+"'&autodelete='true'");
 
         _session.createConsumer(queue);
 
@@ -247,11 +249,11 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-priorities", PRIORITIES);
         // Need to create a queue that does not exist so use test name
-        ((AMQSession) _session).createQueue(new AMQShortString(getName()), false, _durable, false, arguments);
+        ((AMQSession) _session).createQueue(new AMQShortString(getTestQueueName()), false, _durable, false, arguments);
 
         //Need to create a Consumer to ensure that the log has had time to write
         // as the above Create is Asynchronous
-        _session.createConsumer(_session.createQueue(getName()));
+        _session.createConsumer(_session.createQueue(getTestQueueName()));
 
         // Validation
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
@@ -308,11 +310,11 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         final Map<String, Object> arguments = new HashMap<String, Object>();
         arguments.put("x-qpid-priorities", PRIORITIES);
         // Need to create a queue that does not exist so use test name
-        ((AMQSession) _session).createQueue(new AMQShortString(getName()), true, _durable, false, arguments);
+        ((AMQSession) _session).createQueue(new AMQShortString(getTestQueueName()), true, _durable, false, arguments);
 
         //Need to create a Consumer to ensure that the log has had time to write
         // as the above Create is Asynchronous
-        _session.createConsumer(_session.createQueue(getName()));
+        _session.createConsumer(_session.createQueue(getTestQueueName()));
 
         // Validation
         List<String> results = _monitor.findMatches(QUEUE_PREFIX);
