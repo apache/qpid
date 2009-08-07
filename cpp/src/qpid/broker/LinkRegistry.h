@@ -30,6 +30,7 @@
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -63,6 +64,7 @@ namespace broker {
         qpid::sys::Mutex lock;
         Broker* broker;
         sys::Timer* timer;
+        boost::intrusive_ptr<qpid::sys::TimerTask> maintenanceTask;
         management::Manageable* parent;
         MessageStore* store;
         bool passive;
@@ -77,6 +79,8 @@ namespace broker {
     public:
         LinkRegistry (); // Only used in store tests
         LinkRegistry (Broker* _broker);
+        ~LinkRegistry();
+
         std::pair<boost::shared_ptr<Link>, bool>
             declare(std::string& host,
                     uint16_t     port,

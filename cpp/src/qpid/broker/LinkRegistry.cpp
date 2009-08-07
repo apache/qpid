@@ -49,10 +49,16 @@ LinkRegistry::LinkRegistry () :
 
 LinkRegistry::LinkRegistry (Broker* _broker) :
     broker(_broker), timer(&broker->getTimer()),
+    maintenanceTask(new Periodic(*this)),
     parent(0), store(0), passive(false), passiveChanged(false),
     realm(broker->getOptions().realm)
 {
-    timer->add (new Periodic(*this));
+    timer->add(maintenanceTask);
+}
+
+LinkRegistry::~LinkRegistry()
+{
+    maintenanceTask->cancel();
 }
 
 LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
@@ -61,7 +67,8 @@ LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
 void LinkRegistry::Periodic::fire ()
 {
     links.periodicMaintenance ();
-    links.timer->add (new Periodic(links));
+    setupNextFire();
+    links.timer->add (this);
 }
 
 void LinkRegistry::periodicMaintenance ()
