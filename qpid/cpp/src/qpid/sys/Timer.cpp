@@ -67,13 +67,11 @@ void TimerTask::setupNextFire() {
 
 // Only allow tasks to be delayed
 void TimerTask::restart() { nextFireTime = max(nextFireTime, AbsTime(AbsTime::now(), period)); }
-void TimerTask::delayTill(AbsTime time) { period = 0; nextFireTime = max(nextFireTime, time); }
 
 void TimerTask::cancel() {
     ScopedLock<Mutex> l(callbackLock);
     cancelled = true;
 }
-bool TimerTask::isCancelled() const { return cancelled; }
 
 Timer::Timer() :
     active(false) 

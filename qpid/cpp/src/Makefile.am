@@ -479,8 +479,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/Broker.h \
   qpid/broker/BrokerImportExport.h \
-  qpid/broker/BrokerSingleton.cpp \
-  qpid/broker/BrokerSingleton.h \
   qpid/broker/Connection.cpp \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionFactory.cpp \
@@ -603,8 +601,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SignalHandler.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
-  qpid/broker/Timer.cpp \
-  qpid/broker/Timer.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
