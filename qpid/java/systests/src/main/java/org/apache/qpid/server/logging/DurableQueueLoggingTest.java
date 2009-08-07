@@ -57,11 +57,12 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
     public void setUp() throws Exception
     {
         super.setUp();
+        //Ensure we only have logs from our test
+        _monitor.reset();
+
         _connection = getConnection();
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _durable = true;
-        //Ensure we only have logs from our
-        _monitor.reset();
     }
 
     /**
