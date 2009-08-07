@@ -55,9 +55,10 @@ void TimerTask::fireTask() {
     fire();
 }
 
+// This can only be used to setup the next fire time. After the Timer has already fired
 void TimerTask::setupNextFire() {
     if (period && readyToFire()) {
-        nextFireTime = AbsTime(nextFireTime, period);
+        nextFireTime = max(AbsTime::now(), AbsTime(nextFireTime, period));
         cancelled = false;
     } else {
         QPID_LOG(error, "Couldn't setup next timer firing: " << Duration(nextFireTime, AbsTime::now()) << "[" << period << "]");
