@@ -848,6 +848,16 @@ public class QpidTestCase extends TestCase
         return con;
     }
 
+    /**
+     * Return a uniqueName for this test.
+     * In this case it returns a queue Named by the TestCase and TestName
+     * @return String name for a queue
+     */
+    protected String getTestQueueName()
+    {
+        return getClass().getSimpleName() + "-" + getName();
+    }
+
     protected void tearDown() throws java.lang.Exception
     {
         // close all the connections used by this test.
