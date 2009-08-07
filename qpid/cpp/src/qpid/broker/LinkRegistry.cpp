@@ -68,7 +68,7 @@ void LinkRegistry::Periodic::fire ()
 {
     links.periodicMaintenance ();
     setupNextFire();
-    links.timer->add (this);
+    links.timer->add(this);
 }
 
 void LinkRegistry::periodicMaintenance ()

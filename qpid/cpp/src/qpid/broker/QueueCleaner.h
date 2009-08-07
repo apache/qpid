@@ -36,6 +36,7 @@ class QueueCleaner
 {
   public:
     QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, sys::Timer& timer);
+    QPID_BROKER_EXTERN ~QueueCleaner();
     QPID_BROKER_EXTERN void start(qpid::sys::Duration period);
   private:
     class Task : public sys::TimerTask
