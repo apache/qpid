@@ -334,6 +334,7 @@ void Broker::shutdown() {
 Broker::~Broker() {
     shutdown();
     queueEvents.shutdown();
+    timer.stop(); // FIXME -- temporary fix for replication bug.
     finalize();                 // Finalize any plugins.
     if (config.auth)
         SaslAuthenticator::fini();
