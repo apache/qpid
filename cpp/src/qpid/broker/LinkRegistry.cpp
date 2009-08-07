@@ -58,7 +58,9 @@ LinkRegistry::LinkRegistry (Broker* _broker) :
 
 LinkRegistry::~LinkRegistry()
 {
-    maintenanceTask->cancel();
+    // This test is only necessary if the default constructor above is present
+    if (maintenanceTask)
+        maintenanceTask->cancel();
 }
 
 LinkRegistry::Periodic::Periodic (LinkRegistry& _links) :
