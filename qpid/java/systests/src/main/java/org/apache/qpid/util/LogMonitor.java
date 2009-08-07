@@ -172,9 +172,7 @@ public class LogMonitor
      */
     public void reset() throws FileNotFoundException, IOException
     {
-        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(_logfile));
-        writer.write("Log Monitor Reset\n");
-        writer.close();
+        new FileOutputStream(_logfile).getChannel().truncate(0);
     }
 
     /**
@@ -183,7 +181,7 @@ public class LogMonitor
      * This is required to be called incase we added a new logger.
      *
      * If we don't call close then the new logger will continue to get log entries
-     * after our desired test has finished. 
+     * after our desired test has finished.
      */
     public void close()
     {
