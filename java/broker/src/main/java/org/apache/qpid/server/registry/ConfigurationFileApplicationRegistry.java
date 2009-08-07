@@ -22,8 +22,10 @@ package org.apache.qpid.server.registry;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
@@ -52,6 +54,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
                                                        new Log4jMessageLogger());
         // Set the Actor for current log messages
         CurrentActor.set(new BrokerActor(_rootMessageLogger));
+
+        CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));        
 
         initialiseManagedObjectRegistry();
 
