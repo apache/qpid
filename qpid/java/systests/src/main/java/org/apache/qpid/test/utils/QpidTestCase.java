@@ -534,7 +534,7 @@ public class QpidTestCase extends TestCase
         Class bdb = null;
         try
         {
-            bdb = Class.forName("org.apache.qpid.store.berkleydb.BDBMessageStore");
+            bdb = Class.forName("org.apache.qpid.server.store.berkeleydb.BDBMessageStore");
         }
         catch (ClassNotFoundException e)
         {
