@@ -12,4 +12,5 @@ org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPD
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPSSL
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownStopped
 org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClose
+org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#testMessageStoreClose
 
