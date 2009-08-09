@@ -852,30 +852,23 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
      */
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition)
     {
-        List<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-
-        QueueEntryIterator it = _entries.iterator();
-
-        long index = 1;
-        for ( ; index < fromPosition && !it.atTail(); index++)
+        List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
-            it.advance();
-        }
+            private long position = 0;
+            
+            public boolean accept(QueueEntry entry)
+            {
+                position++;
+                return (position >= fromPosition) && (position <= toPosition);
+            }
 
-        if(index < fromPosition)
-        {
-            //The queue does not contain enough entries to reach our range.
-            //return the empty list.
-            return queueEntries;
-        }
-
-        for ( ; index <= toPosition && !it.atTail(); index++)
-        {
-            it.advance();
-            queueEntries.add(it.getNode());
-        }
-
-        return queueEntries;
+            public boolean filterComplete()
+            {
+                return position >= toPosition;
+            }
+        });
+        
+        return entries;
     }
 
     public void moveMessagesToAnotherQueue(final long fromMessageId,
