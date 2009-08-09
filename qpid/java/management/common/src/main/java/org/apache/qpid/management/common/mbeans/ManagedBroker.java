@@ -22,12 +22,10 @@
 package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
 
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
@@ -55,13 +53,23 @@ public interface ManagedBroker
     String[] getExchangeTypes() throws IOException;
     
     /**
-     * Returns a Map keyed by QueueName, detailing its associated QueueDepth in bytes.
+     * Returns a list containing the names of the attributes available for the Queue mbeans.
      * @since Qpid JMX API 1.3
      * @throws IOException
      */
-    @MBeanOperation(name = "viewQueueNamesDepths", description = "View the queue names and depths in this virtualhost", 
-                    impact = MBeanOperationInfo.INFO)
-    Map<String,Long> viewQueueNamesDepths() throws IOException;
+    @MBeanOperation(name = "retrieveQueueAttributeNames", description = "Retrieve the attribute names for queues in this virtualhost", 
+            impact = MBeanOperationInfo.INFO)
+    List<String> retrieveQueueAttributeNames() throws IOException;
+    
+    /**
+     * Returns a List of Object Lists containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
+     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
+     * @since Qpid JMX API 1.3
+     * @throws IOException
+     */
+    @MBeanOperation(name = "retrieveQueueAttributeValues", description = "Retrieve the indicated attributes for queues in this virtualhost", 
+            impact = MBeanOperationInfo.INFO)
+    List<List<Object>> retrieveQueueAttributeValues(@MBeanOperationParameter(name="attributes", description="Attributes to retrieve") String[] attributes) throws IOException;
     
     /**
      * Creates a new Exchange.
