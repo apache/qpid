@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.client.AMQConnection;
+
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
@@ -52,11 +54,12 @@ public class ChannelLoggingTest extends AbstractTestLogging
      * 2. New JMS Session/Channel creation
      *
      * Output:
-     * <date> CHN-1001 : Create : Prefetch <count>
+     * <date> CHN-1001 : Create
+     * <date> CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
      *
      * Validation Steps:
-     * 3. The CHN ID is correct
-     * 4. The prefetch value matches that defined by the requesting client.
+     * 1. The CHN ID is correct
+     * 2. The prefetch value matches that defined by the requesting client.
      *
      * @throws Exception - if an error occurs
      */
@@ -66,20 +69,29 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         Connection connection = getConnection();
 
+        int PREFETCH = 12;
+
         // Test that calling session.close gives us the expected output
-        connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        ((AMQConnection)connection).createSession(false, Session.AUTO_ACKNOWLEDGE,PREFETCH);
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
         // Validation
 
-        assertEquals("CHN messages not logged", 1, results.size());
+        assertEquals("CHN messages not logged", 2, results.size());
 
         String log = getLog(results.get(0));
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1001 : Create
         //1 & 2
         validateMessageID("CHN-1001", log);
         assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
+
+        log = getLog(results.get(1));
+        //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
+        //1 & 2
+        validateMessageID("CHN-1004", log);
+        assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
+        assertTrue("Prefetch Count not correct",getMessageString(fromMessage(log)).endsWith("Count "+PREFETCH));
 
         connection.close();
     }
