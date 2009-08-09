@@ -322,6 +322,8 @@ public class NavigationView extends ViewPart
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
 
+        _treeViewer.refresh();
+        
         expandInitialMBeanView(serverNode);
         
         //(re)select the server node now that it is connected to force a selectionEvent
