@@ -39,8 +39,8 @@ package org.apache.qpid.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -50,6 +50,7 @@ import javax.management.ObjectName;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.exchange.Exchange;
@@ -60,6 +61,7 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.AMQQueueMBean;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -114,26 +116,67 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     }
     
     /**
-     * Returns a Map keyed by QueueName, detailing its associated QueueDepth in bytes.
+     * Returns a list containing the names of the attributes available for the Queue mbeans.
      * @since Qpid JMX API 1.3
      * @throws IOException
      */
-    public Map<String,Long> viewQueueNamesDepths() throws IOException
+    public List<String> retrieveQueueAttributeNames() throws IOException
     {
-        Map<String,Long> queueDepthMap = new HashMap<String,Long>(_queueRegistry.getQueues().size());
+        List<String> attributeList = new ArrayList<String>();
+        for(String attr : ManagedQueue.QUEUE_ATTRIBUTES)
+        {
+            attributeList.add(attr);
+        }
         
-        String queueName;
-        Long queueDepth;
+        Collections.sort(attributeList);
 
+        return attributeList;
+    }
+    
+    /**
+     * Returns a List of Object Lists containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
+     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
+     * @since Qpid JMX API 1.3
+     * @throws IOException
+     */
+    public List<List<Object>> retrieveQueueAttributeValues(String[] attributes) throws IOException
+    {
+        if(_queueRegistry.getQueues().size() == 0)
+        {
+            return new ArrayList<List<Object>>();
+        }
+        
+        List<List<Object>> queueAttributesList = new ArrayList<List<Object>>(_queueRegistry.getQueues().size());
+        
+        int attributesLength = attributes.length;
+        
         for(AMQQueue queue : _queueRegistry.getQueues())
         {
-            queueName = queue.getName().toString();
-            queueDepth = queue.getQueueDepth();
+            AMQQueueMBean mbean = (AMQQueueMBean) queue.getManagedObject();
             
-            queueDepthMap.put(queueName,queueDepth);
+            if(mbean == null)
+            {
+                continue;
+            }
+            
+            List<Object> attributeValues = new ArrayList<Object>(attributesLength);
+            
+            for(int i=0; i < attributesLength; i++)
+            {
+                try
+                {
+                    attributeValues.add(mbean.getAttribute(attributes[i]));
+                }
+                catch (Exception e)
+                {
+                    attributeValues.add(new String("-"));
+                }
+            }
+            
+            queueAttributesList.add(attributeValues);
         }
-
-        return queueDepthMap;
+        
+        return queueAttributesList;
     }
     
     /**
