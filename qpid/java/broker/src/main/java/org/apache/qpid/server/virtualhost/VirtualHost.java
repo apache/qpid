@@ -29,6 +29,9 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -154,6 +157,8 @@ public class VirtualHost implements Accessable
     {
         _configuration = hostConfig;
         _name = hostConfig.getName();
+
+        CurrentActor.get().message(VirtualHostMessages.VHT_1001(_name));        
 
         if (_name == null || _name.length() == 0)
         {
@@ -427,6 +432,8 @@ public class VirtualHost implements Accessable
         {
             _messageStore.close();
         }
+
+        CurrentActor.get().message(VirtualHostMessages.VHT_1002());
     }
 
     public ManagedObject getBrokerMBean()

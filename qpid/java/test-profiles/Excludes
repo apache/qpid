@@ -11,6 +11,7 @@ org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskInvalidSize
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPDefault
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPSSL
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownStopped
+org.apache.qpid.server.logging.VirtualHostLoggingTest#testVirtualhostClosure
 org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClose
 org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#testMessageStoreClose
 
