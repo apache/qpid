@@ -212,9 +212,7 @@ public class LogMonitorTest extends TestCase
 
         monitor.reset();
 
-        validateLogContainsMessage(monitor, LOG_RESET_TEXT);
-
-        assertEquals(LOG_RESET_TEXT + "\n", monitor.readFile());
+        assertEquals("", monitor.readFile());
     }
 
     public void testRead() throws IOException
