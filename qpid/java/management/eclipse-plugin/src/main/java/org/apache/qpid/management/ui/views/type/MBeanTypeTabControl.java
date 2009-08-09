@@ -65,17 +65,18 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 
 public abstract class MBeanTypeTabControl extends TabControl
 {
-    private FormToolkit _toolkit;
-    private Form        _form;
+    protected FormToolkit _toolkit;
+    protected Form        _form;
     protected Table _table = null;
     protected TableViewer _tableViewer = null;
 
     protected List<ManagedBean> _mbeans = null;
-    private String _type;
+    protected String _type;
     protected ApiVersion _ApiVersion;
     protected JMXManagedObject _vhostMbean;
     protected String _virtualHost;
     protected JMXServerRegistry _serverRegistry;
+    protected Composite _tableComposite;
     
     public MBeanTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost, String type)
     {
@@ -88,7 +89,13 @@ public abstract class MBeanTypeTabControl extends TabControl
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
+        init();
         createWidgets();
+    }
+    
+    protected void init()
+    {
+        
     }
 
     /**
@@ -131,9 +138,9 @@ public abstract class MBeanTypeTabControl extends TabControl
     
     protected abstract List<ManagedBean> getMbeans();
     
-    protected void createTable(Composite tableComposite)
+    protected void createTable()
     {
-        _table = new Table (tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (_tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -222,12 +229,12 @@ public abstract class MBeanTypeTabControl extends TabControl
             }
         });
         
-        Composite tableComposite = _toolkit.createComposite(mainComposite);
+        _tableComposite = _toolkit.createComposite(mainComposite);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        tableComposite.setLayoutData(gridData);
-        tableComposite.setLayout(new GridLayout(1,false));
+        _tableComposite.setLayoutData(gridData);
+        _tableComposite.setLayout(new GridLayout(1,false));
         
-        createTable(tableComposite);
+        createTable();
         
         favouritesButton.setEnabled(false);
         openButton.setEnabled(false);
@@ -270,6 +277,13 @@ public abstract class MBeanTypeTabControl extends TabControl
             public void mouseDown(MouseEvent e){}
             public void mouseUp(MouseEvent e){}
         });
+        
+        createLowerAreaButton(mainComposite);
+    }
+    
+    protected void createLowerAreaButton(Composite parent)
+    {
+
     }
     
     /**
