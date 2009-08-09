@@ -294,9 +294,8 @@ public class UserManagementTabControl extends TabControl
                     {
                         char[] password = id.getValue().toCharArray();
 
-                        // Retrieve the MBean version. If we have a version 1 UMMBean then 
-                        // it expects the password to be sent as a hashed value.
-                        if (_mbean.getVersion() == 1)
+                        // Qpid JMX API 1.1 and below expects the password to be sent as a hashed value.
+                        if (_ApiVersion.lessThanOrEqualTo(1,1))
                         {
                             try
                             {
@@ -768,6 +767,24 @@ public class UserManagementTabControl extends TabControl
                     return;
                 }
                 
+                char[] passwordChars = password.toCharArray();
+
+                // Qpid JMX API 1.1 and below expects the password to be sent as a hashed value.
+                if (_ApiVersion.lessThanOrEqualTo(1,1))
+                {
+                    try
+                    {
+                        passwordChars = ViewUtility.getHash(password);
+                    }
+                    catch (Exception hashException)
+                    {
+                        ViewUtility.popupErrorMessage("Set Password",
+                                "Unable to calculate hash for Password:"
+                                + hashException.getMessage());
+                        return;
+                    }
+                }
+                
                 boolean read = readButton.getSelection();
                 boolean write = writeButton.getSelection();
                 boolean admin = adminButton.getSelection();
@@ -775,7 +792,7 @@ public class UserManagementTabControl extends TabControl
                 shell.dispose();
                 try
                 {
-                    boolean result = _ummb.createUser(username, password.toCharArray(), read, write, admin);
+                    boolean result = _ummb.createUser(username, passwordChars, read, write, admin);
                     ViewUtility.operationResultFeedback(result, "Created user", "Failed to create user");
                 }
                 catch(Exception e5)
