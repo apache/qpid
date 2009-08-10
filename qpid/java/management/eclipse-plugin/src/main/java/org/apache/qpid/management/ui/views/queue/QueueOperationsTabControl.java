@@ -457,8 +457,21 @@ public class QueueOperationsTabControl extends TabControl
                 {
                     try
                     {
-                        _qmb.clearQueue();
-                        ViewUtility.operationResultFeedback(null, "Queue cleared", null);
+                        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+                        {
+                            //Qpid JMX API 1.3+, returns the number of messages deleted
+                            Long numDeleted = _qmb.clearQueue();
+                            String message = "Queue cleared of " + numDeleted + 
+                                             " non-acquired message" + (numDeleted == 1 ? "": "s");
+                            
+                            ViewUtility.operationResultFeedback(null, message, null);
+                        }
+                        else
+                        {
+                            //Qpid JMX API 1.2 or below, void return
+                            _qmb.clearQueue();
+                            ViewUtility.operationResultFeedback(null, "Queue cleared of non-acquired messages", null);
+                        }
                     }
                     catch (Exception e2)
                     {

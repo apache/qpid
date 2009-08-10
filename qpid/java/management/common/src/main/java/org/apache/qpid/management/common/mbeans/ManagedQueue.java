@@ -291,14 +291,18 @@ public interface ManagedQueue
     void deleteMessageFromTop() throws IOException, JMException;
 
     /**
-     * Clears the queue by deleting all the undelivered messages from the queue.
+     * Clears the queue by deleting all the messages from the queue that have not been acquired by consumers"
+     * 
+     * Since Qpid JMX API 1.3 this returns the number of messages deleted. Prior to this, the return type was void.
+     * @return the number of messages deleted
      * @throws IOException
      * @throws JMException
      */
     @MBeanOperation(name="clearQueue",
-                    description="Clears the queue by deleting all the undelivered messages from the queue",
+                    description="Clears the queue by deleting all the messages from the queue " +
+                    		"that have not been acquired by consumers",
                     impact= MBeanOperationInfo.ACTION)
-    void clearQueue() throws IOException, JMException;
+    Long clearQueue() throws IOException, JMException;
 
     /**
      * Moves the messages in given range of message Ids to given Queue. QPID-170

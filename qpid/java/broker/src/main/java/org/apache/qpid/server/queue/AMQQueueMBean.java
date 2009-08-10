@@ -307,13 +307,16 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     }
 
     /**
+     * Clears the queue of non-acquired messages
+     * 
+     * @return the number of messages deleted
      * @see AMQQueue#clearQueue
      */
-    public void clearQueue() throws JMException
+    public Long clearQueue() throws JMException
     {
         try
         {
-            _queue.clearQueue(_storeContext);
+            return _queue.clearQueue(_storeContext);
         }
         catch (AMQException ex)
         {
