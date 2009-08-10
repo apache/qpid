@@ -20,7 +20,7 @@ qpidd.1
 qpid/cpp/libtool
 qpidc.spec
 qpid/cpp/src/gen/
-*.mk
+*gen.mk
 *.timestamp
 rgen.timestamp
 *.pcl

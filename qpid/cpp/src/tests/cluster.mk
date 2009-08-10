@@ -29,44 +29,46 @@ if HAVE_LIBCPG
 
 
 # ais_check checks pre-requisites for cluster tests and runs them if ok.
-TESTS += \
-    ais_check \
-	run_cluster_tests \
-	federated_cluster_test \
+TESTS +=					\
+	ais_check				\
+	test_watchdog				\
+	run_cluster_tests			\
+	federated_cluster_test			\
 	clustered_replication_test
-	
-EXTRA_DIST += \
-	ais_check \
-	start_cluster \
-	stop_cluster \
-	restart_cluster \
-	cluster_python_tests \
-	cluster_python_tests_failing.txt \
-  	federated_cluster_test \
-  	clustered_replication_test \
-  	run_cluster_tests \
-  	run_long_cluster_tests \
-  	testlib.py \
-  	cluster_tests.py \
-  	long_cluster_tests.py
-  	
 
-LONG_TESTS += \
-	run_long_cluster_tests \
-	start_cluster \
-	cluster_python_tests \
+EXTRA_DIST +=					\
+	ais_check				\
+	start_cluster				\
+	stop_cluster				\
+	restart_cluster				\
+	cluster_python_tests			\
+	cluster_python_tests_failing.txt	\
+	federated_cluster_test			\
+	clustered_replication_test		\
+	run_cluster_tests			\
+	run_long_cluster_tests			\
+	testlib.py				\
+	cluster_tests.py			\
+	long_cluster_tests.py
+
+LONG_TESTS +=					\
+	run_long_cluster_tests			\
+	start_cluster				\
+	cluster_python_tests			\
 	stop_cluster
 
 qpidtest_PROGRAMS += cluster_test
-cluster_test_SOURCES = \
-  	cluster_test.cpp \
-  	unit_test.cpp \
-  	ClusterFixture.cpp \
-  	ClusterFixture.h \
-  	ForkedBroker.h \
-  	ForkedBroker.cpp \
-  	PartialFailure.cpp \
-  	ClusterFailover.cpp
+
+cluster_test_SOURCES =				\
+	cluster_test.cpp			\
+	unit_test.cpp				\
+	ClusterFixture.cpp			\
+	ClusterFixture.h			\
+	ForkedBroker.h				\
+	ForkedBroker.cpp			\
+	PartialFailure.cpp			\
+	ClusterFailover.cpp
+
 cluster_test_LDADD=$(lib_client) $(lib_broker) -lboost_unit_test_framework
 
 qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests long_cluster_tests.py testlib.py
