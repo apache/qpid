@@ -52,12 +52,12 @@ stop_ruby_agent() {
 if test -d ${PYTHON_DIR} ;  then
     start_broker
     echo "Running qmf interop tests using broker on port $BROKER_PORT"
-    PYTHONPATH=${PYTHON_DIR}
+    PYTHONPATH=${PYTHON_DIR}:${MY_DIR}
     export PYTHONPATH
     echo "    Ruby Agent vs. Pure-Python Console"
     start_ruby_agent
     echo "    Ruby agent started at pid $AGENT_PID"
-    ${MY_DIR}/python_console.py -v -s ${SPEC_DIR}/amqp.0-10-qpid-errata.xml -b localhost:$BROKER_PORT $@
+    ${PYTHON_DIR}/qpid-python-test -m python_console -b localhost:$BROKER_PORT $@
     RETCODE=$?
     stop_ruby_agent
     stop_broker
