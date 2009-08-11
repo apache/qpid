@@ -20,7 +20,9 @@
 import os, connection, session
 from util import notify
 from datatypes import RangedSet
+from exceptions import VersionError
 from logging import getLogger
+from ops import Control
 import sys
 
 log = getLogger("qpid.io.ctl")
@@ -29,26 +31,22 @@ class Delegate:
 
   def __init__(self, connection, delegate=session.client):
     self.connection = connection
-    self.spec = connection.spec
     self.delegate = delegate
-    self.control = self.spec["track.control"].value
 
-  def received(self, seg):
-    ssn = self.connection.attached.get(seg.channel)
+  def received(self, op):
+    ssn = self.connection.attached.get(op.channel)
     if ssn is None:
-      ch = connection.Channel(self.connection, seg.channel)
+      ch = connection.Channel(self.connection, op.channel)
     else:
       ch = ssn.channel
 
-    if seg.track == self.control:
-      ctl = seg.decode(self.spec)
-      log.debug("RECV %s", ctl)
-      attr = ctl._type.qname.replace(".", "_")
-      getattr(self, attr)(ch, ctl)
+    if isinstance(op, Control):
+      log.debug("RECV %s", op)
+      getattr(self, op.NAME)(ch, op)
     elif ssn is None:
       ch.session_detached()
     else:
-      ssn.received(seg)
+      ssn.received(op)
 
   def connection_close(self, ch, close):
     self.connection.close_code = (close.reply_code, close.reply_text)
@@ -124,7 +122,8 @@ class Server(Delegate):
 
   def start(self):
     self.connection.read_header()
-    self.connection.write_header(self.spec.major, self.spec.minor)
+    # XXX
+    self.connection.write_header(0, 10)
     connection.Channel(self.connection, 0).connection_start(mechanisms=["ANONYMOUS"])
 
   def connection_start_ok(self, ch, start_ok):
@@ -156,8 +155,14 @@ class Client(Delegate):
     self.heartbeat = heartbeat
 
   def start(self):
-    self.connection.write_header(self.spec.major, self.spec.minor)
-    self.connection.read_header()
+    # XXX
+    cli_major = 0
+    cli_minor = 10
+    self.connection.write_header(cli_major, cli_minor)
+    magic, _, _, major, minor = self.connection.read_header()
+    if not (magic == "AMQP" and major == cli_major and minor == cli_minor):
+      raise VersionError("client: %s-%s, server: %s-%s" %
+                         (cli_major, cli_minor, major, minor))
 
   def connection_start(self, ch, start):
     r = "\0%s\0%s" % (self.username, self.password)

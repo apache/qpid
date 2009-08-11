@@ -477,7 +477,7 @@ class MessageTests(TestBase010):
         #send message A
         ssn.message_transfer(message=Message(ssn.delivery_properties(routing_key="q"), "A"))
 
-        for unit in ssn.credit_unit.values():
+        for unit in ssn.credit_unit.VALUES:
             ssn.message_flow("c", unit, 0xFFFFFFFFL)
 
         q = ssn.incoming("c")
@@ -490,7 +490,7 @@ class MessageTests(TestBase010):
         ssn.channel.session_completed(ssn.receiver._completed)
         ssn.message_accept(RangedSet(msgA.id))
 
-        for unit in ssn.credit_unit.values():
+        for unit in ssn.credit_unit.VALUES:
             ssn.message_flow("c", unit, 0xFFFFFFFFL)
 
         #send message B

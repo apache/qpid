@@ -26,48 +26,6 @@ from logging import getLogger
 raw = getLogger("qpid.io.raw")
 frm = getLogger("qpid.io.frm")
 
-FIRST_SEG = 0x08
-LAST_SEG = 0x04
-FIRST_FRM = 0x02
-LAST_FRM = 0x01
-
-class Frame:
-
-  HEADER = "!2BHxBH4x"
-  HEADER_SIZE = struct.calcsize(HEADER)
-  MAX_PAYLOAD = 65535 - struct.calcsize(HEADER)
-
-  def __init__(self, flags, type, track, channel, payload):
-    if len(payload) > Frame.MAX_PAYLOAD:
-      raise ValueError("max payload size exceeded: %s" % len(payload))
-    self.flags = flags
-    self.type = type
-    self.track = track
-    self.channel = channel
-    self.payload = payload
-
-  def isFirstSegment(self):
-    return bool(FIRST_SEG & self.flags)
-
-  def isLastSegment(self):
-    return bool(LAST_SEG & self.flags)
-
-  def isFirstFrame(self):
-    return bool(FIRST_FRM & self.flags)
-
-  def isLastFrame(self):
-    return bool(LAST_FRM & self.flags)
-
-  def __repr__(self):
-    return "%s%s%s%s %s %s %s %r" % (int(self.isFirstSegment()),
-                                     int(self.isLastSegment()),
-                                     int(self.isFirstFrame()),
-                                     int(self.isLastFrame()),
-                                     self.type,
-                                     self.track,
-                                     self.channel,
-                                     self.payload)
-
 class FramingError(Exception): pass
 
 class Framer(Packer):
@@ -137,24 +95,3 @@ class Framer(Packer):
       self.flush()
     finally:
       self.sock_lock.release()
-
-  def write_frame(self, frame):
-    self.sock_lock.acquire()
-    try:
-      size = len(frame.payload) + struct.calcsize(Frame.HEADER)
-      track = frame.track & 0x0F
-      self.pack(Frame.HEADER, frame.flags, frame.type, size, track, frame.channel)
-      self.write(frame.payload)
-      if frame.isLastSegment() and frame.isLastFrame():
-        self.flush()
-      frm.debug("SENT %s", frame)
-    finally:
-      self.sock_lock.release()
-
-  def read_frame(self):
-    flags, type, size, track, channel = self.unpack(Frame.HEADER)
-    if flags & 0xF0: raise FramingError()
-    payload = self.read(size - struct.calcsize(Frame.HEADER))
-    frame = Frame(flags, type, track, channel, payload)
-    frm.debug("RECV %s", frame)
-    return frame

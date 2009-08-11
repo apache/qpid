@@ -25,7 +25,7 @@ incoming method frames to a delegate.
 """
 
 import thread, threading, traceback, socket, sys, logging
-from connection08 import EOF, Method, Header, Body, Request, Response
+from connection08 import EOF, Method, Header, Body, Request, Response, VersionError
 from message import Message
 from queue import Queue, Closed as QueueClosed
 from content import Content
@@ -95,6 +95,8 @@ class Peer:
           break
         ch = self.channel(frame.channel)
         ch.receive(frame, self.work)
+    except VersionError, e:
+      self.closed(e)
     except:
       self.fatal()
 

@@ -18,7 +18,7 @@
 #
 
 from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.testlib import TestBase
 
 class ExampleTest (TestBase):
     """
