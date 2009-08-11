@@ -284,10 +284,7 @@ void DispatchHandle::processEvent(Poller::EventType type) {
         readableCallback(*this);
         writableCallback(*this);
         break;
-    case Poller::DISCONNECTED: {
-        ScopedLock<Mutex> lock(stateLock);
-        poller->unmonitorHandle(*this, Poller::INOUT);
-        }
+    case Poller::DISCONNECTED:
         if (disconnectedCallback) {
             disconnectedCallback(*this);
         }
