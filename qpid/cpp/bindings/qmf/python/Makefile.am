@@ -21,17 +21,15 @@ if HAVE_PYTHON_DEVEL
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src/qmf -I$(top_srcdir)/src -I$(top_builddir)/src
 
-EXTRA_DIST = python.i
-
 generated_file_list = \
 	qmfengine.cpp \
 	qmfengine.py
 
+EXTRA_DIST = python.i
+BUILT_SOURCES = $(generated_file_list)
+
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmfengine.i
 	swig -python -c++ -Wall -I/usr/include $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -o qmfengine.cpp $(srcdir)/python.i
-
-AM_CPPFLAGS = $(QPID_CXXFLAGS) $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC)
-AM_CXXFLAGS = $(QPID_CXXFLAGS)
 
 pylibdir = $(PYTHON_LIB)
 
@@ -39,9 +37,11 @@ lib_LTLIBRARIES = _qmfengine.la
 
 _qmfengine_la_LDFLAGS = -avoid-version -module -shrext "$(PYTHON_SO)"
 _qmfengine_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfcommon.la
-
+_qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC)
 _qmfengine_la_SOURCES = \
 	qmfengine.cpp
+
+CLEANFILES = $(generated_file_list)
 
 endif  # HAVE_PYTHON_DEVEL
 

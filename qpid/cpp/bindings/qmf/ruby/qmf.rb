@@ -172,7 +172,6 @@ module Qmf
           @by_hash[@map.key(a)] = by_key(@map.key(a))
           a += 1
         end
-
       end
 
       def [] (key)
