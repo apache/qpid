@@ -275,7 +275,7 @@ class Object(object):
     for method in self._schema.getMethods():
       if name == method.name:
         aIdx = 0
-        sendCodec = Codec(self._broker.conn.spec)
+        sendCodec = Codec()
         seq = self._session.seqMgr._reserve((method, synchronous))
         self._broker._setHeader(sendCodec, 'M', seq)
         self._objectId.encode(sendCodec)
@@ -671,7 +671,7 @@ class Session:
     self.getResult = []
     for agent in agentList:
       broker = agent.broker
-      sendCodec = Codec(broker.conn.spec)
+      sendCodec = Codec()
       try:
         self.cv.acquire()
         seq = self.seqMgr._reserve(self._CONTEXT_MULTIGET)
@@ -749,7 +749,7 @@ class Session:
 
     # Send a package request
     # (effectively inc and dec outstanding by not doing anything)
-    sendCodec = Codec(broker.conn.spec)
+    sendCodec = Codec()
     seq = self.seqMgr._reserve(self._CONTEXT_STARTUP)
     broker._setHeader(sendCodec, 'P', seq)
     smsg = broker._message(sendCodec.encoded)
@@ -770,7 +770,7 @@ class Session:
 
     # Send a class request
     broker._incOutstanding()
-    sendCodec = Codec(broker.conn.spec)
+    sendCodec = Codec()
     seq = self.seqMgr._reserve(self._CONTEXT_STARTUP)
     broker._setHeader(sendCodec, 'Q', seq)
     sendCodec.write_str8(pname)
@@ -815,7 +815,7 @@ class Session:
     if unknown:
       # Send a schema request for the unknown class
       broker._incOutstanding()
-      sendCodec = Codec(broker.conn.spec)
+      sendCodec = Codec()
       seq = self.seqMgr._reserve(self._CONTEXT_STARTUP)
       broker._setHeader(sendCodec, 'S', seq)
       classKey.encode(sendCodec)
@@ -955,7 +955,7 @@ class Session:
     elif typecode == 19: data = codec.read_int64()      # S63
     elif typecode == 15:                                # FTABLE
       data = {}
-      sc = Codec(codec.spec, codec.read_vbin32())
+      sc = Codec(codec.read_vbin32())
       if sc.encoded:
         count = sc.read_uint32()
         while count > 0:
@@ -986,7 +986,7 @@ class Session:
           data = self._decodeValue(codec, inner_type_code, broker)
     elif typecode == 21:                                # List
         #taken from codec10.read_list
-        sc = Codec(codec.spec, codec.read_vbin32())
+        sc = Codec(codec.read_vbin32())
         count = sc.read_uint32()
         data = []
         while count > 0:
@@ -995,7 +995,7 @@ class Session:
           count -= 1
     elif typecode == 22:                                #Array
         #taken from codec10.read_array
-        sc = Codec(codec.spec, codec.read_vbin32()) 
+        sc = Codec(codec.read_vbin32()) 
         count = sc.read_uint32()
         type = sc.read_uint8()
         data = []
@@ -1027,7 +1027,7 @@ class Session:
     elif typecode == 19: codec.write_int64  (int(value))    # S64
     elif typecode == 20: value._encodeUnmanaged(codec)      # OBJECT
     elif typecode == 15:                                    # FTABLE
-        sc = Codec(codec.spec)    
+        sc = Codec()
         if value is not None:
           sc.write_uint32(len(value))
           for k, v in value.items():
@@ -1039,7 +1039,7 @@ class Session:
           sc.write_uint32(0)
         codec.write_vbin32(sc.encoded)
     elif typecode == 21:                                    # List
-        sc = Codec(codec.spec)
+        sc = Codec()
         self._encodeValue(sc, len(value), 3)
         for o in value:
           ltype=self.encoding(o)
@@ -1047,7 +1047,7 @@ class Session:
           self._encodeValue(sc, o, ltype)
         codec.write_vbin32(sc.encoded)
     elif typecode == 22:                                    # Array
-        sc = Codec(codec.spec)    
+        sc = Codec()
         self._encodeValue(sc, len(value), 3)
         if len(value) > 0:
             ltype = self.encoding(value[0])
@@ -1159,7 +1159,7 @@ class Session:
     for method in schema.getMethods():
       if name == method.name:
         aIdx = 0
-        sendCodec = Codec(broker.conn.spec)
+        sendCodec = Codec()
         seq = self.seqMgr._reserve((method, False))
         broker._setHeader(sendCodec, 'M', seq)
         objectId.encode(sendCodec)
@@ -1690,7 +1690,7 @@ class Broker:
       self.connected = True
       self.session._handleBrokerConnect(self)
 
-      codec = Codec(self.conn.spec)
+      codec = Codec()
       self._setHeader(codec, 'B')
       msg = self._message(codec.encoded)
       self._send(msg)
@@ -1809,7 +1809,7 @@ class Broker:
       self.cv.release()
 
   def _replyCb(self, msg):
-    codec = Codec(self.conn.spec, msg.body)
+    codec = Codec(msg.body)
     while True:
       opcode, seq = self._checkHeader(codec)
       if   opcode == None: return
