@@ -38,6 +38,7 @@ TESTS +=					\
 
 EXTRA_DIST +=					\
 	ais_check				\
+	test_watchdog				\
 	start_cluster				\
 	stop_cluster				\
 	restart_cluster				\
