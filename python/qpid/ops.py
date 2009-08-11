@@ -66,6 +66,12 @@ class Compound(object):
       result[f.name] = getattr(self, f.name)
     return result
 
+  def __getitem__(self, attr):
+    return getattr(self, attr)
+
+  def __setitem__(self, attr, value):
+    setattr(self, attr, value)
+
   def dispatch(self, target, *args):
     handler = "do_%s" % self.NAME
     if hasattr(target, handler):
