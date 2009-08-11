@@ -23,35 +23,9 @@ import qpid
 from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import uuid4
-from qpid.testlib import TestBase010, testrunner
+from qpid.testlib import TestBase010
 from qmf.console import Session
 from qpid.datatypes import Message
-
-def scan_args(name, default=None, args=sys.argv[1:]):
-    if (name in args):
-        pos = args.index(name)
-        return args[pos + 1]
-    elif default:
-        return default
-    else:
-        print "Please specify extra argument: %s" % name
-        sys.exit(2)
-
-def extract_args(name, args):
-    if (name in args):
-        pos = args.index(name)
-        del args[pos:pos+2]
-    else:
-        return None
-
-def get_broker_port():
-    return scan_args("--port", "5672")
-
-def get_session(user, passwd):
-    socket = connect('127.0.0.1', int(get_broker_port()))
-    connection = Connection (sock=socket, username=user, password=passwd)
-    connection.start()
-    return connection.session(str(uuid4()))
 
 class ACLFile:
     def __init__(self):
@@ -64,6 +38,12 @@ class ACLFile:
         self.f.close()
         
 class ACLTests(TestBase010):
+
+    def get_session(self, user, passwd):
+        socket = connect(self.broker.host, self.broker.port)
+        connection = Connection (sock=socket, username=user, password=passwd)
+        connection.start()
+        return connection.session(str(uuid4()))
 
     def reload_acl(self):
         acl = self.qmf.getObjects(_class="acl")[0]    
@@ -93,7 +73,7 @@ class ACLTests(TestBase010):
         
         self.reload_acl()       
         
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         try:
             session.queue_declare(queue="deny_queue")
         except qpid.session.SessionException, e:
@@ -118,7 +98,7 @@ class ACLTests(TestBase010):
         
         self.reload_acl()       
         
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         try:
             session.queue_declare(queue="allow_queue")
         except qpid.session.SessionException, e:
@@ -146,7 +126,7 @@ class ACLTests(TestBase010):
 
         self.reload_acl()
 
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         try:
             session.queue_declare(queue="allow_queue")
         except qpid.session.SessionException, e:
@@ -243,21 +223,21 @@ class ACLTests(TestBase010):
         
         self.reload_acl()       
         
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         
         try:
             session.queue_declare(queue="q1", durable='true', passive='true')
             self.fail("ACL should deny queue create request with name=q1 durable=true passive=true");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
         
         try:
             session.queue_declare(queue="q2", exclusive='true')
             self.fail("ACL should deny queue create request with name=q2 exclusive=true");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code) 
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
         
         try:
             session.queue_declare(queue="q3", exclusive='true')
@@ -271,14 +251,14 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny queue query request for q3");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
         
         try:
             session.queue_purge(queue="q3")
             self.fail("ACL should deny queue purge request for q3");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
             
         try:
             session.queue_purge(queue="q4")
@@ -291,7 +271,7 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny queue delete request for q4");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
             
         try:
             session.queue_delete(queue="q3")
@@ -319,21 +299,21 @@ class ACLTests(TestBase010):
         
         self.reload_acl()       
         
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         
         try:
             session.exchange_declare(exchange='testEx', durable='true', passive='true')
             self.fail("ACL should deny exchange create request with name=testEx durable=true passive=true");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
        
         try:
             session.exchange_declare(exchange='ex1', type='direct')
             self.fail("ACL should deny exchange create request with name=ex1 type=direct");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code) 
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
         
         try:
             session.exchange_declare(exchange='myXml', type='direct')
@@ -347,14 +327,14 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny queue query request for q3");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
                 
         try:
             session.exchange_bind(exchange='myEx', queue='q1', binding_key='rk1')
             self.fail("ACL should deny exchange bind request with exchange='myEx' queuename='q1' bindingkey='rk1'");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code) 
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
 
         try:
             session.exchange_bind(exchange='myXml', queue='q1', binding_key='x')
@@ -366,7 +346,7 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny exchange unbind request with exchange='myEx' queuename='q1' bindingkey='rk1'");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code) 
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
 
         try:
             session.exchange_unbind(exchange='myXml', queue='q1', binding_key='x')
@@ -379,7 +359,7 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny exchange delete request for myEx");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
             
         try:
             session.exchange_delete(exchange='myXml')
@@ -404,7 +384,7 @@ class ACLTests(TestBase010):
         
         self.reload_acl()       
         
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         
         
         try:
@@ -420,14 +400,14 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny message subscriber request for queue='q1'");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
             
         try:
             session.message_subscribe(queue='q2', destination='myq1')
             self.fail("ACL should deny message subscriber request for queue='q2'");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
               
         try:
             session.message_subscribe(queue='q3', destination='myq1')
@@ -453,7 +433,7 @@ class ACLTests(TestBase010):
         
         self.reload_acl()       
         
-        session = get_session('bob','bob')
+        session = self.get_session('bob','bob')
         
         try:
             session.exchange_declare(exchange='myEx', type='topic')
@@ -468,14 +448,14 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny message transfer to name=amq.direct routingkey=rk1");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')                        
+            session = self.get_session('bob','bob')                        
             
         try:
             session.message_transfer(destination="amq.topic", message=Message(props,"Test"))
             self.fail("ACL should deny message transfer to name=amq.topic");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
-            session = get_session('bob','bob')
+            session = self.get_session('bob','bob')
                         
         try:
             session.message_transfer(destination="myEx", message=Message(props,"Test"))
@@ -489,13 +469,4 @@ class ACLTests(TestBase010):
             session.message_transfer(destination="amq.direct", message=Message(props,"Test"))
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
-                self.fail("ACL should allow message transfer to exchange amq.direct"); 
-                        
-                        
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    #need to remove the extra options from args as test runner doesn't recognize them
-    extract_args("--port", args)
-    args.append("acl") 
-    
-    if not testrunner.run(args): sys.exit(1)                
+                self.fail("ACL should allow message transfer to exchange amq.direct");

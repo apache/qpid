@@ -20,44 +20,21 @@
 
 import sys
 import os
-from qpid.testlib import TestBase010, testrunner
+from qpid.testlib import TestBase010
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from time import sleep
 
-def add_module(args=sys.argv[1:]):
-    for a in args:
-        if a.startswith("cli"):
-            return False
-    return True
-
-def scan_args(name, default=None, args=sys.argv[1:]):
-    if (name in args):
-        pos = args.index(name)
-        return args[pos + 1]
-    elif default:
-        return default
-    else:
-        print "Please specify extra argument: %s" % name
-        sys.exit(2)
-
-def extract_args(name, args):
-    if (name in args):
-        pos = args.index(name)
-        del args[pos:pos+2]
-    else:
-        return None
-
-def remote_host():
-    return scan_args("--remote-host", "localhost")
-
-def remote_port():
-    return int(scan_args("--remote-port"))
-
-def cli_dir():
-    return scan_args("--cli-dir")
-
 class CliTests(TestBase010):
+
+    def remote_host(self):
+        return self.defines.get("remote-host", "localhost")
+
+    def remote_port(self):
+        return int(self.defines["remote-port"])
+
+    def cli_dir(self):
+        return self.defines["cli-dir"]
 
     def makeQueue(self, qname, arguments):
         ret = os.system(self.command(" add queue " + qname + " " + arguments))
@@ -150,15 +127,15 @@ class CliTests(TestBase010):
         self.startQmf();
         qmf = self.qmf
 
-        command = cli_dir() + "/qpid-route dynamic add guest/guest@localhost:%d %s:%d amq.topic" %\
-            (testrunner.port, remote_host(), remote_port())
+        command = self.cli_dir() + "/qpid-route dynamic add guest/guest@localhost:%d %s:%d amq.topic" %\
+            (self.broker.port, self.remote_host(), self.remote_port())
         ret = os.system(command)
         self.assertEqual(ret, 0)
 
         links = qmf.getObjects(_class="link")
         found = False
         for link in links:
-            if link.port == remote_port():
+            if link.port == self.remote_port():
                 found = True
         self.assertEqual(found, True)
 
@@ -174,18 +151,4 @@ class CliTests(TestBase010):
         return None
 
     def command(self, arg = ""):
-        return cli_dir() + "/qpid-config -a localhost:%d" % testrunner.port + " " + arg
-
-
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    #need to remove the extra options from args as test runner doesn't recognise them
-    extract_args("--remote-port", args)
-    extract_args("--remote-host", args)
-    extract_args("--cli-dir", args)
-
-    if add_module():
-        #add module(s) to run to testrunners args
-        args.append("cli_tests") 
-    
-    if not testrunner.run(args): sys.exit(1)
+        return self.cli_dir() + "/qpid-config -a localhost:%d" % self.broker.port + " " + arg

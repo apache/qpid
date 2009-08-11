@@ -41,9 +41,9 @@ stop_brokers() {
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
     echo "Running CLI tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
-    PYTHONPATH=${PYTHON_DIR}
+    PYTHONPATH=${PYTHON_DIR}:${MY_DIR}
     export PYTHONPATH
-    ${MY_DIR}/cli_tests.py -v -s ${MY_DIR}/../../../specs/amqp.0-10-qpid-errata.xml -b localhost:$LOCAL_PORT --remote-port $REMOTE_PORT --cli-dir $CLI_DIR $@
+    ${PYTHON_DIR}/qpid-python-test -m cli_tests -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dcli-dir=$CLI_DIR $@
     RETCODE=$?
     stop_brokers
     if test x$RETCODE != x0; then 

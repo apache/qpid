@@ -19,27 +19,10 @@
 #
 
 import sys
-from qpid.testlib import TestBase010, testrunner
+from qpid.testlib import TestBase010
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from time import sleep
-
-def scan_args(name, default=None, args=sys.argv[1:]):
-    if (name in args):
-        pos = args.index(name)
-        return args[pos + 1]
-    elif default:
-        return default
-    else:
-        print "Please specify extra argument: %s" % name
-        sys.exit(2)
-
-def extract_args(name, args):
-    if (name in args):
-        pos = args.index(name)
-        del args[pos:pos+2]
-    else:
-        return None
 
 class QmfInteropTests(TestBase010):
 
@@ -74,10 +57,3 @@ class QmfInteropTests(TestBase010):
         if headers:
             return headers[name]
         return None
-
-
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    args.append("python_console")
-
-    if not testrunner.run(args): sys.exit(1)
