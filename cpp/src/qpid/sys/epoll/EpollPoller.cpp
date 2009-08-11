@@ -575,6 +575,8 @@ Poller::Event Poller::wait(Duration timeout) {
                 // (just not writable), allow us to readable until we get here again
                 if (epe.events & ::EPOLLHUP) {
                     if (eh.isHungup()) {
+                        // Don't set up last Handle so that we don't reset this handle
+                        // when we get back in here
                         return Event(handle, DISCONNECTED);
                     }
                     eh.setHungup();
