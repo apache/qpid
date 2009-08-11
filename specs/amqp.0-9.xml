@@ -1659,29 +1659,28 @@
       <doc>This method confirms the deletion of an exchange.</doc>
       <chassis name = "client" implement = "MUST" />
     </method>
-	
-	<!-- RG : Added Exchange.bound and Exchange.bound-ok -->
-	<method name="bound" synchronous="1" index="22">
-	    <chassis name="server" implement="SHOULD"/>
-        <field name="exchange" domain="exchange-name"/>
-        <field name = "routing-key" type = "shortstr">
-            Message routing key
-            <doc>
-              Specifies the routing key for the message.  The routing key is
-              used for routing messages depending on the exchange configuration.
-            </doc>
-        </field>
-        <field name = "queue" domain = "queue name"/>
+
+    <!-- RG : Added Exchange.bound and Exchange.bound-ok -->
+    <method name="bound" synchronous="1" index="22">
+      <chassis name="server" implement="SHOULD"/>
+      <response name="bound-ok"/>
+      <field name="exchange" domain="exchange-name"/>
+      <field name = "routing-key" type = "shortstr">
+        Message routing key
+        <doc>
+          Specifies the routing key for the message.  The routing key is
+          used for routing messages depending on the exchange configuration.
+        </doc>
+      </field>
+      <field name = "queue" domain = "queue name"/>
     </method>
 
     <method name="bound-ok" synchronous="1" index="23">
-        <field name="reply-code" domain="reply-code"/>
-        <field name="reply-text" domain="reply-text"/>
-		<chassis name="client" implement="SHOULD"/>
+      <field name="reply-code" domain="reply-code"/>
+      <field name="reply-text" domain="reply-text"/>
+      <chassis name="client" implement="SHOULD"/>
     </method>
 
-
-	
   </class>
 
   <!-- ==  QUEUE  ============================================================ -->
