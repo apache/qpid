@@ -51,6 +51,8 @@ parser.add_option("-v", "--log-level", metavar="LEVEL", default="WARN",
 parser.add_option("-c", "--log-category", metavar="CATEGORY", action="append",
                   dest="log_categories", default=[],
                   help="log only categories matching CATEGORY pattern")
+parser.add_option("-m", "--module", action="append", default=[],
+                  dest="modules", help="add module to test search path")
 parser.add_option("-i", "--ignore", action="append", default=[],
                   help="ignore tests matching IGNORE pattern")
 parser.add_option("-I", "--ignore-file", metavar="IFILE", action="append",
@@ -101,8 +103,10 @@ for v in opts.ignore_file:
 for a in args:
   includes.append(a.strip())
 
-if not includes:
+if not includes and not opts.modules:
   includes.extend(["qpid.tests.*", "tests.*", "tests_0-10.*"])
+else:
+  includes.append("*")
 
 def is_ignored(path):
   for p in excludes:
@@ -493,7 +497,9 @@ class Harness:
               objects.append(child)
       self.scanned.append(obj)
 
-modules = "qpid.tests", "tests", "tests_0-8", "tests_0-9", "tests_0-10"
+modules = opts.modules
+if not modules:
+  modules.extend(["qpid.tests", "tests", "tests_0-8", "tests_0-9", "tests_0-10"])
 h = Harness()
 for name in modules:
   m = __import__(name, None, None, ["dummy"])
