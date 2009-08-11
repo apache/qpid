@@ -17,9 +17,4 @@
 # under the License.
 #
 
-if HAVE_SWIG
-
-EXTRA_DIST = qmfengine.i
-SUBDIRS = ruby tests
-
-endif
+TESTS = run_interop_tests
