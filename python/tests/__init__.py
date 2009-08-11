@@ -19,12 +19,4 @@
 # under the License.
 #
 
-from codec import *
-from queue import *
-from spec import *
-from framer import *
-from assembler import *
-from datatypes import *
-from connection import *
-from spec010 import *
-from codec010 import *
+import codec, queue, datatypes, connection, spec010, codec010

@@ -34,8 +34,8 @@ import connection, time, socket, sys, traceback
 from codec010 import StringCodec
 from datatypes import timestamp, uuid4, RangedSet, Message as Message010
 from logging import getLogger
+from ops import PRIMITIVE
 from session import Client, INCOMPLETE
-from spec import SPEC
 from threading import Thread, RLock, Condition
 from util import connect
 
@@ -191,9 +191,12 @@ class Connection(Lockable):
     try:
       self._socket = connect(self.host, self.port)
     except socket.error, e:
-      raise ConnectError(*e.args)
+      raise ConnectError(e)
     self._conn = connection.Connection(self._socket)
-    self._conn.start()
+    try:
+      self._conn.start()
+    except connection.VersionError, e:
+      raise ConnectError(e)
 
     for ssn in self.sessions.values():
       ssn._attach()
@@ -263,8 +266,8 @@ FILTER_DEFAULTS = {
 def delegate(session):
   class Delegate(Client):
 
-    def message_transfer(self, cmd, headers, body):
-      session._message_transfer(cmd, headers, body)
+    def message_transfer(self, cmd):
+      session._message_transfer(cmd)
   return Delegate
 
 class Session(Lockable):
@@ -314,9 +317,9 @@ class Session(Lockable):
       link._disconnected()
 
   @synchronized
-  def _message_transfer(self, cmd, headers, body):
-    m = Message010(body)
-    m.headers = headers
+  def _message_transfer(self, cmd):
+    m = Message010(cmd.payload)
+    m.headers = cmd.headers
     m.id = cmd.id
     msg = self._decode(m)
     rcv = self.receivers[int(cmd.destination)]
@@ -812,16 +815,16 @@ class Receiver(Lockable):
 
 
 def codec(name):
-  type = SPEC.named[name]
+  type = PRIMITIVE[name]
 
   def encode(x):
-    sc = StringCodec(SPEC)
-    type.encode(sc, x)
+    sc = StringCodec()
+    sc.write_primitive(type, x)
     return sc.encoded
 
   def decode(x):
-    sc = StringCodec(SPEC, x)
-    return type.decode(sc)
+    sc = StringCodec(x)
+    return sc.read_primitive(type)
 
   return encode, decode
 

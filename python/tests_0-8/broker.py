@@ -19,15 +19,15 @@
 from qpid.client import Closed
 from qpid.queue import Empty
 from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.testlib import TestBase
 
 class BrokerTests(TestBase):
     """Tests for basic Broker functionality"""
 
-    def test_amqp_basic_13(self):
+    def test_ack_and_no_ack(self):
         """
         First, this test tries to receive a message with a no-ack
-        consumer. Second, this test tries to explicitely receive and
+        consumer. Second, this test tries to explicitly receive and
         acknowledge a message with an acknowledging consumer.
         """
         ch = self.channel
@@ -40,7 +40,7 @@ class BrokerTests(TestBase):
         msg = self.client.queue(ctag).get(timeout = 5)
         self.assert_(msg.content.body == body)
 
-        # Acknowleding consumer
+        # Acknowledging consumer
         self.queue_declare(ch, queue = "otherqueue")
         ctag = ch.basic_consume(queue = "otherqueue", no_ack = False).consumer_tag
         body = "test ack"
@@ -102,3 +102,19 @@ class BrokerTests(TestBase):
         except Closed, e:
             self.assertConnectionException(504, e.args[0])
 
+    def test_channel_flow(self):
+        channel = self.channel
+        channel.queue_declare(queue="flow_test_queue", exclusive=True)
+        ctag = channel.basic_consume(queue="flow_test_queue", no_ack=True).consumer_tag
+        incoming = self.client.queue(ctag)
+        
+        channel.channel_flow(active=False)        
+        channel.basic_publish(routing_key="flow_test_queue", content=Content("abcdefghijklmnopqrstuvwxyz"))
+        try:
+            incoming.get(timeout=1) 
+            self.fail("Received message when flow turned off.")
+        except Empty: None
+        
+        channel.channel_flow(active=True)
+        msg = incoming.get(timeout=1)
+        self.assertEqual("abcdefghijklmnopqrstuvwxyz", msg.content.body)

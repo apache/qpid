@@ -18,9 +18,8 @@
 #
 
 from unittest import TestCase
-from qpid.testlib import testrunner
-from qpid.spec010 import load
 from qpid.datatypes import *
+from qpid.ops import DeliveryProperties, FragmentProperties, MessageProperties
 
 class SerialTest(TestCase):
 
@@ -176,10 +175,9 @@ class UUIDTest(TestCase):
 class MessageTest(TestCase):
 
   def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10-qpid-errata.xml"))
-    self.mp = Struct(self.spec["message.message_properties"])
-    self.dp = Struct(self.spec["message.delivery_properties"])
-    self.fp = Struct(self.spec["message.fragment_properties"])
+    self.mp = MessageProperties()
+    self.dp = DeliveryProperties()
+    self.fp = FragmentProperties()
 
   def testHas(self):
     m = Message(self.mp, self.dp, self.fp, "body")
@@ -207,7 +205,7 @@ class MessageTest(TestCase):
 
   def testSetReplace(self):
     m = Message(self.mp, self.dp, self.fp, "body")
-    dp = Struct(self.spec["message.delivery_properties"])
+    dp = DeliveryProperties()
     assert m.get("delivery_properties") == self.dp
     assert m.get("delivery_properties") != dp
     m.set(dp)

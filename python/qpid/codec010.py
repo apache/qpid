@@ -20,23 +20,66 @@
 import datetime
 from packer import Packer
 from datatypes import serial, timestamp, RangedSet, Struct, UUID
+from ops import Compound, PRIMITIVE, COMPOUND
 
 class CodecException(Exception): pass
 
+def direct(t):
+  return lambda x: t
+
+def map_str(s):
+  for c in s:
+    if ord(c) >= 0x80:
+      return "vbin16"
+  return "str16"
+
 class Codec(Packer):
 
-  def __init__(self, spec):
-    self.spec = spec
+  ENCODINGS = {
+    unicode: direct("str16"),
+    str: map_str,
+    buffer: direct("vbin32"),
+    int: direct("int64"),
+    long: direct("int64"),
+    float: direct("double"),
+    None.__class__: direct("void"),
+    list: direct("list"),
+    tuple: direct("list"),
+    dict: direct("map"),
+    timestamp: direct("datetime"),
+    datetime.datetime: direct("datetime"),
+    UUID: direct("uuid"),
+    Compound: direct("struct32")
+    }
 
-  def write_void(self, v):
-    assert v == None
+  def encoding(self, obj):
+    enc = self._encoding(obj.__class__, obj)
+    if enc is None:
+      raise CodecException("no encoding for %r" % obj)
+    return PRIMITIVE[enc]
+
+  def _encoding(self, klass, obj):
+    if self.ENCODINGS.has_key(klass):
+      return self.ENCODINGS[klass](obj)
+    for base in klass.__bases__:
+      result = self._encoding(base, obj)
+      if result != None:
+        return result
+
+  def read_primitive(self, type):
+    return getattr(self, "read_%s" % type.NAME)()
+  def write_primitive(self, type, v):
+    getattr(self, "write_%s" % type.NAME)(v)
+
   def read_void(self):
     return None
+  def write_void(self, v):
+    assert v == None
 
-  def write_bit(self, b):
-    if not b: raise ValueError(b)
   def read_bit(self):
     return True
+  def write_bit(self, b):
+    if not b: raise ValueError(b)
 
   def read_uint8(self):
     return self.unpack("!B")
@@ -172,20 +215,8 @@ class Codec(Packer):
     self.write_uint32(len(b))
     self.write(b)
 
-  def write_map(self, m):
-    sc = StringCodec(self.spec)
-    if m is not None:
-      sc.write_uint32(len(m))
-      for k, v in m.items():
-        type = self.spec.encoding(v)
-        if type == None:
-          raise CodecException("no encoding for %s" % v.__class__)
-        sc.write_str8(k)
-        sc.write_uint8(type.code)
-        type.encode(sc, v)
-    self.write_vbin32(sc.encoded)
   def read_map(self):
-    sc = StringCodec(self.spec, self.read_vbin32())
+    sc = StringCodec(self.read_vbin32())
     if not sc.encoded:
       return None
     count = sc.read_uint32()
@@ -193,91 +224,132 @@ class Codec(Packer):
     while sc.encoded:
       k = sc.read_str8()
       code = sc.read_uint8()
-      type = self.spec.types[code]
-      v = type.decode(sc)
+      type = PRIMITIVE[code]
+      v = sc.read_primitive(type)
       result[k] = v
     return result
-
-  def write_array(self, a):
-    sc = StringCodec(self.spec)
-    if a is not None:
-      if len(a) > 0:
-        type = self.spec.encoding(a[0])
-      else:
-        type = self.spec.encoding(None)
-      sc.write_uint8(type.code)
-      sc.write_uint32(len(a))
-      for o in a:
-        type.encode(sc, o)
+  def write_map(self, m):
+    sc = StringCodec()
+    if m is not None:
+      sc.write_uint32(len(m))
+      for k, v in m.items():
+        type = self.encoding(v)
+        sc.write_str8(k)
+        sc.write_uint8(type.CODE)
+        sc.write_primitive(type, v)
     self.write_vbin32(sc.encoded)
+
   def read_array(self):
-    sc = StringCodec(self.spec, self.read_vbin32())
+    sc = StringCodec(self.read_vbin32())
     if not sc.encoded:
       return None
-    type = self.spec.types[sc.read_uint8()]
+    type = PRIMITIVE[sc.read_uint8()]
     count = sc.read_uint32()
     result = []
     while count > 0:
-      result.append(type.decode(sc))
+      result.append(sc.read_primitive(type))
       count -= 1
     return result
+  def write_array(self, a):
+    sc = StringCodec()
+    if a is not None:
+      if len(a) > 0:
+        type = self.encoding(a[0])
+      else:
+        type = self.encoding(None)
+      sc.write_uint8(type.CODE)
+      sc.write_uint32(len(a))
+      for o in a:
+        sc.write_primitive(type, o)
+    self.write_vbin32(sc.encoded)
 
+  def read_list(self):
+    sc = StringCodec(self.read_vbin32())
+    if not sc.encoded:
+      return None
+    count = sc.read_uint32()
+    result = []
+    while count > 0:
+      type = PRIMITIVE[sc.read_uint8()]
+      result.append(sc.read_primitive(type))
+      count -= 1
+    return result
   def write_list(self, l):
-    sc = StringCodec(self.spec)
+    sc = StringCodec()
     if l is not None:
       sc.write_uint32(len(l))
       for o in l:
-        type = self.spec.encoding(o)
-        sc.write_uint8(type.code)
-        type.encode(sc, o)
+        type = self.encoding(o)
+        sc.write_uint8(type.CODE)
+        sc.write_primitive(type, o)
     self.write_vbin32(sc.encoded)
-  def read_list(self):
-    sc = StringCodec(self.spec, self.read_vbin32())
-    if not sc.encoded:
-      return None
-    count = sc.read_uint32()
-    result = []
-    while count > 0:
-      type = self.spec.types[sc.read_uint8()]
-      result.append(type.decode(sc))
-      count -= 1
-    return result
 
   def read_struct32(self):
     size = self.read_uint32()
     code = self.read_uint16()
-    type = self.spec.structs[code]
-    fields = type.decode_fields(self)
-    return Struct(type, **fields)
+    cls = COMPOUND[code]
+    op = cls()
+    self.read_fields(op)
+    return op
   def write_struct32(self, value):
-    sc = StringCodec(self.spec)
-    sc.write_uint16(value._type.code)
-    value._type.encode_fields(sc, value)
-    self.write_vbin32(sc.encoded)
+    self.write_compound(value)
 
-  def read_control(self):
-    cntrl = self.spec.controls[self.read_uint16()]
-    return Struct(cntrl, **cntrl.decode_fields(self))
-  def write_control(self, ctrl):
-    type = ctrl._type
-    self.write_uint16(type.code)
-    type.encode_fields(self, ctrl)
+  def read_compound(self, cls):
+    size = self.read_size(cls.SIZE)
+    if cls.CODE is not None:
+      code = self.read_uint16()
+      assert code == cls.CODE
+    op = cls()
+    self.read_fields(op)
+    return op
+  def write_compound(self, op):
+    sc = StringCodec()
+    if op.CODE is not None:
+      sc.write_uint16(op.CODE)
+    sc.write_fields(op)
+    self.write_size(op.SIZE, len(sc.encoded))
+    self.write(sc.encoded)
 
-  def read_command(self):
-    type = self.spec.commands[self.read_uint16()]
-    hdr = self.spec["session.header"].decode(self)
-    cmd = Struct(type, **type.decode_fields(self))
-    return hdr, cmd
-  def write_command(self, hdr, cmd):
-    self.write_uint16(cmd._type.code)
-    hdr._type.encode(self, hdr)
-    cmd._type.encode_fields(self, cmd)
+  def read_fields(self, op):
+    flags = 0
+    for i in range(op.PACK):
+      flags |= (self.read_uint8() << 8*i)
+
+    for i in range(len(op.FIELDS)):
+      f = op.FIELDS[i]
+      if flags & (0x1 << i):
+        if COMPOUND.has_key(f.type):
+          value = self.read_compound(COMPOUND[f.type])
+        else:
+          value = getattr(self, "read_%s" % f.type)()
+        setattr(op, f.name, value)
+  def write_fields(self, op):
+    flags = 0
+    for i in range(len(op.FIELDS)):
+      f = op.FIELDS[i]
+      value = getattr(op, f.name)
+      if f.type == "bit":
+        present = value
+      else:
+        present = value != None
+      if present:
+        flags |= (0x1 << i)
+    for i in range(op.PACK):
+      self.write_uint8((flags >> 8*i) & 0xFF)
+    for i in range(len(op.FIELDS)):
+      f = op.FIELDS[i]
+      if flags & (0x1 << i):
+        if COMPOUND.has_key(f.type):
+          enc = self.write_compound
+        else:
+          enc = getattr(self, "write_%s" % f.type)
+        value = getattr(op, f.name)
+        enc(value)
 
   def read_size(self, width):
     if width > 0:
       attr = "read_uint%d" % (width*8)
       return getattr(self, attr)()
-
   def write_size(self, width, n):
     if width > 0:
       attr = "write_uint%d" % (width*8)
@@ -285,7 +357,6 @@ class Codec(Packer):
 
   def read_uuid(self):
     return UUID(self.unpack("16s"))
-
   def write_uuid(self, s):
     if isinstance(s, UUID):
       s = s.bytes
@@ -293,7 +364,6 @@ class Codec(Packer):
 
   def read_bin128(self):
     return self.unpack("16s")
-
   def write_bin128(self, b):
     self.pack("16s", b)
 
@@ -301,14 +371,13 @@ class Codec(Packer):
 
 class StringCodec(Codec):
 
-  def __init__(self, spec, encoded = ""):
-    Codec.__init__(self, spec)
+  def __init__(self, encoded = ""):
     self.encoded = encoded
-
-  def write(self, s):
-    self.encoded += s
 
   def read(self, n):
     result = self.encoded[:n]
     self.encoded = self.encoded[n:]
     return result
+
+  def write(self, s):
+    self.encoded += s

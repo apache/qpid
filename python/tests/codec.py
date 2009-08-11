@@ -23,7 +23,6 @@ from qpid.codec import Codec
 from qpid.spec import load
 from cStringIO import StringIO
 from qpid.reference import ReferenceId
-from qpid.testlib import testrunner
 
 __doc__ = """
 
@@ -54,13 +53,8 @@ __doc__ = """
 
 """
 
-SPEC = None
-
-def spec():
-    global SPEC
-    if SPEC == None:
-        SPEC = load(testrunner.get_spec_file("amqp.0-8.xml"))
-    return SPEC
+from qpid_config import amqp_spec_0_8
+SPEC = load(amqp_spec_0_8)
 
 # --------------------------------------
 # --------------------------------------
@@ -76,7 +70,7 @@ class BaseDataTypes(unittest.TestCase):
         """
         standard setUp for unitetest (refer unittest documentation for details)
         """
-        self.codec = Codec(StringIO(), spec())
+        self.codec = Codec(StringIO(), SPEC)
 
     # ------------------
     def tearDown(self):
@@ -507,7 +501,7 @@ def test(type, value):
     else:
       values = [value]
     stream = StringIO()
-    codec = Codec(stream, spec())
+    codec = Codec(stream, SPEC)
     for v in values:
       codec.encode(type, v)
     codec.flush()

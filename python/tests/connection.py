@@ -22,10 +22,10 @@ from unittest import TestCase
 from qpid.util import connect, listen
 from qpid.connection import *
 from qpid.datatypes import Message
-from qpid.testlib import testrunner
 from qpid.delegates import Server
 from qpid.queue import Queue
 from qpid.session import Delegate
+from qpid.ops import QueueQueryResult
 
 PORT = 1234
 
@@ -51,12 +51,12 @@ class TestSession(Delegate):
     pass
 
   def queue_query(self, qq):
-    return qq._type.result.type.new((qq.queue,), {})
+    return QueueQueryResult(qq.queue)
 
-  def message_transfer(self, cmd, headers, body):
+  def message_transfer(self, cmd):
     if cmd.destination == "echo":
-      m = Message(body)
-      m.headers = headers
+      m = Message(cmd.payload)
+      m.headers = cmd.headers
       self.session.message_transfer(cmd.destination, cmd.accept_mode,
                                     cmd.acquire_mode, m)
     elif cmd.destination == "abort":
@@ -64,7 +64,7 @@ class TestSession(Delegate):
     elif cmd.destination == "heartbeat":
       self.session.channel.connection_heartbeat()
     else:
-      self.queue.put((cmd, headers, body))
+      self.queue.put(cmd)
 
 class ConnectionTest(TestCase):
 
@@ -134,17 +134,17 @@ class ConnectionTest(TestCase):
       ssn.message_transfer(d)
 
     for d in destinations:
-      cmd, header, body = self.queue.get(10)
+      cmd = self.queue.get(10)
       assert cmd.destination == d
-      assert header == None
-      assert body == None
+      assert cmd.headers == None
+      assert cmd.payload == None
 
     msg = Message("this is a test")
     ssn.message_transfer("four", message=msg)
-    cmd, header, body = self.queue.get(10)
+    cmd = self.queue.get(10)
     assert cmd.destination == "four"
-    assert header == None
-    assert body == msg.body
+    assert cmd.headers == None
+    assert cmd.payload == msg.body
 
     qq = ssn.queue_query("asdf")
     assert qq.queue == "asdf"
