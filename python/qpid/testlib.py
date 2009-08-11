@@ -181,6 +181,7 @@ class TestBase010(unittest.TestCase):
     def configure(self, config):
         self.config = config
         self.broker = config.broker
+        self.defines = self.config.defines
 
     def setUp(self):
         self.conn = self.connect()
