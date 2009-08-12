@@ -19,4 +19,4 @@
 # under the License.
 #
 
-./run_cluster_tests long_cluster_tests.py
+./run_cluster_tests long_cluster_tests
