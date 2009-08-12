@@ -48,6 +48,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.ssl.SSLContextFactory;
 
 /**
@@ -175,11 +176,16 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         {
             try
             {
+                CurrentActor.set(amqProtocolSession.getLogActor());
                 amqProtocolSession.closeSession();
             }
             catch (AMQException e)
             {
                 _logger.error("Caught AMQException whilst closingSession:" + e);
+            }
+            finally
+            {
+                CurrentActor.remove();
             }
         }
     }
