@@ -29,8 +29,8 @@
   <property name="modules.plugin"     value="broker-plugins"/>
   <property name="modules.management.tools" value="management/tools/qpid-cli"/>
   <property name="modules"            value="${modules.core}
-  ${modules.plugin} ${modules.examples} ${modules.tests}
-  ${modules.management} ${modules.management.tools}"/>
+  ${modules.plugin} ${modules.examples}
+  ${modules.management} ${modules.management.tools} ${modules.tests}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
