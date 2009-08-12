@@ -175,6 +175,9 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
                     newProxyInstance(_mbsc, connectionName,
                                      ManagedConnection.class, false);
 
+            //Remove the connection close from any 0-10 connections 
+           _monitor.reset();
+
             //Close the connection
             mangedConnection.closeConnection();
 
