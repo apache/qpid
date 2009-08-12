@@ -419,7 +419,7 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
     {
     case _qmf::Link::METHOD_CLOSE :
         checkClosePermission();
-	if (!closing) {
+        if (!closing) {
 	    closing = true;
 	    if (state != STATE_CONNECTING && connection) {
                 //connection can only be closed on the connections own IO processing thread
