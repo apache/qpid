@@ -162,8 +162,8 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         assertEquals(TRANSIENT + " keyword not correct in log entry.",
                      !_durable, fromMessage(log).contains(TRANSIENT));
 
-        assertTrue("Queue does not have correct owner value:" + fromMessage(log),
-                   fromMessage(log).contains("Owner: null"));
+        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
+                   fromMessage(log).contains("Owner"));
     }
 
     /**
@@ -217,8 +217,8 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         assertTrue("Queue does not have the AutoDelete keyword in log:" + fromMessage(log),
                    fromMessage(log).contains("AutoDelete"));
 
-        assertTrue("Queue does not have correct owner value:" + fromMessage(log),
-                   fromMessage(log).contains("Owner: null"));
+        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
+                   fromMessage(log).contains("Owner"));
     }
 
     /**
@@ -277,8 +277,8 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         assertTrue("Queue does not have the right Priority value keyword in log:" + fromMessage(log),
                    fromMessage(log).contains("Priority: " + PRIORITIES));
 
-        assertTrue("Queue does not have correct owner value:" + fromMessage(log),
-                   fromMessage(log).contains("Owner: null"));
+        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
+                   fromMessage(log).contains("Owner"));
     }
 
     /**
@@ -342,8 +342,8 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
         assertTrue("Queue does not have the AutoDelete keyword in log:" + fromMessage(log),
                    fromMessage(log).contains("AutoDelete"));
 
-        assertTrue("Queue does not have correct owner value:" + fromMessage(log),
-                   fromMessage(log).contains("Owner: null"));
+        assertFalse("Queue should not contain Owner tag:" + fromMessage(log),
+                   fromMessage(log).contains("Owner"));
     }
 
 }
