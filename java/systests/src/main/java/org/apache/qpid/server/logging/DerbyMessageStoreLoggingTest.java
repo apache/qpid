@@ -28,8 +28,6 @@ import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
 import java.util.List;
-import java.util.LinkedList;
-import java.util.Iterator;
 
 /**
  * The MessageStore test suite validates that the follow log messages as
@@ -371,7 +369,6 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         // exclude them here.
         results = filterResultsByVirtualHost(results, "/localhost");
 
-
         assertEquals("Recovered test queue not found.", 1, results.size());
 
         String result = getLog(results.get(0));
@@ -402,6 +399,41 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
     /**
      * Description:
+     * A persistent queue must be persisted so that on recovery it can be restored independently of any messages that may be stored on it. This test verifies that the MessageStore will log that it has recovered 0 messages for persistent queues that do not have any messages.
+     * Input:
+     *
+     * 1. Default persistent configuration
+     * 2. Persistent queue with no messages enqueued
+     * Output:
+     *
+     * <date> MST-1005 : Recovered 0 messages for queue <queue.name>
+     *
+     * Validation Steps:
+     * 3. The MST ID is correct
+     * 4. This must occur after the queue recovery start MST-1004 has been logged.
+     * 5. The count is 0
+     * 6. 'messages' is correctly printed
+     * 7. The queue.name is non-empty
+     */
+    public void testMessageStoreQueueRecoveryCountEmpty() throws Exception
+    {
+        assertLoggingNotYetOccured(MESSAGES_STORE_PREFIX);
+
+        String queueName = getTestQueueName();
+
+        startBroker();
+        Connection connetion = getConnection();
+        Session session = connetion.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("direct://amq.direct/" + queueName + "/" + queueName + "?durable='true'");
+
+        session.createConsumer(queue).close();
+
+        int COUNT = 0;
+        testDurableRecoveryCount(COUNT, queueName);
+    }
+
+    /**
+     * Description:
      * On recovery all the persistent messages that are stored on disk must be returned to the queue. MST-1005 will report the number of messages that have been recovered from disk.
      * Input:
      *
@@ -424,14 +456,27 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         String queueName = getTestQueueName();
 
+        int COUNT = 10;
+
+        testDurableRecoveryCount(COUNT, queueName);
+    }
+
+    /**
+     * Send a set number of messages to a new durable queue, as specified. Then
+     * restart the broker and validate that they are restored.
+     *
+     * @param COUNT - the count to send
+     * @param queueName - the new queue name
+     * @throws Exception - if a problem occured.
+     */
+    private void testDurableRecoveryCount(int COUNT, String queueName) throws Exception
+    {
         startBroker();
         Connection connetion = getConnection();
         Session session = connetion.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue("direct://amq.direct/" + queueName + "/" + queueName + "?durable='true'");
 
         session.createConsumer(queue).close();
-
-        int COUNT = 10;
 
         sendMessage(session, queue, COUNT);
         try
@@ -469,15 +514,22 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
             results = _monitor.findMatches("MST-1005");
 
-            assertEquals("Recovered test queue not found.", 2, results.size());
+            assertTrue("Insufficient MST-1005 logged.", results.size()>0);
 
-            result = getLog(results.get(0));
+            result = null;
 
             // If the first message is not our queue the second one will be
-            if (!result.contains(queueName))
+            for(String resultEntry : results)
             {
-                result = getLog(results.get(1));
+                // Look for first match and set that to result
+                if (resultEntry.contains(queueName))
+                {
+                    result = getLog(resultEntry);
+                    break;
+                }
             }
+
+            assertNotNull("MST-1005 entry for queue:" + queueName + ". Not found", result);
 
             // getSlize will return extract the vhost from vh(/test) -> '/test'
             // so remove the '/' to get the name
