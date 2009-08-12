@@ -103,10 +103,11 @@ for v in opts.ignore_file:
 for a in args:
   includes.append(a.strip())
 
-if not includes and not opts.modules:
-  includes.extend(["qpid.tests.*", "tests.*", "tests_0-10.*"])
-else:
-  includes.append("*")
+if not includes:
+  if not opts.modules:
+    includes.extend(["qpid.tests.*", "tests.*", "tests_0-10.*"])
+  else:
+    includes.append("*")
 
 def is_ignored(path):
   for p in excludes:
