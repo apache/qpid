@@ -64,21 +64,40 @@ public class ManagementActor extends AbstractActor
     {
         String currentName = Thread.currentThread().getName();
 
+        String actor;
         // Record the last thread name so we don't have to recreate the log string
         if (!currentName.equals(_lastThreadName))
         {
             _lastThreadName = currentName;
 
-            System.err.println(currentName);
-            // Management Threads have this format.
+            // Management Thread names have this format.
             //RMI TCP Connection(2)-169.24.29.116
-            String connectionID = currentName.split("\\(")[1].split("\\)")[0];
-            String ip = currentName.split("-")[1];
+            // This is true for both LocalAPI and JMX Connections
+            // However to be defensive lets test.
 
-            _logString = "[" + MessageFormat.format(MANAGEMENT_FORMAT,
-                                                    connectionID,
-                                                    ip)
-                         + "] ";
+            String[] split = currentName.split("\\(");
+            if (split.length == 2)
+            {
+                String connectionID = split[1].split("\\)")[0];
+                String ip = currentName.split("-")[1];
+
+                actor = MessageFormat.format(MANAGEMENT_FORMAT,
+                                             connectionID,
+                                             ip);
+            }
+            else
+            {
+                // This is a precautionary path as it is not expected to occur
+                // however rather than adjusting the thread name of the two
+                // tests that will use this it is safer all round to do this.
+                // it is also currently used by tests :
+                // AMQBrokerManagerMBeanTest
+                // ExchangeMBeanTest
+                actor = currentName;
+            }
+
+            _logString = "[" + actor + "] ";
+
         }
     }
 
