@@ -33,7 +33,7 @@
 
 %typemap (in) uint16_t
 {
-    $1 = FIX2UINT ($input);
+    $1 = NUM2UINT ($input);
 }
 
 %typemap (out) uint16_t
@@ -43,7 +43,7 @@
 
 %typemap (in) uint32_t
 {
-    $1 = FIX2UINT ($input);
+    $1 = NUM2UINT ($input);
 }
 
 %typemap (out) uint32_t
@@ -57,7 +57,7 @@
 
 %typemap (in) uint64_t
 {
-    $1 = FIX2ULONG ($input);
+    $1 = NUM2ULONG ($input);
 }
 
 %typemap (out) uint64_t
