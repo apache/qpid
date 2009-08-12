@@ -104,10 +104,10 @@ for a in args:
   includes.append(a.strip())
 
 if not includes:
-  if not opts.modules:
-    includes.extend(["qpid.tests.*", "tests.*", "tests_0-10.*"])
-  else:
+  if opts.modules:
     includes.append("*")
+  else:
+    includes.extend(["qpid.tests.*", "tests.*", "tests_0-10.*"])
 
 def is_ignored(path):
   for p in excludes:
