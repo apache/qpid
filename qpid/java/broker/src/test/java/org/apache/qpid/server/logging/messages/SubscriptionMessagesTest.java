@@ -68,4 +68,16 @@ public class SubscriptionMessagesTest extends AbstractTestMessages
 
         validateLogMessage(log, "SUB-1002", expected);
     }
+
+    public void testMessage1003()
+    {
+        String state = "ACTIVE";
+
+        _logMessage = SubscriptionMessages.SUB_1003(state);
+        List<Object> log = performLog();
+
+        String[] expected = {"State :", state};
+
+        validateLogMessage(log, "SUB-1003", expected);
+    }
 }
