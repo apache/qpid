@@ -206,9 +206,8 @@ class SemanticState : private boost::noncopyable {
     void reject(DeliveryId first, DeliveryId last);
     void handle(boost::intrusive_ptr<Message> msg);
 
-    //final 0-10 spec (completed and accepted are distinct):
-    void completed(DeliveryId deliveryTag, DeliveryId endTag);
-    void accepted(DeliveryId deliveryTag, DeliveryId endTag);
+    void completed(const framing::SequenceSet& commands);
+    void accepted(const framing::SequenceSet& commands);
 
     void attached();
     void detached();
