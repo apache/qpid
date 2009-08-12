@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.omg.CORBA.TRANSIENT;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
