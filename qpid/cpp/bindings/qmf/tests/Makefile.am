@@ -18,3 +18,4 @@
 #
 
 TESTS = run_interop_tests
+EXTRA_DIST = run_interop_tests
