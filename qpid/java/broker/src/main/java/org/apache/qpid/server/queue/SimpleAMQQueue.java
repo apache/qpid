@@ -170,6 +170,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         CurrentActor.get().message(_logSubject,
                                    QueueMessages.QUE_1001(String.valueOf(_owner),
                                                           priorities,
+                                                          _owner != null,
                                                           autoDelete,
                                                           durable, !durable,
                                                           priorities > 0));
