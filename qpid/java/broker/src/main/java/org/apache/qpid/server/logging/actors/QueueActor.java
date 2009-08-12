@@ -18,28 +18,35 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.subjects;
+package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
 
-public class QueueLogSubject extends AbstractLogSubject
+import java.text.MessageFormat;
+
+/**
+ * This Actor is used when while the queue is performing an asynchronous process
+ * of its queue.
+ */
+public class QueueActor extends AbstractActor
 {
 
     /**
-     * LOG FORMAT for the ExchangeLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
+     * Create an QueueLogSubject that Logs in the following format.
      *
-     * 0 - Virtualhost name
-     * 1 - queue name
+     * @param queue      The queue that this Actor is working for
+     * @param rootLogger the Root logger to use.
      */
-    public static String LOG_FORMAT = "vh(/{0})/qu({1})";
-
-    /** Create an QueueLogSubject that Logs in the following format. */
-    public QueueLogSubject(AMQQueue queue)
+    public QueueActor(AMQQueue queue, RootMessageLogger rootLogger)
     {
-        setLogStringWithFormat(LOG_FORMAT,
-                               queue.getVirtualHost().getName(),
-                               queue.getName());
+        super(rootLogger);
+
+        _logString = "[" + MessageFormat.format(QueueLogSubject.LOG_FORMAT,
+                                                queue.getVirtualHost().getName(),
+                                                queue.getName()) + "] ";
+
     }
 }
+    
