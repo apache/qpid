@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.LogActor;
+
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
@@ -50,10 +54,15 @@ public abstract class AMQManagedObject extends DefaultManagedObject
 
     protected MBeanInfo _mbeanInfo;
 
+    protected LogActor _logActor;
+
     protected AMQManagedObject(Class<?> managementInterface, String typeName, int version)
         throws NotCompliantMBeanException
     {
         super(managementInterface, typeName, version);
+        // CurrentActor will be defined as these objects are created during
+        // broker startup.
+        _logActor = new ManagementActor(CurrentActor.get().getRootMessageLogger());
         buildMBeanInfo();
     }
 

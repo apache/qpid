@@ -65,6 +65,8 @@ import org.apache.qpid.server.queue.AMQQueueMBean;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -79,7 +81,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final MessageStore _messageStore;
 
     private final VirtualHost.VirtualHostMBean _virtualHostMBean;
-    
+
     @MBeanConstructor("Creates the Broker Manager MBean")
     public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
@@ -189,6 +191,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
     {
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             synchronized (_exchangeRegistry)
@@ -210,6 +213,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             throw new MBeanException(ex, "Error in creating exchange " + exchangeName);
         }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     /**
@@ -225,6 +232,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         // boolean inUse = false;
         // Check if there are queue-bindings with the exchange and unregister
         // when there are no bindings.
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             _exchangeRegistry.unregisterExchange(new AMQShortString(exchangeName), false);
@@ -232,6 +240,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         catch (AMQException ex)
         {
             throw new MBeanException(ex, "Error in unregistering exchange " + exchangeName);
+        }
+        finally
+        {
+            CurrentActor.remove();
         }
     }
 
@@ -252,6 +264,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The queue \"" + queueName + "\" already exists.");
         }
 
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             AMQShortString ownerShortString = null;
@@ -275,6 +288,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             jme.initCause(ex);
             throw new MBeanException(jme, "Error in creating queue " + queueName);
         }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     private VirtualHost getVirtualHost()
@@ -296,6 +313,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The Queue " + queueName + " is not a registerd queue.");
         }
 
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             queue.delete();
@@ -307,6 +325,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             JMException jme = new JMException(ex.getMessage());
             jme.initCause(ex);
             throw new MBeanException(jme, "Error in deleting queue " + queueName);
+        }
+        finally
+        {
+            CurrentActor.remove();    
         }
     }
 

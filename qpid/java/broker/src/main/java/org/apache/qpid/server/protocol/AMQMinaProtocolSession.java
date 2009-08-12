@@ -659,7 +659,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         {
             _closed = true;
             
-            _actor.message(ConnectionMessages.CON_1002());
+            CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
 
             if (_virtualHost != null)
             {

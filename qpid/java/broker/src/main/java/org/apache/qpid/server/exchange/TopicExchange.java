@@ -37,6 +37,8 @@ import org.apache.qpid.server.exchange.topic.TopicParser;
 import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -351,6 +353,7 @@ public class TopicExchange extends AbstractExchange
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
             }
 
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
             try
             {
                 queue.bind(TopicExchange.this, new AMQShortString(binding), null);
@@ -358,6 +361,10 @@ public class TopicExchange extends AbstractExchange
             catch (AMQException ex)
             {
                 throw new MBeanException(ex);
+            }
+            finally
+            {
+                CurrentActor.remove();
             }
         }
 

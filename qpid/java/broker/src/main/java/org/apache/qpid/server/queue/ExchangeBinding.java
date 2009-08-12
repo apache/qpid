@@ -45,7 +45,7 @@ public class ExchangeBinding
         _arguments = arguments == null ? EMPTY_ARGUMENTS : arguments;
         _logSubject = new BindingLogSubject(routingKey,exchange,queue);
 
-        CurrentActor.get().message(_logSubject, BindingMessages.BND_1001(_arguments.toString(), arguments != null));
+        CurrentActor.get().message(_logSubject, BindingMessages.BND_1001(String.valueOf(_arguments), arguments != null));
     }
 
 
