@@ -24,7 +24,6 @@ package org.apache.qpid.server.logging;
 import junit.framework.AssertionFailedError;
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 
 import java.util.List;
 
@@ -60,49 +59,37 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
      */
     public void testVirtualhostCreation() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-//        if (isJavaBroker() && isExternalBroker())
+
+        List<String> results = _monitor.findMatches(VHT_PREFIX);
+        try
         {
-//            startBroker();
+            // Validation
+            Configuration configuration = ServerConfiguration.flatConfig(_configFile);
+            List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
 
-            // Now we can create the monitor as _outputFile will now be defined
-//            _monitor = new LogMonitor(_outputFile);
+            //Validate each vhost logs a creation
+            results = _monitor.findMatches("VHT-1001");
 
+            assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
-            String configFilePath = _configFile.toString();
-
-            List<String> results = _monitor.findMatches(VHT_PREFIX);
-            try
+            for (int index = 0; index < results.size(); index++)
             {
-                // Validation
-                Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-                List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+                String result = getLog(results.get(index));
 
-                //Validate each vhost logs a creation
-                results = _monitor.findMatches("VHT-1001");
+                // Retrieve the vhostname from the log entry message 'Created : <vhostname>'
+                String vhostName = getMessageString(fromMessage(result)).split(" ")[2];
 
-                assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
-
-                for (int index = 0; index < results.size(); index++)
-                {
-                    String result = getLog(results.get(index));
-
-                    // Retrieve the vhostname from the log entry message 'Created : <vhostname>'
-                    String vhostName = getMessageString(fromMessage(result)).split(" ")[2] ;
-
-                    assertTrue("Virualhost named in log not found in config file:"+ vhostName+":"+vhosts, vhosts.contains(vhostName));
-                }
+                assertTrue("Virualhost named in log not found in config file:" + vhostName + ":" + vhosts, vhosts.contains(vhostName));
             }
-            catch (AssertionFailedError afe)
+        }
+        catch (AssertionFailedError afe)
+        {
+            System.err.println("Log Dump:");
+            for (String log : results)
             {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
-                throw afe;
+                System.err.println(log);
             }
+            throw afe;
         }
     }
 
@@ -123,43 +110,30 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
      */
     public void testVirtualhostClosure() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker,
-        // that broker must be started via Main so not an InVM broker.
-//        if (isJavaBroker() && isExternalBroker())
+        stopBroker();
+
+        List<String> results = _monitor.findMatches(VHT_PREFIX);
+        try
         {
-//            startBroker();
+            // Validation
 
-            // Now we can create the monitor as _outputFile will now be defined
-//            _monitor = new LogMonitor(_outputFile);
+            Configuration configuration = ServerConfiguration.flatConfig(_configFile);
+            List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
 
-            stopBroker();
+            //Validate each vhost logs a creation
+            results = _monitor.findMatches("VHT-1002");
 
-            String configFilePath = _configFile.toString();
-
-            List<String> results = _monitor.findMatches(VHT_PREFIX);
-            try
+            assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
+        }
+        catch (AssertionFailedError afe)
+        {
+            System.err.println("Log Dump:");
+            for (String log : results)
             {
-                // Validation
-
-                Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-                List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
-
-                //Validate each vhost logs a creation
-                results = _monitor.findMatches("VHT-1002");
-
-                assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
+                System.err.println(log);
             }
-            catch (AssertionFailedError afe)
-            {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
-                throw afe;
-            }
+            throw afe;
         }
     }
-
 
 }
