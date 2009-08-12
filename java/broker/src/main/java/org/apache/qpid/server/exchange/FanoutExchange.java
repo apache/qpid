@@ -31,6 +31,8 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -102,6 +104,7 @@ public class FanoutExchange extends AbstractExchange
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
             }
 
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
             try
             {
                 queue.bind(FanoutExchange.this, new AMQShortString(BINDING_KEY_SUBSTITUTE), null);
@@ -109,6 +112,10 @@ public class FanoutExchange extends AbstractExchange
             catch (AMQException ex)
             {
                 throw new MBeanException(ex);
+            }
+            finally
+            {
+                CurrentActor.remove();
             }
         }
 
