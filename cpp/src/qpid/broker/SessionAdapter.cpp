@@ -429,13 +429,11 @@ void SessionAdapter::QueueHandlerImpl::delete_(const string& queue, bool ifUnuse
     }
 } 
 
-
 SessionAdapter::MessageHandlerImpl::MessageHandlerImpl(SemanticState& s) : 
     HandlerHelper(s),
     releaseRedeliveredOp(boost::bind(&SemanticState::release, &state, _1, _2, true)),
     releaseOp(boost::bind(&SemanticState::release, &state, _1, _2, false)),
-    rejectOp(boost::bind(&SemanticState::reject, &state, _1, _2)),
-    acceptOp(boost::bind(&SemanticState::accepted, &state, _1, _2))
+    rejectOp(boost::bind(&SemanticState::reject, &state, _1, _2))
  {}
 
 //
@@ -547,8 +545,7 @@ void SessionAdapter::MessageHandlerImpl::stop(const std::string& destination)
 
 void SessionAdapter::MessageHandlerImpl::accept(const framing::SequenceSet& commands)
 {
-
-    commands.for_each(acceptOp);
+    state.accepted(commands);
 }
 
 framing::MessageAcquireResult SessionAdapter::MessageHandlerImpl::acquire(const framing::SequenceSet& transfers)
