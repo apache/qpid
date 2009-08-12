@@ -123,8 +123,11 @@ def is_included(path):
       return True
   return False
 
+def is_smart():
+  return sys.stdout.isatty() and os.environ.get("TERM", "dumb") != "dumb"
+
 def width():
-  if sys.stdout.isatty():
+  if is_smart():
     s = struct.pack("HHHH", 0, 0, 0, 0)
     fd_stdout = sys.stdout.fileno()
     x = fcntl.ioctl(fd_stdout, termios.TIOCGWINSZ, s)
@@ -155,7 +158,7 @@ KEYWORDS = {"pass": (32,),
             "ignored": (33,),
             "selected": (34,)}
 
-COLORIZE = sys.stdout.isatty()
+COLORIZE = is_smart()
 
 def colorize_word(word, text=None):
   if text is None:
