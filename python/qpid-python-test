@@ -134,7 +134,10 @@ def width():
     rows, cols, xpx, ypx = struct.unpack("HHHH", x)
     return cols
   else:
-    return 80
+    try:
+      return int(os.environ.get("COLUMNS", "80"))
+    except ValueError:
+      return 80
 
 WIDTH = width()
 
