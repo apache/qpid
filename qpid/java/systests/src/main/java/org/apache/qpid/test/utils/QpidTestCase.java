@@ -362,6 +362,16 @@ public class QpidTestCase extends TestCase
     }
 
     /**
+     * Return the management portin use by the broker on this main port
+     * @param mainPort the broker's main port.
+     * @return the management port that corresponds to the broker on the given port
+     */
+    protected int getManagementPort(int mainPort)
+    {
+        return mainPort + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
+    }
+
+    /**
      * Get the Port that is use by the current broker
      *
      * @return the current port
@@ -392,7 +402,7 @@ public class QpidTestCase extends TestCase
         return _broker
                 .replace("@PORT", "" + port)
                 .replace("@SSL_PORT", "" + (port - 1))
-                .replace("@MPORT", "" + (port + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT)))
+                .replace("@MPORT", "" + getManagementPort(port))
                 .replace("@CONFIG_FILE", _configFile.toString());
     }
 
