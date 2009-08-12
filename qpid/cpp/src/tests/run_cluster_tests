@@ -19,13 +19,6 @@
 # under the License.
 #
 
-if test -z $1; then
-	CLUSTER_TEST=cluster_tests.py
-else
-	CLUSTER_TEST=$1
-	echo "Running ${CLUSTER_TEST}..."
-fi
-
 # Check that top_builddir and srcdir are set
 # If not, assume local run from test dir
 if [ -z ${top_builddir} -o -z ${srcdir} ]; then
@@ -33,22 +26,34 @@ if [ -z ${top_builddir} -o -z ${srcdir} ]; then
 	top_builddir=${srcdir}/../../
 fi
 TEST_DIR=${top_builddir}/src/tests
+PYTHON_DIR=${srcdir}/../../../python
+
+if test -z $1; then
+	CLUSTER_TEST="${PYTHON_DIR}/qpid-python-test -m cluster_tests cluster_tests.ShortTests.\*"
+else
+	CLUSTER_TEST="${PYTHON_DIR}/qpid-python-test -m cluster_tests cluster_tests.LongTests.\*"
+	echo "Running $1..."
+fi
 
 
 # Check AIS requirements
 id -nG | grep '\<ais\>' > /dev/null || NOGROUP="You are not a member of the ais group."
-ps -u root | grep 'aisexec\|corosync' > /dev/null || NOAISEXEC="The aisexec or corosync daemon is not running as root"
+ps -u root | grep 'aisexec\|corosync' > /dev/null || NOAISEXEC="The aisexec or corosync daemon is not running as root."
+if ! test -d ${PYTHON_DIR}; then
+	NO_PYTHON_DIR="PYTHON_DIR=\"${PYTHON_DIR}\" not found or does not exist."
+fi
 
-if test -n "${NOGROUP}" -o -n "${NOAISEXEC}"; then
+if test -n "${NOGROUP}" -o -n "${NOAISEXEC}" -o -n "${NO_PYTHON_DIR}"; then
     cat <<EOF
 
     ======== WARNING: PYTHON CLUSTER TESTS DISABLED ===========
 
     Tests that depend on the openais library (used for clustering)
-    will not be run because:
+    and python will not be run because:
 
     ${NOGROUP}
     ${NOAISEXEC}
+    ${NO_PYTHON_DIR}
 
     ===========================================================
 
@@ -65,7 +70,7 @@ fi
 
 
 # Set up environment for python tests
-export PYTHONPATH=${srcdir}:${srcdir}/../../../python
+export PYTHONPATH=${srcdir}:${PYTHON_DIR}
 export QPIDD_EXEC=${top_builddir}/src/qpidd
 export CLUSTER_LIB=${top_builddir}/src/.libs/cluster.so
 export QPID_CONFIG_EXEC=${srcdir}/../../../python/commands/qpid-config
@@ -98,8 +103,9 @@ export TMP_DATA_DIR
 
 
 # Run the test
-sg ais -c "${srcdir}/${CLUSTER_TEST} -v"
+sg ais -c "${CLUSTER_TEST}"
 RETCODE=$?
+
 if test x${RETCODE} != x0; then 
     exit 1;
 fi
