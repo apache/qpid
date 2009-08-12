@@ -32,7 +32,6 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 
-import java.security.Principal;
 import java.util.List;
 
 /**
@@ -49,6 +48,9 @@ public class ManagementActorTest extends TestCase
 
     LogActor _amqpActor;
     UnitTestMessageLogger _rawLogger;
+    private static final String IP = "127.0.0.1";
+    private static final String CONNECTION_ID = "1";
+    private String _threadName;
 
     public void setUp() throws ConfigurationException
     {
@@ -59,17 +61,16 @@ public class ManagementActorTest extends TestCase
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, _rawLogger);
 
-        _amqpActor = new ManagementActor(new Principal()
-        {
-            public String getName()
-            {
-                return "ManagementActorTest";
-            }
-        }, rootLogger);
+        _amqpActor = new ManagementActor(rootLogger);
+
+        // Set the thread name to be the same as a RMI JMX Connection would use
+        _threadName = Thread.currentThread().getName();
+        Thread.currentThread().setName("RMI TCP Connection(" + CONNECTION_ID + ")-" + IP);
     }
 
     public void tearDown()
     {
+        Thread.currentThread().setName(_threadName);
         _rawLogger.clearLogMessages();
     }
 
@@ -120,6 +121,11 @@ public class ManagementActorTest extends TestCase
         // Verify that the logged message does not contains the 'ch:' marker
         assertFalse("Message was logged with a channel identifier." + logs.get(0),
                     logs.get(0).toString().contains("/ch:"));
+
+        // Verify that the message has the right values
+        assertTrue("Message contains the [mng: prefix",
+                   logs.get(0).toString().contains("[mng:" + CONNECTION_ID + "(" + IP + ")"));
+
     }
 
 }
