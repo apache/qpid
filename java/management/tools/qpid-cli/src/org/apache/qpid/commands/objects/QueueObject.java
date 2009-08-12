@@ -30,7 +30,7 @@ public class QueueObject extends ObjectNames
 {
     public QueueObject(MBeanServerConnection mbsc)
     {
-        ObjectNames(mbsc);
+        super(mbsc);
     }
 
     public void setQueryString(String object, String name, String vhost)

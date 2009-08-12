@@ -28,7 +28,7 @@ public class ConnectionObject extends ObjectNames
     public ConnectionObject(MBeanServerConnection mbsc)
     {
         /* calling parent classes constructor */
-        ObjectNames(mbsc);
+        super(mbsc);
     }
 
     public void setQueryString(String object, String name, String vhost)
