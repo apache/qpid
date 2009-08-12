@@ -27,7 +27,7 @@ public class UserManagementObject extends ObjectNames
 {
     public UserManagementObject(MBeanServerConnection mbsc)
     {
-        ObjectNames(mbsc);
+        super(mbsc);
     }
 
     public void setQueryString(String object, String name, String vhost)

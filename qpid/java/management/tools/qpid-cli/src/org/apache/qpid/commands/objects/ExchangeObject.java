@@ -27,8 +27,7 @@ public class ExchangeObject extends ObjectNames
 {
     public ExchangeObject(MBeanServerConnection mbsc)
     {
-        ObjectNames(mbsc);
-
+        super(mbsc);
     }
 
     public void setQueryString(String object, String name, String vhost)

@@ -35,17 +35,16 @@ public class ObjectNames
 {
     public String querystring = null;
     public MBeanServerConnection mbsc;
-    public Set set = null;
+    public Set<ObjectName> set = null;
     public String attributes = "";
     public String attributevalues = "";// = null;
 
-    /* method return the Set objects according to the Object type */
-    public void ObjectNames(MBeanServerConnection mbsc)
+    public ObjectNames(MBeanServerConnection mbsc)
     {
         this.mbsc = mbsc;
     }
 
-    public Set returnObjects()
+    public Set<ObjectName> returnObjects()
     {
         try
         {

@@ -28,7 +28,7 @@ public class VirtualHostObject extends ObjectNames
 
     public VirtualHostObject(MBeanServerConnection mbsc)
     {
-        ObjectNames(mbsc);
+        super(mbsc);
     }
 
     public void setQueryString(String object, String name, String vhost)
