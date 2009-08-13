@@ -521,34 +521,6 @@ public class QpidTestCase extends TestCase
         }
     }
 
-    public void nukeBroker() throws Exception
-    {
-        nukeBroker(0);
-    }
-
-    public void nukeBroker(int port) throws Exception
-    {
-        Process proc = _brokers.get(getPort(port));
-        if (proc == null)
-        {
-            stopBroker(port);
-        }
-        else
-        {
-            String command = "pkill -KILL -f " + getBrokerCommand(getPort(port));
-            try
-            {
-                Runtime.getRuntime().exec(command);
-            }
-            catch (Exception e)
-            {
-                // Can't do that, try the old fashioned way
-                _logger.warn("Could not run " + command + ", killing with stopBroker()");
-                stopBroker(port);
-            }
-        }
-    }
-
     /**
      * Attempt to set the Java Broker to use the BDBMessageStore for persistence
      * Falling back to the DerbyMessageStore if

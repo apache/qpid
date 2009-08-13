@@ -45,7 +45,7 @@ public class PersistentStoreTest extends QpidTestCase
         _con = getConnection();
         _con.start();
         _session = _con.createSession(true, Session.AUTO_ACKNOWLEDGE);
-        _destination = _session.createQueue(this.getClass().getName());
+        _destination = _session.createQueue(getTestQueueName());
         _consumer = _session.createConsumer(_destination);
         _consumer.close();
         
@@ -70,16 +70,16 @@ public class PersistentStoreTest extends QpidTestCase
         assertNull("No more messages should be received", _consumer.receive(100));
     }
     
-    /** 
-     * starts the server, sends 100 messages, restarts the server and gets 100 messages back
-     * the test formerly referred to as BDB-Qpid-1
-     * @throws Exception 
-     */
-    public void testStartStop() throws Exception
-    {
-        restartBroker();
-        checkMessages();
-    }    
+//    /**
+//     * starts the server, sends 100 messages, restarts the server and gets 100 messages back
+//     * the test formerly referred to as BDB-Qpid-1
+//     * @throws Exception
+//     */
+//    public void testStartStop() throws Exception
+//    {
+//        restartBroker(); -- Not Currently a gracefull restart so not BDB-Qpid-1
+//        checkMessages();
+//    }
 
 
     /** 
@@ -89,23 +89,22 @@ public class PersistentStoreTest extends QpidTestCase
      */
     public void testForcibleStartStop() throws Exception
     {
-        nukeBroker();
-        startBroker();
-        checkMessages();
-    }
-
-    /** 
-     * starts the server, sends 100 committed messages, 5 uncommited ones, 
-     * restarts the server and gets 100 messages back
-     * the test formerly referred to as BDB-Qpid-5
-     * @throws Exception 
-     */
-    public void testStartStopMidTransaction() throws Exception
-    {
-        sendMessage(_session, _destination, 5);
         restartBroker();
         checkMessages();
     }
+
+//    /**
+//     * starts the server, sends 100 committed messages, 5 uncommited ones,
+//     * restarts the server and gets 100 messages back
+//     * the test formerly referred to as BDB-Qpid-5
+//     * @throws Exception
+//     */
+//    public void testStartStopMidTransaction() throws Exception
+//    {
+//        sendMessage(_session, _destination, 5);
+//        restartBroker(); -- Not Currently a gracefull restart so not BDB-Qpid-1
+//        checkMessages();
+//    }
 
     /** 
      * starts the server, sends 100 committed messages, 5 uncommited ones, 
@@ -116,8 +115,7 @@ public class PersistentStoreTest extends QpidTestCase
     public void testForcibleStartStopMidTransaction() throws Exception
     {
         sendMessage(_session, _destination, 5);
-        nukeBroker();
-        startBroker();
+        restartBroker();
         checkMessages();
     }
 
@@ -136,14 +134,14 @@ public class PersistentStoreTest extends QpidTestCase
         checkMessages();
     }
     
-    /**
-     * starts the server, sends 50 committed messages, copies $QPID_WORK to a new location,
-     * sends 10 messages, stops the server, nukes the store, restores the copy, starts the server
-     * checks that we get the first 50 back.  
-     */
-    public void testHotBackup()
-    {
-        
-    }
+//    /**
+//     * starts the server, sends 50 committed messages, copies $QPID_WORK to a new location,
+//     * sends 10 messages, stops the server, nukes the store, restores the copy, starts the server
+//     * checks that we get the first 50 back.
+//     */
+//    public void testHotBackup()
+//    {
+//        -- removing as this will leave 100msgs on a queue
+//    }
     
 }
