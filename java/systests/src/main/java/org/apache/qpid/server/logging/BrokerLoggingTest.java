@@ -149,24 +149,23 @@ public class BrokerLoggingTest extends AbstractTestLogging
         {
             String TESTID = "BRK-1007";
 
-//            _monitor = new LogMonitor(new File(System.getProperty("QPID_WORK") + "/log/qpid.log"));
-
             //Remove test Log4j config from the commandline
             _broker = _broker.substring(0, _broker.indexOf("-l"));
 
-            // As a result we will pick up the broker default and will right
+            // As a result of removing the test log4j config
+            // we will pick up the broker default and will write
             // data to the standard qpid.log file. Which means that the start
-            // broker process will not be monitoring the right file for startup.
+            // broker process will not be monitoring the right file for startup
+            // messages. Therefore:
 
-            // Set the broker commit ready string to check for the _log4j default
+            // Set the broker.ready string to check for the _log4j default that
+            // is still present on standard out. 
             System.setProperty(BROKER_READY, "Qpid Broker Ready");
 
             startBroker();
 
-            // Now we can create the monitor on the qpid.log that is defined in
-            // the default log4j configuration
-            _monitor = new LogMonitor(new File(System.getProperty("QPID_WORK") +
-                                               "/log/qpid.log"));
+            // Now we can create the monitor as _outputFile will now be defined
+            _monitor = new LogMonitor(_outputFile);
 
             // Ensure broker has fully started up.
             getConnection();
