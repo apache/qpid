@@ -455,7 +455,131 @@ class FederationTests(TestBase010):
         sleep(3)
         self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
         self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+
+    def test_dynamic_topic_reorigin(self):
+        session = self.session
+        r_conn = self.connect(host=self.remote_host(), port=self.remote_port())
+        r_session = r_conn.session("test_dynamic_topic_reorigin")
+
+        session.exchange_declare(exchange="fed.topic_reorigin", type="topic")
+        r_session.exchange_declare(exchange="fed.topic_reorigin", type="topic")
+
+        session.exchange_declare(exchange="fed.topic_reorigin_2", type="topic")
+        r_session.exchange_declare(exchange="fed.topic_reorigin_2", type="topic")
+
+        self.startQmf()
+        qmf = self.qmf
+        broker = qmf.getObjects(_class="broker")[0]
+        result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
+        self.assertEqual(result.status, 0)
+
+        session.queue_declare(queue="fed2", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed2", exchange="fed.topic_reorigin_2", binding_key="ft-key.one.#")
+        self.subscribe(queue="fed2", destination="f2")
+        queue2 = session.incoming("f2")
+
+        link = qmf.getObjects(_class="link")[0]
+        result = link.bridge(False, "fed.topic_reorigin", "fed.topic_reorigin", "", "", "", False, False, True, 0)
+        self.assertEqual(result.status, 0)
+        result = link.bridge(False, "fed.topic_reorigin_2", "fed.topic_reorigin_2", "", "", "", False, False, True, 0)
+        self.assertEqual(result.status, 0)
+
+        bridge = qmf.getObjects(_class="bridge")[0]
+        bridge2 = qmf.getObjects(_class="bridge")[1]
+        sleep(5)
+
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="fed.topic_reorigin", binding_key="ft-key.#")
+        self.subscribe(queue="fed1", destination="f1")
+        queue = session.incoming("f1")
+
+        for i in range(1, 11):
+            dp = r_session.delivery_properties(routing_key="ft-key.one.two")
+            r_session.message_transfer(destination="fed.topic_reorigin", message=Message(dp, "Message %d" % i))
+
+        for i in range(1, 11):
+            msg = queue.get(timeout=5)
+            self.assertEqual("Message %d" % i, msg.body)
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
+        result = bridge.close()
+        self.assertEqual(result.status, 0)
+        result = bridge2.close()
+        self.assertEqual(result.status, 0)
+        result = link.close()
+        self.assertEqual(result.status, 0)
+
+        sleep(3)
+        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
+        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+
+
         
+    def test_dynamic_direct_reorigin(self):
+        session = self.session
+        r_conn = self.connect(host=self.remote_host(), port=self.remote_port())
+        r_session = r_conn.session("test_dynamic_direct_reorigin")
+
+        session.exchange_declare(exchange="fed.direct_reorigin", type="direct")
+        r_session.exchange_declare(exchange="fed.direct_reorigin", type="direct")
+
+        session.exchange_declare(exchange="fed.direct_reorigin_2", type="direct")
+        r_session.exchange_declare(exchange="fed.direct_reorigin_2", type="direct")
+
+        self.startQmf()
+        qmf = self.qmf
+        broker = qmf.getObjects(_class="broker")[0]
+        result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
+        self.assertEqual(result.status, 0)
+
+        session.queue_declare(queue="fed2", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed2", exchange="fed.direct_reorigin_2", binding_key="ft-key.two")
+        self.subscribe(queue="fed2", destination="f2")
+        queue2 = session.incoming("f2")
+
+        link = qmf.getObjects(_class="link")[0]
+        result = link.bridge(False, "fed.direct_reorigin", "fed.direct_reorigin", "", "", "", False, False, True, 0)
+        self.assertEqual(result.status, 0)
+        result = link.bridge(False, "fed.direct_reorigin_2", "fed.direct_reorigin_2", "", "", "", False, False, True, 0)
+        self.assertEqual(result.status, 0)
+
+        bridge = qmf.getObjects(_class="bridge")[0]
+        bridge2 = qmf.getObjects(_class="bridge")[1]
+        sleep(5)
+
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="fed.direct_reorigin", binding_key="ft-key.one")
+        self.subscribe(queue="fed1", destination="f1")
+        queue = session.incoming("f1")
+
+        for i in range(1, 11):
+            dp = r_session.delivery_properties(routing_key="ft-key.one")
+            r_session.message_transfer(destination="fed.direct_reorigin", message=Message(dp, "Message %d" % i))
+
+        for i in range(1, 11):
+            msg = queue.get(timeout=5)
+            self.assertEqual("Message %d" % i, msg.body)
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
+        result = bridge.close()
+        self.assertEqual(result.status, 0)
+        result = bridge2.close()
+        self.assertEqual(result.status, 0)
+        result = link.close()
+        self.assertEqual(result.status, 0)
+
+        sleep(3)
+        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
+        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+
+
+
     def getProperty(self, msg, name):
         for h in msg.headers:
             if hasattr(h, name): return getattr(h, name)
