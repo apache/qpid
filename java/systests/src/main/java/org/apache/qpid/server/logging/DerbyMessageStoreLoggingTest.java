@@ -428,6 +428,9 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
 
         session.createConsumer(queue).close();
 
+        // Stop the broker so that we can test recovery
+        stopBroker();
+
         int COUNT = 0;
         testDurableRecoveryCount(COUNT, queueName);
     }
