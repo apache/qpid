@@ -145,7 +145,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION = "broker.version";
-    private static final String BROKER_READY = "broker.ready";
+    protected static final String BROKER_READY = "broker.ready";
     private static final String BROKER_STOPPED = "broker.stopped";
     private static final String TEST_OUTPUT = "test.output";
 
