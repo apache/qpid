@@ -225,12 +225,25 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
         if (reallyUnbind)
             unbind(queue, routingPattern, 0);
     } else if (fedOp == fedOpReorigin) {
-        for (BindingMap::iterator iter = bindings.begin();
-             iter != bindings.end(); iter++) {
-            const BoundKey& bk = iter->second;
-            if (bk.fedBinding.hasLocal()) {
-                propagateFedOp(iter->first, string(), fedOpBind, string());
+        /** gather up all the keys that need rebinding in a local vector
+         * while holding the lock.  Then propagate once the lock is
+         * released
+         */
+        std::vector<std::string> keys2prop;
+        {
+            RWlock::ScopedRlock l(lock);    
+            for (BindingMap::iterator iter = bindings.begin();
+                 iter != bindings.end(); iter++) {
+                const BoundKey& bk = iter->second;
+                
+                if (bk.fedBinding.hasLocal()) {
+                    keys2prop.push_back(iter->first);
+                }
             }
+        }   /* lock dropped */
+        for (std::vector<std::string>::const_iterator key = keys2prop.begin();
+             key != keys2prop.end(); key++) {
+            propagateFedOp( *key, string(), fedOpBind, string());
         }
     }
 
