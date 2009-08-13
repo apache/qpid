@@ -147,11 +147,15 @@ void ConnectionHandler::close()
         fail("Connection closed before it was established");
         break;
       case OPEN:
-        setState(CLOSING);
-        proxy.close(200, OK);
-        waitFor(FINISHED);
+        if (setState(CLOSING, OPEN)) {
+            proxy.close(200, OK);
+            waitFor(FINISHED);//FINISHED = CLOSED or FAILED
+        }
+        //else, state was changed from open after we checked, can only
+        //change to failed or closed, so nothing to do
         break;
-        // Nothing to do for CLOSING, CLOSED, FAILED or NOT_STARTED
+
+        // Nothing to do if already CLOSING, CLOSED, FAILED or if NOT_STARTED
     }
 }
 
