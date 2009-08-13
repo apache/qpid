@@ -377,6 +377,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/InitiationHandler.h		\
   qpid/framing/InputHandler.h			\
   qpid/framing/Invoker.h			\
+  qpid/framing/IsInSequenceSet.h		\
   qpid/framing/MethodBodyFactory.h		\
   qpid/framing/MethodContent.h			\
   qpid/framing/ModelMethod.h			\
