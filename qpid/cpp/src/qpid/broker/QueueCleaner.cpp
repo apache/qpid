@@ -30,7 +30,7 @@ QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer& t) : queues(q), timer(t
 
 QueueCleaner::~QueueCleaner()
 {
-    task->cancel();
+    if (task) task->cancel();
 }
 
 void QueueCleaner::start(qpid::sys::Duration p)
