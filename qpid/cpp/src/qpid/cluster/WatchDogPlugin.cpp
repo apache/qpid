@@ -16,6 +16,28 @@
  *
  */
 
+/**@file
+
+   The watchdog plug-in will kill the qpidd broker process if it
+   becomes stuck for longer than a configured interval.
+
+   If the watchdog plugin is loaded and the --watchdog-interval=N
+   option is set then the broker starts a watchdog process and signals
+   it every N/2 seconds.
+
+   The watchdog process runs a very simple program that starts a timer
+   for N seconds, and resets the timer to N seconds whenever it is
+   signalled by the broker. If the timer ever reaches 0 the watchdog
+   kills the broker process (with kill -9) and exits.
+
+   This is useful in a cluster setting because in some insttances
+   (e.g. while resolving an error) it's possible for a stuck process
+   to hang other cluster members that are waiting for it to send a
+   message.  Using the watchdog, the stuck process is terminated and 
+   removed fromt the cluster allowing other members to continue and
+   clients of the stuck process to fail over to other members.
+
+*/
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/log/Statement.h"
