@@ -78,7 +78,7 @@ ManagementAgent* ManagementAgent::Singleton::getInstance()
 const string ManagementAgentImpl::storeMagicNumber("MA02");
 
 ManagementAgentImpl::ManagementAgentImpl() :
-    extThread(false), 
+    interval(10), extThread(false),
     initialized(false), connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
