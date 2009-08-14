@@ -359,8 +359,11 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 // INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
             // The second will be by the connnection as it acknowledges and activates the subscription
 // INFO - MESSAGE [con:6(guest@anonymous(26562441)/test)/ch:3] [sub:6(qu(example.queue))] SUB-1003 : State : ACTIVE
-            // The final one will be the subscription suspending as part of the SubFlushRunner
+            // The final one can be the subscription suspending as part of the SubFlushRunner or the processQueue thread
+            // As a result validating the actor is more complicated and doesn't add anything. The goal of this test is
+            // to ensure the State is correct not that a particular Actor performs the logging.
 // INFO - MESSAGE [sub:6(vh(test)/qu(example.queue))] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
+// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
 
             assertEquals("Result set larger than expected.", 3, results.size());
 
@@ -387,10 +390,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
             expectedState = "SUSPENDED";
             log = getLog(results.get(2));
             validateSubscriptionState(log, expectedState);
-            // Validate we have a subscription Actor
-            actor = fromActor(log);
-            assertTrue("The actor is not a subscription actor:" + actor, actor.startsWith("sub:"));
-
+            // We only need validate the state.
         }
         catch (AssertionFailedError afe)
         {
