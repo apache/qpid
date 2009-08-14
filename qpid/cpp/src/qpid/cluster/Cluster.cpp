@@ -323,11 +323,9 @@ void Cluster::deliver(
 {
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
-    while (buf.available()) {
-        Event e(Event::decodeCopy(from, buf));
-        LATENCY_TRACK(if (e.getConnectionId().getMember() == self) mcast.cpgLatency.finish());
-        deliverEvent(e);
-    }
+    Event e(Event::decodeCopy(from, buf));
+    LATENCY_TRACK(if (e.getConnectionId().getMember() == self) mcast.cpgLatency.finish());
+    deliverEvent(e);
 }
 
 LATENCY_TRACK(sys::LatencyTracker<const char*> eventQueueLatencyTracker("EventQueue");)
