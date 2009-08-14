@@ -18,6 +18,9 @@
  * under the License.
  *
  */
+
+/** @file helper executable for WatchDogPlugin.cpp */
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <signal.h>
