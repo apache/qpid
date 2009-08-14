@@ -72,7 +72,7 @@ Event Event::decodeCopy(const MemberId& m, framing::Buffer& buf) {
     if (buf.available() < e.size)
         throw Exception("Not enough data for multicast event");
     e.store = RefCountedBuffer::create(e.size + HEADER_SIZE);
-    buf.getRawData((uint8_t*)(e.getData()), e.size);
+    memcpy(e.getData(), buf.getPointer() + buf.getPosition(), e.size);
     return e;
 }
 
