@@ -24,7 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
@@ -34,6 +36,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.Log4jEntityResolver;
+import org.apache.log4j.xml.QpidLog4JConfigurator;
+import org.apache.log4j.xml.QpidLog4JConfigurator.IllegalLoggerLevelException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -244,46 +248,50 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     }
     
     //handler to catch errors signalled by the JAXP parser and throw an appropriate exception
-    private class SaxErrorHandler implements ErrorHandler
+    public static class QpidLog4JSaxErrorHandler implements ErrorHandler
     {
-        
         public void error(SAXParseException e) throws SAXException
         {
-            throw new SAXException("Error parsing XML file: " + e.getMessage());
+            throw new SAXException(constructMessage("Error parsing XML file", e));
         }
 
         public void fatalError(SAXParseException e) throws SAXException
         {
-            throw new SAXException("Fatal error parsing XML file: " + e.getMessage());
+            throw new SAXException(constructMessage("Fatal error parsing XML file", e));
         }
 
         public void warning(SAXParseException e) throws SAXException
         {
-            throw new SAXException("Warning parsing XML file: " + e.getMessage());
+            throw new SAXException(constructMessage("Warning parsing XML file", e));
+        }
+
+        private static String constructMessage(final String msg, final SAXParseException ex)
+        {
+            return new String(msg + ": Line " + ex.getLineNumber()+" column " +ex.getColumnNumber() + ": " + ex.getMessage());
         }
     }
 
     //method to parse the XML configuration file, validating it in the process, and returning a DOM Document of the content.
-    private synchronized Document parseConfigFile(String fileName) throws IOException
+    private static synchronized Document parseConfigFile(String fileName) throws IOException
     {
         //check file was specified, exists, and is readable
         if(fileName == null)
         {
-            _logger.warn("No log4j XML configuration file has been set");
-            throw new IOException("No log4j XML configuration file has been set");
+            _logger.warn("Provided log4j XML configuration filename is null");
+            throw new IOException("Provided log4j XML configuration filename is null");
         }
 
         File configFile = new File(fileName);
 
         if (!configFile.exists())
         {
-            _logger.warn("Specified log4j XML configuration file does not exist: " + fileName);
-            throw new IOException("Specified log4j XML configuration file does not exist");
+            _logger.warn("The log4j XML configuration file could not be found: " + fileName);
+            throw new IOException("The log4j XML configuration file could not be found");
         }
         else if (!configFile.canRead())
         {
-            _logger.warn("Specified log4j XML configuration file is not readable: " + fileName);
-            throw new IOException("Specified log4j XML configuration file is not readable");
+            _logger.warn("The log4j XML configuration file is not readable: " + fileName);
+            throw new IOException("The log4j XML configuration file is not readable");
         }
 
         //parse it
@@ -291,7 +299,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         DocumentBuilder docBuilder;
         Document doc;
 
-        ErrorHandler errHandler = new SaxErrorHandler();
+        ErrorHandler errHandler = new QpidLog4JSaxErrorHandler();
         try
         {
             docFactory.setValidating(true);
@@ -315,14 +323,14 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         catch (IOException e)
         {
             _logger.warn("Unable to parse the specified log4j XML file" + e);
-            throw new IOException("Unable to parse the specified log4j XML file", e);
+            throw new IOException("Unable to parse the specified log4j XML file: " + e.getMessage());
         }
 
         return doc;
     }
 
     
-    private synchronized boolean writeUpdatedConfigFile(String log4jConfigFileName, Document doc) throws IOException
+    private static synchronized boolean writeUpdatedConfigFile(String log4jConfigFileName, Document doc) throws IOException
     {
         File log4jConfigFile = new File(log4jConfigFileName);
         
@@ -389,20 +397,11 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
      * and not the only possible child element.
      */
     
-    
-    public synchronized TabularData viewConfigFileLoggerLevels() throws IOException
+    public static synchronized Map<String,String> retrieveConfigFileLoggersLevels(String fileName) throws IOException
     {
-        if (_loggerLevelTabularType == null)
-        {
-            _logger.warn("TabluarData type not set up correctly");
-            return null;
-        }
-        
-        _logger.info("Getting logger levels from log4j configuration file");
-        
-        Document doc = parseConfigFile(_log4jConfigFileName);
+        Document doc = parseConfigFile(fileName);
 
-        TabularData loggerLevelList = new TabularDataSupport(_loggerLevelTabularType);
+        HashMap<String,String> loggerLevelList = new HashMap<String,String>();
 
         //retrieve the 'category' element nodes
         NodeList categoryElements = doc.getElementsByTagName("category");
@@ -436,17 +435,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
                 continue;
             }
 
-            try
-            {
-                Object[] itemData = {categoryName, priority};
-                CompositeData loggerData = new CompositeDataSupport(_loggerLevelCompositeType, COMPOSITE_ITEM_NAMES, itemData);
-                loggerLevelList.put(loggerData);
-            }
-            catch (OpenDataException e)
-            {
-                _logger.warn("Unable to create logger level list due to :" + e);
-                return null;
-            }
+            loggerLevelList.put(categoryName, priority);
         }
 
         //retrieve the 'logger' element nodes
@@ -466,6 +455,30 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
 
             Element levelElement = (Element) levelElements.item(0);
             level = levelElement.getAttribute("value").toUpperCase();
+            
+            loggerLevelList.put(loggerName, level);
+        }
+        
+        return loggerLevelList;
+    }
+
+    public synchronized TabularData viewConfigFileLoggerLevels() throws IOException
+    {
+        if (_loggerLevelTabularType == null)
+        {
+            _logger.warn("TabluarData type not set up correctly");
+            return null;
+        }
+        
+        _logger.info("Getting logger levels from log4j configuration file");
+
+        TabularData loggerLevelList = new TabularDataSupport(_loggerLevelTabularType);
+        
+        Map<String,String> levels = retrieveConfigFileLoggersLevels(_log4jConfigFileName);
+
+        for (String loggerName : levels.keySet())
+        {
+            String level = levels.get(loggerName);
             
             try
             {
@@ -574,19 +587,17 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
      * and not the only possible child element.
      */
     
-    public synchronized String getConfigFileRootLoggerLevel() throws IOException
+    public static synchronized String retrieveConfigFileRootLoggerLevel(String fileName) throws IOException
     {
-        _logger.info("Getting root logger level from log4j configuration file");
-
-        Document doc = parseConfigFile(_log4jConfigFileName);
+        Document doc = parseConfigFile(fileName);
        
         //retrieve the optional 'root' element node
         NodeList rootElements = doc.getElementsByTagName("root");
 
         if (rootElements.getLength() == 0)
         {
-            //there is not root logger definition
-            return null;
+            //there is no root logger definition
+            return "N/A";
         }
 
         Element rootElement = (Element) rootElements.item(0);
@@ -616,6 +627,11 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         {
             return null;
         }
+    }
+    
+    public synchronized String getConfigFileRootLoggerLevel() throws IOException
+    {
+        return retrieveConfigFileRootLoggerLevel(_log4jConfigFileName);
     }
     
     public synchronized boolean setConfigFileRootLoggerLevel(String level) throws IOException

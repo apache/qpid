@@ -20,6 +20,9 @@
 @echo off
 REM Script to run the Qpid Java Broker
 
+rem stop the Log4J default initialisation, let the broker do it using etc/log4j.xml
+if "%QPID_LOG4J_SETTINGS%" == "" set QPID_LOG4J_SETTINGS=-Dlog4j.defaultInitOverride=true
+
 rem Guess QPID_HOME if not defined
 set CURRENT_DIR=%cd%
 if not "%QPID_HOME%" == "" goto gotHome
@@ -194,7 +197,7 @@ rem QPID_OPTS intended to hold any -D props for use
 rem user must enclose any value for QPID_OPTS in double quotes
 :runCommand
 set MODULE_JARS=%QPID_MODULE_JARS%
-set COMMAND="%JAVA_HOME%\bin\java" %JAVA_VM% %JAVA_MEM% %JAVA_GC% %QPID_OPTS% %SYSTEM_PROPS% -cp "%CLASSPATH%;%MODULE_JARS%" org.apache.qpid.server.Main %QPID_ARGS%
+set COMMAND="%JAVA_HOME%\bin\java" %JAVA_VM% %JAVA_MEM% %JAVA_GC% %QPID_OPTS% %QPID_LOG4J_SETTINGS% %SYSTEM_PROPS% -cp "%CLASSPATH%;%MODULE_JARS%" org.apache.qpid.server.Main %QPID_ARGS%
 
 if "%debug%" == "true" echo %CLASSPATH%;%LAUNCH_JAR%;%MODULE_JARS%
 if "%debug%" == "true" echo %COMMAND%
