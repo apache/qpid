@@ -194,11 +194,15 @@ public class ConfigurationFileTabControl extends TabControl
         }
         
         Label noteLabel = _toolkit.createLabel(_headerComposite, 
-                "NOTE: These options modify the config file. " +
-                "Changes take effect if LogWatch is enabled " +
-                "or the broker is restarted.");
+                "NOTE: These options modify the configuration file. " +
+                "Changes only take effect automatically if LogWatch is enabled.");
+        Label noteLabel2 = _toolkit.createLabel(_headerComposite, 
+                "A Logger set to a non-inherited Level in the Runtime tab " +
+                "will retain that value after the configuration is reloaded.");
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
         noteLabel.setLayoutData(gridData);
+        gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
+        noteLabel2.setLayoutData(gridData);
         
         Group configFileLoggerLevelsGroup = new Group(_paramsComposite, SWT.SHADOW_NONE);
         configFileLoggerLevelsGroup.setBackground(_paramsComposite.getBackground());
