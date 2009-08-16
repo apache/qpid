@@ -47,7 +47,8 @@ import org.xml.sax.SAXException;
 public class QpidLog4JConfigurator
 {
     //lock to protect access to the configuration file
-    private static final ReentrantLock LOCK = new ReentrantLock();
+    //shared with LoggingManagementMBean
+    public static final ReentrantLock LOCK = new ReentrantLock();
     private static Logger _logger;
 
     private QpidLog4JConfigurator()
