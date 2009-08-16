@@ -157,7 +157,7 @@ public class QpidTestCase extends TestCase
     private static final String VERSION_08 = "0-8";
     private static final String VERSION_010 = "0-10";
 
-    private static final String QPID_HOME = "QPID_HOME";
+    protected static final String QPID_HOME = "QPID_HOME";
 
     protected static int DEFAULT_VM_PORT = 1;
     protected static int DEFAULT_PORT = Integer.getInteger("test.port", 5672);
@@ -182,6 +182,8 @@ public class QpidTestCase extends TestCase
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
     public static final String TOPIC = "topic";
+    /** Map to hold test defined environment properties */
+    private Map<String,String> _env;
 
 
     public QpidTestCase(String name)
@@ -198,6 +200,9 @@ public class QpidTestCase extends TestCase
     {
         _testName = getClass().getSimpleName() + "." + getName();
         String qname = getClass().getName() + "." + getName();
+
+        // Initalise this for each test run
+        _env = new HashMap<String, String>();
 
         PrintStream oldOut = System.out;
         PrintStream oldErr = System.err;
@@ -435,6 +440,16 @@ public class QpidTestCase extends TestCase
             //Add the test name to the broker run.
             env.put("QPID_PNAME", "-DPNAME=\"" + _testName + "\"");
             env.put("QPID_WORK", System.getProperty("QPID_WORK"));
+
+            // Add all the environment settings the test requested
+            if (!_env.isEmpty())
+            {
+                for(Map.Entry<String,String> entry : _env.entrySet())
+                {
+                    env.put(entry.getKey() ,entry.getValue());
+                }
+            }
+
             process = pb.start();
 
             Piper p = new Piper(process.getInputStream(),
@@ -675,6 +690,18 @@ public class QpidTestCase extends TestCase
             }
         }
     }
+
+    /**
+     * Add an environtmen variable for the external broker environment
+     *
+     * @param property the property to set
+     * @param value the value to set it to
+     */
+    protected void setBrokerEnvironment(String property, String value)
+    {
+        _env.put(property,value);
+    }
+
 
     /**
      * Check whether the broker is an 0.8
