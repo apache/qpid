@@ -76,10 +76,12 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     private static final Logger _logger = Logger.getLogger(LoggingManagementMBean.class);
     private String _log4jConfigFileName;
     private int _log4jLogWatchInterval;
+    private static final String INHERITED = "INHERITED";
     private static final String[] LEVELS = new String[]{Level.ALL.toString(), Level.TRACE.toString(), 
                                                         Level.DEBUG.toString(), Level.INFO.toString(), 
                                                         Level.WARN.toString(), Level.ERROR.toString(), 
-                                                        Level.FATAL.toString(),Level.OFF.toString()};   
+                                                        Level.FATAL.toString(),Level.OFF.toString(),
+                                                        INHERITED};   
     static TabularType _loggerLevelTabularType;
     static CompositeType _loggerLevelCompositeType;
 
@@ -225,6 +227,13 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         {
             return false;
         }
+        
+        if(newLevel == null)
+        {
+            //A null Level reference implies inheritance. Setting the runtime RootLogger 
+            //to null is catastrophic (and prevented by Log4J at startup and runtime anyway).
+            return false;
+        }
 
         _logger.info("Setting RootLogger level to " + level);
 
@@ -237,6 +246,13 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
     //method to convert from a string to a log4j Level, throws exception if the given value is invalid
     private Level getLevel(String level) throws Exception
     {
+        if("null".equalsIgnoreCase(level) || INHERITED.equalsIgnoreCase(level))
+        {
+            //the string "null" or "inherited" signals to inherit from a parent logger,
+            //using a null Level reference for the logger.
+            return null;
+        }
+        
         Level newLevel = Level.toLevel(level);
         
         //above Level.toLevel call returns a DEBUG Level if the request fails. Check the result.
@@ -611,7 +627,7 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             }
 
             //update the element with the new level/priority
-            levelElement.setAttribute("value", level);
+            levelElement.setAttribute("value", level.toLowerCase());
 
             //output the new file
             return writeUpdatedConfigFile(_log4jConfigFileName, doc);
@@ -699,7 +715,14 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             //check that the specified level is a valid log4j Level
             try
             {
-                getLevel(level);
+                Level newLevel = getLevel(level);
+                if(newLevel == null)
+                {
+                    //A null Level reference implies inheritance. Setting the config file RootLogger 
+                    //to "null" or "inherited" just ensures it defaults to DEBUG at startup as Log4J 
+                    //prevents this catastrophic situation at startup and runtime anyway.
+                    return false;
+                }
             }
             catch (Exception e)
             {
