@@ -753,4 +753,41 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             LOCK.unlock();
         }
     }
+
+    public synchronized void reloadConfigFile() throws IOException
+    {
+        try
+        {
+            LOCK.lock();
+
+            QpidLog4JConfigurator.configure(_log4jConfigFileName);
+            _logger.info("Applied log4j configuration from: " + _log4jConfigFileName);
+        }
+        catch (IllegalLoggerLevelException e)
+        {
+            _logger.warn("The log4j configuration reload request was aborted: " + e);
+            //recommended that MBeans should use standard java.* and javax.* exceptions only
+            throw new IOException("The log4j configuration reload request was aborted: " + e.getMessage());
+        }
+        catch (ParserConfigurationException e)
+        {
+            _logger.warn("The log4j configuration reload request was aborted: " + e);
+            throw new IOException("The log4j configuration reload request was aborted: " + e.getMessage());
+        }
+        catch (SAXException e)
+        {
+            _logger.warn("The log4j configuration reload request was aborted: " + e);
+            //recommended that MBeans should use standard java.* and javax.* exceptions only
+            throw new IOException("The log4j configuration reload request was aborted: " + e.getMessage());
+        }
+        catch (IOException e)
+        {
+            _logger.warn("The log4j configuration reload request was aborted: " + e);
+            throw new IOException("The log4j configuration reload request was aborted: " + e.getMessage());
+        }
+        finally
+        {
+            LOCK.unlock();
+        }
+    }
 }
