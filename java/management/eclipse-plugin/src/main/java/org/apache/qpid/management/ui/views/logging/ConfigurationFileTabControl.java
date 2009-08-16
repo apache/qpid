@@ -30,6 +30,7 @@ import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
@@ -80,6 +81,7 @@ public class ConfigurationFileTabControl extends TabControl
     private String[] _availableLoggerLevels;
     private TabularDataSupport _configFileLoggerLevels = null;
     private LoggingManagement _lmmb;
+    private ApiVersion _ApiVersion;
     
     static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
     static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
@@ -91,6 +93,7 @@ public class ConfigurationFileTabControl extends TabControl
         _lmmb = (LoggingManagement)
                 MBeanServerInvocationHandler.newProxyInstance(mbsc, mbean.getObjectName(),
                                                             LoggingManagement.class, false);
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createScrolledForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
@@ -341,6 +344,43 @@ public class ConfigurationFileTabControl extends TabControl
         _logWatchIntervalLabel = _toolkit.createLabel(logWatchIntervalGroup, "-");
         _logWatchIntervalLabel.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         _logWatchIntervalLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true));
+        
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            Group reloadConfigFileGroup = new Group(attributesComposite, SWT.SHADOW_NONE);
+            reloadConfigFileGroup.setBackground(attributesComposite.getBackground());
+            reloadConfigFileGroup.setText("Reload Configuration File");
+            gridData = new GridData(SWT.LEFT, SWT.TOP, true, false);
+            reloadConfigFileGroup.setLayoutData(gridData);
+            reloadConfigFileGroup.setLayout(new GridLayout());
+
+            final Button reloadConfigFileButton = _toolkit.createButton(reloadConfigFileGroup, "Reload Config File", SWT.PUSH);
+            reloadConfigFileButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+            reloadConfigFileButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    int response = ViewUtility.popupOkCancelConfirmationMessage("Reload", 
+                                                                            "Reload Logging Configuration File?");
+                    if (response == SWT.OK)
+                    {
+                        try
+                        {
+                            _lmmb.reloadConfigFile();
+                            ViewUtility.operationResultFeedback(null, "Reloaded Logging Configuration File", null);
+
+                        }
+                        catch (Exception ex)
+                        {
+                            ViewUtility.operationFailedStatusBarMessage("Error Reloading Logging Configuration File");
+                            MBeanUtility.handleException(_mbean, ex);
+                        }
+
+                        refresh(_mbean);;
+                    }
+                }
+            });
+        }
     }
 
 
