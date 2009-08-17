@@ -32,9 +32,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
-import org.apache.qpid.server.logging.management.LoggingManagementMBean.QpidLog4JSaxErrorHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 /**
  * Substitute for the Log4J XMLWatchdog (as used by DOMConfigurator.configureAndWatch)
@@ -50,6 +50,7 @@ public class QpidLog4JConfigurator
     //shared with LoggingManagementMBean
     public static final ReentrantLock LOCK = new ReentrantLock();
     private static Logger _logger;
+    private static DOMConfigurator domConfig = new DOMConfigurator();
 
     private QpidLog4JConfigurator()
     {
@@ -63,10 +64,15 @@ public class QpidLog4JConfigurator
         {
             LOCK.lock();
 
-            strictlyParseXMLConfigFile(filename);
+            parseXMLConfigFile(filename);
             checkLoggerLevels(filename);
 
             DOMConfigurator.configure(filename);
+            
+            if(_logger == null)
+            {
+                _logger = Logger.getLogger(QpidLog4JConfigurator.class);
+            }
         }
         finally
         {
@@ -77,7 +83,7 @@ public class QpidLog4JConfigurator
     public static void configureAndWatch(String filename, long delay) throws IOException, ParserConfigurationException, 
                                                                              SAXException, IllegalLoggerLevelException
     {
-        strictlyParseXMLConfigFile(filename);
+        parseXMLConfigFile(filename);
         checkLoggerLevels(filename);
         
         QpidLog4JXMLWatchdog watchdog = new QpidLog4JXMLWatchdog(filename);
@@ -85,7 +91,7 @@ public class QpidLog4JConfigurator
         watchdog.start();
     }
     
-    private static void strictlyParseXMLConfigFile(String fileName) throws IOException, SAXException,
+    private static void parseXMLConfigFile(String fileName) throws IOException, SAXException,
                                                                                         ParserConfigurationException
     {
         try
@@ -127,6 +133,43 @@ public class QpidLog4JConfigurator
         }
     }
     
+    public static class QpidLog4JSaxErrorHandler implements ErrorHandler
+    {
+        public void error(SAXParseException e) throws SAXException
+        {
+            if(_logger != null)
+            {
+                _logger.warn(constructMessage("Error parsing XML file", e));
+            }
+            else
+            {
+                System.err.println(constructMessage("Error parsing XML file", e));
+            }
+        }
+
+        public void fatalError(SAXParseException e) throws SAXException
+        {
+            throw new SAXException(constructMessage("Fatal error parsing XML file", e));
+        }
+
+        public void warning(SAXParseException e) throws SAXException
+        {
+            if(_logger != null)
+            {
+                _logger.warn(constructMessage("Warning parsing XML file", e));
+            }
+            else
+            {
+                System.err.println(constructMessage("Warning parsing XML file", e));
+            }
+        }
+
+        private static String constructMessage(final String msg, final SAXParseException ex)
+        {
+            return new String(msg + ": Line " + ex.getLineNumber()+" column " +ex.getColumnNumber() + ": " + ex.getMessage());
+        }
+    }
+    
     private static class QpidLog4JXMLWatchdog extends XMLWatchdog
     {
         public QpidLog4JXMLWatchdog(String filename)
@@ -142,7 +185,7 @@ public class QpidLog4JConfigurator
                 
                 try
                 {
-                    strictlyParseXMLConfigFile(filename);
+                    parseXMLConfigFile(filename);
                 }
                 catch (Exception e)
                 {
@@ -201,18 +244,43 @@ public class QpidLog4JConfigurator
         {
             LOCK.lock();
             
+            //get the Logger levels to check
             Map<String, String> loggersLevels;
             loggersLevels = LoggingManagementMBean.retrieveConfigFileLoggersLevels(filename);
+            //add the RootLogger to the list too
+            String rootLoggerlevelString = LoggingManagementMBean.retrieveConfigFileRootLoggerLevel(filename);
+            loggersLevels.put("Root", rootLoggerlevelString);
+            
 
             for (String loggerName : loggersLevels.keySet())
             {
                 String levelString = loggersLevels.get(loggerName);
-                checkLevel(loggerName,levelString);
+                
+                //let log4j replace any properties in the string
+                String log4jConfiguredString = domConfig.subst(levelString);
+                
+                if(log4jConfiguredString.equals("") & ! log4jConfiguredString.equals(levelString))
+                {
+                    //log4j has returned an empty string but this isnt what we gave it.
+                    //There may have been an undefined property. Unlike an incorrect
+                    //literal value, we will allow this case to proceed, but warn users.
+                    
+                    if(_logger != null)
+                    {
+                        _logger.warn("Unable to detect Level value from '" + levelString 
+                                +"' for logger '" + loggerName + "', Log4J will default this to DEBUG");
+                    }
+                    else
+                    {
+                        System.err.println("Unable to detect Level value from '" + levelString 
+                                +"' for logger " + loggerName + ", Log4J will default this to DEBUG");
+                    }
+                    
+                    continue;
+                }
+                
+                checkLevel(loggerName,log4jConfiguredString);
             }
-
-            //check the root logger level
-            String rootLoggerlevelString = LoggingManagementMBean.retrieveConfigFileRootLoggerLevel(filename);
-            checkLevel("Root", rootLoggerlevelString);
         }
         finally
         {

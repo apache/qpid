@@ -69,8 +69,8 @@ import java.util.Properties;
 @SuppressWarnings({"AccessStaticViaInstance"})
 public class Main
 {
-    private static final Logger _logger = Logger.getLogger(Main.class);
-    public static final Logger _brokerLogger = Logger.getLogger("Qpid.Broker");
+    private static Logger _logger;
+    private static Logger _brokerLogger;
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
@@ -468,7 +468,18 @@ public class Main
 
     public static void main(String[] args)
     {
-
+        //if the -Dlog4j.configuration property has not been set, enable the init override
+        //to stop Log4J wondering off and picking up the first log4j.xml/properties file it
+        //finds from the classpath when we get the first Loggers
+        if(System.getProperty("log4j.configuration") == null)
+        {
+            System.setProperty("log4j.defaultInitOverride", "true");
+        }
+        
+        //now that the override status is know, we can instantiate the Loggers
+        _logger = Logger.getLogger(Main.class);
+        _brokerLogger = Logger.getLogger("Qpid.Broker");
+        
         new Main(args);
     }
 
