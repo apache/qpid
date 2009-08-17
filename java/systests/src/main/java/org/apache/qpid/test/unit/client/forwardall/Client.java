@@ -29,6 +29,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
@@ -62,7 +63,7 @@ public class Client implements MessageListener
     {
         _connection = connection;
         _expected = expected;
-        _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        _session = (AMQSession) _connection.createSession(true, AMQSession.NO_ACKNOWLEDGE);
         AMQQueue response =
             new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("ResponseQueue"), true);
         _session.createConsumer(response).setMessageListener(this);
@@ -73,6 +74,7 @@ public class Client implements MessageListener
         request.setJMSReplyTo(response);
         MessageProducer prod = _session.createProducer(service);
         prod.send(request);
+        _session.commit();
     }
 
     void shutdownWhenComplete() throws Exception
@@ -89,6 +91,14 @@ public class Client implements MessageListener
         {
 
             notifyAll();
+        }
+        try
+        {
+            _session.commit();
+        }
+        catch (JMSException e)
+        {
+            
         }
 
     }

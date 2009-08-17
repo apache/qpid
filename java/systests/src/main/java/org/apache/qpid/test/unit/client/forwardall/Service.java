@@ -55,7 +55,7 @@ public class Service implements MessageListener
     {
         _connection = connection;
         //AMQQueue queue = new SpecialQueue(connection, "ServiceQueue");
-        _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        _session = (AMQSession) _connection.createSession(true, AMQSession.NO_ACKNOWLEDGE);
           AMQQueue queue  = (AMQQueue)  _session.createQueue("ServiceQueue") ;
         _session.createConsumer(queue).setMessageListener(this);
         _connection.start();
@@ -68,6 +68,7 @@ public class Service implements MessageListener
             Message response = _session.createTextMessage("Response!");
             Destination replyTo = request.getJMSReplyTo();
             _session.createProducer(replyTo).send(response);
+            _session.commit();
         }
         catch (Exception e)
         {
