@@ -357,6 +357,8 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         _tableViewer.setSorter(tableSorter);
         _table.setSortColumn(_table.getColumn(0));
         _table.setSortDirection(SWT.UP);
+        
+        addTableListeners();
     }
     
     protected void createLowerAreaButton(Composite parent)
