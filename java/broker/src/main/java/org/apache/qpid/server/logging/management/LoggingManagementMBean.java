@@ -33,6 +33,7 @@ import java.util.Map;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.util.FileUtils;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -397,12 +398,12 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             catch (TransformerException e)
             {
                 _logger.warn("Could not transform the XML into new file: " +e);
-                return false;
+                throw new IOException("Could not transform the XML into new file: " +e);
             }
             catch (IOException e)
             {
-                _logger.warn("Could not create the new file: " +e);
-                return false;
+                _logger.warn("Could not create the new log4j XML file: " +e);
+                throw new IOException("Could not create the new log4j XML file: " +e);
             }
 
             // Swap temp file in to replace existing configuration file.
@@ -411,8 +412,34 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             {
                 old.delete();
             }
-            log4jConfigFile.renameTo(old);
-            return tmp.renameTo(log4jConfigFile);
+            
+            try
+            {
+                if(!log4jConfigFile.renameTo(old))
+                {
+                    FileUtils.copyCheckedEx(log4jConfigFile, old);
+                }
+            }
+            catch (IOException e)
+            {
+                _logger.warn("Could not backup the existing log4j XML file: " +e);
+                throw new IOException("Could not backup the existing log4j XML file: " +e);
+            }
+            
+            try
+            {
+                if(!tmp.renameTo(log4jConfigFile))
+                {
+                    FileUtils.copyCheckedEx(tmp, log4jConfigFile);
+                }
+            }
+            catch (IOException e)
+            {
+                _logger.warn("Could not copy the new configuration into place: " +e);
+                throw new IOException("Could not copy the new configuration into place: " +e);
+            }
+            
+            return true;
         }
         finally
         {
