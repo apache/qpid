@@ -25,6 +25,7 @@ import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
+import org.apache.qpid.util.FileUtils;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
@@ -428,6 +429,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             BufferedReader reader = null;
             PrintStream writer = null;
             File tmp = File.createTempFile(_passwordFile.getName(), ".tmp");
+            tmp.deleteOnExit();
 
             try
             {
@@ -501,6 +503,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                     }
                 }
             }
+            catch(IOException e)
+            {
+                _logger.error("Unable to create the new password file: " + e);
+                throw new IOException("Unable to create the new password file" + e);
+            }
             finally
             {
                 if (reader != null)
@@ -512,16 +519,39 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 {
                     writer.close();
                 }
-
-                // Swap temp file to main password file.
-                File old = new File(_passwordFile.getAbsoluteFile() + ".old");
-                if (old.exists())
+            }
+            
+            // Swap temp file to main password file.
+            File old = new File(_passwordFile.getAbsoluteFile() + ".old");
+            if (old.exists())
+            {
+                old.delete();
+            }
+            
+            try
+            {
+                if(!_passwordFile.renameTo(old))
                 {
-                    old.delete();
+                    FileUtils.copyCheckedEx(_passwordFile, old);
                 }
-                _passwordFile.renameTo(old);
-                tmp.renameTo(_passwordFile);
-                tmp.delete();
+            }
+            catch (IOException e)
+            {
+                _logger.error("Could not backup the existing password file: " +e);
+                throw new IOException("Could not backup the existing password file: " + e);
+            }
+            
+            try
+            {
+                if(!tmp.renameTo(_passwordFile))
+                {
+                    FileUtils.copyCheckedEx(tmp, _passwordFile);
+                }
+            }
+            catch (IOException e)
+            {
+                _logger.error("Could not copy the new password file into place: " +e);
+                throw new IOException("Could not copy the new password file into place: " + e);
             }
         }
         finally
