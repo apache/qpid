@@ -287,7 +287,7 @@ public class RuntimeTabControl extends TabControl
             public void mouseUp(MouseEvent e){}
         });
         
-        final Button logLevelEditButton = _toolkit.createButton(effectiveRuntimeLoggerLevelsGroup, "Edit Selected Logger...", SWT.PUSH);
+        final Button logLevelEditButton = _toolkit.createButton(effectiveRuntimeLoggerLevelsGroup, "Edit Selected Logger(s)...", SWT.PUSH);
         logLevelEditButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         logLevelEditButton.setEnabled(false);
         logLevelEditButton.addSelectionListener(new SelectionAdapter()
@@ -359,7 +359,7 @@ public class RuntimeTabControl extends TabControl
                 selectedLoggers.add(user);
             }
 
-            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Runtime Logger Level");
+            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Runtime Logger Level(s)");
             
             _toolkit.createLabel(shell, "Logger(s): ").setBackground(shell.getBackground());
 
