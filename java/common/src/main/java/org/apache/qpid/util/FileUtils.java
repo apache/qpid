@@ -196,29 +196,42 @@ public class FileUtils
     {
         try
         {
-            InputStream in = new FileInputStream(src);
-            if (!dst.exists())
-            {
-                dst.createNewFile();
-            }
-
-            OutputStream out = new FileOutputStream(dst);
-
-            // Transfer bytes from in to out
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) > 0)
-            {
-                out.write(buf, 0, len);
-            }
-
-            in.close();
-            out.close();
+            copyCheckedEx(src, dst);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Copies the specified source file to the specified destination file. If the destination file does not exist,
+     * it is created.
+     *
+     * @param src The source file name.
+     * @param dst The destination file name.
+     * @throws IOException
+     */
+    public static void copyCheckedEx(File src, File dst) throws IOException
+    {
+        InputStream in = new FileInputStream(src);
+        if (!dst.exists())
+        {
+            dst.createNewFile();
+        }
+
+        OutputStream out = new FileOutputStream(dst);
+
+        // Transfer bytes from in to out
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = in.read(buf)) > 0)
+        {
+            out.write(buf, 0, len);
+        }
+
+        in.close();
+        out.close();
     }
 
     /*
