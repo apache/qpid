@@ -282,7 +282,7 @@ public class ConfigurationFileTabControl extends TabControl
             public void mouseUp(MouseEvent e){}
         });
         
-        final Button logLevelEditButton = _toolkit.createButton(configFileLoggerLevelsGroup, "Edit Selected Logger...", SWT.PUSH);
+        final Button logLevelEditButton = _toolkit.createButton(configFileLoggerLevelsGroup, "Edit Selected Logger(s)...", SWT.PUSH);
         logLevelEditButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         logLevelEditButton.setEnabled(false);
         logLevelEditButton.addSelectionListener(new SelectionAdapter()
@@ -406,7 +406,7 @@ public class ConfigurationFileTabControl extends TabControl
                 selectedLoggers.add(user);
             }
 
-            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Config File Logger Level");
+            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Config File Logger Level(s)");
             
             _toolkit.createLabel(shell, "Logger(s): ").setBackground(shell.getBackground());
 
