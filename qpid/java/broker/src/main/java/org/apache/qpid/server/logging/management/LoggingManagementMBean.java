@@ -40,6 +40,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.Log4jEntityResolver;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
+import org.apache.log4j.xml.QpidLog4JConfigurator.QpidLog4JSaxErrorHandler;
 import org.apache.log4j.xml.QpidLog4JConfigurator.IllegalLoggerLevelException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -266,30 +267,6 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
         return newLevel;
     }
     
-    //handler to catch errors signalled by the JAXP parser and throw an appropriate exception
-    public static class QpidLog4JSaxErrorHandler implements ErrorHandler
-    {
-        public void error(SAXParseException e) throws SAXException
-        {
-            throw new SAXException(constructMessage("Error parsing XML file", e));
-        }
-
-        public void fatalError(SAXParseException e) throws SAXException
-        {
-            throw new SAXException(constructMessage("Fatal error parsing XML file", e));
-        }
-
-        public void warning(SAXParseException e) throws SAXException
-        {
-            throw new SAXException(constructMessage("Warning parsing XML file", e));
-        }
-
-        private static String constructMessage(final String msg, final SAXParseException ex)
-        {
-            return new String(msg + ": Line " + ex.getLineNumber()+" column " +ex.getColumnNumber() + ": " + ex.getMessage());
-        }
-    }
-
     //method to parse the XML configuration file, validating it in the process, and returning a DOM Document of the content.
     private static synchronized Document parseConfigFile(String fileName) throws IOException
     {

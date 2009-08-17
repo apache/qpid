@@ -386,11 +386,11 @@ public class QpidLog4JConfiguratorTest extends TestCase
         }
         catch (IllegalLoggerLevelException e)
         {
-            fail("Incorrect Exception, expected an IOException");
+            //expected, ignore
         }
         catch (IOException e)
         {
-            //expected, ignore
+            fail("Incorrect Exception, expected an IllegalLoggerLevelException");
         }
     }
 }

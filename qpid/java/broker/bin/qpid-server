@@ -23,12 +23,6 @@ if [ -z "$QPID_HOME" ]; then
     export PATH=${PATH}:${QPID_HOME}/bin
 fi
 
-if [ -z "$QPID_LOG4J_SETTINGS" ]; then
-    # Disable the Log4J default initialization process, allowing the broker to 
-    # perform the configuration using etc/log4j.xml
-    QPID_LOG4J_SETTINGS="-Dlog4j.defaultInitOverride=true"
-fi
-
 # Set classpath to include Qpid jar with all required jars in manifest
 QPID_LIBS=$QPID_HOME/lib/qpid-all.jar:$QPID_HOME/lib/bdbstore-launch.jar
 
@@ -40,6 +34,6 @@ export JAVA=java \
        QPID_CLASSPATH=$QPID_LIBS \
        QPID_RUN_LOG=2
 
-QPID_OPTS="$QPID_OPTS $QPID_LOG4J_SETTINGS -Damqj.read_write_pool_size=32"
+QPID_OPTS="$QPID_OPTS -Damqj.read_write_pool_size=32"
 
 . qpid-run org.apache.qpid.server.Main "$@"
