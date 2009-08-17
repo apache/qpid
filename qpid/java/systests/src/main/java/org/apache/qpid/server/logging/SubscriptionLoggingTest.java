@@ -327,7 +327,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         int PREFETCH = 15;
 
         //Create new session with small prefetch
-        _session = ((AMQConnection) _connection).createSession(false, Session.AUTO_ACKNOWLEDGE, PREFETCH);
+        _session = ((AMQConnection) _connection).createSession(true, Session.AUTO_ACKNOWLEDGE, PREFETCH);
 
         MessageConsumer consumer = _session.createConsumer(_queue);
 
@@ -336,16 +336,11 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         //Fill the prefetch and two extra so that our receive bellow allows the
         // subscription to become active then return to a suspended state.
         sendMessage(_session, _queue, 17);
-
+        _session.commit();
         // Retreive the first message, and start the flow of messages
         assertNotNull("First message not retreived", consumer.receive(1000));
-
-        //Give the internal broker time to respond to the ack that the above
-        // receive will perform.
-        if (!isExternalBroker())
-        {
-            Thread.sleep(1000);
-        }
+        _session.commit();
+        
         
         _connection.close();
 
@@ -356,7 +351,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         {
             // Validation expects three messages.
             // The first will be logged by the QueueActor as part of the processQueue thread
-// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
+// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED 
             // The second will be by the connnection as it acknowledges and activates the subscription
 // INFO - MESSAGE [con:6(guest@anonymous(26562441)/test)/ch:3] [sub:6(qu(example.queue))] SUB-1003 : State : ACTIVE
             // The final one can be the subscription suspending as part of the SubFlushRunner or the processQueue thread
@@ -365,7 +360,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 // INFO - MESSAGE [sub:6(vh(test)/qu(example.queue))] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
 // INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
 
-            assertEquals("Result set larger than expected.", 3, results.size());
+            assertEquals("Result set not expected size:", 3, results.size());
 
             // Validate Initial Suspension
             String expectedState = "SUSPENDED";
