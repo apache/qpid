@@ -77,6 +77,8 @@ public abstract class MBeanTypeTabControl extends TabControl
     protected String _virtualHost;
     protected JMXServerRegistry _serverRegistry;
     protected Composite _tableComposite;
+    protected Button _favouritesButton;
+    protected Button _openButton;
     
     public MBeanTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost, String type)
     {
@@ -191,53 +193,14 @@ public abstract class MBeanTypeTabControl extends TabControl
         _tableViewer.setSorter(tableSorter);
         _table.setSortColumn(_table.getColumn(0));
         _table.setSortDirection(SWT.UP);
+        
+        addTableListeners();
     }
     
-    
-    
-    private void createWidgets()
+    protected void addTableListeners()
     {
-        Composite mainComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
-        mainComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        mainComposite.setLayout(new GridLayout());
-        
-        Composite buttonComposite = _toolkit.createComposite(mainComposite, SWT.NONE);
-        GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, false);
-        buttonComposite.setLayoutData(gridData);
-        buttonComposite.setLayout(new GridLayout(2,true));
-        
-        final Button favouritesButton = _toolkit.createButton(buttonComposite, 
-                                                    "<-- Add " + _type + "(s) to favourites", SWT.PUSH);
-        gridData = new GridData(SWT.LEFT, SWT.CENTER, true, false);
-        favouritesButton.setLayoutData(gridData);
-        favouritesButton.addSelectionListener(new SelectionAdapter()
-        {
-            public void widgetSelected(SelectionEvent e)
-            {
-                addMBeanToFavourites();
-            }
-        });
-        
-        final Button openButton = _toolkit.createButton(buttonComposite, "Open selected " + _type, SWT.PUSH);
-        gridData = new GridData(SWT.RIGHT, SWT.CENTER, true, false);
-        openButton.setLayoutData(gridData);
-        openButton.addSelectionListener(new SelectionAdapter()
-        {
-            public void widgetSelected(SelectionEvent e)
-            {
-                openMBean();
-            }
-        });
-        
-        _tableComposite = _toolkit.createComposite(mainComposite);
-        gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        _tableComposite.setLayoutData(gridData);
-        _tableComposite.setLayout(new GridLayout(1,false));
-        
-        createTable();
-        
-        favouritesButton.setEnabled(false);
-        openButton.setEnabled(false);
+        _favouritesButton.setEnabled(false);
+        _openButton.setEnabled(false);
         
         _tableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
             public void selectionChanged(SelectionChangedEvent evt)
@@ -246,22 +209,22 @@ public abstract class MBeanTypeTabControl extends TabControl
 
                 if (selectionIndex == -1)
                 {
-                    favouritesButton.setEnabled(false);
-                    openButton.setEnabled(false);
+                    _favouritesButton.setEnabled(false);
+                    _openButton.setEnabled(false);
                     return;
                 }
                 else
                 {
-                    favouritesButton.setEnabled(true);
+                    _favouritesButton.setEnabled(true);
                 }
                 
                 if(_table.getSelectionCount() > 1)
                 {
-                    openButton.setEnabled(false);
+                    _openButton.setEnabled(false);
                 }
                 else
                 {
-                    openButton.setEnabled(true);
+                    _openButton.setEnabled(true);
                 }
             }
         });
@@ -277,6 +240,49 @@ public abstract class MBeanTypeTabControl extends TabControl
             public void mouseDown(MouseEvent e){}
             public void mouseUp(MouseEvent e){}
         });
+    }
+    
+    
+    private void createWidgets()
+    {
+        Composite mainComposite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
+        mainComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        mainComposite.setLayout(new GridLayout());
+        
+        Composite buttonComposite = _toolkit.createComposite(mainComposite, SWT.NONE);
+        GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, false);
+        buttonComposite.setLayoutData(gridData);
+        buttonComposite.setLayout(new GridLayout(2,true));
+        
+        _favouritesButton = _toolkit.createButton(buttonComposite, 
+                                                    "<-- Add " + _type + "(s) to favourites", SWT.PUSH);
+        gridData = new GridData(SWT.LEFT, SWT.CENTER, true, false);
+        _favouritesButton.setLayoutData(gridData);
+        _favouritesButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                addMBeanToFavourites();
+            }
+        });
+        
+        _openButton = _toolkit.createButton(buttonComposite, "Open selected " + _type, SWT.PUSH);
+        gridData = new GridData(SWT.RIGHT, SWT.CENTER, true, false);
+        _openButton.setLayoutData(gridData);
+        _openButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                openMBean();
+            }
+        });
+        
+        _tableComposite = _toolkit.createComposite(mainComposite);
+        gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+        _tableComposite.setLayoutData(gridData);
+        _tableComposite.setLayout(new GridLayout(1,false));
+        
+        createTable();
         
         createLowerAreaButton(mainComposite);
     }
