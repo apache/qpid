@@ -55,7 +55,7 @@ public class FailoverBaseCase extends QpidTestCase
     {
         super.setUp();
         setSystemProperty("QPID_WORK", System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
-        startBroker(FAILING_PORT);
+        startBroker(failingPort);
     }
 
     /**
@@ -76,7 +76,7 @@ public class FailoverBaseCase extends QpidTestCase
 
     public void tearDown() throws Exception
     {
-    	stopBroker(FAILING_PORT);
+    	stopBroker(_broker.equals(VM)?FAILING_PORT:FAILING_PORT);
         super.tearDown();
         FileUtils.deleteDirectory(System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
     }
