@@ -31,6 +31,7 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
+import org.apache.qpid.thread.QpidThreadExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
