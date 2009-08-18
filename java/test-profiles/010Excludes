@@ -4,6 +4,7 @@ org.apache.qpid.client.ResetMessageListenerTest#*
 //These tests are for the java broker
 org.apache.qpid.server.security.acl.SimpleACLTest#*
 org.apache.qpid.server.plugins.PluginTest#*
+org.apache.qpid.server.BrokerStartupTest#*
 
 // This test is not finished
 org.apache.qpid.test.testcases.TTLTest#*
