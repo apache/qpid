@@ -28,7 +28,7 @@ public class FailoverBaseCase extends QpidTestCase
 {
 
     public static int FAILING_VM_PORT = 2;
-    public static int FAILING_PORT = DEFAULT_PORT + 1;
+    public static int FAILING_PORT = DEFAULT_PORT + 100;
 
     protected int failingPort;
     
@@ -42,7 +42,7 @@ public class FailoverBaseCase extends QpidTestCase
         }
         else
         {
-            failingPort = FAILING_PORT;
+        	failingPort = FAILING_PORT;
         }
     }
     
@@ -55,7 +55,7 @@ public class FailoverBaseCase extends QpidTestCase
     {
         super.setUp();
         setSystemProperty("QPID_WORK", System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
-        startBroker(getFailingPort());
+        startBroker(FAILING_PORT);
     }
 
     /**
@@ -67,14 +67,16 @@ public class FailoverBaseCase extends QpidTestCase
     public Connection getConnection() throws Exception
     {
         Connection conn =
-            getConnectionFactory("failover").createConnection("guest", "guest");
+        	(Boolean.getBoolean("profile.use_ssl"))?
+        			getConnectionFactory("failover.ssl").createConnection("guest", "guest"):		
+        			getConnectionFactory("failover").createConnection("guest", "guest");
         _connections.add(conn);
         return conn;
     }
 
     public void tearDown() throws Exception
     {
-        stopBroker(getFailingPort());
+    	stopBroker(FAILING_PORT);
         super.tearDown();
         FileUtils.deleteDirectory(System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
     }

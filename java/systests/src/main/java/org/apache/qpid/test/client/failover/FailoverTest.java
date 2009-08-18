@@ -333,8 +333,9 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         }
         
         int iterations = Integer.getInteger("profile.failoverIterations",0);
-        boolean b = true;
-        int failingPort = getFailingPort();
+        boolean useAltPort = false;
+        int altPort = FAILING_PORT;
+        int stdPort = DEFAULT_PORT;
         init(false, Session.AUTO_ACKNOWLEDGE);
         for (int i=0; i < iterations; i++)
         {
@@ -343,25 +344,25 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
             _logger.debug("===================================================================");
             
             runP2PFailover(numMessages, false,false, false);
-            startBroker(failingPort);
-            if (b)
+            startBroker(getFailingPort());
+            if (useAltPort)
             {
-                failingPort = getFailingPort()-1;
-                b = false;
+            	setFailingPort(altPort);
+                useAltPort = false;
             }
             else
             {
-                failingPort = getFailingPort()+1;
-                b = true;
+            	setFailingPort(stdPort);
+            	useAltPort = true;
             }
-            setFailingPort(failingPort);
+            
         }
-        //To prevent any failover logic being initiaed when we shutdown the brokers.
+        //To prevent any failover logic being initiated when we shutdown the brokers.
         connection.close();
         
         // Shutdown the brokers
-        stopBroker(getFailingPort());
-        stopBroker(b?getFailingPort()+1 : getFailingPort()-1);
+        stopBroker(altPort);
+        stopBroker(stdPort);
         
     }  
     
