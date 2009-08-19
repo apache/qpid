@@ -25,6 +25,11 @@
 
 namespace qmf {
 
+    /**
+     * Operational states for Connections.
+     *
+     * \ingroup qmfapi
+     */
     enum ConnectionState {
        CONNECTION_UP   = 1,
        CONNECTION_DOWN = 2
