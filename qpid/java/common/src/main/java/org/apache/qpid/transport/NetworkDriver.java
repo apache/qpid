@@ -43,9 +43,12 @@ public interface NetworkDriver extends Sender<java.nio.ByteBuffer>
    void bind (int port, InetAddress[] addresses, ProtocolEngineFactory protocolFactory,  
               NetworkDriverConfiguration config, SSLContextFactory sslFactory) throws BindException; 
  
-   // Returns the remote address of underlying socket 
+   // Returns the remote address of the underlying socket 
    SocketAddress getRemoteAddress();
  
+   // Returns the local address of the underlying socket
+   SocketAddress getLocalAddress();
+   
    /**
     * The length of time after which the ProtocolEngines readIdle() method should be called if no data has been 
     * read in seconds

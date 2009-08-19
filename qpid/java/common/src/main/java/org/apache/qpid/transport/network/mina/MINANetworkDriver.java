@@ -78,6 +78,8 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     private Throwable _lastException;
     private boolean _acceptingConnections = false;
 
+    private WriteFuture _lastWriteFuture;
+
     public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO)
     {
         _useNIO = useNIO;
@@ -174,6 +176,11 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
         return _ioSession.getRemoteAddress();
     }
+    
+    public SocketAddress getLocalAddress()
+    {
+        return _ioSession.getLocalAddress();
+    }
 
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
             SSLEngine sslEngine) throws OpenException
@@ -256,13 +263,15 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     public void flush()
     {
-        // MINA doesn't support flush 
+        if (_lastWriteFuture != null)
+        {
+            _lastWriteFuture.join();
+        }
     }
 
     public void send(ByteBuffer msg)
     {
-        WriteFuture future = _ioSession.write(org.apache.mina.common.ByteBuffer.wrap(msg));
-        future.join();
+        _lastWriteFuture = _ioSession.write(org.apache.mina.common.ByteBuffer.wrap(msg));
     }
 
     public void setIdleTimeout(long l)
