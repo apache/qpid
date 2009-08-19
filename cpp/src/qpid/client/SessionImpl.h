@@ -86,7 +86,15 @@ public:
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
-    Future send(const framing::AMQBody& command, const framing::FrameSet& content);
+    /**
+     * This method takes the content as a FrameSet; if reframe=false,
+     * the caller is resposnible for ensuring that the header and
+     * content frames in that set are correct for this connection
+     * (right flags, right fragmentation etc). If reframe=true, then
+     * the header and content from the frameset will be copied and
+     * reframed correctly for the connection.
+     */
+    Future send(const framing::AMQBody& command, const framing::FrameSet& content, bool reframe=false);
     void sendRawFrame(framing::AMQFrame& frame);
 
     Demux& getDemux();

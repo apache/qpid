@@ -319,7 +319,7 @@ struct MethodContentAdaptor : MethodContent
 
 }
     
-Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
+Future SessionImpl::send(const AMQBody& command, const FrameSet& content, bool reframe) {
     Acquire a(sendLock);
     SequenceNumber id = nextOut++;
     {
@@ -337,7 +337,7 @@ Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
     frame.setEof(false);
     handleOut(frame);
 
-    if (content.isComplete()) {
+    if (reframe) {
         MethodContentAdaptor c(content);
         sendContent(c);
     } else {
