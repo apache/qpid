@@ -33,11 +33,11 @@ module Qmf
     class ConnectionSettings < Qmfengine::ConnectionSettings
     end
 
-    class ConnectionEvent
+    class ConnectionHandler
         def conn_event_connected(); end
         def conn_event_disconnected(error); end
-        def conn_event_session_closed(context, error); end
-        def conn_event_recv(context, message); end
+        def sess_event_session_closed(context, error); end
+        def sess_event_recv(context, message); end
     end
 
     class Query
@@ -63,15 +63,10 @@ module Qmf
       end
     end
 
-    class AgentHandler
-      def get_query(context, query, userId); end
-      def method_call(context, name, object_id, args, userId); end
-    end
-
     class Connection
       attr_reader :impl
 
-      def initialize(settings, event_handler = nil, delay_min = 1, delay_max = 128, delay_factor = 2)
+      def initialize(settings, delay_min = 1, delay_max = 128, delay_factor = 2)
         @impl = Qmfengine::ResilientConnection.new(settings, delay_min, delay_max, delay_factor)
         @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
         @impl.setNotifyFd(@sockEngine.fileno)
@@ -232,7 +227,12 @@ module Qmf
       end
     end
 
-    class Agent
+    class AgentHandler
+      def get_query(context, query, userId); end
+      def method_call(context, name, object_id, args, userId); end
+    end
+
+    class Agent < ConnectionHandler
       def initialize(handler, label="")
         if label == ""
           @agentLabel = "rb-%s.%d" % [Socket.gethostname, Process::pid]
@@ -241,7 +241,7 @@ module Qmf
         end
         @conn = nil
         @handler = handler
-        @impl = Qmfengine::Agent.new(@agentLabel)
+        @impl = Qmfengine::AgentEngine.new(@agentLabel)
         @event = Qmfengine::AgentEvent.new
         @xmtMessage = Qmfengine::Message.new
       end

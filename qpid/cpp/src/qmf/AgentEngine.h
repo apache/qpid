@@ -1,5 +1,5 @@
-#ifndef _QmfAgent_
-#define _QmfAgent_
+#ifndef _QmfAgentEngine_
+#define _QmfAgentEngine_
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -64,15 +64,15 @@ namespace qmf {
         SchemaObjectClass* objectClass; // (METHOD_CALL)
     };
 
-    class AgentImpl;
+    class AgentEngineImpl;
 
     /**
-     * Agent - Protocol engine for the QMF agent
+     * AgentEngine - Protocol engine for the QMF agent
      */
-    class Agent {
+    class AgentEngine {
     public:
-        Agent(char* label, bool internalStore=true);
-        ~Agent();
+        AgentEngine(char* label, bool internalStore=true);
+        ~AgentEngine();
 
         /**
          * Configure the directory path for storing persistent data.
@@ -80,7 +80,7 @@ namespace qmf {
          *            created, written, and read.  If NULL, no persistent storage will be
          *            attempted.
          */
-        void setStoreDir(char* path);
+        void setStoreDir(const char* path);
 
         /**
          * Configure the directory path for files transferred over QMF.
@@ -88,7 +88,7 @@ namespace qmf {
          *            created, deleted, written, and read.  If NULL, file transfers shall not
          *            be permitted.
          */
-        void setTransferDir(char* path);
+        void setTransferDir(const char* path);
 
         /**
          * Pass messages received from the AMQP session to the Agent engine.
@@ -182,11 +182,12 @@ namespace qmf {
          *@return The objectId of the managed object.
          */
         const ObjectId* addObject(Object& obj, uint64_t persistId);
+        const ObjectId* addObject(Object& obj, uint32_t persistIdLo, uint32_t persistIdHi);
 
         /**
-         * Allocate an objecc-id for an object that will be managed by the application.
+         * Allocate an object-id for an object that will be managed by the application.
          *@param persistId A unique non-zero value if the object-id is to be persistent.
-         @return The objectId structure for the allocated ID.
+         *@return The objectId structure for the allocated ID.
          */
         const ObjectId* allocObjectId(uint64_t persistId);
         const ObjectId* allocObjectId(uint32_t persistIdLo, uint32_t persistIdHi);
@@ -198,7 +199,7 @@ namespace qmf {
         void raiseEvent(Event& event);
 
     private:
-        AgentImpl* impl;
+        AgentEngineImpl* impl;
     };
 }
 

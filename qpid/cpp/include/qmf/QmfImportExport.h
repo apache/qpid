@@ -1,3 +1,6 @@
+#ifndef QMF_IMPORT_EXPORT_H
+#define QMF_IMPORT_EXPORT_H
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,41 +20,14 @@
  * under the License.
  */
 
-%{
+#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
+#  if defined(QMF_EXPORT) || defined (qmf_EXPORTS)
+#    define QMF_EXTERN __declspec(dllexport)
+#  else
+#    define QMF_EXTERN __declspec(dllimport)
+#  endif
+#else
+#  define QMF_EXTERN
+#endif
 
-#include "AgentEngine.h"
-#include <ResilientConnection.h>
-
-%}
-
-
-%include <Query.h>
-%include <Message.h>
-%include <AgentEngine.h>
-%include <ResilientConnection.h>
-%include <Typecode.h>
-%include <Schema.h>
-%include <Value.h>
-%include <ObjectId.h>
-%include <Object.h>
-
-%include <qpid/client/ClientImportExport.h>
-%include <qpid/client/ConnectionSettings.h>
-
-
-%inline {
-
-using namespace std;
-using namespace qmf;
-
-namespace qmf {
-
-
-}
-}
-
-
-%{
-
-%};
-
+#endif
