@@ -26,6 +26,7 @@
  * <h2>Messaging Client API classes</h2>
  * <ul>
  * <li><p>\ref clientapi</p></li>
+ * <li><p>\ref qmfapi</p></li>
  * </ul>
  * 
  * <h2>Code for common tasks</h2>
@@ -127,5 +128,6 @@
 
 /**
  * \defgroup clientapi Qpid C++ Client API
+ * \defgroup qmfapi Qpid Management Framework C++ API
  *
  */

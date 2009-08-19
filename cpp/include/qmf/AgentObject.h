@@ -32,6 +32,8 @@ namespace qmf {
 
     /**
      * AgentObject is an extension of Object with agent-specific methods added.
+     *
+     * \ingroup qmfapi
      */
     class AgentObject : public Object {
     public:

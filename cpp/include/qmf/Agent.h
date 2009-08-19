@@ -35,6 +35,8 @@ namespace qmf {
     /**
      * AgentListener is used by agents that select the internalStore=false option (see Agent
      * constructor) or by agents that wish to provide access control for queries and methods.
+     *
+     * \ingroup qmfapi
      */
     class AgentListener {
         QMF_EXTERN virtual ~AgentListener();
@@ -143,6 +145,8 @@ namespace qmf {
     /**
      * The Agent class is the QMF Agent portal.  It should be instantiated once and associated with a
      * Connection (setConnection) to connect an agent to the QMF infrastructure.
+     *
+     * \ingroup qmfapi
      */
     class Agent {
     public:

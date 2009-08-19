@@ -29,6 +29,8 @@ namespace qmf {
 
     /**
      * Settings for AMQP connections to the broker.
+     *
+     * \ingroup qmfapi
      */
     class ConnectionSettings {
     public:
