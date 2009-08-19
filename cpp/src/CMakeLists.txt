@@ -618,7 +618,7 @@ set (qmfagent_SOURCES
      ../include/qpid/agent/ManagementAgent.h
      qpid/agent/ManagementAgentImpl.cpp
      qpid/agent/ManagementAgentImpl.h
-     qmf/Agent.cpp
+     qmf/AgentEngine.cpp
     )
 add_library (qmfagent SHARED ${qmfagent_SOURCES})
 target_link_libraries (qmfagent qmfcommon)
@@ -626,7 +626,7 @@ set_target_properties (qmfagent PROPERTIES
                        VERSION ${qpidc_version})
 
 set (qmfcommon_SOURCES
-    qmf/Agent.cpp
+    qmf/AgentEngine.cpp
     qmf/ResilientConnection.cpp
     qmf/MessageImpl.cpp
     qmf/SchemaImpl.cpp
