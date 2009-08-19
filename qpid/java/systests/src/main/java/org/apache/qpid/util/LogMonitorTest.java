@@ -30,25 +30,25 @@ import java.util.List;
 public class LogMonitorTest extends TestCase
 {
 
+    private LogMonitor _monitor;
+
+    @Override
+    public void setUp() throws Exception
+    {
+        _monitor = new LogMonitor();
+        _monitor.getMonitoredFile().deleteOnExit(); // Make sure we clean up
+    }
+    
     /**
      * Test that a new file is created when attempting to set up a monitor with
      * the default constructor.
      */
     public void testMonitor()
     {
-        // Validate that a NPE is thrown with null input
-        try
-        {
-            LogMonitor montior = new LogMonitor();
-            //Validte that the monitor is now running on a new file
-            assertTrue("New file does not have correct name:" + montior.
-                    getMonitoredFile().getName(),
-                       montior.getMonitoredFile().getName().contains("LogMonitor"));
-        }
-        catch (IOException ioe)
-        {
-            fail("IOE thrown:" + ioe);
-        }
+        //Validate that the monitor is now running on a new file
+        assertTrue("New file does not have correct name:" + _monitor.
+                getMonitoredFile().getName(),
+                _monitor.getMonitoredFile().getName().contains("LogMonitor"));
     }
 
     /**
@@ -63,13 +63,11 @@ public class LogMonitorTest extends TestCase
         File testFile = File.createTempFile("testMonitorFile", ".log");
         testFile.deleteOnExit();
 
-        LogMonitor monitor;
-
         //Ensure that we can create a monitor on a file
         try
         {
-            monitor = new LogMonitor(testFile);
-            assertEquals(testFile, monitor.getMonitoredFile());
+            _monitor = new LogMonitor(testFile);
+            assertEquals(testFile, _monitor.getMonitoredFile());
         }
         catch (IOException ioe)
         {
@@ -136,13 +134,12 @@ public class LogMonitorTest extends TestCase
      */
     public void testFindMatches_Match() throws IOException
     {
-        LogMonitor monitor = new LogMonitor();
 
         String message = getName() + ": Test Message";
 
         Logger.getRootLogger().warn(message);
 
-        validateLogContainsMessage(monitor, message);
+        validateLogContainsMessage(_monitor, message);
     }
 
     /**
@@ -152,21 +149,17 @@ public class LogMonitorTest extends TestCase
      */
     public void testFindMatches_NoMatch() throws IOException
     {
-        LogMonitor monitor = new LogMonitor();
-
         String message = getName() + ": Test Message";
 
         Logger.getRootLogger().warn(message);
 
         String notLogged = "This text was not logged";
 
-        validateLogDoesNotContainsMessage(monitor, notLogged);
+        validateLogDoesNotContainsMessage(_monitor, notLogged);
     }
 
     public void testWaitForMessage_Found() throws IOException
     {
-        LogMonitor monitor = new LogMonitor();
-
         String message = getName() + ": Test Message";
 
         long TIME_OUT = 2000;
@@ -174,13 +167,11 @@ public class LogMonitorTest extends TestCase
         logMessageWithDelay(message, TIME_OUT / 2);
 
         assertTrue("Message was not logged ",
-                   monitor.waitForMessage(message, TIME_OUT));
+                    _monitor.waitForMessage(message, TIME_OUT));
     }
 
     public void testWaitForMessage_Timeout() throws IOException
     {
-        LogMonitor monitor = new LogMonitor();
-
         String message = getName() + ": Test Message";
 
         long TIME_OUT = 2000;
@@ -189,41 +180,37 @@ public class LogMonitorTest extends TestCase
 
         // Verify that we can time out waiting for a message
         assertFalse("Message was logged ",
-                    monitor.waitForMessage(message, TIME_OUT / 2));
+                    _monitor.waitForMessage(message, TIME_OUT / 2, false));
 
         // Verify that the message did eventually get logged.
         assertTrue("Message was never logged.",
-                   monitor.waitForMessage(message, TIME_OUT));
+                    _monitor.waitForMessage(message, TIME_OUT));
     }
 
     public void testReset() throws IOException
     {
-        LogMonitor monitor = new LogMonitor();
-
         String message = getName() + ": Test Message";
 
         Logger.getRootLogger().warn(message);
 
-        validateLogContainsMessage(monitor, message);
+        validateLogContainsMessage(_monitor, message);
 
         String LOG_RESET_TEXT = "Log Monitor Reset";
 
-        validateLogDoesNotContainsMessage(monitor, LOG_RESET_TEXT);
+        validateLogDoesNotContainsMessage(_monitor, LOG_RESET_TEXT);
 
-        monitor.reset();
+        _monitor.reset();
 
-        assertEquals("", monitor.readFile());
+        assertEquals("", _monitor.readFile());
     }
 
     public void testRead() throws IOException
     {
-        LogMonitor monitor = new LogMonitor();
-
         String message = getName() + ": Test Message";
 
         Logger.getRootLogger().warn(message);
 
-        String fileContents = monitor.readFile();
+        String fileContents = _monitor.readFile();
 
         assertTrue("Logged message not found when reading file.",
                    fileContents.contains(message));

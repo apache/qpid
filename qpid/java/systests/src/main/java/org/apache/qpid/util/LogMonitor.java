@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -118,7 +119,7 @@ public class LogMonitor
      * @throws java.io.FileNotFoundException if the Log file can nolonger be found
      * @throws IOException                   thrown when reading the log file
      */
-    public boolean waitForMessage(String message, long wait)
+    public boolean waitForMessage(String message, long wait, boolean printFileOnFailure)
             throws FileNotFoundException, IOException
     {
         // Loop through alerts until we're done or wait ms seconds have passed,
@@ -126,20 +127,35 @@ public class LogMonitor
         BufferedReader reader = new BufferedReader(new FileReader(_logfile));
         boolean found = false;
         long endtime = System.currentTimeMillis() + wait;
+        ArrayList<String> contents = new ArrayList<String>();
         while (!found && System.currentTimeMillis() < endtime)
         {
             while (reader.ready())
             {
                 String line = reader.readLine();
+                contents.add(line);
                 if (line.contains(message))
                 {
                     found = true;
                 }
             }
         }
-
+        if (!found && printFileOnFailure)
+        {
+            for (String line : contents)
+            {
+                System.out.println(line);
+            }
+        }
         return found;
     }
+    
+
+    public boolean waitForMessage(String messageCountAlert, long alertLogWaitPeriod) throws FileNotFoundException, IOException
+    {
+       return waitForMessage(messageCountAlert, alertLogWaitPeriod, true);
+    }
+
 
     /**
      * Read the log file in to memory as a String
