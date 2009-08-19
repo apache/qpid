@@ -342,8 +342,6 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _session.commit();
         
         
-        _connection.close();
-
         //Validate
         List<String> results = _monitor.findMatches("SUB-1003");
 
@@ -396,6 +394,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
             }
             throw afe;
         }
+        _connection.close();
 
     }
 
