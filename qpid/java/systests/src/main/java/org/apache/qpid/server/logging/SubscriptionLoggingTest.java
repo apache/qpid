@@ -344,6 +344,19 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         
         //Validate
         List<String> results = _monitor.findMatches("SUB-1003");
+        
+        if (results.size() != 3)
+        {
+            try
+            {
+                Thread.sleep(1500);    
+            }
+            catch (InterruptedException e)
+            {
+                
+            }
+            results = _monitor.findMatches("SUB-1003");
+        }
 
         try
         {
