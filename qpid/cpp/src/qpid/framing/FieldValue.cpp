@@ -22,6 +22,7 @@
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/Endian.h"
+#include "qpid/framing/List.h"
 #include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
@@ -37,6 +38,8 @@ void FieldValue::setType(uint8_t type)
     typeOctet = type;
     if (typeOctet == 0xA8) {
         data.reset(new EncodedValue<FieldTable>());
+    } else if (typeOctet == 0xA9) {
+        data.reset(new EncodedValue<List>());
     } else if (typeOctet == 0xAA) {
         data.reset(new EncodedValue<Array>());
     } else {    
@@ -164,9 +167,36 @@ FieldTableValue::FieldTableValue(const FieldTable& f) : FieldValue(0xa8, new Enc
 {
 }
 
+ListValue::ListValue(const List& l) : FieldValue(0xa9, new EncodedValue<List>(l))
+{
+}
+
 ArrayValue::ArrayValue(const Array& a) : FieldValue(0xaa, new EncodedValue<Array>(a))
 {
 }
+
+VoidValue::VoidValue() : FieldValue(0xf0, new FixedWidthValue<0>()) {}
+
+BoolValue::BoolValue(bool b) :
+    FieldValue(0x08, new FixedWidthValue<1>(b))
+{}
+
+Unsigned8Value::Unsigned8Value(uint8_t v) :
+    FieldValue(0x02, new FixedWidthValue<1>(v))
+{}
+Unsigned16Value::Unsigned16Value(uint16_t v) :
+    FieldValue(0x12, new FixedWidthValue<2>(v))
+{}
+Unsigned32Value::Unsigned32Value(uint32_t v) :
+    FieldValue(0x22, new FixedWidthValue<4>(v))
+{}
+
+Integer8Value::Integer8Value(int8_t v) :
+    FieldValue(0x01, new FixedWidthValue<1>(v))
+{}
+Integer16Value::Integer16Value(int16_t v) :
+    FieldValue(0x11, new FixedWidthValue<2>(v))
+{}
 
 void FieldValue::print(std::ostream& out) const {
     data->print(out);
