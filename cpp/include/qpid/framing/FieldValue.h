@@ -83,7 +83,7 @@ class FieldValue {
     FieldValue(): data(0) {};
     // Default assignment operator is fine
     void setType(uint8_t type);
-    uint8_t getType();
+    QPID_COMMON_EXTERN uint8_t getType();
     Data& getData() { return *data; }
     uint32_t encodedSize() const { return 1 + data->encodedSize(); };
     bool empty() const { return data.get() == 0; }
