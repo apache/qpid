@@ -24,7 +24,6 @@
 #include "qpid/framing/SequenceSet.h"
 
 using namespace qpid::framing;
-using namespace boost;
 
 namespace qpid {
 namespace client {
