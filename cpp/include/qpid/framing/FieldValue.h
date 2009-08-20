@@ -24,7 +24,6 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/framing/Endian.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/CommonImportExport.h"
 
@@ -104,6 +103,8 @@ class FieldValue {
 
   protected:
     FieldValue(uint8_t t, Data* d): typeOctet(t), data(d) {}
+
+    static uint8_t* convertIfRequired(uint8_t* const octets, int width);
 
   private:
     uint8_t typeOctet;
@@ -199,7 +200,7 @@ inline T FieldValue::getFloatingPointValue() const {
     FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
     if (fwv) {
         T value;
-        uint8_t* const octets = Endian::convertIfRequired(fwv->rawOctets(), W);
+        uint8_t* const octets = convertIfRequired(fwv->rawOctets(), W);
         uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
         for (uint i = 0; i < W; ++i) target[i] = octets[i];
         return value;
