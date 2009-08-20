@@ -378,6 +378,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/InputHandler.h			\
   qpid/framing/Invoker.h			\
   qpid/framing/IsInSequenceSet.h		\
+  qpid/framing/List.cpp				\
   qpid/framing/MethodBodyFactory.h		\
   qpid/framing/MethodContent.h			\
   qpid/framing/ModelMethod.h			\
@@ -723,6 +724,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/framing/Buffer.h		\
   ../include/qpid/framing/FieldTable.h		\
   ../include/qpid/framing/FieldValue.h		\
+  ../include/qpid/framing/List.h		\
   ../include/qpid/framing/ProtocolVersion.h	\
   ../include/qpid/framing/SequenceNumber.h	\
   ../include/qpid/framing/SequenceSet.h		\

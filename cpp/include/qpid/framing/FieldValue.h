@@ -24,6 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/Endian.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/CommonImportExport.h"
 
@@ -36,7 +37,6 @@
 namespace qpid {
 namespace framing {
 
-//class Array;
 /**
  * Exception that is the base exception for all field table errors.
  *
@@ -52,6 +52,8 @@ class FieldValueException : public qpid::Exception {};
 struct InvalidConversionException : public FieldValueException {
     InvalidConversionException() {}
 };
+
+class List;
 
 /**
  * Value that can appear in an AMQP field table
@@ -96,12 +98,17 @@ class FieldValue {
     template <typename T> bool convertsTo() const { return false; }
     template <typename T> T get() const { throw InvalidConversionException(); }
 
+    template <class T, int W> T getIntegerValue() const;
+    template <class T, int W> T getFloatingPointValue() const;
+    template <class T> bool get(T&) const;
+
   protected:
     FieldValue(uint8_t t, Data* d): typeOctet(t), data(d) {}
 
   private:
     uint8_t typeOctet;
     std::auto_ptr<Data> data;
+
 };
 
 template <>
@@ -165,9 +172,51 @@ class FixedWidthValue : public FieldValue::Data {
         return v;
     }
     uint8_t* rawOctets() { return octets; }
+    uint8_t* rawOctets() const { return octets; }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
 };
+
+template <class T, int W>
+inline T FieldValue::getIntegerValue() const
+{
+    FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
+    if (fwv) {
+        uint8_t* octets = fwv->rawOctets();
+        T v = 0;
+        for (int i = 0; i < W-1; ++i) {
+            v |= octets[i]; v <<= 8;
+        }
+        v |= octets[W-1];
+        return v;
+    } else {
+        throw InvalidConversionException();
+    }
+}
+
+template <class T, int W>
+inline T FieldValue::getFloatingPointValue() const {
+    FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
+    if (fwv) {
+        T value;
+        uint8_t* const octets = Endian::convertIfRequired(fwv->rawOctets(), W);
+        uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
+        for (uint i = 0; i < W; ++i) target[i] = octets[i];
+        return value;
+    } else {
+        throw InvalidConversionException();
+    }
+}
+
+template <>
+inline float FieldValue::get<float>() const {
+    return getFloatingPointValue<float, 4>();
+}
+
+template <>
+inline double FieldValue::get<double>() const {
+    return getFloatingPointValue<double, 8>();
+}
 
 template <>
 class FixedWidthValue<0> : public FieldValue::Data {
@@ -243,6 +292,27 @@ class EncodedValue : public FieldValue::Data {
     void print(std::ostream& o) const { o << "[" << value << "]"; };
 };
 
+/**
+ * Accessor that can be used to get values of type FieldTable, Array
+ * and List.
+ */
+template <class T>
+inline bool FieldValue::get(T& t) const
+{
+    const EncodedValue<T>* v = dynamic_cast< EncodedValue<T>* >(data.get());    
+    if (v != 0) {
+        t = v->getValue();
+        return true;
+    } else {
+        try {
+            t = get<T>();
+            return true;
+        } catch (const InvalidConversionException&) {
+            return false;
+        }
+    }
+}
+
 class Str8Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Str8Value(const std::string& v);
@@ -294,12 +364,56 @@ class Unsigned64Value : public FieldValue {
 
 class FieldTableValue : public FieldValue {
   public:
+    typedef FieldTable ValueType;
     QPID_COMMON_EXTERN FieldTableValue(const FieldTable&);
 };
 
 class ArrayValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN ArrayValue(const Array&);
+};
+
+class VoidValue : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN VoidValue();
+};
+
+class BoolValue : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN BoolValue(bool);
+};
+
+class Unsigned8Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Unsigned8Value(uint8_t);
+};
+
+class Unsigned16Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Unsigned16Value(uint16_t);
+};
+
+class Unsigned32Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Unsigned32Value(uint32_t);
+};
+
+class Integer8Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Integer8Value(int8_t);
+};
+
+class Integer16Value : public FieldValue {
+  public:
+    QPID_COMMON_EXTERN Integer16Value(int16_t);
+};
+
+typedef IntegerValue Integer32Value;
+
+class ListValue : public FieldValue {
+  public:
+    typedef List ValueType;
+    QPID_COMMON_EXTERN ListValue(const List&);
 };
 
 template <class T>
@@ -314,7 +428,6 @@ bool getEncodedValue(FieldTable::ValuePtr vptr, T& value)
     }
     return false;
 }
-
 
 }} // qpid::framing
 
