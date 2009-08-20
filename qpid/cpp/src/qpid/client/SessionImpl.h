@@ -25,6 +25,7 @@
 #include "qpid/client/Demux.h"
 #include "qpid/client/Execution.h"
 #include "qpid/client/Results.h"
+#include "qpid/client/ClientImportExport.h"
 
 #include "qpid/SessionId.h"
 #include "qpid/SessionState.h"
@@ -94,7 +95,7 @@ public:
      * the header and content from the frameset will be copied and
      * reframed correctly for the connection.
      */
-    Future send(const framing::AMQBody& command, const framing::FrameSet& content, bool reframe=false);
+    QPID_CLIENT_EXTERN Future send(const framing::AMQBody& command, const framing::FrameSet& content, bool reframe=false);
     void sendRawFrame(framing::AMQFrame& frame);
 
     Demux& getDemux();
