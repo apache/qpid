@@ -451,6 +451,7 @@ set (libqpidcommon_SOURCES
      qpid/framing/FieldValue.cpp
      qpid/framing/FrameSet.cpp
      qpid/framing/FrameDecoder.cpp
+     qpid/framing/List.cpp
      qpid/framing/ProtocolInitiation.cpp
      qpid/framing/ProtocolVersion.cpp
      qpid/framing/SendContent.cpp
