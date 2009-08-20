@@ -84,6 +84,10 @@ class Base(Test):
     contents = self.drain(rcv)
     assert len(contents) == 0, "%s is supposed to be empty: %s" % (rcv, contents)
 
+  def assertPending(self, rcv, expected):
+    p = rcv.pending()
+    assert p == expected, "expected %s, got %s" % (expected, p)
+
   def sleep(self):
     time.sleep(self.delay())
 
@@ -107,7 +111,8 @@ class SetupTests(Base):
     try:
       self.conn = Connection.open("localhost", 0)
       assert False, "connect succeeded"
-    except ConnectError:
+    except ConnectError, e:
+      # XXX: should verify that e includes appropriate diagnostic info
       pass
 
 class ConnectionTests(Base):
@@ -237,7 +242,8 @@ class SessionTests(Base):
     # were requeued, and ack this time before closing
     self.ssn = self.conn.session()
     rcv = self.ssn.receiver("test-ack-queue")
-    assert contents == self.drain(rcv)
+    drained = self.drain(rcv)
+    assert contents == drained, "expected %s, got %s" % (contents, drained)
     self.ssn.acknowledge()
     self.ssn.close()
 
@@ -319,7 +325,8 @@ class SessionTests(Base):
       txssn.acknowledge()
     else:
       txssn.rollback()
-      assert contents == self.drain(txrcv)
+      drained = self.drain(txrcv)
+      assert contents == drained, "expected %s, got %s" % (contents, drained)
       txssn.acknowledge()
       txssn.rollback()
       assert contents == self.drain(txrcv)
@@ -467,19 +474,19 @@ class ReceiverTests(Base):
   def testCapacity(self):
     self.rcv.capacity = 5
     self.rcv.start()
-    assert self.rcv.pending() == 0
+    self.assertPending(self.rcv, 0)
 
     for i in range(15):
       self.send("testCapacity", i)
     self.sleep()
-    assert self.rcv.pending() == 5
+    self.assertPending(self.rcv, 5)
 
     self.drain(self.rcv, limit = 5)
     self.sleep()
-    assert self.rcv.pending() == 5
+    self.assertPending(self.rcv, 5)
 
     self.drain(self.rcv)
-    assert self.rcv.pending() == 0
+    self.assertPending(self.rcv, 0)
 
     self.ssn.acknowledge()
 

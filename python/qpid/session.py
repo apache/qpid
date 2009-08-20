@@ -168,8 +168,6 @@ class Session(command_invoker()):
       result = Future(exception=SessionException)
       self.results[self.sender.next_id] = result
 
-    log.debug("SENDING %s", cmd)
-
     self.send(cmd)
 
     log.debug("SENT %s", cmd)
