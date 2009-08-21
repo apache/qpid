@@ -132,7 +132,7 @@ class Serial:
     return hash(self.value)
 
   def __cmp__(self, other):
-    if other is None:
+    if other.__class__ not in (int, long, Serial):
       return 1
 
     other = serial(other)
