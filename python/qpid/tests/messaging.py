@@ -408,9 +408,9 @@ class ReceiverTests(Base):
       elapsed = time.time() - start
       assert elapsed >= self.delay()
 
-    one = self.send("testListen", 1)
-    two = self.send("testListen", 2)
-    three = self.send("testListen", 3)
+    one = self.send("testFetch", 1)
+    two = self.send("testFetch", 2)
+    three = self.send("testFetch", 3)
     msg = self.rcv.fetch(0)
     assert msg.content == one
     msg = self.rcv.fetch(self.delay())
