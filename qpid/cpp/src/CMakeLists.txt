@@ -616,10 +616,10 @@ target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRA
 #  qpid/agent/ManagementAgent.h \
 #  qpid/agent/ManagementAgentImpl.h
 set (qmfagent_SOURCES
-     ../include/qpid/agent/ManagementAgent.h
-     qpid/agent/ManagementAgentImpl.cpp
-     qpid/agent/ManagementAgentImpl.h
-     qmf/AgentEngine.cpp
+    qmf/AgentEngine.cpp
+    qmf/AgentEngine.h
+    qpid/agent/ManagementAgentImpl.cpp
+    qpid/agent/ManagementAgentImpl.h
     )
 add_library (qmfagent SHARED ${qmfagent_SOURCES})
 target_link_libraries (qmfagent qmfcommon)
@@ -627,14 +627,31 @@ set_target_properties (qmfagent PROPERTIES
                        VERSION ${qpidc_version})
 
 set (qmfcommon_SOURCES
-    qmf/AgentEngine.cpp
-    qmf/ResilientConnection.cpp
+    qmf/ConnectionSettingsImpl.cpp
+    qmf/ConnectionSettingsImpl.h
+    qmf/ConsoleEngine.h
+    qmf/Event.h
+    qmf/Message.h
     qmf/MessageImpl.cpp
-    qmf/SchemaImpl.cpp
-    qmf/ValueImpl.cpp
+    qmf/MessageImpl.h
+    qmf/Object.h
+    qmf/ObjectId.h
     qmf/ObjectIdImpl.cpp
+    qmf/ObjectIdImpl.h
     qmf/ObjectImpl.cpp
+    qmf/ObjectImpl.h
+    qmf/Query.h
     qmf/QueryImpl.cpp
+    qmf/QueryImpl.h
+    qmf/ResilientConnection.cpp
+    qmf/ResilientConnection.h
+    qmf/Schema.h
+    qmf/SchemaImpl.cpp
+    qmf/SchemaImpl.h
+    qmf/Typecode.h
+    qmf/Value.h
+    qmf/ValueImpl.cpp
+    qmf/ValueImpl.h
     )
 add_library (qmfcommon SHARED ${qmfcommon_SOURCES})
 target_link_libraries (qmfcommon qpidclient)

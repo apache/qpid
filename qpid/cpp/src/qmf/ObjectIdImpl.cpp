@@ -166,11 +166,6 @@ bool ObjectId::operator==(const ObjectId& other) const
     return *impl == *other.impl;
 }
 
-bool ObjectId::operator!=(const ObjectId& other) const
-{
-    return !(*impl == *other.impl);
-}
-
 bool ObjectId::operator<(const ObjectId& other) const
 {
     return *impl < *other.impl;

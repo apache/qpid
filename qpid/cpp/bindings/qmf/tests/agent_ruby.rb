@@ -71,8 +71,8 @@ class App < Qmf::AgentHandler
 
   def main
     @settings = Qmf::ConnectionSettings.new
-    @settings.host = ARGV[0] if ARGV.size > 0
-    @settings.port = ARGV[1].to_i if ARGV.size > 1
+    @settings.set_attr("host", ARGV[0]) if ARGV.size > 0
+    @settings.set_attr("port", ARGV[1].to_i) if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
     @agent = Qmf::Agent.new(self)
 

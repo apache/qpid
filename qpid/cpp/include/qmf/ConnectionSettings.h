@@ -21,6 +21,7 @@
  */
 
 #include "qmf/QmfImportExport.h"
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qmf {
 
@@ -34,6 +35,8 @@ namespace qmf {
      */
     class ConnectionSettings {
     public:
+
+        ConnectionSettings(const ConnectionSettings& copy);
 
         /**
          * Create a set of default connection settings.
@@ -79,8 +82,10 @@ namespace qmf {
          * Get the value of an attribute.
          *
          * @param key A null-terminated attribute name.
+         *
+         * @return The value associated with the attribute name.
          */
-        QMF_EXTERN const Value& getAttr(const char* key) const;
+        QMF_EXTERN Value getAttr(const char* key) const;
 
         /**
          * Get the attribute string (the portion of the URL following the '?') for the settings.
@@ -129,6 +134,7 @@ namespace qmf {
         QMF_EXTERN void setRetry(int delayMin = 1, int delayMax = 128, int delayFactor = 2);
 
     private:
+        friend class ResilientConnectionImpl;
         ConnectionSettingsImpl* impl;
     };
 

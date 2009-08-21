@@ -35,6 +35,8 @@ nobase_include_HEADERS +=			\
   ../include/qmf/AgentObject.h
 
 libqmfcommon_la_SOURCES =			\
+  qmf/ConnectionSettingsImpl.cpp		\
+  qmf/ConnectionSettingsImpl.h			\
   qmf/ConsoleEngine.h				\
   qmf/Event.h					\
   qmf/Message.h					\
