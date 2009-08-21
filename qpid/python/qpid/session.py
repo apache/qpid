@@ -146,7 +146,8 @@ class Session(command_invoker()):
     if self._closing:
       raise SessionClosed()
 
-    if self.channel == None:
+    ch = self.channel
+    if ch == None:
       raise SessionDetached()
 
     if op == MessageTransfer:
@@ -162,7 +163,7 @@ class Session(command_invoker()):
     cmd = op(*args, **kwargs)
     cmd.sync = self.auto_sync or cmd.sync
     self.need_sync = not cmd.sync
-    cmd.channel = self.channel.id
+    cmd.channel = ch.id
 
     if op.RESULT:
       result = Future(exception=SessionException)
