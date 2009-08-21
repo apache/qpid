@@ -19,6 +19,8 @@
 
 #include "qmf/ResilientConnection.h"
 #include "qmf/MessageImpl.h"
+#include "qmf/ConnectionSettingsImpl.h"
+#include <qpid/client/Connection.h>
 #include <qpid/client/Session.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/SubscriptionManager.h>
@@ -77,8 +79,7 @@ namespace qmf {
 
     class ResilientConnectionImpl : public qpid::sys::Runnable {
     public:
-        ResilientConnectionImpl(ConnectionSettings& settings,
-                                int dmin, int dmax, int dfactor);
+        ResilientConnectionImpl(ConnectionSettings& settings);
         ~ResilientConnectionImpl();
 
         bool isConnected() const;
@@ -174,12 +175,11 @@ void RCSession::received(qpid::client::Message& msg)
     connImpl.EnqueueEvent(ResilientConnectionEvent::RECV, userContext, qmsg);
 }
 
-ResilientConnectionImpl::ResilientConnectionImpl(ConnectionSettings& _settings,
-                                                 int dmin, int dmax, int dfactor) :
-    notifyFd(-1), connected(false), shutdown(false), settings(_settings), 
-    delayMin(dmin), delayMax(dmax), delayFactor(dfactor), connThread(*this)
+ResilientConnectionImpl::ResilientConnectionImpl(ConnectionSettings& _settings) :
+    notifyFd(-1), connected(false), shutdown(false), settings(_settings), connThread(*this)
 {
     connection.registerFailureCallback(boost::bind(&ResilientConnectionImpl::failure, this));
+    settings.impl->getRetrySettings(&delayMin, &delayMax, &delayFactor);
 }
 
 ResilientConnectionImpl::~ResilientConnectionImpl()
@@ -318,7 +318,7 @@ void ResilientConnectionImpl::run()
 
     while (true) {
         try {
-            connection.open(settings);
+            connection.open(settings.impl->getClientSettings());
             {
                 Mutex::ScopedLock _lock(lock);
                 connected = true;
@@ -396,10 +396,9 @@ void ResilientConnectionImpl::EnqueueEvent(ResilientConnectionEvent::EventKind k
 // Wrappers
 //==================================================================
 
-ResilientConnection::ResilientConnection(ConnectionSettings& settings,
-                                         int delayMin, int delayMax, int delayFactor)
+ResilientConnection::ResilientConnection(ConnectionSettings& settings)
 {
-    impl = new ResilientConnectionImpl(settings, delayMin, delayMax, delayFactor);
+    impl = new ResilientConnectionImpl(settings);
 }
 
 ResilientConnection::~ResilientConnection()

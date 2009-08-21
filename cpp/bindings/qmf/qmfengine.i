@@ -19,24 +19,22 @@
 
 %{
 
-#include "AgentEngine.h"
-#include <ResilientConnection.h>
+#include "qmf/AgentEngine.h"
+#include <qmf/ResilientConnection.h>
 
 %}
 
-
-%include <Query.h>
-%include <Message.h>
-%include <AgentEngine.h>
-%include <ResilientConnection.h>
-%include <Typecode.h>
-%include <Schema.h>
-%include <Value.h>
-%include <ObjectId.h>
-%include <Object.h>
-
-%include <qpid/client/ClientImportExport.h>
-%include <qpid/client/ConnectionSettings.h>
+%include <qmf/QmfImportExport.h>
+%include <qmf/Query.h>
+%include <qmf/Message.h>
+%include <qmf/AgentEngine.h>
+%include <qmf/ConnectionSettings.h>
+%include <qmf/ResilientConnection.h>
+%include <qmf/Typecode.h>
+%include <qmf/Schema.h>
+%include <qmf/Value.h>
+%include <qmf/ObjectId.h>
+%include <qmf/Object.h>
 
 
 %inline {

@@ -47,6 +47,8 @@ namespace qmf {
 
         /**
          * Called each time the state of the connection changes.
+         *
+         * @param state the new state
          */
         virtual void newState(ConnectionState state);
 

@@ -30,7 +30,33 @@ module Qmf
         end
     end
 
-    class ConnectionSettings < Qmfengine::ConnectionSettings
+    class ConnectionSettings
+      attr_reader :impl
+
+      def initialize(url = nil)
+        if url
+          @impl = Qmfengine::ConnectionSettings.new(url)
+        else
+          @impl = Qmfengine::ConnectionSettings.new()
+        end
+      end
+
+      def set_attr(key, val)
+        if val.class == String
+          v = Qmfengine::Value.new(TYPE_LSTR)
+          v.setString(val)
+        elsif val.class == TrueClass or val.class == FalseClass
+          v = Qmfengine::Value.new(TYPE_BOOL)
+          v.setBool(val)
+        elsif val.class == Fixnum
+          v = Qmfengine::Value.new(TYPE_UINT32)
+          v.setUint(val)
+        else
+          raise ArgumentError, "Value for attribute '#{key}' has unsupported type: #{val.class}"
+        end
+
+        @impl.setAttr(key, v)
+      end
     end
 
     class ConnectionHandler
@@ -66,8 +92,8 @@ module Qmf
     class Connection
       attr_reader :impl
 
-      def initialize(settings, delay_min = 1, delay_max = 128, delay_factor = 2)
-        @impl = Qmfengine::ResilientConnection.new(settings, delay_min, delay_max, delay_factor)
+      def initialize(settings)
+        @impl = Qmfengine::ResilientConnection.new(settings.impl)
         @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
         @impl.setNotifyFd(@sockEngine.fileno)
         @new_conn_handlers = Array.new
