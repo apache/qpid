@@ -104,7 +104,7 @@ class FieldValue {
   protected:
     FieldValue(uint8_t t, Data* d): typeOctet(t), data(d) {}
 
-    static uint8_t* convertIfRequired(uint8_t* const octets, int width);
+    QPID_COMMON_EXTERN static uint8_t* convertIfRequired(uint8_t* const octets, int width);
 
   private:
     uint8_t typeOctet;
