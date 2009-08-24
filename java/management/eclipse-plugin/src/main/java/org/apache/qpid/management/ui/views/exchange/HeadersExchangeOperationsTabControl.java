@@ -220,6 +220,8 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         _bindingNumberTableViewer.setContentProvider(new ContentProviderImpl(BINDING_NUM));
         _bindingNumberTableViewer.setLabelProvider(new LabelProviderImpl(BINDING_NUM));
         _bindingNumberTableViewer.setSorter(tableSorter);
+        _bindingNumberTable.setSortColumn(_bindingNumberTable.getColumn(0));
+        _bindingNumberTable.setSortDirection(SWT.UP);
         
         //table of header bindings
         _headersTable = new Table (tablesComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
@@ -272,6 +274,8 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         _headersTableViewer.setContentProvider(new ContentProviderImpl(HEADER_BINDINGS));
         _headersTableViewer.setLabelProvider(new LabelProviderImpl(HEADER_BINDINGS));
         _headersTableViewer.setSorter(queuesTableSorter);
+        _headersTable.setSortColumn(_headersTable.getColumn(0));
+        _headersTable.setSortDirection(SWT.UP);
         _headersTableViewer.setInput(new String[]{"Select a binding to view key-value pairs"});
         
         _bindingNumberTableViewer.addSelectionChangedListener(new ISelectionChangedListener(){

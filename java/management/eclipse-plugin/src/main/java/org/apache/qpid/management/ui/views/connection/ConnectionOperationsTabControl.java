@@ -199,6 +199,8 @@ public class ConnectionOperationsTabControl extends TabControl
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(tableSorter);
+        _table.setSortColumn(_table.getColumn(0));
+        _table.setSortDirection(SWT.UP);
         
         Composite buttonsComposite = _toolkit.createComposite(viewChannelsGroup);
         gridData = new GridData(SWT.RIGHT, SWT.BOTTOM, false, false);

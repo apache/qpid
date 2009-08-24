@@ -237,6 +237,8 @@ public class ExchangeOperationsTabControl extends TabControl
         _keysTableViewer.setContentProvider(new ContentProviderImpl(BINDING_KEY));
         _keysTableViewer.setLabelProvider(new LabelProviderImpl(BINDING_KEY));
         _keysTableViewer.setSorter(tableSorter);
+        _keysTable.setSortColumn(_keysTable.getColumn(0));
+        _keysTable.setSortDirection(SWT.UP);
         
         
         _queuesTable = new Table (tablesComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
@@ -287,6 +289,8 @@ public class ExchangeOperationsTabControl extends TabControl
         _queuesTableViewer.setContentProvider(new ContentProviderImpl(QUEUES));
         _queuesTableViewer.setLabelProvider(new LabelProviderImpl(QUEUES));
         _queuesTableViewer.setSorter(queuesTableSorter);
+        _queuesTable.setSortColumn(_queuesTable.getColumn(0));
+        _queuesTable.setSortDirection(SWT.UP);
         _queuesTableViewer.setInput(new String[]{"Select a binding key to view queues"});
         
         //listener for double clicking to open the selection mbean

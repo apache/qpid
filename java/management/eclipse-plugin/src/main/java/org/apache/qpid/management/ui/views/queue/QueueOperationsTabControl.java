@@ -358,6 +358,8 @@ public class QueueOperationsTabControl extends TabControl
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(tableSorter);
+        _table.setSortColumn(_table.getColumn(0));
+        _table.setSortDirection(SWT.UP);
         
         //Side Buttons
         Composite buttonsComposite = _toolkit.createComposite(tableAndButtonsComposite);
