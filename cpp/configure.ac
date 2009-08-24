@@ -66,6 +66,7 @@ if test x$GXX = xyes; then
 	# -Wunreachable-code -Wpadded -Winline
 	# -Wshadow - warns about boost headers.
 	if test "${enableval}" = yes; then
+	    gl_COMPILER_FLAGS(-Werror)
 	    gl_COMPILER_FLAGS(-pedantic)
 	    gl_COMPILER_FLAGS(-Wall)
 	    gl_COMPILER_FLAGS(-Wextra)

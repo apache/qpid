@@ -59,7 +59,7 @@ windows_dist = \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp
 
-EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist) $(top_srcdir)/src/boost
+EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
 
 # Define variables that are be appended to by this file and included .mk files.
 nobase_include_HEADERS =
