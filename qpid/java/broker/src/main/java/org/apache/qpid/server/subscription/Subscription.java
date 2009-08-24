@@ -59,7 +59,9 @@ public interface Subscription
 
     boolean isClosed();
 
-    boolean isBrowser();
+    boolean acquires();
+
+    boolean seesRequeues();
 
     void close();
 

@@ -439,7 +439,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 if (!sub.wouldSuspend(entry))
                 {
-                    if (!sub.isBrowser() && !entry.acquire(sub))
+                    if (sub.acquires() && !entry.acquire(sub))
                     {
                         // restore credit here that would have been taken away by wouldSuspend since we didn't manage
                         // to acquire the entry for this subscription
@@ -556,7 +556,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             Subscription sub = subscriberIter.getNode().getSubscription();
 
             // we don't make browsers send the same stuff twice
-            if (!sub.isBrowser())
+            if (sub.seesRequeues())
             {
                 updateLastSeenEntry(sub, entry);
             }
@@ -1255,7 +1255,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     {
                         if (!sub.wouldSuspend(node))
                         {
-                            if (!sub.isBrowser() && !node.acquire(sub))
+                            if (sub.acquires() && !node.acquire(sub))
                             {
                                 sub.restoreCredit(node);
                             }
@@ -1263,7 +1263,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                             {
                                 deliverMessage(sub, node);
 
-                                if (sub.isBrowser())
+                                if (!sub.acquires())
                                 {
                                     QueueEntry newNode = _entries.next(node);
 

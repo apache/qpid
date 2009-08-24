@@ -210,6 +210,16 @@ public class SubscriptionTestHelper implements Subscription
         return false;
     }
 
+    public boolean acquires()
+    {
+        return true;
+    }
+
+    public boolean seesRequeues()
+    {
+        return true;
+    }
+
     public boolean isBrowser()
     {
         return false;

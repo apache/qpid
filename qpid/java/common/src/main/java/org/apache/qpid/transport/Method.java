@@ -35,6 +35,7 @@ import static org.apache.qpid.transport.util.Functions.*;
 public abstract class Method extends Struct implements ProtocolEvent
 {
 
+
     public static final Method create(int type)
     {
         // XXX: should generate separate factories for separate
@@ -43,12 +44,18 @@ public abstract class Method extends Struct implements ProtocolEvent
     }
 
     // XXX: command subclass?
+    public static interface CompletionListener
+    {
+        public void onComplete(Method method);
+    }
+
     private int id;
     private int channel;
     private boolean idSet = false;
     private boolean sync = false;
     private boolean batch = false;
     private boolean unreliable = false;
+    private CompletionListener completionListener;
 
     public final int getId()
     {
@@ -59,6 +66,11 @@ public abstract class Method extends Struct implements ProtocolEvent
     {
         this.id = id;
         this.idSet = true;
+    }
+
+    boolean idSet()
+    {
+        return idSet;
     }
 
     public final int getChannel()
@@ -149,6 +161,21 @@ public abstract class Method extends Struct implements ProtocolEvent
         else
         {
             delegate.control(context, this);
+        }
+    }
+
+
+    public void setCompletionListener(CompletionListener completionListener)
+    {
+        this.completionListener = completionListener;
+    }
+
+    public void complete()
+    {
+        if(completionListener!= null)
+        {
+            completionListener.onComplete(this);
+            completionListener = null;            
         }
     }
 

@@ -448,7 +448,7 @@ public class Session extends SessionInvoker
         }
     }
 
-    boolean complete(int lower, int upper)
+    protected boolean complete(int lower, int upper)
     {
         //avoid autoboxing
         if(log.isDebugEnabled())
@@ -465,8 +465,9 @@ public class Session extends SessionInvoker
                 if (m != null)
                 {
                     commandBytes -= m.getBodySize();
+                    m.complete();
+                    commands[idx] = null;                    
                 }
-                commands[idx] = null;
             }
             if (le(lower, maxComplete + 1))
             {
@@ -561,7 +562,8 @@ public class Session extends SessionInvoker
                           "(state=%s)", state));
                 }
 
-                int next = commandsOut++;
+                int next;
+                next = commandsOut++;
                 m.setId(next);
 
                 if (isFull(next))
@@ -917,6 +919,14 @@ public class Session extends SessionInvoker
                         result.notifyAll();
                     }
                 }
+            }
+            if(state == CLOSED)
+            {
+                delegate.closed(this);
+            }
+            else
+            {
+                delegate.detached(this);
             }
         }
     }

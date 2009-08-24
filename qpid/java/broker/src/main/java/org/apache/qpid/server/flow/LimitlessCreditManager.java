@@ -34,7 +34,7 @@ public class LimitlessCreditManager extends AbstractFlowCreditManager implements
         return -1L;
     }
 
-    public void addCredit(long messageCredit, long bytesCredit)
+    public void restoreCredit(long messageCredit, long bytesCredit)
     {
     }
 

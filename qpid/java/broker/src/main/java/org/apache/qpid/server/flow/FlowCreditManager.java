@@ -38,11 +38,10 @@ public interface FlowCreditManager
 
     boolean removeListener(FlowCreditManagerListener listener);
 
-    public void addCredit(long messageCredit, long bytesCredit);
-
-    public void removeAllCredit();
+    public void restoreCredit(long messageCredit, long bytesCredit);
 
     public boolean hasCredit();
 
     public boolean useCreditForMessage(ServerMessage msg);
+
 }

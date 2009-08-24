@@ -27,9 +27,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.flow.*;
 import org.apache.qpid.AMQException;
@@ -37,12 +35,11 @@ import org.apache.qpid.AMQException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.nio.ByteBuffer;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
     private final IApplicationRegistry _appRegistry;
-    private Map<String, Subscription_0_10> _subscriptions = new HashMap<String, Subscription_0_10>();
+    private Map<String, Subscription_0_10> _subscriptions = new HashMap<String, Subscription_0_10>();    
 
     public ServerSessionDelegate(IApplicationRegistry appRegistry)
     {
@@ -62,7 +59,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageAccept(Session session, MessageAccept method)
     {
-        super.messageAccept(session, method);
+        ((ServerSession)session).accept(method.getTransfers());
     }
 
 
@@ -70,13 +67,13 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageReject(Session session, MessageReject method)
     {
-        super.messageReject(session, method);
+        ((ServerSession)session).reject(method.getTransfers());
     }
 
     @Override
     public void messageRelease(Session session, MessageRelease method)
     {
-        super.messageRelease(session, method);
+        ((ServerSession)session).release(method.getTransfers());
     }
 
     @Override
@@ -102,7 +99,8 @@ public class ServerSessionDelegate extends SessionDelegate
 
         //TODO null check
 
-        FlowCreditManager creditManager = new MessageOnlyCreditManager(0L);
+
+        FlowCreditManager_0_10 creditManager = new CreditCreditManager(0L,0L);
 
         // TODO filters
 
@@ -439,6 +437,36 @@ public class ServerSessionDelegate extends SessionDelegate
         super.queueQuery(session, method);
     }
 
+    @Override
+    public void messageSetFlowMode(Session ssn, MessageSetFlowMode sfm)
+    {
+        String destination = sfm.getDestination();
+
+        Subscription_0_10 sub = _subscriptions.get(destination);
+
+        // TODO null check
+
+        if(sub.isStopped())
+        {
+            sub.setFlowMode(sfm.getFlowMode());
+        }
+
+        
+
+    }
+
+    @Override
+    public void messageStop(Session ssn, MessageStop stop)
+    {
+        String destination = stop.getDestination();
+
+        Subscription_0_10 sub = _subscriptions.get(destination);
+
+        // TODO null check
+
+        sub.stop();
+
+    }
 
     @Override
     public void messageFlow(Session ssn, MessageFlow flow)
@@ -447,12 +475,20 @@ public class ServerSessionDelegate extends SessionDelegate
 
         Subscription_0_10 sub = _subscriptions.get(destination);
 
-        FlowCreditManager creditManager = sub.getCreditManager();
+        // TODO null check
 
-        if(flow.getUnit() == MessageCreditUnit.MESSAGE)
+        sub.addCredit(flow.getUnit(), flow.getValue());
+
+    }
+
+    @Override
+    public void closed(Session session)
+    {
+        super.closed(session);
+        for(Subscription_0_10 sub : _subscriptions.values())
         {
-            creditManager.addCredit(flow.getValue(), 0L);
+            sub.close();
+            ((ServerSession)session).releaseAll();
         }
-
     }
 }

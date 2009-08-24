@@ -119,6 +119,16 @@ public class MockSubscription implements Subscription
         return _closed;
     }
 
+    public boolean acquires()
+    {
+        return true;
+    }
+
+    public boolean seesRequeues()
+    {
+        return true;
+    }
+
     public boolean isSuspended()
     {
         return false;

@@ -43,7 +43,7 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
         return _bytesCredit;
     }
 
-    public synchronized void addCredit(long messageCredit, long bytesCredit)
+    public synchronized void restoreCredit(long messageCredit, long bytesCredit)
     {        
         _messageCredit += messageCredit;
         _bytesCredit += bytesCredit;

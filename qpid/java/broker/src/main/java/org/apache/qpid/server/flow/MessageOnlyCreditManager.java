@@ -43,7 +43,7 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
         return -1L;
     }
 
-    public void addCredit(long messageCredit, long bytesCredit)
+    public void restoreCredit(long messageCredit, long bytesCredit)
     {
         _messageCredit.addAndGet(messageCredit);
         setSuspended(false);

@@ -43,7 +43,7 @@ public class BytesOnlyCreditManager extends AbstractFlowCreditManager
         return _bytesCredit.get();
     }
 
-    public void addCredit(long messageCredit, long bytesCredit)
+    public void restoreCredit(long messageCredit, long bytesCredit)
     {
         _bytesCredit.addAndGet(bytesCredit);
         setSuspended(false);

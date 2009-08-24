@@ -33,7 +33,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -547,7 +546,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public void restoreCredit(final QueueEntry queueEntry)
     {
-        _creditManager.addCredit(1, queueEntry.getSize());
+        _creditManager.restoreCredit(1, queueEntry.getSize());
     }
 
 
@@ -626,4 +625,16 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         ProtocolOutputConverter converter = getChannel().getProtocolSession().getProtocolOutputConverter();
         converter.confirmConsumerAutoClose(getChannel().getChannelId(), getConsumerTag());
     }
+
+    public boolean acquires()
+    {
+        return !isBrowser();
+    }
+
+    public boolean seesRequeues()
+    {
+        return !isBrowser();
+    }
+
+    abstract boolean isBrowser();
 }

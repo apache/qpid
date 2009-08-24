@@ -184,4 +184,11 @@ public class SessionDelegate
         }
     }
 
+    public void closed(Session session)
+    {
+    }
+
+    public void detached(Session session)
+    {        
+    }
 }

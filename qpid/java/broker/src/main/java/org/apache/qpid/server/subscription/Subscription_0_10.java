@@ -22,11 +22,17 @@ package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.FailedDequeueException;
+import org.apache.qpid.server.queue.MessageCleanupException;
 import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.flow.CreditCreditManager;
+import org.apache.qpid.server.flow.WindowCreditManager;
+import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.transport.ServerSession;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.*;
@@ -35,9 +41,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
-
-import sun.awt.X11.XSystemTrayPeer;
 
 public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener
 {
@@ -49,7 +54,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
 
 
-    private FlowCreditManager _creditManager;
+    private FlowCreditManager_0_10 _creditManager;
 
 
     private StateListener _stateListener = new StateListener()
@@ -66,11 +71,14 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final FilterManager _filters;
     private final MessageAcceptMode _acceptMode;
     private final MessageAcquireMode _acquireMode;
+    private MessageFlowMode _flowMode;
     private final ServerSession _session;
+    private AtomicBoolean _stopped = new AtomicBoolean(true);
+    private ConcurrentHashMap<Integer, QueueEntry> _sentMap = new ConcurrentHashMap<Integer, QueueEntry>();
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
-                             MessageAcquireMode acquireMode, FlowCreditManager creditManager, FilterManager filters)
+                             MessageAcquireMode acquireMode, FlowCreditManager_0_10 creditManager, FilterManager filters)
     {
         _session = session;
         _destination = destination;
@@ -159,7 +167,12 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public boolean isBrowser()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return _acquireMode == MessageAcquireMode.NOT_ACQUIRED;
+    }
+
+    public boolean seesRequeues()
+    {
+        return _acquireMode != MessageAcquireMode.NOT_ACQUIRED || _acceptMode == MessageAcceptMode.EXPLICIT;
     }
 
     public void close()
@@ -218,7 +231,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     }
 
 
-    public void send(QueueEntry entry) throws AMQException
+    public void send(final QueueEntry entry) throws AMQException
     {
         ServerMessage serverMsg = entry.getMessage();
 
@@ -278,12 +291,76 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         deliveryProps.setRedelivered(entry.isRedelivered());
 
         newHeaders.add(deliveryProps);
-        xfr.setHeader(new Header(newHeaders));
+        xfr.setHeader(new Header(newHeaders));                
+
+        if(_acceptMode == MessageAcceptMode.NONE)
+        {
+            xfr.setCompletionListener(new MessageAcceptCompletionListener(this, _session, entry));
+        }
+
 
 
         _session.sendMessage(xfr);
 
+        if(_acceptMode == MessageAcceptMode.EXPLICIT)
+        {
+            // potential race condition if incomming commands on this session can be processed on a different thread
+            // to this one (i.e. the message is only put in the map *after* it has been sent, theoretically we could get
+            // acknowledgement back before reaching the next line)
+            _session.onMessageDispositionChange(xfr, new ServerSession.MessageDispositionChangeListener()
+                                        {
+                                            public void onAccept()
+                                            {
+                                                acknowledge(entry);
+                                            }
 
+                                            public void onRelease()
+                                            {
+                                                release(entry);
+                                            }
+
+                                            public void onReject()
+                                            {
+                                                reject(entry);
+                                            }
+            });
+        }
+        else
+        {
+            _session.onMessageDispositionChange(xfr, new ServerSession.MessageDispositionChangeListener()
+                                        {
+                                            public void onAccept()
+                                            {
+                                                // TODO : should log error of explicit accept on non-explicit sub
+                                            }
+
+                                            public void onRelease()
+                                            {
+                                                release(entry);
+                                            }
+
+                                            public void onReject()
+                                            {
+                                                reject(entry);
+                                            }
+
+            });
+        }
+
+
+    }
+
+    private void reject(QueueEntry entry)
+    {
+        entry.setRedelivered(true);
+        entry.reject(this);
+
+    }
+
+    private void release(QueueEntry entry)
+    {
+        entry.setRedelivered(true);
+        entry.release();
     }
 
     public void queueDeleted(AMQQueue queue)
@@ -308,7 +385,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public void restoreCredit(QueueEntry queueEntry)
     {
-        _creditManager.addCredit(1, queueEntry.getSize());
+        _creditManager.restoreCredit(1, queueEntry.getSize());
     }
 
     public void setStateListener(StateListener listener)
@@ -342,20 +419,92 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     }
 
 
-    public FlowCreditManager getCreditManager()
+    public FlowCreditManager_0_10 getCreditManager()
     {
         return _creditManager;
     }
 
-    public void setCreditManager(FlowCreditManager creditManager)
+
+    public void stop()
     {
-        _creditManager.removeListener(this);
+        if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
+        {
+            _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
+        }
+        _stopped.set(true);
+    }
 
-        _creditManager = creditManager;
+    public void addCredit(MessageCreditUnit unit, long value)
+    {
+        FlowCreditManager_0_10 creditManager = getCreditManager();
 
-        creditManager.addStateListener(this);
+        switch (unit)
+        {
+            case MESSAGE:
+
+                creditManager.addCredit(value, 0L);
+                break;
+            case BYTE:
+                creditManager.addCredit(0L, value);
+                break;
+        }
+
+        _stopped.set(false);
+
+        if(creditManager.hasCredit())
+        {
+            if(_state.compareAndSet(State.SUSPENDED, State.ACTIVE))
+            {
+                _stateListener.stateChange(this, State.SUSPENDED, State.ACTIVE);
+            }
+        }
 
     }
 
+    public void setFlowMode(MessageFlowMode flowMode)
+    {
 
+        _creditManager.removeListener(this);
+
+        switch(flowMode)
+        {
+            case CREDIT:
+                _creditManager = new CreditCreditManager(0l,0l);
+                break;
+            case WINDOW:
+                _creditManager = new WindowCreditManager(0l,0l);
+                break;
+            default:
+                throw new RuntimeException("Unknown message flow mode: " + flowMode);
+        }
+        _creditManager.addStateListener(this);
+    }
+
+    public boolean isStopped()
+    {
+        return _stopped.get();
+    }
+
+    public boolean acquires()
+    {
+        return _acquireMode == MessageAcquireMode.PRE_ACQUIRED;
+    }
+
+    public void acknowledge(QueueEntry entry)
+    {
+        // TODO Fix Store Context / cleanup
+
+        try
+        {
+            entry.discard(new StoreContext());
+        }
+        catch (FailedDequeueException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        catch (MessageCleanupException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+    }
 }
