@@ -882,7 +882,7 @@ public class AttributesTabControl extends TabControl
         {
             attribute = (AttributeData) element;
             if (attribute.isWritable())
-                return Display.getCurrent().getSystemColor(SWT.COLOR_DARK_BLUE);
+                return Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
             else
                 return Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
         }
