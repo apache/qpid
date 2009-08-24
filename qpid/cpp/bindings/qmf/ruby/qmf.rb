@@ -174,11 +174,18 @@ module Qmf
           @impl = Qmfengine::ObjectId.new
         end
       end
+
       def object_num_high
         return @impl.getObjectNumHi
       end
+
       def object_num_low
         return @impl.getObjectNumLo
+      end
+
+      def ==(other)
+        return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
+           (@impl.getObjectNumLo == other.impl.getObjectNumLo)
       end
     end
 
