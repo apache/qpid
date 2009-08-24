@@ -485,7 +485,8 @@ class ReceiverTests(Base):
     self.sleep()
     self.assertPending(self.rcv, 5)
 
-    self.drain(self.rcv)
+    drained = self.drain(self.rcv)
+    assert len(drained) == 10
     self.assertPending(self.rcv, 0)
 
     self.ssn.acknowledge()
@@ -493,15 +494,15 @@ class ReceiverTests(Base):
   def testCapacityUNLIMITED(self):
     self.rcv.capacity = UNLIMITED
     self.rcv.start()
-    assert self.rcv.pending() == 0
+    self.assertPending(self.rcv, 0)
 
     for i in range(10):
       self.send("testCapacityUNLIMITED", i)
     self.sleep()
-    assert self.rcv.pending() == 10
+    self.assertPending(self.rcv, 10)
 
     self.drain(self.rcv)
-    assert self.rcv.pending() == 0
+    self.assertPending(self.rcv, 0)
 
     self.ssn.acknowledge()
 
