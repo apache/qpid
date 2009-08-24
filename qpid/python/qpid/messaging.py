@@ -1006,6 +1006,9 @@ class Driver(Lockable):
 
     if snd.closed:
       del self._attachments[snd]
+      return None
+    else:
+      return _snd
 
   def link_in(self, rcv):
     _ssn = self._attachments[rcv.session]
@@ -1037,6 +1040,9 @@ class Driver(Lockable):
       _ssn.sync()
       del self._attachments[rcv]
       rcv.closed = True
+      return None
+    else:
+      return _rcv
 
   def process(self, ssn):
     if ssn.closing: return
@@ -1113,7 +1119,7 @@ class Driver(Lockable):
 
   def grant(self, rcv):
     _ssn = self._attachments[rcv.session]
-    _rcv = self._attachments[rcv]
+    _rcv = self.link_in(rcv)
 
     if rcv.granted is UNLIMITED:
       if rcv.impending is UNLIMITED:
@@ -1149,7 +1155,7 @@ class Driver(Lockable):
 
   def send(self, snd, msg):
     _ssn = self._attachments[snd.session]
-    _snd = self._attachments[snd]
+    _snd = self.link_out(snd)
 
     # XXX: what if subject is specified for a normal queue?
     if _snd._routing_key is None:
