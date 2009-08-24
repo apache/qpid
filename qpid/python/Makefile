@@ -37,7 +37,7 @@ $(BUILD)/%.py: %.py
 	./preppy $(PYTHON_VERSION) < $< > $@
 
 $(BUILD)/%.pyc: $(BUILD)/%.py
-	python -m py_compile $<
+	python -c "import py_compile; py_compile.main()" $<
 
 $(BUILD)/qpid_config.py: qpid_config.py
 	@mkdir -p $(BUILD)
