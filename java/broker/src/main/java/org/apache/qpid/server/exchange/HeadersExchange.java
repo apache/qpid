@@ -204,11 +204,21 @@ public class HeadersExchange extends AbstractExchange
             for (int i = 0; i < bindings.length; i++)
             {
                 String[] keyAndValue = bindings[i].split("=");
-                if (keyAndValue == null || keyAndValue.length < 2)
+                if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2)
                 {
                     throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
                 }
-                bindingMap.setString(keyAndValue[0], keyAndValue[1]);
+                
+                if(keyAndValue.length ==1)
+                {
+                    //no value was given, only a key. Use an empty value
+                    //to signal match on key presence alone
+                    bindingMap.setString(keyAndValue[0], "");
+                }
+                else
+                {
+                    bindingMap.setString(keyAndValue[0], keyAndValue[1]);
+                }
             }
 
             _bindings.add(new Registration(new HeadersBinding(bindingMap), queue));
