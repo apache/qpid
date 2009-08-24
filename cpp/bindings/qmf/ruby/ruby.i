@@ -38,7 +38,7 @@
 
 %typemap (out) uint16_t
 {
-    $result = UINT2NUM((unsigned short) $1);
+    $result = UINT2NUM((uint16_t) $1);
 }
 
 %typemap (in) uint32_t
@@ -51,7 +51,7 @@
 
 %typemap (out) uint32_t
 {
-    $result = UINT2NUM((unsigned int) $1);
+    $result = UINT2NUM((uint32_t) $1);
 }
 
 %typemap (in) int32_t
@@ -64,7 +64,7 @@
 
 %typemap (out) int32_t
 {
-    $result = INT2NUM((int) $1);
+    $result = INT2NUM((int32_t) $1);
 }
 
 %typemap (typecheck, precedence=SWIG_TYPECHECK_INTEGER) uint32_t {
@@ -73,25 +73,28 @@
 
 %typemap (in) uint64_t
 {
-    $1 = NUM2ULONG ($input);
+    if (TYPE($input) == T_BIGNUM)
+        $1 = NUM2ULL($input);
+    else
+        $1 = (uint64_t) FIX2LONG($input);
 }
 
 %typemap (out) uint64_t
 {
-    $result = ULONG2NUM((long) $1);
+    $result = ULL2NUM((uint64_t) $1);
 }
 
 %typemap (in) int64_t
 {
     if (TYPE($input) == T_BIGNUM)
-        $1 = NUM2LONG($input);
+        $1 = NUM2LL($input);
     else
-        $1 = FIX2LONG($input);
+        $1 = (int64_t) FIX2LONG($input);
 }
 
 %typemap (out) int64_t
 {
-    $result = LONG2NUM((long) $1);
+    $result = LL2NUM((int64_t) $1);
 }
 
 %typemap (typecheck, precedence=SWIG_TYPECHECK_INTEGER) uint64_t {
