@@ -22,6 +22,7 @@ package org.apache.qpid.management.ui.views.exchange;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.management.MBeanServerConnection;
@@ -48,6 +49,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -60,6 +62,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
@@ -182,7 +185,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         final TableSorter tableSorter = new TableSorter(BINDING_NUM);
         
         String[] titles = {"Binding Number", "Queue Name"};
-        int[] bounds = {125, 175};
+        int[] bounds = {135, 175};
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;
@@ -494,25 +497,38 @@ public class HeadersExchangeOperationsTabControl extends TabControl
     private void createNewBinding(Shell parent)
     {
         final Shell shell = ViewUtility.createModalDialogShell(parent, "Create New Binding");
-
-        Composite destinationComposite = _toolkit.createComposite(shell, SWT.NONE);
-        destinationComposite.setBackground(shell.getBackground());
-        destinationComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        destinationComposite.setLayout(new GridLayout(2,false));
+      
+        Composite queueNameComposite = _toolkit.createComposite(shell, SWT.NONE);
+        queueNameComposite.setBackground(shell.getBackground());
+        GridData layoutData = new GridData(SWT.CENTER, SWT.TOP, true, false);
+        layoutData.minimumWidth = 300;
+        queueNameComposite.setLayoutData(layoutData);
+        queueNameComposite.setLayout(new GridLayout(2,false));
         
-        _toolkit.createLabel(destinationComposite,"Queue:").setBackground(shell.getBackground());
-        final Combo destinationCombo = new Combo(destinationComposite,SWT.NONE | SWT.READ_ONLY);
+        _toolkit.createLabel(queueNameComposite,"Queue:").setBackground(shell.getBackground());
+        final Combo destinationCombo = new Combo(queueNameComposite,SWT.NONE | SWT.READ_ONLY);
         destinationCombo.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
-        Composite bindingComposite = _toolkit.createComposite(shell, SWT.NONE);
-        bindingComposite.setBackground(shell.getBackground());
-        bindingComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        bindingComposite.setLayout(new GridLayout(2,false));
+        final ScrolledComposite scrolledComposite = new ScrolledComposite(shell, SWT.V_SCROLL);
+        scrolledComposite.setExpandHorizontal(true);
+        scrolledComposite.setLayout(new GridLayout());
+        scrolledComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        scrolledComposite.setBackground(shell.getBackground());
         
-        _toolkit.createLabel(bindingComposite,"Binding:").setBackground(shell.getBackground());
-        final Text bindingText = new Text(bindingComposite, SWT.BORDER);
-        bindingText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-
+        final Composite bindingComposite = _toolkit.createComposite(scrolledComposite, SWT.NONE);
+        bindingComposite.setBackground(scrolledComposite.getBackground());
+        bindingComposite.setLayout(new GridLayout(2,true));
+        layoutData = new GridData(SWT.FILL, SWT.TOP, true, false);
+        bindingComposite.setLayoutData(layoutData);
+        scrolledComposite.setContent(bindingComposite);
+        
+        Composite addMoreButtonComp = _toolkit.createComposite(shell);
+        addMoreButtonComp.setBackground(shell.getBackground());
+        addMoreButtonComp.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, true));
+        addMoreButtonComp.setLayout(new GridLayout());
+        
+        final Button addMoreButton = _toolkit.createButton(addMoreButtonComp, "Add additional field", SWT.PUSH);
+        
         Composite okCancelButtonsComp = _toolkit.createComposite(shell);
         okCancelButtonsComp.setBackground(shell.getBackground());
         okCancelButtonsComp.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, true));
@@ -536,26 +552,106 @@ public class HeadersExchangeOperationsTabControl extends TabControl
             destinationCombo.setItems(queueList.toArray(new String[0]));
         }
         destinationCombo.select(0);
+
+        final HashMap<Text, Text> headerBindingHashMap = new HashMap<Text, Text>();
+        
+        //add headings
+        Label keyLabel = _toolkit.createLabel(bindingComposite,"Key:");
+        keyLabel.setBackground(bindingComposite.getBackground());
+        keyLabel.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false));
+        
+        Label valueLabel = _toolkit.createLabel(bindingComposite,"Value:");
+        valueLabel.setBackground(bindingComposite.getBackground());
+        valueLabel.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false));
+        
+        //add the x-match key by default and offer a comobo to select its value
+        final Text xmatchKeyText = new Text(bindingComposite, SWT.BORDER);
+        xmatchKeyText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        xmatchKeyText.setText("x-match");
+        xmatchKeyText.setEditable(false);
+        
+        final Combo xmatchValueCombo = new Combo(bindingComposite,SWT.NONE | SWT.READ_ONLY);
+        xmatchValueCombo.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        xmatchValueCombo.setItems(new String[]{"any", "all"});
+        xmatchValueCombo.select(0);
+        
+        //make some empty key-value fields
+        for(int i=0; i < 4; i++)
+        {
+            Text keyText = new Text(bindingComposite, SWT.BORDER);
+            Text valueText = new Text(bindingComposite, SWT.BORDER);
+            keyText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+            valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+            headerBindingHashMap.put(keyText, valueText);
+        }
+        bindingComposite.setSize(bindingComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        
+        //allow adding more fields for additional key-value pairs
+        addMoreButton.addSelectionListener(new SelectionAdapter()
+        {
+            public void widgetSelected(SelectionEvent e)
+            {
+                Text keyText = new Text(bindingComposite, SWT.BORDER);
+                Text valueText = new Text(bindingComposite, SWT.BORDER);
+                keyText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+                valueText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+
+                headerBindingHashMap.put(keyText, valueText);
+
+                bindingComposite.setSize(bindingComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+                bindingComposite.layout(true);
+                scrolledComposite.layout(true);
+            }
+        });
         
         okButton.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
             {
-                String binding = bindingText.getText();
-                
-                if (binding == null || binding.length() == 0)
-                {                            
-                    ViewUtility.popupErrorMessage("Create New Binding", "Please enter a valid binding");
-                    return;
-                }
+                String xMatchString = xmatchValueCombo.getText();
                 
                 String destQueue = destinationCombo.getItem(destinationCombo.getSelectionIndex()).toString();
+                
+                StringBuffer bindingValue = new StringBuffer();
+
+                //insert the x-match key-value pair
+                if (xMatchString.equalsIgnoreCase("any"))
+                {                            
+                    bindingValue.append("x-match=any");
+                }
+                else
+                {
+                    bindingValue.append("x-match=all");
+                }
+                
+                //insert the other key-value pairs
+                for (Text keyText : headerBindingHashMap.keySet())
+                {
+                    
+                    String key = keyText.getText();
+                    if(key == null || key.length() == 0)
+                    {
+                        continue;
+                    }
+                    
+                    Text valueText = headerBindingHashMap.get(keyText);
+                    String value = valueText.getText();
+                    
+                    bindingValue.append(",");
+                    bindingValue.append(key + "=");
+                    //empty values are permitted, signalling only key-presence is required
+                    if(value != null && value.length() > 0)
+                    {
+                        bindingValue.append(value);
+                    }
+                }
                 
                 shell.dispose();
 
                 try
                 {
-                    _emb.createNewBinding(destQueue, binding);
+                    _emb.createNewBinding(destQueue, bindingValue.toString());
                     ViewUtility.operationResultFeedback(null, "Created new Binding", null);
                 }
                 catch (Exception e4)
