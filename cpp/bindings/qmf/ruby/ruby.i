@@ -43,12 +43,28 @@
 
 %typemap (in) uint32_t
 {
-    $1 = NUM2UINT ($input);
+    if (TYPE($input) == T_BIGNUM)
+        $1 = NUM2UINT($input);
+    else
+        $1 = FIX2UINT($input);
 }
 
 %typemap (out) uint32_t
 {
     $result = UINT2NUM((unsigned int) $1);
+}
+
+%typemap (in) int32_t
+{
+    if (TYPE($input) == T_BIGNUM)
+        $1 = NUM2INT($input);
+    else
+        $1 = FIX2INT($input);
+}
+
+%typemap (out) int32_t
+{
+    $result = INT2NUM((int) $1);
 }
 
 %typemap (typecheck, precedence=SWIG_TYPECHECK_INTEGER) uint32_t {
@@ -62,7 +78,20 @@
 
 %typemap (out) uint64_t
 {
-    $result = ULONG2NUM((unsigned long) $1);
+    $result = ULONG2NUM((long) $1);
+}
+
+%typemap (in) int64_t
+{
+    if (TYPE($input) == T_BIGNUM)
+        $1 = NUM2LONG($input);
+    else
+        $1 = FIX2LONG($input);
+}
+
+%typemap (out) int64_t
+{
+    $result = LONG2NUM((long) $1);
 }
 
 %typemap (typecheck, precedence=SWIG_TYPECHECK_INTEGER) uint64_t {
