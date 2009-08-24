@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
         return broker.execute(options.get());
     }
     catch(const exception& e) {
-        QPID_LOG(critical, "Broker start-up failed: " << e.what());
+        QPID_LOG(critical, "Unexpected error: " << e.what());
     }
     return 1;
 }
