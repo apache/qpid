@@ -23,7 +23,13 @@ DATA_DIR=$(PREFIX)/share
 
 PYTHON_LIB=$(shell python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(prefix='$(PREFIX)')")
 PYTHON_VERSION=$(shell python -c "from distutils.sysconfig import get_python_version; print get_python_version()")
-AMQP_SPEC_DIR=$(abspath $(DATA_DIR)/amqp)
+
+ddfirst=$(shell ddir=$(DATA_DIR) && echo $${ddir:0:1})
+ifeq ($(ddfirst),/)
+AMQP_SPEC_DIR=$(DATA_DIR)/amqp
+else
+AMQP_SPEC_DIR=$(PWD)/$(DATA_DIR)/amqp
+endif
 
 DIRS=qmf qpid mllib models examples tests tests_0-8 tests_0-9 tests_0-10
 SRCS=$(shell find $(DIRS) -name "*.py") qpid_config.py
