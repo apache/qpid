@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
         receiver.setListener(&listener);
         receiver.setCapacity(1);
         receiver.start();
-        while (session.dispatch() && !listener.isFinished());
+        while (session.dispatch() && !listener.isFinished()) ;
         connection.close();
         return 0;
     } catch(const std::exception& error) {

@@ -274,7 +274,7 @@ QPID_AUTO_TEST_CASE(testSessionDispatch)
         s.send(msg);
     }    
 
-    while (fix.session.dispatch(qpid::sys::TIME_SEC));
+    while (fix.session.dispatch(qpid::sys::TIME_SEC)) ;
     
     BOOST_CHECK_EQUAL(collector.messageData, boost::assign::list_of<std::string>("Message_1")("Message_2")("Message_3"));
 }

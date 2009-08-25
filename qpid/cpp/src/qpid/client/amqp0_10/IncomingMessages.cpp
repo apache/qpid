@@ -114,7 +114,7 @@ void IncomingMessages::releaseAll()
     }
     //then pump out any available messages from incoming queue...
     GetAny handler;
-    while (process(&handler, 0));
+    while (process(&handler, 0)) ;
     //now release all messages
     session.messageRelease(unaccepted);
     unaccepted.clear();
@@ -123,11 +123,11 @@ void IncomingMessages::releaseAll()
 void IncomingMessages::releasePending(const std::string& destination)
 {
     //first pump all available messages from incoming to received...
-    while (process(0, 0));
+    while (process(0, 0)) ;
 
     //now remove all messages for this destination from received list, recording their ids...
     MatchAndTrack match(destination);
-    for (FrameSetQueue::iterator i = received.begin(); i != received.end(); i = match(*i) ? received.erase(i) : ++i);
+    for (FrameSetQueue::iterator i = received.begin(); i != received.end(); i = match(*i) ? received.erase(i) : ++i) ;
     //now release those messages
     session.messageRelease(match.ids);
 }
