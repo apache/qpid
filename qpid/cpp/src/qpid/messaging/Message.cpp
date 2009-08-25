@@ -1,0 +1,325 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+#include "qpid/messaging/Message.h"
+#include "qpid/messaging/Address.h"
+#include "qpid/messaging/Codec.h"
+#include "qpid/messaging/MessageContent.h"
+#include "qpid/messaging/Variant.h"
+
+namespace qpid {
+namespace client {
+}
+
+namespace messaging {
+
+namespace {
+const std::string EMPTY_STRING = "";
+}
+
+struct MessageImpl : MessageContent
+{
+    Address replyTo;
+    std::string subject;
+    std::string contentType;
+    VariantMap headers;
+
+    std::string bytes;
+    Variant content;//used only for LIST and MAP
+    VariantType type;//if LIST, MAP content holds the value; if VOID bytes holds the value
+
+    void* internalId;
+
+    MessageImpl(const std::string& c);
+    MessageImpl(const char* chars, size_t count);
+
+    void setReplyTo(const Address& d);
+    const Address& getReplyTo() const;
+    
+    void setSubject(const std::string& s);
+    const std::string& getSubject() const;
+    
+    void setContentType(const std::string& s);
+    const std::string& getContentType() const;
+    
+    const VariantMap& getHeaders() const;
+    VariantMap& getHeaders();
+    
+    void setBytes(const std::string& bytes);
+    void setBytes(const char* chars, size_t count);
+    const std::string& getBytes() const;
+    std::string& getBytes();
+
+    void setInternalId(void*);
+    void* getInternalId();
+
+    bool isVoid() const;
+
+    const std::string& asString() const;
+    std::string& asString();
+
+    const char* asChars() const;
+    size_t size() const;
+
+    const Variant::Map& asMap() const;
+    Variant::Map& asMap();
+    bool isMap() const;
+
+    const Variant::List& asList() const;
+    Variant::List& asList();
+    bool isList() const;
+
+    void clear();
+
+    void encode(Codec& codec);
+    void decode(Codec& codec);
+
+    Variant& operator[](const std::string&);
+
+    std::ostream& print(std::ostream& out) const;
+
+    //operator<< for variety of types...
+    MessageContent& operator<<(const std::string&);
+    MessageContent& operator<<(const char*);
+    MessageContent& operator<<(bool);
+    MessageContent& operator<<(int8_t);
+    MessageContent& operator<<(int16_t);
+    MessageContent& operator<<(int32_t);
+    MessageContent& operator<<(int64_t);
+    MessageContent& operator<<(uint8_t);
+    MessageContent& operator<<(uint16_t);
+    MessageContent& operator<<(uint32_t);
+    MessageContent& operator<<(uint64_t);
+    MessageContent& operator<<(double);
+    MessageContent& operator<<(float);
+
+    //assignment from string, map and list
+    MessageContent& operator=(const std::string&);
+    MessageContent& operator=(const char*);
+    MessageContent& operator=(const Variant::Map&);
+    MessageContent& operator=(const Variant::List&);
+
+    template <class T> MessageContent& append(T& t);
+};
+
+MessageImpl::MessageImpl(const std::string& c) : bytes(c), type(VOID), internalId(0) {}
+MessageImpl::MessageImpl(const char* chars, size_t count) : bytes(chars, count), type(VOID), internalId(0) {}
+
+void MessageImpl::setReplyTo(const Address& d) { replyTo = d; }
+const Address& MessageImpl::getReplyTo() const { return replyTo; }
+
+void MessageImpl::setSubject(const std::string& s) { subject = s; }
+const std::string& MessageImpl::getSubject() const { return subject; }
+
+void MessageImpl::setContentType(const std::string& s) { contentType = s; }
+const std::string& MessageImpl::getContentType() const { return contentType; }
+
+const VariantMap& MessageImpl::getHeaders() const { return headers; }
+VariantMap& MessageImpl::getHeaders() { return headers; }
+
+//should these methods be on MessageContent?
+void MessageImpl::setBytes(const std::string& c) { clear(); bytes = c; }
+void MessageImpl::setBytes(const char* chars, size_t count) { clear(); bytes.assign(chars, count); }
+const std::string& MessageImpl::getBytes() const { return bytes; }
+std::string& MessageImpl::getBytes() { return bytes; }
+
+
+Variant& MessageImpl::operator[](const std::string& key) { return asMap()[key]; }
+
+std::ostream& MessageImpl::print(std::ostream& out) const
+{
+    if (type == MAP) {
+        return out << content.asMap();
+    } else if (type == LIST) {
+        return out << content.asList();
+    } else {
+        return out << bytes;
+    }
+}
+
+template <class T> MessageContent& MessageImpl::append(T& t)
+{
+    if (type == VOID) {
+        //TODO: this is inefficient, probably want to hold on to the stream object
+        std::stringstream s;
+        s << bytes;
+        s << t;
+        bytes = s.str();
+    } else if (type == LIST) {
+        content.asList().push_back(Variant(t));
+    } else {
+        throw InvalidConversion("<< operator only valid on strings and lists");
+    }
+    return *this;
+}
+
+MessageContent& MessageImpl::operator<<(const std::string& v) { return append(v); }
+MessageContent& MessageImpl::operator<<(const char* v) { return append(v); }
+MessageContent& MessageImpl::operator<<(bool v) { return append(v); }
+MessageContent& MessageImpl::operator<<(int8_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(int16_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(int32_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(int64_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(uint8_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(uint16_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(uint32_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(uint64_t v) { return append(v); }
+MessageContent& MessageImpl::operator<<(double v) { return append(v); }
+MessageContent& MessageImpl::operator<<(float v) { return append(v); }
+MessageContent& MessageImpl::operator=(const std::string& s) 
+{ 
+    type = VOID;
+    bytes = s; 
+    return *this;
+}
+MessageContent& MessageImpl::operator=(const char* c) 
+{ 
+    type = VOID;
+    bytes = c;
+    return *this;
+}
+MessageContent& MessageImpl::operator=(const Variant::Map& m)
+{ 
+    type = MAP;
+    content = m; 
+    return *this;
+}
+
+MessageContent& MessageImpl::operator=(const Variant::List& l)
+{ 
+    type = LIST;
+    content = l; 
+    return *this;
+}
+
+void MessageImpl::encode(Codec& codec)
+{
+    if (content.getType() != VOID) {
+        bytes = EMPTY_STRING;
+        codec.encode(content, bytes);
+    }
+}
+
+void MessageImpl::decode(Codec& codec) 
+{
+    codec.decode(bytes, content);    
+    if (content.getType() == MAP) type = MAP;
+    else if (content.getType() == LIST) type = LIST;
+    else type = VOID;//TODO: what if codec set some type other than map or list??
+}
+
+void MessageImpl::setInternalId(void* i) { internalId = i; }
+void* MessageImpl::getInternalId() { return internalId; }
+
+bool MessageImpl::isVoid() const { return type == VOID; }
+
+const std::string& MessageImpl::asString() const 
+{ 
+    if (isVoid()) return getBytes();
+    else return content.getString();//will throw an error
+}
+std::string& MessageImpl::asString()
+{ 
+    if (isVoid()) return getBytes();
+    else return content.getString();//will throw an error
+}
+
+const char* MessageImpl::asChars() const
+{
+    if (!isVoid()) throw InvalidConversion("Content is of structured type.");
+    return bytes.data();
+}
+size_t MessageImpl::size() const
+{
+    return bytes.size();
+}
+
+const Variant::Map& MessageImpl::asMap() const { return content.asMap(); }
+Variant::Map& MessageImpl::asMap()
+{ 
+    if (isVoid()) {
+        content = Variant::Map(); 
+        type = MAP; 
+    }
+    return content.asMap(); 
+}
+bool MessageImpl::isMap() const { return type == MAP; }
+
+const Variant::List& MessageImpl::asList() const { return content.asList(); }
+Variant::List& MessageImpl::asList()
+{ 
+    if (isVoid()) {
+        content = Variant::List(); 
+        type = LIST; 
+    }
+    return content.asList(); 
+}
+bool MessageImpl::isList() const { return type == LIST; }
+
+void MessageImpl::clear() { bytes = EMPTY_STRING; content.reset(); type = VOID; } 
+
+
+Message::Message(const std::string& bytes) : impl(new MessageImpl(bytes)) {}
+Message::Message(const char* bytes, size_t count) : impl(new MessageImpl(bytes, count)) {}
+
+Message::Message(const Message& m) : impl(new MessageImpl(m.getBytes())) {}
+Message::~Message() { delete impl; }
+
+Message& Message::operator=(const Message& m) { *impl = *m.impl; return *this; }
+
+void Message::setReplyTo(const Address& d) { impl->setReplyTo(d); }
+const Address& Message::getReplyTo() const { return impl->getReplyTo(); }
+
+void Message::setSubject(const std::string& s) { impl->setSubject(s); }
+const std::string& Message::getSubject() const { return impl->getSubject(); }
+
+void Message::setContentType(const std::string& s) { impl->setContentType(s); }
+const std::string& Message::getContentType() const { return impl->getContentType(); }
+
+const VariantMap& Message::getHeaders() const { return impl->getHeaders(); }
+VariantMap& Message::getHeaders() { return impl->getHeaders(); }
+
+void Message::setBytes(const std::string& c) { impl->setBytes(c); }
+void Message::setBytes(const char* chars, size_t count) { impl->setBytes(chars, count); }
+const std::string& Message::getBytes() const { return impl->getBytes(); }
+std::string& Message::getBytes() { return impl->getBytes(); }
+
+const char* Message::getRawContent() const { return impl->getBytes().data(); }
+size_t Message::getContentSize() const { return impl->getBytes().size(); }
+
+MessageContent& Message::getContent() { return *impl; }
+const MessageContent& Message::getContent() const { return *impl; }
+void Message::setContent(const std::string& s) { *impl = s; }
+void Message::setContent(const Variant::Map& m) { *impl = m; }
+void Message::setContent(const Variant::List& l) { *impl = l; }
+
+void Message::encode(Codec& codec) { impl->encode(codec); }
+
+void Message::decode(Codec& codec) { impl->decode(codec); }
+
+void Message::setInternalId(void* i) { impl->setInternalId(i); }
+void* Message::getInternalId() { return impl->getInternalId(); }
+
+std::ostream& operator<<(std::ostream& out, const MessageContent& content)
+{
+    return content.print(out);
+}
+
+}} // namespace qpid::messaging

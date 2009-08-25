@@ -103,6 +103,7 @@ public:
     void markCompleted(const framing::SequenceSet& ids, bool notifyPeer);
     bool isComplete(const framing::SequenceNumber& id);
     bool isCompleteUpTo(const framing::SequenceNumber& id);
+    framing::SequenceNumber getCompleteUpTo();
     void waitForCompletion(const framing::SequenceNumber& id);
     void sendCompletion();
     void sendFlush();

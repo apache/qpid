@@ -95,6 +95,7 @@ set(unit_tests_to_build
     InlineAllocator
     InlineVector
     ClientSessionTest
+    MessagingSessionTest
     SequenceSet
     StringUtils
     IncompleteMessageList
@@ -128,6 +129,7 @@ set(unit_tests_to_build
     ReplicationTest
     ClientMessageTest
     PollableCondition
+    Variant
     ${xml_tests}
     CACHE STRING "Which unit tests to build"
    )

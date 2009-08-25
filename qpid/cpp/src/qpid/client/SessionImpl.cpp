@@ -202,6 +202,16 @@ bool SessionImpl::isCompleteUpTo(const SequenceNumber& id)
     return f.result;
 }
 
+framing::SequenceNumber SessionImpl::getCompleteUpTo()
+{
+    SequenceNumber firstIncomplete;
+    {
+        Lock l(state);
+        firstIncomplete = incompleteIn.front();
+    }
+    return --firstIncomplete;
+}
+
 struct MarkCompleted 
 {
     const SequenceNumber& id;
