@@ -123,6 +123,28 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, False)
 
+    def test_qpid_config_altex(self):
+        self.startQmf();
+        qmf = self.qmf
+        exName = "testalt"
+        altName = "amq.direct"
+
+        ret = os.system(self.command(" add exchange topic %s --alternate-exchange=%s" % (exName, altName)))
+        self.assertEqual(ret, 0)
+
+        exchanges = qmf.getObjects(_class="exchange")
+        found = False
+        for exchange in exchanges:
+            if exchange.name == altName:
+                self.assertEqual(exchange.altExchange, None)
+
+            if exchange.name == exName:
+                found = True
+                if not exchange.altExchange:
+                    self.fail("Alternate exchange not set")
+                self.assertEqual(exchange._altExchange_.name, altName)
+        self.assertEqual(found, True)
+
     def test_qpid_route(self):
         self.startQmf();
         qmf = self.qmf

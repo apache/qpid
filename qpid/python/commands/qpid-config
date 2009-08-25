@@ -190,6 +190,8 @@ class BrokerManager:
                 if ex.durable:    print "--durable",
                 if MSG_SEQUENCE in args and args[MSG_SEQUENCE] == 1: print "--sequence",
                 if IVE in args and args[IVE] == 1: print "--ive",
+                if ex.altExchange:
+                    print "--alternate-exchange=%s" % ex._altExchange_.name,
                 print
 
     def ExchangeListRecurse (self, filter):
