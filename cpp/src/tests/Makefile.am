@@ -65,6 +65,7 @@ unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
 	$(lib_client) $(lib_broker) $(lib_console)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
+	MessagingSessionTests.cpp \
 	ClientSessionTest.cpp \
 	BrokerFixture.h SocketProxy.h \
 	exception_test.cpp \
@@ -111,7 +112,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	FrameDecoder.cpp \
 	ReplicationTest.cpp \
 	ClientMessageTest.cpp \
-	PollableCondition.cpp
+	PollableCondition.cpp \
+	Variant.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp

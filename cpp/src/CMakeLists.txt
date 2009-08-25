@@ -523,6 +523,35 @@ set (libqpidclient_SOURCES
      qpid/client/SubscriptionImpl.cpp
      qpid/client/SubscriptionManager.cpp
      qpid/client/SubscriptionManagerImpl.cpp
+     qpid/messaging/Address.cpp
+     qpid/messaging/Connection.cpp
+     qpid/messaging/ConnectionImpl.h
+     qpid/messaging/Filter.cpp
+     qpid/messaging/Message.cpp
+     qpid/messaging/Receiver.cpp
+     qpid/messaging/ReceiverImpl.h
+     qpid/messaging/Session.cpp
+     qpid/messaging/SessionImpl.h
+     qpid/messaging/Sender.cpp
+     qpid/messaging/SenderImpl.h
+     qpid/messaging/Variant.cpp
+     qpid/client/amqp0_10/AddressResolution.h
+     qpid/client/amqp0_10/AddressResolution.cpp
+     qpid/client/amqp0_10/Codecs.cpp
+     qpid/client/amqp0_10/CompletionTracker.h
+     qpid/client/amqp0_10/CompletionTracker.cpp
+     qpid/client/amqp0_10/ConnectionImpl.h
+     qpid/client/amqp0_10/ConnectionImpl.cpp
+     qpid/client/amqp0_10/IncomingMessages.h
+     qpid/client/amqp0_10/IncomingMessages.cpp
+     qpid/client/amqp0_10/MessageSink.h
+     qpid/client/amqp0_10/MessageSource.h
+     qpid/client/amqp0_10/ReceiverImpl.h
+     qpid/client/amqp0_10/ReceiverImpl.cpp
+     qpid/client/amqp0_10/SessionImpl.h
+     qpid/client/amqp0_10/SessionImpl.cpp
+     qpid/client/amqp0_10/SenderImpl.h
+     qpid/client/amqp0_10/SenderImpl.cpp
 )
 add_library (qpidclient SHARED ${libqpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon)
