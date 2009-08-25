@@ -30,7 +30,7 @@ Areas that still need work:
   - protocol negotiation/multiprotocol impl
 """
 
-import connection, time, socket, sys, traceback
+import connection, time, socket, sys, compat
 from codec010 import StringCodec
 from datatypes import timestamp, uuid4, RangedSet, Message as Message010, Serial
 from exceptions import Timeout
@@ -907,7 +907,7 @@ class Driver(Lockable):
       exi = sys.exc_info()
 
     if exi:
-      msg = traceback.format_exc()
+      msg = compat.format_exc()
       recoverable = ["aborted", "Connection refused", "SessionDetached", "Connection reset by peer",
                      "Bad file descriptor", "start timed out", "Broken pipe"]
       for r in recoverable:
