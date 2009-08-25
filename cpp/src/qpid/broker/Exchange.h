@@ -132,7 +132,7 @@ public:
     qpid::framing::FieldTable& getArgs() { return args; }
 
     Exchange::shared_ptr getAlternate() { return alternate; }
-    void setAlternate(Exchange::shared_ptr _alternate) { alternate = _alternate; }
+    void setAlternate(Exchange::shared_ptr _alternate);
     void incAlternateUsers() { alternateUsers++; }
     void decAlternateUsers() { alternateUsers--; }
     bool inUseAsAlternate() { return alternateUsers > 0; }

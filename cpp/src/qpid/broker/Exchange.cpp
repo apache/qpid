@@ -91,7 +91,9 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
         ManagementAgent* agent = broker->getManagementAgent();
         if (agent != 0)
         {
-            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
+            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name);
+            mgmtExchange->set_durable(durable);
+            mgmtExchange->set_autoDelete(false);
             agent->addObject (mgmtExchange);
         }
     }
@@ -109,7 +111,9 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
         ManagementAgent* agent = broker->getManagementAgent();
         if (agent != 0)
         {
-            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name, durable);
+            mgmtExchange = new _qmf::Exchange (agent, this, parent, _name);
+            mgmtExchange->set_durable(durable);
+            mgmtExchange->set_autoDelete(false);
             mgmtExchange->set_arguments(args);
             if (!durable) {
                 if (name.empty()) {
@@ -137,6 +141,17 @@ Exchange::~Exchange ()
 {
     if (mgmtExchange != 0)
         mgmtExchange->resourceDestroy ();
+}
+
+void Exchange::setAlternate(Exchange::shared_ptr _alternate)
+{
+    alternate = _alternate;
+    if (mgmtExchange != 0) {
+        if (alternate.get() != 0)
+            mgmtExchange->set_altExchange(alternate->GetManagementObject()->getObjectId());
+        else
+            mgmtExchange->clr_altExchange();
+    }
 }
 
 void Exchange::setPersistenceId(uint64_t id) const
