@@ -79,7 +79,13 @@ void SessionImpl::reject(qpid::messaging::Message& m)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     //TODO: how do I get the id of the original transfer command? think this through some more...
-    SequenceNumber id(reinterpret_cast<uint32_t>(m.getInternalId()));
+
+    // [tross] The following hack was added to get this code to compile on a 64-bit machine.
+    //         It should be functionally equivalent to the original on a 32-bit architecture
+    //         but is almost certainly not what was intended by the author.
+    uint64_t rawId(reinterpret_cast<uint64_t>(m.getInternalId()));
+    SequenceNumber id((uint32_t) ((rawId & 0xFFFFFFFF) ^ ((rawId >> 32) & 0xFFFFFFFF)));
+
     SequenceSet set;
     set.add(id);
     session.messageReject(set);
