@@ -25,6 +25,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.PrincipalHolder;
 
 public class QueueDenier extends AllowAll
 {
@@ -48,7 +49,7 @@ public class QueueDenier extends AllowAll
 
     
     @Override
-    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
     {
         if (!(queue.getName().toString().equals(_queueName)))
         {

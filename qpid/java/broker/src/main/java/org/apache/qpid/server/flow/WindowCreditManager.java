@@ -201,4 +201,11 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
             _messageCreditLimit = -1;
         }
     }
+
+    public void clearCredit()
+    {
+        _bytesCreditLimit = 0l;
+        _messageCreditLimit = 0l;
+        setSuspended(true);
+    }
 }

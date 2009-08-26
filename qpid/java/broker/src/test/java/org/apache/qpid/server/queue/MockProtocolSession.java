@@ -186,7 +186,7 @@ public class MockProtocolSession implements AMQProtocolSession
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public Principal getAuthorizedID()
+    public Principal getPrincipal()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

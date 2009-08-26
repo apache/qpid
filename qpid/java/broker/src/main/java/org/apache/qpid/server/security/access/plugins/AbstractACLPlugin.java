@@ -26,6 +26,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.PrincipalHolder;
 
 /**
  * This ACLPlugin abstains from all votes. Useful if your plugin only cares about a few operations. 
@@ -35,63 +36,63 @@ public abstract class AbstractACLPlugin implements ACLPlugin
 
     private static final AuthzResult DEFAULT_ANSWER = AuthzResult.ABSTAIN;
 
-    public AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue,
+    public AuthzResult authoriseBind(PrincipalHolder session, Exchange exch, AMQQueue queue,
             AMQShortString routingKey)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost)
+    public AuthzResult authoriseConnect(PrincipalHolder session, VirtualHost virtualHost)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue)
+    public AuthzResult authoriseConsume(PrincipalHolder session, boolean noAck, AMQQueue queue)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
+    public AuthzResult authoriseConsume(PrincipalHolder session, boolean exclusive, boolean noAck, boolean noLocal,
             boolean nowait, AMQQueue queue)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
+    public AuthzResult authoriseCreateExchange(PrincipalHolder session, boolean autoDelete, boolean durable,
             AMQShortString exchangeName, boolean internal, boolean nowait, boolean passive, AMQShortString exchangeType)
     {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public AuthzResult authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable,
+    public AuthzResult authoriseCreateQueue(PrincipalHolder session, boolean autoDelete, boolean durable,
             boolean exclusive, boolean nowait, boolean passive, AMQShortString queue)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
+    public AuthzResult authorisePublish(PrincipalHolder session, boolean immediate, boolean mandatory,
             AMQShortString routingKey, Exchange e)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authorisePurge(PrincipalHolder session, AMQQueue queue)
     {
         return DEFAULT_ANSWER;
     }
 
-    public AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey,
+    public AuthzResult authoriseUnbind(PrincipalHolder session, Exchange exch, AMQShortString routingKey,
             AMQQueue queue)
     {
         return DEFAULT_ANSWER;

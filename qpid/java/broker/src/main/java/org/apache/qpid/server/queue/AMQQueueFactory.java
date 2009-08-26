@@ -26,6 +26,8 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Map;
+
 
 public class AMQQueueFactory
 {
@@ -82,5 +84,40 @@ public class AMQQueueFactory
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);
         q.configure(config);
         return q;
+    }
+
+    public static AMQQueue createAMQQueueImpl(String queueName,
+                                              boolean durable,
+                                              String owner,
+                                              boolean autoDelete,
+                                              VirtualHost virtualHost, Map<String, Object> arguments)
+            throws AMQException
+    {
+        int priorities = 1;
+        if(arguments.containsKey(X_QPID_PRIORITIES))
+        {
+            Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
+            if(prioritiesObj instanceof Number)
+            {
+                priorities = ((Number)prioritiesObj).intValue();
+            }
+        }
+
+
+        AMQQueue q = null;
+        if(priorities > 1)
+        {
+            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, virtualHost, priorities);
+        }
+        else
+        {
+            q = new SimpleAMQQueue(queueName, durable, owner, autoDelete, virtualHost);
+        }
+
+        //Register the new queue
+        virtualHost.getQueueRegistry().registerQueue(q);
+        q.configure(virtualHost.getConfiguration().getQueueConfiguration(queueName));
+        return q;
+
     }
 }

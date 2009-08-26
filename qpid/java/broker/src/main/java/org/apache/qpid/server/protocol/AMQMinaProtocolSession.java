@@ -677,7 +677,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public String toString()
     {
-        return _minaProtocolSession.getRemoteAddress() + "(" + (getAuthorizedID() == null ? "?" : getAuthorizedID().getName() + ")");
+        return _minaProtocolSession.getRemoteAddress() + "(" + (getPrincipal() == null ? "?" : getPrincipal().getName() + ")");
     }
 
     public String dump()
@@ -822,7 +822,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         _authorizedID = authorizedID;
     }
 
-    public Principal getAuthorizedID()
+    public Principal getPrincipal()
     {
         return _authorizedID;
     }

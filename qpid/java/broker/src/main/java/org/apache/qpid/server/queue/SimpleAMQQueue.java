@@ -164,6 +164,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
+    public SimpleAMQQueue(String queueName, boolean durable, String owner, boolean autoDelete, VirtualHost virtualHost)
+            throws AMQException
+    {
+        this(new AMQShortString(queueName), durable, new AMQShortString(owner),autoDelete,virtualHost);
+    }
+
     public void resetNotifications()
     {
         // This ensure that the notification checks for the configured alerts are created.

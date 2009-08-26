@@ -84,7 +84,8 @@ public class Connection extends ConnectionInvoker
     private SaslServer saslServer;
     private SaslClient saslClient;
     private long idleTimeout = 0;
-    
+    private String _authorizationID;
+
     // want to make this final
     private int _connectionId;
 
@@ -525,7 +526,17 @@ public class Connection extends ConnectionInvoker
     {
         return idleTimeout;
     }
-    
+
+    public void setAuthorizationID(String authorizationID)
+    {
+        _authorizationID = authorizationID;
+    }
+
+    public String getAuthorizationID()
+    {
+        return _authorizationID;
+    }
+
     public String toString()
     {
         return String.format("conn:%x", System.identityHashCode(this));

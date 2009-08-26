@@ -131,6 +131,7 @@ public class ServerDelegate extends ConnectionDelegate
                     (Integer.MAX_VALUE,
                      org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
                      0, Integer.MAX_VALUE);
+                conn.setAuthorizationID(ss.getAuthorizationID());
             }
             else
             {

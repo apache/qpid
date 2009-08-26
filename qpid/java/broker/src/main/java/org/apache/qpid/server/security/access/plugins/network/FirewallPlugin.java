@@ -38,6 +38,7 @@ import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.plugins.AbstractACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.util.NetMatcher;
 
 public class FirewallPlugin extends AbstractACLPlugin
@@ -178,7 +179,7 @@ public class FirewallPlugin extends AbstractACLPlugin
     private FirewallRule[] _rules;
 
     @Override
-    public AuthzResult authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost)
+    public AuthzResult authoriseConnect(PrincipalHolder session, VirtualHost virtualHost)
     {
         if (!(session instanceof AMQMinaProtocolSession))
         {
@@ -226,7 +227,6 @@ public class FirewallPlugin extends AbstractACLPlugin
         }
     }
 
-    @Override
     public void setConfiguration(Configuration config) throws ConfigurationException
     {
         // Get default action

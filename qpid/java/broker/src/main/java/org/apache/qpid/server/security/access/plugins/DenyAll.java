@@ -54,7 +54,7 @@ public class DenyAll extends BasicACLPlugin
         if (ACLManager.getLogger().isInfoEnabled())
         {
             ACLManager.getLogger().info(
-                    "Denying user:" + session.getAuthorizedID());
+                    "Denying user:" + session.getPrincipal());
         }
         throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
                 "DenyAll Plugin");

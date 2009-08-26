@@ -28,7 +28,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.exchange.Exchange;
@@ -188,7 +187,7 @@ public class IncomingMessage implements Filterable, InboundMessage
             AMQShortString userID = getContentHeader().properties instanceof BasicContentHeaderProperties ?
                      ((BasicContentHeaderProperties) getContentHeader().properties).getUserId() : null;
             
-            if (MSG_AUTH && !_publisher.getAuthorizedID().getName().equals(userID == null? "" : userID.toString()))
+            if (MSG_AUTH && !_publisher.getPrincipal().getName().equals(userID == null? "" : userID.toString()))
             {
                 throw new UnauthorizedAccessException("Acccess Refused",message);
             }

@@ -22,25 +22,18 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicPublishBody;
 
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.PrincipalPermissions;
-import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.PrincipalHolder;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -290,9 +283,9 @@ public class SimpleXML implements ACLPlugin
         return "Simple";
     }
 
-    public AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch, AMQQueue queue, AMQShortString routingKey)
+    public AuthzResult authoriseBind(PrincipalHolder session, Exchange exch, AMQQueue queue, AMQShortString routingKey)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -303,9 +296,9 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseConnect(AMQProtocolSession session, VirtualHost virtualHost)
+    public AuthzResult authoriseConnect(PrincipalHolder session, VirtualHost virtualHost)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -316,9 +309,9 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck, AMQQueue queue)
+    public AuthzResult authoriseConsume(PrincipalHolder session, boolean noAck, AMQQueue queue)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -329,16 +322,16 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean exclusive, boolean noAck, boolean noLocal,
+    public AuthzResult authoriseConsume(PrincipalHolder session, boolean exclusive, boolean noAck, boolean noLocal,
             boolean nowait, AMQQueue queue)
     {
         return authoriseConsume(session, noAck, queue);
     }
 
-    public AuthzResult authoriseCreateExchange(AMQProtocolSession session, boolean autoDelete, boolean durable,
+    public AuthzResult authoriseCreateExchange(PrincipalHolder session, boolean autoDelete, boolean durable,
             AMQShortString exchangeName, boolean internal, boolean nowait, boolean passive, AMQShortString exchangeType)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -349,10 +342,10 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseCreateQueue(AMQProtocolSession session, boolean autoDelete, boolean durable, boolean exclusive,
+    public AuthzResult authoriseCreateQueue(PrincipalHolder session, boolean autoDelete, boolean durable, boolean exclusive,
             boolean nowait, boolean passive, AMQShortString queue)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -363,9 +356,9 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -376,9 +369,9 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -389,10 +382,10 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authorisePublish(AMQProtocolSession session, boolean immediate, boolean mandatory,
+    public AuthzResult authorisePublish(PrincipalHolder session, boolean immediate, boolean mandatory,
             AMQShortString routingKey, Exchange e)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -403,9 +396,9 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authorisePurge(PrincipalHolder session, AMQQueue queue)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;
@@ -416,9 +409,9 @@ public class SimpleXML implements ACLPlugin
         }
     }
 
-    public AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch, AMQShortString routingKey, AMQQueue queue)
+    public AuthzResult authoriseUnbind(PrincipalHolder session, Exchange exch, AMQShortString routingKey, AMQQueue queue)
     {
-        PrincipalPermissions principalPermissions = _users.get(session.getAuthorizedID().getName());
+        PrincipalPermissions principalPermissions = _users.get(session.getPrincipal().getName());
         if (principalPermissions == null)
         {
             return AuthzResult.DENIED;

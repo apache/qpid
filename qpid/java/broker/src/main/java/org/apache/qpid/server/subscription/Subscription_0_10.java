@@ -311,7 +311,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                                         {
                                             public void onAccept()
                                             {
-                                                acknowledge(entry);
+                                                _session.acknowledge(Subscription_0_10.this,entry);
                                             }
 
                                             public void onRelease()
@@ -432,6 +432,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
         }
         _stopped.set(true);
+        FlowCreditManager_0_10 creditManager = getCreditManager();
+        creditManager.clearCredit();
     }
 
     public void addCredit(MessageCreditUnit unit, long value)
@@ -506,5 +508,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
+    }
+
+    public void flush() throws AMQException
+    {
+        _queue.flushSubscription(this);
+        stop();
     }
 }

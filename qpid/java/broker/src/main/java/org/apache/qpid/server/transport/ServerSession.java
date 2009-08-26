@@ -23,13 +23,24 @@ package org.apache.qpid.server.transport;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
-import static org.apache.qpid.util.Serial.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.security.Principal;
 
-public class ServerSession extends Session
+import static org.apache.qpid.util.Serial.*;
+import com.sun.security.auth.UserPrincipal;
+
+public class ServerSession extends Session implements PrincipalHolder
 {
 
 
@@ -42,36 +53,60 @@ public class ServerSession extends Session
         public void onReject();
     }
 
+    public static interface Task
+    {
+        public void doTask(ServerSession session);
+    }
+
 
     private final SortedMap<Integer, MessageDispositionChangeListener> _messageDispositionListenerMap =
             new ConcurrentSkipListMap<Integer, MessageDispositionChangeListener>();
 
+    private Transaction _transaction;
+
+    private Principal _principal;
+
+    private Map<String, Subscription_0_10> _subscriptions = new HashMap<String, Subscription_0_10>();
+
+    private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
+
+
     ServerSession(Connection connection, Binary name, long expiry)
     {
         super(connection, name, expiry);
+        _transaction = new AutoCommitTransaction();
+        _principal = new UserPrincipal(connection.getAuthorizationID());
     }
 
     ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         super(connection, delegate, name, expiry);
+        _transaction = new AutoCommitTransaction();
     }
 
-    public void enqueue(ServerMessage message, ArrayList<AMQQueue> queues)
+    public void enqueue(final ServerMessage message, ArrayList<AMQQueue> queues)
     {
-        // TODO Txn
 
-        try
+        for(final AMQQueue q : queues)
         {
-            for(AMQQueue q : queues)
+            _transaction.enqueue(q,message, new Transaction.Action()
             {
-                q.enqueue(message);
-            }
+
+                public void postCommit()
+                {
+                    try
+                    {
+                        q.enqueue(message);
+                    }
+                    catch (AMQException e)
+                    {
+                        // TODO
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
+            });
         }
-        catch (AMQException e)
-        {
-            // TODO
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+
     }
 
     
@@ -171,15 +206,103 @@ public class ServerSession extends Session
         _messageDispositionListenerMap.remove(method.getId());
     }
 
-    public void releaseAll()
+    public void onClose()
     {
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
             listener.onRelease();
         }
         _messageDispositionListenerMap.clear();
+
+        for (Task task : _taskList)
+        {
+            task.doTask(this);
+        }
+
     }
 
+    public void acknowledge(final Subscription_0_10 sub, final QueueEntry entry)
+    {
+        _transaction.dequeue(entry.getQueue(), entry.getMessage(),
+                             new Transaction.Action()
+                             {
 
+                                 public void postCommit()
+                                 {
+                                     sub.acknowledge(entry);
+                                 }
+                             });
+
+    }
+
+    public Map<String, Subscription_0_10> getSubscriptions()
+    {
+        return _subscriptions;
+    }
+
+    public void register(String destination, Subscription_0_10 sub)
+    {
+        _subscriptions.put(destination, sub);
+    }
+
+    public Subscription_0_10 getSubscription(String destination)
+    {
+        return _subscriptions.get(destination);
+    }
+
+    public void unregister(Subscription_0_10 sub)
+    {
+        _subscriptions.remove(sub);
+        try
+        {
+            sub.getSendLock();
+            sub.getQueue().unregisterSubscription(sub);
+
+        }
+        catch (AMQException e)
+        {
+            // TODO
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        finally
+        {
+            sub.releaseSendLock();
+        }
+    }
+
+    public void selectTx()
+    {
+        _transaction = new LocalTransaction();
+    }
+
+    public void commit()
+    {
+        _transaction.commit();
+    }
+
+    public void rollback()
+    {
+        _transaction.rollback();
+    }
+
+    void setPrincipal(Principal principal)
+    {
+        _principal = principal;
+    }
+
+    public Principal getPrincipal()
+    {
+        return _principal;
+    }
+
+    public void addSessionCloseTask(Task task)
+    {
+        _taskList.add(task);
+    }
+
+    public void removeSessionCloseTask(Task task)
+    {
+        _taskList.remove(task);
+    }
 
 }

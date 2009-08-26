@@ -39,6 +39,15 @@ public class AMQPriorityQueue extends SimpleAMQQueue
         super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
     }
 
+    public AMQPriorityQueue(String queueName,
+                            boolean durable,
+                            String owner,
+                            boolean autoDelete,
+                            VirtualHost virtualHost, int priorities) throws AMQException
+    {
+        this(new AMQShortString(queueName), durable, new AMQShortString(owner),autoDelete,virtualHost,priorities);
+    }
+
     public int getPriorities()
     {
         return ((PriorityQueueList) _entries).getPriorities();

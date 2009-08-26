@@ -24,6 +24,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.PrincipalHolder;
 
 public class ExchangeDenier extends AllowAll
 {
@@ -42,7 +43,7 @@ public class ExchangeDenier extends AllowAll
     };
     
     @Override
-    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
     {
         return AuthzResult.DENIED;
     }
