@@ -686,6 +686,8 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/Connection.cpp			\
   qpid/messaging/Filter.cpp			\
   qpid/messaging/Message.cpp			\
+  qpid/messaging/MessageImpl.h			\
+  qpid/messaging/MessageImpl.cpp		\
   qpid/messaging/Sender.cpp			\
   qpid/messaging/Receiver.cpp			\
   qpid/messaging/Session.cpp			\

@@ -79,11 +79,9 @@ class Message
     QPID_CLIENT_EXTERN void encode(Codec&);
     QPID_CLIENT_EXTERN void decode(Codec&);
 
-    //TODO: move this out of the public API
-    QPID_CLIENT_EXTERN void setInternalId(void*);
-    QPID_CLIENT_EXTERN void* getInternalId();
   private:
     MessageImpl* impl;
+  friend class MessageImplAccess;
 };
 }} // namespace qpid::messaging
 
