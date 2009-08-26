@@ -345,17 +345,19 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         //Validate
         List<String> results = _monitor.findMatches("SUB-1003");
         
-        if (results.size() != 3)
+        int i = 0;
+        while (results.size() != 3 && i < 10)
         {
             try
             {
-                Thread.sleep(1500);    
+                Thread.sleep(1500);
             }
             catch (InterruptedException e)
             {
                 
             }
             results = _monitor.findMatches("SUB-1003");
+            i++;
         }
 
         try
