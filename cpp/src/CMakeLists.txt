@@ -528,6 +528,8 @@ set (libqpidclient_SOURCES
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/Filter.cpp
      qpid/messaging/Message.cpp
+     qpid/messaging/MessageImpl.h
+     qpid/messaging/MessageImpl.cpp
      qpid/messaging/Receiver.cpp
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/Session.cpp

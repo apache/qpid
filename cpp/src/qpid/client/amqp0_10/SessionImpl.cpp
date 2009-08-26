@@ -29,6 +29,7 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Filter.h"
 #include "qpid/messaging/Message.h"
+#include "qpid/messaging/MessageImpl.h"
 #include "qpid/messaging/MessageListener.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Receiver.h"
@@ -39,6 +40,7 @@
 #include <boost/intrusive_ptr.hpp>
 
 using qpid::messaging::Filter;
+using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Sender;
 using qpid::messaging::Receiver;
 using qpid::messaging::VariantMap;
@@ -78,16 +80,8 @@ void SessionImpl::acknowledge()
 void SessionImpl::reject(qpid::messaging::Message& m)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
-    //TODO: how do I get the id of the original transfer command? think this through some more...
-
-    // [tross] The following hack was added to get this code to compile on a 64-bit machine.
-    //         It should be functionally equivalent to the original on a 32-bit architecture
-    //         but is almost certainly not what was intended by the author.
-    uint64_t rawId(reinterpret_cast<uint64_t>(m.getInternalId()));
-    SequenceNumber id((uint32_t) ((rawId & 0xFFFFFFFF) ^ ((rawId >> 32) & 0xFFFFFFFF)));
-
     SequenceSet set;
-    set.add(id);
+    set.add(MessageImplAccess::get(m).getInternalId());
     session.messageReject(set);
 }
 

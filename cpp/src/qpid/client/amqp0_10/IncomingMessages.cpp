@@ -26,6 +26,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
+#include "qpid/messaging/MessageImpl.h"
 #include "qpid/messaging/Variant.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/FrameSet.h"
@@ -41,6 +42,7 @@ using namespace qpid::framing;
 using namespace qpid::framing::message;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
+using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Variant;
 
 namespace {
@@ -219,9 +221,8 @@ void populateHeaders(qpid::messaging::Message& message, const AMQHeaderBody* hea
 void populate(qpid::messaging::Message& message, FrameSet& command)
 {
     //need to be able to link the message back to the transfer it was delivered by
-    //e.g. for rejecting. TODO: hide this from API
-    uint32_t commandId = command.getId();
-    message.setInternalId(reinterpret_cast<void*>(commandId));
+    //e.g. for rejecting.
+    MessageImplAccess::get(message).setInternalId(command.getId());
         
     command.getContent(message.getBytes());
 

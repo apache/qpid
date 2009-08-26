@@ -44,9 +44,7 @@ int main(int argc, char** argv) {
     try {
         Connection connection = Connection::open(url);
         Session session = connection.newSession();
-        VariantMap options;
-        options["auto_acknowledge"] = 0;
-        Receiver receiver = session.createReceiver("service_queue", options);
+        Receiver receiver = session.createReceiver("service_queue");
 
         while (true) {
             Message request = receiver.fetch();

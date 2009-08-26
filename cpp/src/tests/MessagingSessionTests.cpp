@@ -322,4 +322,21 @@ QPID_AUTO_TEST_CASE(testListMessage)
     fix.session.acknowledge();
 }
 
+QPID_AUTO_TEST_CASE(testReject)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message m1("reject-me");
+    sender.send(m1);
+    Message m2("accept-me");
+    sender.send(m2);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
+    BOOST_CHECK_EQUAL(in.getBytes(), m1.getBytes());
+    fix.session.reject(in);
+    in = receiver.fetch(5 * qpid::sys::TIME_SEC);
+    BOOST_CHECK_EQUAL(in.getBytes(), m2.getBytes());
+    fix.session.acknowledge();    
+}
+
 QPID_AUTO_TEST_SUITE_END()
