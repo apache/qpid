@@ -55,3 +55,6 @@ qpid/java/lib/cobertura/
 *.dll
 # MacOS File
 .DS_Store
+
+#Eclipse workspace
+workspace/
