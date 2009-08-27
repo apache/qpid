@@ -701,7 +701,7 @@ class Receiver(Lockable):
     if self._capacity() == 0:
       self.granted = self.returned + 1
       self.wakeup()
-    self.ewait(lambda: self.impending == self.granted)
+    self.ewait(lambda: self.impending >= self.granted)
     msg = self.session._get(self._pred, timeout=timeout)
     if msg is None:
       self.drain = True
@@ -1202,6 +1202,8 @@ class Driver(Lockable):
     msg = self._decode(m)
     rcv = ssn.receivers[int(cmd.destination)]
     msg._receiver = rcv
+    if rcv.impending is not UNLIMITED:
+      assert rcv.received < rcv.impending
     rcv.received += 1
     log.debug("RECV [%s] %s", ssn, msg)
     ssn.incoming.append(msg)
