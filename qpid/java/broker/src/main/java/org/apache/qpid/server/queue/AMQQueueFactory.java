@@ -94,7 +94,7 @@ public class AMQQueueFactory
             throws AMQException
     {
         int priorities = 1;
-        if(arguments.containsKey(X_QPID_PRIORITIES))
+        if(arguments != null && arguments.containsKey(X_QPID_PRIORITIES))
         {
             Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
             if(prioritiesObj instanceof Number)

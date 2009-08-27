@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
+import java.nio.ByteBuffer;
 
 public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener
 {
@@ -242,7 +243,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
         MessageTransfer xfr = new MessageTransfer();
         xfr.setDestination(_destination);
-        xfr.setBody(msg.getBody());
+        if(msg.getBody() != null)
+        {
+            xfr.setBody(msg.getBody());
+        }
+        
         xfr.setAcceptMode(_acceptMode);
         xfr.setAcquireMode(_acquireMode);
 
