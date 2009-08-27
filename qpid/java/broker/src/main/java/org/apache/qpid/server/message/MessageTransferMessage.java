@@ -70,7 +70,8 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
 
     public long getSize()
     {
-        return _messageProps.getContentLength();
+
+        return _xfr.getBodySize();
     }
 
     public boolean isImmediate()
