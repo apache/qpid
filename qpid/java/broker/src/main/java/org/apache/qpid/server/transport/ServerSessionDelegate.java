@@ -102,33 +102,65 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageSubscribe(Session session, MessageSubscribe method)
     {
-        String destination = method.getDestination();
-        String queueName = method.getQueue();
-        QueueRegistry queueRegistry = getQueueRegistry(session);
 
-        AMQQueue queue = queueRegistry.getQueue(queueName);
-
-        //TODO null check
-
-
-        FlowCreditManager_0_10 creditManager = new CreditCreditManager(0L,0L);
-
-        // TODO filters
-
-        Subscription_0_10 sub = new Subscription_0_10((ServerSession)session, destination,method.getAcceptMode(),method.getAcquireMode(), creditManager, null);
-
-        ((ServerSession)session).register(destination, sub);
-        try
+        //TODO - work around broken Python tests
+        if(!method.hasAcceptMode())
         {
-            queue.registerSubscription(sub, method.getExclusive());
+            method.setAcceptMode(MessageAcceptMode.EXPLICIT);
         }
-        catch (AMQException e)
+        if(!method.hasAcquireMode())
         {
-            // TODO
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            throw new RuntimeException(e);
-        }        
+            method.setAcquireMode(MessageAcquireMode.PRE_ACQUIRED);
 
+        }
+
+       /* if(!method.hasAcceptMode())
+        {
+            exception(session,method,ExecutionErrorCode.ILLEGAL_ARGUMENT, "Accept-mode not supplied");
+        }
+        else if(!method.hasAcquireMode())
+        {
+            exception(session,method,ExecutionErrorCode.ILLEGAL_ARGUMENT, "Acquire-mode not supplied");
+        }
+        else */if(!method.hasQueue())
+        {
+            exception(session,method,ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not supplied");
+        }
+        else
+        {
+            String destination = method.getDestination();
+            String queueName = method.getQueue();
+            QueueRegistry queueRegistry = getQueueRegistry(session);
+
+
+            AMQQueue queue = queueRegistry.getQueue(queueName);
+
+            if(queue == null)
+            {
+                exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");    
+            }
+            else
+            {
+
+                FlowCreditManager_0_10 creditManager = new CreditCreditManager(0L,0L);
+
+                // TODO filters
+
+                Subscription_0_10 sub = new Subscription_0_10((ServerSession)session, destination,method.getAcceptMode(),method.getAcquireMode(), creditManager, null);
+
+                ((ServerSession)session).register(destination, sub);
+                try
+                {
+                    queue.registerSubscription(sub, method.getExclusive());
+                }
+                catch (AMQException e)
+                {
+                    // TODO
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
 
@@ -266,10 +298,12 @@ public class ServerSessionDelegate extends SessionDelegate
 
 
             }
-            else
+            else if(exchange == null)
             {
                 ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
                 ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+
+
 
                 try
                 {
@@ -292,6 +326,10 @@ public class ServerSessionDelegate extends SessionDelegate
                     throw new RuntimeException(e);
                 }
 
+            }
+            else
+            {
+                // TODO check same as declared
             }
 
         }
@@ -371,7 +409,23 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void exchangeQuery(Session session, ExchangeQuery method)
     {
-        super.exchangeQuery(session, method);
+
+        ExchangeQueryResult result = new ExchangeQueryResult();
+
+        Exchange exchange = getExchange(session, method.getName());
+
+        if(exchange != null)
+        {
+            result.setDurable(exchange.isDurable());
+            result.setType(exchange.getType().toString());
+            result.setNotFound(false);
+        }
+        else
+        {
+            result.setNotFound(true);
+        }
+
+        session.executionResult((int) method.getId(), result);
     }
 
     @Override
@@ -462,7 +516,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
 
         session.executionResult((int) method.getId(), result);
-        super.exchangeBound(session, method);
+
     }
 
     private AMQQueue getQueue(Session session, String queue)
@@ -551,7 +605,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                 }
             }
-            else if (queue.getOwner() != null && !((ServerSession)session).getPrincipal().getName().equals(queue.getOwner()))
+            else if (method.getExclusive() && (queue.getOwner() != null && !queue.getOwner().equals(((ServerSession)session).getPrincipal().getName())))
             {
 
                     String description = "Cannot declare queue('" + queueName + "'),"

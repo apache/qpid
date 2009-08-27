@@ -62,7 +62,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
             throws AMQException
     {
-        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
+        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(new AMQShortString(type));
         if (exchType == null)
         {
 
@@ -106,7 +106,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
                     return;
                 }
                 Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
-                ExchangeType type = exchangeTypeClass.newInstance();
+                ExchangeType<? extends ExchangeType> type = exchangeTypeClass.newInstance();
                 registerExchangeType(type);
             }
             catch (ClassCastException classCastEx)
