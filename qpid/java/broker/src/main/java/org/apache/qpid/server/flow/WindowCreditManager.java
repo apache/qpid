@@ -39,6 +39,8 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
     {
         _bytesCreditLimit = bytesCreditLimit;
         _messageCreditLimit = messageCreditLimit;
+        setSuspended(!hasCredit());
+
     }
 
 

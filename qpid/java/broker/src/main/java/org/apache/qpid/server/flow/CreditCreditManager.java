@@ -37,6 +37,8 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
     {
         _bytesCredit = bytesCredit;
         _messageCredit = messageCredit;
+        setSuspended(!hasCredit());
+
     }
 
 

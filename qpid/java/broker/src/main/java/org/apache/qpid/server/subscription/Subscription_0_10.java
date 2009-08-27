@@ -88,6 +88,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _creditManager = creditManager;
         _filters = filters;
         _creditManager.addStateListener(this);
+        _state.set(_creditManager.hasCredit() ? State.ACTIVE : State.SUSPENDED);
 
     }
 
@@ -484,7 +485,13 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             default:
                 throw new RuntimeException("Unknown message flow mode: " + flowMode);
         }
+        if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
+        {
+            _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
+        }
+
         _creditManager.addStateListener(this);
+
     }
 
     public boolean isStopped()
