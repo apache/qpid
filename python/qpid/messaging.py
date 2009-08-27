@@ -30,7 +30,7 @@ Areas that still need work:
   - protocol negotiation/multiprotocol impl
 """
 
-import connection, time, socket, sys, compat
+import connection, time, socket, sys, compat, inspect
 from codec010 import StringCodec
 from datatypes import timestamp, uuid4, RangedSet, Message as Message010, Serial
 from exceptions import Timeout
@@ -45,13 +45,23 @@ log = getLogger("qpid.messaging")
 static = staticmethod
 
 def synchronized(meth):
-  def sync_wrapper(self, *args, **kwargs):
-    self.lock()
-    try:
-      return meth(self, *args, **kwargs)
-    finally:
-      self.unlock()
-  return sync_wrapper
+  args, vargs, kwargs, defs = inspect.getargspec(meth)
+  scope = {}
+  scope["meth"] = meth
+  exec """
+def %s%s:
+  %s
+  %s.lock()
+  try:
+    return meth%s
+  finally:
+    %s.unlock()
+""" % (meth.__name__, inspect.formatargspec(args, vargs, kwargs, defs),
+       repr(inspect.getdoc(meth)), args[0],
+       inspect.formatargspec(args, vargs, kwargs, defs,
+                             formatvalue=lambda x: ""),
+       args[0]) in scope
+  return scope[meth.__name__]
 
 class Lockable(object):
 
