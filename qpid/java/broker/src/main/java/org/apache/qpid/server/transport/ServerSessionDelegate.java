@@ -26,6 +26,8 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -36,10 +38,12 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueDeleteOkBody;
+import org.apache.qpid.framing.ExchangeDeleteOkBody;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -241,8 +245,10 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 exception(session, method, ExecutionErrorCode.NOT_FOUND, "not-found: exchange-name '"+exchangeName+"'");
 
-                // TODO - control flow
-                return;
+            }
+            else
+            {
+                // TODO - check exchange has same properties
             }
 
         }
@@ -258,12 +264,36 @@ public class ServerSessionDelegate extends SessionDelegate
 
                 exception(session, method, errorCode, description);
 
-                // TODO - Control Flow
-                return;
+
+            }
+            else
+            {
+                ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
+                ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+
+                try
+                {
+
+                    exchange = exchangeFactory.createExchange(method.getExchange(),
+                                                              method.getType(),
+                                                              method.getDurable(),
+                                                              method.getAutoDelete());
+
+                    exchangeRegistry.registerExchange(exchange);
+                }
+                catch(AMQUnknownExchangeType e)
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Unknown Exchange Type: " + method.getType());
+                }
+                catch (AMQException e)
+                {
+                    //TODO
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
+                }
+
             }
 
-
-            // TODO
         }
     }
 
@@ -307,7 +337,35 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void exchangeDelete(Session session, ExchangeDelete method)
     {
-        super.exchangeDelete(session, method);
+        VirtualHost virtualHost = getVirtualHost(session);
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+
+        //Perform ACLs
+        if (!virtualHost.getAccessManager().authoriseDelete((ServerSession)session,
+                exchangeRegistry.getExchange(method.getExchange())))
+        {
+            exception(session,method, ExecutionErrorCode.NOT_ALLOWED, "Permission denied");
+
+        }
+        else
+        {
+
+            try
+            {
+                exchangeRegistry.unregisterExchange(method.getExchange(), method.getIfUnused());
+            }
+            catch (ExchangeInUseException e)
+            {
+                exception(session, method, ExecutionErrorCode.PRECONDITION_FAILED, "Exchange in use");
+            }
+            catch (AMQException e)
+            {
+                // TODO
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 
     @Override

@@ -108,6 +108,11 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
     }
 
+    public void unregisterExchange(String name, boolean inUse) throws AMQException
+    {
+        unregisterExchange(new AMQShortString(name), inUse);
+    }
+
     public Exchange getExchange(AMQShortString name)
     {
         if ((name == null) || name.length() == 0)

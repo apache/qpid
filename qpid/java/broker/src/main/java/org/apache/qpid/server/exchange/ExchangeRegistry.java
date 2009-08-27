@@ -50,4 +50,6 @@ public interface ExchangeRegistry extends MessageRouter
     void initialise() throws AMQException;
 
     Exchange getExchange(String exchangeName);
+
+    void unregisterExchange(String exchange, boolean ifUnused)  throws ExchangeInUseException, AMQException;;
 }
