@@ -68,9 +68,9 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
 
     public synchronized void restoreCredit(final long messageCredit, final long bytesCredit)
     {
-        _bytesCredit = 0l;
+        /*_bytesCredit = 0l;
         _messageCredit = 0l;
-        setSuspended(true);
+        setSuspended(true);*/
     }
 
     
@@ -106,7 +106,9 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
 
     public void clearCredit()
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        _bytesCredit = 0l;
+        _messageCredit = 0l;
+        setSuspended(true);
     }
 
 
