@@ -85,9 +85,9 @@ namespace qmf {
         void setStoreDir(const char* path);
         void setTransferDir(const char* path);
         void handleRcvMessage(Message& message);
-        bool getXmtMessage(Message& item);
+        bool getXmtMessage(Message& item) const;
         void popXmt();
-        bool getEvent(AgentEvent& event);
+        bool getEvent(AgentEvent& event) const;
         void popEvent();
         void newSession();
         void startProtocol();
@@ -103,7 +103,7 @@ namespace qmf {
         void raiseEvent(Event& event);
 
     private:
-        Mutex     lock;
+        mutable Mutex lock;
         Mutex     addLock;
         string    label;
         string    queueName;
@@ -134,13 +134,13 @@ namespace qmf {
 #       define MA_BUFFER_SIZE 65536
         char outputBuffer[MA_BUFFER_SIZE];
 
-        struct SchemaClassKey {
+        struct AgentClassKey {
             string name;
             uint8_t hash[16];
-            SchemaClassKey(const string& n, const uint8_t* h) : name(n) {
+            AgentClassKey(const string& n, const uint8_t* h) : name(n) {
                 memcpy(hash, h, 16);
             }
-            SchemaClassKey(Buffer& buffer) {
+            AgentClassKey(Buffer& buffer) {
                 buffer.getShortString(name);
                 buffer.getBin128(hash);
             }
@@ -149,8 +149,8 @@ namespace qmf {
             }
         };
 
-        struct SchemaClassKeyComp {
-            bool operator() (const SchemaClassKey& lhs, const SchemaClassKey& rhs) const
+        struct AgentClassKeyComp {
+            bool operator() (const AgentClassKey& lhs, const AgentClassKey& rhs) const
             {
                 if (lhs.name != rhs.name)
                     return lhs.name < rhs.name;
@@ -162,8 +162,8 @@ namespace qmf {
             }
         };
 
-        typedef map<SchemaClassKey, SchemaObjectClassImpl*, SchemaClassKeyComp> ObjectClassMap;
-        typedef map<SchemaClassKey, SchemaEventClassImpl*, SchemaClassKeyComp>  EventClassMap;
+        typedef map<AgentClassKey, SchemaObjectClassImpl*, AgentClassKeyComp> ObjectClassMap;
+        typedef map<AgentClassKey, SchemaEventClassImpl*, AgentClassKeyComp>  EventClassMap;
 
         struct ClassMaps {
             ObjectClassMap objectClasses;
@@ -185,7 +185,7 @@ namespace qmf {
         void sendBufferLH(Buffer& buf, const string& destination, const string& routingKey);
 
         void sendPackageIndicationLH(const string& packageName);
-        void sendClassIndicationLH(ClassKind kind, const string& packageName, const SchemaClassKey& key);
+        void sendClassIndicationLH(ClassKind kind, const string& packageName, const AgentClassKey& key);
         void sendCommandCompleteLH(const string& exchange, const string& key, uint32_t seq,
                                    uint32_t code = 0, const string& text = "OK");
         void sendMethodErrorLH(uint32_t sequence, const string& key, uint32_t code, const string& text="");
@@ -277,7 +277,7 @@ void AgentEngineImpl::handleRcvMessage(Message& message)
     }
 }
 
-bool AgentEngineImpl::getXmtMessage(Message& item)
+bool AgentEngineImpl::getXmtMessage(Message& item) const
 {
     Mutex::ScopedLock _lock(lock);
     if (xmtQueue.empty())
@@ -293,7 +293,7 @@ void AgentEngineImpl::popXmt()
         xmtQueue.pop_front();
 }
 
-bool AgentEngineImpl::getEvent(AgentEvent& event)
+bool AgentEngineImpl::getEvent(AgentEvent& event) const
 {
     Mutex::ScopedLock _lock(lock);
     if (eventQueue.empty())
@@ -423,11 +423,11 @@ void AgentEngineImpl::registerClass(SchemaObjectClass* cls)
     map<string, ClassMaps>::iterator iter = packages.find(impl->package);
     if (iter == packages.end()) {
         packages[impl->package] = ClassMaps();
-        iter = packages.find(impl->package);
+        iter = packages.find(impl->getClassKey()->getPackageName());
         // TODO: Indicate this package if connected
     }
 
-    SchemaClassKey key(impl->name, impl->getHash());
+    AgentClassKey key(impl->getClassKey()->getClassName(), impl->getClassKey()->getHash());
     iter->second.objectClasses[key] = impl;
 
     // TODO: Indicate this schema if connected.
@@ -441,11 +441,11 @@ void AgentEngineImpl::registerClass(SchemaEventClass* cls)
     map<string, ClassMaps>::iterator iter = packages.find(impl->package);
     if (iter == packages.end()) {
         packages[impl->package] = ClassMaps();
-        iter = packages.find(impl->package);
+        iter = packages.find(impl->getClassKey()->getPackageName());
         // TODO: Indicate this package if connected
     }
 
-    SchemaClassKey key(impl->name, impl->getHash());
+    AgentClassKey key(impl->getClassKey()->getClassName(), impl->getClassKey()->getHash());
     iter->second.eventClasses[key] = impl;
 
     // TODO: Indicate this schema if connected.
@@ -576,7 +576,7 @@ void AgentEngineImpl::sendPackageIndicationLH(const string& packageName)
     QPID_LOG(trace, "SENT PackageIndication:  package_name=" << packageName);
 }
 
-void AgentEngineImpl::sendClassIndicationLH(ClassKind kind, const string& packageName, const SchemaClassKey& key)
+void AgentEngineImpl::sendClassIndicationLH(ClassKind kind, const string& packageName, const AgentClassKey& key)
 {
     Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
     encodeHeader(buffer, 'q');
@@ -690,7 +690,7 @@ void AgentEngineImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence,
     string rKey(replyKey);
     string packageName;
     inBuffer.getShortString(packageName);
-    SchemaClassKey key(inBuffer);
+    AgentClassKey key(inBuffer);
 
     if (rExchange.empty())
         rExchange = QMF_EXCHANGE;
@@ -791,7 +791,7 @@ void AgentEngineImpl::handleMethodRequest(Buffer& buffer, uint32_t sequence, con
     ObjectIdImpl* oidImpl = new ObjectIdImpl(buffer);
     boost::shared_ptr<ObjectId> oid(oidImpl->envelope);
     buffer.getShortString(pname);
-    SchemaClassKey classKey(buffer);
+    AgentClassKey classKey(buffer);
     buffer.getShortString(method);
 
     map<string, ClassMaps>::const_iterator pIter = packages.find(pname);
@@ -876,7 +876,7 @@ void AgentEngine::handleRcvMessage(Message& message)
     impl->handleRcvMessage(message);
 }
 
-bool AgentEngine::getXmtMessage(Message& item)
+bool AgentEngine::getXmtMessage(Message& item) const
 {
     return impl->getXmtMessage(item);
 }
@@ -886,7 +886,7 @@ void AgentEngine::popXmt()
     impl->popXmt();
 }
 
-bool AgentEngine::getEvent(AgentEvent& event)
+bool AgentEngine::getEvent(AgentEvent& event) const
 {
     return impl->getEvent(event);
 }

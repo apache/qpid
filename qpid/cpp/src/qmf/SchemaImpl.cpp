@@ -240,15 +240,20 @@ void SchemaStatisticImpl::updateHash(SchemaHash& hash) const
     hash.update(description);
 }
 
-SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) : envelope(new SchemaObjectClass(this)), hasHash(true)
+SchemaClassKeyImpl::SchemaClassKeyImpl(const string& p, const string& n, const SchemaHash& h) :
+    envelope(new SchemaClassKey(this)), package(p), name(n), hash(h) {}
+
+SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) :
+    envelope(new SchemaObjectClass(this)), hasHash(true), classKey(package, name, hash)
 {
     buffer.getShortString(package);
     buffer.getShortString(name);
     hash.decode(buffer);
 
-    uint16_t propCount   = buffer.getShort();
-    uint16_t statCount   = buffer.getShort();
-    uint16_t methodCount = buffer.getShort();
+    /*uint8_t hasParentClass =*/ buffer.getOctet(); // TODO: Parse parent-class indicator
+    uint16_t propCount     = buffer.getShort();
+    uint16_t statCount     = buffer.getShort();
+    uint16_t methodCount   = buffer.getShort();
 
     for (uint16_t idx = 0; idx < propCount; idx++) {
         SchemaPropertyImpl* property = new SchemaPropertyImpl(buffer);
@@ -288,7 +293,7 @@ void SchemaObjectClassImpl::encode(Buffer& buffer) const
         (*iter)->encode(buffer);
 }
 
-const uint8_t* SchemaObjectClassImpl::getHash() const
+const SchemaClassKey* SchemaObjectClassImpl::getClassKey() const
 {
     if (!hasHash) {
         hasHash = true;
@@ -305,7 +310,7 @@ const uint8_t* SchemaObjectClassImpl::getHash() const
             (*iter)->updateHash(hash);
     }
 
-    return hash.get();
+    return classKey.envelope;
 }
 
 void SchemaObjectClassImpl::addProperty(const SchemaProperty& property)
@@ -353,7 +358,8 @@ const SchemaMethod* SchemaObjectClassImpl::getMethod(int idx) const
     return 0;
 }
 
-SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) : envelope(new SchemaEventClass(this)), hasHash(true)
+SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) :
+    envelope(new SchemaEventClass(this)), hasHash(true), classKey(package, name, hash)
 {
     buffer.getShortString(package);
     buffer.getShortString(name);
@@ -380,7 +386,7 @@ void SchemaEventClassImpl::encode(Buffer& buffer) const
         (*iter)->encode(buffer);
 }
 
-const uint8_t* SchemaEventClassImpl::getHash() const
+const SchemaClassKey* SchemaEventClassImpl::getClassKey() const
 {
     if (!hasHash) {
         hasHash = true;
@@ -390,7 +396,7 @@ const uint8_t* SchemaEventClassImpl::getHash() const
              iter != arguments.end(); iter++)
             (*iter)->updateHash(hash);
     }
-    return hash.get();
+    return classKey.envelope;
 }
 
 void SchemaEventClassImpl::addArgument(const SchemaArgument& argument)
@@ -407,6 +413,7 @@ const SchemaArgument* SchemaEventClassImpl::getArgument(int idx) const
             return (*iter)->envelope;
     return 0;
 }
+
 
 //==================================================================
 // Wrappers
@@ -620,6 +627,28 @@ const char* SchemaStatistic::getDesc() const
     return impl->getDesc().c_str();
 }
 
+SchemaClassKey::SchemaClassKey(SchemaClassKeyImpl* i) : impl(i) {}
+
+SchemaClassKey::~SchemaClassKey()
+{
+    delete impl;
+}
+
+const char* SchemaClassKey::getPackageName() const
+{
+    return impl->getPackageName().c_str();
+}
+
+const char* SchemaClassKey::getClassName() const
+{
+    return impl->getClassName().c_str();
+}
+
+const uint8_t* SchemaClassKey::getHash() const
+{
+    return impl->getHash();
+}
+
 SchemaObjectClass::SchemaObjectClass(const char* package, const char* name)
 {
     impl = new SchemaObjectClassImpl(this, package, name);
@@ -647,19 +676,9 @@ void SchemaObjectClass::addMethod(const SchemaMethod& method)
     impl->addMethod(method);
 }
 
-const char* SchemaObjectClass::getPackage() const
+const SchemaClassKey* SchemaObjectClass::getClassKey() const
 {
-    return impl->getPackage().c_str();
-}
-
-const char* SchemaObjectClass::getName() const
-{
-    return impl->getName().c_str();
-}
-
-const uint8_t* SchemaObjectClass::getHash() const
-{
-    return impl->getHash();
+    return impl->getClassKey();
 }
 
 int SchemaObjectClass::getPropertyCount() const
@@ -714,19 +733,9 @@ void SchemaEventClass::setDesc(const char* desc)
     impl->setDesc(desc);
 }
 
-const char* SchemaEventClass::getPackage() const
+const SchemaClassKey* SchemaEventClass::getClassKey() const
 {
-    return impl->getPackage().c_str();
-}
-
-const char* SchemaEventClass::getName() const
-{
-    return impl->getName().c_str();
-}
-
-const uint8_t* SchemaEventClass::getHash() const
-{
-    return impl->getHash();
+    return impl->getClassKey();
 }
 
 int SchemaEventClass::getArgumentCount() const

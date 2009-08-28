@@ -79,7 +79,7 @@ namespace qmf {
 
     class ResilientConnectionImpl : public qpid::sys::Runnable {
     public:
-        ResilientConnectionImpl(ConnectionSettings& settings);
+        ResilientConnectionImpl(const ConnectionSettings& settings);
         ~ResilientConnectionImpl();
 
         bool isConnected() const;
@@ -108,7 +108,7 @@ namespace qmf {
         bool connected;
         bool shutdown;
         string lastError;
-        ConnectionSettings settings;
+        const ConnectionSettings settings;
         Connection connection;
         mutable qpid::sys::Mutex lock;
         int delayMin;
@@ -175,7 +175,7 @@ void RCSession::received(qpid::client::Message& msg)
     connImpl.EnqueueEvent(ResilientConnectionEvent::RECV, userContext, qmsg);
 }
 
-ResilientConnectionImpl::ResilientConnectionImpl(ConnectionSettings& _settings) :
+ResilientConnectionImpl::ResilientConnectionImpl(const ConnectionSettings& _settings) :
     notifyFd(-1), connected(false), shutdown(false), settings(_settings), connThread(*this)
 {
     connection.registerFailureCallback(boost::bind(&ResilientConnectionImpl::failure, this));
@@ -222,7 +222,7 @@ bool ResilientConnectionImpl::createSession(const char* name, void* sessionConte
 
     RCSession::Ptr sess = RCSession::Ptr(new RCSession(*this, name, connection, sessionContext));
 
-    handle.handle = (void*) sess.get();
+    handle.impl = (void*) sess.get();
     sessions.insert(sess);
 
     return true;
@@ -231,7 +231,7 @@ bool ResilientConnectionImpl::createSession(const char* name, void* sessionConte
 void ResilientConnectionImpl::destroySession(SessionHandle handle)
 {
     Mutex::ScopedLock _lock(lock);
-    RCSession::Ptr sess = RCSession::Ptr((RCSession*) handle.handle);
+    RCSession::Ptr sess = RCSession::Ptr((RCSession*) handle.impl);
     set<RCSession::Ptr>::iterator iter = sessions.find(sess);
     if (iter != sessions.end()) {
         for (vector<string>::iterator dIter = sess->dests.begin(); dIter != sess->dests.end(); dIter++)
@@ -247,7 +247,7 @@ void ResilientConnectionImpl::destroySession(SessionHandle handle)
 void ResilientConnectionImpl::sendMessage(SessionHandle handle, qmf::Message& message)
 {
     Mutex::ScopedLock _lock(lock);
-    RCSession::Ptr sess = RCSession::Ptr((RCSession*) handle.handle);
+    RCSession::Ptr sess = RCSession::Ptr((RCSession*) handle.impl);
     set<RCSession::Ptr>::iterator iter = sessions.find(sess);
     qpid::client::Message msg;
     string data(message.body, message.length);
@@ -267,7 +267,7 @@ void ResilientConnectionImpl::sendMessage(SessionHandle handle, qmf::Message& me
 void ResilientConnectionImpl::declareQueue(SessionHandle handle, char* queue)
 {
     Mutex::ScopedLock _lock(lock);
-    RCSession* sess = (RCSession*) handle.handle;
+    RCSession* sess = (RCSession*) handle.impl;
 
     sess->session.queueDeclare(arg::queue=queue, arg::autoDelete=true, arg::exclusive=true);
     sess->subscriptions->subscribe(*sess, queue, queue);
@@ -277,7 +277,7 @@ void ResilientConnectionImpl::declareQueue(SessionHandle handle, char* queue)
 void ResilientConnectionImpl::deleteQueue(SessionHandle handle, char* queue)
 {
     Mutex::ScopedLock _lock(lock);
-    RCSession* sess = (RCSession*) handle.handle;
+    RCSession* sess = (RCSession*) handle.impl;
 
     sess->session.queueDelete(arg::queue=queue);
     for (vector<string>::iterator iter = sess->dests.begin();
@@ -293,7 +293,7 @@ void ResilientConnectionImpl::bind(SessionHandle handle,
                                    char* exchange, char* queue, char* key)
 {
     Mutex::ScopedLock _lock(lock);
-    RCSession* sess = (RCSession*) handle.handle;
+    RCSession* sess = (RCSession*) handle.impl;
 
     sess->session.exchangeBind(arg::exchange=exchange, arg::queue=queue, arg::bindingKey=key);
 }
@@ -302,7 +302,7 @@ void ResilientConnectionImpl::unbind(SessionHandle handle,
                                      char* exchange, char* queue, char* key)
 {
     Mutex::ScopedLock _lock(lock);
-    RCSession* sess = (RCSession*) handle.handle;
+    RCSession* sess = (RCSession*) handle.impl;
 
     sess->session.exchangeUnbind(arg::exchange=exchange, arg::queue=queue, arg::bindingKey=key);
 }
@@ -396,7 +396,7 @@ void ResilientConnectionImpl::EnqueueEvent(ResilientConnectionEvent::EventKind k
 // Wrappers
 //==================================================================
 
-ResilientConnection::ResilientConnection(ConnectionSettings& settings)
+ResilientConnection::ResilientConnection(const ConnectionSettings& settings)
 {
     impl = new ResilientConnectionImpl(settings);
 }

@@ -26,6 +26,8 @@
 
 namespace qmf {
 
+    class ResilientConnectionImpl;
+
     /**
      * Represents events that occur, unsolicited, from ResilientConnection.
      */
@@ -43,11 +45,10 @@ namespace qmf {
         Message   message;        // RECV
     };
 
-    struct SessionHandle {
-        void* handle;
+    class SessionHandle {
+        friend class ResilientConnectionImpl;
+        void* impl;
     };
-
-    class ResilientConnectionImpl;
 
     /**
      * ResilientConnection represents a Qpid connection that is resilient.
@@ -67,7 +68,7 @@ namespace qmf {
          *@param delayMax Maximum delay (in seconds) between retries.
          *@param delayFactor Factor to multiply retry delay by after each failure.
          */
-        ResilientConnection(ConnectionSettings& settings);
+        ResilientConnection(const ConnectionSettings& settings);
         ~ResilientConnection();
 
         /**

@@ -123,9 +123,9 @@ void ObjectImpl::parsePresenceMasks(Buffer& buffer, set<string>& excludeList)
 
 void ObjectImpl::encodeSchemaKey(qpid::framing::Buffer& buffer) const
 {
-    buffer.putShortString(objectClass->getPackage());
-    buffer.putShortString(objectClass->getName());
-    buffer.putBin128(const_cast<uint8_t*>(objectClass->getHash()));
+    buffer.putShortString(objectClass->getClassKey()->getPackageName());
+    buffer.putShortString(objectClass->getClassKey()->getClassName());
+    buffer.putBin128(const_cast<uint8_t*>(objectClass->getClassKey()->getHash()));
 }
 
 void ObjectImpl::encodeManagedObjectData(qpid::framing::Buffer& buffer) const
