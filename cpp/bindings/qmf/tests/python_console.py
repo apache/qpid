@@ -128,6 +128,18 @@ class QmfInteropTests(TestBase010):
         self.assertEqual(parent.int16val, -1000)
         self.assertEqual(parent.int8val,  -100)
 
+    def test_D_userid_for_method(self):
+        self.startQmf();
+        qmf = self.qmf
+
+        parents = qmf.getObjects(_class="parent")
+        self.assertEqual(len(parents), 1)
+        parent = parents[0]
+
+        result = parent.probe_userid()
+        self.assertEqual(result.status, 0)
+        self.assertEqual(result.userid, "guest")
+
     def getProperty(self, msg, name):
         for h in msg.headers:
             if hasattr(h, name): return getattr(h, name)

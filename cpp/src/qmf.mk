@@ -37,6 +37,7 @@ nobase_include_HEADERS +=			\
 libqmfcommon_la_SOURCES =			\
   qmf/ConnectionSettingsImpl.cpp		\
   qmf/ConnectionSettingsImpl.h			\
+  qmf/ConsoleEngine.cpp				\
   qmf/ConsoleEngine.h				\
   qmf/Event.h					\
   qmf/Message.h					\

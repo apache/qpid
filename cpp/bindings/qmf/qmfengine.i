@@ -20,7 +20,8 @@
 %{
 
 #include "qmf/AgentEngine.h"
-#include <qmf/ResilientConnection.h>
+#include "qmf/ConsoleEngine.h"
+#include "qmf/ResilientConnection.h"
 
 %}
 
@@ -28,6 +29,7 @@
 %include <qmf/Query.h>
 %include <qmf/Message.h>
 %include <qmf/AgentEngine.h>
+%include <qmf/ConsoleEngine.h>
 %include <qmf/ConnectionSettings.h>
 %include <qmf/ResilientConnection.h>
 %include <qmf/Typecode.h>

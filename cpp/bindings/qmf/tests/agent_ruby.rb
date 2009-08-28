@@ -53,7 +53,10 @@ class Model
     method = Qmf::SchemaMethod.new("create_child", :desc => "Create a new child object")
     method.add_argument(Qmf::SchemaArgument.new("child_name", Qmf::TYPE_LSTR, :dir => Qmf::DIR_IN))
     method.add_argument(Qmf::SchemaArgument.new("child_ref", Qmf::TYPE_REF, :dir => Qmf::DIR_OUT))
+    @parent_class.add_method(method)
 
+    method = Qmf::SchemaMethod.new("probe_userid", :desc => "Return the user-id for this method call")
+    method.add_argument(Qmf::SchemaArgument.new("userid", Qmf::TYPE_SSTR, :dir => Qmf::DIR_OUT))
     @parent_class.add_method(method)
 
     @child_class = Qmf::SchemaObjectClass.new("org.apache.qpid.qmf", "child")
@@ -136,6 +139,13 @@ class App < Qmf::AgentHandler
       @child.set_attr("name", args.by_key("child_name"))
       @child.set_object_id(oid)
       @agent.method_response(context, 0, "OK", args)
+
+    elsif name == "probe_userid"
+      args['userid'] = userId
+      @agent.method_response(context, 0, "OK", args)
+
+    else
+      @agent.method_response(context, 1, "Unimplemented Method: #{name}", args)
     end
   end
 
