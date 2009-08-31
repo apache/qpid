@@ -20,7 +20,6 @@
  */
 
 #include "qpid/CommonImportExport.h"
-#include "qpid/sys/uuid.h"
 #include "qpid/sys/IntegerTypes.h"
 
 #include <boost/array.hpp>
@@ -38,33 +37,31 @@ class Buffer;
  *
  * Full value semantics, operators ==, < etc.  are provided by
  * boost::array so Uuid can be the key type in a map etc.
+ *
+ * TODO: change this implementation as it leaks boost into the
+ * client API
  */
 struct Uuid : public boost::array<uint8_t, 16> {
     /** If unique is true, generate a unique ID else a null ID. */
-    Uuid(bool unique=false) { if (unique) generate(); else clear(); }
+    Uuid(bool unique=false);
 
     /** Copy from 16 bytes of data. */
-    Uuid(const uint8_t* data) { assign(data); }
-
-    /** Copy from 16 bytes of data. */
-    void assign(const uint8_t* data) {
-        uuid_copy(c_array(), data);
-    }
-
-    /** Set to a new unique identifier. */
-    void generate() { uuid_generate(c_array()); }
-
-    /** Set to all zeros. */
-    void clear() { uuid_clear(c_array()); }
-
-    /** Test for null (all zeros). */
-    // Force int 0/!0 to false/true; avoids compile warnings.
-    bool isNull() {
-        return !!uuid_is_null(data());
-    }
+    Uuid(const uint8_t* data);
 
     // Default op= and copy ctor are fine.
     // boost::array gives us ==, < etc.
+
+    /** Copy from 16 bytes of data. */
+    void assign(const uint8_t* data);
+
+    /** Set to a new unique identifier. */
+    void generate();
+
+    /** Set to all zeros. */
+    void clear();
+
+    /** Test for null (all zeros). */
+    bool isNull();
 
     QPID_COMMON_EXTERN void encode(framing::Buffer& buf) const;
     QPID_COMMON_EXTERN void decode(framing::Buffer& buf);
