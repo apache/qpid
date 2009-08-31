@@ -23,7 +23,8 @@
 import time
 from qpid.tests import Test
 from qpid.harness import Skipped
-from qpid.messaging import Connection, ConnectError, Disconnected, Empty, Message, UNLIMITED, uuid4
+from qpid.messaging import Connection, ConnectError, Disconnected, Empty, \
+    InsufficientCapacity, Message, UNLIMITED, uuid4
 from Queue import Queue, Empty as QueueEmpty
 
 class Base(Test):
@@ -71,11 +72,11 @@ class Base(Test):
     ssn.acknowledge()
     assert msg.content == content, "expected %r, got %r" % (content, msg.content)
 
-  def drain(self, rcv, limit=None):
+  def drain(self, rcv, limit=None, timeout=0):
     contents = []
     try:
       while limit is None or len(contents) < limit:
-        contents.append(rcv.fetch(0).content)
+        contents.append(rcv.fetch(timeout=timeout).content)
     except Empty:
       pass
     return contents
@@ -542,6 +543,32 @@ class SenderTests(Base):
 
   def testSendMap(self):
     self.checkContent({"testSendMap": self.test_id, "pie": "blueberry", "pi": 3.14})
+
+  def asyncTest(self, capacity):
+    self.snd.capacity = capacity
+    msgs = [self.content("asyncTest", i) for i in range(15)]
+    for m in msgs:
+      self.snd.send(m, sync=False)
+    drained = self.drain(self.rcv, timeout=self.delay())
+    assert msgs == drained, "expected %s, got %s" % (msgs, drained)
+    self.ssn.acknowledge()
+
+  def testSendAsyncCapacity0(self):
+    try:
+      self.asyncTest(0)
+      assert False, "send shouldn't succeed with zero capacity"
+    except InsufficientCapacity:
+      # this is expected
+      pass
+
+  def testSendAsyncCapacity1(self):
+    self.asyncTest(1)
+
+  def testSendAsyncCapacity5(self):
+    self.asyncTest(5)
+
+  def testSendAsyncCapacityUNLIMITED(self):
+    self.asyncTest(UNLIMITED)
 
 class MessageTests(Base):
 
