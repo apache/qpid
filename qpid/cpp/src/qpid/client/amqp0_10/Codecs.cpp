@@ -183,25 +183,25 @@ boost::shared_ptr<FieldValue> toFieldValue(const Variant& in)
 {
     boost::shared_ptr<FieldValue> out;
     switch (in.getType()) {
-      case VOID: out = boost::shared_ptr<FieldValue>(new VoidValue()); break;
-      case BOOL: out = boost::shared_ptr<FieldValue>(new BoolValue(in.asBool())); break;
-      case UINT8: out = boost::shared_ptr<FieldValue>(new Unsigned8Value(in.asUint8())); break;
-      case UINT16: out = boost::shared_ptr<FieldValue>(new Unsigned16Value(in.asUint16())); break;
-      case UINT32: out = boost::shared_ptr<FieldValue>(new Unsigned32Value(in.asUint32())); break;
-      case UINT64: out = boost::shared_ptr<FieldValue>(new Unsigned64Value(in.asUint64())); break;
-      case INT8: out = boost::shared_ptr<FieldValue>(new Integer8Value(in.asInt8())); break;
-      case INT16: out = boost::shared_ptr<FieldValue>(new Integer16Value(in.asInt16())); break;
-      case INT32: out = boost::shared_ptr<FieldValue>(new Integer32Value(in.asInt32())); break;
-      case INT64: out = boost::shared_ptr<FieldValue>(new Integer64Value(in.asInt64())); break;
-      case FLOAT: out = boost::shared_ptr<FieldValue>(new FloatValue(in.asFloat())); break;
-      case DOUBLE: out = boost::shared_ptr<FieldValue>(new DoubleValue(in.asDouble())); break;
+      case VAR_VOID: out = boost::shared_ptr<FieldValue>(new VoidValue()); break;
+      case VAR_BOOL: out = boost::shared_ptr<FieldValue>(new BoolValue(in.asBool())); break;
+      case VAR_UINT8: out = boost::shared_ptr<FieldValue>(new Unsigned8Value(in.asUint8())); break;
+      case VAR_UINT16: out = boost::shared_ptr<FieldValue>(new Unsigned16Value(in.asUint16())); break;
+      case VAR_UINT32: out = boost::shared_ptr<FieldValue>(new Unsigned32Value(in.asUint32())); break;
+      case VAR_UINT64: out = boost::shared_ptr<FieldValue>(new Unsigned64Value(in.asUint64())); break;
+      case VAR_INT8: out = boost::shared_ptr<FieldValue>(new Integer8Value(in.asInt8())); break;
+      case VAR_INT16: out = boost::shared_ptr<FieldValue>(new Integer16Value(in.asInt16())); break;
+      case VAR_INT32: out = boost::shared_ptr<FieldValue>(new Integer32Value(in.asInt32())); break;
+      case VAR_INT64: out = boost::shared_ptr<FieldValue>(new Integer64Value(in.asInt64())); break;
+      case VAR_FLOAT: out = boost::shared_ptr<FieldValue>(new FloatValue(in.asFloat())); break;
+      case VAR_DOUBLE: out = boost::shared_ptr<FieldValue>(new DoubleValue(in.asDouble())); break;
         //TODO: check encoding (and length?) when deciding what AMQP type to treat string as
-      case STRING: out = boost::shared_ptr<FieldValue>(new Str16Value(in.asString())); break;
-      case MAP: 
+      case VAR_STRING: out = boost::shared_ptr<FieldValue>(new Str16Value(in.asString())); break;
+      case VAR_MAP: 
         //out = boost::shared_ptr<FieldValue>(toFieldValueCollection<FieldTableValue>(in.asMap(), &toFieldTableEntry));
         out = boost::shared_ptr<FieldValue>(toFieldTableValue(in.asMap()));
         break;
-      case LIST: 
+      case VAR_LIST: 
         //out = boost::shared_ptr<FieldValue>(toFieldValueCollection<ListValue>(in.asList(), &toFieldValue));
         out = boost::shared_ptr<FieldValue>(toListValue(in.asList()));
         break;

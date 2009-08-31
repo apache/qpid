@@ -113,31 +113,31 @@ class VariantImpl
 };
 
 
-VariantImpl::VariantImpl() : type(VOID) { value.i64 = 0; }
-VariantImpl::VariantImpl(bool b) : type(BOOL) { value.b = b; }
-VariantImpl::VariantImpl(uint8_t i) : type(UINT8) { value.ui8 = i; }
-VariantImpl::VariantImpl(uint16_t i) : type(UINT16) { value.ui16 = i; }
-VariantImpl::VariantImpl(uint32_t i) : type(UINT32) { value.ui32 = i; }
-VariantImpl::VariantImpl(uint64_t i) : type(UINT64) { value.ui64 = i; }
-VariantImpl::VariantImpl(int8_t i) : type(INT8) { value.i8 = i; }
-VariantImpl::VariantImpl(int16_t i) : type(INT16) { value.i16 = i; }
-VariantImpl::VariantImpl(int32_t i) : type(INT32) { value.i32 = i; }
-VariantImpl::VariantImpl(int64_t i) : type(INT64) { value.i64 = i; }
-VariantImpl::VariantImpl(float f) : type(FLOAT) { value.f = f; }
-VariantImpl::VariantImpl(double d) : type(DOUBLE) { value.d = d; }
-VariantImpl::VariantImpl(const std::string& s) : type(STRING) { value.v = new std::string(s); }
-VariantImpl::VariantImpl(const Variant::Map& m) : type(MAP) { value.v = new Variant::Map(m); }
-VariantImpl::VariantImpl(const Variant::List& l) : type(LIST) { value.v = new Variant::List(l); }
+VariantImpl::VariantImpl() : type(VAR_VOID) { value.i64 = 0; }
+VariantImpl::VariantImpl(bool b) : type(VAR_BOOL) { value.b = b; }
+VariantImpl::VariantImpl(uint8_t i) : type(VAR_UINT8) { value.ui8 = i; }
+VariantImpl::VariantImpl(uint16_t i) : type(VAR_UINT16) { value.ui16 = i; }
+VariantImpl::VariantImpl(uint32_t i) : type(VAR_UINT32) { value.ui32 = i; }
+VariantImpl::VariantImpl(uint64_t i) : type(VAR_UINT64) { value.ui64 = i; }
+VariantImpl::VariantImpl(int8_t i) : type(VAR_INT8) { value.i8 = i; }
+VariantImpl::VariantImpl(int16_t i) : type(VAR_INT16) { value.i16 = i; }
+VariantImpl::VariantImpl(int32_t i) : type(VAR_INT32) { value.i32 = i; }
+VariantImpl::VariantImpl(int64_t i) : type(VAR_INT64) { value.i64 = i; }
+VariantImpl::VariantImpl(float f) : type(VAR_FLOAT) { value.f = f; }
+VariantImpl::VariantImpl(double d) : type(VAR_DOUBLE) { value.d = d; }
+VariantImpl::VariantImpl(const std::string& s) : type(VAR_STRING) { value.v = new std::string(s); }
+VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.v = new Variant::Map(m); }
+VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.v = new Variant::List(l); }
 
 VariantImpl::~VariantImpl() { 
     switch (type) {
-      case STRING:
+      case VAR_STRING:
         delete reinterpret_cast<std::string*>(value.v);
         break;
-      case MAP:
+      case VAR_MAP:
         delete reinterpret_cast<Variant::Map*>(value.v);
         break;
-      case LIST:
+      case VAR_LIST:
         delete reinterpret_cast<Variant::List*>(value.v);
         break;
       default:
@@ -175,169 +175,169 @@ bool toBool(const std::string& s)
 bool VariantImpl::asBool() const
 {
     switch(type) {
-      case VOID: return false;
-      case BOOL: return value.b;
-      case UINT8: return value.ui8;
-      case UINT16: return value.ui16;
-      case UINT32: return value.ui32;
-      case UINT64: return value.ui64;
-      case INT8: return value.i8;
-      case INT16: return value.i16;
-      case INT32: return value.i32;
-      case INT64: return value.i64;
-      case STRING: return toBool(*reinterpret_cast<std::string*>(value.v));
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(BOOL)));
+      case VAR_VOID: return false;
+      case VAR_BOOL: return value.b;
+      case VAR_UINT8: return value.ui8;
+      case VAR_UINT16: return value.ui16;
+      case VAR_UINT32: return value.ui32;
+      case VAR_UINT64: return value.ui64;
+      case VAR_INT8: return value.i8;
+      case VAR_INT16: return value.i16;
+      case VAR_INT32: return value.i32;
+      case VAR_INT64: return value.i64;
+      case VAR_STRING: return toBool(*reinterpret_cast<std::string*>(value.v));
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_BOOL)));
     }
 }
 uint8_t VariantImpl::asUint8() const
 {
     switch(type) {
-      case UINT8: return value.ui8;
-      case STRING: return convertFromString<uint8_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(UINT8)));
+      case VAR_UINT8: return value.ui8;
+      case VAR_STRING: return convertFromString<uint8_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT8)));
     }
 }
 uint16_t VariantImpl::asUint16() const
 {
     switch(type) {
-      case UINT8: return value.ui8;
-      case UINT16: return value.ui16;
-      case STRING: return convertFromString<uint16_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(UINT16)));
+      case VAR_UINT8: return value.ui8;
+      case VAR_UINT16: return value.ui16;
+      case VAR_STRING: return convertFromString<uint16_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT16)));
     }
 }
 uint32_t VariantImpl::asUint32() const
 {
     switch(type) {
-      case UINT8: return value.ui8;
-      case UINT16: return value.ui16;
-      case UINT32: return value.ui32;
-      case STRING: return convertFromString<uint32_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(UINT32)));
+      case VAR_UINT8: return value.ui8;
+      case VAR_UINT16: return value.ui16;
+      case VAR_UINT32: return value.ui32;
+      case VAR_STRING: return convertFromString<uint32_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT32)));
     }
 }
 uint64_t VariantImpl::asUint64() const
 {
     switch(type) {
-      case UINT8: return value.ui8;
-      case UINT16: return value.ui16;
-      case UINT32: return value.ui32;
-      case UINT64: return value.ui64;
-      case STRING: return convertFromString<uint64_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(UINT64)));
+      case VAR_UINT8: return value.ui8;
+      case VAR_UINT16: return value.ui16;
+      case VAR_UINT32: return value.ui32;
+      case VAR_UINT64: return value.ui64;
+      case VAR_STRING: return convertFromString<uint64_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_UINT64)));
     }
 }
 int8_t VariantImpl::asInt8() const
 {
     switch(type) {
-      case INT8: return value.i8;
-      case STRING: return convertFromString<int8_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(INT8)));
+      case VAR_INT8: return value.i8;
+      case VAR_STRING: return convertFromString<int8_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT8)));
     }
 }
 int16_t VariantImpl::asInt16() const
 {
     switch(type) {
-      case INT8: return value.i8;
-      case INT16: return value.i16;
-      case STRING: return convertFromString<int16_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(INT16)));
+      case VAR_INT8: return value.i8;
+      case VAR_INT16: return value.i16;
+      case VAR_STRING: return convertFromString<int16_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT16)));
     }
 }
 int32_t VariantImpl::asInt32() const
 {
     switch(type) {
-      case INT8: return value.i8;
-      case INT16: return value.i16;
-      case INT32: return value.i32;
-      case STRING: return convertFromString<int32_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(INT32)));
+      case VAR_INT8: return value.i8;
+      case VAR_INT16: return value.i16;
+      case VAR_INT32: return value.i32;
+      case VAR_STRING: return convertFromString<int32_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT32)));
     }
 }
 int64_t VariantImpl::asInt64() const
 {
     switch(type) {
-      case INT8: return value.i8;
-      case INT16: return value.i16;
-      case INT32: return value.i32;
-      case INT64: return value.i64;
-      case STRING: return convertFromString<int64_t>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(INT64)));
+      case VAR_INT8: return value.i8;
+      case VAR_INT16: return value.i16;
+      case VAR_INT32: return value.i32;
+      case VAR_INT64: return value.i64;
+      case VAR_STRING: return convertFromString<int64_t>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_INT64)));
     }
 }
 float VariantImpl::asFloat() const
 {
     switch(type) {
-      case FLOAT: return value.f;
-      case STRING: return convertFromString<float>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(FLOAT)));
+      case VAR_FLOAT: return value.f;
+      case VAR_STRING: return convertFromString<float>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_FLOAT)));
     }
 }
 double VariantImpl::asDouble() const
 {
     switch(type) {
-      case FLOAT: return value.f;
-      case DOUBLE: return value.d;
-      case STRING: return convertFromString<double>();
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(DOUBLE)));
+      case VAR_FLOAT: return value.f;
+      case VAR_DOUBLE: return value.d;
+      case VAR_STRING: return convertFromString<double>();
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_DOUBLE)));
     }
 }
 std::string VariantImpl::asString() const
 {
     switch(type) {
-      case VOID: return EMPTY;
-      case BOOL: return value.b ? TRUE : FALSE;
-      case UINT8: return boost::lexical_cast<std::string>((int) value.ui8);
-      case UINT16: return boost::lexical_cast<std::string>(value.ui16);
-      case UINT32: return boost::lexical_cast<std::string>(value.ui32);
-      case UINT64: return boost::lexical_cast<std::string>(value.ui64);
-      case INT8: return boost::lexical_cast<std::string>((int) value.i8);
-      case INT16: return boost::lexical_cast<std::string>(value.i16);
-      case INT32: return boost::lexical_cast<std::string>(value.i32);
-      case INT64: return boost::lexical_cast<std::string>(value.i64);
-      case DOUBLE: return boost::lexical_cast<std::string>(value.d);
-      case FLOAT: return boost::lexical_cast<std::string>(value.f);
-      case STRING: return *reinterpret_cast<std::string*>(value.v);
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(STRING)));
+      case VAR_VOID: return EMPTY;
+      case VAR_BOOL: return value.b ? TRUE : FALSE;
+      case VAR_UINT8: return boost::lexical_cast<std::string>((int) value.ui8);
+      case VAR_UINT16: return boost::lexical_cast<std::string>(value.ui16);
+      case VAR_UINT32: return boost::lexical_cast<std::string>(value.ui32);
+      case VAR_UINT64: return boost::lexical_cast<std::string>(value.ui64);
+      case VAR_INT8: return boost::lexical_cast<std::string>((int) value.i8);
+      case VAR_INT16: return boost::lexical_cast<std::string>(value.i16);
+      case VAR_INT32: return boost::lexical_cast<std::string>(value.i32);
+      case VAR_INT64: return boost::lexical_cast<std::string>(value.i64);
+      case VAR_DOUBLE: return boost::lexical_cast<std::string>(value.d);
+      case VAR_FLOAT: return boost::lexical_cast<std::string>(value.f);
+      case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_STRING)));
     }
 }
 
 const Variant::Map& VariantImpl::asMap() const
 {
     switch(type) {
-      case MAP: return *reinterpret_cast<Variant::Map*>(value.v);
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(MAP)));
+      case VAR_MAP: return *reinterpret_cast<Variant::Map*>(value.v);
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_MAP)));
     }
 }
 
 Variant::Map& VariantImpl::asMap()
 {
     switch(type) {
-      case MAP: return *reinterpret_cast<Variant::Map*>(value.v);
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(MAP)));
+      case VAR_MAP: return *reinterpret_cast<Variant::Map*>(value.v);
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_MAP)));
     }
 }
 
 const Variant::List& VariantImpl::asList() const
 {
     switch(type) {
-      case LIST: return *reinterpret_cast<Variant::List*>(value.v);
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(LIST)));
+      case VAR_LIST: return *reinterpret_cast<Variant::List*>(value.v);
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_LIST)));
     }
 }
 
 Variant::List& VariantImpl::asList()
 {
     switch(type) {
-      case LIST: return *reinterpret_cast<Variant::List*>(value.v);
-      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(LIST)));
+      case VAR_LIST: return *reinterpret_cast<Variant::List*>(value.v);
+      default: throw InvalidConversion(QPID_MSG("Cannot convert from " << getTypeName(type) << " to " << getTypeName(VAR_LIST)));
     }
 }
 
 std::string& VariantImpl::getString()
 {
     switch(type) {
-      case STRING: return *reinterpret_cast<std::string*>(value.v);
+      case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
       default: throw InvalidConversion(QPID_MSG("Variant is not a string; use asString() if conversion is required."));
     }
 }
@@ -345,7 +345,7 @@ std::string& VariantImpl::getString()
 const std::string& VariantImpl::getString() const
 {
     switch(type) {
-      case STRING: return *reinterpret_cast<std::string*>(value.v);
+      case VAR_STRING: return *reinterpret_cast<std::string*>(value.v);
       default: throw InvalidConversion(QPID_MSG("Variant is not a string; use asString() if conversion is required."));
     }
 }
@@ -356,21 +356,21 @@ const std::string& VariantImpl::getEncoding() const { return encoding; }
 std::string VariantImpl::getTypeName(VariantType type) const
 {
     switch (type) {
-      case VOID: return "void";
-      case BOOL: return "bool";
-      case UINT8: return "uint8";
-      case UINT16: return "uint16";
-      case UINT32: return "uint32";
-      case UINT64: return "uint64";
-      case INT8: return "int8";
-      case INT16: return "int16";
-      case INT32: return "int32";
-      case INT64: return "int64";
-      case FLOAT: return "float";
-      case DOUBLE: return "double";
-      case STRING: return "string";
-      case MAP: return "map";
-      case LIST: return "list";
+      case VAR_VOID: return "void";
+      case VAR_BOOL: return "bool";
+      case VAR_UINT8: return "uint8";
+      case VAR_UINT16: return "uint16";
+      case VAR_UINT32: return "uint32";
+      case VAR_UINT64: return "uint64";
+      case VAR_INT8: return "int8";
+      case VAR_INT16: return "int16";
+      case VAR_INT32: return "int32";
+      case VAR_INT64: return "int64";
+      case VAR_FLOAT: return "float";
+      case VAR_DOUBLE: return "double";
+      case VAR_STRING: return "string";
+      case VAR_MAP: return "map";
+      case VAR_LIST: return "list";
     }
     return "<unknown>";//should never happen
 }
@@ -378,20 +378,20 @@ std::string VariantImpl::getTypeName(VariantType type) const
 VariantImpl* VariantImpl::create(const Variant& v) 
 {
     switch (v.getType()) {
-      case BOOL: return new VariantImpl(v.asBool());
-      case UINT8: return new VariantImpl(v.asUint8());
-      case UINT16: return new VariantImpl(v.asUint16());
-      case UINT32: return new VariantImpl(v.asUint32());
-      case UINT64: return new VariantImpl(v.asUint64());
-      case INT8: return new VariantImpl(v.asInt8());
-      case INT16: return new VariantImpl(v.asInt16());
-      case INT32: return new VariantImpl(v.asInt32());
-      case INT64: return new VariantImpl(v.asInt64());
-      case FLOAT: return new VariantImpl(v.asFloat());
-      case DOUBLE: return new VariantImpl(v.asDouble());
-      case STRING: return new VariantImpl(v.asString());
-      case MAP: return new VariantImpl(v.asMap());
-      case LIST: return new VariantImpl(v.asList());
+      case VAR_BOOL: return new VariantImpl(v.asBool());
+      case VAR_UINT8: return new VariantImpl(v.asUint8());
+      case VAR_UINT16: return new VariantImpl(v.asUint16());
+      case VAR_UINT32: return new VariantImpl(v.asUint32());
+      case VAR_UINT64: return new VariantImpl(v.asUint64());
+      case VAR_INT8: return new VariantImpl(v.asInt8());
+      case VAR_INT16: return new VariantImpl(v.asInt16());
+      case VAR_INT32: return new VariantImpl(v.asInt32());
+      case VAR_INT64: return new VariantImpl(v.asInt64());
+      case VAR_FLOAT: return new VariantImpl(v.asFloat());
+      case VAR_DOUBLE: return new VariantImpl(v.asDouble());
+      case VAR_STRING: return new VariantImpl(v.asString());
+      case VAR_MAP: return new VariantImpl(v.asMap());
+      case VAR_LIST: return new VariantImpl(v.asList());
       default: return new VariantImpl();
     }
 }
@@ -584,13 +584,13 @@ std::ostream& operator<<(std::ostream& out, const Variant::List& list)
 std::ostream& operator<<(std::ostream& out, const Variant& value)
 {
     switch (value.getType()) {
-      case MAP:
+      case VAR_MAP:
         out << "{" << value.asMap() << "}";
         break;
-      case LIST:
+      case VAR_LIST:
         out << "[" << value.asList() << "]";
         break;
-      case VOID:
+      case VAR_VOID:
         out << "<void>";
         break;
       default:

@@ -35,8 +35,8 @@ template <class> class PrivateImplRef;
 
 namespace messaging {
 
-class Address;
-class Filter;
+struct Address;
+struct Filter;
 class Message;
 class MessageListener;
 class Sender;
