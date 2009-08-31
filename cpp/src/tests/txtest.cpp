@@ -33,7 +33,7 @@
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/sys/uuid.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/sys/Thread.h"
 
 using namespace qpid;
@@ -130,8 +130,6 @@ struct Transfer : public Client, public Runnable
     std::string src;
     std::string dest;
     Thread thread;
-    uuid_t uuid;
-    char uuidStr[37]; // Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx + trailing \0
     framing::Xid xid;
 
     Transfer(const std::string& to, const std::string& from) : src(to), dest(from), xid(0x4c414e47, "", from) {}
@@ -184,9 +182,8 @@ struct Transfer : public Client, public Runnable
     }
 
     void setNewXid(framing::Xid& xid) {
-        ::uuid_generate(uuid);
-        ::uuid_unparse(uuid, uuidStr);
-        xid.setGlobalId(uuidStr);
+        framing::Uuid uuid(true);
+        xid.setGlobalId(uuid.str());
     }
 };
 

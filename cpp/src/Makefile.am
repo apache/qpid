@@ -54,7 +54,7 @@ windows_dist = \
   qpid/sys/windows/Time.cpp \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
-  ../include/qpid/sys/windows/uuid.h \
+  qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp
@@ -461,7 +461,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Timer.cpp				\
   qpid/sys/Timer.h				\
   qpid/sys/Waitable.h				\
-  qpid/sys/alloca.h
+  qpid/sys/alloca.h				\
+  qpid/sys/uuid.h
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
@@ -782,7 +783,6 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/SystemInfo.h		\
   ../include/qpid/sys/Thread.h			\
   ../include/qpid/sys/Time.h			\
-  ../include/qpid/sys/uuid.h			\
   ../include/qpid/messaging/Address.h 		\
   ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Codec.h 	        \
