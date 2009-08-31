@@ -49,11 +49,15 @@ libqmfcommon_la_SOURCES =			\
   qmf/ObjectIdImpl.h				\
   qmf/ObjectImpl.cpp				\
   qmf/ObjectImpl.h				\
+  qmf/Protocol.cpp				\
+  qmf/Protocol.h				\
   qmf/Query.h					\
   qmf/QueryImpl.cpp				\
   qmf/QueryImpl.h				\
   qmf/ResilientConnection.cpp			\
   qmf/ResilientConnection.h			\
+  qmf/SequenceManager.cpp			\
+  qmf/SequenceManager.h				\
   qmf/Schema.h					\
   qmf/SchemaImpl.cpp				\
   qmf/SchemaImpl.h				\
