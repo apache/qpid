@@ -33,9 +33,9 @@ namespace client {
 
 namespace messaging {
 
-class Address;
+struct Address;
 class Codec;
-class MessageImpl;
+struct MessageImpl;
 
 /**
  * Representation of a message.
@@ -81,7 +81,7 @@ class Message
 
   private:
     MessageImpl* impl;
-  friend class MessageImplAccess;
+    friend struct MessageImplAccess;
 };
 }} // namespace qpid::messaging
 

@@ -28,8 +28,8 @@ namespace {
 const std::string EMPTY_STRING = "";
 }
 
-MessageImpl::MessageImpl(const std::string& c) : bytes(c), type(VOID), internalId(0) {}
-MessageImpl::MessageImpl(const char* chars, size_t count) : bytes(chars, count), type(VOID), internalId(0) {}
+MessageImpl::MessageImpl(const std::string& c) : bytes(c), type(VAR_VOID), internalId(0) {}
+MessageImpl::MessageImpl(const char* chars, size_t count) : bytes(chars, count), type(VAR_VOID), internalId(0) {}
 
 void MessageImpl::setReplyTo(const Address& d) { replyTo = d; }
 const Address& MessageImpl::getReplyTo() const { return replyTo; }
@@ -54,9 +54,9 @@ Variant& MessageImpl::operator[](const std::string& key) { return asMap()[key]; 
 
 std::ostream& MessageImpl::print(std::ostream& out) const
 {
-    if (type == MAP) {
+    if (type == VAR_MAP) {
         return out << content.asMap();
-    } else if (type == LIST) {
+    } else if (type == VAR_LIST) {
         return out << content.asList();
     } else {
         return out << bytes;
@@ -65,13 +65,13 @@ std::ostream& MessageImpl::print(std::ostream& out) const
 
 template <class T> MessageContent& MessageImpl::append(T& t)
 {
-    if (type == VOID) {
+    if (type == VAR_VOID) {
         //TODO: this is inefficient, probably want to hold on to the stream object
         std::stringstream s;
         s << bytes;
         s << t;
         bytes = s.str();
-    } else if (type == LIST) {
+    } else if (type == VAR_LIST) {
         content.asList().push_back(Variant(t));
     } else {
         throw InvalidConversion("<< operator only valid on strings and lists");
@@ -94,33 +94,33 @@ MessageContent& MessageImpl::operator<<(double v) { return append(v); }
 MessageContent& MessageImpl::operator<<(float v) { return append(v); }
 MessageContent& MessageImpl::operator=(const std::string& s) 
 { 
-    type = VOID;
+    type = VAR_VOID;
     bytes = s; 
     return *this;
 }
 MessageContent& MessageImpl::operator=(const char* c) 
 { 
-    type = VOID;
+    type = VAR_VOID;
     bytes = c;
     return *this;
 }
 MessageContent& MessageImpl::operator=(const Variant::Map& m)
 { 
-    type = MAP;
+    type = VAR_MAP;
     content = m; 
     return *this;
 }
 
 MessageContent& MessageImpl::operator=(const Variant::List& l)
 { 
-    type = LIST;
+    type = VAR_LIST;
     content = l; 
     return *this;
 }
 
 void MessageImpl::encode(Codec& codec)
 {
-    if (content.getType() != VOID) {
+    if (content.getType() != VAR_VOID) {
         bytes = EMPTY_STRING;
         codec.encode(content, bytes);
     }
@@ -129,15 +129,15 @@ void MessageImpl::encode(Codec& codec)
 void MessageImpl::decode(Codec& codec) 
 {
     codec.decode(bytes, content);    
-    if (content.getType() == MAP) type = MAP;
-    else if (content.getType() == LIST) type = LIST;
-    else type = VOID;//TODO: what if codec set some type other than map or list??
+    if (content.getType() == VAR_MAP) type = VAR_MAP;
+    else if (content.getType() == VAR_LIST) type = VAR_LIST;
+    else type = VAR_VOID;//TODO: what if codec set some type other than map or list??
 }
 
 void MessageImpl::setInternalId(qpid::framing::SequenceNumber i) { internalId = i; }
 qpid::framing::SequenceNumber MessageImpl::getInternalId() { return internalId; }
 
-bool MessageImpl::isVoid() const { return type == VOID; }
+bool MessageImpl::isVoid() const { return type == VAR_VOID; }
 
 const std::string& MessageImpl::asString() const 
 { 
@@ -165,24 +165,24 @@ Variant::Map& MessageImpl::asMap()
 { 
     if (isVoid()) {
         content = Variant::Map(); 
-        type = MAP; 
+        type = VAR_MAP; 
     }
     return content.asMap(); 
 }
-bool MessageImpl::isMap() const { return type == MAP; }
+bool MessageImpl::isMap() const { return type == VAR_MAP; }
 
 const Variant::List& MessageImpl::asList() const { return content.asList(); }
 Variant::List& MessageImpl::asList()
 { 
     if (isVoid()) {
-        content = Variant::List(); 
-        type = LIST; 
+        content = Variant::List();
+        type = VAR_LIST; 
     }
     return content.asList(); 
 }
-bool MessageImpl::isList() const { return type == LIST; }
+bool MessageImpl::isList() const { return type == VAR_LIST; }
 
-void MessageImpl::clear() { bytes = EMPTY_STRING; content.reset(); type = VOID; } 
+void MessageImpl::clear() { bytes = EMPTY_STRING; content.reset(); type = VAR_VOID; } 
 
 MessageImpl& MessageImplAccess::get(Message& msg)
 {

@@ -32,8 +32,8 @@ namespace client {
 
 namespace messaging {
 
-class Address;
-class Filter;
+struct Address;
+struct Filter;
 class Message;
 class Sender;
 class Receiver;

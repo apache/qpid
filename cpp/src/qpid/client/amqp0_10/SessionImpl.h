@@ -32,8 +32,8 @@
 namespace qpid {
 
 namespace messaging {
-class Address;
-class Filter;
+struct Address;
+struct Filter;
 class Message;
 class Receiver;
 class Sender;

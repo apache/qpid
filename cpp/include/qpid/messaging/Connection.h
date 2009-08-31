@@ -41,7 +41,7 @@ class Session;
 class Connection : public qpid::client::Handle<ConnectionImpl>
 {
   public:
-    static Connection open(const std::string& url, const Variant::Map& options = Variant::Map());
+    static QPID_CLIENT_EXTERN Connection open(const std::string& url, const Variant::Map& options = Variant::Map());
 
     QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl = 0);
     QPID_CLIENT_EXTERN Connection(const Connection&);
