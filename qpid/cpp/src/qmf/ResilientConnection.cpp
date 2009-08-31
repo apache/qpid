@@ -318,6 +318,7 @@ void ResilientConnectionImpl::run()
 
     while (true) {
         try {
+            QPID_LOG(trace, "Trying to open connection...");
             connection.open(settings.impl->getClientSettings());
             {
                 Mutex::ScopedLock _lock(lock);
@@ -326,6 +327,7 @@ void ResilientConnectionImpl::run()
 
                 while (connected)
                     cond.wait(lock);
+                delay = delayMin;
 
                 while (!sessions.empty()) {
                     set<RCSession::Ptr>::iterator iter = sessions.begin();
@@ -334,6 +336,11 @@ void ResilientConnectionImpl::run()
                     EnqueueEvent(ResilientConnectionEvent::SESSION_CLOSED, sess->userContext);
                     Mutex::ScopedUnlock _u(lock);
                     sess->stop();
+
+                    // Nullify the intrusive pointer within the scoped unlock, otherwise,
+                    // the reference is held until overwritted above (under lock) which causes
+                    // the session destructor to be called with the lock held.
+                    sess = 0;
                 }
 
                 EnqueueEvent(ResilientConnectionEvent::DISCONNECTED);
@@ -341,7 +348,6 @@ void ResilientConnectionImpl::run()
                 if (shutdown)
                     return;
             }
-            delay = delayMin;
             connection.close();
         } catch (exception &e) {
             QPID_LOG(debug, "connection.open exception: " << e.what());

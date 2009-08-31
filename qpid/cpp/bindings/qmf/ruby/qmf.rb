@@ -536,7 +536,7 @@ module Qmf
   class Console
     attr_reader :impl
 
-    def initialize(handler, kwargs={})
+    def initialize(handler = nil, kwargs={})
       @handler = handler
       @impl = Qmfengine::ConsoleEngine.new
       @event = Qmfengine::ConsoleEvent.new
@@ -587,6 +587,7 @@ module Qmf
       valid = @impl.getEvent(@event)
       while valid
         count += 1
+        puts "Console Event: #{@event.kind}"
         case @event.kind
         when Qmfengine::ConsoleEvent::AGENT_ADDED
         when Qmfengine::ConsoleEvent::AGENT_DELETED
