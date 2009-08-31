@@ -782,8 +782,14 @@ public class DerbyMessageStore implements MessageStore
                 {
                     stmt = conn.prepareStatement(INSERT_INTO_QUEUE);
 
+                    String owner = queue.getPrincipalHolder() == null 
+                                   ? null
+                                   : queue.getPrincipalHolder().getPrincipal() == null
+                                     ? null
+                                     : queue.getPrincipalHolder().getPrincipal().getName();
+
                     stmt.setString(1, queue.getName().toString());
-                    stmt.setString(2, queue.getOwner() == null ? null : queue.getOwner().toString());
+                    stmt.setString(2, owner);
 
                     stmt.execute();
 

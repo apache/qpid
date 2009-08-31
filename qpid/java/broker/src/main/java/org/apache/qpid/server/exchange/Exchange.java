@@ -29,6 +29,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public interface Exchange
 {
@@ -50,6 +51,8 @@ public interface Exchange
     void close() throws AMQException;
 
     void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
+
+
 
     void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException;
 
@@ -96,4 +99,5 @@ public interface Exchange
     boolean isBound(String bindingKey, AMQQueue queue);
 
     boolean isBound(String bindingKey);
+
 }

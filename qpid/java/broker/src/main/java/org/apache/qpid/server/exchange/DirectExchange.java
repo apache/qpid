@@ -160,7 +160,17 @@ public class DirectExchange extends AbstractExchange
         return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
     }
 
+    public void registerQueue(String routingKey, AMQQueue queue, Map<String,Object> args) throws AMQException
+    {
+        registerQueue(new AMQShortString(routingKey), queue);
+    }
+
     public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
+    {
+        registerQueue(routingKey, queue);
+    }
+
+    private void registerQueue(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         assert queue != null;
         assert routingKey != null;

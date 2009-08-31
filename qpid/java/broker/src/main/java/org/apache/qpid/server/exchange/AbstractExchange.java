@@ -43,6 +43,8 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Map;
+
 public abstract class AbstractExchange implements Exchange, Managable
 {
     private AMQShortString _name;
@@ -205,6 +207,12 @@ public abstract class AbstractExchange implements Exchange, Managable
     {
         return getVirtualHost().getQueueRegistry();
     }
+
+    public boolean isBound(String bindingKey, Map<String,Object> arguments, AMQQueue queue)
+    {
+        return isBound(new AMQShortString(bindingKey), queue);
+    }
+
 
     public boolean isBound(String bindingKey, AMQQueue queue)
     {

@@ -22,7 +22,7 @@ package org.apache.qpid.server.flow;
  */
 public interface FlowCreditManager_0_10 extends FlowCreditManager
 {
-    public void addCredit(long bytes, long count);
+    public void addCredit(long count, long bytes);
 
     void clearCredit();
 }

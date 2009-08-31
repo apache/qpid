@@ -33,6 +33,7 @@ public class SubscriptionTestHelper implements Subscription
     private final List<QueueEntry> messages;
     private final Object key;
     private boolean isSuspended;
+    private AMQQueue.Context _queueContext;
 
     public SubscriptionTestHelper(Object key)
     {
@@ -101,9 +102,14 @@ public class SubscriptionTestHelper implements Subscription
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void restoreCredit(final QueueEntry queueEntry)
+    public void onDequeue(final QueueEntry queueEntry)
     {
 
+    }
+
+    public void restoreCredit(QueueEntry queueEntry)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void setStateListener(final StateListener listener)
@@ -116,9 +122,14 @@ public class SubscriptionTestHelper implements Subscription
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public QueueEntry getLastSeenEntry()
+    public AMQQueue.Context getQueueContext()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _queueContext;
+    }
+
+    public void setQueueContext(AMQQueue.Context queueContext)
+    {
+        _queueContext = queueContext;
     }
 
     public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue)

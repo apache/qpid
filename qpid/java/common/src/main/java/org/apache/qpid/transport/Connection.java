@@ -316,7 +316,14 @@ public class Connection extends ConnectionInvoker
     public void dispatch(Method method)
     {
         Session ssn = getSession(method.getChannel());
-        ssn.received(method);
+        if(ssn != null)
+        {
+            ssn.received(method);
+        }
+        else
+        {
+            // TODO
+        }
     }
 
     public int getChannelMax()

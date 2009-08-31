@@ -179,6 +179,11 @@ public abstract class Method extends Struct implements ProtocolEvent
         }
     }
 
+    public boolean hasCompletionListener()
+    {
+        return completionListener != null;
+    }
+
     public String toString()
     {
         StringBuilder str = new StringBuilder();

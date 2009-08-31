@@ -24,10 +24,7 @@ import org.apache.qpid.transport.*;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
+import org.apache.qpid.server.exchange.*;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -39,14 +36,13 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.QueueDeleteOkBody;
-import org.apache.qpid.framing.ExchangeDeleteOkBody;
+import org.apache.qpid.framing.*;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Collection;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
@@ -90,7 +86,14 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageAcquire(Session session, MessageAcquire method)
     {
-        super.messageAcquire(session, method);
+        RangeSet acquiredRanges = ((ServerSession)session).acquire(method.getTransfers());
+
+        Acquired result = new Acquired(acquiredRanges);
+
+
+        session.executionResult((int) method.getId(), result);
+
+        
     }
 
     @Override
@@ -129,35 +132,60 @@ public class ServerSessionDelegate extends SessionDelegate
         else
         {
             String destination = method.getDestination();
-            String queueName = method.getQueue();
-            QueueRegistry queueRegistry = getQueueRegistry(session);
 
-
-            AMQQueue queue = queueRegistry.getQueue(queueName);
-
-            if(queue == null)
+            if(((ServerSession)session).getSubscription(destination)!=null)
             {
-                exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");    
+                exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Subscription already exists with destaination: '"+destination+"'");
             }
             else
             {
+                String queueName = method.getQueue();
+                QueueRegistry queueRegistry = getQueueRegistry(session);
 
-                FlowCreditManager_0_10 creditManager = new CreditCreditManager(0L,0L);
 
-                // TODO filters
+                AMQQueue queue = queueRegistry.getQueue(queueName);
 
-                Subscription_0_10 sub = new Subscription_0_10((ServerSession)session, destination,method.getAcceptMode(),method.getAcquireMode(), creditManager, null);
-
-                ((ServerSession)session).register(destination, sub);
-                try
+                if(queue == null)
                 {
-                    queue.registerSubscription(sub, method.getExclusive());
+                    exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
                 }
-                catch (AMQException e)
+                else if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
                 {
-                    // TODO
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    throw new RuntimeException(e);
+                    exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
+                }
+                else
+                {
+
+                    FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
+
+                    // TODO filters
+
+                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session, 
+                                                                  destination,
+                                                                  method.getAcceptMode(),
+                                                                  method.getAcquireMode(),
+                                                                  MessageFlowMode.WINDOW,
+                                                                  creditManager, null);
+
+                    ((ServerSession)session).register(destination, sub);
+                    try
+                    {
+                        queue.registerSubscription(sub, method.getExclusive());
+                    }
+                    catch (AMQQueue.ExistingExclusiveSubscription existing)
+                    {
+                        exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an exclusive consumer");
+                    }
+                    catch (AMQQueue.ExistingSubscriptionPreventsExclusive exclusive)
+                    {
+                        exception(session, method, ExecutionErrorCode.RESOURCE_LOCKED, "Queue has an existing consumer - can't subscribe exclusively");
+                    }
+                    catch (AMQException e)
+                    {
+                        // TODO
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }
@@ -172,18 +200,34 @@ public class ServerSessionDelegate extends SessionDelegate
         if(xfr.hasDestination())
         {
             exchange = exchangeRegistry.getExchange(xfr.getDestination());
+            if(exchange == null)
+            {
+                exchange = exchangeRegistry.getDefaultExchange();
+            }
         }
         else
         {
             exchange = exchangeRegistry.getDefaultExchange();
         }
 
-        MessageTransferMessage message = new MessageTransferMessage(xfr);
+        MessageTransferMessage message = new MessageTransferMessage(xfr, ((ServerSession)ssn).getReference());
+
+        DeliveryProperties delvProps = null;
+        if(message.getHeader() != null && (delvProps = message.getHeader().get(DeliveryProperties.class)) != null && delvProps.hasTtl() && !delvProps.hasExpiration())
+        {
+            delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
+        }
+
         try
         {
             ArrayList<AMQQueue> queues = exchange.route(message);
 
-            ((ServerSession) ssn).enqueue(message, queues);
+
+
+            if(queues != null)
+            {
+                ((ServerSession) ssn).enqueue(message, queues);
+            }
 
             ssn.processed(xfr);
         }
@@ -281,6 +325,10 @@ public class ServerSessionDelegate extends SessionDelegate
             else
             {
                 // TODO - check exchange has same properties
+                if(!exchange.getType().toString().equals(method.getType()))
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
+                }
             }
 
         }
@@ -329,7 +377,10 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                // TODO check same as declared
+                if(!exchange.getType().toString().equals(method.getType()))
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
+                }
             }
 
         }
@@ -343,7 +394,7 @@ public class ServerSessionDelegate extends SessionDelegate
         ex.setDescription(description);
 
         session.invoke(ex);
-        session.close();
+        //session.close();
     }
 
     private Exchange getExchange(Session session, String exchangeName)
@@ -431,12 +482,128 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void exchangeBind(Session session, ExchangeBind method)
     {
-        super.exchangeBind(session, method);
+
+        VirtualHost virtualHost = getVirtualHost(session);
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+        if (!method.hasQueue())
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
+        }
+        else if (!method.hasExchange())
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "exchange not set");
+        }
+/*
+        else if (!method.hasBindingKey())
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "binding-key not set");
+        }
+*/
+        else
+        {
+            //TODO - here because of non-compiant python tests
+            if (!method.hasBindingKey())
+            {
+                method.setBindingKey(method.getQueue());    
+            }
+            AMQQueue queue = queueRegistry.getQueue(method.getQueue());
+            Exchange exchange = exchangeRegistry.getExchange(method.getExchange());
+            if(queue == null)
+            {
+                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: '" + method.getQueue() + "' not found");
+            }
+            else if(exchange == null)
+            {
+                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Exchange: '" + method.getExchange() + "' not found");
+            }
+            else if (!virtualHost.getAccessManager().authoriseBind((ServerSession)session, exchange,
+                    queue, new AMQShortString(method.getBindingKey())))
+            {
+                exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Bind Exchange: '" + method.getExchange()
+                                                                           + "' to Queue: '" + method.getQueue()
+                                                                           + "' not allowed");
+            }
+            else if(exchange.getType().equals(HeadersExchange.TYPE.getName()) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
+            {
+                exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getName() + " require an x-match header");    
+            }
+            else
+            {
+                try
+                {
+                    AMQShortString routingKey = new AMQShortString(method.getBindingKey());
+                    FieldTable fieldTable = FieldTable.convertToFieldTable(method.getArguments());
+
+                    if (!exchange.isBound(routingKey, fieldTable, queue))
+                    {
+                        queue.bind(exchange, routingKey, fieldTable);
+                    }
+                    else
+                    {
+                        // todo
+                    }
+                }
+                catch (AMQException e)
+                {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+            }
+
+
+        }
+
+
+
     }
 
     @Override
     public void exchangeUnbind(Session session, ExchangeUnbind method)
     {
+                VirtualHost virtualHost = getVirtualHost(session);
+        ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+        QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+        if (!method.hasQueue())
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
+        }
+        else if (!method.hasExchange())
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "exchange not set");
+        }
+        else if (!method.hasBindingKey())
+        {
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "binding-key not set");
+        }
+        else
+        {
+            AMQQueue queue = queueRegistry.getQueue(method.getQueue());
+            Exchange exchange = exchangeRegistry.getExchange(method.getExchange());
+            if(queue == null)
+            {
+                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: '" + method.getQueue() + "' not found");
+            }
+            else if(exchange == null)
+            {
+                exception(session, method, ExecutionErrorCode.NOT_FOUND, "Exchange: '" + method.getExchange() + "' not found");
+            }
+            else
+            {
+                try
+                {
+                    queue.unBind(exchange, new AMQShortString(method.getBindingKey()), null);
+                }
+                catch (AMQException e)
+                {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+
         super.exchangeUnbind(session, method);
     }
 
@@ -445,41 +612,65 @@ public class ServerSessionDelegate extends SessionDelegate
     {
 
         ExchangeBoundResult result = new ExchangeBoundResult();
+        Exchange exchange;
+        AMQQueue queue;
         if(method.hasExchange())
         {
-            Exchange exchange = getExchange(session, method.getExchange());
+            exchange = getExchange(session, method.getExchange());
 
             if(exchange == null)
             {
                 result.setExchangeNotFound(true);
             }
+        }
+        else
+        {
+            exchange = getExchangeRegistry(session).getDefaultExchange();
+        }
 
-            if(method.hasQueue())
+
+        if(method.hasQueue())
+        {
+
+            queue = getQueue(session, method.getQueue());
+            if(queue == null)
+            {
+                result.setQueueNotFound(true);
+            }
+        
+
+            if(exchange != null && queue != null)
             {
 
-                AMQQueue queue = getQueue(session, method.getQueue());
-                if(queue == null)
-                {
-                    result.setQueueNotFound(true);
-                }
+                boolean queueMatched = exchange.isBound(queue);
 
-                if(exchange != null && queue != null)
+                result.setQueueNotMatched(!queueMatched);
+
+
+                if(method.hasBindingKey())
                 {
 
-                    if(method.hasBindingKey())
+                    if(method.hasArguments())
                     {
-
-                        if(method.hasArguments())
-                        {
-                            // TODO
-                        }
-                        result.setKeyNotMatched(!exchange.isBound(method.getBindingKey(), queue));
-
+                        // TODO
                     }
-
-                    result.setQueueNotMatched(!exchange.isBound(queue));
-
+                    if(queueMatched)
+                    {
+                        result.setKeyNotMatched(!exchange.isBound(method.getBindingKey(), queue));
+                    }
+                    else
+                    {
+                        result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
+                    }
                 }
+                else if (method.hasArguments())
+                {
+                    // TODO
+                    
+                }
+
+                result.setQueueNotMatched(!exchange.isBound(queue));
+
             }
             else if(exchange != null && method.hasBindingKey())
             {
@@ -492,30 +683,19 @@ public class ServerSessionDelegate extends SessionDelegate
             }
 
         }
-        else if(method.hasQueue())
+        else if(exchange != null && method.hasBindingKey())
         {
-            AMQQueue queue = getQueue(session, method.getQueue());
-            if(queue == null)
+            if(method.hasArguments())
             {
-                result.setQueueNotFound(true);
+                // TODO
             }
-            else
-            {
-                if(method.hasBindingKey())
-                {
-                    if(method.hasArguments())
-                    {
-                        // TODO
-                    }
-
-                    // TODO
-                }
-            }
+            result.setKeyNotMatched(!exchange.isBound(method.getBindingKey()));
 
         }
 
 
         session.executionResult((int) method.getId(), result);
+
 
     }
 
@@ -580,6 +760,11 @@ public class ServerSessionDelegate extends SessionDelegate
                     try
                     {
                         queue = createQueue(queueName, method, virtualHost, (ServerSession)session);
+                        if(method.getExclusive())
+                        {
+                            queue.setPrincipalHolder((ServerSession)session);
+                        }
+
 
                         if (queue.isDurable() && !queue.isAutoDelete())
                         {
@@ -597,6 +782,64 @@ public class ServerSessionDelegate extends SessionDelegate
                             queue.bind(defaultExchange, new AMQShortString(queueName), null);
 
                         }
+
+                        if(method.hasAutoDelete()
+                           && method.getAutoDelete()
+                           && method.hasExclusive()
+                           && method.getExclusive())
+                        {
+                            final AMQQueue q = queue;
+                            final ServerSession.Task deleteQueueTask = new ServerSession.Task()
+                            {
+
+                                public void doTask(ServerSession session)
+                                {
+                                    try
+                                    {
+                                        q.delete();
+                                    }
+                                    catch (AMQException e)
+                                    {
+                                        //TODO
+                                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                    }
+                                }
+                            };
+                            final ServerSession s = (ServerSession) session;
+                            s.addSessionCloseTask(deleteQueueTask);
+                            queue.addQueueDeleteTask(new AMQQueue.Task()
+                            {
+
+                                public void doTask(AMQQueue queue) throws AMQException
+                                {
+                                    s.removeSessionCloseTask(deleteQueueTask);
+                                }
+                            });
+                        }
+                        else if(method.getExclusive())
+                        {
+                            {
+                            final AMQQueue q = queue;
+                            final ServerSession.Task removeExclusive = new ServerSession.Task()
+                            {
+
+                                public void doTask(ServerSession session)
+                                {
+                                    q.setPrincipalHolder(null);
+                                }
+                            };
+                            final ServerSession s = (ServerSession) session;
+                            s.addSessionCloseTask(removeExclusive);
+                            queue.addQueueDeleteTask(new AMQQueue.Task()
+                            {
+
+                                public void doTask(AMQQueue queue) throws AMQException
+                                {
+                                    s.removeSessionCloseTask(removeExclusive);
+                                }
+                            });
+                        }
+                        }
                     }
                     catch (AMQException e)
                     {
@@ -605,13 +848,12 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                 }
             }
-            else if (method.getExclusive() && (queue.getOwner() != null && !queue.getOwner().equals(((ServerSession)session).getPrincipal().getName())))
+            else if (method.getExclusive() && (queue.getPrincipalHolder() != null && !queue.getPrincipalHolder().equals(session)))
             {
 
                     String description = "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
-                                                                           + "declared on another client ID('"
-                                                                           + queue.getOwner() + "')";
+                                                                           + "declared on another session";
                     ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
 
                     exception(session, method, errorCode, description);
@@ -695,7 +937,11 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if (method.getIfEmpty() && !queue.isEmpty())
+                if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                {
+                    exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
+                }
+                else if (method.getIfEmpty() && !queue.isEmpty())
                 {
                     exception(session, method, ExecutionErrorCode.PRECONDITION_FAILED, "Queue " + queueName + " not empty");
                 }
@@ -746,7 +992,7 @@ public class ServerSessionDelegate extends SessionDelegate
         String queueName = method.getQueue();
         if(queueName == null || queueName.length()==0)
         {
-            exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "No queue name supplied");
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "No queue name supplied");
 
         }
         else
@@ -778,7 +1024,25 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void queueQuery(Session session, QueueQuery method)
     {
-        super.queueQuery(session, method);
+        QueueQueryResult result = new QueueQueryResult();
+
+        AMQQueue queue = getQueue(session, method.getQueue());
+
+        if(queue != null)
+        {
+            result.setQueue(queue.getName().toString());
+            result.setDurable(queue.isDurable());
+            result.setExclusive(queue.isExclusive());
+            result.setAutoDelete(queue.isAutoDelete());
+            result.setArguments(queue.getArguments());
+            result.setMessageCount(queue.getMessageCount());
+            result.setSubscriberCount(queue.getConsumerCount());
+
+        }
+
+
+        session.executionResult((int) method.getId(), result);
+
     }
 
     @Override
@@ -835,15 +1099,14 @@ public class ServerSessionDelegate extends SessionDelegate
     public void closed(Session session)
     {
         super.closed(session);
-        for(Subscription_0_10 sub : getSubscriptions(session).values())
+        for(Subscription_0_10 sub : getSubscriptions(session))
         {
-            sub.close();
+            ((ServerSession)session).unregister(sub);
         }
-        ((ServerSession)session).onClose();
         ((ServerSession)session).onClose();
     }
 
-    public Map<String, Subscription_0_10> getSubscriptions(Session session)
+    public Collection<Subscription_0_10> getSubscriptions(Session session)
     {
         return ((ServerSession)session).getSubscriptions();
     }

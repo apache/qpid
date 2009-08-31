@@ -189,14 +189,14 @@ class HeadersBinding
     {
         for(Map.Entry<String,Object> entry : matches.entrySet())
         {
-            if(!headers.containsHeader(entry.getKey())
-               || !((entry.getValue() == null && headers.getHeader(entry.getKey()) == null)
+            if(headers.containsHeader(entry.getKey())
+               || ((entry.getValue() == null && headers.getHeader(entry.getKey()) == null)
                    || (entry.getValue().equals(headers.getHeader(entry.getKey())))))
             {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     private boolean passesRequiredOr(AMQMessageHeader headers)

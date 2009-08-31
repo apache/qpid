@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -114,6 +115,7 @@ public class HeadersExchange extends AbstractExchange
 
 
     private final List<Registration> _bindings = new CopyOnWriteArrayList<Registration>();
+    private Map<AMQShortString, Registration> _bindingByKey = new ConcurrentHashMap<AMQShortString, Registration>();
 
     /**
      * HeadersExchangeMBean class implements the management interface for the
@@ -211,7 +213,7 @@ public class HeadersExchange extends AbstractExchange
                 bindingMap.setString(keyAndValue[0], keyAndValue[1]);
             }
 
-            _bindings.add(new Registration(new HeadersBinding(bindingMap), queue));
+            _bindings.add(new Registration(new HeadersBinding(bindingMap), queue, new AMQShortString(binding)));
         }
 
     } // End of MBean class
@@ -224,13 +226,17 @@ public class HeadersExchange extends AbstractExchange
     public void registerQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() + " with " + args);
-        _bindings.add(new Registration(new HeadersBinding(args), queue));
+
+        Registration registration = new Registration(new HeadersBinding(args), queue, routingKey);
+        _bindings.add(registration);
+
     }
 
     public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
-        if(!_bindings.remove(new Registration(new HeadersBinding(args), queue)))
+
+        if(!_bindings.remove(new Registration(args == null ? null : new HeadersBinding(args), queue, routingKey)))
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
                                    + " with headers args " + args);    
@@ -326,21 +332,28 @@ public class HeadersExchange extends AbstractExchange
     {
         private final HeadersBinding binding;
         private final AMQQueue queue;
+        private final AMQShortString routingKey;
 
-        Registration(HeadersBinding binding, AMQQueue queue)
+        Registration(HeadersBinding binding, AMQQueue queue, AMQShortString routingKey)
         {
             this.binding = binding;
             this.queue = queue;
+            this.routingKey = routingKey;
         }
 
         public int hashCode()
         {
-            return queue.hashCode();
+            int queueHash = queue.hashCode();
+            int routingHash = routingKey == null ? 0 : routingKey.hashCode();
+            return queueHash + routingHash;
         }
 
         public boolean equals(Object o)
         {
-            return o instanceof Registration && ((Registration) o).queue.equals(queue);
+            return o instanceof Registration
+                   && ((Registration) o).queue.equals(queue)
+                   && (routingKey == null ? ((Registration)o).routingKey == null
+                                          : routingKey.equals(((Registration)o).routingKey));
         }
     }
 }

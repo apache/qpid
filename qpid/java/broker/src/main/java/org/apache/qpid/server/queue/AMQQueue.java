@@ -28,15 +28,23 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 public interface AMQQueue extends Managable, Comparable<AMQQueue>
 {
+
+
+    public interface Context
+    {
+        QueueEntry getLastSeenEntry();
+    }
 
     AMQShortString getName();
 
@@ -45,6 +53,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     boolean isAutoDelete();
 
     AMQShortString getOwner();
+    PrincipalHolder getPrincipalHolder();
+    void setPrincipalHolder(PrincipalHolder principalHolder);
 
     VirtualHost getVirtualHost();
 
@@ -89,6 +99,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     QueueEntry enqueue(ServerMessage message) throws AMQException;
 
     void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
+
+    void requeue(QueueEntryImpl storeContext, Subscription subscription);
 
     void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
 
@@ -165,6 +177,10 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void deliverAsync();
 
     void stop();
+
+    boolean isExclusive();
+
+    Map<String, Object> getArguments();
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription

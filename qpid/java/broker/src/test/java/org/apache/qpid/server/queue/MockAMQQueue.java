@@ -32,6 +32,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.AMQException;
 import org.apache.commons.configuration.Configuration;
 
@@ -45,6 +46,8 @@ public class MockAMQQueue implements AMQQueue
 {
     private boolean _deleted = false;
     private AMQShortString _name;
+
+    private PrincipalHolder _principalHolder;
 
     public MockAMQQueue(String name)
     {
@@ -167,6 +170,11 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void requeue(QueueEntryImpl storeContext, Subscription subscription)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -312,6 +320,16 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean isExclusive()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Map<String, Object> getArguments()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public ManagedObject getManagedObject()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -331,6 +349,16 @@ public class MockAMQQueue implements AMQQueue
     public void configure(QueueConfiguration config)
     {
         
+    }
+
+    public PrincipalHolder getPrincipalHolder()
+    {
+        return _principalHolder;
+    }
+
+    public void setPrincipalHolder(PrincipalHolder principalHolder)
+    {
+        _principalHolder = principalHolder;
     }
 
 }

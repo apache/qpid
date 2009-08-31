@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 */
 public class SimpleQueueEntryList implements QueueEntryList
 {
+
     private final QueueEntryImpl _head;
 
     private volatile QueueEntryImpl _tail;

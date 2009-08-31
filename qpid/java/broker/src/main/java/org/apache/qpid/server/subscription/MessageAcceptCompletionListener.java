@@ -30,18 +30,24 @@ public class MessageAcceptCompletionListener implements Method.CompletionListene
     private final Subscription_0_10 _sub;
     private final QueueEntry _entry;
     private final ServerSession _session;
+    private boolean _restoreCredit;
 
-    public MessageAcceptCompletionListener(Subscription_0_10 sub, ServerSession session, QueueEntry entry)
+    public MessageAcceptCompletionListener(Subscription_0_10 sub, ServerSession session, QueueEntry entry, boolean restoreCredit)
     {
         super();
         _sub = sub;
         _entry = entry;
         _session = session;
+        _restoreCredit = restoreCredit;
     }
 
     public void onComplete(Method method)
     {
         _session.acknowledge(_sub, _entry);
+        if(_restoreCredit)
+        {
+            _sub.restoreCredit(_entry);
+        }
         _session.removeDispositionListener(method);        
     }
 }

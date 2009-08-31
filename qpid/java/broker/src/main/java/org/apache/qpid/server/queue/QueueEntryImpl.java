@@ -124,7 +124,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public long getSize()
     {
-        return getMessage().getSize();
+        return getMessage() == null ? 0 : getMessage().getSize();
     }
 
     public boolean getDeliveredToConsumer()
@@ -134,14 +134,17 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean expired() throws AMQException
     {
-        long expiration = getMessage().getExpiration();
-        if (expiration != 0L)
+        ServerMessage message = getMessage();
+        if(message != null)
         {
-            long now = System.currentTimeMillis();
+            long expiration = message.getExpiration();
+            if (expiration != 0L)
+            {
+                long now = System.currentTimeMillis();
 
-            return (now > expiration);
+                return (now > expiration);
+            }
         }
-
         return false;
 
     }
@@ -176,6 +179,13 @@ public class QueueEntryImpl implements QueueEntry
     {
 
         return (_state instanceof SubscriptionAcquiredState);
+    }
+
+    public boolean isAcquiredBy(Subscription subscription)
+    {
+        EntryState state = _state;
+        return state instanceof SubscriptionAcquiredState
+               && ((SubscriptionAcquiredState)state).getSubscription() == subscription;
     }
 
     public void setDeliveredToSubscription()
@@ -263,6 +273,15 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
+    public void requeue(Subscription subscription)
+    {
+        getQueue().requeue(this, subscription);
+        if(_stateChangeListeners != null)
+        {
+            notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+        }
+    }
+
     public void dequeue(final StoreContext storeContext) throws FailedDequeueException
     {
         EntryState state = _state;
@@ -272,7 +291,7 @@ public class QueueEntryImpl implements QueueEntry
             if (state instanceof SubscriptionAcquiredState)
             {
                 Subscription s = ((SubscriptionAcquiredState) state).getSubscription();
-                s.restoreCredit(this);
+                s.onDequeue(this);
             }
 
             getQueue().dequeue(storeContext, this);

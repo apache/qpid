@@ -29,20 +29,23 @@ import org.apache.qpid.server.txn.Transaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.security.Principal;
+import java.lang.ref.WeakReference;
 
 import static org.apache.qpid.util.Serial.*;
 import com.sun.security.auth.UserPrincipal;
 
 public class ServerSession extends Session implements PrincipalHolder
 {
-
+    private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
 
     public static interface MessageDispositionChangeListener
     {
@@ -51,6 +54,10 @@ public class ServerSession extends Session implements PrincipalHolder
         public void onRelease();
 
         public void onReject();
+
+        public boolean acquire();
+
+
     }
 
     public static interface Task
@@ -66,9 +73,11 @@ public class ServerSession extends Session implements PrincipalHolder
 
     private Principal _principal;
 
-    private Map<String, Subscription_0_10> _subscriptions = new HashMap<String, Subscription_0_10>();
+    private Map<String, Subscription_0_10> _subscriptions = new ConcurrentHashMap<String, Subscription_0_10>();
 
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
+
+    private final WeakReference<Session> _reference;
 
 
     ServerSession(Connection connection, Binary name, long expiry)
@@ -76,12 +85,15 @@ public class ServerSession extends Session implements PrincipalHolder
         super(connection, name, expiry);
         _transaction = new AutoCommitTransaction();
         _principal = new UserPrincipal(connection.getAuthorizationID());
+        _reference = new WeakReference(this);
     }
 
     ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         super(connection, delegate, name, expiry);
         _transaction = new AutoCommitTransaction();
+        _principal = new UserPrincipal(connection.getAuthorizationID());
+        _reference = new WeakReference(this);
     }
 
     public void enqueue(final ServerMessage message, ArrayList<AMQQueue> queues)
@@ -103,6 +115,11 @@ public class ServerSession extends Session implements PrincipalHolder
                         // TODO
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
+                }
+
+                public void onRollback()
+                {
+                    // NO-OP
                 }
             });
         }
@@ -160,6 +177,54 @@ public class ServerSession extends Session implements PrincipalHolder
                                       });
     }
 
+    public RangeSet acquire(RangeSet transfers)
+    {
+        RangeSet acquired = new RangeSet();
+
+        if(!_messageDispositionListenerMap.isEmpty())
+        {
+            Iterator<Integer> unacceptedMessages = _messageDispositionListenerMap.keySet().iterator();
+            Iterator<Range> rangeIter = transfers.iterator();
+
+            if(rangeIter.hasNext())
+            {
+                Range range = rangeIter.next();
+
+                while(range != null && unacceptedMessages.hasNext())
+                {
+                    int next = unacceptedMessages.next();
+                    while(gt(next, range.getUpper()))
+                    {
+                        if(rangeIter.hasNext())
+                        {
+                            range = rangeIter.next();
+                        }
+                        else
+                        {
+                            range = null;
+                            break;
+                        }
+                    }
+                    if(range != null && range.includes(next))
+                    {
+                        MessageDispositionChangeListener changeListener = _messageDispositionListenerMap.get(next);
+                        if(changeListener.acquire())
+                        {
+                            acquired.add(next);
+                        }
+                    }
+
+
+                }
+
+            }
+
+
+        }
+
+        return acquired;
+    }
+
     public void dispositionChange(RangeSet ranges, MessageDispositionAction action)
     {
         if(!_messageDispositionListenerMap.isEmpty())
@@ -208,6 +273,7 @@ public class ServerSession extends Session implements PrincipalHolder
 
     public void onClose()
     {
+        _transaction.rollback();
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
             listener.onRelease();
@@ -217,7 +283,7 @@ public class ServerSession extends Session implements PrincipalHolder
         for (Task task : _taskList)
         {
             task.doTask(this);
-        }
+        }                
 
     }
 
@@ -231,32 +297,53 @@ public class ServerSession extends Session implements PrincipalHolder
                                  {
                                      sub.acknowledge(entry);
                                  }
+
+                                 public void onRollback()
+                                 {
+                                     entry.release();
+
+                                     try
+                                     {
+                                         entry.requeue(new StoreContext());
+                                     }
+                                     catch (AMQException e)
+                                     {
+                                         //TODO
+                                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                         throw new RuntimeException(e);
+                                     }
+
+                                 }
                              });
 
     }
 
-    public Map<String, Subscription_0_10> getSubscriptions()
+    public Collection<Subscription_0_10> getSubscriptions()
     {
-        return _subscriptions;
+        return _subscriptions.values();
     }
 
     public void register(String destination, Subscription_0_10 sub)
     {
-        _subscriptions.put(destination, sub);
+        _subscriptions.put(destination == null ? NULL_DESTINTATION : destination, sub);
     }
 
     public Subscription_0_10 getSubscription(String destination)
     {
-        return _subscriptions.get(destination);
+        return _subscriptions.get(destination == null ? NULL_DESTINTATION : destination);
     }
 
     public void unregister(Subscription_0_10 sub)
     {
-        _subscriptions.remove(sub);
+        _subscriptions.remove(sub.getConsumerTag().toString());
         try
         {
             sub.getSendLock();
-            sub.getQueue().unregisterSubscription(sub);
+            AMQQueue queue = sub.getQueue();
+            if(queue != null)
+            {
+                queue.unregisterSubscription(sub);
+            }
 
         }
         catch (AMQException e)
@@ -285,11 +372,6 @@ public class ServerSession extends Session implements PrincipalHolder
         _transaction.rollback();
     }
 
-    void setPrincipal(Principal principal)
-    {
-        _principal = principal;
-    }
-
     public Principal getPrincipal()
     {
         return _principal;
@@ -304,5 +386,11 @@ public class ServerSession extends Session implements PrincipalHolder
     {
         _taskList.remove(task);
     }
+
+    public WeakReference<Session> getReference()
+     {
+         return _reference;
+     }
+
 
 }

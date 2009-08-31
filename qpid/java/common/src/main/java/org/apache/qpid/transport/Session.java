@@ -617,7 +617,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if (expiry > 0 && !m.isUnreliable())
+                if ((expiry > 0 && !m.isUnreliable()) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();

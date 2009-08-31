@@ -39,7 +39,7 @@ public class MockSubscription implements Subscription
     private AMQShortString tag = new AMQShortString("mocktag");
     private AMQQueue queue = null;
     private StateListener _listener = null;
-    private QueueEntry lastSeen = null;
+    private AMQQueue.Context _queueContext = null;
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();
@@ -69,9 +69,9 @@ public class MockSubscription implements Subscription
         return tag ;
     }
 
-    public QueueEntry getLastSeenEntry()
+    public AMQQueue.Context getQueueContext()
     {
-        return lastSeen;
+        return _queueContext;
     }
 
     public SubscriptionAcquiredState getOwningState()
@@ -147,25 +147,23 @@ public class MockSubscription implements Subscription
     {
     }
 
+    public void onDequeue(QueueEntry queueEntry)
+    {
+    }
+
     public void restoreCredit(QueueEntry queueEntry)
     {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void send(QueueEntry msg) throws AMQException
     {
-        lastSeen = msg;
         messages.add(msg);
     }
 
-    public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue)
+    public void setQueueContext(AMQQueue.Context queueContext)
     {
-        boolean result = false;
-        if (expected != null)
-        {
-            result = (expected.equals(lastSeen));
-        }
-        lastSeen = newValue;
-        return result;
+        _queueContext = queueContext;
     }
 
     public void setQueue(AMQQueue queue)

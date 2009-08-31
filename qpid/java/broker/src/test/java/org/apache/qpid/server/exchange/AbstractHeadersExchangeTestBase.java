@@ -318,6 +318,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
+                public boolean isAcquiredBy(Subscription subscription)
+                {
+                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
                 public void setDeliveredToSubscription()
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
@@ -364,6 +369,11 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                 }
 
                 public void requeue(StoreContext storeContext) throws AMQException
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void requeue(Subscription subscription)
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }

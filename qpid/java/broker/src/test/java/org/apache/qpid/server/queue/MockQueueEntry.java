@@ -44,6 +44,11 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
+    public boolean isAcquiredBy(Subscription subscription)
+    {
+        return false;
+    }
+
     public void addStateChangeListener(StateChangeListener listener)
     {
 
@@ -163,7 +168,12 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    
+    public void requeue(Subscription subscription)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+
     public void setDeliveredToSubscription()
     {
 

@@ -40,7 +40,10 @@ public class LocalTransaction implements Transaction
 
         try
         {
-
+            for(Action action : _postCommitActions)
+            {
+                action.onRollback();
+            }
         }
         finally
         {

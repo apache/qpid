@@ -24,6 +24,7 @@ import org.apache.qpid.transport.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.nio.ByteBuffer;
+import java.lang.ref.WeakReference;
 
 
 public class MessageTransferMessage implements InboundMessage, ServerMessage
@@ -36,16 +37,26 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
     private final AMQMessageHeader _messageHeader;
     private final long _messageNumber;
     private final long _arrivalTime;
+    private WeakReference<Session> _sessionRef;
 
-    public MessageTransferMessage(MessageTransfer xfr)
+    public MessageTransferMessage(MessageTransfer xfr, WeakReference<Session> sessionRef)
     {
         _xfr = xfr;
         _messageNumber = _numberSource.getAndIncrement();
         Header header = _xfr.getHeader();
-        _deliveryProps = header.get(DeliveryProperties.class);
-        _messageProps = header.get(MessageProperties.class);
+        if(header != null)
+        {
+            _deliveryProps = header.get(DeliveryProperties.class);
+            _messageProps = header.get(MessageProperties.class);
+        }
+        else
+        {
+            _deliveryProps = null;
+            _messageProps = null;
+        }
         _messageHeader = new MessageTransferHeader(_deliveryProps, _messageProps);
         _arrivalTime = System.currentTimeMillis();
+        _sessionRef = sessionRef;
     }
 
     public String getRoutingKey()
@@ -110,5 +121,9 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
         return _xfr.getBody();
     }
 
+    public Session getSession()
+    {
+        return _sessionRef == null ? null : _sessionRef.get();
+    }
 
 }

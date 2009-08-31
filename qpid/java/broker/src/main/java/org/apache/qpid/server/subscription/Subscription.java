@@ -30,7 +30,6 @@ public interface Subscription
 {
 
 
-
     public static enum State
     {
         ACTIVE,
@@ -76,15 +75,17 @@ public interface Subscription
 
     void releaseSendLock();
 
+    void onDequeue(final QueueEntry queueEntry);
+
     void restoreCredit(final QueueEntry queueEntry);
 
     void setStateListener(final StateListener listener);
 
     public State getState();
 
-    QueueEntry getLastSeenEntry();
+    AMQQueue.Context getQueueContext();
 
-    boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
+    void setQueueContext(AMQQueue.Context queueContext);
 
 
     boolean isActive();

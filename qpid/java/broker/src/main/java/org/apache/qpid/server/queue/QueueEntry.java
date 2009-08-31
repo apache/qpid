@@ -3,6 +3,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.message.ServerMessage;
 
 /*
@@ -151,6 +152,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
     boolean isDeleted();
 
     boolean acquiredBySubscription();
+    boolean isAcquiredBy(Subscription subscription);
 
     void setDeliveredToSubscription();
 
@@ -171,6 +173,8 @@ public interface QueueEntry extends Comparable<QueueEntry>
     boolean isRejectedBy(Subscription subscription);
 
     void requeue(StoreContext storeContext) throws AMQException;
+
+    void requeue(Subscription subscription);
 
     void dequeue(final StoreContext storeContext) throws FailedDequeueException;
 

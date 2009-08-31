@@ -109,6 +109,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 else
                 {
                     queue = createQueue(queueName, body, virtualHost, session);
+                    queue.setPrincipalHolder(session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
                         store.createQueue(queue, body.getArguments());
@@ -123,12 +124,15 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     }
                 }
             }
-            else if (queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
+            else if (queue.getPrincipalHolder() != null
+                     && queue.getPrincipalHolder().getPrincipal() != null
+                     && queue.getPrincipalHolder().getPrincipal().getName() != null
+                     && !session.getContextKey().equals(new AMQShortString(queue.getPrincipalHolder().getPrincipal().getName())))
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
                                                                            + "declared on another client ID('"
-                                                                           + queue.getOwner() + "')");
+                                                                           + queue.getPrincipalHolder().getPrincipal().getName() + "')");
             }
 
             AMQChannel channel = session.getChannel(channelId);

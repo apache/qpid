@@ -21,6 +21,7 @@
 package org.apache.qpid.extras.exchanges.diagnostic;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.openmbean.OpenDataException;
@@ -153,6 +154,12 @@ public class DiagnosticExchange extends AbstractExchange
         // No op
     }
 
+    public void registerQueue(String routingKey, AMQQueue queue, Map<String, Object> args) throws AMQException
+    {
+        // No op
+    }
+
+
     /**
      * Does nothing.
      * 
@@ -214,4 +221,5 @@ public class DiagnosticExchange extends AbstractExchange
 		// TODO Auto-generated method stub
 		return false;
 	}
+
 }

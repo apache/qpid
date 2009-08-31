@@ -30,6 +30,8 @@ public interface Transaction
     public static interface Action
     {
         public void postCommit();
+
+        public void onRollback();
     }
 
     void dequeue(AMQQueue queue, ServerMessage message, Action postCommitAction);
