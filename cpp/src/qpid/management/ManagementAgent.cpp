@@ -535,8 +535,8 @@ void ManagementAgent::handleMethodRequestLH (Buffer& inBuffer, string replyToKey
     } else {
         if ((iter->second->getPackageName() != packageName) ||
             (iter->second->getClassName()   != className)) {
-            outBuffer.putLong        (Manageable::STATUS_INVALID_PARAMETER);
-            outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_INVALID_PARAMETER));
+            outBuffer.putLong        (Manageable::STATUS_PARAMETER_INVALID);
+            outBuffer.putMediumString(Manageable::StatusText (Manageable::STATUS_PARAMETER_INVALID));
         }
         else
             try {
