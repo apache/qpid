@@ -100,7 +100,7 @@ QPID_AUTO_TEST_CASE(testAssignment)
 QPID_AUTO_TEST_CASE(testList)
 {    
     const std::string s("abc");
-    const float f(9.876);
+    const float f(9.876f);
     const int16_t x(1000);
 
     Variant value = Variant::List();
@@ -131,7 +131,7 @@ QPID_AUTO_TEST_CASE(testList)
 QPID_AUTO_TEST_CASE(testMap)
 {    
     const std::string red("red");
-    const float pi(3.14);
+    const float pi(3.14f);
     const int16_t x(1000);
 
     Variant value = Variant::Map();
