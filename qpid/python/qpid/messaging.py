@@ -1277,5 +1277,7 @@ class Driver(Lockable):
     msg._transfer_id = message.id
     return msg
 
-__all__ = ["Connection", "ConnectionError", "ConnectError", "Pattern", "Session", "Sender", "Receiver", "Message",
-           "ReceiveError", "Empty", "SendError", "InsufficientCapacity", "timestamp", "uuid4"]
+__all__ = ["Connection", "Session", "Sender", "Receiver", "Pattern", "Message",
+           "ConnectionError", "ConnectError", "SessionError", "Disconnected",
+           "SendError", "InsufficientCapacity", "ReceiveError", "Empty",
+           "timestamp", "uuid4"]
