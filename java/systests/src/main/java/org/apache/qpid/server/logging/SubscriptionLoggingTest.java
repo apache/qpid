@@ -29,6 +29,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.Topic;
+import javax.jms.Message;
 import java.io.IOException;
 import java.util.List;
 
@@ -335,30 +336,32 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         //Fill the prefetch and two extra so that our receive bellow allows the
         // subscription to become active then return to a suspended state.
-        sendMessage(_session, _queue, 17);
+        int SEND_COUNT = 17;
+        sendMessage(_session, _queue, SEND_COUNT);
         _session.commit();
         // Retreive the first message, and start the flow of messages
-        assertNotNull("First message not retreived", consumer.receive(1000));
+        Message msg = consumer.receive(1000);
+        assertNotNull("First message not retreived", msg);
         _session.commit();
         
         
         //Validate
         List<String> results = _monitor.findMatches("SUB-1003");
-        
-        int i = 0;
-        while (results.size() != 3 && i < 10)
+
+        // It has been seen on occasion that we do not get 3 messages logged.
+        // This could indicate that the broker has not received the above commit
+
+        // Check that we can received all the messages
+        int receivedCount = 0;
+        while (msg != null)
         {
-            try
-            {
-                Thread.sleep(1500);
-            }
-            catch (InterruptedException e)
-            {
-                
-            }
-            results = _monitor.findMatches("SUB-1003");
-            i++;
+            receivedCount++;
+            msg = consumer.receive(1000);
+            _session.commit();
         }
+
+        System.err.println("All messasges received correctly.");
+        assertEquals("Not all sent messages received.", SEND_COUNT, receivedCount);
 
         try
         {
