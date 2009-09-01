@@ -479,7 +479,7 @@ public class CommitRollbackTest extends QpidTestCase
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
         _pubSession.commit();
 
-        assertNotNull(_consumer.receive(100));
+        assertNotNull(_consumer.receive(1000));
 
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
