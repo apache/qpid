@@ -335,8 +335,12 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         _connection.start();
 
         //Fill the prefetch and two extra so that our receive bellow allows the
-        // subscription to become active then return to a suspended state.
-        int SEND_COUNT = 17;
+        // subscription to become active
+        // Previously we set this to 17 so that it would return to a suspended
+        // state. However, testing has shown that the state change can occur
+        // sufficiently quickly that logging does not occur consistently enough
+        // for testing.
+        int SEND_COUNT = 16;
         sendMessage(_session, _queue, SEND_COUNT);
         _session.commit();
         // Retreive the first message, and start the flow of messages
@@ -344,13 +348,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         assertNotNull("First message not retreived", msg);
         _session.commit();
         
-        
-        //Validate
-        List<String> results = _monitor.findMatches("SUB-1003");
-
-        // It has been seen on occasion that we do not get 3 messages logged.
-        // This could indicate that the broker has not received the above commit
-
+        // Drain the queue to ensure there is time for the ACTIVE log message
         // Check that we can received all the messages
         int receivedCount = 0;
         while (msg != null)
@@ -360,17 +358,24 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
             _session.commit();
         }
 
-        System.err.println("All messasges received correctly.");
+        //Validate we received all the messages
         assertEquals("Not all sent messages received.", SEND_COUNT, receivedCount);
+
+        // Fill the queue again to suspend the consumer
+        sendMessage(_session, _queue, SEND_COUNT);
+        _session.commit();
+
+        //Validate
+        List<String> results = _monitor.findMatches("SUB-1003");
 
         try
         {
             // Validation expects three messages.
             // The first will be logged by the QueueActor as part of the processQueue thread
-// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED 
+// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
             // The second will be by the connnection as it acknowledges and activates the subscription
 // INFO - MESSAGE [con:6(guest@anonymous(26562441)/test)/ch:3] [sub:6(qu(example.queue))] SUB-1003 : State : ACTIVE
-            // The final one can be the subscription suspending as part of the SubFlushRunner or the processQueue thread
+            // The final one can be either the connection or the subscription suspending as part of the SubFlushRunner or the processQueue thread
             // As a result validating the actor is more complicated and doesn't add anything. The goal of this test is
             // to ensure the State is correct not that a particular Actor performs the logging.
 // INFO - MESSAGE [sub:6(vh(test)/qu(example.queue))] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
@@ -413,6 +418,9 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
             throw afe;
         }
         _connection.close();
+
+        //Ensure the queue is drained before the test ends
+        drainQueue(_queue);
 
     }
 
