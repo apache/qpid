@@ -29,6 +29,8 @@ import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 
 import javax.jms.Connection;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanServerConnection;
@@ -38,6 +40,8 @@ import javax.management.remote.JMXConnector;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test class to test if any change in the broker JMX code is affesting the management console
@@ -161,6 +165,23 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
             //Create a connection to the broker
             Connection connection = getConnection();
 
+            // Monitor the connection for an exception being thrown
+            // this should be a DisconnectionException but it is not this tests
+            // job to valiate that. Only use the exception as a synchronisation
+            // to check the log file for the Close message
+            final CountDownLatch exceptionReceived = new CountDownLatch(1);
+            connection.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    //Failover being attempted.
+                    exceptionReceived.countDown();
+                }
+            });
+
+            //Remove the connection close from any 0-10 connections
+            _monitor.reset();
+
             // Get all active AMQP connections
             AllObjects allObject = new AllObjects(_mbsc);
             allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,*";
@@ -175,15 +196,16 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
                     newProxyInstance(_mbsc, connectionName,
                                      ManagedConnection.class, false);
 
-            //Remove the connection close from any 0-10 connections 
-           _monitor.reset();
 
             //Close the connection
             mangedConnection.closeConnection();
 
+            //Wait for the connection to close
+            assertTrue("Timed out waiting for conneciton to report close",
+                       exceptionReceived.await(2, TimeUnit.SECONDS));
+
             //Validate results
             List<String> results = _monitor.findMatches("CON-1002");
-
 
             assertEquals("Unexpected Connection Close count", 1, results.size());
         }
