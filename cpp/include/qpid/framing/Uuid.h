@@ -43,10 +43,10 @@ class Buffer;
  */
 struct Uuid : public boost::array<uint8_t, 16> {
     /** If unique is true, generate a unique ID else a null ID. */
-    Uuid(bool unique=false);
+    QPID_COMMON_EXTERN Uuid(bool unique=false);
 
     /** Copy from 16 bytes of data. */
-    Uuid(const uint8_t* data);
+    QPID_COMMON_EXTERN Uuid(const uint8_t* data);
 
     // Default op= and copy ctor are fine.
     // boost::array gives us ==, < etc.
@@ -55,7 +55,7 @@ struct Uuid : public boost::array<uint8_t, 16> {
     void assign(const uint8_t* data);
 
     /** Set to a new unique identifier. */
-    void generate();
+    QPID_COMMON_EXTERN void generate();
 
     /** Set to all zeros. */
     void clear();
