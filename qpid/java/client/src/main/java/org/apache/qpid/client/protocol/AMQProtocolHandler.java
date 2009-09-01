@@ -191,7 +191,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _logger.debug("Protocol session created for session " + System.identityHashCode(session));
         _failoverHandler = new FailoverHandler(this, session);
 
-        final ProtocolCodecFilter pcf = new ProtocolCodecFilter(new AMQCodecFactory(false));
+        final ProtocolCodecFilter pcf = new ProtocolCodecFilter(new AMQCodecFactory(false, _protocolSession));
 
         if (Boolean.getBoolean("amqj.shared_read_write_pool"))
         {

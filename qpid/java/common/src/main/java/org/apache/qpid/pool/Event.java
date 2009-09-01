@@ -45,21 +45,31 @@ import org.apache.mina.common.IoSession;
  *       a continuation. Job is also a continuation, as is the job completion handler. Or, as Event is totally abstract,
  *       it is really an interface, so could just drop it and use the continuation interface instead.
  */
-public abstract class Event
+public class Event
 {
+    private Runnable _runner;
+
+    public Event()
+    {
+        
+    }
+    
     /**
      * Creates a continuation.
      */
-    public Event()
-    { }
+    public Event(Runnable runner)
+    { 
+        _runner = runner;
+    }
 
     /**
-     * Processes the continuation in the context of a Mina session.
-     *
-     * @param session The Mina session.
+     * Processes the continuation
      */
-    public abstract void process(IoSession session);
-
+    public void process()
+    {
+        _runner.run();
+    }
+    
     /**
      * A continuation ({@link Event}) that takes a Mina messageReceived event, and passes it to a NextFilter.
      *
@@ -68,22 +78,22 @@ public abstract class Event
      * <tr><td> Pass a Mina messageReceived event to a NextFilter. <td> {@link IoFilter.NextFilter}, {@link IoSession}
      * </table>
      */
-    public static final class ReceivedEvent extends Event
+    public static final class MinaReceivedEvent extends Event
     {
         private final Object _data;
-
         private final IoFilter.NextFilter _nextFilter;
+        private final IoSession _session;
 
-        public ReceivedEvent(final IoFilter.NextFilter nextFilter, final Object data)
+        public MinaReceivedEvent(final IoFilter.NextFilter nextFilter, final Object data, final IoSession session)
         {
-            super();
             _nextFilter = nextFilter;
             _data = data;
+            _session = session;
         }
 
-        public void process(IoSession session)
+        public void process()
         {
-            _nextFilter.messageReceived(session, _data);
+            _nextFilter.messageReceived(_session, _data);
         }
 
         public IoFilter.NextFilter getNextFilter()
@@ -101,21 +111,22 @@ public abstract class Event
      *     <td> {@link IoFilter.NextFilter}, {@link IoFilter.WriteRequest}, {@link IoSession}
      * </table>
      */
-    public static final class WriteEvent extends Event
+    public static final class MinaWriteEvent extends Event
     {
         private final IoFilter.WriteRequest _data;
         private final IoFilter.NextFilter _nextFilter;
+        private IoSession _session;
 
-        public WriteEvent(final IoFilter.NextFilter nextFilter, final IoFilter.WriteRequest data)
+        public MinaWriteEvent(final IoFilter.NextFilter nextFilter, final IoFilter.WriteRequest data, final IoSession session)
         {
-            super();
             _nextFilter = nextFilter;
             _data = data;
+            _session = session;
         }
 
-        public void process(IoSession session)
+        public void process()
         {
-            _nextFilter.filterWrite(session, _data);
+            _nextFilter.filterWrite(_session, _data);
         }
 
         public IoFilter.NextFilter getNextFilter()
@@ -135,16 +146,17 @@ public abstract class Event
     public static final class CloseEvent extends Event
     {
         private final IoFilter.NextFilter _nextFilter;
+        private final IoSession _session;
 
-        public CloseEvent(final IoFilter.NextFilter nextFilter)
+        public CloseEvent(final IoFilter.NextFilter nextFilter, final IoSession session)
         {
-            super();
             _nextFilter = nextFilter;
+            _session = session;
         }
 
-        public void process(IoSession session)
+        public void process()
         {
-            _nextFilter.sessionClosed(session);
+            _nextFilter.sessionClosed(_session);
         }
 
         public IoFilter.NextFilter getNextFilter()

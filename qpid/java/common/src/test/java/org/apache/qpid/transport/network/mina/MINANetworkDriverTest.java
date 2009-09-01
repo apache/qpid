@@ -299,7 +299,7 @@ public class MINANetworkDriverTest extends TestCase
         _countingEngine.setNewLatch(TEST_DATA.getBytes().length);
         _client.send(ByteBuffer.wrap(TEST_DATA.getBytes()));
         _countingEngine.getExceptionLatch().await(2, TimeUnit.SECONDS);
-        assertEquals("Exception should not been thrown", 0, 
+        assertEquals("Exception should have been thrown", 0, 
                 _countingEngine.getExceptionLatch().getCount());
     } 
     
@@ -321,11 +321,12 @@ public class MINANetworkDriverTest extends TestCase
     {
         EchoProtocolEngine _engine = null;
         
-        public ProtocolEngine newProtocolEngine()
+        public ProtocolEngine newProtocolEngine(NetworkDriver driver)
         {
             if (_engine == null)
             {
                 _engine = new EchoProtocolEngine();
+                _engine.setNetworkDriver(driver);
             }
             return getEngine();
         }

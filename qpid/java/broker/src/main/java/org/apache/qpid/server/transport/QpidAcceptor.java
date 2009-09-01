@@ -20,21 +20,21 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.mina.common.IoAcceptor;
+import org.apache.qpid.transport.NetworkDriver;
 
 public class QpidAcceptor
 {
-    IoAcceptor _acceptor;
+    NetworkDriver _driver;
     String _protocol;
-    public QpidAcceptor(IoAcceptor acceptor, String protocol)
+    public QpidAcceptor(NetworkDriver driver, String protocol)
     {
-        _acceptor = acceptor;
+        _driver = driver;
         _protocol = protocol;
     }
 
-    public IoAcceptor getIoAcceptor()
+    public NetworkDriver getNetworkDriver()
     {
-        return _acceptor;
+        return _driver;
     }
 
     public String toString()

@@ -55,9 +55,6 @@ public class Job implements ReadWriteRunnable
     /** The maximum number of events to process per run of the job. More events than this may be queued in the job. */
     private final int _maxEvents;
 
-    /** The Mina session. */
-    private final IoSession _session;
-
     /** Holds the queue of events that make up the job. */
     private final java.util.Queue<Event> _eventQueue = new ConcurrentLinkedQueue<Event>();
 
@@ -79,7 +76,13 @@ public class Job implements ReadWriteRunnable
      */
     Job(IoSession session, JobCompletionHandler completionHandler, int maxEvents, final boolean readJob)
     {
-        _session = session;
+        _completionHandler = completionHandler;
+        _maxEvents = maxEvents;
+        _readJob = readJob;
+    }
+
+    public Job(JobCompletionHandler completionHandler, int maxEvents, boolean readJob)
+    {
         _completionHandler = completionHandler;
         _maxEvents = maxEvents;
         _readJob = readJob;
@@ -90,7 +93,7 @@ public class Job implements ReadWriteRunnable
      *
      * @param evt The continuation to enqueue.
      */
-    void add(Event evt)
+    public void add(Event evt)
     {
         _eventQueue.add(evt);
     }
@@ -111,7 +114,7 @@ public class Job implements ReadWriteRunnable
             }
             else
             {
-                e.process(_session);
+                e.process();
             }
         }
         return false;
@@ -153,29 +156,18 @@ public class Job implements ReadWriteRunnable
         if(processAll())
         {
             deactivate();
-            _completionHandler.completed(_session, this);
+            _completionHandler.completed(this);
         }
         else
         {
-            _completionHandler.notCompleted(_session, this);
+            _completionHandler.notCompleted(this);
         }
-    }
-
-    public boolean isReadJob()
-    {
-        return _readJob;
     }
 
     public boolean isRead()
     {
         return _readJob;
     }
-
-    public boolean isWrite()
-    {
-        return !_readJob;
-    }
-
 
     /**
      * Another interface for a continuation.
@@ -185,8 +177,8 @@ public class Job implements ReadWriteRunnable
      */
     static interface JobCompletionHandler
     {
-        public void completed(IoSession session, Job job);
+        public void completed(Job job);
 
-        public void notCompleted(final IoSession session, final Job job);
+        public void notCompleted(final Job job);
     }
 }

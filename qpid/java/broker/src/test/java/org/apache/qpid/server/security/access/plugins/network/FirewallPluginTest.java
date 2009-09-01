@@ -30,17 +30,14 @@ import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
-import org.apache.qpid.server.protocol.TestIoSession;
+import org.apache.qpid.server.protocol.AMQProtocolEngine;
+import org.apache.qpid.server.protocol.TestNetworkDriver;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class FirewallPluginTest extends TestCase
 {
@@ -84,22 +81,22 @@ public class FirewallPluginTest extends TestCase
 
     private TestableMemoryMessageStore _store;
     private VirtualHost _virtualHost;
-    private AMQMinaProtocolSession _session;
+    private AMQProtocolEngine _session;
+    private TestNetworkDriver _testDriver;
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
         _store = new TestableMemoryMessageStore();
-        TestIoSession iosession = new TestIoSession();
-        iosession.setAddress("127.0.0.1");
+        _testDriver = new TestNetworkDriver();
+        _testDriver.setAddress("127.0.0.1");
 
         // Retreive VirtualHost from the Registry
         VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
         _virtualHost = virtualHostRegistry.getVirtualHost("test");
 
-        AMQCodecFactory codecFactory = new AMQCodecFactory(true);
-        _session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);        
+        _session = new AMQProtocolEngine(virtualHostRegistry, _testDriver);
     }
 
     public void tearDown() throws Exception
@@ -170,7 +167,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        _testDriver.setAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -185,7 +182,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        _testDriver.setAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
 
@@ -198,7 +195,7 @@ public class FirewallPluginTest extends TestCase
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("127.0.0.1");
+        _testDriver.setAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
 
@@ -211,7 +208,7 @@ public class FirewallPluginTest extends TestCase
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("127.0.0.1");
+        _testDriver.setAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -234,7 +231,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        _testDriver.setAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -257,7 +254,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        _testDriver.setAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
 
@@ -271,7 +268,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        _testDriver.setAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -285,7 +282,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("192.168.23.23");
+        _testDriver.setAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -295,11 +292,11 @@ public class FirewallPluginTest extends TestCase
         firstRule.setAccess("allow");
         firstRule.setHostname("foo, bar, "+new InetSocketAddress("127.0.0.1", 5672).getHostName());
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
-        ((TestIoSession) _session.getIOSession()).setAddress("10.0.0.1");
+        _testDriver.setAddress("10.0.0.1");
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        ((TestIoSession) _session.getIOSession()).setAddress("127.0.0.1");
+        _testDriver.setAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     

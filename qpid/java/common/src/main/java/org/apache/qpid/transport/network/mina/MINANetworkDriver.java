@@ -181,6 +181,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
         return _ioSession.getLocalAddress();
     }
+    
 
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
             SSLEngine sslEngine) throws OpenException
@@ -251,6 +252,10 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     public void close()
     {
+        if (_lastWriteFuture != null)
+        {
+            _lastWriteFuture.join();
+        }
         if (_acceptor != null)
         {
             _acceptor.unbindAll();
@@ -359,9 +364,14 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
                 protocolSession.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
             }
-
+            
+            if (_ioSession == null)
+            {
+                _ioSession = protocolSession;
+            }
+            
             // Set up the protocol engine
-            ProtocolEngine protocolEngine = _factory.newProtocolEngine();
+            ProtocolEngine protocolEngine = _factory.newProtocolEngine(this);
             MINANetworkDriver newDriver = new MINANetworkDriver(_useNIO, _processors, _executorPool, _protectIO, protocolEngine, protocolSession);
             protocolEngine.setNetworkDriver(newDriver);
             protocolSession.setAttachment(protocolEngine);
@@ -383,6 +393,12 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     private ProtocolEngine getProtocolEngine()
     {
        return _protocolEngine;
+    }
+
+    public void setProtocolEngineFactory(ProtocolEngineFactory engineFactory, boolean acceptingConnections)
+    {
+        _factory = engineFactory;
+        _acceptingConnections = acceptingConnections;
     }
 
 }

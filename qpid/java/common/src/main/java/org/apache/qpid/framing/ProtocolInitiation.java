@@ -20,12 +20,10 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.qpid.AMQException;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -53,12 +51,11 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         _protocolMajor = protocolMajor;
         _protocolMinor = protocolMinor;
     }
-
+    
     public ProtocolInitiation(ProtocolVersion pv)
     {
         this(AMQP_HEADER, CURRENT_PROTOCOL_CLASS, TCP_PROTOCOL_INSTANCE, pv.getMajorVersion(), pv.getMinorVersion());
     }
-
 
     public ProtocolInitiation(ByteBuffer in)
     {
@@ -71,6 +68,11 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         _protocolMinor = in.get();
     }
 
+    public void writePayload(org.apache.mina.common.ByteBuffer buffer)
+    {
+        writePayload(buffer.buf());
+    }
+    
     public long getSize()
     {
         return 4 + 1 + 1 + 1 + 1;
@@ -127,16 +129,11 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
          * @return true if we have enough data to decode the PI frame fully, false if more
          * data is required
          */
-        public boolean decodable(IoSession session, ByteBuffer in)
+        public boolean decodable(ByteBuffer in)
         {
             return (in.remaining() >= 8);
         }
 
-        public void decode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out)
-        {
-            ProtocolInitiation pi = new ProtocolInitiation(in);
-            out.write(pi);
-        }
     }
 
     public ProtocolVersion checkVersion() throws AMQException
@@ -192,4 +189,5 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         buffer.append(Integer.toHexString(_protocolMinor));
         return buffer.toString();
     }
+
 }

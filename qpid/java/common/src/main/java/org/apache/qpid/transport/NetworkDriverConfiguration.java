@@ -28,17 +28,17 @@ package org.apache.qpid.transport;
 public interface NetworkDriverConfiguration  
 {  
     // Taken from Socket  
-    boolean getKeepAlive();
-    boolean getOOBInline();
-    boolean getReuseAddress();
+    Boolean getKeepAlive();
+    Boolean getOOBInline();
+    Boolean getReuseAddress();
     Integer getSoLinger(); // null means off 
-    int getSoTimeout(); 
-    boolean getTcpNoDelay(); 
-    int getTrafficClass();
+    Integer getSoTimeout(); 
+    Boolean getTcpNoDelay(); 
+    Integer getTrafficClass();
 
     // The amount of memory in bytes to allocate to the incoming buffer 
-    int getReceiveBufferSize();  
+    Integer getReceiveBufferSize();  
 
     // The amount of memory in bytes to allocate to the outgoing buffer 
-    int getSendBufferSize();  
+    Integer getSendBufferSize();  
 } 

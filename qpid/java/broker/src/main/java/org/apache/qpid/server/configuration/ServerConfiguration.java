@@ -38,6 +38,7 @@ import org.apache.qpid.server.configuration.management.ConfigurationManagementMB
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.NetworkDriverConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -564,7 +565,7 @@ public class ServerConfiguration implements SignalHandler
 
     public boolean getSSLOnly()
     {
-        return getConfig().getBoolean("connector.ssl.sslOnly", true);
+        return getConfig().getBoolean("connector.ssl.sslOnly", false);
     }
 
     public int getSSLPort()
@@ -612,5 +613,58 @@ public class ServerConfiguration implements SignalHandler
         return getConfig().getLong("housekeeping.checkPeriod",
                    getConfig().getLong("housekeeping.expiredMessageCheckPeriod",
                            DEFAULT_HOUSEKEEPING_PERIOD));
+    }
+
+    public NetworkDriverConfiguration getNetworkConfiguration()
+    {
+        return new NetworkDriverConfiguration()
+        {
+            
+            public Integer getTrafficClass()
+            {
+                return null;
+            }
+            
+            public Boolean getTcpNoDelay()
+            {
+                // Can't call parent getTcpNoDelay since it just calls this one
+                return getConfig().getBoolean("connector.tcpNoDelay", true);
+            }
+            
+            public Integer getSoTimeout()
+            {
+                return null;
+            }
+            
+            public Integer getSoLinger()
+            {
+                return null;
+            }
+            
+            public Integer getSendBufferSize()
+            {
+                return getBufferWriteLimit();
+            }
+            
+            public Boolean getReuseAddress()
+            {
+                return null;
+            }
+            
+            public Integer getReceiveBufferSize()
+            {
+                return getBufferReadLimit();
+            }
+            
+            public Boolean getOOBInline()
+            {
+                return null;
+            }
+            
+            public Boolean getKeepAlive()
+            {
+                return null;
+            }
+        };
     }
 }
