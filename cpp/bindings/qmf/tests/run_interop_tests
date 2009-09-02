@@ -49,17 +49,44 @@ stop_ruby_agent() {
     kill $AGENT_PID
 }
 
+start_python_agent() {
+    PYTHONPATH="${MY_DIR}/../python:${API_DIR}/python:${API_DIR}/python/.libs" python ${MY_DIR}/python_agent.py localhost $BROKER_PORT &
+    PY_AGENT_PID=$!
+}
+
+stop_python_agent() {
+    kill $PY_AGENT_PID
+}
+
+TESTS_FAILED=0
+
 if test -d ${PYTHON_DIR} ;  then
     start_broker
     echo "Running qmf interop tests using broker on port $BROKER_PORT"
     PYTHONPATH=${PYTHON_DIR}:${MY_DIR}
     export PYTHONPATH
+
+    echo "    Python Agent (external storage) vs. Pure-Python Console"
+    start_python_agent
+    echo "    Python agent started at pid $PY_AGENT_PID"
+    ${PYTHON_DIR}/qpid-python-test -m python_console -b localhost:$BROKER_PORT $@
+    RETCODE=$?
+    stop_python_agent
+    if test x$RETCODE != x0; then
+         echo "FAIL qmf interop tests (Python Agent)";
+         TESTS_FAILED=1
+    fi
+
     echo "    Ruby Agent (external storage) vs. Pure-Python Console"
     start_ruby_agent
     echo "    Ruby agent started at pid $AGENT_PID"
     ${PYTHON_DIR}/qpid-python-test -m python_console -b localhost:$BROKER_PORT $@
     RETCODE=$?
     stop_ruby_agent
+    if test x$RETCODE != x0; then
+         echo "FAIL qmf interop tests (Ruby Agent)";
+         TESTS_FAILED=1
+    fi
 
     # Also against the Pure-Python console:
     #   Ruby agent (internal storage)
@@ -72,7 +99,8 @@ if test -d ${PYTHON_DIR} ;  then
     #   C++ console
 
     stop_broker
-    if test x$RETCODE != x0; then 
-        echo "FAIL qmf interop tests"; exit 1;
+    if test x$TESTS_FAILED != x0; then
+        echo "TEST FAILED!"
+        exit 1
     fi
 fi

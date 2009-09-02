@@ -21,7 +21,7 @@ if HAVE_SWIG
 if HAVE_RUBY_DEVEL
 
 EXTRA_DIST = qmfengine.i
-SUBDIRS = ruby tests
+SUBDIRS = ruby python tests
 
 endif
 endif
