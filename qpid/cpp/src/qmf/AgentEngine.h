@@ -182,7 +182,7 @@ namespace qmf {
          *@return The objectId of the managed object.
          */
         const ObjectId* addObject(Object& obj, uint64_t persistId);
-        const ObjectId* addObject(Object& obj, uint32_t persistIdLo, uint32_t persistIdHi);
+        //        const ObjectId* addObject(Object& obj, uint32_t persistIdLo, uint32_t persistIdHi);
 
         /**
          * Allocate an object-id for an object that will be managed by the application.
