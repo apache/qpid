@@ -328,11 +328,14 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         int PREFETCH = 15;
 
         //Create new session with small prefetch
-        _session = ((AMQConnection) _connection).createSession(true, Session.AUTO_ACKNOWLEDGE, PREFETCH);
+        _session = ((AMQConnection) _connection).createSession(true, Session.SESSION_TRANSACTED, PREFETCH);
 
         MessageConsumer consumer = _session.createConsumer(_queue);
 
         _connection.start();
+
+        //Start the dispatcher & Unflow the channel.
+        consumer.receiveNoWait();
 
         //Fill the prefetch and two extra so that our receive bellow allows the
         // subscription to become active
@@ -371,15 +374,13 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
         try
         {
             // Validation expects three messages.
-            // The first will be logged by the QueueActor as part of the processQueue thread
-// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
-            // The second will be by the connnection as it acknowledges and activates the subscription
-// INFO - MESSAGE [con:6(guest@anonymous(26562441)/test)/ch:3] [sub:6(qu(example.queue))] SUB-1003 : State : ACTIVE
-            // The final one can be either the connection or the subscription suspending as part of the SubFlushRunner or the processQueue thread
-            // As a result validating the actor is more complicated and doesn't add anything. The goal of this test is
-            // to ensure the State is correct not that a particular Actor performs the logging.
-// INFO - MESSAGE [sub:6(vh(test)/qu(example.queue))] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
-// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State : SUSPENDED
+            // The Actor can be any one of the following depending on the exactly what is going on on the broker.
+            // Ideally we would test that we can get all of them but setting up
+            // the timing to do this in a consistent way is not benefitial.
+            // Ensuring the State is as expected is sufficient.
+// INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State :
+// INFO - MESSAGE [con:6(guest@anonymous(26562441)/test)/ch:3] [sub:6(qu(example.queue))] SUB-1003 : State :
+// INFO - MESSAGE [sub:6(vh(test)/qu(example.queue))] [sub:6(qu(example.queue))] SUB-1003 : State :
 
             assertEquals("Result set not expected size:", 3, results.size());
 
@@ -388,19 +389,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
             String log = getLog(results.get(0));
             validateSubscriptionState(log, expectedState);
 
-            // Validate that the logActor is the the queue
-            String actor = fromActor(log);
-            assertTrue("Actor string does not contain expected queue("
-                       + _queue.getQueueName() + ") name." + actor,
-                       actor.contains("qu(" + _queue.getQueueName() + ")"));
-
             // After being suspended the subscription should become active.
             expectedState = "ACTIVE";
             log = getLog(results.get(1));
             validateSubscriptionState(log, expectedState);
-            // Validate we have a connection Actor
-            actor = fromActor(log);
-            assertTrue("The actor is not a connection actor:" + actor, actor.startsWith("con:"));
 
             // Validate that it was re-suspended
             expectedState = "SUSPENDED";
