@@ -19,6 +19,7 @@
 
 import compat, connection, socket, sys, time
 from datatypes import RangedSet, Message as Message010
+from exceptions import Timeout
 from lockable import synchronized, Lockable
 from logging import getLogger
 from messaging import get_codec, Message, Pattern, UNLIMITED
