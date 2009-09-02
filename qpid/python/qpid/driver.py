@@ -18,11 +18,11 @@
 #
 
 import compat, connection, socket, sys, time
+from concurrency import synchronized
 from datatypes import RangedSet, Message as Message010
 from exceptions import Timeout
-from lockable import synchronized, Lockable
 from logging import getLogger
-from messaging import get_codec, Message, Pattern, UNLIMITED
+from messaging import get_codec, ConnectError, Message, Pattern, UNLIMITED
 from ops import delivery_mode
 from session import Client, INCOMPLETE, SessionDetached
 from threading import Condition, Thread
@@ -63,12 +63,11 @@ def delegate(handler, session):
       return handler._message_transfer(session, cmd)
   return Delegate
 
-class Driver(Lockable):
+class Driver:
 
   def __init__(self, connection):
     self.connection = connection
     self._lock = self.connection._lock
-    self._condition = self.connection._condition
     self._wakeup_cond = Condition()
     self._socket = None
     self._conn = None
@@ -134,7 +133,7 @@ class Driver(Lockable):
         self.connection.error = (msg,)
 
     self._modcount = modcount
-    self.notifyAll()
+    self.connection._waiter.notifyAll()
 
   def connect(self):
     if self._conn is not None:
@@ -177,7 +176,7 @@ class Driver(Lockable):
       _ssn.auto_sync = False
       _ssn.invoke_lock = self._lock
       _ssn.lock = self._lock
-      _ssn.condition = self._condition
+      _ssn.condition = self.connection._condition
       if ssn.transactional:
         # XXX: adding an attribute to qpid.session.Session
         _ssn.acked = []
@@ -422,7 +421,7 @@ class Driver(Lockable):
     rcv.received += 1
     log.debug("RECV [%s] %s", ssn, msg)
     ssn.incoming.append(msg)
-    self.notifyAll()
+    self.connection._waiter.notifyAll()
     return INCOMPLETE
 
   def _decode(self, message):
