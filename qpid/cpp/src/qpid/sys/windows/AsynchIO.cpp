@@ -50,12 +50,15 @@ namespace {
  * recorded in each thread is about the same. If this turns out not to be the
  * case we could rebalance the info occasionally.  
  */
+#if 0
+  // These are never used and __declspec(thread) causes accvio on dynamic load
 QPID_TSS int threadReadTotal = 0;
 QPID_TSS int threadMaxRead = 0;
 QPID_TSS int threadReadCount = 0;
 QPID_TSS int threadWriteTotal = 0;
 QPID_TSS int threadWriteCount = 0;
 QPID_TSS int64_t threadMaxReadTimeNs = 2 * 1000000; // start at 2ms
+#endif
 
 /*
  * The function pointers for AcceptEx and ConnectEx need to be looked up
@@ -642,12 +645,12 @@ void AsynchIO::close(void) {
 }
 
 void AsynchIO::readComplete(AsynchReadResult *result) {
-    ++threadReadCount;
+  //    ++threadReadCount;
     int status = result->getStatus();
     size_t bytes = result->getTransferred();
     if (status == 0 && bytes > 0) {
         bool restartRead = true;     // May not if receiver doesn't want more
-        threadReadTotal += bytes;
+        //        threadReadTotal += bytes;
         if (readCallback)
             restartRead = readCallback(*this, result->getBuff());
         if (restartRead)
@@ -674,10 +677,10 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
     size_t bytes = result->getTransferred();
     AsynchIO::BufferBase *buff = result->getBuff();
     if (buff != 0) {
-        ++threadWriteCount;
+      //        ++threadWriteCount;
         writeInProgress = false;
         if (status == 0 && bytes > 0) {
-            threadWriteTotal += bytes;
+          //            threadWriteTotal += bytes;
             if (bytes < result->getRequested()) // Still more to go; resubmit
                 startWrite(buff);
             else
