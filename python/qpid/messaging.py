@@ -32,7 +32,6 @@ Areas that still need work:
 
 from codec010 import StringCodec
 from datatypes import timestamp, uuid4, Serial
-from exceptions import Timeout
 from lockable import synchronized, Lockable
 from logging import getLogger
 from ops import PRIMITIVE
