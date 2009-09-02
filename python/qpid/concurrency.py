@@ -26,11 +26,11 @@ def synchronized(meth):
   exec """
 def %s%s:
   %s
-  %s.lock()
+  %s._lock.acquire()
   try:
     return meth%s
   finally:
-    %s.unlock()
+    %s._lock.release()
 """ % (meth.__name__, inspect.formatargspec(args, vargs, kwargs, defs),
        repr(inspect.getdoc(meth)), args[0],
        inspect.formatargspec(args, vargs, kwargs, defs,
@@ -38,13 +38,10 @@ def %s%s:
        args[0]) in scope
   return scope[meth.__name__]
 
-class Lockable(object):
+class Waiter(object):
 
-  def lock(self):
-    self._lock.acquire()
-
-  def unlock(self):
-    self._lock.release()
+  def __init__(self, condition):
+    self.condition = condition
 
   def wait(self, predicate, timeout=None):
     passed = 0
@@ -53,16 +50,16 @@ class Lockable(object):
       if timeout is None:
         # using the timed wait prevents keyboard interrupts from being
         # blocked while waiting
-        self._condition.wait(3)
+        self.condition.wait(3)
       elif passed < timeout:
-        self._condition.wait(timeout - passed)
+        self.condition.wait(timeout - passed)
       else:
         return False
       passed = time.time() - start
     return True
 
   def notify(self):
-    self._condition.notify()
+    self.condition.notify()
 
   def notifyAll(self):
-    self._condition.notifyAll()
+    self.condition.notifyAll()
