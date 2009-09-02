@@ -176,7 +176,7 @@ void RCSession::received(qpid::client::Message& msg)
 }
 
 ResilientConnectionImpl::ResilientConnectionImpl(const ConnectionSettings& _settings) :
-    notifyFd(-1), connected(false), shutdown(false), settings(_settings), connThread(*this)
+    notifyFd(-1), connected(false), shutdown(false), settings(_settings), delayMin(1), connThread(*this)
 {
     connection.registerFailureCallback(boost::bind(&ResilientConnectionImpl::failure, this));
     settings.impl->getRetrySettings(&delayMin, &delayMax, &delayFactor);
