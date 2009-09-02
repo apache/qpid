@@ -264,7 +264,6 @@ void Link::ioThreadProcessing()
     }
     if (!cancellations.empty()) {
         for (Bridges::iterator i = cancellations.begin(); i != cancellations.end(); ++i) {
-            active.push_back(*i);
             (*i)->cancel(*connection);
         }
         cancellations.clear();
