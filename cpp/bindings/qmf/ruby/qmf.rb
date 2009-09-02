@@ -26,7 +26,7 @@ module Qmf
 
   # Pull all the TYPE_* constants into Qmf namespace.  Maybe there's an easier way?
   Qmfengine.constants.each do |c|
-    if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0
+    if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0 or c.index('CLASS_') == 0
       const_set(c, Qmfengine.const_get(c))
     end
   end
@@ -81,8 +81,8 @@ module Qmf
       @impl = Qmfengine::ResilientConnection.new(settings.impl)
       @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
       @impl.setNotifyFd(@sockEngine.fileno)
-      @new_conn_handlers = Array.new
-      @conn_handlers = Array.new
+      @new_conn_handlers = []
+      @conn_handlers = []
 
       @thread = Thread.new do
         run
@@ -91,7 +91,7 @@ module Qmf
 
     def add_conn_handler(handler)
       synchronize do
-        @new_conn_handlers.push(handler)
+        @new_conn_handlers << handler
       end
       @sockEngine.write("x")
     end
@@ -107,11 +107,11 @@ module Qmf
 
         synchronize do
           new_handlers = @new_conn_handlers
-          @new_conn_handlers = Array.new
+          @new_conn_handlers = []
         end
 
         new_handlers.each do |nh|
-          @conn_handlers.push(nh)
+          @conn_handlers << nh
           nh.conn_event_connected() if connected
         end
         new_handlers = nil
@@ -466,11 +466,15 @@ module Qmf
 
   class SchemaObjectClass
     attr_reader :impl
-    def initialize(package, name, kwargs={})
-      @impl = Qmfengine::SchemaObjectClass.new(package, name)
+    def initialize(package='', name='', kwargs={})
       @properties = []
       @statistics = []
       @methods = []
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        @impl = Qmfengine::SchemaObjectClass.new(package, name)
+      end
     end
 
     def add_property(prop)
@@ -489,7 +493,7 @@ module Qmf
     end
 
     def name
-      @impl.getName
+      @impl.getClassKey.getClassName
     end
 
     def properties
@@ -505,15 +509,23 @@ module Qmf
 
   class SchemaEventClass
     attr_reader :impl
-    def initialize(package, name, kwargs={})
-      @impl = Qmfengine::SchemaEventClass.new(package, name)
-      @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
+    def initialize(package='', name='', kwargs={})
       @arguments = []
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        @impl = Qmfengine::SchemaEventClass.new(package, name)
+        @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
+      end
     end
 
     def add_argument(arg)
       @arguments << arg
       @impl.addArgument(arg.impl)
+    end
+
+    def name
+      @impl.getClassKey.getClassName
     end
   end
 
@@ -540,12 +552,12 @@ module Qmf
       @handler = handler
       @impl = Qmfengine::ConsoleEngine.new
       @event = Qmfengine::ConsoleEvent.new
-      @broker_list = Array.new
+      @broker_list = []
     end
 
     def add_connection(conn)
       broker = Broker.new(self, conn)
-      @broker_list.push(broker)
+      @broker_list << broker
       return broker
     end
 
@@ -553,9 +565,30 @@ module Qmf
     end
 
     def get_packages()
+      plist = []
+      count = @impl.packageCount
+      for i in 0...count
+        plist << @impl.getPackageName(i)
+      end
+      return plist
     end
 
-    def get_classes(package)
+    def get_classes(package, kind=CLASS_OBJECT)
+      clist = []
+      count = @impl.classCount(package)
+      for i in 0...count
+        key = @impl.getClass(package, i)
+        class_kind = @impl.getClassKind(key)
+        if class_kind == kind
+          if kind == CLASS_OBJECT
+            clist << SchemaObjectClass.new('', '', :impl => @impl.getObjectClass(key))
+          elsif kind == CLASS_EVENT
+            clist << SchemaEventClass.new('', '', :impl => @impl.getEventClass(key))
+          end
+        end
+      end
+
+      return clist
     end
 
     def get_schema(class_key)
@@ -606,17 +639,36 @@ module Qmf
   end
 
   class Broker < ConnectionHandler
+    include MonitorMixin
     attr_reader :impl
 
     def initialize(console, conn)
+      super()
       @console = console
       @conn = conn
       @session = nil
+      @cv = new_cond
+      @stable = nil
       @event = Qmfengine::BrokerEvent.new
       @xmtMessage = Qmfengine::Message.new
       @impl = Qmfengine::BrokerProxy.new(@console.impl)
       @console.impl.addConnection(@impl, self)
       @conn.add_conn_handler(self)
+    end
+
+    def waitForStable(timeout = nil)
+      synchronize do
+        return if @stable
+        if timeout
+          unless @cv.wait(timeout) { @stable }
+            raise "Timed out waiting for broker connection to become stable"
+          end
+        else
+          while not @stable
+            @cv.wait
+          end
+        end
+      end
     end
 
     def do_broker_events()
@@ -637,6 +689,11 @@ module Qmf
           @conn.impl.unbind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
         when Qmfengine::BrokerEvent::SETUP_COMPLETE
           @impl.startProtocol
+        when Qmfengine::BrokerEvent::STABLE
+          synchronize do
+            @stable = :true
+            @cv.signal
+          end
         end
         @impl.popEvent
         valid = @impl.getEvent(@event)

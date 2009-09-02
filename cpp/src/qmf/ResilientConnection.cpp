@@ -270,7 +270,10 @@ void ResilientConnectionImpl::declareQueue(SessionHandle handle, char* queue)
     RCSession* sess = (RCSession*) handle.impl;
 
     sess->session.queueDeclare(arg::queue=queue, arg::autoDelete=true, arg::exclusive=true);
+    sess->subscriptions->setAcceptMode(ACCEPT_MODE_NONE);
+    sess->subscriptions->setAcquireMode(ACQUIRE_MODE_PRE_ACQUIRED);
     sess->subscriptions->subscribe(*sess, queue, queue);
+    sess->subscriptions->setFlowControl(queue, FlowControl::unlimited());
     sess->dests.push_back(string(queue));
 }
 

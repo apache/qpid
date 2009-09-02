@@ -92,7 +92,8 @@ namespace qmf {
             DELETE_QUEUE    = 12,
             BIND            = 13,
             UNBIND          = 14,
-            SETUP_COMPLETE  = 15
+            SETUP_COMPLETE  = 15,
+            STABLE          = 16
         };
 
         EventKind kind;
@@ -169,12 +170,12 @@ namespace qmf {
         uint32_t classCount(const char* packageName) const;
         const SchemaClassKey* getClass(const char* packageName, uint32_t idx) const;
 
-        ClassKind getClassKind(const SchemaClassKey& key) const;
-        const SchemaObjectClass* getObjectClass(const SchemaClassKey& key) const;
-        const SchemaEventClass* getEventClass(const SchemaClassKey& key) const;
+        ClassKind getClassKind(const SchemaClassKey* key) const;
+        const SchemaObjectClass* getObjectClass(const SchemaClassKey* key) const;
+        const SchemaEventClass* getEventClass(const SchemaClassKey* key) const;
 
         void bindPackage(const char* packageName);
-        void bindClass(const SchemaClassKey& key);
+        void bindClass(const SchemaClassKey* key);
         void bindClass(const char* packageName, const char* className);
 
         uint32_t agentCount() const;
