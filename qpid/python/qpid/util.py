@@ -134,3 +134,9 @@ class URL:
     if self.port:
       s += ":%s" % self.port
     return s
+
+def default(value, default):
+  if value is None:
+    return default
+  else:
+    return value
