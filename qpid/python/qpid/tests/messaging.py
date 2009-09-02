@@ -264,10 +264,11 @@ class SessionTests(Base):
 
   def testAcknowledgeAsyncAckCap0(self):
     try:
-      self.ackTest(lambda ssn: ssn.acknowledge(sync=False), 0)
-      assert False, "acknowledge shouldn't succeed with ack_capacity of zero"
-    except InsufficientCapacity:
-      pass
+      try:
+        self.ackTest(lambda ssn: ssn.acknowledge(sync=False), 0)
+        assert False, "acknowledge shouldn't succeed with ack_capacity of zero"
+      except InsufficientCapacity:
+        pass
     finally:
       self.ssn.ack_capacity = UNLIMITED
       self.drain(self.ssn.receiver("test-ack-queue"))
