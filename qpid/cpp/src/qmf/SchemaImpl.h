@@ -21,6 +21,7 @@
  */
 
 #include "qmf/Schema.h"
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
 #include <qpid/framing/Buffer.h>
@@ -35,7 +36,7 @@ namespace qmf {
         uint8_t hash[16];
     public:
         SchemaHash();
-        void encode(qpid::framing::Buffer& buffer);
+        void encode(qpid::framing::Buffer& buffer) const;
         void decode(qpid::framing::Buffer& buffer);
         void update(const char* data, uint32_t len);
         void update(uint8_t data);
@@ -45,6 +46,9 @@ namespace qmf {
         void update(Access a) { update((uint8_t) a); }
         void update(bool b) { update((uint8_t) (b ? 1 : 0)); }
         const uint8_t* get() const { return hash; }
+        bool operator==(const SchemaHash& other) const;
+        bool operator<(const SchemaHash& other) const;
+        bool operator>(const SchemaHash& other) const;
     };
 
     struct SchemaArgumentImpl {
@@ -149,9 +153,15 @@ namespace qmf {
         const std::string& getPackageName() const { return package; }
         const std::string& getClassName() const { return name; }
         const uint8_t* getHash() const { return hash.get(); }
+
+        void encode(qpid::framing::Buffer& buffer) const;
+        bool operator==(const SchemaClassKeyImpl& other) const;
+        bool operator<(const SchemaClassKeyImpl& other) const;
+        std::string str() const;
     };
 
     struct SchemaObjectClassImpl {
+        typedef boost::shared_ptr<SchemaObjectClassImpl> Ptr;
         SchemaObjectClass* envelope;
         std::string package;
         std::string name;
@@ -180,6 +190,7 @@ namespace qmf {
     };
 
     struct SchemaEventClassImpl {
+        typedef boost::shared_ptr<SchemaEventClassImpl> Ptr;
         SchemaEventClass* envelope;
         std::string package;
         std::string name;

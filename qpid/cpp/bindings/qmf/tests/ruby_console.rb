@@ -31,7 +31,25 @@ class App < Qmf::ConsoleHandler
     @connection = Qmf::Connection.new(@settings)
     @qmf = Qmf::Console.new
 
-    @qmf.add_connection(@connection)
+    @broker = @qmf.add_connection(@connection)
+    @broker.waitForStable
+
+    packages = @qmf.get_packages
+    puts "----- Packages -----"
+    packages.each do |p|
+      puts p
+      puts "    ----- Object Classes -----"
+      classes = @qmf.get_classes(p)
+      classes.each do |c|
+        puts "    #{c.name}"
+      end
+      puts "    ----- Event Classes -----"
+      classes = @qmf.get_classes(p, Qmf::CLASS_EVENT)
+      classes.each do |c|
+        puts "    #{c.name}"
+      end
+    end
+    puts "-----"
 
     sleep
   end
