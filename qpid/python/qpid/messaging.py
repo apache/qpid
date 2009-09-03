@@ -544,18 +544,25 @@ class Sender:
     return self.queued - self.acked
 
   @synchronized
-  def send(self, object, sync=True):
+  def send(self, object, sync=True, timeout=None):
     """
     Send a message. If the object passed in is of type L{unicode},
     L{str}, L{list}, or L{dict}, it will automatically be wrapped in a
     L{Message} and sent. If it is of type L{Message}, it will be sent
-    directly.
+    directly. If the sender capacity is not L{UNLIMITED} then send
+    will block until there is available capacity to send the message.
+    If the timeout parameter is specified, then send will throw an
+    L{InsufficientCapacity} exception if capacity does not become
+    available within the specified time.
 
     @type object: unicode, str, list, dict, Message
     @param object: the message or content to send
 
     @type sync: boolean
     @param sync: if true then block until the message is sent
+
+    @type timeout: float
+    @param timeout: the time to wait for available capacity
     """
 
     if not self.session.connection._connected or self.session.closing:
@@ -569,7 +576,8 @@ class Sender:
     if self.capacity is not UNLIMITED:
       if self.capacity <= 0:
         raise InsufficientCapacity("capacity = %s" % self.capacity)
-      self._ewait(lambda: self.pending() < self.capacity)
+      if not self._ewait(lambda: self.pending() < self.capacity, timeout=timeout):
+        raise InsufficientCapacity("capacity = %s" % self.capacity)
 
     # XXX: what if we send the same message to multiple senders?
     message._sender = self

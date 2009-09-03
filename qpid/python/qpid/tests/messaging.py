@@ -599,6 +599,22 @@ class SenderTests(Base):
   def testSendAsyncCapacityUNLIMITED(self):
     self.asyncTest(UNLIMITED)
 
+  def testCapacityTimeout(self):
+    self.snd.capacity = 1
+    msgs = []
+    caught = False
+    while len(msgs) < 100:
+      m = self.content("testCapacity", len(msgs))
+      try:
+        self.snd.send(m, sync=False, timeout=0)
+        msgs.append(m)
+      except InsufficientCapacity:
+        caught = True
+        break
+    self.drain(self.rcv, expected=msgs)
+    self.ssn.acknowledge()
+    assert caught, "did not exceed capacity"
+
 class MessageTests(Base):
 
   def testCreateString(self):
