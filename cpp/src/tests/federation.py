@@ -573,8 +573,13 @@ class FederationTests(TestBase010):
 
         result = bridge.close()
         self.assertEqual(result.status, 0)
-        result = bridge2.close()
-        self.assertEqual(result.status, 0)
+        
+        # Extra test: don't explicitly close() bridge2.  When the link is closed,
+        # it should clean up bridge2 automagically.  verify_cleanup() will detect
+        # if bridge2 isn't cleaned up and will fail the test.
+        #
+        #result = bridge2.close()
+        #self.assertEqual(result.status, 0)
         result = link.close()
         self.assertEqual(result.status, 0)
 
