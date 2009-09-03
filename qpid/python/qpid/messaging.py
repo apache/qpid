@@ -128,11 +128,6 @@ class Connection:
     self._modcount += 1
     self._driver.wakeup()
 
-  def _catchup(self, exc=ConnectionError):
-    mc = self._modcount
-    self._wait(lambda: not self._driver._modcount < mc)
-    self._check_error(exc)
-
   def _check_error(self, exc=ConnectionError):
     if self.error:
       raise exc(*self.error)
@@ -303,9 +298,6 @@ class Session:
 
   def _wakeup(self):
     self.connection._wakeup()
-
-  def _catchup(self, exc=SessionError):
-    self.connection._catchup(exc)
 
   def _check_error(self, exc=SessionError):
     self.connection._check_error(exc)
@@ -491,8 +483,7 @@ class Session:
 
     self.closing = True
     self._wakeup()
-    self._catchup()
-    self._wait(lambda: self.closed)
+    self._ewait(lambda: self.closed)
     while self.thread.isAlive():
       self.thread.join(3)
     self.thread = None
@@ -524,9 +515,6 @@ class Sender:
 
   def _wakeup(self):
     self.session._wakeup()
-
-  def _catchup(self, exc=SendError):
-    self.session._catchup(exc)
 
   def _check_error(self, exc=SendError):
     self.session._check_error(exc)
@@ -641,9 +629,6 @@ class Receiver:
 
   def _wakeup(self):
     self.session._wakeup()
-
-  def _catchup(self, exc=ReceiveError):
-    self.session._catchup()
 
   def _check_error(self, exc=ReceiveError):
     self.session._check_error(exc)
