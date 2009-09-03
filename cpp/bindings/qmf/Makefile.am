@@ -18,10 +18,16 @@
 #
 
 if HAVE_SWIG
-if HAVE_RUBY_DEVEL
 
 EXTRA_DIST = qmfengine.i
-SUBDIRS = ruby python tests
+SUBDIRS = tests
 
+if HAVE_RUBY_DEVEL
+SUBDIRS += ruby
 endif
+
+if HAVE_PYTHON_DEVEL
+SUBDIRS += python
+endif
+
 endif
