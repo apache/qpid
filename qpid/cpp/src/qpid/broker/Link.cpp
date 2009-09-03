@@ -200,8 +200,10 @@ void Link::destroy ()
 
         // Move the bridges to be deleted into a local vector so there is no
         // corruption of the iterator caused by bridge deletion.
-        for (Bridges::iterator i = active.begin(); i != active.end(); i++)
+        for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+            (*i)->closed();
             toDelete.push_back(*i);
+        }
         active.clear();
 
         for (Bridges::iterator i = created.begin(); i != created.end(); i++)
