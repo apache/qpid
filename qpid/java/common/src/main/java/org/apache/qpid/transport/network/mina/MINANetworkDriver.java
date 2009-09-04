@@ -30,13 +30,13 @@ import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLEngine;
 
+import org.apache.log4j.Logger;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.IoFilterChain;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.common.IoSessionConfig;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.common.WriteFuture;
 import org.apache.mina.filter.ReadThrottleFilterBuilder;
@@ -80,6 +80,8 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     private WriteFuture _lastWriteFuture;
 
+    private static final Logger _logger = Logger.getLogger(MINANetworkDriver.class);
+    
     public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO)
     {
         _useNIO = useNIO;
@@ -289,6 +291,10 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         if (_protocolEngine != null)
         {
             _protocolEngine.exception(throwable);
+        } 
+        else
+        {
+            _logger.error("Exception thrown and no ProtocolEngine to handle it", throwable);
         }
         _lastException = throwable;
     }

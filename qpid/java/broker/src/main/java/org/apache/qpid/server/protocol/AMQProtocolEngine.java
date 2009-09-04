@@ -227,7 +227,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                         }
                         catch (Exception e)
                         {
-                            e.printStackTrace();
+                            _logger.error("Unexpected exception when processing datablock", e);
                             closeProtocolSession();
                         }
                     }
@@ -236,7 +236,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            _logger.error("Unexpected exception when processing datablock", e);
             closeProtocolSession();
         }
     }
