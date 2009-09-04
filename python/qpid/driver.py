@@ -78,9 +78,6 @@ class Driver:
     self.thread.setDaemon(True)
     # XXX: need to figure out how to join on this thread
 
-  def start(self):
-    self.thread.start()
-
   def wakeup(self):
     self._wakeup_cond.acquire()
     try:
