@@ -191,6 +191,7 @@ class Driver:
     if ssn.closing:
       _ssn.close()
       del self._attachments[ssn]
+      ssn.closed = True
 
   def _exchange_query(self, ssn, address):
     # XXX: auto sync hack is to avoid deadlock on future
