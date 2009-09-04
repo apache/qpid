@@ -121,9 +121,11 @@ void SessionAdapter::ExchangeHandlerImpl::checkType(Exchange::shared_ptr exchang
 
 void SessionAdapter::ExchangeHandlerImpl::checkAlternate(Exchange::shared_ptr exchange, Exchange::shared_ptr alternate)
 {
-    if (alternate && alternate != exchange->getAlternate()) 
+    if (alternate && ((exchange->getAlternate() && alternate != exchange->getAlternate())
+                      || !exchange->getAlternate()))
         throw NotAllowedException(QPID_MSG("Exchange declared with alternate-exchange "
-                                           << exchange->getAlternate()->getName() << ", requested " 
+                                           << (exchange->getAlternate() ? exchange->getAlternate()->getName() : "<nonexistent>")
+                                           << ", requested " 
                                            << alternate->getName()));
 }
                 
