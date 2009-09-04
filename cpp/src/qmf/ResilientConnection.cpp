@@ -41,7 +41,7 @@
 
 using namespace std;
 using namespace qmf;
-using namespace qpid::client;
+using namespace qpid;
 using qpid::sys::Mutex;
 
 namespace qmf {
@@ -57,22 +57,22 @@ namespace qmf {
         ResilientConnectionEvent copy();
     };
 
-    struct RCSession : public MessageListener, public qpid::sys::Runnable, public qpid::RefCounted {
+    struct RCSession : public client::MessageListener, public qpid::sys::Runnable, public qpid::RefCounted {
         typedef boost::intrusive_ptr<RCSession> Ptr;
         ResilientConnectionImpl& connImpl;
         string name;
-        Connection& connection;
-        Session session;
-        SubscriptionManager* subscriptions;
+        client::Connection& connection;
+        client::Session session;
+        client::SubscriptionManager* subscriptions;
         void* userContext;
         vector<string> dests;
         qpid::sys::Thread thread;
 
-        RCSession(ResilientConnectionImpl& ci, const string& n, Connection& c, void* uc) :
+        RCSession(ResilientConnectionImpl& ci, const string& n, client::Connection& c, void* uc) :
             connImpl(ci), name(n), connection(c), session(connection.newSession(name)),
-            subscriptions(new SubscriptionManager(session)), userContext(uc), thread(*this) {}
+            subscriptions(new client::SubscriptionManager(session)), userContext(uc), thread(*this) {}
         ~RCSession();
-        void received(qpid::client::Message& msg);
+        void received(client::Message& msg);
         void run();
         void stop();
     };
@@ -109,7 +109,7 @@ namespace qmf {
         bool shutdown;
         string lastError;
         const ConnectionSettings settings;
-        Connection connection;
+        client::Connection connection;
         mutable qpid::sys::Mutex lock;
         int delayMin;
         int delayMax;
@@ -156,7 +156,7 @@ void RCSession::stop()
     subscriptions->stop();
 }
 
-void RCSession::received(qpid::client::Message& msg)
+void RCSession::received(client::Message& msg)
 {
     qmf::MessageImpl qmsg;
     qmsg.body = msg.getData();
@@ -256,7 +256,7 @@ void ResilientConnectionImpl::sendMessage(SessionHandle handle, qmf::Message& me
     msg.setData(data);
 
     try {
-        sess->session.messageTransfer(arg::content=msg, arg::destination=message.destination);
+        sess->session.messageTransfer(client::arg::content=msg, client::arg::destination=message.destination);
     } catch(exception& e) {
         QPID_LOG(error, "Session Exception during message-transfer: " << e.what());
         sessions.erase(iter);
@@ -269,11 +269,11 @@ void ResilientConnectionImpl::declareQueue(SessionHandle handle, char* queue)
     Mutex::ScopedLock _lock(lock);
     RCSession* sess = (RCSession*) handle.impl;
 
-    sess->session.queueDeclare(arg::queue=queue, arg::autoDelete=true, arg::exclusive=true);
-    sess->subscriptions->setAcceptMode(ACCEPT_MODE_NONE);
-    sess->subscriptions->setAcquireMode(ACQUIRE_MODE_PRE_ACQUIRED);
+    sess->session.queueDeclare(client::arg::queue=queue, client::arg::autoDelete=true, client::arg::exclusive=true);
+	sess->subscriptions->setAcceptMode(client::ACCEPT_MODE_NONE);
+	sess->subscriptions->setAcquireMode(client::ACQUIRE_MODE_PRE_ACQUIRED);
     sess->subscriptions->subscribe(*sess, queue, queue);
-    sess->subscriptions->setFlowControl(queue, FlowControl::unlimited());
+	sess->subscriptions->setFlowControl(queue, client::FlowControl::unlimited());
     sess->dests.push_back(string(queue));
 }
 
@@ -282,7 +282,7 @@ void ResilientConnectionImpl::deleteQueue(SessionHandle handle, char* queue)
     Mutex::ScopedLock _lock(lock);
     RCSession* sess = (RCSession*) handle.impl;
 
-    sess->session.queueDelete(arg::queue=queue);
+    sess->session.queueDelete(client::arg::queue=queue);
     for (vector<string>::iterator iter = sess->dests.begin();
          iter != sess->dests.end(); iter++)
         if (*iter == queue) {
@@ -298,7 +298,7 @@ void ResilientConnectionImpl::bind(SessionHandle handle,
     Mutex::ScopedLock _lock(lock);
     RCSession* sess = (RCSession*) handle.impl;
 
-    sess->session.exchangeBind(arg::exchange=exchange, arg::queue=queue, arg::bindingKey=key);
+    sess->session.exchangeBind(client::arg::exchange=exchange, client::arg::queue=queue, client::arg::bindingKey=key);
 }
 
 void ResilientConnectionImpl::unbind(SessionHandle handle,
@@ -307,7 +307,7 @@ void ResilientConnectionImpl::unbind(SessionHandle handle,
     Mutex::ScopedLock _lock(lock);
     RCSession* sess = (RCSession*) handle.impl;
 
-    sess->session.exchangeUnbind(arg::exchange=exchange, arg::queue=queue, arg::bindingKey=key);
+    sess->session.exchangeUnbind(client::arg::exchange=exchange, client::arg::queue=queue, client::arg::bindingKey=key);
 }
 
 void ResilientConnectionImpl::setNotifyFd(int fd)
