@@ -286,6 +286,7 @@ class Session:
     self.closed = False
 
     self._lock = connection._lock
+    self.running = True
     self.thread = Thread(target = self.run)
     self.thread.setDaemon(True)
     self.thread.start()
@@ -460,6 +461,7 @@ class Session:
 
   @synchronized
   def run(self):
+    self.running = True
     try:
       while True:
         msg = self._get(self._pred)
@@ -470,7 +472,7 @@ class Session:
           if self._peek(self._pred) is None:
             self.connection._waiter.notifyAll()
     finally:
-      self.closed = True
+      self.running = False
       self.connection._waiter.notifyAll()
 
   @synchronized
@@ -483,7 +485,7 @@ class Session:
 
     self.closing = True
     self._wakeup()
-    self._ewait(lambda: self.closed)
+    self._ewait(lambda: self.closed and not self.running)
     while self.thread.isAlive():
       self.thread.join(3)
     self.thread = None
