@@ -60,11 +60,14 @@ MessageWaiter::MessageWaiter(InputLink^ parent, TimeSpan timeSpan, bool consumin
     else {
 	this->assigned = true;
     }
+    this->parent = parent;
+    this->thisLock = gcnew Object();
+
+    // do this after the Message Waiter is fully initialized, in case of
+    // very small timespan 
     if (timeSpan != TimeSpan::MaxValue) {
 	this->timer = gcnew Timer(timeoutCallback, this, timeSpan, TimeSpan::FromMilliseconds(-1));
     }
-    this->parent = parent;
-    this->thisLock = gcnew Object();
 }
 
 MessageWaiter::~MessageWaiter()
