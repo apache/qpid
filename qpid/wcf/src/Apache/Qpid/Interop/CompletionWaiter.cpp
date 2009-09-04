@@ -53,11 +53,13 @@ CompletionWaiter::CompletionWaiter(AmqpSession^ parent, TimeSpan timeSpan, IntPt
     this->qpidFuture = future;
     this->asyncCallback = callback;
     this->state = state;
+    this->parent = parent;
+    this->thisLock = gcnew Object();
+    // do this after the Completion Waiter is fully initialized, in case of
+    // very small timespan 
     if (timeSpan != TimeSpan::MaxValue) {
 	this->timer = gcnew Timer(timeoutCallback, this, timeSpan, TimeSpan::FromMilliseconds(-1));
     }
-    this->parent = parent;
-    this->thisLock = gcnew Object();
 }
 
 
