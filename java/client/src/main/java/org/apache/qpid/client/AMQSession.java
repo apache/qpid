@@ -65,6 +65,7 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
+import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -629,6 +630,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     public void close(long timeout) throws JMSException
     {
+        close(timeout, true);
+    }
+
+    private void close(long timeout, boolean sendClose) throws JMSException
+    {
         if (_logger.isInfoEnabled())
         {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -654,9 +660,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         // If the connection is open or we are in the process
                         // of closing the connection then send a cance
                         // no point otherwise as the connection will be gone
-                        if (!_connection.isClosed() || _connection.isClosing())                        
+                        if (!_connection.isClosed() || _connection.isClosing())
                         {
-                            sendClose(timeout);
+                            if (sendClose)
+                            {
+                                sendClose(timeout);
+                            }
                         }
                     }
                     catch (AMQException e)
@@ -1737,6 +1746,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         }
                         catch (AMQException e)
                         {
+                            if (e instanceof AMQChannelClosedException)
+                            {
+                                close(-1, false);
+                            }
+
                             JMSException ex = new JMSException("Error registering consumer: " + e);
 
                             ex.setLinkedException(e);

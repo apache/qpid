@@ -15,3 +15,5 @@ org.apache.qpid.server.logging.VirtualHostLoggingTest#testVirtualhostClosure
 org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClose
 org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#testMessageStoreClose
 
+// QPID-2081 - the connection close here needs more work
+org.apache.qpid.test.unit.clienta.DynamicQueueExchangeCreateTest#testExchangeDeclare
