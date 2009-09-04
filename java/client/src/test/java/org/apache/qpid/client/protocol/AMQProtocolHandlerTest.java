@@ -200,15 +200,8 @@ public class AMQProtocolHandlerTest extends TestCase
         _handler.getStateManager().error(trigger);
 
         _logger.info("Setting state to be CONNECTION_CLOSED.");
-        try
-        {
-            _handler.getStateManager().changeState(AMQState.CONNECTION_CLOSED);
-        }
-        catch (AMQException e)
-        {
-            _logger.error("Unable to change the state to closed.", e);
-            fail("Unable to change the state to closed due to :"+e.getMessage());
-        }
+
+        _handler.getStateManager().changeState(AMQState.CONNECTION_CLOSED);
 
         _logger.info("Firing exception");
         _handler.propagateExceptionToFrameListeners(trigger);

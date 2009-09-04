@@ -259,7 +259,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     /**
      * Called when we want to create a new IoTransport session
-     * @param brokerDetail 
+     * @param brokerDetail
      */
     public void createIoTransportSession(BrokerDetails brokerDetail)
     {
@@ -271,7 +271,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                                 brokerDetail.useSSL());
         _protocolSession.init();
     }
-    
+
     /**
      * Called when the network connection is closed. This can happen, either because the client explicitly requested
      * that the connection be closed, in which case nothing is done, or because the connection died. In the case
@@ -433,12 +433,11 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * @param e the exception to propagate
      *
      * @see #propagateExceptionToFrameListeners
-     * @see #propagateExceptionToStateWaiters
      */
     public void propagateExceptionToAllWaiters(Exception e)
     {
+        getStateManager().error(e);
         propagateExceptionToFrameListeners(e);
-        propagateExceptionToStateWaiters(e);
     }
 
     /**
@@ -467,22 +466,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 }
             }
         }
-    }
-
-    /**
-     * This caters for the case where we only need to propogate an exception to the the state manager to interupt any
-     * thing waiting for a state change.
-     *
-     * Currently (2008-07-15) the state manager is only used during 0-8/0-9 Connection establishement.
-     *
-     * Normally the state manager would not need to be notified without notifiying the frame listeners so in normal
-     * cases {@link #propagateExceptionToAllWaiters} would be the correct choice.
-     *
-     * @param e the exception to propagate
-     */
-    public void propagateExceptionToStateWaiters(Exception e)
-    {
-        getStateManager().error(e);
     }
 
     public void notifyFailoverStarting()
@@ -601,7 +584,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         {
             _protocolLogger.debug(String.format("SEND: [%s] %s", this, message));
         }
-        
+
         final long sentMessages = _messagesOut++;
 
         final boolean debug = _logger.isDebugEnabled();
@@ -667,7 +650,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                     throw _lastFailoverException;
                 }
 
-                if(_stateManager.getCurrentState() == AMQState.CONNECTION_CLOSED)
+                if(_stateManager.getCurrentState() == AMQState.CONNECTION_CLOSED ||
+                        _stateManager.getCurrentState() == AMQState.CONNECTION_CLOSING)
                 {
                     Exception e = _stateManager.getLastException();
                     if (e != null)
@@ -733,25 +717,31 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      */
     public void closeConnection(long timeout) throws AMQException
     {
-        getStateManager().changeState(AMQState.CONNECTION_CLOSING);
-
         ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
                                                                                                   new AMQShortString("JMS client is closing the connection."), 0, 0);
 
         final AMQFrame frame = body.generateFrame(0);
 
-        try
-        {
-            syncWrite(frame, ConnectionCloseOkBody.class, timeout);
-            _protocolSession.closeProtocolSession();
-        }
-        catch (AMQTimeoutException e)
+        //If the connection is already closed then don't do a syncWrite
+        if (getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSED))
         {
             _protocolSession.closeProtocolSession(false);
         }
-        catch (FailoverException e)
+        else
         {
-            _logger.debug("FailoverException interrupted connection close, ignoring as connection close anyway.");
+            try
+            {
+                syncWrite(frame, ConnectionCloseOkBody.class, timeout);
+                _protocolSession.closeProtocolSession();
+            }
+            catch (AMQTimeoutException e)
+            {
+                _protocolSession.closeProtocolSession(false);
+            }
+            catch (FailoverException e)
+            {
+                _logger.debug("FailoverException interrupted connection close, ignoring as connection   close anyway.");
+            }
         }
     }
 

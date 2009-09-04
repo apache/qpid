@@ -40,7 +40,6 @@ public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener<C
     }
 
     public void methodReceived(AMQProtocolSession session, ConnectionOpenOkBody body, int channelId)
-                throws AMQException            
     {
         session.getStateManager().changeState(AMQState.CONNECTION_OPEN);
     }

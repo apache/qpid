@@ -52,7 +52,7 @@ public class AMQIoTransportProtocolSession extends AMQProtocolSession
     }
     
     @Override
-    public void closeProtocolSession(boolean waitLast) throws AMQException
+    public void closeProtocolSession(boolean waitLast) 
     {
         _ioSender.close();
         _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_CLOSED);

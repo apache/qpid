@@ -33,6 +33,7 @@ import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
+import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
@@ -116,12 +117,23 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
-        getProtocolHandler().closeSession(this);
-        getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createChannelCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
-                new AMQShortString("JMS client closing channel"), 0, 0).generateFrame(_channelId), 
-                                       ChannelCloseOkBody.class, timeout);
-        // When control resumes at this point, a reply will have been received that
-        // indicates the broker has closed the channel successfully.
+        // we also need to check the state manager for 08/09 as the
+        // _connection variable may not be updated in time by the error receiving
+        // thread.
+        // We can't close the session if we are alreadying in the process of
+        // closing/closed the connection.
+                
+        if (!(getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSED)
+            || getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSING)))
+        {
+
+            getProtocolHandler().closeSession(this);
+            getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createChannelCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
+                                                                                                           new AMQShortString("JMS client closing channel"), 0, 0).generateFrame(_channelId),
+                                           ChannelCloseOkBody.class, timeout);
+            // When control resumes at this point, a reply will have been received that
+            // indicates the broker has closed the channel successfully.
+        }
     }
 
     public void sendCommit() throws AMQException, FailoverException
