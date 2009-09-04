@@ -21,7 +21,7 @@
  */
 
 #if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
-#  if defined(QMF_EXPORT) || defined (qmf_EXPORTS)
+#  if defined(QMF_EXPORT) || defined (qmfcommon_EXPORTS)
 #    define QMF_EXTERN __declspec(dllexport)
 #  else
 #    define QMF_EXTERN __declspec(dllimport)
