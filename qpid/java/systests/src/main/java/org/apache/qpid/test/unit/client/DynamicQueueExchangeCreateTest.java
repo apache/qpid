@@ -46,8 +46,11 @@ public class DynamicQueueExchangeCreateTest extends QpidTestCase
             fail("JMSException should be thrown as the queue does not exist");
         }
         catch (JMSException e)
-        {
-            assertTrue(e.getMessage().contains("does not exist"));
+        {           
+            assertTrue("Exception should be that the queue does not exist :" +
+                       e.getMessage(),
+                       e.getMessage().contains("does not exist"));
+
         }
     }
 
@@ -60,7 +63,7 @@ public class DynamicQueueExchangeCreateTest extends QpidTestCase
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         String EXCHANGE_TYPE = "test.direct";
-        Queue queue = session.createQueue("new.direct://" + EXCHANGE_TYPE + "/queue/queue");
+        Queue queue = session.createQueue("direct://" + EXCHANGE_TYPE + "/queue/queue");
 
         try
         {
@@ -69,9 +72,9 @@ public class DynamicQueueExchangeCreateTest extends QpidTestCase
         }
         catch (JMSException e)
         {
-            System.err.println(e.getMessage());
-
-            assertTrue(e.getMessage().contains("Exchange " + EXCHANGE_TYPE + " does not exist"));
+            assertTrue("Exception should be that the exchange does not exist :" +
+                       e.getMessage(),
+                       e.getMessage().contains("Exchange " + EXCHANGE_TYPE + " does not exist"));
         }
     }
 
