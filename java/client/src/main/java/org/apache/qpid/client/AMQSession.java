@@ -206,9 +206,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     protected static final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
 
-    protected static final boolean DECLARE_QUEUES =
+    protected final boolean DECLARE_QUEUES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_queues", "true"));
-    protected static final boolean DECLARE_EXCHANGES =
+    protected final boolean DECLARE_EXCHANGES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
 
     /** System property to enable strict AMQP compliance. */
