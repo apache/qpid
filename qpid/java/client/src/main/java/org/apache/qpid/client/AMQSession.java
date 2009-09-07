@@ -721,25 +721,22 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         if (!_closed.getAndSet(true))
         {
-            synchronized (getFailoverMutex())
+            synchronized (_messageDeliveryLock)
             {
-                synchronized (_messageDeliveryLock)
+                // An AMQException has an error code and message already and will be passed in when closure occurs as a
+                // result of a channel close request
+                AMQException amqe;
+                if (e instanceof AMQException)
                 {
-                    // An AMQException has an error code and message already and will be passed in when closure occurs as a
-                    // result of a channel close request
-                    AMQException amqe;
-                    if (e instanceof AMQException)
-                    {
-                        amqe = (AMQException) e;
-                    }
-                    else
-                    {
-                        amqe = new AMQException("Closing session forcibly", e);
-                    }
-
-                    _connection.deregisterSession(_channelId);
-                    closeProducersAndConsumers(amqe);
+                    amqe = (AMQException) e;
                 }
+                else
+                {
+                    amqe = new AMQException("Closing session forcibly", e);
+                }
+
+                _connection.deregisterSession(_channelId);
+                closeProducersAndConsumers(amqe);
             }
         }
     }
