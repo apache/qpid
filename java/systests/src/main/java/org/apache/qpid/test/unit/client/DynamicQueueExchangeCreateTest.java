@@ -27,6 +27,13 @@ import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+/**
+ * QPID-155
+ *
+ * Test to validate that setting the respective qpid.declare_queues,
+ * qpid.declare_exchanges system properties functions as expected.
+ * 
+ */
 public class DynamicQueueExchangeCreateTest extends QpidTestCase
 {
 
