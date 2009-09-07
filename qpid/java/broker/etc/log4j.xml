@@ -50,7 +50,7 @@
 
     <appender class="org.apache.log4j.FileAppender" name="FileAppender">
         <param name="File" value="${QPID_WORK}/log/${logprefix}qpid${logsuffix}.log"/>
-        <param name="Append" value="false"/>
+        <param name="Append" value="${QPID_LOG_APPEND}"/>
 
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
