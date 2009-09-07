@@ -33,6 +33,8 @@ class Message;
 namespace client {
 namespace amqp0_10 {
 
+class OutgoingMessage;
+
 /**
  *
  */
@@ -41,7 +43,7 @@ class MessageSink
   public:
     virtual ~MessageSink() {}
     virtual void declare(qpid::client::AsyncSession& session, const std::string& name) = 0;
-    virtual void send(qpid::client::AsyncSession& session, const std::string& name, qpid::messaging::Message& message) = 0;
+    virtual void send(qpid::client::AsyncSession& session, const std::string& name, OutgoingMessage& message) = 0;
     virtual void cancel(qpid::client::AsyncSession& session, const std::string& name) = 0;
   private:
 };

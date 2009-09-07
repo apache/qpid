@@ -310,7 +310,6 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);    
-    BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
     BOOST_CHECK_EQUAL(in.getContent().asMap()["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(in.getContent().asMap()["pi"].asFloat(), 3.14f);
     fix.session.acknowledge();
@@ -329,7 +328,6 @@ QPID_AUTO_TEST_CASE(testListMessage)
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);    
-    BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
     Variant::List& list = in.getContent().asList();    
     BOOST_CHECK_EQUAL(list.size(), out.getContent().asList().size());
     BOOST_CHECK_EQUAL(list.front().asString(), "abc");

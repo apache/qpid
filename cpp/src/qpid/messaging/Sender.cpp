@@ -38,7 +38,7 @@ Sender::Sender(SenderImpl* impl) { PI::ctor(*this, impl); }
 Sender::Sender(const Sender& s) : qpid::client::Handle<SenderImpl>() { PI::copy(*this, s); }
 Sender::~Sender() { PI::dtor(*this); }
 Sender& Sender::operator=(const Sender& s) { return PI::assign(*this, s); }
-void Sender::send(Message& message) { impl->send(message); }
+void Sender::send(const Message& message) { impl->send(message); }
 void Sender::cancel() { impl->cancel(); }
 
 }} // namespace qpid::messaging
