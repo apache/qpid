@@ -21,9 +21,13 @@
  * under the License.
  *
  */
+#include "qpid/messaging/Address.h"
+#include "qpid/messaging/Filter.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ReceiverImpl.h"
+#include "qpid/messaging/Variant.h"
 #include "qpid/client/AsyncSession.h"
+#include "qpid/client/amqp0_10/SessionImpl.h"
 #include "qpid/sys/Time.h"
 #include <memory>
 
@@ -31,8 +35,8 @@ namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
+class AddressResolution;
 class MessageSource;
-class SessionImpl;
 
 /**
  * A receiver implementation based on an AMQP 0-10 subscription.
@@ -41,8 +45,14 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
 {
   public:
 
-    ReceiverImpl(SessionImpl& parent, const std::string& name, std::auto_ptr<MessageSource> source);
+    enum State {UNRESOLVED, STOPPED, STARTED, CANCELLED};
 
+    ReceiverImpl(SessionImpl& parent, const std::string& name,
+                 const qpid::messaging::Address& address,
+                 const qpid::messaging::Filter* filter,
+                 const qpid::messaging::Variant::Map& options);
+
+    void init(qpid::client::AsyncSession session, AddressResolution& resolver);
     bool get(qpid::messaging::Message& message, qpid::sys::Duration timeout);
     qpid::messaging::Message get(qpid::sys::Duration timeout);
     bool fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout);
@@ -50,8 +60,6 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     void cancel();
     void start();
     void stop();
-    void subscribe();
-    void setSession(qpid::client::AsyncSession s);
     const std::string& getName() const;
     void setCapacity(uint32_t);
     void setListener(qpid::messaging::MessageListener* listener);
@@ -59,16 +67,97 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     void received(qpid::messaging::Message& message);
   private:
     SessionImpl& parent;
-    const std::auto_ptr<MessageSource> source;
     const std::string destination;
+    const qpid::messaging::Address address;
+    const qpid::messaging::Filter* filter;
+    const qpid::messaging::Variant::Map options;
     const uint32_t byteCredit;
-    
+    State state;
+
+    std::auto_ptr<MessageSource> source;
     uint32_t capacity;
     qpid::client::AsyncSession session;
-    bool started;
-    bool cancelled;
     qpid::messaging::MessageListener* listener;
     uint32_t window;
+
+    void startFlow();
+    //implementation of public facing methods
+    bool fetchImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
+    bool getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
+    void startImpl();
+    void stopImpl();
+    void cancelImpl();
+    void setCapacityImpl(uint32_t);
+
+    //functors for public facing methods (allows locking and retry
+    //logic to be centralised)
+    struct Command
+    {
+        ReceiverImpl& impl;
+
+        Command(ReceiverImpl& i) : impl(i) {}
+    };
+
+    struct Get : Command
+    {
+        qpid::messaging::Message& message;
+        qpid::sys::Duration timeout;
+        bool result;
+
+        Get(ReceiverImpl& i, qpid::messaging::Message& m, qpid::sys::Duration t) : 
+            Command(i), message(m), timeout(t), result(false) {}
+        void operator()() { result = impl.getImpl(message, timeout); }
+    };
+
+    struct Fetch : Command
+    {
+        qpid::messaging::Message& message;
+        qpid::sys::Duration timeout;
+        bool result;
+
+        Fetch(ReceiverImpl& i, qpid::messaging::Message& m, qpid::sys::Duration t) : 
+            Command(i), message(m), timeout(t), result(false) {}
+        void operator()() { result = impl.fetchImpl(message, timeout); }
+    };
+
+    struct Stop : Command
+    {
+        Stop(ReceiverImpl& i) : Command(i) {}
+        void operator()() { impl.stopImpl(); }
+    };
+
+    struct Start : Command
+    {
+        Start(ReceiverImpl& i) : Command(i) {}
+        void operator()() { impl.startImpl(); }
+    };
+
+    struct Cancel : Command
+    {
+        Cancel(ReceiverImpl& i) : Command(i) {}
+        void operator()() { impl.cancelImpl(); }
+    };
+
+    struct SetCapacity : Command
+    {
+        uint32_t capacity;
+
+        SetCapacity(ReceiverImpl& i, uint32_t c) : Command(i), capacity(c) {}
+        void operator()() { impl.setCapacityImpl(capacity); }
+    };
+
+    //helper templates for some common patterns
+    template <class F> void execute()
+    {
+        F f(*this);
+        parent.execute(f);
+    }
+    
+    template <class F, class P> void execute1(P p)
+    {
+        F f(*this, p);
+        parent.execute(f);
+    }
 };
 
 }}} // namespace qpid::client::amqp0_10

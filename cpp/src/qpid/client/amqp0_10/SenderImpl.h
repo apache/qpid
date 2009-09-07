@@ -21,17 +21,20 @@
  * under the License.
  *
  */
+#include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/SenderImpl.h"
+#include "qpid/messaging/Variant.h"
 #include "qpid/client/AsyncSession.h"
+#include "qpid/client/amqp0_10/SessionImpl.h"
 #include <memory>
 
 namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
+class AddressResolution;
 class MessageSink;
-class SessionImpl;
 
 /**
  *
@@ -39,19 +42,66 @@ class SessionImpl;
 class SenderImpl : public qpid::messaging::SenderImpl
 {
   public:
-    SenderImpl(SessionImpl& parent, const std::string& name, std::auto_ptr<MessageSink> sink);
+    enum State {UNRESOLVED, ACTIVE, CANCELLED};
+
+    SenderImpl(SessionImpl& parent, const std::string& name, 
+               const qpid::messaging::Address& address, 
+               const qpid::messaging::Variant::Map& options);
     void send(qpid::messaging::Message&);
     void cancel();
-    void setSession(qpid::client::AsyncSession);
+    void init(qpid::client::AsyncSession, AddressResolution&);
 
   private:
     SessionImpl& parent;
     const std::string name;
+    const qpid::messaging::Address address;
+    const qpid::messaging::Variant::Map options;
+    State state;
     std::auto_ptr<MessageSink> sink;
 
     qpid::client::AsyncSession session;
     std::string destination;
     std::string routingKey;
+
+    //logic for application visible methods:
+    void sendImpl(qpid::messaging::Message&);
+    void cancelImpl();
+
+    //functors for application visible methods (allowing locking and
+    //retry to be centralised):
+    struct Command
+    {
+        SenderImpl& impl;
+
+        Command(SenderImpl& i) : impl(i) {}
+    };
+
+    struct Send : Command
+    {
+        qpid::messaging::Message* message;
+
+        Send(SenderImpl& i, qpid::messaging::Message* m) : Command(i), message(m) {}
+        void operator()() { impl.sendImpl(*message); }
+    };
+
+    struct Cancel : Command
+    {
+        Cancel(SenderImpl& i) : Command(i) {}
+        void operator()() { impl.cancelImpl(); }
+    };
+
+    //helper templates for some common patterns
+    template <class F> void execute()
+    {
+        F f(*this);
+        parent.execute(f);
+    }
+    
+    template <class F, class P> void execute1(P p)
+    {
+        F f(*this, p);
+        parent.execute(f);
+    }    
 };
 }}} // namespace qpid::client::amqp0_10
 

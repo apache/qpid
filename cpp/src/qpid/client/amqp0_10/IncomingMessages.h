@@ -67,7 +67,7 @@ class IncomingMessages
         virtual bool accept(MessageTransfer& transfer) = 0;
     };
 
-    IncomingMessages(qpid::client::AsyncSession session);
+    void setSession(qpid::client::AsyncSession session);
     bool get(Handler& handler, qpid::sys::Duration timeout);
     //bool get(qpid::messaging::Message& message, qpid::sys::Duration timeout);
     //bool get(const std::string& destination, qpid::messaging::Message& message, qpid::sys::Duration timeout);
