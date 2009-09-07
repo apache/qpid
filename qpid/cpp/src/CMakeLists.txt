@@ -540,6 +540,7 @@ set (libqpidclient_SOURCES
      qpid/client/amqp0_10/AddressResolution.h
      qpid/client/amqp0_10/AddressResolution.cpp
      qpid/client/amqp0_10/Codecs.cpp
+     qpid/client/amqp0_10/CodecsInternal.h
      qpid/client/amqp0_10/CompletionTracker.h
      qpid/client/amqp0_10/CompletionTracker.cpp
      qpid/client/amqp0_10/ConnectionImpl.h
@@ -548,6 +549,8 @@ set (libqpidclient_SOURCES
      qpid/client/amqp0_10/IncomingMessages.cpp
      qpid/client/amqp0_10/MessageSink.h
      qpid/client/amqp0_10/MessageSource.h
+     qpid/client/amqp0_10/OutgoingMessage.h
+     qpid/client/amqp0_10/OutgoingMessage.cpp
      qpid/client/amqp0_10/ReceiverImpl.h
      qpid/client/amqp0_10/ReceiverImpl.cpp
      qpid/client/amqp0_10/SessionImpl.h

@@ -21,6 +21,7 @@
 #include "qpid/client/amqp0_10/IncomingMessages.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
 #include "qpid/client/amqp0_10/Codecs.h"
+#include "qpid/client/amqp0_10/CodecsInternal.h"
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/log/Statement.h"
@@ -194,8 +195,6 @@ void IncomingMessages::MessageTransfer::retrieve(qpid::messaging::Message* messa
 {
     parent.retrieve(content, message);
 }
-
-void translate(const FieldTable& from, Variant::Map& to);//implemented in Codecs.cpp
 
 void populateHeaders(qpid::messaging::Message& message, 
                      const DeliveryProperties* deliveryProperties, 

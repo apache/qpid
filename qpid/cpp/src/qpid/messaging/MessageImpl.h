@@ -84,6 +84,7 @@ struct MessageImpl : MessageContent
 
     void clear();
 
+    void getEncodedContent(Codec& codec, std::string&) const;
     void encode(Codec& codec);
     void decode(Codec& codec);
 
@@ -125,6 +126,7 @@ class Message;
 struct MessageImplAccess
 {
     static MessageImpl& get(Message&);
+    static const MessageImpl& get(const Message&);
 };
 
 }} // namespace qpid::messaging

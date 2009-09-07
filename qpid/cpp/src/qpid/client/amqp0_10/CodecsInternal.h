@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_SENDER_H
-#define QPID_MESSAGING_SENDER_H
+#ifndef QPID_CLIENT_AMQP0_10_CODECSINTERNAL_H
+#define QPID_CLIENT_AMQP0_10_CODECSINTERNAL_H
 
 /*
  *
@@ -21,37 +21,21 @@
  * under the License.
  *
  */
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/messaging/Variant.h"
+#include "qpid/framing/FieldTable.h"
 
 namespace qpid {
 namespace client {
-
-template <class> class PrivateImplRef;
-
-}
-
-namespace messaging {
-
-class Message;
-class SenderImpl;
+namespace amqp0_10 {
 
 /**
- * Interface through which messages are sent.
+ * Declarations of a couple of conversion functions implemented in
+ * Codecs.cpp but not exposed through API
  */
-class Sender : public qpid::client::Handle<SenderImpl>
-{
-  public:
-    QPID_CLIENT_EXTERN Sender(SenderImpl* impl = 0);
-    QPID_CLIENT_EXTERN Sender(const Sender&);
-    QPID_CLIENT_EXTERN ~Sender();
-    QPID_CLIENT_EXTERN Sender& operator=(const Sender&);
 
-    QPID_CLIENT_EXTERN void send(const Message& message);
-    QPID_CLIENT_EXTERN void cancel();
-  private:
-  friend class qpid::client::PrivateImplRef<Sender>;
-};
-}} // namespace qpid::messaging
+void translate(const qpid::messaging::Variant::Map& from, qpid::framing::FieldTable& to);
+void translate(const qpid::framing::FieldTable& from, qpid::messaging::Variant::Variant::Map& to);
 
-#endif  /*!QPID_MESSAGING_SENDER_H*/
+}}} // namespace qpid::client::amqp0_10
+
+#endif  /*!QPID_CLIENT_AMQP0_10_CODECSINTERNAL_H*/

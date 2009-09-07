@@ -1,5 +1,5 @@
-#ifndef QPID_MESSAGING_SENDER_H
-#define QPID_MESSAGING_SENDER_H
+#ifndef QPID_CLIENT_AMQP0_10_OUTGOINGMESSAGE_H
+#define QPID_CLIENT_AMQP0_10_OUTGOINGMESSAGE_H
 
 /*
  *
@@ -21,37 +21,26 @@
  * under the License.
  *
  */
-#include "qpid/client/ClientImportExport.h"
-#include "qpid/client/Handle.h"
+#include "qpid/client/Completion.h"
+#include "qpid/client/Message.h"
 
 namespace qpid {
-namespace client {
-
-template <class> class PrivateImplRef;
-
-}
-
 namespace messaging {
-
 class Message;
-class SenderImpl;
+}
+namespace client {
+namespace amqp0_10 {
 
-/**
- * Interface through which messages are sent.
- */
-class Sender : public qpid::client::Handle<SenderImpl>
+struct OutgoingMessage
 {
-  public:
-    QPID_CLIENT_EXTERN Sender(SenderImpl* impl = 0);
-    QPID_CLIENT_EXTERN Sender(const Sender&);
-    QPID_CLIENT_EXTERN ~Sender();
-    QPID_CLIENT_EXTERN Sender& operator=(const Sender&);
+    qpid::client::Message message;
+    qpid::client::Completion status;
 
-    QPID_CLIENT_EXTERN void send(const Message& message);
-    QPID_CLIENT_EXTERN void cancel();
-  private:
-  friend class qpid::client::PrivateImplRef<Sender>;
+    void convert(const qpid::messaging::Message&);
 };
-}} // namespace qpid::messaging
 
-#endif  /*!QPID_MESSAGING_SENDER_H*/
+
+
+}}} // namespace qpid::client::amqp0_10
+
+#endif  /*!QPID_CLIENT_AMQP0_10_OUTGOINGMESSAGE_H*/

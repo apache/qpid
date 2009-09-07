@@ -28,6 +28,7 @@
 #include "qpid/client/AsyncSession.h"
 #include "qpid/client/amqp0_10/SessionImpl.h"
 #include <memory>
+#include <boost/ptr_container/ptr_deque.hpp>
 
 namespace qpid {
 namespace client {
@@ -35,6 +36,7 @@ namespace amqp0_10 {
 
 class AddressResolution;
 class MessageSink;
+class OutgoingMessage;
 
 /**
  *
@@ -47,7 +49,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     SenderImpl(SessionImpl& parent, const std::string& name, 
                const qpid::messaging::Address& address, 
                const qpid::messaging::Variant::Map& options);
-    void send(qpid::messaging::Message&);
+    void send(const qpid::messaging::Message&);
     void cancel();
     void init(qpid::client::AsyncSession, AddressResolution&);
 
@@ -63,8 +65,16 @@ class SenderImpl : public qpid::messaging::SenderImpl
     std::string destination;
     std::string routingKey;
 
+    typedef boost::ptr_deque<OutgoingMessage> OutgoingMessages;
+    OutgoingMessages outgoing;
+    uint32_t capacity;
+    uint32_t window;
+
+    void checkPendingSends();
+    void replay();
+
     //logic for application visible methods:
-    void sendImpl(qpid::messaging::Message&);
+    void sendImpl(const qpid::messaging::Message&);
     void cancelImpl();
 
     //functors for application visible methods (allowing locking and
@@ -78,9 +88,9 @@ class SenderImpl : public qpid::messaging::SenderImpl
 
     struct Send : Command
     {
-        qpid::messaging::Message* message;
+        const qpid::messaging::Message* message;
 
-        Send(SenderImpl& i, qpid::messaging::Message* m) : Command(i), message(m) {}
+        Send(SenderImpl& i, const qpid::messaging::Message* m) : Command(i), message(m) {}
         void operator()() { impl.sendImpl(*message); }
     };
 

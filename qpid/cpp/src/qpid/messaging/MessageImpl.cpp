@@ -126,6 +126,15 @@ void MessageImpl::encode(Codec& codec)
     }
 }
 
+void MessageImpl::getEncodedContent(Codec& codec, std::string& out) const
+{
+    if (content.getType() != VAR_VOID) {
+        codec.encode(content, out);
+    } else {
+        out = bytes;
+    }
+}
+
 void MessageImpl::decode(Codec& codec) 
 {
     codec.decode(bytes, content);    
@@ -185,6 +194,10 @@ bool MessageImpl::isList() const { return type == VAR_LIST; }
 void MessageImpl::clear() { bytes = EMPTY_STRING; content.reset(); type = VAR_VOID; } 
 
 MessageImpl& MessageImplAccess::get(Message& msg)
+{
+    return *msg.impl;
+}
+const MessageImpl& MessageImplAccess::get(const Message& msg)
 {
     return *msg.impl;
 }
