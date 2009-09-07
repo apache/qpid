@@ -43,6 +43,7 @@ class Session;
 namespace client {
 namespace amqp0_10 {
 
+class ConnectionImpl;
 class ReceiverImpl;
 class SenderImpl;
 
@@ -53,7 +54,7 @@ class SenderImpl;
 class SessionImpl : public qpid::messaging::SessionImpl
 {
   public:
-    SessionImpl(qpid::client::Session);
+    SessionImpl(ConnectionImpl&);
     void commit();
     void rollback();
     void acknowledge();
@@ -81,26 +82,120 @@ class SessionImpl : public qpid::messaging::SessionImpl
 
     void receiverCancelled(const std::string& name);
     void senderCancelled(const std::string& name);
-    
+
+    void setSession(qpid::client::Session);
+
+    template <class T> bool execute(T& f)
+    {
+        try {
+            qpid::sys::Mutex::ScopedLock l(lock);
+            f();
+            return true;
+        } catch (TransportFailure&) {
+            reconnect();
+            return false;
+        }
+    }
+
     static SessionImpl& convert(qpid::messaging::Session&);
 
-    qpid::client::Session session;
   private:
     typedef std::map<std::string, qpid::messaging::Receiver> Receivers;
     typedef std::map<std::string, qpid::messaging::Sender> Senders;
 
     qpid::sys::Mutex lock;
+    ConnectionImpl& connection;
+    qpid::client::Session session;
     AddressResolution resolver;
     IncomingMessages incoming;
     Receivers receivers;
     Senders senders;
 
-    qpid::messaging::Receiver addReceiver(const qpid::messaging::Address& address, 
-                                          const qpid::messaging::Filter* filter, 
-                                          const qpid::messaging::VariantMap& options);
     bool acceptAny(qpid::messaging::Message*, bool, IncomingMessages::MessageTransfer&);
     bool accept(ReceiverImpl*, qpid::messaging::Message*, bool, IncomingMessages::MessageTransfer&);
     bool getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout);
+    void reconnect();
+
+    void commitImpl();
+    void rollbackImpl();
+    void acknowledgeImpl();
+    void rejectImpl(qpid::messaging::Message&);
+    void closeImpl();
+    void syncImpl();
+    void flushImpl();
+    qpid::messaging::Sender createSenderImpl(const qpid::messaging::Address& address, 
+                                             const qpid::messaging::VariantMap& options);
+    qpid::messaging::Receiver createReceiverImpl(const qpid::messaging::Address& address, 
+                                                 const qpid::messaging::Filter* filter, 
+                                                 const qpid::messaging::VariantMap& options);
+
+    //functors for public facing methods (allows locking and retry
+    //logic to be centralised)
+    struct Command
+    {
+        SessionImpl& impl;
+
+        Command(SessionImpl& i) : impl(i) {}
+    };
+
+    struct Commit : Command
+    {
+        Commit(SessionImpl& i) : Command(i) {}
+        void operator()() { impl.commitImpl(); }
+    };
+
+    struct Rollback : Command
+    {
+        Rollback(SessionImpl& i) : Command(i) {}
+        void operator()() { impl.rollbackImpl(); }
+    };
+
+    struct Acknowledge : Command
+    {
+        Acknowledge(SessionImpl& i) : Command(i) {}
+        void operator()() { impl.acknowledgeImpl(); }
+    };
+
+    struct Sync : Command
+    {
+        Sync(SessionImpl& i) : Command(i) {}
+        void operator()() { impl.syncImpl(); }
+    };
+
+    struct Flush : Command
+    {
+        Flush(SessionImpl& i) : Command(i) {}
+        void operator()() { impl.flushImpl(); }
+    };
+
+    struct Reject : Command
+    {
+        qpid::messaging::Message& message;
+
+        Reject(SessionImpl& i, qpid::messaging::Message& m) : Command(i), message(m) {}
+        void operator()() { impl.rejectImpl(message); }
+    };
+    
+    struct CreateSender;
+    struct CreateReceiver;
+
+    //helper templates for some common patterns
+    template <class F> bool execute()
+    {
+        F f(*this);
+        return execute(f);
+    }
+    
+    template <class F> void retry()
+    {
+        while (!execute<F>()) {}
+    }
+    
+    template <class F, class P> bool execute1(P p)
+    {
+        F f(*this, p);
+        return execute(f);
+    }
 };
 }}} // namespace qpid::client::amqp0_10
 

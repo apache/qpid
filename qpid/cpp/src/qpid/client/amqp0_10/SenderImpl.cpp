@@ -21,29 +21,54 @@
 #include "SenderImpl.h"
 #include "MessageSink.h"
 #include "SessionImpl.h"
+#include "AddressResolution.h"
 
 namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
-SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name, std::auto_ptr<MessageSink> _sink) : 
-    parent(_parent), name(_name), sink(_sink) {}
+SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name, 
+                       const qpid::messaging::Address& _address, 
+                       const qpid::messaging::Variant::Map& _options) : 
+    parent(_parent), name(_name), address(_address), options(_options), state(UNRESOLVED) {}
 
 void SenderImpl::send(qpid::messaging::Message& m) 
 {
-    sink->send(session, name, m);
+    execute1<Send>(&m);
 }
 
 void SenderImpl::cancel()
 {
-    sink->cancel(session, name);
-    parent.senderCancelled(name);
+    execute<Cancel>();
 }
 
-void SenderImpl::setSession(qpid::client::AsyncSession s)
+void SenderImpl::init(qpid::client::AsyncSession s, AddressResolution& resolver)
 {
     session = s;
-    sink->declare(session, name);
+    if (state == UNRESOLVED) {
+        sink = resolver.resolveSink(session, address, options);
+        state = ACTIVE;
+    }
+    if (state == CANCELLED) {
+        sink->cancel(session, name);
+        parent.senderCancelled(name);
+    } else {
+        sink->declare(session, name);
+        //TODO: replay
+    }
+}
+
+void SenderImpl::sendImpl(qpid::messaging::Message& m) 
+{
+    //TODO: record for replay if appropriate
+    sink->send(session, name, m);
+}
+
+void SenderImpl::cancelImpl()
+{
+    state = CANCELLED;
+    sink->cancel(session, name);
+    parent.senderCancelled(name);
 }
 
 }}} // namespace qpid::client::amqp0_10

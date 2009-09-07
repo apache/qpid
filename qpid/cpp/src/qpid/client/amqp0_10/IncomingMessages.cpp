@@ -82,9 +82,11 @@ struct MatchAndTrack
 };
 }
 
-IncomingMessages::IncomingMessages(qpid::client::AsyncSession s) : 
-    session(s), 
-    incoming(SessionBase_0_10Access(session).get()->getDemux().getDefault()) {}
+void IncomingMessages::setSession(qpid::client::AsyncSession s)
+{
+    session = s;
+    incoming = SessionBase_0_10Access(session).get()->getDemux().getDefault();
+}
 
 bool IncomingMessages::get(Handler& handler, Duration timeout)
 {
@@ -208,6 +210,7 @@ void populateHeaders(qpid::messaging::Message& message,
         if (messageProperties->hasReplyTo()) {
             message.setReplyTo(AddressResolution::convert(messageProperties->getReplyTo()));
         }
+        message.getHeaders().clear();
         translate(messageProperties->getApplicationHeaders(), message.getHeaders());
         //TODO: convert other message properties
     }

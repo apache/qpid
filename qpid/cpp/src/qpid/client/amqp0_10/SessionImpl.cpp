@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/client/amqp0_10/SessionImpl.h"
+#include "qpid/client/amqp0_10/ConnectionImpl.h"
 #include "qpid/client/amqp0_10/ReceiverImpl.h"
 #include "qpid/client/amqp0_10/SenderImpl.h"
 #include "qpid/client/amqp0_10/MessageSource.h"
@@ -49,54 +50,53 @@ namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
-SessionImpl::SessionImpl(qpid::client::Session s) : session(s), incoming(session) {}
+SessionImpl::SessionImpl(ConnectionImpl& c) : connection(c) {}
 
+
+void SessionImpl::sync()
+{
+    retry<Sync>();
+}
+
+void SessionImpl::flush()
+{
+    retry<Flush>();
+}
 
 void SessionImpl::commit()
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
-    incoming.accept();
-    session.txCommit();
+    if (!execute<Commit>()) {
+        throw Exception();//TODO: what type?
+    }
 }
 
 void SessionImpl::rollback()
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
-    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) i->second.stop();
-    //ensure that stop has been processed and all previously sent
-    //messages are available for release:                   
-    session.sync();
-    incoming.releaseAll();
-    session.txRollback();    
-    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) i->second.start();
+    //If the session fails during this operation, the transaction will
+    //be rolled back anyway.
+    execute<Rollback>();
 }
 
 void SessionImpl::acknowledge()
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
-    incoming.accept();
+    //Should probably throw an exception on failure here, or indicate
+    //it through a return type at least. Failure means that the
+    //message may be redelivered; i.e. the application cannot delete
+    //any state necessary for preventing reprocessing of the message
+    execute<Acknowledge>();
 }
 
 void SessionImpl::reject(qpid::messaging::Message& m)
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
-    SequenceSet set;
-    set.add(MessageImplAccess::get(m).getInternalId());
-    session.messageReject(set);
+    //Possibly want to somehow indicate failure here as well. Less
+    //clear need as compared to acknowledge however.
+    execute1<Reject>(m);
 }
 
 void SessionImpl::close()
 {
+    connection.closed(*this);
     session.close();
-}
-
-void translate(const VariantMap& options, SubscriptionSettings& settings)
-{
-    //TODO: fill this out
-    VariantMap::const_iterator i = options.find("auto_acknowledge");
-    if (i != options.end()) {
-        settings.autoAck = i->second.asInt32();
-    }
 }
 
 template <class T, class S> boost::intrusive_ptr<S> getImplPtr(T& t)
@@ -114,36 +114,86 @@ template <class T> void getFreeKey(std::string& key, T& map)
     key = name;
 }
 
-Sender SessionImpl::createSender(const qpid::messaging::Address& address, const VariantMap& options)
-{ 
-    qpid::sys::Mutex::ScopedLock l(lock);
-    std::auto_ptr<MessageSink> sink = resolver.resolveSink(session, address, options);
-    std::string name = address;
-    getFreeKey(name, senders);
-    Sender sender(new SenderImpl(*this, name, sink));
-    getImplPtr<Sender, SenderImpl>(sender)->setSession(session);
-    senders[name] = sender;
-    return sender;
-}
-Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address, const VariantMap& options)
-{ 
-    return addReceiver(address, 0, options);
-}
-Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address, const Filter& filter, const VariantMap& options)
-{ 
-    return addReceiver(address, &filter, options);
-}
 
-Receiver SessionImpl::addReceiver(const qpid::messaging::Address& address, const Filter* filter, const VariantMap& options)
+void SessionImpl::setSession(qpid::client::Session s)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
-    std::auto_ptr<MessageSource> source = resolver.resolveSource(session, address, filter, options);
+    session = s;
+    incoming.setSession(session);
+    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
+        getImplPtr<Receiver, ReceiverImpl>(i->second)->init(session, resolver);
+    }
+    for (Senders::iterator i = senders.begin(); i != senders.end(); ++i) {
+        getImplPtr<Sender, SenderImpl>(i->second)->init(session, resolver);
+    }
+}
+
+struct SessionImpl::CreateReceiver : Command
+{
+    qpid::messaging::Receiver result;
+    const qpid::messaging::Address& address;
+    const Filter* filter;
+    const qpid::messaging::Variant::Map& options;
+    
+    CreateReceiver(SessionImpl& i, const qpid::messaging::Address& a, const Filter* f, 
+                   const qpid::messaging::Variant::Map& o) :
+        Command(i), address(a), filter(f), options(o) {}
+    void operator()() { result = impl.createReceiverImpl(address, filter, options); }
+};
+
+Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address, const VariantMap& options)
+{ 
+    CreateReceiver f(*this, address, 0, options);
+    while (!execute(f)) {}
+    return f.result;
+}
+
+Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address, 
+                                     const Filter& filter, const VariantMap& options)
+{ 
+    CreateReceiver f(*this, address, &filter, options);
+    while (!execute(f)) {}
+    return f.result;
+}
+
+Receiver SessionImpl::createReceiverImpl(const qpid::messaging::Address& address,
+                                         const Filter* filter, const VariantMap& options)
+{
     std::string name = address;
     getFreeKey(name, receivers);
-    Receiver receiver(new ReceiverImpl(*this, name, source));
-    getImplPtr<Receiver, ReceiverImpl>(receiver)->setSession(session);
+    Receiver receiver(new ReceiverImpl(*this, name, address, filter, options));
+    getImplPtr<Receiver, ReceiverImpl>(receiver)->init(session, resolver);
     receivers[name] = receiver;
     return receiver;
+}
+
+struct SessionImpl::CreateSender : Command
+{
+    qpid::messaging::Sender result;
+    const qpid::messaging::Address& address;
+    const qpid::messaging::Variant::Map& options;
+    
+    CreateSender(SessionImpl& i, const qpid::messaging::Address& a,
+                 const qpid::messaging::Variant::Map& o) :
+        Command(i), address(a), options(o) {}
+    void operator()() { result = impl.createSenderImpl(address, options); }
+};
+
+Sender SessionImpl::createSender(const qpid::messaging::Address& address, const VariantMap& options)
+{
+    CreateSender f(*this, address, options);
+    while (!execute(f)) {}
+    return f.result;
+}
+
+Sender SessionImpl::createSenderImpl(const qpid::messaging::Address& address, const VariantMap& options)
+{ 
+    std::string name = address;
+    getFreeKey(name, senders);
+    Sender sender(new SenderImpl(*this, name, address, options));
+    getImplPtr<Sender, SenderImpl>(sender)->init(session, resolver);
+    senders[name] = sender;
+    return sender;
 }
 
 qpid::messaging::Address SessionImpl::createTempQueue(const std::string& baseName)
@@ -212,15 +262,7 @@ bool SessionImpl::acceptAny(qpid::messaging::Message* message, bool isDispatch, 
 
 bool SessionImpl::getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout)
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
     return incoming.get(handler, timeout);
-}
-
-bool SessionImpl::dispatch(qpid::sys::Duration timeout)
-{
-    qpid::messaging::Message message;
-    IncomingMessageHandler handler(boost::bind(&SessionImpl::acceptAny, this, &message, true, _1));
-    return getIncoming(handler, timeout);
 }
 
 bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout)
@@ -229,10 +271,71 @@ bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message,
     return getIncoming(handler, timeout);
 }
 
+bool SessionImpl::dispatch(qpid::sys::Duration timeout)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    while (true) {
+        try {
+            qpid::messaging::Message message;
+            IncomingMessageHandler handler(boost::bind(&SessionImpl::acceptAny, this, &message, true, _1));
+            return getIncoming(handler, timeout);
+        } catch (TransportFailure&) {
+            reconnect();
+        }
+    }
+}
+
 bool SessionImpl::fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout)
 {
-    IncomingMessageHandler handler(boost::bind(&SessionImpl::acceptAny, this, &message, false, _1));
-    return getIncoming(handler, timeout);
+    qpid::sys::Mutex::ScopedLock l(lock);
+    while (true) {
+        try {
+            IncomingMessageHandler handler(boost::bind(&SessionImpl::acceptAny, this, &message, false, _1));
+            return getIncoming(handler, timeout);
+        } catch (TransportFailure&) {
+            reconnect();
+        }
+    }
+}
+
+void SessionImpl::syncImpl()
+{
+    session.sync();
+}
+
+void SessionImpl::flushImpl()
+{
+    session.flush();
+}
+
+
+void SessionImpl::commitImpl()
+{
+    incoming.accept();
+    session.txCommit();
+}
+
+void SessionImpl::rollbackImpl()
+{
+    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) i->second.stop();
+    //ensure that stop has been processed and all previously sent
+    //messages are available for release:                   
+    session.sync();
+    incoming.releaseAll();
+    session.txRollback();    
+    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) i->second.start();
+}
+
+void SessionImpl::acknowledgeImpl()
+{
+    incoming.accept();
+}
+
+void SessionImpl::rejectImpl(qpid::messaging::Message& m)
+{
+    SequenceSet set;
+    set.add(MessageImplAccess::get(m).getInternalId());
+    session.messageReject(set);
 }
 
 qpid::messaging::Message SessionImpl::fetch(qpid::sys::Duration timeout) 
@@ -244,28 +347,19 @@ qpid::messaging::Message SessionImpl::fetch(qpid::sys::Duration timeout)
 
 void SessionImpl::receiverCancelled(const std::string& name)
 {
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        receivers.erase(name);
-    }
+    receivers.erase(name);
     session.sync();
     incoming.releasePending(name);
 }
 
 void SessionImpl::senderCancelled(const std::string& name)
 {
-    qpid::sys::Mutex::ScopedLock l(lock);
     senders.erase(name);
 }
 
-void SessionImpl::sync()
+void SessionImpl::reconnect()
 {
-    session.sync();
-}
-
-void SessionImpl::flush()
-{
-    session.flush();
+    connection.reconnect();    
 }
 
 void* SessionImpl::getLastConfirmedSent()

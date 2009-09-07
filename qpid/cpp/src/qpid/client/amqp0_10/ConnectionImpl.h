@@ -23,11 +23,18 @@
  */
 #include "qpid/messaging/ConnectionImpl.h"
 #include "qpid/messaging/Variant.h"
+#include "qpid/Url.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/sys/Semaphore.h"
+#include <vector>
 
 namespace qpid {
 namespace client {
 namespace amqp0_10 {
+
+class SessionImpl;
 
 class ConnectionImpl : public qpid::messaging::ConnectionImpl
 {
@@ -35,8 +42,27 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     ConnectionImpl(const std::string& url, const qpid::messaging::Variant::Map& options);
     void close();
     qpid::messaging::Session newSession();
+    void closed(SessionImpl&);
+    void reconnect();
   private:
+    typedef std::vector<qpid::messaging::Session> Sessions;
+
+    qpid::sys::Mutex lock;//used to protect data structures
+    qpid::sys::Semaphore semaphore;//used to coordinate reconnection
     qpid::client::Connection connection;
+    qpid::Url url;
+    qpid::client::ConnectionSettings settings;
+    Sessions sessions;
+    bool reconnectionEnabled;
+    int timeout;
+    int minRetryInterval;
+    int maxRetryInterval;
+
+    void connect(const qpid::sys::AbsTime& started);
+    bool tryConnect();
+    bool tryConnect(const std::vector<Url>& urls);
+    bool tryConnect(const Url&);
+    bool resetSessions();
 };
 }}} // namespace qpid::client::amqp0_10
 

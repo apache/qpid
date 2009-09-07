@@ -183,6 +183,26 @@ QPID_AUTO_TEST_CASE(testSimpleSendReceive)
     BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
 }
 
+QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("test-message");
+    for (uint i = 0; i < 10; ++i) {
+        out.getHeaders()["a"] = i; 
+        sender.send(out);
+    }
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in;
+    for (uint i = 0; i < 10; ++i) {
+        //Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
+        BOOST_CHECK(receiver.fetch(in, 5 * qpid::sys::TIME_SEC));
+        BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
+        BOOST_CHECK_EQUAL(in.getHeaders()["a"].asUint32(), i);
+        fix.session.acknowledge();
+    }
+}
+
 QPID_AUTO_TEST_CASE(testSenderError)
 {
     MessagingFixture fix;

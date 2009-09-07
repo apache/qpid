@@ -270,6 +270,11 @@ check_PROGRAMS+=qrsh
 qrsh_SOURCES=qrsh.cpp
 qrsh_LDADD=$(lib_client)
 
+check_PROGRAMS+=qpid_stream
+qpid_stream_INCLUDES=$(PUBLIC_INCLUDES)
+qpid_stream_SOURCES=qpid_stream.cpp
+qpid_stream_LDADD=$(lib_client) 
+
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
