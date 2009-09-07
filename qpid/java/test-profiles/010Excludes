@@ -83,3 +83,9 @@ org.apache.qpid.server.logging.*
 
 // CPP Broker does not have a JMX interface to test
 org.apache.qpid.management.jmx.*
+
+// 0-10 is not supported by the MethodRegistry
+org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
+
+// QPID-2084 : this test needs more work for 0-10
+org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
