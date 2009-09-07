@@ -65,5 +65,22 @@ public class JavaServerCloseRaceConditionTest extends QpidTestCase
                 fail("Cause was not AMQAuthenticationException. Was " + e.getClass() + ":" + e.getMessage());
             }
         }
+
+        try
+        {
+            // Depending on if the notification thread has closed the connection
+            // or not we may get an exception here when we attempt to close the
+            // connection. If we do get one then it should be the same as above
+            // an AMQAuthenticationException.
+            connection.close();
+        }
+        catch (Exception e)
+        {
+            if (!(e instanceof AMQAuthenticationException))
+            {
+                fail("Cause was not AMQAuthenticationException. Was " + e.getClass() + ":" + e.getMessage());
+            }
+        }
+
     }
 }
