@@ -383,7 +383,7 @@ void AsynchIO::queueWrite(BufferBase* buff) {
     assert(buff);
     // If we've already closed the socket then throw the write away
     if (queuedClose) {
-        bufferQueue.push_front(buff);
+        queueReadBuffer(buff);
         return;
     } else {
         writeQueue.push_front(buff);
