@@ -34,7 +34,7 @@ namespace amqp0_10 {
  */
 
 void translate(const qpid::messaging::Variant::Map& from, qpid::framing::FieldTable& to);
-void translate(const qpid::framing::FieldTable& from, qpid::messaging::Variant::Variant::Map& to);
+void translate(const qpid::framing::FieldTable& from, qpid::messaging::Variant::Map& to);
 
 }}} // namespace qpid::client::amqp0_10
 
