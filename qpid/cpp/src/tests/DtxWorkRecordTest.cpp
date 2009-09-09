@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,6 +26,9 @@
 
 using namespace qpid::broker;
 using boost::static_pointer_cast;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(DtxWorkRecordTestSuite)
 
@@ -44,7 +47,7 @@ QPID_AUTO_TEST_CASE(testOnePhaseCommit){
     DtxBuffer::shared_ptr bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
-        
+
     DtxWorkRecord work("my-xid", &store);
     work.add(bufferA);
     work.add(bufferB);
@@ -77,7 +80,7 @@ QPID_AUTO_TEST_CASE(testFailOnOnePhaseCommit){
     DtxBuffer::shared_ptr bufferC(new DtxBuffer());
     bufferC->enlist(static_pointer_cast<TxOp>(opC));
     bufferC->markEnded();
-        
+
     DtxWorkRecord work("my-xid", &store);
     work.add(bufferA);
     work.add(bufferB);
@@ -108,7 +111,7 @@ QPID_AUTO_TEST_CASE(testTwoPhaseCommit){
     DtxBuffer::shared_ptr bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
-        
+
     DtxWorkRecord work("my-xid", &store);
     work.add(bufferA);
     work.add(bufferB);
@@ -142,7 +145,7 @@ QPID_AUTO_TEST_CASE(testFailOnTwoPhaseCommit){
     DtxBuffer::shared_ptr bufferC(new DtxBuffer());
     bufferC->enlist(static_pointer_cast<TxOp>(opC));
     bufferC->markEnded();
-        
+
     DtxWorkRecord work("my-xid", &store);
     work.add(bufferA);
     work.add(bufferB);
@@ -171,7 +174,7 @@ QPID_AUTO_TEST_CASE(testRollback){
     DtxBuffer::shared_ptr bufferB(new DtxBuffer());
     bufferB->enlist(static_pointer_cast<TxOp>(opB));
     bufferB->markEnded();
-        
+
     DtxWorkRecord work("my-xid", &store);
     work.add(bufferA);
     work.add(bufferB);
@@ -187,3 +190,4 @@ QPID_AUTO_TEST_CASE(testRollback){
 
 QPID_AUTO_TEST_SUITE_END()
 
+}} // namespace qpid::tests

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,13 +40,16 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using std::string;
 
+namespace qpid {
+namespace tests {
+
 struct Args : public TestOptions {
     uint msgSize;
     bool verbose;
 
     Args() : TestOptions("Simple test of Qpid c++ client; sends and receives a single message."), msgSize(26)
     {
-        addOptions()            
+        addOptions()
             ("size", optValue(msgSize, "N"), "message size")
             ("verbose", optValue(verbose), "print out some status messages");
     }
@@ -58,7 +61,7 @@ std::string generateData(uint size)
 {
     if (size < chars.length()) {
         return chars.substr(0, size);
-    }   
+    }
     std::string data;
     for (uint i = 0; i < (size / chars.length()); i++) {
         data += chars;
@@ -78,6 +81,10 @@ void print(const std::string& text, const Message& msg)
     std::cout << std::endl;
 }
 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
+
 int main(int argc, char** argv)
 {
     try {
@@ -92,7 +99,7 @@ int main(int argc, char** argv)
         //Create and open a session on the connection through which
         //most functionality is exposed:
         Session session = connection.newSession();
-	if (opts.verbose) std::cout << "Opened session." << std::endl;	
+	if (opts.verbose) std::cout << "Opened session." << std::endl;
 
 
         //'declare' the exchange and the queue, which will create them
@@ -116,13 +123,13 @@ int main(int argc, char** argv)
         // Using the SubscriptionManager, get the message from the queue.
         SubscriptionManager subs(session);
         Message msgIn = subs.get("MyQueue");
-        if (msgIn.getData() == msgOut.getData()) 
+        if (msgIn.getData() == msgOut.getData())
             if (opts.verbose) std::cout << "Received the exepected message." << std::endl;
 
         //close the session & connection
 	session.close();
 	if (opts.verbose) std::cout << "Closed session." << std::endl;
-	connection.close();	
+	connection.close();
 	if (opts.verbose) std::cout << "Closed connection." << std::endl;
         return 0;
     } catch(const std::exception& e) {

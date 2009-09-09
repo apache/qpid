@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,9 +28,12 @@ using namespace qpid;
 using namespace broker;
 using namespace framing;
 
+namespace qpid {
+namespace tests {
+
 struct MessageUtils
 {
-    static boost::intrusive_ptr<Message> createMessage(const string& exchange="", const string& routingKey="", 
+    static boost::intrusive_ptr<Message> createMessage(const string& exchange="", const string& routingKey="",
                                                        const Uuid& messageId=Uuid(true), uint64_t contentSize = 0)
     {
         boost::intrusive_ptr<broker::Message> msg(new broker::Message());
@@ -41,7 +44,7 @@ struct MessageUtils
         msg->getFrames().append(method);
         msg->getFrames().append(header);
         MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-        props->setContentLength(contentSize);        
+        props->setContentLength(contentSize);
         props->setMessageId(messageId);
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
         return msg;
@@ -53,3 +56,5 @@ struct MessageUtils
         msg->getFrames().append(content);
     }
 };
+
+}} // namespace qpid::tests

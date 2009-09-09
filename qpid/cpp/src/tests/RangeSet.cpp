@@ -24,6 +24,9 @@
 using namespace std;
 using namespace qpid;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(RangeSetTestSuite)
 
 typedef qpid::Range<int> TestRange;
@@ -44,8 +47,8 @@ QPID_AUTO_TEST_CASE(testRangeSetAddPoint) {
     BOOST_CHECK_MESSAGE(r.contains(TestRange(3,4)), r);
     BOOST_CHECK(!r.empty());
     r += 5;
-    BOOST_CHECK_MESSAGE(r.contains(5), r);        
-    BOOST_CHECK_MESSAGE(r.contains(TestRange(5,6)), r);        
+    BOOST_CHECK_MESSAGE(r.contains(5), r);
+    BOOST_CHECK_MESSAGE(r.contains(TestRange(5,6)), r);
     BOOST_CHECK_MESSAGE(!r.contains(TestRange(3,6)), r);
     r += 4;
     BOOST_CHECK_MESSAGE(r.contains(TestRange(3,6)), r);
@@ -139,3 +142,5 @@ QPID_AUTO_TEST_CASE(testRangeContaining) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

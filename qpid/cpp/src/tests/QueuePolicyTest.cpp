@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,6 +32,9 @@ using namespace qpid::broker;
 using namespace qpid::client;
 using namespace qpid::framing;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(QueuePolicyTestSuite)
 
 QueuedMessage createMessage(uint32_t size)
@@ -50,11 +53,11 @@ QPID_AUTO_TEST_CASE(testCount)
     BOOST_CHECK_EQUAL((uint32_t) 5, policy->getMaxCount());
 
     QueuedMessage msg = createMessage(10);
-    for (size_t i = 0; i < 5; i++) { 
+    for (size_t i = 0; i < 5; i++) {
         policy->tryEnqueue(msg);
     }
     try {
-        policy->tryEnqueue(msg);        
+        policy->tryEnqueue(msg);
         BOOST_FAIL("Policy did not fail on enqueuing sixth message");
     } catch (const ResourceLimitExceededException&) {}
 
@@ -62,7 +65,7 @@ QPID_AUTO_TEST_CASE(testCount)
     policy->tryEnqueue(msg);
 
     try {
-        policy->tryEnqueue(msg);        
+        policy->tryEnqueue(msg);
         BOOST_FAIL("Policy did not fail on enqueuing sixth message (after dequeue)");
     } catch (const ResourceLimitExceededException&) {}
 }
@@ -71,12 +74,12 @@ QPID_AUTO_TEST_CASE(testSize)
 {
     std::auto_ptr<QueuePolicy> policy(QueuePolicy::createQueuePolicy(0, 50));
     QueuedMessage msg = createMessage(10);
-    
-    for (size_t i = 0; i < 5; i++) { 
+
+    for (size_t i = 0; i < 5; i++) {
         policy->tryEnqueue(msg);
     }
     try {
-        policy->tryEnqueue(msg);        
+        policy->tryEnqueue(msg);
         BOOST_FAIL("Policy did not fail on aggregate size exceeding 50. " << *policy);
     } catch (const ResourceLimitExceededException&) {}
 
@@ -84,7 +87,7 @@ QPID_AUTO_TEST_CASE(testSize)
     policy->tryEnqueue(msg);
 
     try {
-        policy->tryEnqueue(msg);        
+        policy->tryEnqueue(msg);
         BOOST_FAIL("Policy did not fail on aggregate size exceeding 50 (after dequeue). " << *policy);
     } catch (const ResourceLimitExceededException&) {}
 }
@@ -104,7 +107,7 @@ QPID_AUTO_TEST_CASE(testBoth)
     messages.push_back(createMessage(11));
     messages.push_back(createMessage(2));
     messages.push_back(createMessage(7));
-    for (size_t i = 0; i < messages.size(); i++) { 
+    for (size_t i = 0; i < messages.size(); i++) {
         policy->tryEnqueue(messages[i]);
     }
     //size = 45 at this point, count = 5
@@ -140,7 +143,7 @@ QPID_AUTO_TEST_CASE(testSettings)
     BOOST_CHECK_EQUAL(a->getMaxSize(), b->getMaxSize());
 }
 
-QPID_AUTO_TEST_CASE(testRingPolicy) 
+QPID_AUTO_TEST_CASE(testRingPolicy)
 {
     FieldTable args;
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy(5, 0, QueuePolicy::RING);
@@ -169,7 +172,7 @@ QPID_AUTO_TEST_CASE(testRingPolicy)
     BOOST_CHECK(!f.subs.get(msg, q));
 }
 
-QPID_AUTO_TEST_CASE(testStrictRingPolicy) 
+QPID_AUTO_TEST_CASE(testStrictRingPolicy)
 {
     FieldTable args;
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy(5, 0, QueuePolicy::RING_STRICT);
@@ -181,7 +184,7 @@ QPID_AUTO_TEST_CASE(testStrictRingPolicy)
     LocalQueue incoming;
     SubscriptionSettings settings(FlowControl::unlimited());
     settings.autoAck = 0; // no auto ack.
-    Subscription sub = f.subs.subscribe(incoming, q, settings); 
+    Subscription sub = f.subs.subscribe(incoming, q, settings);
     for (int i = 0; i < 5; i++) {
         f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
     }
@@ -192,10 +195,10 @@ QPID_AUTO_TEST_CASE(testStrictRingPolicy)
         ScopedSuppressLogging sl; // Suppress messages for expected errors.
         f.session.messageTransfer(arg::content=client::Message("Message_6", q));
         BOOST_FAIL("expecting ResourceLimitExceededException.");
-    } catch (const ResourceLimitExceededException&) {}    
+    } catch (const ResourceLimitExceededException&) {}
 }
 
-QPID_AUTO_TEST_CASE(testPolicyWithDtx) 
+QPID_AUTO_TEST_CASE(testPolicyWithDtx)
 {
     FieldTable args;
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy(5, 0, QueuePolicy::REJECT);
@@ -207,7 +210,7 @@ QPID_AUTO_TEST_CASE(testPolicyWithDtx)
     LocalQueue incoming;
     SubscriptionSettings settings(FlowControl::unlimited());
     settings.autoAck = 0; // no auto ack.
-    Subscription sub = f.subs.subscribe(incoming, q, settings); 
+    Subscription sub = f.subs.subscribe(incoming, q, settings);
     f.session.dtxSelect();
     Xid tx1(1, "test-dtx-mgr", "tx1");
     f.session.dtxStart(arg::xid=tx1);
@@ -244,7 +247,7 @@ QPID_AUTO_TEST_CASE(testPolicyWithDtx)
         ScopedSuppressLogging sl; // Suppress messages for expected errors.
         other.messageTransfer(arg::content=client::Message("Message_6", q));
         BOOST_FAIL("expecting ResourceLimitExceededException.");
-    } catch (const ResourceLimitExceededException&) {}    
+    } catch (const ResourceLimitExceededException&) {}
 
     f.session.dtxCommit(arg::xid=tx3);
     //now retry and this time should succeed
@@ -252,7 +255,7 @@ QPID_AUTO_TEST_CASE(testPolicyWithDtx)
     other.messageTransfer(arg::content=client::Message("Message_6", q));
 }
 
-QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore) 
+QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore)
 {
     //Ensure that with no store loaded, we don't flow to disk but
     //fallback to rejecting messages
@@ -265,7 +268,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore)
     LocalQueue incoming;
     SubscriptionSettings settings(FlowControl::unlimited());
     settings.autoAck = 0; // no auto ack.
-    Subscription sub = f.subs.subscribe(incoming, q, settings); 
+    Subscription sub = f.subs.subscribe(incoming, q, settings);
     for (int i = 0; i < 5; i++) {
         f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
     }
@@ -276,8 +279,10 @@ QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore)
         ScopedSuppressLogging sl; // Suppress messages for expected errors.
         f.session.messageTransfer(arg::content=client::Message("Message_6", q));
         BOOST_FAIL("expecting ResourceLimitExceededException.");
-    } catch (const ResourceLimitExceededException&) {}    
+    } catch (const ResourceLimitExceededException&) {}
 }
 
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

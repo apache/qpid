@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,6 +35,9 @@
 #include <boost/format.hpp>
 #include <string>
 #include <vector>
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(MessagingSessionTests)
 
@@ -86,7 +89,7 @@ struct MessagingFixture : public BrokerFixture
     Session session;
     BrokerAdmin admin;
 
-    MessagingFixture(Broker::Options opts = Broker::Options()) : 
+    MessagingFixture(Broker::Options opts = Broker::Options()) :
         BrokerFixture(opts),
         connection(Connection::open((boost::format("amqp:tcp:localhost:%1%") % (broker->getPort(Broker::TCP_TRANSPORT))).str())),
         session(connection.newSession()),
@@ -133,7 +136,7 @@ struct TopicFixture : MessagingFixture
 
 struct MultiQueueFixture : MessagingFixture
 {
-    typedef std::vector<std::string>::const_iterator const_iterator; 
+    typedef std::vector<std::string>::const_iterator const_iterator;
     std::vector<std::string> queues;
 
     MultiQueueFixture(const std::vector<std::string>& names = boost::assign::list_of<std::string>("q1")("q2")("q3")) : queues(names)
@@ -161,7 +164,7 @@ struct MessageDataCollector : MessageListener
     }
 };
 
-std::vector<std::string> fetch(Receiver& receiver, int count, qpid::sys::Duration timeout=qpid::sys::TIME_SEC*5) 
+std::vector<std::string> fetch(Receiver& receiver, int count, qpid::sys::Duration timeout=qpid::sys::TIME_SEC*5)
 {
     std::vector<std::string> data;
     Message message;
@@ -189,7 +192,7 @@ QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
     Sender sender = fix.session.createSender(fix.queue);
     Message out("test-message");
     for (uint i = 0; i < 10; ++i) {
-        out.getHeaders()["a"] = i; 
+        out.getHeaders()["a"] = i;
         sender.send(out);
     }
     Receiver receiver = fix.session.createReceiver(fix.queue);
@@ -249,14 +252,14 @@ QPID_AUTO_TEST_CASE(testSimpleTopic)
     Message in;
     BOOST_CHECK(!sub2.fetch(in, 0));//TODO: or should this raise an error?
 
-    
+
     //TODO: check pending messages...
 }
 
 QPID_AUTO_TEST_CASE(testSessionFetch)
 {
     MultiQueueFixture fix;
-    
+
     for (uint i = 0; i < fix.queues.size(); i++) {
         Receiver r = fix.session.createReceiver(fix.queues[i]);
         r.setCapacity(10u);
@@ -267,8 +270,8 @@ QPID_AUTO_TEST_CASE(testSessionFetch)
         Sender s = fix.session.createSender(fix.queues[i]);
         Message msg((boost::format("Message_%1%") % (i+1)).str());
         s.send(msg);
-    }    
-    
+    }
+
     for (uint i = 0; i < fix.queues.size(); i++) {
         Message msg;
         BOOST_CHECK(fix.session.fetch(msg, qpid::sys::TIME_SEC));
@@ -279,7 +282,7 @@ QPID_AUTO_TEST_CASE(testSessionFetch)
 QPID_AUTO_TEST_CASE(testSessionDispatch)
 {
     MultiQueueFixture fix;
-    
+
     MessageDataCollector collector;
     for (uint i = 0; i < fix.queues.size(); i++) {
         Receiver r = fix.session.createReceiver(fix.queues[i]);
@@ -292,10 +295,10 @@ QPID_AUTO_TEST_CASE(testSessionDispatch)
         Sender s = fix.session.createSender(fix.queues[i]);
         Message msg((boost::format("Message_%1%") % (i+1)).str());
         s.send(msg);
-    }    
+    }
 
     while (fix.session.dispatch(qpid::sys::TIME_SEC)) ;
-    
+
     BOOST_CHECK_EQUAL(collector.messageData, boost::assign::list_of<std::string>("Message_1")("Message_2")("Message_3"));
 }
 
@@ -309,7 +312,7 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     out.getContent().asMap()["pi"] = 3.14f;
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);    
+    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
     BOOST_CHECK_EQUAL(in.getContent().asMap()["abc"].asString(), "def");
     BOOST_CHECK_EQUAL(in.getContent().asMap()["pi"].asFloat(), 3.14f);
     fix.session.acknowledge();
@@ -324,11 +327,11 @@ QPID_AUTO_TEST_CASE(testListMessage)
     out.getContent() << "abc";
     out.getContent() << 1234;
     out.getContent() << "def";
-    out.getContent() << 56.789;    
+    out.getContent() << 56.789;
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);    
-    Variant::List& list = in.getContent().asList();    
+    Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
+    Variant::List& list = in.getContent().asList();
     BOOST_CHECK_EQUAL(list.size(), out.getContent().asList().size());
     BOOST_CHECK_EQUAL(list.front().asString(), "abc");
     list.pop_front();
@@ -354,7 +357,9 @@ QPID_AUTO_TEST_CASE(testReject)
     fix.session.reject(in);
     in = receiver.fetch(5 * qpid::sys::TIME_SEC);
     BOOST_CHECK_EQUAL(in.getBytes(), m2.getBytes());
-    fix.session.acknowledge();    
+    fix.session.acknowledge();
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

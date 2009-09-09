@@ -27,6 +27,9 @@ using boost::intrusive_ptr;
 using namespace std;
 using namespace qpid;
 
+namespace qpid {
+namespace tests {
+
 struct CountMe : public RefCounted {
     static int instances;
     CountMe() { ++instances; }
@@ -48,3 +51,5 @@ QPID_AUTO_TEST_CASE(testRefCounted) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

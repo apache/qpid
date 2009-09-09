@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,6 +39,9 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <vector>
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(ClientSessionTest)
 
@@ -122,12 +125,12 @@ QPID_AUTO_TEST_CASE(testDispatcher)
     ClientSessionFixture fix;
     fix.session =fix.connection.newSession();
     size_t count = 100;
-    for (size_t i = 0; i < count; ++i) 
+    for (size_t i = 0; i < count; ++i)
         fix.session.messageTransfer(arg::content=Message(boost::lexical_cast<string>(i), "my-queue"));
     DummyListener listener(fix.session, "my-queue", count);
     listener.run();
-    BOOST_CHECK_EQUAL(count, listener.messages.size());        
-    for (size_t i = 0; i < count; ++i) 
+    BOOST_CHECK_EQUAL(count, listener.messages.size());
+    for (size_t i = 0; i < count; ++i)
         BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
@@ -142,8 +145,8 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
         fix.session.messageTransfer(arg::content=Message(boost::lexical_cast<string>(i), "my-queue"));
     }
     t.join();
-    BOOST_CHECK_EQUAL(count, listener.messages.size());        
-    for (size_t i = 0; i < count; ++i) 
+    BOOST_CHECK_EQUAL(count, listener.messages.size());
+    for (size_t i = 0; i < count; ++i)
         BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
@@ -215,7 +218,7 @@ QPID_AUTO_TEST_CASE(testLocalQueue) {
     BOOST_CHECK_EQUAL("foo1", lq.pop().getData());
     BOOST_CHECK(lq.empty());    // Credit exhausted.
     fix.subs.getSubscription("lq").setFlowControl(FlowControl::unlimited());
-    BOOST_CHECK_EQUAL("foo2", lq.pop().getData());    
+    BOOST_CHECK_EQUAL("foo2", lq.pop().getData());
 }
 
 struct DelayedTransfer : sys::Runnable
@@ -246,7 +249,7 @@ QPID_AUTO_TEST_CASE(testGet) {
     Thread t(sender);
     //test timed get where message shows up after a short delay
     BOOST_CHECK(fix.subs.get(got, "getq", 5*TIME_SEC));
-    BOOST_CHECK_EQUAL("foo2", got.getData());    
+    BOOST_CHECK_EQUAL("foo2", got.getData());
     t.join();
 }
 
@@ -271,8 +274,8 @@ QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     ClientSessionFixture fix(opts);
     fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
 
-    for (uint i = 0; i < 10; i++) {        
-        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+    for (uint i = 0; i < 10; i++) {
+        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
         if (i % 2) m.getDeliveryProperties().setTtl(500);
         fix.session.messageTransfer(arg::content=m);
     }
@@ -286,15 +289,15 @@ QPID_AUTO_TEST_CASE(testExpirationOnPop) {
     ClientSessionFixture fix;
     fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
 
-    for (uint i = 0; i < 10; i++) {        
-        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+    for (uint i = 0; i < 10; i++) {
+        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
         if (i % 2) m.getDeliveryProperties().setTtl(200);
         fix.session.messageTransfer(arg::content=m);
     }
 
     qpid::sys::usleep(300* 1000);
 
-    for (uint i = 0; i < 10; i++) {        
+    for (uint i = 0; i < 10; i++) {
         if (i % 2) continue;
         Message m;
         BOOST_CHECK(fix.subs.get(m, "my-queue", TIME_SEC));
@@ -306,8 +309,8 @@ QPID_AUTO_TEST_CASE(testRelease) {
     ClientSessionFixture fix;
 
     const uint count=10;
-    for (uint i = 0; i < count; i++) {        
-        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+    for (uint i = 0; i < count; i++) {
+        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
         fix.session.messageTransfer(arg::content=m);
     }
 
@@ -334,7 +337,7 @@ QPID_AUTO_TEST_CASE(testRelease) {
     for (uint i = 0; i < count; i++) {
         BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i+1)).str(), l2.messages[i].getData());
     }
-    
+
     fix.subs.stop();
     fix.subs.wait();
     fix.session.close();
@@ -344,8 +347,8 @@ QPID_AUTO_TEST_CASE(testCompleteOnAccept) {
     ClientSessionFixture fix;
     const uint count = 8;
     const uint chunk = 4;
-    for (uint i = 0; i < count; i++) {        
-        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+    for (uint i = 0; i < count; i++) {
+        Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
         fix.session.messageTransfer(arg::content=m);
     }
 
@@ -358,25 +361,25 @@ QPID_AUTO_TEST_CASE(testCompleteOnAccept) {
     Subscription s = fix.subs.subscribe(q, "my-queue", settings);
     fix.session.messageFlush(arg::destination=s.getName());
     SequenceSet accepted;
-    for (uint i = 0; i < chunk; i++) {        
+    for (uint i = 0; i < chunk; i++) {
         Message m;
         BOOST_CHECK(q.get(m));
         BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i+1)).str(), m.getData());
         accepted.add(m.getId());
-    }    
+    }
     Message m;
     BOOST_CHECK(!q.get(m));
-    
+
     s.accept(accepted);
     fix.session.messageFlush(arg::destination=s.getName());
     accepted.clear();
-    
-    for (uint i = chunk; i < count; i++) {        
+
+    for (uint i = chunk; i < count; i++) {
         Message m;
         BOOST_CHECK(q.get(m));
         BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i+1)).str(), m.getData());
         accepted.add(m.getId());
-    }    
+    }
     fix.session.messageAccept(accepted);
 }
 
@@ -424,7 +427,7 @@ QPID_AUTO_TEST_CASE(testConcurrentSenders)
     connection.open(settings);
     AsyncSession session = connection.newSession();
     Message message(string(512, 'X'));
-    
+
     boost::ptr_vector<Publisher> publishers;
     for (size_t i = 0; i < 5; i++) {
         publishers.push_back(new Publisher(connection, message, 100));
@@ -447,7 +450,7 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscribe)
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.subs.subscribe(q, "myq", "second"), ResourceLockedException);
     ;
-    
+
 }
 
 QPID_AUTO_TEST_CASE(testExclusiveBinding) {
@@ -478,7 +481,7 @@ QPID_AUTO_TEST_CASE(testResubscribeWithLocalQueue) {
     fix.subs.subscribe(p, "some-queue");
     fix.subs.cancel("some-queue");
     fix.subs.subscribe(q, "some-queue");
-    
+
     fix.session.messageTransfer(arg::content=Message("some-data", "some-queue"));
     fix.session.messageFlush(arg::destination="some-queue");
 
@@ -542,10 +545,10 @@ QPID_AUTO_TEST_CASE(testLVQVariedSize) {
         std::ostringstream data;
         size_t size = 100 - ((i % 10) * 10);
         data << std::string(size, 'x');
-    
+
         Message m(data.str(), queue);
         m.getHeaders().setString(key, "abc");
-        fix.session.messageTransfer(arg::content=m);    
+        fix.session.messageTransfer(arg::content=m);
     }
 }
 
@@ -594,7 +597,7 @@ QPID_AUTO_TEST_CASE(testExpirationNotAltered) {
     ClientSessionFixture fix;
     fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
 
-    Message m("my-message", "my-queue");        
+    Message m("my-message", "my-queue");
     m.getDeliveryProperties().setTtl(60000);
     m.getDeliveryProperties().setExpiration(12345);
     fix.session.messageTransfer(arg::content=m);
@@ -606,4 +609,4 @@ QPID_AUTO_TEST_CASE(testExpirationNotAltered) {
 
 QPID_AUTO_TEST_SUITE_END()
 
-
+}} // namespace qpid::tests

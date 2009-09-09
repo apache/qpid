@@ -60,6 +60,9 @@ using qpid::broker::Broker;
 using boost::shared_ptr;
 using qpid::cluster::Cluster;
 
+namespace qpid {
+namespace tests {
+
 /** Cluster fixture is a vector of ports for the replicas.
  *
  * At most one replica (by default replica 0) is in the current
@@ -106,5 +109,7 @@ class ClusterFixture : public vector<uint16_t>  {
  *@param n if specified wait for the cluster size to be n, up to a timeout.
  */
 std::set<int> knownBrokerPorts(qpid::client::Connection& source, int n=-1);
+
+}} // namespace qpid::tests
 
 #endif  /*!CLUSTER_FIXTURE_H*/

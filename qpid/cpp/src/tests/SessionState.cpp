@@ -28,6 +28,9 @@
 #include <functional>
 #include <numeric>
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(SessionStateTestSuite)
 
 using namespace std;
@@ -94,7 +97,7 @@ size_t transfer1(qpid::SessionState& s, string content) {
 size_t transfer1Char(qpid::SessionState& s, char content) {
     return transfer1(s, string(1,content));
 }
-        
+
 // Send transfer frame with multiple single-byte content frames.
 size_t transferN(qpid::SessionState& s, string content) {
     size_t size=send(s, transferFrame(!content.empty()));
@@ -134,7 +137,7 @@ QPID_AUTO_TEST_CASE(testSendGetReplyList) {
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(0,0))),"CabcCdCeCfCxyz");
     // Ignore controls.
     s.senderRecord(AMQFrame(new SessionFlushBody()));
-    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(2,0))),"CeCfCxyz");    
+    BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(2,0))),"CeCfCxyz");
 }
 
 QPID_AUTO_TEST_CASE(testNeedFlush) {
@@ -185,7 +188,7 @@ QPID_AUTO_TEST_CASE(testPeerConfirmed) {
     s.senderConfirmed(SessionPoint(5));
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(5,0))), "CxCy");
     BOOST_CHECK(s.senderNeedFlush());
-    
+
     s.senderConfirmed(SessionPoint(6));
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(6,0))), "Cy");
     BOOST_CHECK(!s.senderNeedFlush());
@@ -195,7 +198,7 @@ QPID_AUTO_TEST_CASE(testPeerCompleted) {
     qpid::SessionState s;
     s.setTimeout(1);
     s.senderGetCommandPoint();
-    // Completion implies confirmation 
+    // Completion implies confirmation
     transfers(s, "abc");
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(0,0))), "CaCbCc");
     SequenceSet set(SequenceSet() + 0 + 1);
@@ -205,7 +208,7 @@ QPID_AUTO_TEST_CASE(testPeerCompleted) {
     transfers(s, "def");
     // We dont do out-of-order confirmation, so this will only confirm up to 3:
     set = SequenceSet(SequenceSet() + 2 + 3 + 5);
-    s.senderCompleted(set);    
+    s.senderCompleted(set);
     BOOST_CHECK_EQUAL(str(s.senderExpected(SessionPoint(4,0))), "CeCf");
 }
 
@@ -215,11 +218,11 @@ QPID_AUTO_TEST_CASE(testReceive) {
     s.receiverSetCommandPoint(SessionPoint());
     BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(0));
     BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(0));
-    
+
     BOOST_CHECK(s.receiverRecord(transferFrame(false)));
     BOOST_CHECK_EQUAL(s.receiverGetExpected(), SessionPoint(1));
     BOOST_CHECK_EQUAL(s.receiverGetReceived(), SessionPoint(1));
-    
+
     BOOST_CHECK(s.receiverRecord(transferFrame(true)));
     SessionPoint point = SessionPoint(1, transferFrameSize());
     BOOST_CHECK_EQUAL(s.receiverGetExpected(), point);
@@ -297,3 +300,5 @@ QPID_AUTO_TEST_CASE(testNeedKnownCompleted) {
 
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

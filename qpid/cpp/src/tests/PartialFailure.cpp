@@ -31,6 +31,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(PartialFailureTestSuite)
 
 using namespace std;
@@ -257,3 +260,5 @@ QPID_AUTO_TEST_CASE(testPartialFailureMemberLeaves) {
 #endif
 #endif  // FIXME aconway 2009-07-30:
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

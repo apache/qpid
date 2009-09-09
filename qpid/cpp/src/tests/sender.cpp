@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,7 +37,10 @@ using namespace qpid::framing;
 
 using namespace std;
 
-struct Args : public qpid::TestOptions 
+namespace qpid {
+namespace tests {
+
+struct Args : public qpid::TestOptions
 {
     string destination;
     string key;
@@ -65,12 +68,13 @@ const string EOS("eos");
 class Sender : public FailoverManager::Command
 {
   public:
-    Sender(const std::string& destination, const std::string& key, uint sendEos, bool durable, uint ttl, const std::string& lvqMatchValue, const std::string& lvqMatchFile);
+    Sender(const std::string& destination, const std::string& key, uint sendEos, bool durable, uint ttl,
+           const std::string& lvqMatchValue, const std::string& lvqMatchFile);
     void execute(AsyncSession& session, bool isRetry);
   private:
     const std::string destination;
     MessageReplayTracker sender;
-    Message message;  
+    Message message;
     const uint sendEos;
     uint sent;
     std::ifstream lvqMatchValues;
@@ -112,7 +116,11 @@ void Sender::execute(AsyncSession& session, bool isRetry)
     }
 }
 
-int main(int argc, char ** argv) 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
+
+int main(int argc, char ** argv)
 {
     Args opts;
     try {
@@ -121,7 +129,7 @@ int main(int argc, char ** argv)
         Sender sender(opts.destination, opts.key, opts.sendEos, opts.durable, opts.ttl, opts.lvqMatchValue, opts.lvqMatchFile);
         connection.execute(sender);
         connection.close();
-        return 0;  
+        return 0;
     } catch(const std::exception& error) {
         std::cout << "Failed: " << error.what() << std::endl;
     }

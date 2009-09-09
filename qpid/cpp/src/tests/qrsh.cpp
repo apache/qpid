@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,11 +37,13 @@ using namespace qpid::framing;
 
 using namespace std;
 
+namespace qpid {
+namespace tests {
 
 class ResponseListener : public MessageListener
 {
     public :
-    
+
     int exitCode;
 
     ResponseListener ( SubscriptionManager & subscriptions )
@@ -50,7 +52,7 @@ class ResponseListener : public MessageListener
     {
     }
 
-    virtual void 
+    virtual void
     received ( Message & message )
     {
         char first_word[1000];
@@ -66,9 +68,9 @@ class ResponseListener : public MessageListener
         if ( ! strcmp ( first_word, "get_response" ) )
         {
             // The remainder of the message is the file we requested.
-            fprintf ( stdout, 
-                      "%s", 
-                      message.getData().c_str() + strlen("get_response" ) 
+            fprintf ( stdout,
+                      "%s",
+                      message.getData().c_str() + strlen("get_response" )
                     );
             subscriptions.cancel(message.getDestination());
         }
@@ -76,12 +78,13 @@ class ResponseListener : public MessageListener
 
 
     private :
-    
+
     SubscriptionManager & subscriptions;
 };
 
+}} // namespace qpid::tests
 
-
+using namespace qpid::tests;
 
 /*
  *  argv[1] host
@@ -90,8 +93,8 @@ class ResponseListener : public MessageListener
  *  argv[4] command name
  *  argv[5..N] args to the command
  */
-int 
-main ( int argc, char ** argv ) 
+int
+main ( int argc, char ** argv )
 {
     const char* host = argv[1];
     int port = atoi(argv[2]);
@@ -99,14 +102,14 @@ main ( int argc, char ** argv )
 
     Connection connection;
 
-    try 
+    try
     {
         connection.open ( host, port );
         Session session = connection.newSession ( );
 
         // Make a queue and bind it to fanout.
         string myQueue = session.getId().getName();
-  
+
         session.queueDeclare ( arg::queue=myQueue,
                                arg::exclusive=true,
                                arg::autoDelete=true
@@ -136,7 +139,7 @@ main ( int argc, char ** argv )
             response_command = true;
 
         // Send the payload message.
-        // Skip "qrsh host_name port" 
+        // Skip "qrsh host_name port"
         Message message;
         stringstream ss;
         for ( int i = 3; i < argc; ++ i )
@@ -144,7 +147,7 @@ main ( int argc, char ** argv )
 
         message.setData ( ss.str() );
 
-        session.messageTransfer(arg::content=message, 
+        session.messageTransfer(arg::content=message,
                                 arg::destination="amq.fanout");
 
         if ( response_command )
@@ -153,8 +156,8 @@ main ( int argc, char ** argv )
         session.close();
         connection.close();
         return responseListener.exitCode;
-    } 
-    catch ( exception const & e) 
+    }
+    catch ( exception const & e)
     {
         cerr << e.what() << endl;
     }

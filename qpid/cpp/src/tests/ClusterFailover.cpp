@@ -32,6 +32,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(ClusterFailoverTestSuite)
 
 using namespace std;
@@ -60,3 +63,5 @@ QPID_AUTO_TEST_CASE(testReconnectSameSessionName) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

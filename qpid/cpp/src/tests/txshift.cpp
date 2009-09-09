@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,14 +34,17 @@
 using namespace qpid::client;
 using namespace qpid::sys;
 
-struct Args : public qpid::TestOptions 
+namespace qpid {
+namespace tests {
+
+struct Args : public qpid::TestOptions
 {
     string workQueue;
     size_t workers;
 
     Args() : workQueue("txshift-control"), workers(1)
     {
-        addOptions()            
+        addOptions()
             ("workers", qpid::optValue(workers, "N"), "Number of separate worker sessions to start")
             ("work-queue", qpid::optValue(workQueue, "NAME"), "work queue from which to take instructions");
     }
@@ -61,7 +64,7 @@ struct Transfer : MessageListener
 
     Transfer(const std::string control_) : control(control_), expected(0), transfered(0) {}
 
-    void subscribeToSource(SubscriptionManager manager) 
+    void subscribeToSource(SubscriptionManager manager)
     {
         sourceSettings.autoAck = 0;//will accept once at the end of the batch
         sourceSettings.flowControl = FlowControl::messageCredit(expected);
@@ -69,7 +72,7 @@ struct Transfer : MessageListener
         QPID_LOG(info, "Subscribed to source: " << source << " expecting: " << expected);
     }
 
-    void subscribeToControl(SubscriptionManager manager) 
+    void subscribeToControl(SubscriptionManager manager)
     {
         controlSettings.flowControl = FlowControl::messageCredit(1);
         controlSubscription = manager.subscribe(*this, control, controlSettings);
@@ -94,7 +97,7 @@ struct Transfer : MessageListener
         message.getDeliveryProperties().setRoutingKey(destination);
         async(sourceSubscription.getSession()).messageTransfer(arg::content=message);
         if (++transfered == expected) {
-            QPID_LOG(info, "completed job: " << transfered << " messages shifted from " << 
+            QPID_LOG(info, "completed job: " << transfered << " messages shifted from " <<
                      source << " to " << destination);
             sourceSubscription.accept(sourceSubscription.getUnaccepted());
             sourceSubscription.getSession().txCommit();
@@ -111,7 +114,7 @@ struct Transfer : MessageListener
             destination = message.getHeaders().getAsString("dest");
             expected = message.getHeaders().getAsInt("count");
             transfered = 0;
-            QPID_LOG(info, "received transfer request: " << expected << " messages to be shifted from " << 
+            QPID_LOG(info, "received transfer request: " << expected << " messages to be shifted from " <<
                      source << " to " << destination);
             subscribeToSource(controlSubscription.getSubscriptionManager());
         } else if (message.getData() == "quit") {
@@ -133,7 +136,7 @@ struct Worker : FailoverManager::Command, Runnable
 
     Worker(FailoverManager& c, const std::string& controlQueue) : connection(c), transfer(controlQueue) {}
 
-    void run() 
+    void run()
     {
         connection.execute(*this);
     }
@@ -148,7 +151,7 @@ struct Worker : FailoverManager::Command, Runnable
         runner.join();
     }
 
-    void execute(AsyncSession& session, bool isRetry) 
+    void execute(AsyncSession& session, bool isRetry)
     {
         if (isRetry) QPID_LOG(info, "Retrying...");
         session.txSelect();
@@ -158,6 +161,10 @@ struct Worker : FailoverManager::Command, Runnable
         session.txCommit();//commit accept of control messages
     }
 };
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {
