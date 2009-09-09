@@ -111,7 +111,7 @@ class QueueRegistry {
 
     /** Call f for each queue in the registry. */
     template <class F> void eachQueue(F f) const {
-        qpid::sys::RWlock::ScopedWlock l(lock);
+        qpid::sys::RWlock::ScopedRlock l(lock);
         for (QueueMap::const_iterator i = queues.begin(); i != queues.end(); ++i)
             f(i->second);
     }
