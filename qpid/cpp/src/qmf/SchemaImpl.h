@@ -21,6 +21,7 @@
  */
 
 #include "qmf/Schema.h"
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
 #include <qpid/framing/Buffer.h>
@@ -35,7 +36,7 @@ namespace qmf {
         uint8_t hash[16];
     public:
         SchemaHash();
-        void encode(qpid::framing::Buffer& buffer);
+        void encode(qpid::framing::Buffer& buffer) const;
         void decode(qpid::framing::Buffer& buffer);
         void update(const char* data, uint32_t len);
         void update(uint8_t data);
@@ -45,6 +46,9 @@ namespace qmf {
         void update(Access a) { update((uint8_t) a); }
         void update(bool b) { update((uint8_t) (b ? 1 : 0)); }
         const uint8_t* get() const { return hash; }
+        bool operator==(const SchemaHash& other) const;
+        bool operator<(const SchemaHash& other) const;
+        bool operator>(const SchemaHash& other) const;
     };
 
     struct SchemaArgumentImpl {
@@ -138,27 +142,45 @@ namespace qmf {
         void updateHash(SchemaHash& hash) const;
     };
 
+    struct SchemaClassKeyImpl {
+        const SchemaClassKey* envelope;
+        const std::string& package;
+        const std::string& name;
+        const SchemaHash& hash;
+
+        SchemaClassKeyImpl(const std::string& package, const std::string& name, const SchemaHash& hash);
+
+        const std::string& getPackageName() const { return package; }
+        const std::string& getClassName() const { return name; }
+        const uint8_t* getHash() const { return hash.get(); }
+
+        void encode(qpid::framing::Buffer& buffer) const;
+        bool operator==(const SchemaClassKeyImpl& other) const;
+        bool operator<(const SchemaClassKeyImpl& other) const;
+        std::string str() const;
+    };
+
     struct SchemaObjectClassImpl {
+        typedef boost::shared_ptr<SchemaObjectClassImpl> Ptr;
         SchemaObjectClass* envelope;
         std::string package;
         std::string name;
         mutable SchemaHash hash;
         mutable bool hasHash;
+        SchemaClassKeyImpl classKey;
         std::vector<SchemaPropertyImpl*> properties;
         std::vector<SchemaStatisticImpl*> statistics;
         std::vector<SchemaMethodImpl*> methods;
 
         SchemaObjectClassImpl(SchemaObjectClass* e, const char* p, const char* n) :
-            envelope(e), package(p), name(n), hasHash(false) {}
+        envelope(e), package(p), name(n), hasHash(false), classKey(package, name, hash) {}
         SchemaObjectClassImpl(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
         void addProperty(const SchemaProperty& property);
         void addStatistic(const SchemaStatistic& statistic);
         void addMethod(const SchemaMethod& method);
 
-        const std::string& getPackage() const { return package; }
-        const std::string& getName() const { return name; }
-        const uint8_t* getHash() const;
+        const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const { return properties.size(); }
         int getStatisticCount() const { return statistics.size(); }
         int getMethodCount() const { return methods.size(); }
@@ -168,24 +190,24 @@ namespace qmf {
     };
 
     struct SchemaEventClassImpl {
+        typedef boost::shared_ptr<SchemaEventClassImpl> Ptr;
         SchemaEventClass* envelope;
         std::string package;
         std::string name;
         mutable SchemaHash hash;
         mutable bool hasHash;
+        SchemaClassKeyImpl classKey;
         std::string description;
         std::vector<SchemaArgumentImpl*> arguments;
 
         SchemaEventClassImpl(SchemaEventClass* e, const char* p, const char* n) :
-            envelope(e), package(p), name(n), hasHash(false) {}
+            envelope(e), package(p), name(n), hasHash(false), classKey(package, name, hash) {}
         SchemaEventClassImpl(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
         void addArgument(const SchemaArgument& argument);
         void setDesc(const char* desc) { description = desc; }
 
-        const std::string& getPackage() const { return package; }
-        const std::string& getName() const { return name; }
-        const uint8_t* getHash() const;
+        const SchemaClassKey* getClassKey() const;
         int getArgumentCount() const { return arguments.size(); }
         const SchemaArgument* getArgument(int idx) const;
     };

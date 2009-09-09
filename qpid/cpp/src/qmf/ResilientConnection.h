@@ -21,11 +21,12 @@
  */
 
 #include <qmf/Message.h>
-#include <qpid/client/Connection.h>
-#include <qpid/client/ConnectionSettings.h>
+#include <qmf/ConnectionSettings.h>
 #include <string>
 
 namespace qmf {
+
+    class ResilientConnectionImpl;
 
     /**
      * Represents events that occur, unsolicited, from ResilientConnection.
@@ -44,11 +45,10 @@ namespace qmf {
         Message   message;        // RECV
     };
 
-    struct SessionHandle {
-        void* handle;
+    class SessionHandle {
+        friend class ResilientConnectionImpl;
+        void* impl;
     };
-
-    class ResilientConnectionImpl;
 
     /**
      * ResilientConnection represents a Qpid connection that is resilient.
@@ -68,10 +68,7 @@ namespace qmf {
          *@param delayMax Maximum delay (in seconds) between retries.
          *@param delayFactor Factor to multiply retry delay by after each failure.
          */
-        ResilientConnection(qpid::client::ConnectionSettings& settings,
-                            int delayMin = 1,
-                            int delayMax = 128,
-                            int delayFactor = 2);
+        ResilientConnection(const ConnectionSettings& settings);
         ~ResilientConnection();
 
         /**

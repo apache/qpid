@@ -269,11 +269,13 @@ bool Connection::doOutput() {
                 cb(); // Lend the IO thread for management processing
             }
         }
-        if (mgmtClosing)
+        if (mgmtClosing) {
+            closed();
             close(connection::CLOSE_CODE_CONNECTION_FORCED, "Closed by Management Request");
-        else
+        } else {
             //then do other output as needed:
             return outputTasks.doOutput();
+	}
     }catch(ConnectionException& e){
         close(e.code, e.getMessage());
     }catch(std::exception& e){

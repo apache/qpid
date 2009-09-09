@@ -213,7 +213,7 @@ class MessageUpdater {
         framing::MessageTransferBody transfer(
             framing::ProtocolVersion(), UpdateClient::UPDATE, message::ACCEPT_MODE_NONE, message::ACQUIRE_MODE_PRE_ACQUIRED);
         
-        sb.get()->send(transfer, message.payload->getFrames());
+        sb.get()->send(transfer, message.payload->getFrames(), !message.payload->isContentReleased());
         if (message.payload->isContentReleased()){
             uint16_t maxFrameSize = sb.get()->getConnection()->getNegotiatedSettings().maxFrameSize;
             uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();

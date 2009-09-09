@@ -18,4 +18,10 @@
 #
 
 TESTS = run_interop_tests
-EXTRA_DIST = run_interop_tests
+
+EXTRA_DIST =          \
+  agent_ruby.rb       \
+  python_agent.py     \
+  python_console.py   \
+  ruby_console.rb     \
+  run_interop_tests

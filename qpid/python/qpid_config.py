@@ -19,7 +19,7 @@
 
 import os
 
-qpid_home = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-amqp_spec = os.path.join(qpid_home, "specs", "amqp.0-10-qpid-errata.xml")
-amqp_spec_0_8 = os.path.join(qpid_home, "specs", "amqp.0-8.xml")
-amqp_spec_0_9 = os.path.join(qpid_home, "specs", "amqp.0-9.xml")
+AMQP_SPEC_DIR=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "specs")
+amqp_spec = os.path.join(AMQP_SPEC_DIR, "amqp.0-10-qpid-errata.xml")
+amqp_spec_0_8 = os.path.join(AMQP_SPEC_DIR, "amqp.0-8.xml")
+amqp_spec_0_9 = os.path.join(AMQP_SPEC_DIR, "amqp.0-9.xml")

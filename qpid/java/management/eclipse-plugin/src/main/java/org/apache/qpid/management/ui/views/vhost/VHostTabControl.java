@@ -205,6 +205,8 @@ public class VHostTabControl extends TabControl
         _queueTableViewer.setContentProvider(new ContentProviderImpl());
         _queueTableViewer.setLabelProvider(new LabelProviderImpl());
         _queueTableViewer.setSorter(tableSorter);
+        _queueTable.setSortColumn(_queueTable.getColumn(0));
+        _queueTable.setSortDirection(SWT.UP);
         
         Composite queuesRightComposite = _toolkit.createComposite(queuesGroup);
         gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
@@ -314,6 +316,8 @@ public class VHostTabControl extends TabControl
         _exchangeTableViewer.setContentProvider(new ContentProviderImpl());
         _exchangeTableViewer.setLabelProvider(new LabelProviderImpl());
         _exchangeTableViewer.setSorter(exchangeTableSorter);
+        _exchangeTable.setSortColumn(_exchangeTable.getColumn(0));
+        _exchangeTable.setSortDirection(SWT.UP);
         
         Composite exchangesRightComposite = _toolkit.createComposite(exchangesGroup);
         gridData = new GridData(SWT.FILL, SWT.FILL, false, true);

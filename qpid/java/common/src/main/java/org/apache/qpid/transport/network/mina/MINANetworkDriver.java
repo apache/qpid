@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLEngine;
 
-import org.apache.log4j.Logger;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoAcceptor;
@@ -59,6 +58,9 @@ import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.NetworkDriverConfiguration;
 import org.apache.qpid.transport.OpenException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 {
 
@@ -80,7 +82,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     private WriteFuture _lastWriteFuture;
 
-    private static final Logger _logger = Logger.getLogger(MINANetworkDriver.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MINANetworkDriver.class);
     
     public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO)
     {

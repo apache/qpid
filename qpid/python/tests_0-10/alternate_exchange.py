@@ -141,7 +141,61 @@ class AlternateExchangeTests(TestBase010):
             session.exchange_delete(exchange="e")
             session.exchange_delete(exchange="alternate")
             self.assertEquals(530, e.args[0].error_code)
-            
+
+
+    def test_modify_existing_exchange_alternate(self):
+        """
+        Ensure that attempting to modify an exhange to change
+        the alternate throws an exception
+        """
+        session = self.session
+        session.exchange_declare(exchange="alt1", type="direct")
+        session.exchange_declare(exchange="alt2", type="direct")
+        session.exchange_declare(exchange="onealternate", type="fanout", alternate_exchange="alt1")
+        try:
+            # attempt to change the alternate on an already existing exchange
+            session.exchange_declare(exchange="onealternate", type="fanout", alternate_exchange="alt2")
+            self.fail("Expected changing an alternate on an existing exchange to fail")
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
+        session = self.conn.session("alternate", 2)
+        session.exchange_delete(exchange="onealternate")
+        session.exchange_delete(exchange="alt2")
+        session.exchange_delete(exchange="alt1")
+
+
+    def test_add_alternate_to_exchange(self):
+        """
+        Ensure that attempting to modify an exhange by adding
+        an alternate throws an exception
+        """
+        session = self.session
+        session.exchange_declare(exchange="alt1", type="direct")
+        session.exchange_declare(exchange="noalternate", type="fanout")
+        try:
+            # attempt to add an alternate on an already existing exchange
+            session.exchange_declare(exchange="noalternate", type="fanout", alternate_exchange="alt1")
+            self.fail("Expected adding an alternate on an existing exchange to fail")
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
+        session = self.conn.session("alternate", 2)
+        session.exchange_delete(exchange="noalternate")
+        session.exchange_delete(exchange="alt1")
+
+
+    def test_del_alternate_to_exchange(self):
+        """
+        Ensure that attempting to modify an exhange by declaring
+        it again without an alternate does nothing
+        """
+        session = self.session
+        session.exchange_declare(exchange="alt1", type="direct")
+        session.exchange_declare(exchange="onealternate", type="fanout", alternate_exchange="alt1")
+        # attempt to re-declare without an alternate - silently ignore
+        session.exchange_declare(exchange="onealternate", type="fanout" )
+        session.exchange_delete(exchange="onealternate")
+        session.exchange_delete(exchange="alt1")
+
 
     def assertEmpty(self, queue):
         try:

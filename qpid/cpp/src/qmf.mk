@@ -18,7 +18,7 @@
 #
 
 #
-# qmf agent library makefile fragment, to be included in Makefile.am
+# qmf library makefile fragment, to be included in Makefile.am
 # 
 lib_LTLIBRARIES +=				\
   libqmfcommon.la				\
@@ -27,13 +27,18 @@ lib_LTLIBRARIES +=				\
 # Public header files
 nobase_include_HEADERS +=			\
   ../include/qpid/agent/ManagementAgent.h	\
-  ../include/qpid/agent/QmfAgentImportExport.h
-
+  ../include/qpid/agent/QmfAgentImportExport.h	\
+  ../include/qmf/Agent.h			\
+  ../include/qmf/Connection.h			\
+  ../include/qmf/QmfImportExport.h		\
+  ../include/qmf/ConnectionSettings.h		\
+  ../include/qmf/AgentObject.h
 
 libqmfcommon_la_SOURCES =			\
-  qmf/Agent.cpp					\
-  qmf/Agent.h					\
-  qmf/Console.h					\
+  qmf/ConnectionSettingsImpl.cpp		\
+  qmf/ConnectionSettingsImpl.h			\
+  qmf/ConsoleEngine.cpp				\
+  qmf/ConsoleEngine.h				\
   qmf/Event.h					\
   qmf/Message.h					\
   qmf/MessageImpl.cpp				\
@@ -44,11 +49,15 @@ libqmfcommon_la_SOURCES =			\
   qmf/ObjectIdImpl.h				\
   qmf/ObjectImpl.cpp				\
   qmf/ObjectImpl.h				\
+  qmf/Protocol.cpp				\
+  qmf/Protocol.h				\
   qmf/Query.h					\
   qmf/QueryImpl.cpp				\
   qmf/QueryImpl.h				\
   qmf/ResilientConnection.cpp			\
   qmf/ResilientConnection.h			\
+  qmf/SequenceManager.cpp			\
+  qmf/SequenceManager.h				\
   qmf/Schema.h					\
   qmf/SchemaImpl.cpp				\
   qmf/SchemaImpl.h				\
@@ -58,9 +67,9 @@ libqmfcommon_la_SOURCES =			\
   qmf/ValueImpl.h
 
 libqmfagent_la_SOURCES =			\
-  ../include/qpid/agent/ManagementAgent.h	\
+  qmf/AgentEngine.cpp				\
+  qmf/AgentEngine.h				\
   qpid/agent/ManagementAgentImpl.cpp		\
-  qpid/agent/ManagementAgentImpl.h		\
-  qmf/Agent.cpp
+  qpid/agent/ManagementAgentImpl.h
 
-libqmfagent_la_LIBADD = libqpidclient.la
+libqmfagent_la_LIBADD = libqpidclient.la libqmfcommon.la

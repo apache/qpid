@@ -25,6 +25,7 @@
 #include "qpid/framing/FrameSet.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/BlockingQueue.h"
+#include "qpid/client/ClientImportExport.h"
 
 #ifndef _Demux_
 #define _Demux_
@@ -49,17 +50,17 @@ public:
     typedef sys::BlockingQueue<framing::FrameSet::shared_ptr> Queue;
     typedef boost::shared_ptr<Queue> QueuePtr;
 
-    Demux();
-    ~Demux();
+    QPID_CLIENT_EXTERN Demux();
+    QPID_CLIENT_EXTERN ~Demux();
     
-    void handle(framing::FrameSet::shared_ptr);
-    void close(const sys::ExceptionHolder& ex);
-    void open();
+    QPID_CLIENT_EXTERN void handle(framing::FrameSet::shared_ptr);
+    QPID_CLIENT_EXTERN void close(const sys::ExceptionHolder& ex);
+    QPID_CLIENT_EXTERN void open();
 
-    QueuePtr add(const std::string& name, Condition);
-    void remove(const std::string& name);
-    QueuePtr get(const std::string& name);
-    QueuePtr getDefault();
+    QPID_CLIENT_EXTERN QueuePtr add(const std::string& name, Condition);
+    QPID_CLIENT_EXTERN void remove(const std::string& name);
+    QPID_CLIENT_EXTERN QueuePtr get(const std::string& name);
+    QPID_CLIENT_EXTERN QueuePtr getDefault();
 
 private:
     struct Record

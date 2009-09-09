@@ -197,8 +197,8 @@ public class ConfigurationFileTabControl extends TabControl
                 "NOTE: These options modify the configuration file. " +
                 "Changes only take effect automatically if LogWatch is enabled.");
         Label noteLabel2 = _toolkit.createLabel(_headerComposite, 
-                "A Logger set to a non-inherited Level in the Runtime tab " +
-                "will retain that value after the configuration is reloaded.");
+                "A child Logger set to a non-inherited Level in the Runtime tab " +
+                "will retain that value after the file is reloaded.");
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
         noteLabel.setLayoutData(gridData);
         gridData = new GridData(SWT.FILL, SWT.FILL, false, true);

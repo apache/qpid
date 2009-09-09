@@ -84,6 +84,7 @@ Timer::~Timer()
     stop();
 }
 
+// TODO AStitcher 21/08/09 The threshholds for emitting warnings are a little arbitrary
 void Timer::run()
 {
     Monitor::ScopedLock l(monitor);
@@ -111,8 +112,8 @@ void Timer::run()
                 // Warn on callback overrun
                 AbsTime end(AbsTime::now());
                 Duration overrun(tasks.top()->nextFireTime, end);
-                bool late = delay > 1 * TIME_MSEC;
-                bool overran = overrun > 1 * TIME_MSEC;
+                bool late = delay > 10 * TIME_MSEC;
+                bool overran = overrun > 2 * TIME_MSEC;
                 if (late)
                 if (overran) {
                     QPID_LOG(warning,

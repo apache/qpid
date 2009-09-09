@@ -39,7 +39,6 @@ namespace qmf {
         bool isDurable() const;
 
         bool operator==(const ObjectId& other) const;
-        bool operator!=(const ObjectId& other) const;
         bool operator<(const ObjectId& other) const;
         bool operator>(const ObjectId& other) const;
         bool operator<=(const ObjectId& other) const;

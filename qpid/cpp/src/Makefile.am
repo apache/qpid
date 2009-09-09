@@ -54,7 +54,7 @@ windows_dist = \
   qpid/sys/windows/Time.cpp \
   ../include/qpid/sys/windows/Time.h \
   qpid/sys/windows/uuid.cpp \
-  ../include/qpid/sys/windows/uuid.h \
+  qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp
@@ -378,6 +378,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/InputHandler.h			\
   qpid/framing/Invoker.h			\
   qpid/framing/IsInSequenceSet.h		\
+  qpid/framing/List.cpp				\
   qpid/framing/MethodBodyFactory.h		\
   qpid/framing/MethodContent.h			\
   qpid/framing/ModelMethod.h			\
@@ -460,7 +461,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Timer.cpp				\
   qpid/sys/Timer.h				\
   qpid/sys/Waitable.h				\
-  qpid/sys/alloca.h
+  qpid/sys/alloca.h				\
+  qpid/sys/uuid.h
 
 if HAVE_SASL
 libqpidcommon_la_SOURCES += qpid/sys/cyrus/CyrusSecurityLayer.h
@@ -680,7 +682,41 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SubscriptionImpl.h		\
   qpid/client/SubscriptionManager.cpp		\
   qpid/client/SubscriptionManagerImpl.cpp	\
-  qpid/client/SubscriptionManagerImpl.h
+  qpid/client/SubscriptionManagerImpl.h		\
+  qpid/messaging/Address.cpp			\
+  qpid/messaging/Connection.cpp			\
+  qpid/messaging/Filter.cpp			\
+  qpid/messaging/Message.cpp			\
+  qpid/messaging/MessageImpl.h			\
+  qpid/messaging/MessageImpl.cpp		\
+  qpid/messaging/Sender.cpp			\
+  qpid/messaging/Receiver.cpp			\
+  qpid/messaging/Session.cpp			\
+  qpid/messaging/Variant.cpp			\
+  qpid/messaging/ConnectionImpl.h 		\
+  qpid/messaging/SenderImpl.h			\
+  qpid/messaging/ReceiverImpl.h			\
+  qpid/messaging/SessionImpl.h			\
+  qpid/client/amqp0_10/AddressResolution.h	\
+  qpid/client/amqp0_10/AddressResolution.cpp	\
+  qpid/client/amqp0_10/Codecs.cpp		\
+  qpid/client/amqp0_10/CodecsInternal.h		\
+  qpid/client/amqp0_10/ConnectionImpl.h	        \
+  qpid/client/amqp0_10/ConnectionImpl.cpp	\
+  qpid/client/amqp0_10/CompletionTracker.h	\
+  qpid/client/amqp0_10/CompletionTracker.cpp	\
+  qpid/client/amqp0_10/IncomingMessages.h	\
+  qpid/client/amqp0_10/IncomingMessages.cpp	\
+  qpid/client/amqp0_10/MessageSink.h		\
+  qpid/client/amqp0_10/MessageSource.h		\
+  qpid/client/amqp0_10/OutgoingMessage.h	\
+  qpid/client/amqp0_10/OutgoingMessage.cpp	\
+  qpid/client/amqp0_10/ReceiverImpl.h		\
+  qpid/client/amqp0_10/ReceiverImpl.cpp		\
+  qpid/client/amqp0_10/SessionImpl.h		\
+  qpid/client/amqp0_10/SessionImpl.cpp		\
+  qpid/client/amqp0_10/SenderImpl.h		\
+  qpid/client/amqp0_10/SenderImpl.cpp
 
 # NOTE: only public header files (which should be in ../include)
 # should go in this list. Private headers should go in the SOURCES
@@ -723,6 +759,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/framing/Buffer.h		\
   ../include/qpid/framing/FieldTable.h		\
   ../include/qpid/framing/FieldValue.h		\
+  ../include/qpid/framing/List.h		\
   ../include/qpid/framing/ProtocolVersion.h	\
   ../include/qpid/framing/SequenceNumber.h	\
   ../include/qpid/framing/SequenceSet.h		\
@@ -749,7 +786,18 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/SystemInfo.h		\
   ../include/qpid/sys/Thread.h			\
   ../include/qpid/sys/Time.h			\
-  ../include/qpid/sys/uuid.h
+  ../include/qpid/messaging/Address.h 		\
+  ../include/qpid/messaging/Connection.h 	\
+  ../include/qpid/messaging/Codec.h 	        \
+  ../include/qpid/messaging/Filter.h 		\
+  ../include/qpid/messaging/Message.h 		\
+  ../include/qpid/messaging/MessageContent.h 	\
+  ../include/qpid/messaging/MessageListener.h 	\
+  ../include/qpid/messaging/Sender.h 		\
+  ../include/qpid/messaging/Receiver.h 	        \
+  ../include/qpid/messaging/Session.h 		\
+  ../include/qpid/messaging/Variant.h 		\
+  ../include/qpid/client/amqp0_10/Codecs.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)

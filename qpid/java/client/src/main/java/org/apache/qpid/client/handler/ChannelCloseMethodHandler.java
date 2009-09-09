@@ -32,7 +32,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +47,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener<Chann
     }
 
     public void methodReceived(AMQProtocolSession session, ChannelCloseBody method, int channelId)
-        throws AMQException
+            throws AMQException
     {
         _logger.debug("ChannelClose method received");
 
@@ -59,52 +58,62 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener<Chann
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
         }
 
-
-
         ChannelCloseOkBody body = session.getMethodRegistry().createChannelCloseOkBody();
         AMQFrame frame = body.generateFrame(channelId);
         session.writeFrame(frame);
-
-        if (errorCode != AMQConstant.REPLY_SUCCESS)
+        try
         {
-            if (_logger.isDebugEnabled())
+            if (errorCode != AMQConstant.REPLY_SUCCESS)
             {
-                _logger.debug("Channel close received with errorCode " + errorCode + ", and reason " + reason);
-            }
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Channel close received with errorCode " + errorCode + ", and reason " + reason);
+                }
 
-            if (errorCode == AMQConstant.NO_CONSUMERS)
-            {
-                throw new AMQNoConsumersException("Error: " + reason, null, null);
-            }
-            else if (errorCode == AMQConstant.NO_ROUTE)
-            {
-                throw new AMQNoRouteException("Error: " + reason, null, null);
-            }
-            else if (errorCode == AMQConstant.INVALID_ARGUMENT)
-            {
-                _logger.debug("Broker responded with Invalid Argument.");
+                if (errorCode == AMQConstant.NO_CONSUMERS)
+                {
+                    throw new AMQNoConsumersException("Error: " + reason, null, null);
+                }
+                else if (errorCode == AMQConstant.NO_ROUTE)
+                {
+                    throw new AMQNoRouteException("Error: " + reason, null, null);
+                }
+                else if (errorCode == AMQConstant.INVALID_ARGUMENT)
+                {
+                    _logger.debug("Broker responded with Invalid Argument.");
 
-                throw new org.apache.qpid.AMQInvalidArgumentException(String.valueOf(reason), null);
-            }
-            else if (errorCode == AMQConstant.INVALID_ROUTING_KEY)
-            {
-                _logger.debug("Broker responded with Invalid Routing Key.");
+                    throw new org.apache.qpid.AMQInvalidArgumentException(String.valueOf(reason), null);
+                }
+                else if (errorCode == AMQConstant.INVALID_ROUTING_KEY)
+                {
+                    _logger.debug("Broker responded with Invalid Routing Key.");
 
-                throw new AMQInvalidRoutingKeyException(String.valueOf(reason), null);
-            }
-            else
-            {
-                throw new AMQChannelClosedException(errorCode, "Error: " + reason, null);
-            }
+                    throw new AMQInvalidRoutingKeyException(String.valueOf(reason), null);
+                }
+                else
+                {
 
+                    throw new AMQChannelClosedException(errorCode, "Error: " + reason, null);
+                }
+
+            }
         }
-        // fixme why is this only done when the close is expected...
-        // should the above forced closes not also cause a close?
-        // ----------
-        // Closing the session only when it is expected allows the errors to be processed
-        // Calling this here will prevent failover. So we should do this for all exceptions
-        // that should never cause failover. Such as authentication errors.
+        finally
+        {
+            // fixme why is this only done when the close is expected...
+            // should the above forced closes not also cause a close?
+            // ----------
+            // Closing the session only when it is expected allows the errors to be processed
+            // Calling this here will prevent failover. So we should do this for all exceptions
+            // that should never cause failover. Such as authentication errors.
+            // ----
+            // 2009-09-07 - ritchiem
+            // calling channelClosed will only close this session and will not
+            // prevent failover. If we don't close the session here then we will
+            // have problems during the session close as it will attempt to
+            // close the session that the broker has closed, 
 
-        session.channelClosed(channelId, errorCode, String.valueOf(reason));
+            session.channelClosed(channelId, errorCode, String.valueOf(reason));
+        }
     }
 }

@@ -110,6 +110,12 @@ def Usage ():
     print "    --force-if-not-empty  Force delete of queue even if it's not empty"
     print "    --force-if-used       Force delete of queue even if it's currently used"
     print
+    print "Add Exchange <type> values:"
+    print "    direct     Direct exchange for point-to-point communication"
+    print "    fanout     Fanout exchange for broadcast communication"
+    print "    topic      Topic exchange that routes messages using binding keys with wildcards"
+    print "    headers    Headers exchange that matches header fields against the binding keys"
+    print
     print "Add Exchange Options:"
     print "    --alternate-exchange [name of the alternate exchange]"
     print "                         In the event that a message cannot be routed, this is the name of the exchange to"
@@ -190,6 +196,8 @@ class BrokerManager:
                 if ex.durable:    print "--durable",
                 if MSG_SEQUENCE in args and args[MSG_SEQUENCE] == 1: print "--sequence",
                 if IVE in args and args[IVE] == 1: print "--ive",
+                if ex.altExchange:
+                    print "--alternate-exchange=%s" % ex._altExchange_.name,
                 print
 
     def ExchangeListRecurse (self, filter):

@@ -51,6 +51,9 @@ class FieldTable
     typedef boost::shared_ptr<FieldValue> ValuePtr;
     typedef std::map<std::string, ValuePtr> ValueMap;
     typedef ValueMap::iterator iterator;
+    typedef ValueMap::const_reference const_reference;
+    typedef ValueMap::reference reference;
+    typedef ValueMap::value_type value_type;
 
     QPID_COMMON_EXTERN FieldTable() {};
     QPID_COMMON_EXTERN FieldTable(const FieldTable& ft);
@@ -97,12 +100,16 @@ class FieldTable
     QPID_COMMON_EXTERN bool operator==(const FieldTable& other) const;
 
     // Map-like interface.
-    // TODO: may need to duplicate into versions that return mutable iterator
     ValueMap::const_iterator begin() const { return values.begin(); }
     ValueMap::const_iterator end() const { return values.end(); }
     ValueMap::const_iterator find(const std::string& s) const { return values.find(s); }
 
+    ValueMap::iterator begin() { return values.begin(); }
+    ValueMap::iterator end() { return values.end(); }
+    ValueMap::iterator find(const std::string& s) { return values.find(s); }
+
     std::pair <ValueMap::iterator, bool> insert(const ValueMap::value_type&);
+    QPID_COMMON_EXTERN ValueMap::iterator insert(ValueMap::iterator, const ValueMap::value_type&);
     void clear() { values.clear(); }
 
     // ### Hack Alert

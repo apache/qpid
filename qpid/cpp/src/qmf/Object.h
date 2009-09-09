@@ -31,7 +31,7 @@ namespace qmf {
     public:
         Object(const SchemaObjectClass* type);
         Object(ObjectImpl* impl);
-        ~Object();
+        virtual ~Object();
 
         void destroy();
         const ObjectId* getObjectId() const;

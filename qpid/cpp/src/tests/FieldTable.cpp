@@ -22,6 +22,7 @@
 #include "qpid/framing/Array.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
+#include "qpid/framing/List.h"
 #include "qpid/sys/alloca.h"
 
 #include "unit_test.h"
@@ -86,7 +87,9 @@ QPID_AUTO_TEST_CASE(testAssignment)
 
 QPID_AUTO_TEST_CASE(testNestedValues)
 {
-    char buff[100];
+    double d = 1.2345;
+    uint32_t u = 101;
+    char buff[1000];
     {
         FieldTable a;
         FieldTable b;
@@ -94,11 +97,17 @@ QPID_AUTO_TEST_CASE(testNestedValues)
         items.push_back("one");
         items.push_back("two");
         Array c(items);
+        List list;
+        list.push_back(List::ValuePtr(new Str16Value("red")));
+        list.push_back(List::ValuePtr(new Unsigned32Value(u)));
+        list.push_back(List::ValuePtr(new Str8Value("yellow")));
+        list.push_back(List::ValuePtr(new DoubleValue(d)));
         
         a.setString("id", "A");
         b.setString("id", "B");
         a.setTable("B", b);
         a.setArray("C", c);
+        a.set("my-list", FieldTable::ValuePtr(new ListValue(list)));
 
 
         Buffer wbuffer(buff, 100);
@@ -119,6 +128,27 @@ QPID_AUTO_TEST_CASE(testNestedValues)
         BOOST_CHECK((uint) 2 == items.size());
         BOOST_CHECK(string("one") == items[0]);
         BOOST_CHECK(string("two") == items[1]);
+
+        List list;
+        BOOST_CHECK(a.get("my-list")->get<List>(list));
+        List::const_iterator i = list.begin();
+        BOOST_CHECK(i != list.end());
+        BOOST_CHECK_EQUAL(std::string("red"), (*i)->get<std::string>());
+
+        i++;
+        BOOST_CHECK(i != list.end());
+        BOOST_CHECK_EQUAL(u, (uint32_t) (*i)->get<int>());
+
+        i++;
+        BOOST_CHECK(i != list.end());
+        BOOST_CHECK_EQUAL(std::string("yellow"), (*i)->get<std::string>());
+
+        i++;
+        BOOST_CHECK(i != list.end());
+        BOOST_CHECK_EQUAL(d, (*i)->get<double>());
+
+        i++;
+        BOOST_CHECK(i == list.end());
     }
 }
 

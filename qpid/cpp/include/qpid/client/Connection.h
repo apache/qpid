@@ -43,7 +43,21 @@ class ConnectionImpl;
  *
  * \ingroup clientapi
  *
+ * Some methods use an AMQP 0-10 URL to specify connection parameters.
+ * This is defined in the AMQP 0-10 specification (http://jira.amqp.org/confluence/display/AMQP/AMQP+Specification).
+ *
+ *   amqp_url          = "amqp:" prot_addr_list
+ *   prot_addr_list    = [prot_addr ","]* prot_addr
+ *   prot_addr         = tcp_prot_addr | tls_prot_addr
+ *
+ *   tcp_prot_addr     = tcp_id tcp_addr
+ *   tcp_id            = "tcp:" | ""
+ *   tcp_addr          = [host [":" port] ]
+ *   host              = <as per http://www.ietf.org/rfc/rfc3986.txt>
+ *   port              = number]]>
+ *  
  */
+
 class Connection
 {
     framing::ProtocolVersion version;

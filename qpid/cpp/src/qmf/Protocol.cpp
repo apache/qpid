@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,39 +6,47 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.security.access.plugins.network;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.security.access.ACLPlugin;
-import org.apache.qpid.server.security.access.ACLPluginFactory;
+#include "qmf/Protocol.h"
+#include "qpid/framing/Buffer.h"
 
-public class FirewallFactory implements ACLPluginFactory
+using namespace std;
+using namespace qmf;
+using namespace qpid::framing;
+
+
+bool Protocol::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq)
 {
+    if (buf.available() < 8)
+        return false;
 
-    @Override
-    public ACLPlugin newInstance(Configuration config) throws ConfigurationException
-    {
-        FirewallPlugin plugin = new FirewallPlugin();
-        plugin.setConfiguration(config);
-        return plugin;
-    }
+    uint8_t h1 = buf.getOctet();
+    uint8_t h2 = buf.getOctet();
+    uint8_t h3 = buf.getOctet();
 
-    @Override
-    public boolean supportsTag(String name)
-    {
-        return name.equals("firewall");
-    }
-    
+    *opcode = buf.getOctet();
+    *seq    = buf.getLong();
+
+    return h1 == 'A' && h2 == 'M' && h3 == '3';
 }
+
+void Protocol::encodeHeader(qpid::framing::Buffer& buf, uint8_t opcode, uint32_t seq)
+{
+    buf.putOctet('A');
+    buf.putOctet('M');
+    buf.putOctet('3');
+    buf.putOctet(opcode);
+    buf.putLong (seq);
+}
+
+

@@ -146,7 +146,8 @@ class Session(command_invoker()):
     if self._closing:
       raise SessionClosed()
 
-    if self.channel == None:
+    ch = self.channel
+    if ch == None:
       raise SessionDetached()
 
     if op == MessageTransfer:
@@ -162,13 +163,11 @@ class Session(command_invoker()):
     cmd = op(*args, **kwargs)
     cmd.sync = self.auto_sync or cmd.sync
     self.need_sync = not cmd.sync
-    cmd.channel = self.channel.id
+    cmd.channel = ch.id
 
     if op.RESULT:
       result = Future(exception=SessionException)
       self.results[self.sender.next_id] = result
-
-    log.debug("SENDING %s", cmd)
 
     self.send(cmd)
 
@@ -245,13 +244,16 @@ class Sender:
     self._completed = RangedSet()
 
   def send(self, cmd):
+    ch = self.session.channel
+    if ch is None:
+      raise SessionDetached()
     cmd.id = self.next_id
     self.next_id += 1
     if self.session.send_id:
       self.session.send_id = False
-      self.session.channel.session_command_point(cmd.id, 0)
+      ch.session_command_point(cmd.id, 0)
     self.commands.append(cmd)
-    self.session.channel.connection.write_op(cmd)
+    ch.connection.write_op(cmd)
 
   def completed(self, commands):
     idx = 0

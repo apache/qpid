@@ -17,6 +17,8 @@
  */
 
 #include "qpid/framing/Uuid.h"
+
+#include "qpid/sys/uuid.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -27,6 +29,35 @@ namespace framing {
 using namespace std;
 
 static const size_t UNPARSED_SIZE=36; 
+
+Uuid::Uuid(bool unique) {
+    if (unique) {
+        generate();
+    } else {
+        clear();
+    }
+}
+
+Uuid::Uuid(const uint8_t* data) {
+    assign(data);
+}
+
+void Uuid::assign(const uint8_t* data) {
+    uuid_copy(c_array(), data);
+}
+
+void Uuid::generate() {
+    uuid_generate(c_array());
+}
+
+void Uuid::clear() {
+    uuid_clear(c_array());
+}
+
+// Force int 0/!0 to false/true; avoids compile warnings.
+bool Uuid::isNull() {
+    return !!uuid_is_null(data());
+}
 
 void Uuid::encode(Buffer& buf) const {
     buf.putRawData(data(), size());

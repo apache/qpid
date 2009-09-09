@@ -790,9 +790,11 @@ public class NavigationView extends ViewPart
             return;
         }
 
-        serverRegistry.closeServerConnection();
         // Add server to the closed server list and the worker thread will remove the server from required places.
         ApplicationRegistry.serverConnectionClosed(managedServer);
+        
+        //close the connection
+        serverRegistry.closeServerConnection();
     }
 
     /**

@@ -4,6 +4,7 @@ org.apache.qpid.client.ResetMessageListenerTest#*
 //These tests are for the java broker
 org.apache.qpid.server.security.acl.SimpleACLTest#*
 org.apache.qpid.server.plugins.PluginTest#*
+org.apache.qpid.server.BrokerStartupTest#*
 
 // This test is not finished
 org.apache.qpid.test.testcases.TTLTest#*
@@ -82,3 +83,9 @@ org.apache.qpid.server.logging.*
 
 // CPP Broker does not have a JMX interface to test
 org.apache.qpid.management.jmx.*
+
+// 0-10 is not supported by the MethodRegistry
+org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
+
+// QPID-2084 : this test needs more work for 0-10
+org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*

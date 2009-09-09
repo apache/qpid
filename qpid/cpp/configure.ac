@@ -512,8 +512,10 @@ AC_CONFIG_FILES([
   examples/xml-exchange/Makefile
   examples/qmf-console/Makefile
   examples/tradedemo/Makefile
+  examples/messaging/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile
+  bindings/qmf/python/Makefile
   bindings/qmf/tests/Makefile
   managementgen/Makefile
   etc/Makefile

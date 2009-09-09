@@ -45,7 +45,6 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener<Con
     { }
 
     public void methodReceived(AMQProtocolSession session, ConnectionTuneBody frame, int channelId)
-                throws AMQException
     {
         _logger.debug("ConnectionTune frame received");
         final MethodRegistry methodRegistry = session.getMethodRegistry();

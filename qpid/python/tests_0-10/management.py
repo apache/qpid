@@ -295,3 +295,25 @@ class ManagementTest (TestBase010):
         sleep(1)
         self.assertEqual(handler.check(), "pass")
 
+    def test_connection_close(self):
+        """
+        Test management method for closing connection
+        """
+        self.startQmf()
+        conn = self.connect()
+        session = conn.session("my-named-session")
+
+        #using qmf find named session and close the corresponding connection:
+        qmf_ssn_object = self.qmf.getObjects(_class="session", name="my-named-session")[0]
+        qmf_ssn_object._connectionRef_.close()
+
+        #check that connection is closed
+        try:
+            conn.session("another-session")
+            self.fail("Expected failure from closed connection")
+        except: None
+        
+        #make sure that the named session has been closed and the name can be re-used
+        conn = self.connect()
+        session = conn.session("my-named-session")
+        session.queue_declare(queue="whatever", exclusive=True, auto_delete=True)
