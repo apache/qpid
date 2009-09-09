@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-namespace 
+namespace
 {
 const std::string qpidMsgSequence("qpid.msg_sequence");
 const std::string qpidSequenceCounter("qpid.sequence_counter");
@@ -51,17 +51,19 @@ const std::string fedOpBind("B");
 const std::string fedOpUnbind("U");
 const std::string fedOpReorigin("R");
 const std::string fedOpHello("H");
+
+const std::string QPID_MANAGEMENT("qpid.management");
 }
 
 
 Exchange::PreRoute::PreRoute(Deliverable& msg, Exchange* _p):parent(_p) {
     if (parent){
         if (parent->sequence || parent->ive) parent->sequenceLock.lock();
-        
+
         if (parent->sequence){
             parent->sequenceNo++;
-            msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders().setInt64(qpidMsgSequence,parent->sequenceNo); 
-        } 
+            msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders().setInt64(qpidMsgSequence,parent->sequenceNo);
+        }
         if (parent->ive) {
             parent->lastMsg =  &( msg.getMessage());
         }
@@ -99,11 +101,9 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
     }
 }
 
-static const std::string QPID_MANAGEMENT("qpid.management");
-
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent, Broker* b)
-    : name(_name), durable(_durable), alternateUsers(0), persistenceId(0), 
+    : name(_name), durable(_durable), alternateUsers(0), persistenceId(0),
       args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), broker(b)
 {
     if (parent != 0 && broker != 0)
@@ -169,7 +169,7 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     string name;
     string type;
     FieldTable args;
-    
+
     buffer.getShortString(name);
     bool durable(buffer.getOctet());
     buffer.getShortString(type);
@@ -185,7 +185,7 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     }
 }
 
-void Exchange::encode(Buffer& buffer) const 
+void Exchange::encode(Buffer& buffer) const
 {
     buffer.putShortString(name);
     buffer.putOctet(durable);
@@ -195,8 +195,8 @@ void Exchange::encode(Buffer& buffer) const
     buffer.put(args);
 }
 
-uint32_t Exchange::encodedSize() const 
-{ 
+uint32_t Exchange::encodedSize() const
+{
     return name.size() + 1/*short string size*/
         + 1 /*durable*/
         + getType().size() + 1/*short string size*/

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,6 +41,9 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+namespace qpid {
+namespace tests {
+
 typedef std::vector<std::string> StringSet;
 
 struct Args : public qpid::TestOptions {
@@ -55,12 +58,12 @@ struct Args : public qpid::TestOptions {
     bool dtx;
     bool quiet;
 
-    Args() : init(true), transfer(true), check(true), 
-             size(256), durable(true), queues(2), 
+    Args() : init(true), transfer(true), check(true),
+             size(256), durable(true), queues(2),
              base("tx-test"), msgsPerTx(1), txCount(1), totalMsgCount(10),
              dtx(false), quiet(false)
     {
-        addOptions()            
+        addOptions()
 
             ("init", optValue(init, "yes|no"), "Declare queues and populate one with the initial set of messages.")
             ("transfer", optValue(transfer, "yes|no"), "'Move' messages from one queue to another using transactions to ensure no message loss.")
@@ -83,7 +86,7 @@ std::string generateData(uint size)
 {
     if (size < chars.length()) {
         return chars.substr(0, size);
-    }   
+    }
     std::string data;
     for (uint i = 0; i < (size / chars.length()); i++) {
         data += chars;
@@ -103,18 +106,18 @@ void generateSet(const std::string& base, uint count, StringSet& collection)
 
 Args opts;
 
-struct Client 
+struct Client
 {
     Connection connection;
     AsyncSession session;
 
-    Client() 
+    Client()
     {
         opts.open(connection);
         session = connection.newSession();
     }
 
-    ~Client() 
+    ~Client()
     {
         try{
             session.close();
@@ -134,19 +137,19 @@ struct Transfer : public Client, public Runnable
 
     Transfer(const std::string& to, const std::string& from) : src(to), dest(from), xid(0x4c414e47, "", from) {}
 
-    void run() 
+    void run()
     {
         try {
-        
+
             if (opts.dtx) session.dtxSelect();
             else session.txSelect();
             SubscriptionManager subs(session);
-            
+
             LocalQueue lq;
             SubscriptionSettings settings(FlowControl::messageWindow(opts.msgsPerTx));
             settings.autoAck = 0; // Disabled
             Subscription sub = subs.subscribe(lq, src, settings);
-            
+
             for (uint t = 0; t < opts.txCount; t++) {
                 Message in;
                 Message out("", dest);
@@ -187,7 +190,7 @@ struct Transfer : public Client, public Runnable
     }
 };
 
-struct Controller : public Client 
+struct Controller : public Client
 {
     StringSet ids;
     StringSet queues;
@@ -198,7 +201,7 @@ struct Controller : public Client
         generateSet("msg", opts.totalMsgCount, ids);
     }
 
-    void init() 
+    void init()
     {
         //declare queues
         for (StringSet::iterator i = queues.begin(); i != queues.end(); i++) {
@@ -236,7 +239,7 @@ struct Controller : public Client
         }
     }
 
-    int check() 
+    int check()
     {
         SubscriptionManager subs(session);
 
@@ -291,10 +294,10 @@ struct Controller : public Client
 
         //check that drained == ids
         StringSet missing;
-        set_difference(ids.begin(), ids.end(), drained.begin(), drained.end(), back_inserter(missing)); 
+        set_difference(ids.begin(), ids.end(), drained.begin(), drained.end(), back_inserter(missing));
 
         StringSet extra;
-        set_difference(drained.begin(), drained.end(), ids.begin(), ids.end(), back_inserter(extra)); 
+        set_difference(drained.begin(), drained.end(), ids.begin(), ids.end(), back_inserter(extra));
 
         if (missing.empty() && extra.empty()) {
             std::cout << "All expected messages were retrieved." << std::endl;
@@ -303,26 +306,30 @@ struct Controller : public Client
             if (!missing.empty()) {
                 std::cout << "The following ids were missing:" << std::endl;
                 for (StringSet::iterator i = missing.begin(); i != missing.end(); i++) {
-                    std::cout << "    '" << *i << "'" << std::endl;                
-                }            
+                    std::cout << "    '" << *i << "'" << std::endl;
+                }
             }
             if (!extra.empty()) {
                 std::cout << "The following extra ids were encountered:" << std::endl;
                 for (StringSet::iterator i = extra.begin(); i != extra.end(); i++) {
-                    std::cout << "    '" << *i << "'" << std::endl;     
-                }            
+                    std::cout << "    '" << *i << "'" << std::endl;
+                }
             }
             return 1;
         }
     }
 };
 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
+
 int main(int argc, char** argv)
 {
     try {
         opts.parse(argc, argv);
         Controller controller;
-        if (opts.init) controller.init(); 
+        if (opts.init) controller.init();
         if (opts.transfer) controller.transfer();
         if (opts.check) return controller.check();
         return 0;

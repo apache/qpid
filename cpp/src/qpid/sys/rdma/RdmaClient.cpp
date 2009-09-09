@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -44,6 +44,9 @@ using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::sys::TIME_SEC;
 using qpid::sys::TIME_INFINITE;
+
+namespace qpid {
+namespace tests {
 
 // count of messages
 int64_t smsgs = 0;
@@ -143,6 +146,10 @@ void rejected(boost::shared_ptr<Poller> p, Rdma::Connection::intrusive_ptr&, con
     cout << "Connection rejected\n";
     p->shutdown();
 }
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char* argv[]) {
     vector<string> args(&argv[0], &argv[argc]);

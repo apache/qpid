@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,8 +35,11 @@ using namespace qpid::framing;
 using namespace std;
 
 
-class Listener : public MessageListener, 
-                 public FailoverManager::Command, 
+namespace qpid {
+namespace tests {
+
+class Listener : public MessageListener,
+                 public FailoverManager::Command,
                  public FailoverManager::ReconnectionStrategy
 {
   public:
@@ -57,32 +60,32 @@ class Listener : public MessageListener,
 };
 
 
-Listener::Listener(int freq, int verbosity) 
-  : count(0), 
-    received_twice(0), 
-    lastSn(0), 
-    gaps(false), 
+Listener::Listener(int freq, int verbosity)
+  : count(0),
+    received_twice(0),
+    lastSn(0),
+    gaps(false),
     reportFrequency(freq),
     verbosity(verbosity),
     done(false)
 {}
 
 
-void Listener::received(Message & message) 
+void Listener::received(Message & message)
 {
-    if (message.getData() == "That's all, folks!") 
+    if (message.getData() == "That's all, folks!")
     {
         done = true;
         if(verbosity > 0 )
         {
-            std::cout << "Shutting down listener for " 
+            std::cout << "Shutting down listener for "
                       << message.getDestination() << std::endl;
 
-            std::cout << "Listener received " 
-                      << count 
-                      << " messages (" 
-                      << received_twice 
-                      << " received_twice)" 
+            std::cout << "Listener received "
+                      << count
+                      << " messages ("
+                      << received_twice
+                      << " received_twice)"
                       << endl;
         }
         subscription.cancel();
@@ -99,8 +102,8 @@ void Listener::received(Message & message)
             ++count;
             if ( ! ( count % reportFrequency ) ) {
                 if ( verbosity > 0 )
-                    std::cout << "Listener has received " 
-                              << count 
+                    std::cout << "Listener has received "
+                              << count
                               << " messages.\n";
             }
         } else {
@@ -132,6 +135,10 @@ void Listener::editUrlList(std::vector<Url>& urls)
      */
     if (urls.size() > 1) std::rotate(urls.begin(), urls.begin() + 1, urls.end());
 }
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char ** argv)
 {

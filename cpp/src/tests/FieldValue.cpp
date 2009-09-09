@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +19,9 @@
 #include "qpid/framing/FieldValue.h"
 
 #include "unit_test.h"
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(FieldValueTestSuite)
 
@@ -32,7 +35,7 @@ IntegerValue i(42);
 
 QPID_AUTO_TEST_CASE(testStr16ValueEquals)
 {
-    
+
     BOOST_CHECK(Str16Value("abc") == s);
     BOOST_CHECK(Str16Value("foo") != s);
     BOOST_CHECK(s != i);
@@ -73,7 +76,7 @@ QPID_AUTO_TEST_CASE(testFieldTableValueEquals)
     BOOST_CHECK_EQUAL(std::string("FOO"),
                             ft.getValue().getString("foo"));
     BOOST_CHECK_EQUAL(7, ft.getValue().getInt("magic"));
-    
+
     FieldTableValue f2;
     BOOST_CHECK(ft != f2);
     f2.getValue().setString("foo", "FOO");
@@ -88,3 +91,5 @@ QPID_AUTO_TEST_CASE(testFieldTableValueEquals)
 #endif
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,8 +39,11 @@ using namespace qpid;
 using namespace qpid::framing;
 using namespace std;
 
+namespace qpid {
+namespace tests {
+
 template <class T>
-std::string tostring(const T& x) 
+std::string tostring(const T& x)
 {
     std::ostringstream out;
     out << x;
@@ -49,7 +52,7 @@ std::string tostring(const T& x)
 
 QPID_AUTO_TEST_SUITE(FramingTestSuite)
 
-QPID_AUTO_TEST_CASE(testMessageTransferBody) 
+QPID_AUTO_TEST_CASE(testMessageTransferBody)
 {
     char buffer[1024];
     ProtocolVersion version(highestProtocolVersion);
@@ -62,8 +65,8 @@ QPID_AUTO_TEST_CASE(testMessageTransferBody)
     out.decode(rbuff);
     BOOST_CHECK_EQUAL(tostring(in), tostring(out));
 }
-    
-QPID_AUTO_TEST_CASE(testConnectionSecureBody) 
+
+QPID_AUTO_TEST_CASE(testConnectionSecureBody)
 {
     char buffer[1024];
     ProtocolVersion version(highestProtocolVersion);
@@ -88,10 +91,10 @@ QPID_AUTO_TEST_CASE(testConnectionRedirectBody)
     Array hosts(0x95);
     hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
     hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
-        
+
     ConnectionRedirectBody in(version, a, hosts);
     in.encode(wbuff);
-        
+
     Buffer rbuff(buffer, sizeof(buffer));
     ConnectionRedirectBody out(version);
     out.decode(rbuff);
@@ -111,7 +114,7 @@ QPID_AUTO_TEST_CASE(testQueueDeclareBody)
     out.decode(rbuff);
     BOOST_CHECK_EQUAL(tostring(in), tostring(out));
 }
-    
+
 QPID_AUTO_TEST_CASE(testConnectionRedirectBodyFrame)
 {
     char buffer[1024];
@@ -122,7 +125,7 @@ QPID_AUTO_TEST_CASE(testConnectionRedirectBodyFrame)
     Array hosts(0x95);
     hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(a)));
     hosts.add(boost::shared_ptr<FieldValue>(new Str16Value(b)));
-        
+
     AMQFrame in((ConnectionRedirectBody(version, a, hosts)));
     in.setChannel(999);
     in.encode(wbuff);
@@ -149,3 +152,5 @@ QPID_AUTO_TEST_CASE(testMessageCancelBodyFrame)
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

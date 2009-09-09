@@ -34,7 +34,7 @@ template <class T> std::ostream& seqPrint(std::ostream& o, const T& seq) {
     return o;
 }
 
-// Compare sequences 
+// Compare sequences
 template <class T, class U>
 bool seqEqual(const T& a, const U& b) {
     typename T::const_iterator i = a.begin();
@@ -59,6 +59,9 @@ bool operator == (const vector<T>& a, const boost::assign_detail::generic_list<T
 template <class T>
 bool operator == (const boost::assign_detail::generic_list<T>& b, const vector<T>& a) { return seqEqual(a, b); }
 }
+
+namespace qpid {
+namespace tests {
 
 /** NB: order of parameters is regex first, in line with
  * CHECK(expected, actual) convention.
@@ -98,6 +101,7 @@ inline std::string getLibPath(const char* envName, const char* defaultPath = 0) 
     return defaultPath;
 }
 
+}} // namespace qpid::tests
 
 #endif  /*!TEST_TOOLS_H*/
 

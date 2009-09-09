@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,9 +39,12 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace qpid;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(ExchangeTestSuite)
 
-QPID_AUTO_TEST_CASE(testMe) 
+QPID_AUTO_TEST_CASE(testMe)
 {
     Queue::shared_ptr queue(new Queue("queue", true));
     Queue::shared_ptr queue2(new Queue("queue2", true));
@@ -70,7 +73,7 @@ QPID_AUTO_TEST_CASE(testIsBound)
     Queue::shared_ptr b(new Queue("b", true));
     Queue::shared_ptr c(new Queue("c", true));
     Queue::shared_ptr d(new Queue("d", true));
-        
+
     string k1("abc");
     string k2("def");
     string k3("xyz");
@@ -139,7 +142,7 @@ QPID_AUTO_TEST_CASE(testIsBound)
     headers.bind(a, "", &args3);
     headers.bind(b, "", &args2);
     headers.bind(c, "", &args1);
-        
+
     BOOST_CHECK(headers.isBound(a, 0, 0));
     BOOST_CHECK(headers.isBound(a, 0, &args1));
     BOOST_CHECK(headers.isBound(a, 0, &args3));
@@ -153,7 +156,7 @@ QPID_AUTO_TEST_CASE(testIsBound)
     BOOST_CHECK(!headers.isBound(d, 0, &args3));
 }
 
-QPID_AUTO_TEST_CASE(testDeleteGetAndRedeclare) 
+QPID_AUTO_TEST_CASE(testDeleteGetAndRedeclare)
 {
     ExchangeRegistry exchanges;
     exchanges.declare("my-exchange", "direct", false, FieldTable());
@@ -162,7 +165,7 @@ QPID_AUTO_TEST_CASE(testDeleteGetAndRedeclare)
         exchanges.get("my-exchange");
     } catch (const NotFoundException&) {}
     std::pair<Exchange::shared_ptr, bool> response = exchanges.declare("my-exchange", "direct", false, FieldTable());
-    BOOST_CHECK_EQUAL(string("direct"), response.first->getType());  
+    BOOST_CHECK_EQUAL(string("direct"), response.first->getType());
 }
 
 intrusive_ptr<Message> cmessage(std::string exchange, std::string routingKey) {
@@ -175,7 +178,7 @@ intrusive_ptr<Message> cmessage(std::string exchange, std::string routingKey) {
     return msg;
 }
 
-QPID_AUTO_TEST_CASE(testSequenceOptions) 
+QPID_AUTO_TEST_CASE(testSequenceOptions)
 {
     FieldTable args;
     args.setInt("qpid.msg_sequence",1);
@@ -225,22 +228,22 @@ QPID_AUTO_TEST_CASE(testSequenceOptions)
         direct.encode(buffer);
     }
     {
-        
+
         ExchangeRegistry exchanges;
         buffer.reset();
         DirectExchange::shared_ptr exch_dec = Exchange::decode(exchanges, buffer);
-        
+
         intrusive_ptr<Message> msg1 = cmessage("e", "A");
         DeliverableMessage dmsg1(msg1);
         exch_dec->route(dmsg1, "abc", 0);
 
         BOOST_CHECK_EQUAL(4, msg1->getApplicationHeaders()->getAsInt64("qpid.msg_sequence"));
-    
+
     }
     delete [] buff;
 }
 
-QPID_AUTO_TEST_CASE(testIVEOption) 
+QPID_AUTO_TEST_CASE(testIVEOption)
 {
     FieldTable args;
     args.setInt("qpid.ive",1);
@@ -248,7 +251,7 @@ QPID_AUTO_TEST_CASE(testIVEOption)
     FanOutExchange fanout("fanout1", false, args);
     HeadersExchange header("headers1", false, args);
     TopicExchange topic ("topic1", false, args);
-    
+
     intrusive_ptr<Message> msg1 = cmessage("direct1", "abc");
     msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString("a", "abc");
     DeliverableMessage dmsg1(msg1);
@@ -256,7 +259,7 @@ QPID_AUTO_TEST_CASE(testIVEOption)
     FieldTable args2;
     args2.setString("x-match", "any");
     args2.setString("a", "abc");
-    
+
     direct.route(dmsg1, "abc", 0);
     fanout.route(dmsg1, "abc", 0);
     header.route(dmsg1, "abc", &args2);
@@ -265,20 +268,22 @@ QPID_AUTO_TEST_CASE(testIVEOption)
     Queue::shared_ptr queue1(new Queue("queue1", true));
     Queue::shared_ptr queue2(new Queue("queue2", true));
     Queue::shared_ptr queue3(new Queue("queue3", true));
-    
+
     BOOST_CHECK(HeadersExchange::match(args2, msg1->getProperties<MessageProperties>()->getApplicationHeaders()));
-    
+
     BOOST_CHECK(direct.bind(queue, "abc", 0));
     BOOST_CHECK(fanout.bind(queue1, "abc", 0));
     BOOST_CHECK(header.bind(queue2, "", &args2));
     BOOST_CHECK(topic.bind(queue3, "abc", 0));
-    
+
     BOOST_CHECK_EQUAL(1u,queue->getMessageCount());
     BOOST_CHECK_EQUAL(1u,queue1->getMessageCount());
     BOOST_CHECK_EQUAL(1u,queue2->getMessageCount());
     BOOST_CHECK_EQUAL(1u,queue3->getMessageCount());
-    
+
 }
 
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

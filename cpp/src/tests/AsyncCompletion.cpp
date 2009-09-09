@@ -49,10 +49,13 @@ using boost::intrusive_ptr;
  * message enqueues at the correct time.
  */
 
+namespace qpid {
+namespace tests {
+
 class AsyncCompletionMessageStore : public NullMessageStore {
   public:
     sys::BlockingQueue<boost::intrusive_ptr<PersistableMessage> > enqueued;
-    
+
     AsyncCompletionMessageStore() : NullMessageStore() {}
     ~AsyncCompletionMessageStore(){}
 
@@ -82,10 +85,10 @@ QPID_AUTO_TEST_CASE(testWaitTillComplete) {
         transfers[i] = s.messageTransfer(arg::content=msg);
     }
 
-    // Get hold of the broker-side messages. 
+    // Get hold of the broker-side messages.
     typedef vector<intrusive_ptr<PersistableMessage> > BrokerMessages;
     BrokerMessages enqueued;
-    for (int j = 0; j < count; ++j) 
+    for (int j = 0; j < count; ++j)
         enqueued.push_back(store->enqueued.pop(TIME_SEC));
 
     // Send a sync, make sure it does not complete till all messages are complete.
@@ -111,3 +114,5 @@ QPID_AUTO_TEST_CASE(testGetResult) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

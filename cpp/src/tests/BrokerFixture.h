@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,6 +35,9 @@
 #include "qpid/sys/Thread.h"
 #include <boost/noncopyable.hpp>
 
+namespace qpid {
+namespace tests {
+
 /**
  * A fixture with an in-process broker.
  */
@@ -55,7 +58,7 @@ struct  BrokerFixture : private boost::noncopyable {
         }
         opts.port=0;
         // Management doesn't play well with multiple in-process brokers.
-        opts.enableMgmt=false;  
+        opts.enableMgmt=false;
         opts.workerThreads=1;
         opts.dataDir="";
         opts.auth=false;
@@ -144,5 +147,6 @@ struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 typedef SessionFixtureT<LocalConnection> SessionFixture;
 typedef SessionFixtureT<ProxyConnection> ProxySessionFixture;
 
+}} // namespace qpid::tests
 
 #endif  /*!TESTS_BROKERFIXTURE_H*/

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,7 +36,10 @@ using namespace qpid::framing;
 
 using namespace std;
 
-struct Args : public qpid::TestOptions 
+namespace qpid {
+namespace tests {
+
+struct Args : public qpid::TestOptions
 {
     string queue;
     uint messages;
@@ -47,7 +50,7 @@ struct Args : public qpid::TestOptions
 
     Args() : queue("test-queue"), messages(0), ignoreDuplicates(false), creditWindow(0), ackFrequency(1), browse(false)
     {
-        addOptions()            
+        addOptions()
             ("queue", qpid::optValue(queue, "QUEUE NAME"), "Queue from which to request messages")
             ("messages", qpid::optValue(messages, "N"), "Number of messages to receive; 0 means receive indefinitely")
             ("ignore-duplicates", qpid::optValue(ignoreDuplicates), "Detect and ignore duplicates (by checking 'sn' header)")
@@ -77,15 +80,15 @@ class Receiver : public MessageListener, public FailoverManager::Command
     bool isDuplicate(Message& message);
 };
 
-Receiver::Receiver(const string& q, uint messages, bool ignoreDuplicates, uint creditWindow, uint ackFrequency, bool browse) : 
-    queue(q), count(messages), skipDups(ignoreDuplicates), processed(0), lastSn(0) 
+Receiver::Receiver(const string& q, uint messages, bool ignoreDuplicates, uint creditWindow, uint ackFrequency, bool browse) :
+    queue(q), count(messages), skipDups(ignoreDuplicates), processed(0), lastSn(0)
 {
     if (browse) settings.acquireMode = ACQUIRE_MODE_NOT_ACQUIRED;
     if (creditWindow) settings.flowControl = FlowControl::messageWindow(creditWindow);
     settings.autoAck = ackFrequency;
 }
 
-void Receiver::received(Message& message) 
+void Receiver::received(Message& message)
 {
     if (!(skipDups && isDuplicate(message))) {
         bool eos = message.getData() == EOS;
@@ -94,7 +97,7 @@ void Receiver::received(Message& message)
     }
 }
 
-bool Receiver::isDuplicate(Message& message) 
+bool Receiver::isDuplicate(Message& message)
 {
     uint sn = message.getHeaders().getAsInt("sn");
     if (lastSn < sn) {
@@ -115,6 +118,10 @@ void Receiver::execute(AsyncSession& session, bool /*isRetry*/)
     }
 }
 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
+
 int main(int argc, char ** argv)
 {
     Args opts;
@@ -130,6 +137,3 @@ int main(int argc, char ** argv)
     }
     return 1;
 }
-
-
-

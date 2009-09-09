@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,7 +33,10 @@
 using namespace qpid::client;
 using namespace qpid::sys;
 
-struct Args : public qpid::TestOptions 
+namespace qpid {
+namespace tests {
+
+struct Args : public qpid::TestOptions
 {
     string workQueue;
     string source;
@@ -43,10 +46,10 @@ struct Args : public qpid::TestOptions
     bool quit;
     bool declareQueues;
 
-    Args() : workQueue("txshift-control"), source("txshift-1"), dest("txshift-2"), messages(0), jobs(0), 
+    Args() : workQueue("txshift-control"), source("txshift-1"), dest("txshift-2"), messages(0), jobs(0),
              quit(false), declareQueues(false)
     {
-        addOptions()            
+        addOptions()
             ("messages", qpid::optValue(messages, "N"), "Number of messages to shift")
             ("jobs", qpid::optValue(jobs, "N"), "Number of shift jobs to request")
             ("source", qpid::optValue(source, "QUEUE NAME"), "source queue from which messages will be shifted")
@@ -56,6 +59,10 @@ struct Args : public qpid::TestOptions
             ("declare-queues", qpid::optValue(declareQueues), "issue a declare for all queues");
     }
 };
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 //TODO: might be nice to make this capable of failover as well at some
 //point; for now its just for the setup phase.

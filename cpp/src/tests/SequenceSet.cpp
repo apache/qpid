@@ -20,6 +20,9 @@
 #include "unit_test.h"
 #include <list>
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(SequenceSetTestSuite)
 
 using namespace qpid::framing;
@@ -72,7 +75,7 @@ QPID_AUTO_TEST_CASE(testAdd) {
         BOOST_CHECK(!s.contains(i));
 
     RangeExpectations().expect(2, 5).expect(8, 8).check(s);
-    
+
     SequenceSet t;
     t.add(6, 10);
     t.add(s);
@@ -90,7 +93,7 @@ QPID_AUTO_TEST_CASE(testAdd2) {
     SequenceSet s;
     s.add(7,6);
     s.add(4,4);
-    s.add(3,10);    
+    s.add(3,10);
     s.add(2);
     RangeExpectations().expect(2, 10).check(s);
 }
@@ -137,4 +140,4 @@ QPID_AUTO_TEST_CASE(testRemove) {
 
 QPID_AUTO_TEST_SUITE_END()
 
-
+}} // namespace qpid::tests

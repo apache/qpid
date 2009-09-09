@@ -26,6 +26,9 @@ using namespace std;
 using namespace qpid;
 using namespace boost::assign;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(UrlTestSuite)
 
 #define URL_CHECK_STR(STR) BOOST_CHECK_EQUAL(Url(STR).str(), STR)
@@ -65,3 +68,5 @@ QPID_AUTO_TEST_CASE(TestInvalidAddress) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

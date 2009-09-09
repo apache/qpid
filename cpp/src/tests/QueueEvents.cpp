@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,6 +30,9 @@
 #include "qpid/sys/Dispatcher.h"
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(QueueEventsSuite)
 
@@ -156,7 +159,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing)
     fixture.session.queueDeclare(arg::queue=q, arg::arguments=options);
     //send and consume some messages
     LocalQueue incoming;
-    Subscription sub = fixture.subs.subscribe(incoming, q); 
+    Subscription sub = fixture.subs.subscribe(incoming, q);
     for (int i = 0; i < 5; i++) {
         fixture.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
     }
@@ -177,7 +180,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing)
     SequenceNumber dequeueId(1);
     for (int i = 0; i < 5; i++) {
         listener.checkEnqueue(q, (boost::format("%1%_%2%") % "Message" % (i+1)).str(), enqueueId++);
-    }    
+    }
     for (int i = 0; i < 3; i++) {
         listener.checkDequeue(q, (boost::format("%1%_%2%") % "Message" % (i+1)).str(), dequeueId++);
     }
@@ -203,7 +206,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing_enqueuesOnly)
     fixture.session.queueDeclare(arg::queue=q, arg::arguments=options);
     //send and consume some messages
     LocalQueue incoming;
-    Subscription sub = fixture.subs.subscribe(incoming, q); 
+    Subscription sub = fixture.subs.subscribe(incoming, q);
     for (int i = 0; i < 5; i++) {
         fixture.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
     }
@@ -224,7 +227,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing_enqueuesOnly)
     SequenceNumber dequeueId(1);
     for (int i = 0; i < 5; i++) {
         listener.checkEnqueue(q, (boost::format("%1%_%2%") % "Message" % (i+1)).str(), enqueueId++);
-    }    
+    }
     for (int i = 5; i < 10; i++) {
         listener.checkEnqueue(q, (boost::format("%1%_%2%") % "Message" % (i+1)).str(), enqueueId++);
     }
@@ -232,4 +235,4 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing_enqueuesOnly)
 
 QPID_AUTO_TEST_SUITE_END()
 
-
+}} // namespace qpid::tests

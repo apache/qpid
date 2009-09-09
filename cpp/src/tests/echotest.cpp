@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,6 +33,9 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace std;
 
+namespace qpid {
+namespace tests {
+
 struct  Args : public qpid::Options,
                public qpid::client::ConnectionSettings
 {
@@ -48,7 +51,7 @@ struct  Args : public qpid::Options,
             ("help", optValue(help), "Print this usage statement")
             ("count", optValue(count, "N"), "Number of messages to send")
             ("size", optValue(count, "N"), "Size of messages")
-            ("broker,b", optValue(host, "HOST"), "Broker host to connect to") 
+            ("broker,b", optValue(host, "HOST"), "Broker host to connect to")
             ("port,p", optValue(port, "PORT"), "Broker port to connect to")
             ("username", optValue(username, "USER"), "user name for broker log in.")
             ("password", optValue(password, "PASSWORD"), "password for broker log in.")
@@ -75,7 +78,7 @@ class Listener : public MessageListener
     Message request;
     double total, min, max;
     bool summary;
-    
+
   public:
     Listener(Session& session, uint limit, bool summary);
     void start(uint size);
@@ -92,7 +95,7 @@ void Listener::start(uint size)
 {
     session.queueDeclare(arg::queue=queue, arg::exclusive=true, arg::autoDelete=true);
     request.getDeliveryProperties().setRoutingKey(queue);
-    subscriptions.subscribe(*this, queue, SubscriptionSettings(FlowControl::unlimited(), ACCEPT_MODE_NONE));    
+    subscriptions.subscribe(*this, queue, SubscriptionSettings(FlowControl::unlimited(), ACCEPT_MODE_NONE));
 
     request.getDeliveryProperties().setTimestamp(current_time());
     if (size) request.setData(std::string(size, 'X'));
@@ -100,7 +103,7 @@ void Listener::start(uint size)
     subscriptions.run();
 }
 
-void Listener::received(Message& response) 
+void Listener::received(Message& response)
 {
     //extract timestamp and compute latency:
     uint64_t sentAt = response.getDeliveryProperties().getTimestamp();
@@ -122,7 +125,11 @@ void Listener::received(Message& response)
     }
 }
 
-int main(int argc, char** argv) 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
+
+int main(int argc, char** argv)
 {
     Args opts;
     opts.parse(argc, argv);

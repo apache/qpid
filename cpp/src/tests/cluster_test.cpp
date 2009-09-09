@@ -59,8 +59,6 @@ template <class T>
 ostream& operator<<(ostream& o, const std::set<T>& s) { return seqPrint(o, s); }
 }
 
-QPID_AUTO_TEST_SUITE(cluster_test)
-
 using namespace std;
 using namespace qpid;
 using namespace qpid::cluster;
@@ -69,6 +67,11 @@ using namespace qpid::client;
 using namespace boost::assign;
 using broker::Broker;
 using boost::shared_ptr;
+
+namespace qpid {
+namespace tests {
+
+QPID_AUTO_TEST_SUITE(cluster_test)
 
 bool durableFlag = std::getenv("STORE_LIB") != 0;
 
@@ -1098,3 +1101,5 @@ QPID_AUTO_TEST_CASE(testRelease) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests
