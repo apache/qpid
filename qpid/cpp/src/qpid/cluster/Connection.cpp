@@ -156,8 +156,17 @@ bool Connection::checkUnsupported(const AMQBody& body) {
     return !message.empty();
 }
 
+struct GiveReadCreditOnExit {
+    Connection& connection;
+    int credit;
+    GiveReadCreditOnExit(Connection& connection_, int credit_) :
+        connection(connection_), credit(credit_) {}
+    ~GiveReadCreditOnExit() { connection.giveReadCredit(credit); }
+};
+
 // Called in delivery thread, in cluster order.
 void Connection::deliveredFrame(const EventFrame& f) {
+    GiveReadCreditOnExit gc(*this, f.readCredit);
     assert(!catchUp);
     currentChannel = f.frame.getChannel(); 
     if (f.frame.getBody()       // frame can be emtpy with just readCredit
@@ -171,7 +180,6 @@ void Connection::deliveredFrame(const EventFrame& f) {
             if (ss) ss->out(const_cast<AMQFrame&>(f.frame));
         }
     }
-    giveReadCredit(f.readCredit);
 }
 
 // A local connection is closed by the network layer.
