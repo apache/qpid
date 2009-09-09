@@ -39,6 +39,9 @@
 
 #include <vector>
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(XmlClientSessionTest)
 
 using namespace qpid::client;
@@ -51,9 +54,6 @@ using qpid::sys::Monitor;
 using std::string;
 using std::cout;
 using std::endl;
-
-namespace qpid {
-namespace tests {
 
 #if defined (QPID_MODULE_SUFFIX)
     Shlib shlib("../xml" QPID_MODULE_SUFFIX);
