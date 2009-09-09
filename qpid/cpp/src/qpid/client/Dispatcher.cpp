@@ -29,7 +29,14 @@
 #include "qpid/client/Message.h"
 #include "qpid/client/MessageImpl.h"
 
-#include <boost/state_saver.hpp>
+#include <boost/version.hpp>
+#if (BOOST_VERSION >= 104000)
+#  include <boost/serialization/state_saver.hpp>
+  using boost::serialization::state_saver;
+#else
+#  include <boost/state_saver.hpp>
+  using boost::state_saver;
+#endif /* BOOST_VERSION */
 
 using qpid::framing::FrameSet;
 using qpid::framing::MessageTransferBody;
@@ -65,7 +72,7 @@ void Dispatcher::run()
     Mutex::ScopedLock l(lock);
     if (running) 
         throw Exception("Dispatcher is already running.");
-    boost::state_saver<bool>  reset(running); // Reset to false on exit.
+    state_saver<bool>  reset(running); // Reset to false on exit.
     running = true;
     try {
         while (!queue->isClosed()) {
