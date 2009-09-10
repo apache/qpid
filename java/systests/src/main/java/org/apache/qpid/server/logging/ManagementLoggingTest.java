@@ -24,6 +24,7 @@ import junit.framework.AssertionFailedError;
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
+import java.io.File;
 
 /**
  * Management Console Test Suite
@@ -308,9 +309,8 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
                 // We expect the RMIConnector Server port to be 100 higher than
                 // the RMI Server Port
-                int mPort = getPort() + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT) + 100;
-                assertTrue("SSL Keystore entry expected(" + mPort + ").:" + getMessageString(log),
-                           getMessageString(log).endsWith(getConfigurationStringProperty("management.ssl.keyStorePath")));
+                assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
+                           getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getAbsolutePath()));
             }
             catch (AssertionFailedError afe)
             {

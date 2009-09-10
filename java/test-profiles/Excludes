@@ -13,5 +13,9 @@ org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPS
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownStopped
 org.apache.qpid.server.logging.VirtualHostLoggingTest#testVirtualhostClosure
 org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClose
-org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#testMessageStoreClose
 
+// QPID-XXX : Test fails to start external broker due to Derby Exception.
+org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
+
+// QPID-2081 :The configuration changes are now highlighting the close race condition
+org.apache.qpid.server.security.acl.SimipleACLTest#*

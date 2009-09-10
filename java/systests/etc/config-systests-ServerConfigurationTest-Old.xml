@@ -41,7 +41,7 @@
 <principal-database>passwordfile</principal-database>
 </jmx>
 </security>
-<virtualhosts>${conf}/virtualhosts-config-test.xml
+<virtualhosts>${conf}/virtualhosts-ServerConfigurationTest-New.xml
 <default>dev-only</default>
 <virtualhost>
 <name>dev-only</name>

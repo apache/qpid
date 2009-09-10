@@ -28,6 +28,7 @@ import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
 import java.util.List;
+import java.io.File;
 
 /**
  * The MessageStore test suite validates that the follow log messages as
@@ -56,9 +57,9 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         //We call super.setUp but this will not start the broker as that is
         //part of the test case.
 
-        // Load current configuration file to get the list of defined vhosts
-        Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-        List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+        // Load the default configuration file to get the list of defined vhosts
+        ServerConfiguration configuration = new ServerConfiguration(new File(_configFile.getParent() + "/config.xml"));
+        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         // Make them all persistent i.e. Use DerbyMessageStore and
         // test that it logs correctly.
@@ -97,8 +98,8 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         assertTrue("MST messages not logged", results.size() > 0);
 
         // Load VirtualHost list from file.
-        Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-        List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1002");
@@ -117,7 +118,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             // the virtualhost name, found above. AND
             // the index that the virtualhost is within the configuration.
             // we can retrive that from the vhosts list previously extracted.
-            String fullStoreName = configuration.getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+            String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -160,8 +161,8 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         assertTrue("MST messages not logged", results.size() > 0);
 
         // Load VirtualHost list from file.
-        Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-        List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1004");
@@ -186,7 +187,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             // the virtualhost name, found above. AND
             // the index that the virtualhost is within the configuration.
             // we can retrive that from the vhosts list previously extracted.
-            String fullStoreName = configuration.getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+            String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -227,8 +228,8 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         assertTrue("MST messages not logged", results.size() > 0);
 
         // Load VirtualHost list from file.
-        Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-        List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1006");
@@ -253,7 +254,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             // the virtualhost name, found above. AND
             // the index that the virtualhost is within the configuration.
             // we can retrive that from the vhosts list previously extracted.
-            String fullStoreName = configuration.getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+            String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -293,8 +294,8 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         assertTrue("MST messages not logged", results.size() > 0);
 
         // Load VirtualHost list from file.
-        Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-        List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1004 : Recovery Start :");
@@ -316,7 +317,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         // the virtualhost name, found above. AND
         // the index that the virtualhost is within the configuration.
         // we can retrive that from the vhosts list previously extracted.
-        String fullStoreName = configuration.getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+        String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
 
         // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
         String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -358,8 +359,8 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         assertTrue("MST messages not logged", results.size() > 0);
 
         // Load VirtualHost list from file.
-        Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-        List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+        ServerConfiguration configuration = new ServerConfiguration(_configFile);
+        List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
         //Validate each vhost logs a creation
         results = _monitor.findMatches("MST-1006 : Recovery Complete :");
@@ -381,7 +382,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
         // the virtualhost name, found above. AND
         // the index that the virtualhost is within the configuration.
         // we can retrive that from the vhosts list previously extracted.
-        String fullStoreName = configuration.getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+        String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
 
         // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
         String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
@@ -500,8 +501,8 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             assertTrue("MST messages not logged", results.size() > 0);
 
             // Load VirtualHost list from file.
-            Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-            List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+            ServerConfiguration configuration = new ServerConfiguration(_configFile);
+            List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
             //Validate each vhost logs a creation
             results = _monitor.findMatches("MST-1004 : Recovery Start : " + queueName);
@@ -542,7 +543,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             // the virtualhost name, found above. AND
             // the index that the virtualhost is within the configuration.
             // we can retrive that from the vhosts list previously extracted.
-            String fullStoreName = configuration.getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
+            String fullStoreName = configuration.getConfig().getString("virtualhosts.virtualhost(" + vhosts.indexOf(vhostName) + ")." + vhostName + ".store.class");
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);

@@ -57,26 +57,13 @@ public class SyncWaitDelayTest extends QpidTestCase
 
     public void setUp() throws Exception
     {
+
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.class", "org.apache.qpid.server.store.SlowMessageStore");
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.delays.commitTran.post", String.valueOf(POST_COMMIT_DELAY));
+        setConfigurationProperty("management.enabled", "false");
+
+        
         super.setUp();
-        stopBroker();
-        if (!_configFile.exists())
-        {
-            fail("Unable to test without config file:" + _configFile);
-        }
-
-        XMLConfiguration configuration = new XMLConfiguration(_configFile); 
-        configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.class", "org.apache.qpid.server.store.SlowMessageStore");
-        configuration.setProperty("virtualhosts.virtualhost." + VIRTUALHOST+".store.delays.commitTran.post", POST_COMMIT_DELAY);
-        configuration.setProperty("management.enabled", "false");
-
-        
-        File tmpFile = File.createTempFile("configFile", "test");
-        tmpFile.deleteOnExit();
-        configuration.save(tmpFile);
-        
-        _configFile = tmpFile;
-
-        startBroker(1);
 
         //Set the syncWrite timeout to be just larger than the delay on the commitTran.
         setSystemProperty("amqj.default_syncwrite_timeout", String.valueOf(SYNC_WRITE_TIMEOUT));

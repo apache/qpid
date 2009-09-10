@@ -40,6 +40,8 @@ public class ServerConfigurationFileTest extends QpidTestCase
         {
             fail("Unable to test without config file:" + _configFile);
         }
+
+        saveTestConfiguration();
         _serverConfig = new ServerConfiguration(_configFile);
     }
 
