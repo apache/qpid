@@ -24,17 +24,20 @@
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
     <connector>
-        <!-- Uncomment out this block and edit the keystorePath and keystorePassword
-             to enable SSL support
+        <!-- To enable SSL edit the keystorePath and keystorePassword
+	     and set enabled to true. 
+             To disasble Non-SSL port set sslOnly to true -->
         <ssl>
-            <enabled>true</enabled>
-            <sslOnly>true</sslOnly>
+            <enabled>false</enabled>
+            <sslOnly>false</sslOnly>
             <keystorePath>/path/to/keystore.ks</keystorePath>
             <keystorePassword>keystorepass</keystorePassword>
-        </ssl>-->
+        </ssl>
         <qpidnio>false</qpidnio>
         <protectio>
             <enabled>false</enabled>
+            <readBufferLimitSize>262144</readBufferLimitSize>
+            <writeBufferLimitSize>262144</writeBufferLimitSize>	    
         </protectio>
         <transport>nio</transport>
         <port>5672</port>
@@ -59,6 +62,7 @@
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
         <enableJMSXUserID>false</enableJMSXUserID>
+        <locale>en_US</locale>	
     </advanced>
 
     <security>
@@ -89,40 +93,143 @@
     </security>
 
     <virtualhosts>
-        <directory>${conf}/virtualhosts</directory>
 
+        <default>test</default>
         <virtualhost>
             <name>localhost</name>
             <localhost>
                 <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore
+                    </class>
                 </store>
 
                 <housekeeping>
                     <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
                 </housekeeping>
 
+                <exchanges>
+                    <exchange>
+                        <type>direct</type>
+                        <name>test.direct</name>
+                        <durable>true</durable>
+                    </exchange>
+                    <exchange>
+                        <type>topic</type>
+                        <name>test.topic</name>
+                    </exchange>
+                </exchanges>
+                <queues>
+                    <exchange>amq.direct</exchange>
+                    <maximumQueueDepth>4235264</maximumQueueDepth>
+                    <!-- 4Mb -->
+                    <maximumMessageSize>2117632</maximumMessageSize>
+                    <!-- 2Mb -->
+                    <maximumMessageAge>600000</maximumMessageAge>
+                    <!-- 10 mins -->
+                    <maximumMessageCount>50</maximumMessageCount>
+                    <!-- 50 messages -->
+
+                    <queue>
+                        <name>queue</name>
+                    </queue>
+                    <queue>
+                        <name>ping</name>
+                    </queue>
+                    <queue>
+                        <name>test-queue</name>
+                        <test-queue>
+                            <exchange>test.direct</exchange>
+                            <durable>true</durable>
+                        </test-queue>
+                    </queue>
+                    <queue>
+                        <name>test-ping</name>
+                        <test-ping>
+                            <exchange>test.direct</exchange>
+                        </test-ping>
+                    </queue>
+
+                </queues>
             </localhost>
         </virtualhost>
+
 
         <virtualhost>
             <name>development</name>
             <development>
                 <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore
+                    </class>
                 </store>
+
+                <queues>
+                    <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                    <maximumMessageCount>50</maximumMessageCount>
+                    <queue>
+                        <name>queue</name>
+                        <queue>
+                            <exchange>amq.direct</exchange>
+                            <maximumQueueDepth>4235264</maximumQueueDepth>
+                            <!-- 4Mb -->
+                            <maximumMessageSize>2117632</maximumMessageSize>
+                            <!-- 2Mb -->
+                            <maximumMessageAge>600000</maximumMessageAge>
+                            <!-- 10 mins -->
+                        </queue>
+                    </queue>
+                    <queue>
+                        <name>ping</name>
+                        <ping>
+                            <exchange>amq.direct</exchange>
+                            <maximumQueueDepth>4235264</maximumQueueDepth>
+                            <!-- 4Mb -->
+                            <maximumMessageSize>2117632</maximumMessageSize>
+                            <!-- 2Mb -->
+                            <maximumMessageAge>600000</maximumMessageAge>
+                            <!-- 10 mins -->
+                        </ping>
+                    </queue>
+                </queues>
             </development>
         </virtualhost>
-
         <virtualhost>
             <name>test</name>
             <test>
                 <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore
+                    </class>
                 </store>
+
+                <queues>
+                    <minimumAlertRepeatGap>30000</minimumAlertRepeatGap>
+                    <maximumMessageCount>50</maximumMessageCount>
+                    <queue>
+                        <name>queue</name>
+                        <queue>
+                            <exchange>amq.direct</exchange>
+                            <maximumQueueDepth>4235264</maximumQueueDepth>
+                            <!-- 4Mb -->
+                            <maximumMessageSize>2117632</maximumMessageSize>
+                            <!-- 2Mb -->
+                            <maximumMessageAge>600000</maximumMessageAge>
+                            <!-- 10 mins -->
+                        </queue>
+                    </queue>
+                    <queue>
+                        <name>ping</name>
+                        <ping>
+                            <exchange>amq.direct</exchange>
+                            <maximumQueueDepth>4235264</maximumQueueDepth>
+                            <!-- 4Mb -->
+                            <maximumMessageSize>2117632</maximumMessageSize>
+                            <!-- 2Mb -->
+                            <maximumMessageAge>600000</maximumMessageAge>
+                            <!-- 10 mins -->
+                        </ping>
+                    </queue>
+                </queues>
             </test>
         </virtualhost>
-
     </virtualhosts>
     <heartbeat>
         <delay>0</delay>
@@ -132,7 +239,8 @@
         <auto_register>true</auto_register>
     </queue>
 
-    <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
+    <status-updates>ON</status-updates>
+
 </broker>
 
 

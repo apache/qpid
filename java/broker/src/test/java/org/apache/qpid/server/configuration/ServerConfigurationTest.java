@@ -54,7 +54,7 @@ public class ServerConfigurationTest extends TestCase
 
         _config = new XMLConfiguration();
     }
-    
+
     @Override
     public void tearDown() throws Exception
     {
@@ -727,7 +727,7 @@ public class ServerConfigurationTest extends TestCase
         assertEquals(true, config.getQpidNIO()); // From the second file, not
                                                  // present in the first
     }
-    
+
     public void testVariableInterpolation() throws Exception
     {
         File mainFile = File.createTempFile(getClass().getName(), null);
@@ -742,7 +742,7 @@ public class ServerConfigurationTest extends TestCase
         out.close();
 
         ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        assertEquals("Did not get correct interpolated value", 
+        assertEquals("Did not get correct interpolated value",
                 "foo", config.getManagementKeyStorePath());
     }
 
@@ -783,7 +783,7 @@ public class ServerConfigurationTest extends TestCase
         out.write("\t</virtualhosts>\n");
         out.write("</broker>\n");
         out.close();
-        
+
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
         ApplicationRegistry.initialise(reg, 1);
@@ -795,15 +795,15 @@ public class ServerConfigurationTest extends TestCase
 
         TestIoSession iosession = new TestIoSession();
         iosession.setAddress("127.0.0.1");
-        
+
         AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
-        
+
         iosession.setAddress("127.1.2.3");
         session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
         assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
-    
+
     public void testCombinedConfigurationFirewall() throws Exception
     {
         // Write out config
@@ -870,7 +870,7 @@ public class ServerConfigurationTest extends TestCase
 
         TestIoSession iosession = new TestIoSession();
         iosession.setAddress("127.0.0.1");
-        
+
         AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
@@ -947,22 +947,22 @@ public class ServerConfigurationTest extends TestCase
         fileBRandom.setLength(0);
         fileBRandom.seek(0);
         fileBRandom.close();
-        
+
         out = new FileWriter(fileB);
         out.write("<firewall>\n");
         out.write("\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
         out.write("</firewall>\n");
         out.close();
-        
+
         reg.getConfiguration().reparseConfigFile();
-        
+
         assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
-        
+
         fileBRandom = new RandomAccessFile(fileB, "rw");
         fileBRandom.setLength(0);
         fileBRandom.seek(0);
         fileBRandom.close();
-        
+
         out = new FileWriter(fileB);
         out.write("<firewall>\n");
         out.write("\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
@@ -970,17 +970,17 @@ public class ServerConfigurationTest extends TestCase
         out.close();
         
         reg.getConfiguration().reparseConfigFile();
-        
+
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
 
     public void testnewParserOutputVsOldParserOutput() throws ConfigurationException
     {
         String configDir = System.getProperty("QPID_HOME")+"/etc";
-        
-        XMLConfiguration oldConfig = new XMLConfiguration(configDir +"/sample-parsed-config.xml");
-        Configuration newConfig = new ServerConfiguration(new File(configDir+"/persistent_config-config-test.xml")).getConfig();
-        
+
+        XMLConfiguration oldConfig = new XMLConfiguration(configDir +"/config-systests-ServerConfigurationTest-Old.xml");
+        Configuration newConfig = new ServerConfiguration(new File(configDir+"/config-systests-ServerConfigurationTest-New.xml")).getConfig();
+
         Iterator xmlKeys = oldConfig.getKeys();
         while (xmlKeys.hasNext())
         {
@@ -988,6 +988,21 @@ public class ServerConfigurationTest extends TestCase
             assertEquals("Incorrect value for "+key, oldConfig.getProperty(key), newConfig.getProperty(key));
         }
     }
-    
-    
+
+
+    public void testNoVirtualhostXMLFile() throws Exception
+    {
+        int REGISTRY=1;
+
+        File configFile = new File(System.getProperty("QPID_HOME")+"/etc/config.xml");
+        assertTrue(configFile.exists());
+
+        ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(configFile), REGISTRY);
+
+        VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance(REGISTRY).getVirtualHostRegistry();
+
+        assertEquals("Incorrect virtualhost count", 3 , virtualHostRegistry.getVirtualHosts().size());
+    }
+
+
 }
