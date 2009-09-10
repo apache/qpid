@@ -18,4 +18,4 @@ org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#testMessageStoreClo
 org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
 
 // QPID-2081 :The configuration changes are now highlighting the close race condition
-org.apache.qpid.server.security.acl.SimipleACLTest#*
+org.apache.qpid.server.security.acl.SimpleACLTest#*
