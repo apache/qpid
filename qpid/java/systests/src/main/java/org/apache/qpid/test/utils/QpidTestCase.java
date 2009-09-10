@@ -21,6 +21,7 @@ import junit.framework.TestCase;
 import junit.framework.TestResult;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -30,6 +31,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
+import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +75,7 @@ public class QpidTestCase extends TestCase
     protected long RECEIVE_TIMEOUT = 1000l;
 
     private Map<String, String> _setProperties = new HashMap<String, String>();
+    private XMLConfiguration _testConfiguration = new XMLConfiguration();
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -183,8 +186,7 @@ public class QpidTestCase extends TestCase
     public static final String QUEUE = "queue";
     public static final String TOPIC = "topic";
     /** Map to hold test defined environment properties */
-    private Map<String,String> _env;
-
+    private Map<String, String> _env;
 
     public QpidTestCase(String name)
     {
@@ -368,7 +370,9 @@ public class QpidTestCase extends TestCase
 
     /**
      * Return the management portin use by the broker on this main port
+     *
      * @param mainPort the broker's main port.
+     *
      * @return the management port that corresponds to the broker on the given port
      */
     protected int getManagementPort(int mainPort)
@@ -415,6 +419,9 @@ public class QpidTestCase extends TestCase
     {
         port = getPort(port);
 
+        // Save any configuratio changes that have been made
+        saveTestConfiguration();
+
         Process process = null;
         if (_broker.equals(VM))
         {
@@ -444,9 +451,28 @@ public class QpidTestCase extends TestCase
             // Add all the environment settings the test requested
             if (!_env.isEmpty())
             {
-                for(Map.Entry<String,String> entry : _env.entrySet())
+                for (Map.Entry<String, String> entry : _env.entrySet())
                 {
-                    env.put(entry.getKey() ,entry.getValue());
+                    env.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            String QPID_OPTS = " ";
+            // Add all the specified system properties to QPID_OPTS
+            if (!_setProperties.isEmpty())
+            {
+                for (String key : _setProperties.keySet())
+                {
+                    QPID_OPTS += "-D" + key + "=" + System.getProperty(key) + " ";
+                }
+
+                if (env.containsKey("QPID_OPTS"))
+                {
+                    env.put("QPID_OPTS", env.get("QPID_OPTS") + QPID_OPTS);
+                }
+                else
+                {
+                    env.put("QPID_OPTS", QPID_OPTS);
                 }
             }
 
@@ -482,6 +508,26 @@ public class QpidTestCase extends TestCase
         }
 
         _brokers.put(port, process);
+    }
+
+    public String getTestConfigFile()
+    {
+        return _output + "/" + getTestQueueName() + ".xml";
+    }
+
+    protected void saveTestConfiguration() throws ConfigurationException
+    {
+        String testConfig = getTestConfigFile();
+        //Specifiy the test configuration
+        setSystemProperty("test.config", testConfig);
+
+        // This is a work
+        if (_testConfiguration.isEmpty())
+        {
+            _testConfiguration.addProperty("test", getTestQueueName());
+        }
+
+        _testConfiguration.save(getTestConfigFile());
     }
 
     public void cleanBroker()
@@ -565,18 +611,12 @@ public class QpidTestCase extends TestCase
             storeClass = bdb;
         }
 
-        // First we munge the config file and, if we're in a VM, set up an additional logfile
-        XMLConfiguration configuration = new XMLConfiguration(_configFile);
-        configuration.setProperty("virtualhosts.virtualhost." + virtualhost +
-                                  ".store.class", storeClass.getName());
-        configuration.setProperty("virtualhosts.virtualhost." + virtualhost +
-                                  ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
-                                  "${work}/" + virtualhost);
 
-        File tmpFile = File.createTempFile("configFile", "test");
-        tmpFile.deleteOnExit();
-        configuration.save(tmpFile);
-        _configFile = tmpFile;
+        _testConfiguration.setProperty("virtualhosts.virtualhost." + virtualhost +
+                                  ".store.class", storeClass.getName());
+        _testConfiguration.setProperty("virtualhosts.virtualhost." + virtualhost +
+                                  ".store." + DerbyMessageStore.ENVIRONMENT_PATH_PROPERTY,
+                                  "${QPID_WORK}/" + virtualhost);
     }
 
     /**
@@ -591,6 +631,10 @@ public class QpidTestCase extends TestCase
      */
     protected String getConfigurationStringProperty(String property) throws ConfigurationException
     {
+        // Call save Configuration to be sure we have saved the test specific
+        // file. As the optional status
+        saveTestConfiguration();
+
         ServerConfiguration configuration = new ServerConfiguration(_configFile);
         return configuration.getConfig().getString(property);
     }
@@ -613,48 +657,9 @@ public class QpidTestCase extends TestCase
     protected void setConfigurationProperty(String property, String value)
             throws ConfigurationException, IOException
     {
-        XMLConfiguration configuration = new XMLConfiguration(_configFile);
-
-        // If we are modifying a virtualhost value then we need to do so in
-        // the virtualhost.xml file as these values overwrite the values in
-        // the main config.xml file
-        if (property.startsWith("virtualhosts"))
-        {
-            // So locate the virtualhost.xml file and use the ServerConfiguration
-            // flatConfig method to get the interpolated value.
-            String vhostConfigFile = ServerConfiguration.
-                    flatConfig(_configFile).getString("virtualhosts");
-
-            // Load the vhostConfigFile
-            XMLConfiguration vhostConfiguration = new XMLConfiguration(vhostConfigFile);
-
-            // Set the value specified in to the vhostConfig.
-            // Remembering that property will be 'virtualhosts.virtulhost....'
-            // so we need to take off the 'virtualhosts.' from the start.
-            vhostConfiguration.setProperty(property.substring(property.indexOf(".") + 1), value);
-
-            // Write out the new virtualhost config file
-            File tmpFile = File.createTempFile("virtualhost-configFile", ".xml");
-            tmpFile.deleteOnExit();
-            vhostConfiguration.save(tmpFile);
-
-            // Change the property and value to be the new virtualhosts file
-            // so that then update the value in the main config file.
-            property = "virtualhosts";
-            value = tmpFile.getAbsolutePath();
-        }
-
-        configuration.setProperty(property, value);
-
-        // Write the new server config file
-        File tmpFile = File.createTempFile("configFile", ".xml");
-        tmpFile.deleteOnExit();
-        configuration.save(tmpFile);
-
-        _logger.info("Qpid Test Case now using configuration File:"
-                     + tmpFile.getAbsolutePath());
-
-        _configFile = tmpFile;
+        //Write the value in to this configuration file which will override the
+        // defaults.
+        _testConfiguration.setProperty(property, value);
     }
 
     /**
@@ -695,13 +700,12 @@ public class QpidTestCase extends TestCase
      * Add an environtmen variable for the external broker environment
      *
      * @param property the property to set
-     * @param value the value to set it to
+     * @param value    the value to set it to
      */
     protected void setBrokerEnvironment(String property, String value)
     {
-        _env.put(property,value);
+        _env.put(property, value);
     }
-
 
     /**
      * Check whether the broker is an 0.8
@@ -720,7 +724,7 @@ public class QpidTestCase extends TestCase
 
     protected boolean isJavaBroker()
     {
-        return _brokerLanguage.equals("java");
+        return _brokerLanguage.equals("java") || _broker.equals("vm");
     }
 
     protected boolean isCppBroker()
@@ -831,7 +835,7 @@ public class QpidTestCase extends TestCase
      *
      * @throws Exception if there is an error getting the connection
      */
-    public Connection getConnection(String username, String password) throws Exception
+    public Connection getConnection(String username, String password) throws JMSException, NamingException
     {
         _logger.info("get Connection");
         Connection con = getConnectionFactory().createConnection(username, password);
@@ -840,7 +844,7 @@ public class QpidTestCase extends TestCase
         return con;
     }
 
-    public Connection getConnection(String username, String password, String id) throws Exception
+    public Connection getConnection(String username, String password, String id) throws JMSException, URLSyntaxException, AMQException, NamingException
     {
         _logger.info("get Connection");
         Connection con;
@@ -860,6 +864,7 @@ public class QpidTestCase extends TestCase
     /**
      * Return a uniqueName for this test.
      * In this case it returns a queue Named by the TestCase and TestName
+     *
      * @return String name for a queue
      */
     protected String getTestQueueName()
