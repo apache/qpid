@@ -34,7 +34,7 @@ namespace {
 boost::function<void()> errorFn;
 
 void cmanCallbackFn(cman_handle_t handle, void */*privdata*/, int reason, int arg) {
-    if (reason == CMAN_REASON_STATECHANGE && arg == 0) {
+    if (reason == CMAN_REASON_STATECHANGE && !cman_is_quorate(handle)) {
         QPID_LOG(critical, "Lost contact with cluster quorum.");
         if (errorFn) errorFn();
         cman_stop_notification(handle);
