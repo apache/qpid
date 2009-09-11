@@ -425,6 +425,8 @@ public class QpidTestCase extends TestCase
         Process process = null;
         if (_broker.equals(VM))
         {
+            setConfigurationProperty("management.jmxport", String.valueOf(getManagementPort(port)));
+            saveTestConfiguration();
             // create an in_VM broker
             ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(_configFile), port);
             TransportConnection.createVMBroker(port);
