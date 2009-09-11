@@ -208,9 +208,9 @@ class ACLTests(TestBase010):
    # ACL queue tests
    #=====================================
            
-    def test_queue_acl(self):
+    def test_queue_acl_deny(self):
         """
-        Test various modes for queue acl
+        Test cases for queue acl in allow mode
         """
         aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q1 durable=true passive=true\n')
@@ -239,6 +239,12 @@ class ACLTests(TestBase010):
             self.assertEqual(530,e.args[0].error_code) 
             session = self.get_session('bob','bob')
         
+        try:
+            session.queue_declare(queue="q2", durable='true')            
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request for q2 with any parameter other than exclusive");
+
         try:
             session.queue_declare(queue="q3", exclusive='true')
             session.queue_declare(queue="q4", durable='true')
@@ -283,9 +289,12 @@ class ACLTests(TestBase010):
    # ACL exchange tests
    #=====================================
    
-    def test_exchange_acl(self):
+    def test_exchange_acl_deny(self):
+        session = self.get_session('bob','bob')        
+        session.queue_declare(queue="baz")
+
         """
-        Test various modes for exchange acl
+        Test cases for exchange acl in allow mode
         """
         aclf = ACLFile()
         aclf.write('acl deny bob@QPID create exchange name=testEx durable=true passive=true\n')
@@ -293,38 +302,47 @@ class ACLTests(TestBase010):
         aclf.write('acl deny bob@QPID access exchange name=myEx\n')
         aclf.write('acl deny bob@QPID bind exchange name=myEx queuename=q1 routingkey=rk1\n')
         aclf.write('acl deny bob@QPID unbind exchange name=myEx queuename=q1 routingkey=rk1\n')
-        aclf.write('acl deny bob@QPID delete exchange name=myEx\n')                
+        aclf.write('acl deny bob@QPID delete exchange name=myEx\n')
         aclf.write('acl allow all all')
         aclf.close()        
         
         self.reload_acl()       
         
         session = self.get_session('bob','bob')
-        
+        session.queue_declare(queue='q1')
+        session.queue_declare(queue='q2')
+        session.exchange_declare(exchange='myEx', type='direct')
+
         try:
-            session.exchange_declare(exchange='testEx', durable='true', passive='true')
+            session.exchange_declare(exchange='testEx', durable=True, passive=True)
             self.fail("ACL should deny exchange create request with name=testEx durable=true passive=true");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
             session = self.get_session('bob','bob')
        
         try:
+            session.exchange_declare(exchange='testEx', type='direct', durable=True, passive=False)
+        except qpid.session.SessionException, e:
+            print e
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow exchange create request for testEx with any parameter other than durable=true and passive=true");
+                        
+        try:
             session.exchange_declare(exchange='ex1', type='direct')
             self.fail("ACL should deny exchange create request with name=ex1 type=direct");
-        except qpid.session.SessionException, e:
+        except qpid.session.SessionException, e:    
             self.assertEqual(530,e.args[0].error_code) 
             session = self.get_session('bob','bob')
         
         try:
             session.exchange_declare(exchange='myXml', type='direct')
-            session.queue_declare(queue='q1')
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
                 self.fail("ACL should allow exchange create request for myXml with any parameter");
 
         try:
             session.exchange_query(name='myEx')
-            self.fail("ACL should deny queue query request for q3");
+            self.fail("ACL should deny exchange query request for myEx");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code)
             session = self.get_session('bob','bob')
@@ -337,10 +355,18 @@ class ACLTests(TestBase010):
             session = self.get_session('bob','bob')
 
         try:
-            session.exchange_bind(exchange='myXml', queue='q1', binding_key='x')
+            session.exchange_bind(exchange='myEx', queue='q1', binding_key='x')
+        except qpid.session.SessionException, e:
+            print e
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow exchange bind request for exchange='myEx', queue='q1', binding_key='x'");
+
+        try:
+            session.exchange_bind(exchange='myEx', queue='q2', binding_key='rk1')
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
-                self.fail("ACL should allow exchange bind request for exchange='myXml', queue='q1', binding_key='x'");
+                self.fail("ACL should allow exchange bind request for exchange='myEx', queue='q2', binding_key='rk1'");
+
         try:
             session.exchange_unbind(exchange='myEx', queue='q1', binding_key='rk1')
             self.fail("ACL should deny exchange unbind request with exchange='myEx' queuename='q1' bindingkey='rk1'");
@@ -349,10 +375,16 @@ class ACLTests(TestBase010):
             session = self.get_session('bob','bob')
 
         try:
-            session.exchange_unbind(exchange='myXml', queue='q1', binding_key='x')
+            session.exchange_unbind(exchange='myEx', queue='q1', binding_key='x')
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
-                self.fail("ACL should allow exchange unbind request for exchange='myXml', queue='q1', binding_key='x'");
+                self.fail("ACL should allow exchange unbind request for exchange='myEx', queue='q1', binding_key='x'");
+
+        try:
+            session.exchange_unbind(exchange='myEx', queue='q2', binding_key='rk1')
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow exchange unbind request for exchange='myEx', queue='q2', binding_key='rk1'");
                    
         try:
             session.exchange_delete(exchange='myEx')
@@ -366,8 +398,66 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
                 self.fail("ACL should allow exchange delete request for myXml");
-                        
+        
+
+    def test_exchange_acl_allow(self):
+        session = self.get_session('bob','bob')
+        session.queue_declare(queue='bar')
+
+        """
+        Test cases for exchange acl in deny mode
+        """
+        aclf = ACLFile()
+        aclf.write('acl allow bob@QPID bind exchange name=amq.topic queuename=bar routingkey=foo.*\n') 
+        aclf.write('acl allow bob@QPID unbind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
+        aclf.write('acl allow guest@QPID all all\n') 
+        aclf.write('acl deny all all')
+        aclf.close()        
+        
+        self.reload_acl()       
+        
+        session = self.get_session('bob','bob')
            
+        try:
+            session.exchange_bind(exchange='amq.topic', queue='bar', binding_key='foo.bar')
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow exchange bind request for exchange='amq.topic', queue='bar', binding_key='foor.bar'");
+
+        try:
+            session.exchange_bind(exchange='amq.topic', queue='baz', binding_key='foo.bar')
+            self.fail("ACL should deny exchange bind request for exchange='amq.topic', queue='baz', binding_key='foo.bar'");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_bind(exchange='amq.topic', queue='bar', binding_key='fooz.bar')
+            self.fail("ACL should deny exchange bind request for exchange='amq.topic', queue='bar', binding_key='fooz.bar'");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+
+        try:
+            session.exchange_unbind(exchange='amq.topic', queue='bar', binding_key='foo.bar')
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow exchange unbind request for exchange='amq.topic', queue='bar', binding_key='foor.bar'");
+        try:
+            session.exchange_unbind(exchange='amq.topic', queue='baz', binding_key='foo.bar')
+            self.fail("ACL should deny exchange unbind request for exchange='amq.topic', queue='baz', binding_key='foo.bar'");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
+        try:
+            session.exchange_unbind(exchange='amq.topic', queue='bar', binding_key='fooz.bar')
+            self.fail("ACL should deny exchange unbind request for exchange='amq.topic', queue='bar', binding_key='fooz.bar'");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+            session = self.get_session('bob','bob')
+
    #=====================================
    # ACL consume tests
    #=====================================
@@ -434,12 +524,6 @@ class ACLTests(TestBase010):
         self.reload_acl()       
         
         session = self.get_session('bob','bob')
-        
-        try:
-            session.exchange_declare(exchange='myEx', type='topic')
-        except qpid.session.SessionException, e:
-            if (530 == e.args[0].error_code):
-                self.fail("ACL should allow exchange create request for myEx with any parameter");
             
         props = session.delivery_properties(routing_key="rk1")
                
