@@ -16,5 +16,7 @@ org.apache.qpid.client.SessionCreateTest#*
 
 org.apache.qpid.test.client.RollbackOrderTest#*
 
-// MALT requries an external broker so exclude it from the InVM test runs
-org.apache.qpid.management.jmx.ManagementActorLoggingTest
+// QPID-2097 exclude it from the InVM test runs until InVM JMX Interface is reliable
+org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
+org.apache.qpid.server.queue.ModelTest#*
+
