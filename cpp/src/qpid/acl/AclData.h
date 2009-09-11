@@ -22,7 +22,7 @@
 
 #include "qpid/broker/AclModule.h"
 #include <vector>
-
+#include <sstream>
 
 namespace qpid {
 namespace acl {
@@ -45,6 +45,16 @@ public:
 	  
 	  
 	  rule (propertyMap& p):log(false),logOnly(false),props(p) {};
+
+	  std::string toString () const {
+	  	std::ostringstream ruleStr;
+	  	ruleStr << "[log=" << log << ", logOnly=" << logOnly << " props{";
+	  	for (propertyMapItr pMItr = props.begin(); pMItr != props.end(); pMItr++) {
+	  		ruleStr << " " << AclHelper::getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
+	  	}
+	  	ruleStr << " }]";
+	  	return ruleStr.str();
+	  }
    };
    typedef  std::vector<rule> ruleSet;
    typedef  ruleSet::const_iterator ruleSetItr;

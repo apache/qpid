@@ -26,7 +26,7 @@
 #include <map>
 #include <set>
 #include <string>
-
+#include <sstream>
 
 namespace qpid {
 
@@ -179,6 +179,8 @@ class AclHelper {
     typedef std::map<ObjectType, actionMapPtr> objectMap;
     typedef objectMap::const_iterator omCitr;
     typedef boost::shared_ptr<objectMap> objectMapPtr;
+    typedef std::map<Property, std::string> propMap;
+    typedef propMap::const_iterator propMapItr;
 
     // This map contains the legal combinations of object/action/properties found in an ACL file
     static void loadValidationMap(objectMapPtr& map) {
@@ -247,6 +249,19 @@ class AclHelper {
         a4->insert(actionPair(ACT_ACCESS, p5));
 
         map->insert(objectPair(OBJ_METHOD, a4));
+    }
+
+    static std::string propertyMapToString(const std::map<Property, std::string>* params) {
+    	std::ostringstream ss;
+	ss << "{";
+	if (params)
+	{
+		for (propMapItr pMItr = params->begin(); pMItr != params->end(); pMItr++) {
+			ss << " " << getPropertyStr((Property) pMItr-> first) << "=" << pMItr->second;
+		}
+	}
+	ss << " }";
+	return ss.str();
     }
 };
 
