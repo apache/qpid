@@ -828,8 +828,8 @@ QPID_AUTO_TEST_CASE(testFlowToDiskMsgProperties){
     fanout1.route(dmsg3, "", 0);
     msg3->releaseContent();
 
-    BOOST_CHECK_EQUAL(3, queue1->getMessageCount());
-    BOOST_CHECK_EQUAL(3, queue2->getMessageCount());
+    BOOST_CHECK_EQUAL(3u, queue1->getMessageCount());
+    BOOST_CHECK_EQUAL(3u, queue2->getMessageCount());
     BOOST_CHECK_EQUAL(msg1->isContentReleased(), false);
     BOOST_CHECK_EQUAL(msg2->isContentReleased(), true);
     BOOST_CHECK_EQUAL(msg3->isContentReleased(), true);
