@@ -514,7 +514,8 @@ public class QpidTestCase extends TestCase
 
     public String getTestConfigFile()
     {
-        return _output + "/" + getTestQueueName() + ".xml";
+        String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
+        return path + "/" + getTestQueueName() + ".xml";
     }
 
     protected void saveTestConfiguration() throws ConfigurationException
