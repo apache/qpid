@@ -310,7 +310,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
                 // We expect the RMIConnector Server port to be 100 higher than
                 // the RMI Server Port
                 assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
-                           getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getAbsolutePath()));
+                           getMessageString(log).endsWith(new File(getConfigurationStringProperty("management.ssl.keyStorePath")).getName()));
             }
             catch (AssertionFailedError afe)
             {
