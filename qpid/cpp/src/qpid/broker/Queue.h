@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -156,8 +156,8 @@ namespace qpid {
             typedef std::vector<shared_ptr> vector;
 
             QPID_BROKER_EXTERN Queue(const string& name,
-                                     bool autodelete = false, 
-                                     MessageStore* const store = 0, 
+                                     bool autodelete = false,
+                                     MessageStore* const store = 0,
                                      const OwnershipToken* const owner = 0,
                                      management::Manageable* parent = 0,
                                      Broker* broker = 0);
@@ -213,11 +213,11 @@ namespace qpid {
                                             bool exclusive = false);
             QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
-            uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages 
+            uint32_t purge(const uint32_t purge_request = 0); //defaults to all messages
             QPID_BROKER_EXTERN void purgeExpired();
 
             //move qty # of messages to destination Queue destq
-            uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
+            uint32_t move(const Queue::shared_ptr destq, uint32_t qty);
 
             QPID_BROKER_EXTERN uint32_t getMessageCount() const;
             QPID_BROKER_EXTERN uint32_t getConsumerCount() const;
@@ -254,8 +254,8 @@ namespace qpid {
              * Inform queue of messages that were enqueued, have since
              * been acquired but not yet accepted or released (and
              * thus are still logically on the queue) - used in
-             * clustered broker.  
-             */ 
+             * clustered broker.
+             */
             void enqueued(const QueuedMessage& msg);
 
             /**
@@ -266,9 +266,9 @@ namespace qpid {
              * accepted it).
              */
             bool isEnqueued(const QueuedMessage& msg);
-            
+
             /**
-             * Gets the next available message 
+             * Gets the next available message
              */
             QPID_BROKER_EXTERN QueuedMessage get();
 
@@ -315,8 +315,6 @@ namespace qpid {
                 bindings.eachBinding(f);
             }
 
-            bool releaseMessageContent(const QueuedMessage&);
-
             void popMsg(QueuedMessage& qmsg);
 
             /** Set the position sequence number  for the next message on the queue.
@@ -340,7 +338,7 @@ namespace qpid {
              * queues. It is used for dequeueing messages in response
              * to an enqueue while avoid holding lock over call to
              * store.
-             * 
+             *
              * Assumes messageLock is held - true for curent use case
              * (QueuePolicy::tryEnqueue()) but rather nasty as this is a public
              * method

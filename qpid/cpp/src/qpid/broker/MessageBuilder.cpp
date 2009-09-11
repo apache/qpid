@@ -35,7 +35,6 @@ namespace
     std::string type_str(uint8_t type);
     const std::string QPID_MANAGEMENT("qpid.management");
 }
-
 MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThreshold) :
     state(DORMANT), store(_store), stagingThreshold(_stagingThreshold), staging(false) {}
 
@@ -80,7 +79,7 @@ void MessageBuilder::handle(AMQFrame& frame)
             && !NullMessageStore::isNullStore(store)
             && message->getExchangeName() != QPID_MANAGEMENT /* don't stage mgnt messages */)
         {
-            message->releaseContent(store);
+            message->releaseContent(true);
             staging = true;
         }
     }
@@ -96,6 +95,7 @@ void MessageBuilder::end()
 void MessageBuilder::start(const SequenceNumber& id)
 {
     message = intrusive_ptr<Message>(new Message(id));
+    message->setStore(store);
     state = METHOD;
     staging = false;
 }

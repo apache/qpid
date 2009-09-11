@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,7 +35,7 @@ namespace qpid {
 namespace broker {
 
 RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, LinkRegistry& _links,
-                                         DtxManager& _dtxMgr, uint64_t _stagingThreshold) 
+                                         DtxManager& _dtxMgr, uint64_t _stagingThreshold)
     : queues(_queues), exchanges(_exchanges), links(_links), dtxMgr(_dtxMgr), stagingThreshold(_stagingThreshold) {}
 
 RecoveryManagerImpl::~RecoveryManagerImpl() {}
@@ -45,7 +45,7 @@ class RecoverableMessageImpl : public RecoverableMessage
     intrusive_ptr<Message> msg;
     const uint64_t stagingThreshold;
 public:
-    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold); 
+    RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold);
     ~RecoverableMessageImpl() {};
     void setPersistenceId(uint64_t id);
     bool loadContent(uint64_t available);
@@ -61,7 +61,7 @@ class RecoverableQueueImpl : public RecoverableQueue
 public:
     RecoverableQueueImpl(const boost::shared_ptr<Queue>& _queue) : queue(_queue) {}
     ~RecoverableQueueImpl() {};
-    void setPersistenceId(uint64_t id);    
+    void setPersistenceId(uint64_t id);
 	uint64_t getPersistenceId() const;
     const std::string& getName() const;
     void setExternalQueueStore(ExternalQueueStore* inst);
@@ -129,10 +129,10 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
 {
     boost::intrusive_ptr<Message> message(new Message());
     message->decodeHeader(buffer);
-    return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));    
+    return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));
 }
 
-RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
+RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid,
                                                                            std::auto_ptr<TPCTransactionContext> txn)
 {
     DtxBuffer::shared_ptr buffer(new DtxBuffer());
@@ -159,7 +159,7 @@ void RecoveryManagerImpl::recoveryComplete()
     queues.eachQueue(boost::bind(&Queue::recoveryComplete, _1));
 }
 
-RecoverableMessageImpl:: RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) : msg(_msg), stagingThreshold(_stagingThreshold) 
+RecoverableMessageImpl:: RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) : msg(_msg), stagingThreshold(_stagingThreshold)
 {
     if (!msg->isPersistent()) {
         msg->forcePersistent(); // set so that message will get dequeued from store.
@@ -195,7 +195,7 @@ void RecoverableQueueImpl::setPersistenceId(uint64_t id)
 {
     queue->setPersistenceId(id);
 }
-	
+
 uint64_t RecoverableQueueImpl::getPersistenceId() const
 {
 	return queue->getPersistenceId();
@@ -205,7 +205,7 @@ const std::string& RecoverableQueueImpl::getName() const
 {
     return queue->getName();
 }
-    
+
 void RecoverableQueueImpl::setExternalQueueStore(ExternalQueueStore* inst)
 {
     queue->setExternalQueueStore(inst);
