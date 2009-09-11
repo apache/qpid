@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,6 +29,7 @@
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/CopyOnWriteArray.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Exchange.h"
@@ -78,12 +79,14 @@ protected:
     private:
         Exchange* parent;
     };
-           
+
+    void blockContentReleaseCheck(Deliverable& msg, qpid::sys::CopyOnWriteArray<Binding::shared_ptr>::ConstPtr b);
+    void doRoute(Deliverable& msg, qpid::sys::CopyOnWriteArray<Binding::shared_ptr>::ConstPtr b);
     void routeIVE();
-           
+
 
     struct MatchQueue {
-        const Queue::shared_ptr queue;        
+        const Queue::shared_ptr queue;
         MatchQueue(Queue::shared_ptr q);
         bool operator()(Exchange::Binding::shared_ptr b);
     };
@@ -143,7 +146,7 @@ public:
     virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
     QPID_BROKER_EXTERN virtual void setProperties(const boost::intrusive_ptr<Message>&);
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
-    
+
     //PersistableExchange:
     QPID_BROKER_EXTERN void setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }

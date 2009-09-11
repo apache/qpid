@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -118,31 +118,17 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
 
     PreRoute pr(msg, this);
 
-    uint32_t count(0);
-
     Bindings::ConstPtr p = bindings.snapshot();
-    if (p.get()){
+    Bindings::Ptr b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
+    if (p.get())
+    {
         for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i) {
             if (match((*i)->args, *args)) {
-                msg.deliverTo((*i)->queue);
-                count++;
-                if ((*i)->mgmtBinding != 0)
-                    (*i)->mgmtBinding->inc_msgMatched();
+                b->push_back(*i);
             }
         }
     }
-
-    if (mgmtExchange != 0) {
-        mgmtExchange->inc_msgReceives();
-        mgmtExchange->inc_byteReceives(msg.contentSize());
-        if (count == 0) {
-            mgmtExchange->inc_msgDrops();
-            mgmtExchange->inc_byteDrops(msg.contentSize());
-        } else {
-            mgmtExchange->inc_msgRoutes(count);
-            mgmtExchange->inc_byteRoutes(count * msg.contentSize());
-        }
-    }
+    doRoute(msg, b);
 }
 
 
@@ -163,7 +149,7 @@ HeadersExchange::~HeadersExchange() {}
 
 const std::string HeadersExchange::typeName("headers");
 
-namespace 
+namespace
 {
 
     bool match_values(const FieldValue& bind, const FieldValue& msg) {
@@ -181,7 +167,7 @@ bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
              i != bind.end();
              ++i)
         {
-            if (i->first != x_match) 
+            if (i->first != x_match)
             {
                 Map::const_iterator j = msg.find(i->first);
                 if (j == msg.end()) return false;
@@ -194,7 +180,7 @@ bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
              i != bind.end();
              ++i)
         {
-            if (i->first != x_match) 
+            if (i->first != x_match)
             {
                 Map::const_iterator j = msg.find(i->first);
                 if (j != msg.end()) {

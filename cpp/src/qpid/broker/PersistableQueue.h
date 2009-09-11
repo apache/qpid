@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -55,18 +55,18 @@ public:
 
     virtual const std::string& getName() const = 0;
     virtual ~PersistableQueue() {
-        if (externalQueueStore) 
+        if (externalQueueStore)
              delete externalQueueStore;
     };
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
-    
+
     inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
-    
+
     PersistableQueue():externalQueueStore(NULL){
     };
-    
-    
+
+
     /**
     * call back to signal async AIO writes have
     * completed (enqueue/dequeue etc)
@@ -76,9 +76,9 @@ public:
     */
     virtual void notifyDurableIOComplete()  = 0;
 protected:
-    
+
     ExternalQueueStore* externalQueueStore;
-    
+
 };
 
 }}

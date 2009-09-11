@@ -536,6 +536,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.cpp \
   qpid/broker/MessageBuilder.h \
+  qpid/broker/MessageReleaseMgr.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/MessageStoreModule.h \
