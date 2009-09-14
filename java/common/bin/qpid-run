@@ -59,7 +59,7 @@ fi
 #Set to help us get round the manifold problems of ps/pgrep on various
 #platforms which gather up to prevent qpid_stop from working .....
 if [ -z "$QPID_PNAME" ]; then
-    export QPID_PNAME=" -DPNAME=QPBRKR"
+    export QPID_PNAME="QPBRKR"
 fi
 
 if [ -z "$QPID_HOME" ]; then
@@ -259,6 +259,6 @@ if $cygwin; then
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $QPID_PNAME $JAVA_GC $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM -DPNAME=\"$QPID_PNAME\" $JAVA_GC $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH
