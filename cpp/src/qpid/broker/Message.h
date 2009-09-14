@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,12 +34,12 @@
 #include <vector>
 
 namespace qpid {
-
+       
 namespace framing {
 class FieldTable;
 class SequenceNumber;
 }
-
+       
 namespace broker {
 class ConnectionToken;
 class Exchange;
@@ -51,10 +51,10 @@ class ExpiryPolicy;
 class Message : public PersistableMessage {
 public:
     typedef boost::function<void (const boost::intrusive_ptr<Message>&)> MessageCallback;
-
+    
     QPID_BROKER_EXTERN Message(const framing::SequenceNumber& id = framing::SequenceNumber());
     QPID_BROKER_EXTERN ~Message();
-
+        
     uint64_t getPersistenceId() const { return persistenceId; }
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
 
@@ -74,7 +74,7 @@ public:
     bool isImmediate() const;
     QPID_BROKER_EXTERN const framing::FieldTable* getApplicationHeaders() const;
     framing::FieldTable& getOrInsertHeaders();
-    QPID_BROKER_EXTERN bool isPersistent() const;
+    QPID_BROKER_EXTERN bool isPersistent();
     bool requiresAccept();
 
     QPID_BROKER_EXTERN void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
@@ -82,8 +82,8 @@ public:
     bool hasExpired();
     sys::AbsTime getExpiration() const { return expiration; }
 
-    framing::FrameSet& getFrames() { return frames; }
-    const framing::FrameSet& getFrames() const { return frames; }
+    framing::FrameSet& getFrames() { return frames; } 
+    const framing::FrameSet& getFrames() const { return frames; } 
 
     template <class T> T* getProperties() {
         qpid::framing::AMQHeaderBody* p = frames.getHeaders();
@@ -128,13 +128,13 @@ public:
 
     QPID_BROKER_EXTERN void decodeHeader(framing::Buffer& buffer);
     QPID_BROKER_EXTERN void decodeContent(framing::Buffer& buffer);
-
+            
     /**
      * Releases the in-memory content data held by this
      * message. Must pass in a store from which the data can
      * be reloaded.
      */
-    void releaseContent(bool immediate = false);
+    void releaseContent(MessageStore* store);
     void destroy();
 
     bool getContentFrame(const Queue& queue, framing::AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const;
@@ -145,11 +145,10 @@ public:
 
     bool isExcluded(const std::vector<std::string>& excludes) const;
     void addTraceId(const std::string& id);
-
-    void forcePersistent();
-    bool isForcedPersistent();
-    void setStore(MessageStore* s) { store = s; }
-
+       
+       void forcePersistent();
+       bool isForcedPersistent();
+    
     boost::intrusive_ptr<Message>& getReplacementMessage(const Queue* qfor) const;
     void setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor);
 
