@@ -56,8 +56,8 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual Sender createSender(const Address& address, const VariantMap& options) = 0;
     virtual Receiver createReceiver(const Address& address, const VariantMap& options) = 0;
     virtual Receiver createReceiver(const Address& address, const Filter& filter, const VariantMap& options) = 0;
-    virtual void* getLastConfirmedSent() = 0;
-    virtual void* getLastConfirmedAcknowledged() = 0;
+    virtual uint32_t available() = 0;
+    virtual uint32_t pendingAck() = 0;
   private:
 };
 }} // namespace qpid::messaging

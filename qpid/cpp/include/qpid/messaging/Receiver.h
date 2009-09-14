@@ -40,7 +40,7 @@ class MessageListener;
 class ReceiverImpl;
 
 /**
- * A pull style interface for message retrieval.
+ * Interface through which messages are received.
  */
 class Receiver : public qpid::client::Handle<ReceiverImpl>
 {
@@ -75,7 +75,7 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
     QPID_CLIENT_EXTERN bool fetch(Message& message, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     /**
      * Retrieves a message for this receivers subscription or waits
-     * for upto the specified timeout for one to become
+     * for up to the specified timeout for one to become
      * available. Unlike get() this method will check with the server
      * that there is no message for the subscription this receiver is
      * serving before throwing an exception.
@@ -87,8 +87,8 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      */
     QPID_CLIENT_EXTERN void start();
     /**
-     * Stops the message flow for this receiver (without actually
-     * cancelling the subscription).
+     * Stops the message flow for this receiver (but does not cancel
+     * the subscription).
      */
     QPID_CLIENT_EXTERN void stop();
     /**
@@ -97,14 +97,35 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * requested by a client via fetch() (or pushed to a listener).
      */
     QPID_CLIENT_EXTERN void setCapacity(uint32_t);
+    /**
+     * Returns the capacity of the receiver. The capacity determines
+     * how many incoming messages can be held in the receiver before
+     * being requested by a client via fetch() (or pushed to a
+     * listener).
+     */
+    QPID_CLIENT_EXTERN uint32_t getCapacity();
+    /**
+     * Returns the number of messages received and waiting to be
+     * fetched.
+     */
+    QPID_CLIENT_EXTERN uint32_t available();
+    /**
+     * Returns a count of the number of messages received on this
+     * receiver that have been acknowledged, but for which that
+     * acknowledgement has not yet been confirmed as processed by the
+     * server.
+     */
+    QPID_CLIENT_EXTERN uint32_t pendingAck();
 
     /**
-     * Cancels this receiver
+     * Cancels this receiver.
      */
     QPID_CLIENT_EXTERN void cancel();
 
     /**
-     * Set a message listener for receiving messages asynchronously.
+     * Set a message listener for this receiver.
+     * 
+     * @see Session::dispatch()
      */
     QPID_CLIENT_EXTERN void setListener(MessageListener* listener);
   private:

@@ -44,6 +44,9 @@ class ReceiverImpl : public virtual qpid::RefCounted
     virtual void start() = 0;
     virtual void stop() = 0;
     virtual void setCapacity(uint32_t) = 0;
+    virtual uint32_t getCapacity() = 0;
+    virtual uint32_t available() = 0;
+    virtual uint32_t pendingAck() = 0;
     virtual void cancel() = 0;
     virtual void setListener(MessageListener*) = 0;
 };

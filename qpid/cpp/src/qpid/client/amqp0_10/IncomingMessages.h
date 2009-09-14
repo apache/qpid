@@ -27,6 +27,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/sys/BlockingQueue.h"
 #include "qpid/sys/Time.h"
+#include "qpid/client/amqp0_10/AcceptTracker.h"
 
 namespace qpid {
 
@@ -74,13 +75,19 @@ class IncomingMessages
     void accept();
     void releaseAll();
     void releasePending(const std::string& destination);
+
+    uint32_t pendingAccept();
+    uint32_t pendingAccept(const std::string& destination);
+
+    uint32_t available();
+    uint32_t available(const std::string& destination);
   private:
     typedef std::deque<FrameSetPtr> FrameSetQueue;
 
     qpid::client::AsyncSession session;
-    qpid::framing::SequenceSet unaccepted;
     boost::shared_ptr< sys::BlockingQueue<FrameSetPtr> > incoming;
     FrameSetQueue received;
+    AcceptTracker acceptTracker;
 
     bool process(Handler*, qpid::sys::Duration);
     void retrieve(FrameSetPtr, qpid::messaging::Message*);

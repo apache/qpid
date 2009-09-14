@@ -698,14 +698,14 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/SenderImpl.h			\
   qpid/messaging/ReceiverImpl.h			\
   qpid/messaging/SessionImpl.h			\
+  qpid/client/amqp0_10/AcceptTracker.h		\
+  qpid/client/amqp0_10/AcceptTracker.cpp	\
   qpid/client/amqp0_10/AddressResolution.h	\
   qpid/client/amqp0_10/AddressResolution.cpp	\
   qpid/client/amqp0_10/Codecs.cpp		\
   qpid/client/amqp0_10/CodecsInternal.h		\
   qpid/client/amqp0_10/ConnectionImpl.h	        \
   qpid/client/amqp0_10/ConnectionImpl.cpp	\
-  qpid/client/amqp0_10/CompletionTracker.h	\
-  qpid/client/amqp0_10/CompletionTracker.cpp	\
   qpid/client/amqp0_10/IncomingMessages.h	\
   qpid/client/amqp0_10/IncomingMessages.cpp	\
   qpid/client/amqp0_10/MessageSink.h		\
