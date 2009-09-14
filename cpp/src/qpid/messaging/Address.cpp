@@ -21,9 +21,6 @@
 #include "qpid/messaging/Address.h"
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
 Address::Address() {}

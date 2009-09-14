@@ -298,6 +298,61 @@ bool SessionImpl::fetch(qpid::messaging::Message& message, qpid::sys::Duration t
     }
 }
 
+uint32_t SessionImpl::available()
+{
+    return get1<Available, uint32_t>((const std::string*) 0);
+}
+uint32_t SessionImpl::available(const std::string& destination)
+{
+    return get1<Available, uint32_t>(&destination);
+}
+
+struct SessionImpl::Available : Command
+{
+    const std::string* destination;
+    uint32_t result;
+    
+    Available(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
+    void operator()() { result = impl.availableImpl(destination); }
+};
+
+uint32_t SessionImpl::availableImpl(const std::string* destination)
+{
+    if (destination) {
+        return incoming.available(*destination);
+    } else {
+        return incoming.available();
+    }
+}
+
+uint32_t SessionImpl::pendingAck()
+{
+    return get1<PendingAck, uint32_t>((const std::string*) 0);
+}
+
+uint32_t SessionImpl::pendingAck(const std::string& destination)
+{
+    return get1<PendingAck, uint32_t>(&destination);
+}
+
+struct SessionImpl::PendingAck : Command
+{
+    const std::string* destination;
+    uint32_t result;
+    
+    PendingAck(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
+    void operator()() { result = impl.pendingAckImpl(destination); }
+};
+
+uint32_t SessionImpl::pendingAckImpl(const std::string* destination)
+{
+    if (destination) {
+        return incoming.pendingAccept(*destination);
+    } else {
+        return incoming.pendingAccept();
+    }
+}
+
 void SessionImpl::syncImpl()
 {
     session.sync();

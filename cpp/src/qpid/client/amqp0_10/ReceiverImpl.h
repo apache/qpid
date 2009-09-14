@@ -62,6 +62,9 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     void stop();
     const std::string& getName() const;
     void setCapacity(uint32_t);
+    uint32_t getCapacity();
+    uint32_t available();
+    uint32_t pendingAck();
     void setListener(qpid::messaging::MessageListener* listener);
     qpid::messaging::MessageListener* getListener();
     void received(qpid::messaging::Message& message);

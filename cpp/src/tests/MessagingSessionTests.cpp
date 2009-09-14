@@ -198,7 +198,6 @@ QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in;
     for (uint i = 0; i < 10; ++i) {
-        //Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
         BOOST_CHECK(receiver.fetch(in, 5 * qpid::sys::TIME_SEC));
         BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
         BOOST_CHECK_EQUAL(in.getHeaders()["a"].asUint32(), i);
@@ -357,6 +356,83 @@ QPID_AUTO_TEST_CASE(testReject)
     fix.session.reject(in);
     in = receiver.fetch(5 * qpid::sys::TIME_SEC);
     BOOST_CHECK_EQUAL(in.getBytes(), m2.getBytes());
+    fix.session.acknowledge();
+}
+
+QPID_AUTO_TEST_CASE(testAvailable)
+{
+    MultiQueueFixture fix;
+
+    Receiver r1 = fix.session.createReceiver(fix.queues[0]);
+    r1.setCapacity(100);
+    r1.start();
+
+    Receiver r2 = fix.session.createReceiver(fix.queues[1]);
+    r2.setCapacity(100);
+    r2.start();
+
+    Sender s1 = fix.session.createSender(fix.queues[0]);
+    Sender s2 = fix.session.createSender(fix.queues[1]);
+
+    for (uint i = 0; i < 10; ++i) {
+        s1.send(Message((boost::format("A_%1%") % (i+1)).str()));
+    }
+    for (uint i = 0; i < 5; ++i) {
+        s2.send(Message((boost::format("B_%1%") % (i+1)).str()));
+    }
+    sleep(1);//is there any avoid an arbitrary sleep while waiting for messages to be dispatched?
+    for (uint i = 0; i < 5; ++i) {
+        BOOST_CHECK_EQUAL(fix.session.available(), 15u - 2*i);
+        BOOST_CHECK_EQUAL(r1.available(), 10u - i);
+        BOOST_CHECK_EQUAL(r1.fetch().getBytes(), (boost::format("A_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(r2.available(), 5u - i);
+        BOOST_CHECK_EQUAL(r2.fetch().getBytes(), (boost::format("B_%1%") % (i+1)).str());
+        fix.session.acknowledge();
+    }
+    for (uint i = 5; i < 10; ++i) {
+        BOOST_CHECK_EQUAL(fix.session.available(), 10u - i);
+        BOOST_CHECK_EQUAL(r1.available(), 10u - i);
+        BOOST_CHECK_EQUAL(r1.fetch().getBytes(), (boost::format("A_%1%") % (i+1)).str());
+    }
+}
+
+QPID_AUTO_TEST_CASE(testPendingAck)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    for (uint i = 0; i < 10; ++i) {
+        sender.send(Message((boost::format("Message_%1%") % (i+1)).str()));
+    }
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    for (uint i = 0; i < 10; ++i) {
+        BOOST_CHECK_EQUAL(receiver.fetch().getBytes(), (boost::format("Message_%1%") % (i+1)).str());
+    }
+    BOOST_CHECK_EQUAL(fix.session.pendingAck(), 0u);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(fix.session.pendingAck(), 10u);
+    fix.session.sync();
+    BOOST_CHECK_EQUAL(fix.session.pendingAck(), 0u);
+}
+
+QPID_AUTO_TEST_CASE(testPendingSend)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    for (uint i = 0; i < 10; ++i) {
+        sender.send(Message((boost::format("Message_%1%") % (i+1)).str()));
+    }
+    //Note: this test relies on 'inside knowledge' of the sender
+    //implementation and the fact that the simple test case makes it
+    //possible to predict when completion information will be sent to
+    //the client. TODO: is there a better way of testing this?
+    BOOST_CHECK_EQUAL(sender.pending(), 10u);
+    fix.session.sync();
+    BOOST_CHECK_EQUAL(sender.pending(), 0u);
+
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    for (uint i = 0; i < 10; ++i) {
+        BOOST_CHECK_EQUAL(receiver.fetch().getBytes(), (boost::format("Message_%1%") % (i+1)).str());
+    }
     fix.session.acknowledge();
 }
 

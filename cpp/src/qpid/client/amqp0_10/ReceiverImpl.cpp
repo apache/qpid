@@ -120,6 +120,21 @@ qpid::messaging::MessageListener* ReceiverImpl::getListener() { return listener;
 
 const std::string& ReceiverImpl::getName() const { return destination; }
 
+uint32_t ReceiverImpl::getCapacity()
+{
+    return capacity;
+}
+
+uint32_t ReceiverImpl::available()
+{
+    return parent.available(destination);
+}
+
+uint32_t ReceiverImpl::pendingAck()
+{
+    return parent.pendingAck(destination);
+}
+
 ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name, 
                            const qpid::messaging::Address& a,
                            const qpid::messaging::Filter* f, 

@@ -23,6 +23,7 @@
  */
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Handle.h"
+#include "qpid/sys/IntegerTypes.h"
 
 namespace qpid {
 namespace client {
@@ -49,6 +50,24 @@ class Sender : public qpid::client::Handle<SenderImpl>
 
     QPID_CLIENT_EXTERN void send(const Message& message);
     QPID_CLIENT_EXTERN void cancel();
+
+    /**
+     * Sets the capacity for the sender. The capacity determines how
+     * many outgoing messages can be held pending confirmation of
+     * receipt by the broker.
+     */
+    QPID_CLIENT_EXTERN void setCapacity(uint32_t);
+    /**
+     * Returns the capacity of the sender. 
+     * @see setCapacity
+     */
+    QPID_CLIENT_EXTERN uint32_t getCapacity();
+    /**
+     * Returns the number of sent messages pending confirmation of
+     * receipt by the broker. (These are the 'in-doubt' messages).
+     */
+    QPID_CLIENT_EXTERN uint32_t pending();
+
   private:
   friend class qpid::client::PrivateImplRef<Sender>;
 };
