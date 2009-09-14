@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,7 +36,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 // - excessive string copying: should be 0 copy, match from original buffer.
 // - match/lookup: use descision tree or other more efficient structure.
 
-namespace
+namespace 
 {
 const std::string qpidFedOp("qpid.fed.op");
 const std::string qpidFedTags("qpid.fed.tags");
@@ -53,7 +53,7 @@ namespace {
 // Iterate over a string of '.'-separated tokens.
 struct TokenIterator {
     typedef pair<const char*,const char*> Token;
-
+    
     TokenIterator(const char* b, const char* e) : token(make_pair(b, find(b,e,'.'))), end(e) {}
 
     bool finished() const { return !token.first; }
@@ -122,7 +122,7 @@ class Matcher {
     Matcher(const string& p, const string& k)
         : matched(), pattern(&p[0], &p[0]+p.size()), key(&k[0], &k[0]+k.size())
     { matched = match(); }
-
+    
     operator bool() const { return matched; }
 
   private:
@@ -158,7 +158,7 @@ class Matcher {
         }
         if (!pattern.finished() && pattern.match1('#'))
             pattern.next();     // Trailing # matches empty.
-        return pattern.finished() && key.finished();
+        return pattern.finished() && key.finished(); 
     }
 
     bool matched;
@@ -173,7 +173,7 @@ string TopicExchange::normalize(const string& pattern) {
     return normal;
 }
 
-bool TopicExchange::match(const string& pattern, const string& key)
+bool TopicExchange::match(const string& pattern, const string& key)  
 {
     return Matcher(pattern, key);
 }
@@ -231,11 +231,11 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
          */
         std::vector<std::string> keys2prop;
         {
-            RWlock::ScopedRlock l(lock);
+            RWlock::ScopedRlock l(lock);    
             for (BindingMap::iterator iter = bindings.begin();
                  iter != bindings.end(); iter++) {
                 const BoundKey& bk = iter->second;
-
+                
                 if (bk.fedBinding.hasLocal()) {
                     keys2prop.push_back(iter->first);
                 }
@@ -293,24 +293,44 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string& pattern)
     return q != qv.end();
 }
 
-void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
-{
-    qpid::sys::CopyOnWriteArray<Binding::shared_ptr>::Ptr b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
+void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
+    Binding::vector mb;
     PreRoute pr(msg, this);
+    uint32_t count(0);
 
     {
-        RWlock::ScopedRlock l(lock);
-        for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-            if (match(i->first, routingKey)) {
-                Binding::vector& qv(i->second.bindingVector);
-                for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++){
-                    b->push_back(*j);
-                }
+    RWlock::ScopedRlock l(lock);
+    for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
+        if (match(i->first, routingKey)) {
+            Binding::vector& qv(i->second.bindingVector);
+            for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++, count++){
+                mb.push_back(*j);
             }
         }
     }
+    }
+    
+    for (Binding::vector::iterator j = mb.begin(); j != mb.end(); ++j) {
+        msg.deliverTo((*j)->queue);
+        if ((*j)->mgmtBinding != 0)
+            (*j)->mgmtBinding->inc_msgMatched ();
+    }
 
-    doRoute(msg, b);
+    if (mgmtExchange != 0)
+    {
+        mgmtExchange->inc_msgReceives  ();
+        mgmtExchange->inc_byteReceives (msg.contentSize ());
+        if (count == 0)
+        {
+            mgmtExchange->inc_msgDrops  ();
+            mgmtExchange->inc_byteDrops (msg.contentSize ());
+        }
+        else
+        {
+            mgmtExchange->inc_msgRoutes  (count);
+            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
+        }
+    }
 }
 
 bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routingKey, const FieldTable* const)
@@ -323,7 +343,7 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routing
         return bindings.size() > 0;
     } else if (routingKey) {
         for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-            if (match(i->first, *routingKey))
+            if (match(i->first, *routingKey)) 
                 return true;
             }
     } else {

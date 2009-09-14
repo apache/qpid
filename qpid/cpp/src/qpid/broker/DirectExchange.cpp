@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,7 +28,7 @@ using namespace qpid::sys;
 using qpid::management::Manageable;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
-namespace
+namespace 
 {
 const std::string qpidFedOp("qpid.fed.op");
 const std::string qpidFedTags("qpid.fed.tags");
@@ -98,7 +98,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
          */
         std::vector<std::string> keys2prop;
         {
-            Mutex::ScopedLock l(lock);
+            Mutex::ScopedLock l(lock);    
             for (Bindings::iterator iter = bindings.begin();
                  iter != bindings.end(); iter++) {
                 const BoundKey& bk = iter->second;
@@ -150,7 +150,34 @@ void DirectExchange::route(Deliverable& msg, const string& routingKey, const Fie
         Mutex::ScopedLock l(lock);
         p = bindings[routingKey].queues.snapshot();
     }
-    doRoute(msg, p);
+    int count(0);
+
+    if (p) {
+        for(std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++, count++) {
+            msg.deliverTo((*i)->queue);
+            if ((*i)->mgmtBinding != 0)
+                (*i)->mgmtBinding->inc_msgMatched();
+        }
+    }
+
+    if(!count){
+        QPID_LOG(info, "DirectExchange " << getName() << " could not route message with key " << routingKey
+                 << "; no matching binding found");
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        }
+    } else {
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgRoutes(count);
+            mgmtExchange->inc_byteRoutes(count * msg.contentSize());
+        }
+    }
+
+    if (mgmtExchange != 0) {
+        mgmtExchange->inc_msgReceives();
+        mgmtExchange->inc_byteReceives(msg.contentSize());
+    }
 }
 
 
