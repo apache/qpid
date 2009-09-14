@@ -447,7 +447,7 @@ public class QpidTestCase extends TestCase
             env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
 
             //Add the test name to the broker run.
-            env.put("QPID_PNAME", "-DPNAME=\"" + _testName + "\"");
+            env.put("QPID_PNAME", _testName );
             env.put("QPID_WORK", System.getProperty("QPID_WORK"));
 
             // Add all the environment settings the test requested
