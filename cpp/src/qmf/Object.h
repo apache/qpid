@@ -31,13 +31,14 @@ namespace qmf {
     public:
         Object(const SchemaObjectClass* type);
         Object(ObjectImpl* impl);
+        Object(const Object& from);
         virtual ~Object();
 
         void destroy();
         const ObjectId* getObjectId() const;
         void setObjectId(ObjectId* oid);
         const SchemaObjectClass* getClass() const;
-        Value* getValue(char* key);
+        Value* getValue(char* key) const;
 
         ObjectImpl* impl;
     };

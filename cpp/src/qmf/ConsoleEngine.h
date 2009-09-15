@@ -37,6 +37,8 @@ namespace qmf {
     class AgentProxy;
     class AgentProxyImpl;
     class MethodResponseImpl;
+    class QueryResponseImpl;
+    class QueryContext;
 
     /**
      *
@@ -57,6 +59,23 @@ namespace qmf {
     /**
      *
      */
+    class QueryResponse {
+    public:
+        QueryResponse(QueryResponseImpl* impl);
+        ~QueryResponse();
+        uint32_t getStatus() const;
+        const Value* getException() const;
+        uint32_t getObjectCount() const;
+        const Object* getObject(uint32_t idx) const;
+
+    private:
+        friend class QueryContext;
+        QueryResponseImpl *impl;
+    };
+
+    /**
+     *
+     */
     struct ConsoleEvent {
         enum EventKind {
             AGENT_ADDED     = 1,
@@ -64,7 +83,6 @@ namespace qmf {
             NEW_PACKAGE     = 3,
             NEW_CLASS       = 4,
             OBJECT_UPDATE   = 5,
-            QUERY_COMPLETE  = 6,
             EVENT_RECEIVED  = 7,
             AGENT_HEARTBEAT = 8,
             METHOD_RESPONSE = 9
@@ -75,11 +93,12 @@ namespace qmf {
         char*           name;           // (NEW_PACKAGE)
         SchemaClassKey* classKey;       // (NEW_CLASS)
         Object*         object;         // (OBJECT_UPDATE)
-        void*           context;        // (OBJECT_UPDATE, QUERY_COMPLETE)
+        void*           context;        // (OBJECT_UPDATE)
         Event*          event;          // (EVENT_RECEIVED)
         uint64_t        timestamp;      // (AGENT_HEARTBEAT)
         uint32_t        methodHandle;   // (METHOD_RESPONSE)
         MethodResponse* methodResponse; // (METHOD_RESPONSE)
+        QueryResponse*  queryResponse;  // (QUERY_COMPLETE)
     };
 
     /**
@@ -93,13 +112,30 @@ namespace qmf {
             BIND            = 13,
             UNBIND          = 14,
             SETUP_COMPLETE  = 15,
-            STABLE          = 16
+            STABLE          = 16,
+            QUERY_COMPLETE  = 17
         };
 
         EventKind kind;
-        char*     name;       // ([DECLARE|DELETE]_QUEUE, [UN]BIND)
-        char*     exchange;   // ([UN]BIND)
-        char*     bindingKey; // ([UN]BIND)
+        char*          name;          // ([DECLARE|DELETE]_QUEUE, [UN]BIND)
+        char*          exchange;      // ([UN]BIND)
+        char*          bindingKey;    // ([UN]BIND)
+        void*          context;       // (QUERY_COMPLETE)
+        QueryResponse* queryResponse; // (QUERY_COMPLETE)
+    };
+
+    /**
+     *
+     */
+    class AgentProxy {
+    public:
+        AgentProxy(AgentProxyImpl* impl);
+        ~AgentProxy();
+        const char* getLabel() const;
+
+    private:
+        friend class BrokerProxyImpl;
+        AgentProxyImpl* impl;
     };
 
     /**
@@ -121,22 +157,13 @@ namespace qmf {
         bool getEvent(BrokerEvent& event) const;
         void popEvent();
 
+        uint32_t agentCount() const;
+        const AgentProxy* getAgent(uint32_t idx) const;
+        void sendQuery(const Query& query, void* context, const AgentProxy* agent = 0);
+
     private:
         friend class ConsoleEngineImpl;
         BrokerProxyImpl* impl;
-    };
-
-    /**
-     *
-     */
-    class AgentProxy {
-    public:
-        AgentProxy(ConsoleEngine& console);
-        ~AgentProxy();
-
-    private:
-        friend class ConsoleEngineImpl;
-        AgentProxyImpl* impl;
     };
 
     // TODO - move this to a public header
@@ -177,11 +204,6 @@ namespace qmf {
         void bindPackage(const char* packageName);
         void bindClass(const SchemaClassKey* key);
         void bindClass(const char* packageName, const char* className);
-
-        uint32_t agentCount() const;
-        const AgentProxy* getAgent(uint32_t idx) const;
-
-        void sendQuery(const Query& query, void* context);
 
         /*
         void startSync(const Query& query, void* context, SyncQuery& sync);

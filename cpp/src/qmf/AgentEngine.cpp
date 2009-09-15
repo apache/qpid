@@ -57,7 +57,7 @@ namespace qmf {
         string      name;
         Object*     object;
         boost::shared_ptr<ObjectId> objectId;
-        Query       query;
+        boost::shared_ptr<Query> query;
         boost::shared_ptr<Value> arguments;
         string      exchange;
         string      bindingKey;
@@ -214,7 +214,7 @@ AgentEvent AgentEventImpl::copy()
     item.sequence  = sequence;
     item.object    = object;
     item.objectId  = objectId.get();
-    item.query     = &query;
+    item.query     = query.get();
     item.arguments = arguments.get();
     item.objectClass = objectClass;
 
@@ -381,7 +381,7 @@ void AgentEngineImpl::methodResponse(uint32_t sequence, uint32_t status, char* t
         }
     }
     sendBufferLH(buffer, context->exchange, context->key);
-    QPID_LOG(trace, "SENT MethodResponse");
+    QPID_LOG(trace, "SENT MethodResponse seq=" << context->sequence << " status=" << status << " text=" << text);
 }
 
 void AgentEngineImpl::queryResponse(uint32_t sequence, Object& object, bool prop, bool stat)
@@ -403,7 +403,7 @@ void AgentEngineImpl::queryResponse(uint32_t sequence, Object& object, bool prop
         object.impl->encodeStatistics(buffer);
     
     sendBufferLH(buffer, context->exchange, context->key);
-    QPID_LOG(trace, "SENT ContentIndication");
+    QPID_LOG(trace, "SENT ContentIndication seq=" << context->sequence);
 }
 
 void AgentEngineImpl::queryComplete(uint32_t sequence)
@@ -511,9 +511,10 @@ AgentEventImpl::Ptr AgentEngineImpl::eventQuery(uint32_t num, const string& user
     AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::GET_QUERY));
     event->sequence = num;
     event->authUserId = userId;
-    event->query.impl->packageName = package;    
-    event->query.impl->className = cls;
-    event->query.impl->oid = oid;
+    if (oid.get())
+        event->query.reset(new Query(oid.get()));
+    else
+        event->query.reset(new Query(cls.c_str(), package.c_str()));
     return event;
 }
 
@@ -723,7 +724,7 @@ void AgentEngineImpl::handleGetQuery(Buffer& inBuffer, uint32_t sequence, const 
 
     ft.decode(inBuffer);
     
-    QPID_LOG(trace, "RCVD GetQuery: map=" << ft);
+    QPID_LOG(trace, "RCVD GetQuery: seq=" << sequence << " map=" << ft);
 
     value = ft.get("_package");
     if (value.get() && value->convertsTo<string>()) {
@@ -772,6 +773,8 @@ void AgentEngineImpl::handleMethodRequest(Buffer& buffer, uint32_t sequence, con
     buffer.getShortString(pname);
     AgentClassKey classKey(buffer);
     buffer.getShortString(method);
+
+    QPID_LOG(trace, "RCVD MethodRequest seq=" << sequence << " method=" << method);
 
     map<string, ClassMaps>::const_iterator pIter = packages.find(pname);
     if (pIter == packages.end()) {

@@ -24,33 +24,90 @@ require 'socket'
 
 class App < Qmf::ConsoleHandler
 
+  def dump_schema
+    packages = @qmfc.get_packages
+    puts "----- Packages -----"
+    packages.each do |p|
+      puts p
+      puts "    ----- Object Classes -----"
+      classes = @qmfc.get_classes(p)
+      classes.each do |c|
+        puts "    #{c.name}"
+
+        puts "        ---- Properties ----"
+        props = c.properties
+        props.each do |prop|
+          puts "        #{prop.name}"
+        end
+
+        puts "        ---- Statistics ----"
+        stats = c.statistics
+        stats.each do |stat|
+          puts "        #{stat.name}"
+        end
+
+        puts "        ---- Methods ----"
+        methods = c.methods
+        methods.each do |method|
+          puts "        #{method.name}"
+          puts "            ---- Args ----"
+          args = method.arguments
+          args.each do |arg|
+            puts "            #{arg.name}"
+          end
+        end
+      end
+
+      puts "    ----- Event Classes -----"
+      classes = @qmfc.get_classes(p, Qmf::CLASS_EVENT)
+      classes.each do |c|
+        puts "    #{c.name}"
+        puts "        ---- Args ----"
+        args = c.arguments
+        args.each do |arg|
+          puts "        #{arg.name}"
+        end
+      end
+    end
+    puts "-----"
+  end
+
   def main
     @settings = Qmf::ConnectionSettings.new
     @settings.set_attr("host", ARGV[0]) if ARGV.size > 0
     @settings.set_attr("port", ARGV[1].to_i) if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
-    @qmf = Qmf::Console.new
+    @qmfc = Qmf::Console.new
 
-    @broker = @qmf.add_connection(@connection)
+    @broker = @qmfc.add_connection(@connection)
     @broker.waitForStable
 
-    packages = @qmf.get_packages
-    puts "----- Packages -----"
-    packages.each do |p|
-      puts p
-      puts "    ----- Object Classes -----"
-      classes = @qmf.get_classes(p)
-      classes.each do |c|
-        puts "    #{c.name}"
-      end
-      puts "    ----- Event Classes -----"
-      classes = @qmf.get_classes(p, Qmf::CLASS_EVENT)
-      classes.each do |c|
-        puts "    #{c.name}"
-      end
-    end
-    puts "-----"
+    dump_schema
 
+    agents = @qmfc.get_agents()
+    puts "---- Agents ----"
+    agents.each do |a|
+      puts "  => #{a.label}"
+    end
+    puts "----"
+
+    for idx in 0...20
+      blist = @qmfc.get_objects(Qmf::Query.new(:class => "broker"))
+      puts "---- Brokers ----"
+      blist.each do |b|
+        puts "    ---- Broker ----"
+        puts "    systemRef: #{b.get_attr('systemRef')}"
+        puts "    port     : #{b.get_attr('port')}"
+        puts "    uptime   : #{b.get_attr('uptime') / 1000000000}"
+      end
+      puts "----"
+      sleep(5)
+    end
+
+    sleep(5)
+    puts "Deleting connection..."
+    @qmfc.del_connection(@broker)
+    puts "    done"
     sleep
   end
 end

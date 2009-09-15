@@ -25,26 +25,72 @@ using namespace qpid::sys;
 
 SequenceManager::SequenceManager() : nextSequence(1) {}
 
-uint32_t SequenceManager::reserve(SequenceContext* ctx)
+void SequenceManager::setUnsolicitedContext(SequenceContext::Ptr ctx)
+{
+    unsolicitedContext = ctx;
+}
+
+uint32_t SequenceManager::reserve(SequenceContext::Ptr ctx)
 {
     Mutex::ScopedLock _lock(lock);
+    if (ctx.get() == 0)
+        ctx = unsolicitedContext;
     uint32_t seq = nextSequence;
     while (contextMap.find(seq) != contextMap.end())
         seq = seq < 0xFFFFFFFF ? seq + 1 : 1;
     nextSequence = seq < 0xFFFFFFFF ? seq + 1 : 1;
     contextMap[seq] = ctx;
+    ctx->reserve();
     return seq;
 }
 
 void SequenceManager::release(uint32_t sequence)
 {
     Mutex::ScopedLock _lock(lock);
-    map<uint32_t, SequenceContext*>::iterator iter = contextMap.find(sequence);
+
+    if (sequence == 0) {
+        if (unsolicitedContext.get() != 0)
+            unsolicitedContext->release();
+        return;
+    }
+
+    map<uint32_t, SequenceContext::Ptr>::iterator iter = contextMap.find(sequence);
     if (iter != contextMap.end()) {
         if (iter->second != 0)
-            iter->second->complete();
+            iter->second->release();
         contextMap.erase(iter);
     }
 }
 
+void SequenceManager::releaseAll()
+{
+    Mutex::ScopedLock _lock(lock);
+    contextMap.clear();
+}
+
+void SequenceManager::dispatch(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer)
+{
+    Mutex::ScopedLock _lock(lock);
+    bool done;
+
+    if (sequence == 0) {
+        if (unsolicitedContext.get() != 0) {
+            done = unsolicitedContext->handleMessage(opcode, sequence, buffer);
+            if (done)
+                unsolicitedContext->release();
+        }
+        return;
+    }
+
+    map<uint32_t, SequenceContext::Ptr>::iterator iter = contextMap.find(sequence);
+    if (iter != contextMap.end()) {
+        if (iter->second != 0) {
+            done = iter->second->handleMessage(opcode, sequence, buffer);
+            if (done) {
+                iter->second->release();
+                contextMap.erase(iter);
+            }
+        }
+    }
+}
 
