@@ -30,6 +30,7 @@ namespace qmf {
     class ObjectId {
     public:
         ObjectId();
+        ObjectId(const ObjectId& from);
         ObjectId(ObjectIdImpl* impl);
         ~ObjectId();
 

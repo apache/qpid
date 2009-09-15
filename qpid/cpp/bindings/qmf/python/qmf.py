@@ -30,6 +30,8 @@ from qmfengine import (TYPE_ABSTIME, TYPE_ARRAY, TYPE_BOOL, TYPE_DELTATIME,
                        TYPE_INT8, TYPE_LIST, TYPE_LSTR, TYPE_MAP, TYPE_OBJECT, 
                        TYPE_REF, TYPE_SSTR, TYPE_UINT16, TYPE_UINT32, TYPE_UINT64, 
                        TYPE_UINT8, TYPE_UUID)
+from qmfengine import (O_EQ, O_NE, O_LT, O_LE, O_GT, O_GE, O_RE_MATCH, O_RE_NOMATCH,
+                       E_NOT, E_AND, E_OR, E_XOR)
 
 
   ##==============================================================================
@@ -404,11 +406,16 @@ class Arguments:
 
 
 class Query:
-    def __init__(self, i=None):
+    def __init__(self, i=None, package="", cls=None, oid=None):
         if i:
             self.impl = i
         else:
-            self.impl = qmfengine.Query()
+            if cls:
+                self.impl = qmfengine.Query(cls, package)
+            elif oid:
+                self.impl = qmfengine.Query(oid)
+            else:
+                raise "Argument error"
         
 
     def package_name(self): return self.impl.getPackage()
@@ -419,9 +426,6 @@ class Query:
             return ObjectId(_objid)
         else:
             return None
-    OPER_AND = qmfengine.Query.OPER_AND
-    OPER_OR = qmfengine.Query.OPER_OR
-
 
 
   ##==============================================================================

@@ -72,8 +72,7 @@ end
 
 class App < Qmf::AgentHandler
   def get_query(context, query, userId)
-#    puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id.object_num_low if query.object_id}"
-    #@parent.inc_attr("queryCount")
+#   puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id.object_num_low if query.object_id}"
     if query.class_name == 'parent'
         @agent.query_response(context, @parent)
     elsif query.object_id == @parent_oid
@@ -135,7 +134,7 @@ class App < Qmf::AgentHandler
     elsif name == "create_child"
       oid = @agent.alloc_object_id(2)
       args['child_ref'] = oid
-      @child = Qmf::QmfObject.new(@model.child_class)
+      @child = Qmf::AgentObject.new(@model.child_class)
       @child.set_attr("name", args.by_key("child_name"))
       @child.set_object_id(oid)
       @agent.method_response(context, 0, "OK", args)
@@ -161,7 +160,7 @@ class App < Qmf::AgentHandler
 
     @agent.set_connection(@connection)
 
-    @parent = Qmf::QmfObject.new(@model.parent_class)
+    @parent = Qmf::AgentObject.new(@model.parent_class)
     @parent.set_attr("name", "Parent One")
     @parent.set_attr("state", "OPERATIONAL")
 

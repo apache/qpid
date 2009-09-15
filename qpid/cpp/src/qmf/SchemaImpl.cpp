@@ -261,7 +261,15 @@ void SchemaStatisticImpl::updateHash(SchemaHash& hash) const
 SchemaClassKeyImpl::SchemaClassKeyImpl(const string& p, const string& n, const SchemaHash& h) :
     envelope(new SchemaClassKey(this)), package(p), name(n), hash(h) {}
 
-void SchemaClassKeyImpl::encode(qpid::framing::Buffer& buffer) const
+SchemaClassKeyImpl::SchemaClassKeyImpl(Buffer& buffer) :
+    envelope(new SchemaClassKey(this)), package(packageContainer), name(nameContainer), hash(hashContainer)
+{
+    buffer.getShortString(packageContainer);
+    buffer.getShortString(nameContainer);
+    hashContainer.decode(buffer);
+}    
+
+void SchemaClassKeyImpl::encode(Buffer& buffer) const
 {
     buffer.putShortString(package);
     buffer.putShortString(name);
@@ -413,8 +421,9 @@ SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) :
     buffer.getShortString(package);
     buffer.getShortString(name);
     hash.decode(buffer);
+    buffer.putOctet(0); // No parent class
 
-    uint16_t argCount   = buffer.getShort();
+    uint16_t argCount = buffer.getShort();
 
     for (uint16_t idx = 0; idx < argCount; idx++) {
         SchemaArgumentImpl* argument = new SchemaArgumentImpl(buffer);

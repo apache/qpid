@@ -100,6 +100,15 @@ void ObjectIdImpl::fromString(const std::string& repr)
     agent = 0;
 }
 
+std::string ObjectIdImpl::asString() const
+{
+    stringstream val;
+
+    val << getFlags() << "-" << getSequence() << "-" << getBrokerBank() << "-" <<
+        getAgentBank() << "-" << getObjectNum();
+    return val.str();
+}
+
 bool ObjectIdImpl::operator==(const ObjectIdImpl& other) const
 {
     uint64_t otherFirst = agent == 0 ? other.first : other.first & 0xffff000000000000LL;
@@ -126,15 +135,11 @@ bool ObjectIdImpl::operator>(const ObjectIdImpl& other) const
 // Wrappers
 //==================================================================
 
-ObjectId::ObjectId()
-{
-    impl = new ObjectIdImpl(this);
-}
+ObjectId::ObjectId() : impl(new ObjectIdImpl(this)) {}
 
-ObjectId::ObjectId(ObjectIdImpl* i)
-{
-    impl = i;
-}
+ObjectId::ObjectId(const ObjectId& from) : impl(new ObjectIdImpl(*(from.impl))) {}
+
+ObjectId::ObjectId(ObjectIdImpl* i) : impl(i) {}
 
 ObjectId::~ObjectId()
 {

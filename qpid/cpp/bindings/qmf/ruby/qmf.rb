@@ -67,6 +67,7 @@ module Qmf
   class ConnectionHandler
     def conn_event_connected(); end
     def conn_event_disconnected(error); end
+    def conn_event_visit(); end
     def sess_event_session_closed(context, error); end
     def sess_event_recv(context, message); end
   end
@@ -82,6 +83,7 @@ module Qmf
       @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
       @impl.setNotifyFd(@sockEngine.fileno)
       @new_conn_handlers = []
+      @conn_handlers_to_delete = []
       @conn_handlers = []
 
       @thread = Thread.new do
@@ -89,17 +91,30 @@ module Qmf
       end
     end
 
+    def kick
+      @sockEngine.write(".")
+      @sockEngine.flush
+    end
+
     def add_conn_handler(handler)
       synchronize do
         @new_conn_handlers << handler
       end
-      @sockEngine.write("x")
+      kick
+    end
+
+    def del_conn_handler(handler)
+      synchronize do
+        @conn_handlers_to_delete << handler
+      end
+      kick
     end
 
     def run()
       eventImpl = Qmfengine::ResilientConnectionEvent.new
       connected = nil
       new_handlers = nil
+      del_handlers = nil
       bt_count = 0
 
       while :true
@@ -107,7 +122,9 @@ module Qmf
 
         synchronize do
           new_handlers = @new_conn_handlers
+          del_handlers = @conn_handlers_to_delete
           @new_conn_handlers = []
+          @conn_handlers_to_delete = []
         end
 
         new_handlers.each do |nh|
@@ -115,6 +132,11 @@ module Qmf
           nh.conn_event_connected() if connected
         end
         new_handlers = nil
+
+        del_handlers.each do |dh|
+          d = @conn_handlers.delete(dh)
+        end
+        del_handlers = nil
 
         valid = @impl.getEvent(eventImpl)
         while valid
@@ -141,6 +163,7 @@ module Qmf
           @impl.popEvent
           valid = @impl.getEvent(eventImpl)
         end
+        @conn_handlers.each { |h| h.conn_event_visit }
       end
     end
   end
@@ -167,21 +190,18 @@ module Qmf
 
   class QmfObject
     attr_reader :impl, :object_class
-    def initialize(cls)
-      @object_class = cls
-      @impl = Qmfengine::Object.new(@object_class.impl)
-    end
-
-    def destroy
-      @impl.destroy
+    def initialize(cls, kwargs={})
+      if cls:
+        @object_class = cls
+        @impl = Qmfengine::Object.new(@object_class.impl)
+      elsif kwargs.include?(:impl)
+        @impl = Qmfengine::Object.new(kwargs[:impl])
+        @object_class = SchemaObjectClass.new(nil, nil, :impl => @impl.getClass)
+      end
     end
 
     def object_id
       return ObjectId.new(@impl.getObjectId)
-    end
-
-    def set_object_id(oid)
-      @impl.setObjectId(oid.impl)
     end
 
     def get_attr(name)
@@ -248,17 +268,31 @@ module Qmf
     def value(name)
       val = @impl.getValue(name.to_s)
       if val.nil?
-        raise ArgumentError, "Attribute '#{name}' not defined for class #{@object_class.impl.getName}"
+        raise ArgumentError, "Attribute '#{name}' not defined for class #{@object_class.impl.getClassKey.getPackageName}:#{@object_class.impl.getClassKey.getClassName}"
       end
       return val
+    end
+  end
+
+  class AgentObject < QmfObject
+    def initialize(cls, kwargs={})
+      super(cls, kwargs)
+    end
+
+    def destroy
+      @impl.destroy
+    end
+
+    def set_object_id(oid)
+      @impl.setObjectId(oid.impl)
     end
   end
 
   class ConsoleObject < QmfObject
     attr_reader :current_time, :create_time, :delete_time
 
-    def initialize(cls)
-      super(cls)
+    def initialize(cls, kwargs={})
+      super(cls, kwargs)
     end
 
     def update()
@@ -373,10 +407,30 @@ module Qmf
     end
   end
 
+  ##==============================================================================
+  ## QUERY
+  ##==============================================================================
+
   class Query
     attr_reader :impl
-    def initialize(i)
-      @impl = i
+    def initialize(kwargs = {})
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        package = ''
+        if kwargs.include?(:key)
+          @impl = Qmfengine::Query.new(kwargs[:key])
+        elsif kwargs.include?(:object_id)
+          @impl = Qmfengine::Query.new(kwargs[:object_id])
+        else
+          package = kwargs[:package] if kwargs.include?(:package)
+          if kwargs.include?(:class)
+            @impl = Qmfengine::Query.new(kwargs[:class], package)
+          else
+            raise ArgumentError, "Invalid arguments, use :key or :class[,:package]"
+          end
+        end
+      end
     end
 
     def package_name
@@ -403,36 +457,60 @@ module Qmf
   class SchemaArgument
     attr_reader :impl
     def initialize(name, typecode, kwargs={})
-      @impl = Qmfengine::SchemaArgument.new(name, typecode)
-      @impl.setDirection(kwargs[:dir]) if kwargs.include?(:dir)
-      @impl.setUnit(kwargs[:unit])     if kwargs.include?(:unit)
-      @impl.setDesc(kwargs[:desc])     if kwargs.include?(:desc)
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        @impl = Qmfengine::SchemaArgument.new(name, typecode)
+        @impl.setDirection(kwargs[:dir]) if kwargs.include?(:dir)
+        @impl.setUnit(kwargs[:unit])     if kwargs.include?(:unit)
+        @impl.setDesc(kwargs[:desc])     if kwargs.include?(:desc)
+      end
+    end
+
+    def name
+      @impl.getName
     end
   end
 
   class SchemaMethod
-    attr_reader :impl
+    attr_reader :impl, :arguments
     def initialize(name, kwargs={})
-      @impl = Qmfengine::SchemaMethod.new(name)
-      @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
       @arguments = []
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+        arg_count = @impl.getArgumentCount
+        for i in 0...arg_count
+          @arguments << SchemaArgument.new(nil, nil, :impl => @impl.getArgument(i))
+        end
+      else
+        @impl = Qmfengine::SchemaMethod.new(name)
+        @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
+      end
     end
 
     def add_argument(arg)
       @arguments << arg
       @impl.addArgument(arg.impl)
     end
+
+    def name
+      @impl.getName
+    end
   end
 
   class SchemaProperty
     attr_reader :impl
     def initialize(name, typecode, kwargs={})
-      @impl = Qmfengine::SchemaProperty.new(name, typecode)
-      @impl.setAccess(kwargs[:access])     if kwargs.include?(:access)
-      @impl.setIndex(kwargs[:index])       if kwargs.include?(:index)
-      @impl.setOptional(kwargs[:optional]) if kwargs.include?(:optional)
-      @impl.setUnit(kwargs[:unit])         if kwargs.include?(:unit)
-      @impl.setDesc(kwargs[:desc])         if kwargs.include?(:desc)
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        @impl = Qmfengine::SchemaProperty.new(name, typecode)
+        @impl.setAccess(kwargs[:access])     if kwargs.include?(:access)
+        @impl.setIndex(kwargs[:index])       if kwargs.include?(:index)
+        @impl.setOptional(kwargs[:optional]) if kwargs.include?(:optional)
+        @impl.setUnit(kwargs[:unit])         if kwargs.include?(:unit)
+        @impl.setDesc(kwargs[:desc])         if kwargs.include?(:desc)
+      end
     end
 
     def name
@@ -443,9 +521,17 @@ module Qmf
   class SchemaStatistic
     attr_reader :impl
     def initialize(name, typecode, kwargs={})
-      @impl = Qmfengine::SchemaStatistic.new(name, typecode)
-      @impl.setUnit(kwargs[:unit]) if kwargs.include?(:unit)
-      @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        @impl = Qmfengine::SchemaStatistic.new(name, typecode)
+        @impl.setUnit(kwargs[:unit]) if kwargs.include?(:unit)
+        @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
+      end
+    end
+
+    def name
+      @impl.getName
     end
   end
 
@@ -465,13 +551,25 @@ module Qmf
   end
 
   class SchemaObjectClass
-    attr_reader :impl
-    def initialize(package='', name='', kwargs={})
+    attr_reader :impl, :properties, :statistics, :methods
+    def initialize(package, name, kwargs={})
       @properties = []
       @statistics = []
       @methods = []
       if kwargs.include?(:impl)
         @impl = kwargs[:impl]
+
+        @impl.getPropertyCount.times do |i|
+          @properties << SchemaProperty.new(nil, nil, :impl => @impl.getProperty(i))
+        end
+
+        @impl.getStatisticCount.times do |i|
+          @statistics << SchemaStatistic.new(nil, nil, :impl => @impl.getStatistic(i))
+        end
+          
+        @impl.getMethodCount.times do |i|
+          @methods << SchemaMethod.new(nil, :impl => @impl.getMethod(i))
+        end
       else
         @impl = Qmfengine::SchemaObjectClass.new(package, name)
       end
@@ -495,24 +593,17 @@ module Qmf
     def name
       @impl.getClassKey.getClassName
     end
-
-    def properties
-      unless @properties
-        @properties = []
-        @impl.getPropertyCount.times do |i|
-          @properties << @impl.getProperty(i)
-        end
-      end
-      return @properties
-    end
   end
 
   class SchemaEventClass
-    attr_reader :impl
-    def initialize(package='', name='', kwargs={})
+    attr_reader :impl, :arguments
+    def initialize(package, name, kwargs={})
       @arguments = []
       if kwargs.include?(:impl)
         @impl = kwargs[:impl]
+        @impl.getArgumentCount.times do |i|
+          @arguments << SchemaArgument.new(nil, nil, :impl => @impl.getArgument(i))
+        end
       else
         @impl = Qmfengine::SchemaEventClass.new(package, name)
         @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
@@ -546,13 +637,18 @@ module Qmf
   end
 
   class Console
+    include MonitorMixin
     attr_reader :impl
 
     def initialize(handler = nil, kwargs={})
+      super()
       @handler = handler
       @impl = Qmfengine::ConsoleEngine.new
       @event = Qmfengine::ConsoleEvent.new
       @broker_list = []
+      @cv = new_cond
+      @sync_count = nil
+      @sync_result = nil
     end
 
     def add_connection(conn)
@@ -562,6 +658,8 @@ module Qmf
     end
 
     def del_connection(broker)
+      broker.shutdown
+      @broker_list.delete(broker)
     end
 
     def get_packages()
@@ -581,9 +679,9 @@ module Qmf
         class_kind = @impl.getClassKind(key)
         if class_kind == kind
           if kind == CLASS_OBJECT
-            clist << SchemaObjectClass.new('', '', :impl => @impl.getObjectClass(key))
+            clist << SchemaObjectClass.new(nil, nil, :impl => @impl.getObjectClass(key))
           elsif kind == CLASS_EVENT
-            clist << SchemaEventClass.new('', '', :impl => @impl.getEventClass(key))
+            clist << SchemaEventClass.new(nil, nil, :impl => @impl.getEventClass(key))
           end
         end
       end
@@ -591,19 +689,70 @@ module Qmf
       return clist
     end
 
-    def get_schema(class_key)
-    end
-
     def bind_package(package)
+      @impl.bindPackage(package)
     end
 
     def bind_class(kwargs = {})
+      if kwargs.include?(:key)
+        @impl.bindClass(kwargs[:key])
+      elsif kwargs.include?(:package)
+        package = kwargs[:package]
+        if kwargs.include?(:class)
+          @impl.bindClass(package, kwargs[:class])
+        else
+          @impl.bindClass(package)
+        end
+      else
+        raise ArgumentError, "Invalid arguments, use :key or :package[,:class]"
+      end
     end
 
     def get_agents(broker = nil)
+      blist = []
+      if broker
+        blist << broker
+      else
+        blist = @broker_list
+      end
+
+      agents = []
+      blist.each do |b|
+        count = b.impl.agentCount
+        for idx in 0...count
+          agents << AgentProxy.new(b.impl.getAgent(idx), b)
+        end
+      end
+
+      return agents
     end
 
     def get_objects(query, kwargs = {})
+      timeout = 30
+      if kwargs.include?(:timeout)
+        timeout = kwargs[:timeout]
+      end
+      synchronize do
+        @sync_count = 1
+        @sync_result = []
+        broker = @broker_list[0]
+        broker.send_query(query.impl, nil)
+        unless @cv.wait(timeout) { @sync_count == 0 }
+          raise "Timed out waiting for response"
+        end
+
+        return @sync_result
+      end
+    end
+
+    def _get_result(list, context)
+      synchronize do
+        list.each do |item|
+          @sync_result << item
+        end
+        @sync_count -= 1
+        @cv.signal
+      end
     end
 
     def start_sync(query)
@@ -638,6 +787,19 @@ module Qmf
     end
   end
 
+  class AgentProxy
+    attr_reader :broker
+
+    def initialize(impl, broker)
+      @impl = impl
+      @broker = broker
+    end
+
+    def label
+      @impl.getLabel
+    end
+  end
+
   class Broker < ConnectionHandler
     include MonitorMixin
     attr_reader :impl
@@ -654,6 +816,13 @@ module Qmf
       @impl = Qmfengine::BrokerProxy.new(@console.impl)
       @console.impl.addConnection(@impl, self)
       @conn.add_conn_handler(self)
+      @operational = :true
+    end
+
+    def shutdown()
+      @console.impl.delConnection(@impl)
+      @conn.del_conn_handler(self)
+      @operational = :false
     end
 
     def waitForStable(timeout = nil)
@@ -669,6 +838,11 @@ module Qmf
           end
         end
       end
+    end
+
+    def send_query(query, ctx)
+      @impl.sendQuery(query, ctx)
+      @conn.kick
     end
 
     def do_broker_events()
@@ -694,6 +868,12 @@ module Qmf
             @stable = :true
             @cv.signal
           end
+        when Qmfengine::BrokerEvent::QUERY_COMPLETE
+          result = []
+          for idx in 0...@event.queryResponse.getObjectCount
+            result << ConsoleObject.new(nil, :impl => @event.queryResponse.getObject(idx))
+          end
+          @console._get_result(result, @event.context)
         end
         @impl.popEvent
         valid = @impl.getEvent(@event)
@@ -732,12 +912,17 @@ module Qmf
       puts "Console Connection Lost"
     end
 
+    def conn_event_visit
+      do_events
+    end
+
     def sess_event_session_closed(context, error)
       puts "Console Session Lost"
       @impl.sessionClosed()
     end
 
     def sess_event_recv(context, message)
+      puts "Unexpected RECV Event" if not @operational
       @impl.handleRcvMessage(message)
       do_events
     end
@@ -798,7 +983,7 @@ module Qmf
         count += 1
         case @event.kind
         when Qmfengine::AgentEvent::GET_QUERY
-          @handler.get_query(@event.sequence, Query.new(@event.query), @event.authUserId)
+          @handler.get_query(@event.sequence, Query.new(:impl => @event.query), @event.authUserId)
         when Qmfengine::AgentEvent::START_SYNC
         when Qmfengine::AgentEvent::END_SYNC
         when Qmfengine::AgentEvent::METHOD_CALL
@@ -850,6 +1035,10 @@ module Qmf
 
     def conn_event_disconnected(error)
       puts "Agent Connection Lost"
+    end
+
+    def conn_event_visit
+      do_events
     end
 
     def sess_event_session_closed(context, error)

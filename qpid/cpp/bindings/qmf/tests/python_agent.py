@@ -72,7 +72,9 @@ class Model:
 
 class App(qmf.AgentHandler):
     def get_query(self, context, query, userId):
-        #    puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id.object_num_low if query.object_id}"
+        #print "Query: user=%s context=%d class=%s" % (userId, context, query.class_name())
+        #if query.object_id():
+        #    print query.object_id().object_num_low()
         self._parent.inc_attr("queryCount")
         if query.class_name() == 'parent':
             self._agent.query_response(context, self._parent)
