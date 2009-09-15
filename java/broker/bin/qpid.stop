@@ -25,20 +25,12 @@
 
 MAX_ATTEMPTS=2
 SLEEP_DELAY=1
-DEFAULT_SEARCH="\-DPNAME=\""
+DEFAULT_SEARCH="PNAME=QPBRKR"
 
-#
-# Use QPID_PNAME to set search criteria.
-#  - If not set default back to attempting QPID_STOP_SEARCH
-#
-if [ -z "$QPID_PNAME" ]; then
-    if [ -z "$QPID_STOP_SEARCH" ]; then
-        SEARCH=$DEFAULT_SEARCH;
-    else
-        SEARCH=$DEFAULT_SEARCH$QPID_STOP_SEARCH;
-    fi
+if [ -z "$QPID_STOP_SEARCH" ]; then
+    SEARCH=$DEFAULT_SEARCH;
 else
-    SEARCH=$DEFAULT_SEARCH$QPID_PNAME;
+    SEARCH=$QPID_STOP_SEARCH;
 fi
 
 #
