@@ -22,6 +22,9 @@
 package org.apache.qpid.server.security.acl;
 
 import junit.framework.TestCase;
+
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.*;
 import org.apache.qpid.framing.AMQShortString;
@@ -34,11 +37,17 @@ import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
-import java.io.File;
 
-public class SimpleACLTest extends QpidTestCase implements ConnectionListener
+import java.io.File;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+public class SimpleACLTest extends QpidTestCase implements ConnectionListener, ExceptionListener
 {
     private String BROKER = "vm://:"+ApplicationRegistry.DEFAULT_INSTANCE;//"tcp://localhost:5672";
+    private ArrayList<Exception> _thrownExceptions = new ArrayList<Exception>();
+    private CountDownLatch _awaitError = new CountDownLatch(51);
 
     public void setUp() throws Exception
     {
@@ -268,7 +277,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testClientPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testClientPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException, InterruptedException
     {
         try
         {
@@ -276,41 +285,38 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 
             ((AMQConnection) conn).setConnectionListener(this);
 
-            Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session = conn.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
-
+            conn.setExceptionListener(this);
             MessageProducer sender = ((AMQSession) session).createProducer(null);
 
-            Queue queue = session.createQueue("Invalid");
-
+            Queue queue = session.createQueue("NewQueueThatIDoNotHaveRightsToPublishToo");
+            
             // Send a message that we will wait to be sent, this should give the broker time to close the connection
             // before we finish this test. Message is set !immed !mand as the queue is invalid so want to test ACLs not
             // queue existence.
             ((org.apache.qpid.jms.MessageProducer) sender).send(queue, session.createTextMessage("test"),
                                                                 DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
 
-            // Test the connection with a valid consumer
-            // This may fail as the session may be closed before the queue or the consumer created.
-            Queue temp = session.createTemporaryQueue();
-
-            session.createConsumer(temp).close();
-
-            //Connection should now be closed and will throw the exception caused by the above send
-            conn.close();
-
-            fail("Close is not expected to succeed.");
+            _awaitError.await(1, TimeUnit.SECONDS);
         }
         catch (JMSException e)
         {
-            Throwable cause = e.getLinkedException();
-            if (!(cause instanceof AMQAuthenticationException))
-            {
-                e.printStackTrace();
-            }
-            assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
-            assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+            fail("Unknown exception thrown:" + e.getMessage());
         }
+        boolean foundCorrectException = false;
+        for (Exception cause : _thrownExceptions)
+        {
+            if (cause instanceof JMSException)
+            {
+                if (((JMSException) cause).getLinkedException() instanceof AMQAuthenticationException)
+                {
+                    foundCorrectException = true;
+                }
+            }
+        }
+        assertTrue("Did not get AMQAuthenticationException thrown", foundCorrectException);
     }
 
     public void testServerConsumeFromNamedQueueValid() throws AMQException, URLSyntaxException
@@ -656,5 +662,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 
     public void failoverComplete()
     {
+    }
+
+    public void onException(JMSException arg0)
+    {
+        _thrownExceptions.add(arg0);
+        _awaitError.countDown();
     }
 }

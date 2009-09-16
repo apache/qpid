@@ -382,6 +382,18 @@ public class MINANetworkDriverTest extends TestCase
                 return null;
             }
         }
+        
+        public SocketAddress getLocalAddress()
+        {            
+            if (_driver != null)
+            {
+                return _driver.getLocalAddress();
+            } 
+            else
+            {
+                return null;
+            }
+        }
 
         public long getWrittenBytes()
         {
@@ -459,6 +471,7 @@ public class MINANetworkDriverTest extends TestCase
         {
             return _closed;
         }
+
     }
 
     private class EchoProtocolEngine extends CountingProtocolEngine

@@ -79,7 +79,7 @@ public class TransportConnection
         return _openSocketRegister.remove(socketID);
     }
 
-    public static synchronized ITransportConnection getInstance(BrokerDetails details) throws AMQTransportConnectionException
+    public static synchronized ITransportConnection getInstance(final BrokerDetails details) throws AMQTransportConnectionException
     {
         int transport = getTransport(details.getTransport());
 
@@ -95,7 +95,22 @@ public class TransportConnection
                 {
                     public IoConnector newSocketConnector()
                     {
-                        return new ExistingSocketConnector(1,new QpidThreadExecutor());
+                        ExistingSocketConnector connector = new ExistingSocketConnector(1,new QpidThreadExecutor());
+
+                        Socket socket = TransportConnection.removeOpenSocket(details.getHost());
+
+                        if (socket != null)
+                        {
+                            _logger.info("Using existing Socket:" + socket);
+
+                            ((ExistingSocketConnector) connector).setOpenSocket(socket);
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("Active Socket must be provided for broker " +
+                                                               "with 'socket://<SocketID>' transport:" + details);
+                        }
+                        return connector;
                     }
                 });
             case TCP:

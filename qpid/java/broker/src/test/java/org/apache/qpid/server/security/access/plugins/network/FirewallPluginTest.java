@@ -32,12 +32,12 @@ import junit.framework.TestCase;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
-import org.apache.qpid.server.protocol.TestNetworkDriver;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.TestNetworkDriver;
 
 public class FirewallPluginTest extends TestCase
 {
@@ -90,7 +90,7 @@ public class FirewallPluginTest extends TestCase
         super.setUp();
         _store = new TestableMemoryMessageStore();
         _testDriver = new TestNetworkDriver();
-        _testDriver.setAddress("127.0.0.1");
+        _testDriver.setRemoteAddress("127.0.0.1");
 
         // Retreive VirtualHost from the Registry
         VirtualHostRegistry virtualHostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
@@ -167,7 +167,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("192.168.23.23");
+        _testDriver.setRemoteAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -182,7 +182,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("192.168.23.23");
+        _testDriver.setRemoteAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
 
@@ -195,7 +195,7 @@ public class FirewallPluginTest extends TestCase
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("127.0.0.1");
+        _testDriver.setRemoteAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
 
@@ -208,7 +208,7 @@ public class FirewallPluginTest extends TestCase
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{rule});
 
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("127.0.0.1");
+        _testDriver.setRemoteAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -231,7 +231,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("192.168.23.23");
+        _testDriver.setRemoteAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -254,7 +254,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("192.168.23.23");
+        _testDriver.setRemoteAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
 
@@ -268,7 +268,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("192.168.23.23");
+        _testDriver.setRemoteAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -282,7 +282,7 @@ public class FirewallPluginTest extends TestCase
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("192.168.23.23");
+        _testDriver.setRemoteAddress("192.168.23.23");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     
@@ -292,11 +292,11 @@ public class FirewallPluginTest extends TestCase
         firstRule.setAccess("allow");
         firstRule.setHostname("foo, bar, "+new InetSocketAddress("127.0.0.1", 5672).getHostName());
         FirewallPlugin plugin = initialisePlugin("deny", new RuleInfo[]{firstRule});
-        _testDriver.setAddress("10.0.0.1");
+        _testDriver.setRemoteAddress("10.0.0.1");
         assertEquals(AuthzResult.DENIED, plugin.authoriseConnect(_session, _virtualHost));
         
         // Set session IP so that we're connected from the right address
-        _testDriver.setAddress("127.0.0.1");
+        _testDriver.setRemoteAddress("127.0.0.1");
         assertEquals(AuthzResult.ALLOWED, plugin.authoriseConnect(_session, _virtualHost));
     }
     

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol;
+package org.apache.qpid.transport;
 
 import java.net.BindException;
 import java.net.InetAddress;
@@ -28,14 +28,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.net.ssl.SSLEngine;
-
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
-import org.apache.qpid.transport.OpenException;
 
 /**
  * Test implementation of IoSession, which is required for some tests. Methods not being used are not implemented,
@@ -44,21 +39,17 @@ import org.apache.qpid.transport.OpenException;
 public class TestNetworkDriver implements NetworkDriver
 {
     private final ConcurrentMap attributes = new ConcurrentHashMap();
-    private String _address = "127.0.0.1";
+    private String _remoteAddress = "127.0.0.1";
+    private String _localAddress = "127.0.0.1";
     private int _port = 1;
 
     public TestNetworkDriver()
     {
     }
 
-    public void setAddress(String string)
+    public void setRemoteAddress(String string)
     {
-        this._address = string;
-    }
-
-    public String getAddress()
-    {
-        return _address;
+        this._remoteAddress = string;
     }
 
     public void setPort(int _port)
@@ -79,16 +70,16 @@ public class TestNetworkDriver implements NetworkDriver
 
     public SocketAddress getLocalAddress()
     {
-        return new InetSocketAddress(_address, _port);
+        return new InetSocketAddress(_localAddress, _port);
     }
 
     public SocketAddress getRemoteAddress()
     {
-        return new InetSocketAddress(_address, _port);
+        return new InetSocketAddress(_remoteAddress, _port);
     }
 
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
-            SSLEngine sslEngine) throws OpenException
+            SSLContextFactory sslFactory) throws OpenException
     {
         
     }
@@ -121,6 +112,11 @@ public class TestNetworkDriver implements NetworkDriver
     public void setIdleTimeout(long l)
     {
         
+    }
+
+    public void setLocalAddress(String localAddress)
+    {
+        _localAddress = localAddress;
     }
 
 }

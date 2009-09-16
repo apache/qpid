@@ -21,7 +21,9 @@
 
 package org.apache.qpid.transport;
 
-public class OpenException extends Exception
+import java.io.IOException;
+
+public class OpenException extends IOException
 {
 
     public OpenException(String string, Throwable lastException)

@@ -33,6 +33,7 @@ import javax.net.ssl.SSLEngine;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoAcceptor;
+import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoFilterChain;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
@@ -71,7 +72,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     private int _processors = 4;
     private boolean _executorPool = false;
     private SSLContextFactory _sslFactory = null;
-    private SocketConnector _socketConnector;
+    private IoConnector _socketConnector;
     private IoAcceptor _acceptor;
     private IoSession _ioSession;
     private ProtocolEngineFactory _factory;
@@ -101,11 +102,23 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         _protectIO = protectIO;
         _protocolEngine = protocolEngine;
         _ioSession = session;
+        _ioSession.setAttachment(_protocolEngine);
     }
     
     public MINANetworkDriver()
     {
 
+    }
+
+    public MINANetworkDriver(IoConnector ioConnector)
+    {
+        _socketConnector = ioConnector;
+    }
+    
+    public MINANetworkDriver(IoConnector ioConnector, ProtocolEngine engine)
+    {
+        _socketConnector = ioConnector;
+        _protocolEngine = engine;
     }
 
     public void bind(int port, InetAddress[] addresses, ProtocolEngineFactory factory,
@@ -188,8 +201,13 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     
 
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
-            SSLEngine sslEngine) throws OpenException
+            SSLContextFactory sslFactory) throws OpenException
     {
+        if (sslFactory != null)
+        {
+            _sslFactory = sslFactory;
+        }
+        
         if (_useNIO)
         {
             _socketConnector = new MultiThreadSocketConnector(1, new QpidThreadExecutor());
@@ -207,7 +225,6 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         {
             org.apache.mina.common.ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
         }
-        
 
         SocketConnectorConfig cfg = (SocketConnectorConfig) _socketConnector.getDefaultConfig();
 
@@ -229,7 +246,11 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         // one SocketConnector per connection at the moment anyway). This allows
         // short-running
         // clients (like unit tests) to complete quickly.
-        _socketConnector.setWorkerTimeout(0);
+        if (_socketConnector instanceof SocketConnector)
+        {
+            ((SocketConnector) _socketConnector).setWorkerTimeout(0);
+        }   
+        
         ConnectFuture future = _socketConnector.connect(new InetSocketAddress(destination, port), this, cfg);
         future.join();
         if (!future.isConnected())
@@ -333,56 +354,54 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     public void sessionCreated(IoSession protocolSession) throws Exception
     {
+        // Configure the session with SSL if necessary
+        SessionUtil.initialize(protocolSession);
+        if (_executorPool)
+        {
+            if (_sslFactory != null)
+            {
+                protocolSession.getFilterChain().addAfter("AsynchronousReadFilter", "sslFilter",
+                        new SSLFilter(_sslFactory.buildServerContext()));
+            }
+        }
+        else
+        {
+            if (_sslFactory != null)
+            {
+                protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
+                        new SSLFilter(_sslFactory.buildServerContext()));
+            }
+        }
+        // Do we want to have read/write buffer limits?
+        if (_protectIO)
+        {
+            //Add IO Protection Filters
+            IoFilterChain chain = protocolSession.getFilterChain();
+
+            protocolSession.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
+
+            ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
+            readfilter.setMaximumConnectionBufferSize(_config.getReceiveBufferSize());
+            readfilter.attach(chain);
+
+            WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
+            writefilter.setMaximumConnectionBufferSize(_config.getSendBufferSize());
+            writefilter.attach(chain);
+
+            protocolSession.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
+        }
+
+        if (_ioSession == null)
+        {
+            _ioSession = protocolSession;
+        }
+        
         if (_acceptingConnections)
         {
-            // Configure the session with SSL if necessary
-            SessionUtil.initialize(protocolSession);
-            if (_executorPool)
-            {
-                if (_sslFactory != null)
-                {
-                    protocolSession.getFilterChain().addAfter("AsynchronousReadFilter", "sslFilter",
-                            new SSLFilter(_sslFactory.buildServerContext()));
-                }
-            }
-            else
-            {
-                if (_sslFactory != null)
-                {
-                    protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
-                            new SSLFilter(_sslFactory.buildServerContext()));
-                }
-            }
-
-            // Do we want to have read/write buffer limits?
-            if (_protectIO)
-            {
-                //Add IO Protection Filters
-                IoFilterChain chain = protocolSession.getFilterChain();
-
-                protocolSession.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
-
-                ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
-                readfilter.setMaximumConnectionBufferSize(_config.getReceiveBufferSize());
-                readfilter.attach(chain);
-
-                WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
-                writefilter.setMaximumConnectionBufferSize(_config.getSendBufferSize());
-                writefilter.attach(chain);
-
-                protocolSession.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
-            }
-            
-            if (_ioSession == null)
-            {
-                _ioSession = protocolSession;
-            }
-            
             // Set up the protocol engine
             ProtocolEngine protocolEngine = _factory.newProtocolEngine(this);
             MINANetworkDriver newDriver = new MINANetworkDriver(_useNIO, _processors, _executorPool, _protectIO, protocolEngine, protocolSession);
             protocolEngine.setNetworkDriver(newDriver);
-            protocolSession.setAttachment(protocolEngine);
         }
     }
 
@@ -407,6 +426,15 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
         _factory = engineFactory;
         _acceptingConnections = acceptingConnections;
+    }
+
+    public void setProtocolEngine(ProtocolEngine protocolEngine)
+    {
+        _protocolEngine = protocolEngine;
+        if (_ioSession != null)
+        {
+            _ioSession.setAttachment(protocolEngine);
+        }
     }
 
 }

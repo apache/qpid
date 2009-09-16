@@ -35,11 +35,11 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.TestNetworkDriver;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.TestNetworkDriver;
 
 public class ServerConfigurationTest extends TestCase
 {
@@ -793,12 +793,12 @@ public class ServerConfigurationTest extends TestCase
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         
         TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setAddress("127.0.0.1");
+        testDriver.setRemoteAddress("127.0.0.1");
         
         AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
         
-        testDriver.setAddress("127.1.2.3");
+        testDriver.setRemoteAddress("127.1.2.3");
         session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
         assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
@@ -867,7 +867,7 @@ public class ServerConfigurationTest extends TestCase
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
 
         TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setAddress("127.0.0.1");
+        testDriver.setRemoteAddress("127.0.0.1");
         
         AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
         session.setNetworkDriver(testDriver);
@@ -935,7 +935,7 @@ public class ServerConfigurationTest extends TestCase
 
         // Test config
         TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setAddress("127.0.0.1");
+        testDriver.setRemoteAddress("127.0.0.1");
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
         AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);

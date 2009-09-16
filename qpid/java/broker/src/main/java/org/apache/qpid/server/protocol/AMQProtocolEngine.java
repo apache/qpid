@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.JMException;
@@ -51,7 +49,6 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQProtocolHeaderException;
-import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.framing.ConnectionCloseBody;
@@ -94,7 +91,7 @@ import org.apache.qpid.transport.Sender;
 
 public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession
 {
-    private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+    private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
     private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
 
@@ -180,6 +177,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
         _actor.message(ConnectionMessages.CON_1001(null, null, false, false));
+        _poolReference.acquireExecutorService();
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -212,7 +210,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         try
         {
             final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
-            fireAsynchEvent(_readJob, new Event(new Runnable()
+            Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Event(new Runnable()
             {
                 @Override
                 public void run()
@@ -463,7 +461,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         final ByteBuffer buf = frame.toNioByteBuffer();
         _lastIoTime = System.currentTimeMillis();
         _writtenBytes += buf.remaining();
-        fireAsynchEvent(_writeJob, new Event(new Runnable()
+        Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Event(new Runnable()
         {
             @Override
             public void run()
@@ -687,6 +685,10 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession() throws AMQException
     {
+        if (CurrentActor.get() == null)
+        {
+            CurrentActor.set(_actor);
+        }
         if (!_closed)
         {
             if (_virtualHost != null)
@@ -907,6 +909,11 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public SocketAddress getRemoteAddress()
     {
         return _networkDriver.getRemoteAddress();
+    }    
+
+    public SocketAddress getLocalAddress()
+    {
+        return _networkDriver.getLocalAddress();
     }
 
     public MethodRegistry getMethodRegistry()
@@ -990,7 +997,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         // Do nothing
     }
-
+    
     @Override
     public long getReadBytes()
     {
@@ -1017,38 +1024,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return (_clientVersion == null) ? null : _clientVersion.toString();
     }
     
-    /**
-     * Adds an {@link Event} to a {@link Job}, triggering the execution of the job if it is not already running.
-     *
-     * @param job The job.
-     * @param event   The event to hand off asynchronously.
-     */
-    void fireAsynchEvent(Job job, Event event)
-    {
-
-        job.add(event);
-
-        final ExecutorService pool = _poolReference .getPool();
-
-        if(pool == null)
-        {
-            return;
-        }
-
-        // rather than perform additional checks on pool to check that it hasn't shutdown.
-        // catch the RejectedExecutionException that will result from executing on a shutdown pool
-        if (job.activate())
-        {
-            try
-            {
-                pool.execute(job);
-            }
-            catch(RejectedExecutionException e)
-            {
-                _logger.warn("Thread pool shutdown while tasks still outstanding");
-            }
-        }
-
-    }
+    
     
 }

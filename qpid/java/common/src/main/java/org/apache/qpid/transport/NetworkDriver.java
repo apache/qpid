@@ -24,8 +24,6 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 
-import javax.net.ssl.SSLEngine;
-
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
@@ -33,13 +31,14 @@ import org.apache.qpid.ssl.SSLContextFactory;
 public interface NetworkDriver extends Sender<java.nio.ByteBuffer> 
 { 
    // Creates a NetworkDriver which attempts to connect to destination on port and attaches the ProtocolEngine to  
-   // it using the SSLEngine if provided 
+   // it using the SSLContextFactory if provided 
    void open(int port, InetAddress destination, ProtocolEngine engine,
-           NetworkDriverConfiguration config, SSLEngine sslEngine)
+           NetworkDriverConfiguration config, SSLContextFactory sslFactory)
    throws OpenException; 
    
    // listens for incoming connections on the specified ports and address and creates a new NetworkDriver which 
-   // processes incoming connections with ProtocolEngines created from factory using the SSLEngine if provided 
+   // processes incoming connections with ProtocolEngines and SSLEngines created from the factories 
+   // (in the case of an SSLContextFactory, if provided) 
    void bind (int port, InetAddress[] addresses, ProtocolEngineFactory protocolFactory,  
               NetworkDriverConfiguration config, SSLContextFactory sslFactory) throws BindException; 
  

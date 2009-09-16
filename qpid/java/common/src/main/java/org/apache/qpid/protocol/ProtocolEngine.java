@@ -37,6 +37,9 @@ public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>
  
    // Returns the remote address of the NetworkDriver 
    SocketAddress getRemoteAddress();
+
+   // Returns the local address of the NetworkDriver 
+   SocketAddress getLocalAddress();
  
    // Returns number of bytes written 
    long getWrittenBytes();

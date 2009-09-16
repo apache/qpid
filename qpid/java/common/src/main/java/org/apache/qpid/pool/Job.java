@@ -21,9 +21,13 @@
 package org.apache.qpid.pool;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.mina.common.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Job is a continuation that batches together other continuations, specifically {@link Event}s, into one continuation.
@@ -66,6 +70,8 @@ public class Job implements ReadWriteRunnable
 
     private final boolean _readJob;
 
+    private final static Logger _logger = LoggerFactory.getLogger(Job.class);
+    
     /**
      * Creates a new job that aggregates many continuations together.
      *
@@ -181,4 +187,38 @@ public class Job implements ReadWriteRunnable
 
         public void notCompleted(final Job job);
     }
+    
+    /**
+     * Adds an {@link Event} to a {@link Job}, triggering the execution of the job if it is not already running.
+     *
+     * @param job The job.
+     * @param event   The event to hand off asynchronously.
+     */
+    public static void fireAsynchEvent(ExecutorService pool, Job job, Event event)
+    {
+
+        job.add(event);
+
+
+        if(pool == null)
+        {
+            return;
+        }
+
+        // rather than perform additional checks on pool to check that it hasn't shutdown.
+        // catch the RejectedExecutionException that will result from executing on a shutdown pool
+        if (job.activate())
+        {
+            try
+            {
+                pool.execute(job);
+            }
+            catch(RejectedExecutionException e)
+            {
+                _logger.warn("Thread pool shutdown while tasks still outstanding");
+            }
+        }
+
+    }
+    
 }

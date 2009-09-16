@@ -34,6 +34,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.TestNetworkDriver;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
