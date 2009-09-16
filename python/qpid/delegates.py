@@ -139,12 +139,18 @@ class Server(Delegate):
 
 class Client(Delegate):
 
+  ppid = 0
+  try:
+    ppid = os.getppid()
+  except:
+    pass
+
   PROPERTIES = {"product": "qpid python client",
                 "version": "development",
                 "platform": os.name,
                 "qpid.client_process": os.path.basename(sys.argv[0]),
                 "qpid.client_pid": os.getpid(),
-                "qpid.client_ppid": os.getppid()}
+                "qpid.client_ppid": ppid}
 
   def __init__(self, connection, username="guest", password="guest",
                mechanism="PLAIN", heartbeat=None):
