@@ -380,7 +380,7 @@ QPID_AUTO_TEST_CASE(testAvailable)
     for (uint i = 0; i < 5; ++i) {
         s2.send(Message((boost::format("B_%1%") % (i+1)).str()));
     }
-    sleep(1);//is there any avoid an arbitrary sleep while waiting for messages to be dispatched?
+    qpid::sys::sleep(1);//is there any avoid an arbitrary sleep while waiting for messages to be dispatched?
     for (uint i = 0; i < 5; ++i) {
         BOOST_CHECK_EQUAL(fix.session.available(), 15u - 2*i);
         BOOST_CHECK_EQUAL(r1.available(), 10u - i);
