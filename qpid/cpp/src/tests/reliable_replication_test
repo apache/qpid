@@ -22,7 +22,7 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python
+PYTHON_DIR=${MY_DIR}/../../../python/temp
 
 trap stop_brokers EXIT
 
