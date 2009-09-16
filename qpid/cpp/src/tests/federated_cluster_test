@@ -22,7 +22,7 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python/temp
+PYTHON_DIR=$srcdir/../../../python
 
 trap stop_brokers EXIT
 

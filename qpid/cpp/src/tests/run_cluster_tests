@@ -26,7 +26,7 @@ if [ -z ${top_builddir} -o -z ${srcdir} ]; then
 	top_builddir=${srcdir}/../../
 fi
 TEST_DIR=${top_builddir}/src/tests
-PYTHON_DIR=${srcdir}/../../../python/temp
+PYTHON_DIR=${srcdir}/../../../python
 
 if test -z $1; then
 	CLUSTER_TEST="${PYTHON_DIR}/qpid-python-test -m cluster_tests cluster_tests.ShortTests.\*"
