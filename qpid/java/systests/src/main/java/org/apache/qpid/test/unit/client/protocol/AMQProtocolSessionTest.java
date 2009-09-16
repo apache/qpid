@@ -78,7 +78,7 @@ public class AMQProtocolSessionTest extends QpidTestCase
         _validAddress = "abc";
         _generatedAddress_3 = "tmp_abc123_3";
     }
-/*
+
     public void testGenerateQueueName()
     {
         AMQShortString testAddress;
@@ -97,13 +97,13 @@ public class AMQProtocolSessionTest extends QpidTestCase
         assertEquals("Failure when generating a queue exchange from an empty address",_generatedAddress_2,testAddress.toString());
 
         //test address with no special chars
-        _testSession.getNetworkDriver().setStringLocalAddress(_validAddress);
+        _testSession.getNetworkDriver().setLocalAddress(_validAddress);
 
         testAddress = _testSession.genQueueName();
         assertEquals("Failure when generating a queue exchange from an address with no special chars",_generatedAddress_3,testAddress.toString());
 
     }
-*/
+
     protected void tearDown() throws Exception
     {
         _testSession = null;
