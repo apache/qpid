@@ -706,7 +706,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             }
             
             _closed = true;
-
+            _poolReference.releaseExecutorService();
             CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
         }
     }

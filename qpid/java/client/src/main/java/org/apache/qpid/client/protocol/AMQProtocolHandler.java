@@ -716,6 +716,7 @@ public class AMQProtocolHandler implements ProtocolEngine
                 _logger.debug("FailoverException interrupted connection close, ignoring as connection   close anyway.");
             }
         }
+        _poolReference.releaseExecutorService();
     }
 
     /** @return the number of bytes read from this protocol session */

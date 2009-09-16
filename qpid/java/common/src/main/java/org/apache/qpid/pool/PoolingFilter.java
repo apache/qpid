@@ -136,9 +136,6 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
     public void destroy()
     {
         _logger.debug("Destroy called on PoolingFilter " + toString());
-
-        // When the reference count gets to zero we release the executor service.
-        _poolReference.releaseExecutorService();
     }
 
     /**
