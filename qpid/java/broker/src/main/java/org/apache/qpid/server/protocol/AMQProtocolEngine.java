@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -135,7 +137,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private FieldTable _clientProperties;
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
 
-    private List<Integer> _closingChannelsList = new CopyOnWriteArrayList<Integer>();
+    private Map<Integer, Long> _closingChannelsList = new ConcurrentHashMap<Integer, Long>();
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
@@ -293,12 +295,8 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                 }
                 else
                 {
-                    if (_logger.isInfoEnabled())
-                    {
-                        _logger.info("Channel[" + channelId + "] awaiting closure. Should close socket as client did not close-ok :" + frame);
-                    }
-
-                    closeProtocolSession();
+                    // The channel has been told to close, we don't process any more frames until
+                    // it's closed. 
                     return;
                 }
             }
@@ -513,7 +511,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public boolean channelAwaitingClosure(int channelId)
     {
-        return !_closingChannelsList.isEmpty() && _closingChannelsList.contains(channelId);
+        return !_closingChannelsList.isEmpty() && _closingChannelsList.containsKey(channelId);
     }
 
     public void addChannel(AMQChannel channel) throws AMQException
@@ -525,7 +523,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
         final int channelId = channel.getChannelId();
 
-        if (_closingChannelsList.contains(channelId))
+        if (_closingChannelsList.containsKey(channelId))
         {
             throw new AMQException("Session is marked awaiting channel close");
         }
@@ -632,7 +630,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private void markChannelAwaitingCloseOk(int channelId)
     {
-        _closingChannelsList.add(channelId);
+        _closingChannelsList.put(channelId, System.currentTimeMillis());
     }
 
     /**
@@ -1023,7 +1021,19 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         return (_clientVersion == null) ? null : _clientVersion.toString();
     }
-    
-    
+
+    @Override
+    public void closeIfLingeringClosedChannels()
+    {
+        for (Entry<Integer, Long>id : _closingChannelsList.entrySet())
+        {
+            if (id.getValue() + 30000 > System.currentTimeMillis())
+            {
+                // We have a channel that we closed 30 seconds ago. Client's dead, kill the connection
+                _logger.error("Closing connection as channel was closed more than 30 seconds ago and no ChannelCloseOk has been processed");
+                closeProtocolSession();
+            }
+        }
+    }
     
 }

@@ -44,6 +44,14 @@ public class ConnectionRegistry implements IConnectionRegistry
     {
 
     }
+    
+    public void expireClosedChannels()
+    {
+        for (AMQProtocolSession connection : _registry)
+        {
+            connection.closeIfLingeringClosedChannels();
+        }
+    }
 
     /** Close all of the currently open connections. */
     public void close() throws AMQException

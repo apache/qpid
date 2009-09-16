@@ -225,5 +225,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
     void commitTransactions(AMQChannel channel) throws AMQException;
 
     List<AMQChannel> getChannels();
+
+    void closeIfLingeringClosedChannels();
     
 }
