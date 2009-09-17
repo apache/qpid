@@ -337,7 +337,7 @@ public class QpidTestCase extends TestCase
                         latch.countDown();
                     }
 
-                    if (latch != null && line.contains(stopped))
+                    if (!seenReady && line.contains(stopped))
                     {
                         stopLine = line;
                     }
