@@ -597,7 +597,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
                     Mutex::ScopedUnlock u(messageLock);   
                     dequeue(0, QueuedMessage(qm.queue, old, qm.position));
                 }
-            }		 
+            }           
         }else {
             messages.push_back(qm);
             listeners.populate(copy);
@@ -702,7 +702,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg)
     if (inLastNodeFailure && persistLastNode){
         msg->forcePersistent();
     }
-	
+       
     if (traceId.size()) {
         msg->addTraceId(traceId);
     }

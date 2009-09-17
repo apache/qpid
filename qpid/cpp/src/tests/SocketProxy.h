@@ -35,8 +35,11 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/log/Statement.h"
 
+namespace qpid {
+namespace tests {
+
 /**
- * A simple socket proxy that forwards to another socket. 
+ * A simple socket proxy that forwards to another socket.
  * Used between client & local broker to simulate network failures.
  */
 class SocketProxy : private qpid::sys::Runnable
@@ -59,7 +62,7 @@ class SocketProxy : private qpid::sys::Runnable
         joined = false;
         thread = qpid::sys::Thread(static_cast<qpid::sys::Runnable*>(this));
     }
-    
+
       ~SocketProxy() { close(); if (!joined) thread.join(); }
 
     /** Simulate a network disconnect. */
@@ -88,7 +91,7 @@ class SocketProxy : private qpid::sys::Runnable
     }
 
     uint16_t getPort() const { return port; }
-    
+
   private:
     static void throwErrno(const std::string& msg) {
         throw qpid::Exception(msg+":"+qpid::sys::strError(errno));
@@ -153,7 +156,7 @@ class SocketProxy : private qpid::sys::Runnable
         }
         try {
             if (server.get()) server->close();
-            close(); 
+            close();
         }
         catch (const std::exception& e) {
             QPID_LOG(debug, "SocketProxy::run exception in client/server close()" << e.what());
@@ -168,5 +171,7 @@ class SocketProxy : private qpid::sys::Runnable
     qpid::sys::Thread thread;
     bool dropClient, dropServer;
 };
+
+}} // namespace qpid::tests
 
 #endif

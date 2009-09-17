@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,6 +36,9 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using namespace std;
 
+namespace qpid {
+namespace tests {
+
 typedef vector<string> StringSet;
 
 struct Args : public qpid::TestOptions {
@@ -46,7 +49,7 @@ struct Args : public qpid::TestOptions {
     bool summary;
     bool print;
     bool durable;
-    
+
     Args() : count(1000), ack(0), queue("publish-consume"),
              declare(false), summary(false), print(false)
     {
@@ -63,12 +66,12 @@ struct Args : public qpid::TestOptions {
 
 Args opts;
 
-struct Client 
+struct Client
 {
     Connection connection;
     Session session;
 
-    Client() 
+    Client()
     {
         opts.open(connection);
         session = connection.newSession();
@@ -85,7 +88,7 @@ struct Client
         settings.flowControl = FlowControl(opts.count, SubscriptionManager::UNLIMITED,false);
         Subscription sub = subs.subscribe(lq, opts.queue, settings);
         Message msg;
-        AbsTime begin=now();        
+        AbsTime begin=now();
         for (size_t i = 0; i < opts.count; ++i) {
             msg=lq.pop();
             QPID_LOG(info, "Received: " << msg.getMessageProperties().getCorrelationId());
@@ -99,7 +102,7 @@ struct Client
         else cout << "Time: " << secs << "s Rate: " << opts.count/secs << endl;
     }
 
-    ~Client() 
+    ~Client()
     {
         try{
             session.close();
@@ -109,6 +112,10 @@ struct Client
         }
     }
 };
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {

@@ -72,7 +72,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
         params.insert(make_pair(acl::PROP_PASSIVE, std::string(passive ? _TRUE : _FALSE) ));
         params.insert(make_pair(acl::PROP_DURABLE, std::string(durable ? _TRUE : _FALSE)));
         if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchange,&params) )
-            throw NotAllowedException(QPID_MSG("ACL denied exhange declare request from " << getConnection().getUserId()));
+            throw NotAllowedException(QPID_MSG("ACL denied exchange declare request from " << getConnection().getUserId()));
     }
     
     //TODO: implement autoDelete
@@ -134,7 +134,7 @@ void SessionAdapter::ExchangeHandlerImpl::delete_(const string& name, bool /*ifU
     AclModule* acl = getBroker().getAcl();
     if (acl) {
         if (!acl->authorise(getConnection().getUserId(),acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
-            throw NotAllowedException(QPID_MSG("ACL denied exhange delete request from " << getConnection().getUserId()));
+            throw NotAllowedException(QPID_MSG("ACL denied exchange delete request from " << getConnection().getUserId()));
     }
 
     //TODO: implement unused
@@ -154,7 +154,7 @@ ExchangeQueryResult SessionAdapter::ExchangeHandlerImpl::query(const string& nam
     AclModule* acl = getBroker().getAcl();
     if (acl) {
         if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_EXCHANGE,name,NULL) )
-            throw NotAllowedException(QPID_MSG("ACL denied exhange query request from " << getConnection().getUserId()));
+            throw NotAllowedException(QPID_MSG("ACL denied exchange query request from " << getConnection().getUserId()));
     }
 
     try {
@@ -171,8 +171,12 @@ void SessionAdapter::ExchangeHandlerImpl::bind(const string& queueName,
 {
     AclModule* acl = getBroker().getAcl();
     if (acl) {
-        if (!acl->authorise(getConnection().getUserId(),acl::ACT_BIND,acl::OBJ_EXCHANGE,exchangeName,routingKey) )
-            throw NotAllowedException(QPID_MSG("ACL denied exhange bind request from " << getConnection().getUserId()));
+        std::map<acl::Property, std::string> params;
+        params.insert(make_pair(acl::PROP_QUEUENAME, queueName));
+        params.insert(make_pair(acl::PROP_ROUTINGKEY, routingKey));
+
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_BIND,acl::OBJ_EXCHANGE,exchangeName,&params))
+            throw NotAllowedException(QPID_MSG("ACL denied exchange bind request from " << getConnection().getUserId()));
     }
 
     Queue::shared_ptr queue = getQueue(queueName);
@@ -234,8 +238,8 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_QUEUENAME, queueName));
         params.insert(make_pair(acl::PROP_ROUTINGKEY, key));
-        if (!acl->authorise(getConnection().getUserId(),acl::ACT_CREATE,acl::OBJ_EXCHANGE,exchangeName,&params) )
-            throw NotAllowedException(QPID_MSG("ACL denied exhange bound request from " << getConnection().getUserId()));
+        if (!acl->authorise(getConnection().getUserId(),acl::ACT_ACCESS,acl::OBJ_EXCHANGE,exchangeName,&params) )
+            throw NotAllowedException(QPID_MSG("ACL denied exchange bound request from " << getConnection().getUserId()));
     }
     
     Exchange::shared_ptr exchange;

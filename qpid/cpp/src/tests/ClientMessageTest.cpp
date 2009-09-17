@@ -24,6 +24,9 @@
 
 using namespace qpid::client;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(ClientMessageTestSuite)
 
 QPID_AUTO_TEST_CASE(MessageCopyAssign) {
@@ -33,7 +36,7 @@ QPID_AUTO_TEST_CASE(MessageCopyAssign) {
     Message c(m);
     BOOST_CHECK_EQUAL("foo", c.getData());
     Message a;
-    BOOST_CHECK_EQUAL("", a.getData());    
+    BOOST_CHECK_EQUAL("", a.getData());
     a = m;
     BOOST_CHECK_EQUAL("foo", a.getData());
     a.setData("a");
@@ -44,3 +47,5 @@ QPID_AUTO_TEST_CASE(MessageCopyAssign) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

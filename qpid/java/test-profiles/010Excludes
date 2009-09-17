@@ -83,6 +83,9 @@ org.apache.qpid.server.logging.*
 
 // CPP Broker does not have a JMX interface to test
 org.apache.qpid.management.jmx.*
+// JMX is used in this test for validation
+org.apache.qpid.server.queue.ModelTest#*
+
 
 // 0-10 is not supported by the MethodRegistry
 org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*

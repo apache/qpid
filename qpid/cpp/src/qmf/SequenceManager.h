@@ -21,29 +21,43 @@
  */
 
 #include "qpid/sys/Mutex.h"
+#include <boost/shared_ptr.hpp>
 #include <map>
+
+namespace qpid {
+    namespace framing {
+        class Buffer;
+    }
+}
 
 namespace qmf {
 
     class SequenceContext {
     public:
+        typedef boost::shared_ptr<SequenceContext> Ptr;
         SequenceContext() {}
         virtual ~SequenceContext() {}
 
-        virtual void complete() = 0;
+        virtual void reserve() = 0;
+        virtual bool handleMessage(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer) = 0;
+        virtual void release() = 0;
     };
 
     class SequenceManager {
     public:
         SequenceManager();
 
-        uint32_t reserve(SequenceContext* ctx);
+        void setUnsolicitedContext(SequenceContext::Ptr ctx);
+        uint32_t reserve(SequenceContext::Ptr ctx = SequenceContext::Ptr());
         void release(uint32_t sequence);
+        void releaseAll();
+        void dispatch(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer);
 
     private:
         mutable qpid::sys::Mutex lock;
         uint32_t nextSequence;
-        std::map<uint32_t, SequenceContext*> contextMap;
+        SequenceContext::Ptr unsolicitedContext;
+        std::map<uint32_t, SequenceContext::Ptr> contextMap;
     };
 
 }

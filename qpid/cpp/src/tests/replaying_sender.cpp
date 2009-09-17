@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,12 +35,15 @@ using namespace qpid::framing;
 
 using namespace std;
 
+namespace qpid {
+namespace tests {
+
 class Sender : public FailoverManager::Command
 {
   public:
     Sender(const std::string& queue, uint count, uint reportFreq);
     void execute(AsyncSession& session, bool isRetry);
-    uint getSent(); 
+    uint getSent();
 
     void setVerbosity   ( int v ) { verbosity   = v; }
     void setPersistence ( int p ) { persistence = p; }
@@ -51,7 +54,7 @@ class Sender : public FailoverManager::Command
     uint sent;
     const uint reportFrequency;
     Message message;
-    
+
     int verbosity;
     int persistence;
 };
@@ -93,7 +96,11 @@ uint Sender::getSent()
     return sent;
 }
 
-int main(int argc, char ** argv) 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
+
+int main(int argc, char ** argv)
 {
     ConnectionSettings settings;
 
@@ -118,23 +125,23 @@ int main(int argc, char ** argv)
         connection.execute ( sender );
         if ( verbosity > 0 )
         {
-            std::cout << "Sender finished.  Sent " 
-                      << sender.getSent() 
-                      << " messages." 
+            std::cout << "Sender finished.  Sent "
+                      << sender.getSent()
+                      << " messages."
                       << endl;
         }
         connection.close();
-        return 0;  
-    } 
-    catch(const std::exception& error) 
+        return 0;
+    }
+    catch(const std::exception& error)
     {
-        cerr << "Sender (host: " 
-             << settings.host 
-             << " port: " 
+        cerr << "Sender (host: "
+             << settings.host
+             << " port: "
              << settings.port
              << " )  "
-             << " Failed: " 
-             << error.what() 
+             << " Failed: "
+             << error.what()
              << std::endl;
     }
     return 1;

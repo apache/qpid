@@ -94,7 +94,7 @@ public class AlertingTest extends AbstractTestLogging
     {
         _connection = getConnection();
         _session = _connection.createSession(true, Session.SESSION_TRANSACTED);
-        _destination = _session.createQueue("testQueue");
+        _destination = _session.createQueue(getTestQueueName());
 
         // Consumer is only used to actually create the destination
         _session.createConsumer(_destination).close();
@@ -116,14 +116,12 @@ public class AlertingTest extends AbstractTestLogging
             // Add the current contents of the log file to test output
             message.append(_monitor.readFile());
 
-            // Write the server config file to test output
-            message.append("Server configuration file in use:\n");
-            message.append(FileUtils.readFileAsString(_configFile));
+            // Write the test config file to test output
+            message.append("Server configuration overrides in use:\n");
+            message.append(FileUtils.readFileAsString(getTestConfigFile()));
 
-            // Write the virtualhost config file to test output
-            message.append("\nVirtualhost configuration file in use:\n");
-            message.append(FileUtils.readFileAsString(ServerConfiguration.
-                    flatConfig(_configFile).getString("virtualhosts")));
+            message.append("\nVirtualhost maxMessageCount:\n");                        
+            message.append((new ServerConfiguration(_configFile)).getConfig().getString("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount"));
 
             fail(message.toString());
         }

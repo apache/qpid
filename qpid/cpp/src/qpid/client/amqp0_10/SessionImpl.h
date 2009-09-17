@@ -83,6 +83,12 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void receiverCancelled(const std::string& name);
     void senderCancelled(const std::string& name);
 
+    uint32_t available();
+    uint32_t available(const std::string& destination);
+
+    uint32_t pendingAck();
+    uint32_t pendingAck(const std::string& destination);
+
     void setSession(qpid::client::Session);
 
     template <class T> bool execute(T& f)
@@ -128,6 +134,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
     qpid::messaging::Receiver createReceiverImpl(const qpid::messaging::Address& address, 
                                                  const qpid::messaging::Filter* filter, 
                                                  const qpid::messaging::VariantMap& options);
+    uint32_t availableImpl(const std::string* destination);
+    uint32_t pendingAckImpl(const std::string* destination);
 
     //functors for public facing methods (allows locking and retry
     //logic to be centralised)
@@ -178,6 +186,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
     
     struct CreateSender;
     struct CreateReceiver;
+    struct PendingAck;
+    struct Available;
 
     //helper templates for some common patterns
     template <class F> bool execute()
@@ -195,6 +205,13 @@ class SessionImpl : public qpid::messaging::SessionImpl
     {
         F f(*this, p);
         return execute(f);
+    }
+
+    template <class F, class R, class P> R get1(P p)
+    {
+        F f(*this, p);
+        while (!execute(f)) {}
+        return f.result;
     }
 };
 }}} // namespace qpid::client::amqp0_10

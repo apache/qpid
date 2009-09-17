@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,6 +30,9 @@ using namespace qpid::sys;
 using namespace qpid::framing;
 using boost::dynamic_pointer_cast;
 using std::list;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(DeliveryRecordTestSuite)
 
@@ -60,3 +63,4 @@ QPID_AUTO_TEST_CASE(testSort)
 
 QPID_AUTO_TEST_SUITE_END()
 
+}} // namespace qpid::tests

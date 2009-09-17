@@ -46,7 +46,7 @@ class PersistableMessage : public Persistable
     sys::Mutex asyncEnqueueLock;
     sys::Mutex asyncDequeueLock;
     sys::Mutex storeLock;
-	
+       
     /**
      * Tracks the number of outstanding asynchronous enqueue
      * operations. When the message is enqueued asynchronously the
@@ -97,7 +97,7 @@ class PersistableMessage : public Persistable
     void flush();
     
     bool isContentReleased() const;
-	
+       
     QPID_BROKER_EXTERN bool isEnqueueComplete();
 
     QPID_BROKER_EXTERN void enqueueComplete();

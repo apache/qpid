@@ -87,7 +87,7 @@
         <auto_register>true</auto_register>
     </queue>
 
-    <virtualhosts>${conf}/virtualhosts-config-test.xml</virtualhosts>
+    <virtualhosts>${conf}/virtualhosts-ServerConfigurationTest-New.xml</virtualhosts>
 </broker>
 
 

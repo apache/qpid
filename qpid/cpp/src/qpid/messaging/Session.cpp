@@ -103,15 +103,7 @@ bool Session::dispatch(qpid::sys::Duration timeout)
 {
     return impl->dispatch(timeout);
 }
-
-void* Session::getLastConfirmedSent()
-{
-    return impl->getLastConfirmedSent();
-}
-
-void* Session::getLastConfirmedAcknowledged()
-{ 
-    return impl->getLastConfirmedAcknowledged();
-}
+uint32_t Session::available() { return impl->available(); }
+uint32_t Session::pendingAck() { return impl->pendingAck(); }
 
 }} // namespace qpid::messaging

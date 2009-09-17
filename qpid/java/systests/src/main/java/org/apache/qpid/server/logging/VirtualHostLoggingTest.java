@@ -64,8 +64,8 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         try
         {
             // Validation
-            Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-            List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+            ServerConfiguration configuration = new ServerConfiguration(_configFile);
+            List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
             //Validate each vhost logs a creation
             results = _monitor.findMatches("VHT-1001");
@@ -117,8 +117,8 @@ public class VirtualHostLoggingTest extends AbstractTestLogging
         {
             // Validation
 
-            Configuration configuration = ServerConfiguration.flatConfig(_configFile);
-            List<String> vhosts = configuration.getList("virtualhosts.virtualhost.name");
+            ServerConfiguration configuration = new ServerConfiguration(_configFile);
+            List<String> vhosts = configuration.getConfig().getList("virtualhosts.virtualhost.name");
 
             //Validate each vhost logs a creation
             results = _monitor.findMatches("VHT-1002");

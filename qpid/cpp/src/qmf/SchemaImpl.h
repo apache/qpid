@@ -148,7 +148,14 @@ namespace qmf {
         const std::string& name;
         const SchemaHash& hash;
 
+        // The *Container elements are only used if there isn't an external place to
+        // store these values.
+        std::string packageContainer;
+        std::string nameContainer;
+        SchemaHash hashContainer;
+
         SchemaClassKeyImpl(const std::string& package, const std::string& name, const SchemaHash& hash);
+        SchemaClassKeyImpl(qpid::framing::Buffer& buffer);
 
         const std::string& getPackageName() const { return package; }
         const std::string& getClassName() const { return name; }

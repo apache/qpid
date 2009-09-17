@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,7 +25,10 @@
 #include <time.h>
 #include "qpid/Options.h"
 
-struct Args : public qpid::Options 
+namespace qpid {
+namespace tests {
+
+struct Args : public qpid::Options
 {
     uint count;
     uint minSize;
@@ -34,12 +37,12 @@ struct Args : public qpid::Options
     uint maxChar;
     bool help;
 
-    Args() : qpid::Options("Random data generator"), 
-             count(1), minSize(8), maxSize(4096), 
+    Args() : qpid::Options("Random data generator"),
+             count(1), minSize(8), maxSize(4096),
              minChar(32), maxChar(126),//safely printable ascii chars
              help(false)
     {
-        addOptions()            
+        addOptions()
             ("count", qpid::optValue(count, "N"), "number of data strings to generate")
             ("min-size", qpid::optValue(minSize, "N"), "minimum size of data string")
             ("max-size", qpid::optValue(maxSize, "N"), "maximum size of data string")
@@ -80,6 +83,10 @@ std::string generateData(uint size, uint min, uint max)
     }
     return data;
 }
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {

@@ -20,26 +20,19 @@
  */
 package org.apache.qpid.management.jmx;
 
-import org.apache.qpid.commands.objects.AllObjects;
-import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
+import org.apache.qpid.test.utils.JMXTestUtils;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -50,33 +43,21 @@ import java.util.concurrent.TimeUnit;
  */
 public class ManagementActorLoggingTest extends AbstractTestLogging
 {
-    MBeanServerConnection _mbsc;
-    JMXConnector _jmxc;
+    private JMXTestUtils _jmxUtils;
     private static final String USER = "admin";
 
     @Override
     public void setUp() throws Exception
     {
-        setConfigurationProperty("management.enabled", "true");
+        _jmxUtils = new JMXTestUtils(this, USER, USER);
+        _jmxUtils.setUp();
         super.setUp();
-
-        if (isExternalBroker())
-        {
-            _jmxc = JMXConnnectionFactory.getJMXConnection(
-                    5000, "127.0.0.1",
-                    getManagementPort(getPort()), USER, USER);
-
-            _mbsc = _jmxc.getMBeanServerConnection();
-        }
     }
 
     @Override
     public void tearDown() throws Exception
     {
-        if (isExternalBroker())
-        {
-            _jmxc.close();
-        }
+        _jmxUtils.close();
         super.tearDown();
     }
 
@@ -107,34 +88,31 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testJMXManagementConsoleConnection() throws IOException
     {
-        if (isExternalBroker())
-        {
-            List<String> results = _monitor.findMatches("MNG-1007");
+        List<String> results = _monitor.findMatches("MNG-1007");
 
-            assertEquals("Unexpected Management Connection count", 1, results.size());
+        assertEquals("Unexpected Management Connection count", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            validateMessageID("MNG-1007", log);
+        validateMessageID("MNG-1007", log);
 
-            assertTrue("User not in log message:" + log, log.endsWith(USER));
-            // Extract the id from the log string
-            //  MESSAGE [mng:1(rmi://169.24.29.116)] MNG-1007 : Open : User admin
-            int connectionID = Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + "");
+        assertTrue("User not in log message:" + log, log.endsWith(USER));
+        // Extract the id from the log string
+        //  MESSAGE [mng:1(rmi://169.24.29.116)] MNG-1007 : Open : User admin
+        int connectionID = Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + "");
 
-            results = _monitor.findMatches("MNG-1008");
+        results = _monitor.findMatches("MNG-1008");
 
-            assertEquals("Unexpected Management Connection close count", 0, results.size());
+        assertEquals("Unexpected Management Connection close count", 0, results.size());
 
-            _jmxc.close();
+        _jmxUtils.close();
 
-            results = _monitor.findMatches("MNG-1008");
+        results = _monitor.findMatches("MNG-1008");
 
-            assertEquals("Unexpected Management Connection count", 1, results.size());
+        assertEquals("Unexpected Management Connection count", 1, results.size());
 
-            assertEquals("Close does not have same id as open,", connectionID,
-                         Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + ""));
-        }
+        assertEquals("Close does not have same id as open,", connectionID,
+                     Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + ""));
     }
 
     /**
@@ -159,56 +137,40 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testConnectionCloseViaManagement() throws IOException, Exception
     {
-        if (isExternalBroker())
+        //Create a connection to the broker
+        Connection connection = getConnection();
+
+        // Monitor the connection for an exception being thrown
+        // this should be a DisconnectionException but it is not this tests
+        // job to valiate that. Only use the exception as a synchronisation
+        // to check the log file for the Close message
+        final CountDownLatch exceptionReceived = new CountDownLatch(1);
+        connection.setExceptionListener(new ExceptionListener()
         {
-
-            //Create a connection to the broker
-            Connection connection = getConnection();
-
-            // Monitor the connection for an exception being thrown
-            // this should be a DisconnectionException but it is not this tests
-            // job to valiate that. Only use the exception as a synchronisation
-            // to check the log file for the Close message
-            final CountDownLatch exceptionReceived = new CountDownLatch(1);
-            connection.setExceptionListener(new ExceptionListener()
+            public void onException(JMSException e)
             {
-                public void onException(JMSException e)
-                {
-                    //Failover being attempted.
-                    exceptionReceived.countDown();
-                }
-            });
+                //Failover being attempted.
+                exceptionReceived.countDown();
+            }
+        });
 
-            //Remove the connection close from any 0-10 connections
-            _monitor.reset();
+        //Remove the connection close from any 0-10 connections
+        _monitor.reset();
 
-            // Get all active AMQP connections
-            AllObjects allObject = new AllObjects(_mbsc);
-            allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,*";
+        // Get a managedConnection
+        ManagedConnection mangedConnection = _jmxUtils.getManagedObject(ManagedConnection.class, "org.apache.qpid:type=VirtualHost.Connection,*");
 
-            Set<ObjectName> objectNames = allObject.returnObjects();
+        //Close the connection
+        mangedConnection.closeConnection();
 
-            assertEquals("More than one test connection returned", 1, objectNames.size());
+        //Wait for the connection to close
+        assertTrue("Timed out waiting for conneciton to report close",
+                   exceptionReceived.await(2, TimeUnit.SECONDS));
 
-            ObjectName connectionName = objectNames.iterator().next();
+        //Validate results
+        List<String> results = _monitor.findMatches("CON-1002");
 
-            ManagedConnection mangedConnection = MBeanServerInvocationHandler.
-                    newProxyInstance(_mbsc, connectionName,
-                                     ManagedConnection.class, false);
-
-
-            //Close the connection
-            mangedConnection.closeConnection();
-
-            //Wait for the connection to close
-            assertTrue("Timed out waiting for conneciton to report close",
-                       exceptionReceived.await(2, TimeUnit.SECONDS));
-
-            //Validate results
-            List<String> results = _monitor.findMatches("CON-1002");
-
-            assertEquals("Unexpected Connection Close count", 1, results.size());
-        }
+        assertEquals("Unexpected Connection Close count", 1, results.size());
     }
 
     /**
@@ -234,114 +196,100 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testCreateExchangeDirectTransientViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous exchange declares
-            _monitor.reset();
+        _monitor.reset();
 
-            createExchange("direct");
+        _jmxUtils.createExchange("test", "direct", null, false);
 
-            // Validate
+        // Validate
 
-            //1 - ID is correct
-            List<String> results = _monitor.findMatches("EXH-1001");
+        //1 - ID is correct
+        List<String> results = _monitor.findMatches("EXH-1001");
 
-            assertEquals("More than one exchange creation found", 1, results.size());
+        assertEquals("More than one exchange creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct exchange name
-            assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
+        // Validate correct exchange name
+        assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
-
-        }
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
     }
 
     public void testCreateExchangeTopicTransientViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous exchange declares
-            _monitor.reset();
+        //Remove any previous exchange declares
+        _monitor.reset();
 
-            createExchange("topic");
+        _jmxUtils.createExchange("test", "topic", null, false);
 
-            // Validate
+        // Validate
 
-            //1 - ID is correct
-            List<String> results = _monitor.findMatches("EXH-1001");
+        //1 - ID is correct
+        List<String> results = _monitor.findMatches("EXH-1001");
 
-            assertEquals("More than one exchange creation found", 1, results.size());
+        assertEquals("More than one exchange creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct exchange name
-            assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
+        // Validate correct exchange name
+        assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
 
-        }
     }
 
     public void testCreateExchangeFanoutTransientViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous exchange declares
-            _monitor.reset();
+        //Remove any previous exchange declares
+        _monitor.reset();
 
-            createExchange("fanout");
+        _jmxUtils.createExchange("test", "fanout", null, false);
 
-            // Validate
+        // Validate
 
-            //1 - ID is correct
-            List<String> results = _monitor.findMatches("EXH-1001");
+        //1 - ID is correct
+        List<String> results = _monitor.findMatches("EXH-1001");
 
-            assertEquals("More than one exchange creation found", 1, results.size());
+        assertEquals("More than one exchange creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct exchange name
-            assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
+        // Validate correct exchange name
+        assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
 
-        }
     }
 
     public void testCreateExchangeHeadersTransientViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous exchange declares
-            _monitor.reset();
+        //Remove any previous exchange declares
+        _monitor.reset();
 
-            createExchange("headers");
+        _jmxUtils.createExchange("test", "headers", null, false);
 
-            // Validate
+        // Validate
 
-            //1 - ID is correct
-            List<String> results = _monitor.findMatches("EXH-1001");
+        //1 - ID is correct
+        List<String> results = _monitor.findMatches("EXH-1001");
 
-            assertEquals("More than one exchange creation found", 1, results.size());
+        assertEquals("More than one exchange creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct exchange name
-            assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
+        // Validate correct exchange name
+        assertTrue("Incorrect exchange name created:" + log, log.endsWith(getName()));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
 
-        }
     }
 
     /**
@@ -365,29 +313,26 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testCreateQueueTransientViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous queue declares
-            _monitor.reset();
+        //Remove any previous queue declares
+        _monitor.reset();
 
-            createQueue();
+        _jmxUtils.createQueue("test", getName(), null, false);
 
-            // Validate
+        // Validate
 
-            List<String> results = _monitor.findMatches("QUE-1001");
+        List<String> results = _monitor.findMatches("QUE-1001");
 
-            assertEquals("More than one queue creation found", 1, results.size());
+        assertEquals("More than one queue creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct queue name
-            String subject = fromSubject(log);
-            assertEquals("Incorrect queue name created", getName(), AbstractTestLogSubject.getSlice("qu", subject));
+        // Validate correct queue name
+        String subject = fromSubject(log);
+        assertEquals("Incorrect queue name created", getName(), AbstractTestLogSubject.getSlice("qu", subject));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
-        }
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
     }
 
     /**
@@ -411,34 +356,29 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testQueueDeleteViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous queue declares
-            _monitor.reset();
+        //Remove any previous queue declares
+        _monitor.reset();
 
-            createQueue();
+        _jmxUtils.createQueue("test", getName(), null, false);
 
-            ManagedBroker managedBroker = MBeanServerInvocationHandler.
-                    newProxyInstance(_mbsc, getVirtualHostManagerObjectName(),
-                                     ManagedBroker.class, false);
+        ManagedBroker managedBroker = _jmxUtils.getManagedBroker("test");
 
-            managedBroker.deleteQueue(getName());
+        managedBroker.deleteQueue(getName());
 
-            List<String> results = _monitor.findMatches("QUE-1002");
+        List<String> results = _monitor.findMatches("QUE-1002");
 
-            assertEquals("More than one queue deletion found", 1, results.size());
+        assertEquals("More than one queue deletion found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct binding
-            String subject = fromSubject(log);
-            assertEquals("Incorrect queue named in delete", getName(), AbstractTestLogSubject.getSlice("qu", subject));
+        // Validate correct binding
+        String subject = fromSubject(log);
+        assertEquals("Incorrect queue named in delete", getName(), AbstractTestLogSubject.getSlice("qu", subject));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
 
-        }
     }
 
     /**
@@ -462,98 +402,83 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testBindingCreateOnDirectViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous queue declares
-            _monitor.reset();
+        //Remove any previous queue declares
+        _monitor.reset();
 
-            createQueue();
+        _jmxUtils.createQueue("test", getName(), null, false);
 
-            ManagedExchange managedExchange = MBeanServerInvocationHandler.
-                    newProxyInstance(_mbsc, getExchange("amq.direct"),
-                                     ManagedExchange.class, false);
+        ManagedExchange managedExchange = _jmxUtils.getManagedExchange("amq.direct");
 
-            managedExchange.createNewBinding(getName(), getName());
+        managedExchange.createNewBinding(getName(), getName());
 
-            List<String> results = _monitor.findMatches("BND-1001");
+        List<String> results = _monitor.findMatches("BND-1001");
 
-            assertEquals("More than one bind creation found", 1, results.size());
+        assertEquals("More than one bind creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct binding
-            String subject = fromSubject(log);
-            assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
-            assertEquals("Incorrect routing key in create", getName(), AbstractTestLogSubject.getSlice("rk", subject));
+        // Validate correct binding
+        String subject = fromSubject(log);
+        assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
+        assertEquals("Incorrect routing key in create", getName(), AbstractTestLogSubject.getSlice("rk", subject));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
-        }
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
     }
 
     public void testBindingCreateOnTopicViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous queue declares
-            _monitor.reset();
+        //Remove any previous queue declares
+        _monitor.reset();
 
-            createQueue();
+        _jmxUtils.createQueue("test", getName(), null, false);
 
-            ManagedExchange managedExchange = MBeanServerInvocationHandler.
-                    newProxyInstance(_mbsc, getExchange("amq.topic"),
-                                     ManagedExchange.class, false);
+        ManagedExchange managedExchange = _jmxUtils.getManagedExchange("amq.topic");
 
-            managedExchange.createNewBinding(getName(), getName());
+        managedExchange.createNewBinding(getName(), getName());
 
-            List<String> results = _monitor.findMatches("BND-1001");
+        List<String> results = _monitor.findMatches("BND-1001");
 
-            assertEquals("More than one bind creation found", 1, results.size());
+        assertEquals("More than one bind creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct binding
-            String subject = fromSubject(log);
-            assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
-            assertEquals("Incorrect routing key in create", getName(), AbstractTestLogSubject.getSlice("rk", subject));
+        // Validate correct binding
+        String subject = fromSubject(log);
+        assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
+        assertEquals("Incorrect routing key in create", getName(), AbstractTestLogSubject.getSlice("rk", subject));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
-        }
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
     }
 
     public void testBindingCreateOnFanoutViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
-            //Remove any previous queue declares
-            _monitor.reset();
+        //Remove any previous queue declares
+        _monitor.reset();
 
-            createQueue();
+        _jmxUtils.createQueue("test", getName(), null, false);
 
-            ManagedExchange managedExchange = MBeanServerInvocationHandler.
-                    newProxyInstance(_mbsc, getExchange("amq.fanout"),
-                                     ManagedExchange.class, false);
+        ManagedExchange managedExchange = _jmxUtils.getManagedExchange("amq.fanout");
 
-            managedExchange.createNewBinding(getName(), getName());
+        managedExchange.createNewBinding(getName(), getName());
 
-            List<String> results = _monitor.findMatches("BND-1001");
+        List<String> results = _monitor.findMatches("BND-1001");
 
-            assertEquals("More than one bind creation found", 1, results.size());
+        assertEquals("More than one bind creation found", 1, results.size());
 
-            String log = getLog(results.get(0));
+        String log = getLog(results.get(0));
 
-            // Validate correct binding
-            String subject = fromSubject(log);
-            assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
-            assertEquals("Incorrect routing key in create", "*", AbstractTestLogSubject.getSlice("rk", subject));
+        // Validate correct binding
+        String subject = fromSubject(log);
+        assertEquals("Incorrect queue named in create", getName(), AbstractTestLogSubject.getSlice("qu", subject));
+        assertEquals("Incorrect routing key in create", "*", AbstractTestLogSubject.getSlice("rk", subject));
 
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
-        }
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
     }
 
     /**
@@ -578,114 +503,28 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testUnRegisterExchangeViaManagementConsole() throws IOException, JMException
     {
-        if (isExternalBroker())
-        {
+        //Remove any previous queue declares
+        _monitor.reset();
 
-            //Remove any previous queue declares
-            _monitor.reset();
+        _jmxUtils.createExchange("test", "direct", null, false);
 
-            createExchange("direct");
+        ManagedBroker managedBroker = _jmxUtils.getManagedBroker("test");
 
-            ManagedBroker managedBroker = MBeanServerInvocationHandler.
-                    newProxyInstance(_mbsc, getVirtualHostManagerObjectName(),
-                                     ManagedBroker.class, false);
+        managedBroker.unregisterExchange(getName());
 
-            managedBroker.unregisterExchange(getName());
+        List<String> results = _monitor.findMatches("EXH-1002");
 
-            List<String> results = _monitor.findMatches("EXH-1002");
+        assertEquals("More than one exchange deletion found", 1, results.size());
 
-            assertEquals("More than one exchange deletion found", 1, results.size());
+        String log = getLog(results.get(0));
 
-            String log = getLog(results.get(0));
+        // Validate correct binding
+        String subject = fromSubject(log);
+        assertEquals("Incorrect exchange named in delete", "direct/" + getName(), AbstractTestLogSubject.getSlice("ex", subject));
 
-            // Validate correct binding
-            String subject = fromSubject(log);
-            assertEquals("Incorrect exchange named in delete", "direct/" + getName(), AbstractTestLogSubject.getSlice("ex", subject));
-
-            // Validate it was a management actor.
-            String actor = fromActor(log);
-            assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
-        }
-    }
-
-    /**
-     * Create a non-durable test exchange with the current test name
-     *
-     * @throws JMException - is thrown if a exchange with this testName already exists
-     * @throws IOException - if there is a problem with the JMX Connection
-     * @throws javax.management.MBeanException
-     *                     - if there is another problem creating the exchange
-     */
-    private void createExchange(String type)
-            throws JMException, IOException, MBeanException
-    {
-        ManagedBroker managedBroker = MBeanServerInvocationHandler.
-                newProxyInstance(_mbsc, getVirtualHostManagerObjectName(),
-                                 ManagedBroker.class, false);
-
-        managedBroker.createNewExchange(getName(), type, false);
-    }
-
-    /**
-     * Create a non-durable queue (with no owner) that is named after the
-     * creating test.
-     *
-     * @throws JMException - is thrown if a queue with this testName already exists
-     * @throws IOException - if there is a problem with the JMX Connection
-     */
-    private void createQueue()
-            throws JMException, IOException
-    {
-        ManagedBroker managedBroker = MBeanServerInvocationHandler.
-                newProxyInstance(_mbsc, getVirtualHostManagerObjectName(),
-                                 ManagedBroker.class, false);
-
-        managedBroker.createNewQueue(getName(), null, false);
-    }
-
-    /**
-     * Retrive the ObjectName for the test Virtualhost.
-     *
-     * This is then use to create aproxy to the ManagedBroker MBean.
-     *
-     * @return the ObjectName for the 'test' VirtualHost.
-     */
-    private ObjectName getVirtualHostManagerObjectName()
-    {
-        // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost=test,*";
-
-        Set<ObjectName> objectNames = allObject.returnObjects();
-
-        assertEquals("Incorrect number test vhosts returned", 1, objectNames.size());
-
-        // We have verified we have only one value in objectNames so return it
-        return objectNames.iterator().next();
-    }
-
-    /**
-     * Retrive the ObjectName for the given Exchange on the test Virtualhost.
-     *
-     * This is then use to create aproxy to the ManagedExchange MBean.
-     *
-     * @param exchange The exchange to retireve e.g. 'direct'
-     *
-     * @return the ObjectName for the given exchange on the test VirtualHost.
-     */
-    private ObjectName getExchange(String exchange)
-    {
-        // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost=test,name=" + exchange + ",*";
-
-        Set<ObjectName> objectNames = allObject.returnObjects();
-
-        assertEquals("Incorrect number of exchange with name '" + exchange +
-                     "' returned", 1, objectNames.size());
-
-        // We have verified we have only one value in objectNames so return it
-        return objectNames.iterator().next();
+        // Validate it was a management actor.
+        String actor = fromActor(log);
+        assertTrue("Actor is not a manangement actor:" + actor, actor.startsWith("mng"));
     }
 
 }

@@ -75,6 +75,17 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN void sync();
     QPID_CLIENT_EXTERN void flush();
 
+    /**
+     * Returns the number of messages received and waiting to be
+     * fetched.
+     */
+    QPID_CLIENT_EXTERN uint32_t available();
+    /**
+     * Returns a count of the number of messages received this session
+     * that have been acknowledged, but for which that acknowledgement
+     * has not yet been confirmed as processed by the server.
+     */
+    QPID_CLIENT_EXTERN uint32_t pendingAck();
     QPID_CLIENT_EXTERN bool fetch(Message& message, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     QPID_CLIENT_EXTERN Message fetch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     QPID_CLIENT_EXTERN bool dispatch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
@@ -88,9 +99,6 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address, const Filter& filter, const VariantMap& options = VariantMap());
 
     QPID_CLIENT_EXTERN Address createTempQueue(const std::string& baseName = std::string());
-
-    QPID_CLIENT_EXTERN void* getLastConfirmedSent();
-    QPID_CLIENT_EXTERN void* getLastConfirmedAcknowledged();
   private:
   friend class qpid::client::PrivateImplRef<Session>;
 };

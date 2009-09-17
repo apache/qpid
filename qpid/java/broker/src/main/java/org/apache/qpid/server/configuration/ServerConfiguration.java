@@ -148,32 +148,27 @@ public class ServerConfiguration implements SignalHandler
             Object thing = i.next();
             if (thing instanceof String)
             {
+                //Open the Virtualhost.xml file and copy values in to main config
                 XMLConfiguration vhostConfiguration = new XMLConfiguration((String) thing);
-                List hosts = vhostConfiguration.getList("virtualhost.name");
-                    for (int j = 0; j < hosts.size(); j++)
-                {
-                    String name = (String) hosts.get(j);
-                    // Add the keys of the virtual host to the main config then bail out
-
-                    Configuration myConf = vhostConfiguration.subset("virtualhost." + name);
-                    Iterator k = myConf.getKeys();
-                    while (k.hasNext())
-                    {
-                        String key = (String) k.next();
-                        conf.setProperty("virtualhosts.virtualhost."+name+"."+key, myConf.getProperty(key));
-                    }
-                    VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, conf.subset("virtualhosts.virtualhost."+name));
-                    _virtualHosts.put(vhostConfig.getName(), vhostConfig);
-                }
-                // Grab things other than the virtualhosts themselves
                 Iterator keys = vhostConfiguration.getKeys();
                 while (keys.hasNext())
                 {
                     String key = (String) keys.next();
-                    conf.setProperty("virtualhosts."+key, vhostConfiguration.getProperty(key));
+                    conf.setProperty("virtualhosts." + key, vhostConfiguration.getProperty(key));
                 }
             }
         }
+
+        List hosts = conf.getList("virtualhosts.virtualhost.name");
+        for (int j = 0; j < hosts.size(); j++)
+        {
+            String name = (String) hosts.get(j);
+            // Add the keys of the virtual host to the main config then bail out
+
+            VirtualHostConfiguration vhostConfig = new VirtualHostConfiguration(name, conf.subset("virtualhosts.virtualhost." + name));
+            _virtualHosts.put(vhostConfig.getName(), vhostConfig);
+        }
+
     }
 
     private void substituteEnvironmentVariables()
@@ -203,7 +198,7 @@ public class ServerConfiguration implements SignalHandler
     }
 
     /**
-     * Check the configuration file to see if status updates are enabled.  
+     * Check the configuration file to see if status updates are enabled.
      * @return true if status updates are enabled
      */
     public boolean getStatusUpdatesEnabled()
@@ -467,7 +462,7 @@ public class ServerConfiguration implements SignalHandler
     {
         return getConfig().getBoolean("management.enabled", true);
     }
- 
+
     public void setManagementEnabled(boolean enabled)
     {
         getConfig().setProperty("management.enabled", enabled);

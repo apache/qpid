@@ -195,9 +195,21 @@ public class VirtualHost implements Accessable
         // perform a createExchange twice with the same details in the
         // MessageStore(RoutingTable) as some instances may not like that.
         // Derby being one.
+        // todo this can be removed with the resolution fo QPID-2096
         configFileRT.exchange.clear();
         
         initialiseModel(hostConfig);
+
+        //todo REMOVE Work Around for QPID-2096
+        // This means that all durable exchanges declared in the configuration
+        // will not be stored in the MessageStore.
+        // They will still be created/registered/available on startup for as
+        // long as they are contained in the configuration. However, when they
+        // are removed from the configuration they will no longer exist.
+        // This differs from durable queues as they will be writen to to the
+        // store. After QPID-2096 has been resolved exchanges will mirror that
+        // functionality.
+        configFileRT.exchange.clear();
 
         if (store != null)
         {

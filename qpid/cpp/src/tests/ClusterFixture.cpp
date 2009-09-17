@@ -61,6 +61,9 @@ using boost::assign::list_of;
 
 #include "ClusterFixture.h"
 
+namespace qpid {
+namespace tests {
+
 ClusterFixture::ClusterFixture(size_t n, const Args& args_, int localIndex_)
     : name(Uuid(true).str()), localIndex(localIndex_), userArgs(args_)
 {
@@ -152,3 +155,5 @@ std::set<int> knownBrokerPorts(qpid::client::Connection& source, int n) {
         s.insert((*i)[0].get<qpid::TcpAddress>()->port);
     return s;
 }
+
+}} // namespace qpid::tests

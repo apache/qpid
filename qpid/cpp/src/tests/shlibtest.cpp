@@ -18,6 +18,9 @@
  *
  */
 
+namespace qpid {
+namespace tests {
+
 int* loaderData = 0;
 extern "C"
 #ifdef WIN32
@@ -28,5 +31,4 @@ void callMe(int *i) { loaderData=i; }
 struct OnUnload { ~OnUnload() { *loaderData=42; } };
 OnUnload unloader;              // For destructor.
 
-
-
+}} // namespace qpid::tests

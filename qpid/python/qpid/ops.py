@@ -74,10 +74,7 @@ class Compound(object):
 
   def dispatch(self, target, *args):
     handler = "do_%s" % self.NAME
-    if hasattr(target, handler):
-      getattr(target, handler)(self, *args)
-    else:
-      print "UNHANDLED:", target, args
+    getattr(target, handler)(self, *args)
 
   def __repr__(self, extras=()):
     return "%s(%s)" % (self.__class__.__name__,

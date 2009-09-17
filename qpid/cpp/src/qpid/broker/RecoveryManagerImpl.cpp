@@ -195,7 +195,7 @@ void RecoverableQueueImpl::setPersistenceId(uint64_t id)
 {
     queue->setPersistenceId(id);
 }
-	
+       
 uint64_t RecoverableQueueImpl::getPersistenceId() const
 {
 	return queue->getPersistenceId();

@@ -8,6 +8,7 @@ broker.executable=${broker.dir}/qpidd
 broker.module.ssl=${module.dir}/ssl.so
 broker.module.cluster=${module.dir}/cluster.so
 broker.module.store=${store.module.dir}/msgstore.so
+broker.stopped=Exception constructed
 
 broker.modules=
 broker.args=

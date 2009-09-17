@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,9 @@
 #include <string>
 
 using namespace qpid::broker;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(QueueRegistryTest)
 
@@ -49,7 +52,7 @@ QPID_AUTO_TEST_CASE(testDeclare)
     BOOST_CHECK_EQUAL(bar, q->getName());
 }
 
-QPID_AUTO_TEST_CASE(testDeclareTmp) 
+QPID_AUTO_TEST_CASE(testDeclareTmp)
 {
     QueueRegistry reg;
     std::pair<Queue::shared_ptr,  bool> qc;
@@ -58,8 +61,8 @@ QPID_AUTO_TEST_CASE(testDeclareTmp)
     BOOST_CHECK(qc.second);
     BOOST_CHECK_EQUAL(std::string("tmp_1"), qc.first->getName());
 }
-    
-QPID_AUTO_TEST_CASE(testFind) 
+
+QPID_AUTO_TEST_CASE(testFind)
 {
     std::string foo("foo");
     std::string bar("bar");
@@ -75,7 +78,7 @@ QPID_AUTO_TEST_CASE(testFind)
     BOOST_CHECK_EQUAL(bar, q->getName());
 }
 
-QPID_AUTO_TEST_CASE(testDestroy) 
+QPID_AUTO_TEST_CASE(testDestroy)
 {
     std::string foo("foo");
     QueueRegistry reg;
@@ -92,3 +95,5 @@ QPID_AUTO_TEST_CASE(testDestroy)
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests
