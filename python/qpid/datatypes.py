@@ -234,6 +234,24 @@ class RangedSet:
   def add(self, lower, upper = None):
     self.add_range(Range(lower, upper))
 
+  def empty(self):
+    for r in self.ranges:
+      if r.lower <= r.upper:
+        return False
+    return True
+
+  def max(self):
+    if self.ranges:
+      return self.ranges[-1].upper
+    else:
+      return None
+
+  def min(self):
+    if self.ranges:
+      return self.ranges[0].lower
+    else:
+      return None
+
   def __iter__(self):
     return iter(self.ranges)
 
