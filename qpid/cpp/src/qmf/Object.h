@@ -39,6 +39,7 @@ namespace qmf {
         void setObjectId(ObjectId* oid);
         const SchemaObjectClass* getClass() const;
         Value* getValue(char* key) const;
+        void invokeMethod(const char* methodName, const Value* inArgs, void* context) const;
 
         ObjectImpl* impl;
     };

@@ -19,6 +19,7 @@
 
 #include "qmf/ObjectImpl.h"
 #include "qmf/ValueImpl.h"
+#include "qmf/BrokerProxyImpl.h"
 #include <qpid/sys/Time.h>
 
 using namespace std;
@@ -27,7 +28,7 @@ using namespace qpid::sys;
 using qpid::framing::Buffer;
 
 ObjectImpl::ObjectImpl(Object* e, const SchemaObjectClass* type) :
-    envelope(e), objectClass(type), createTime(uint64_t(Duration(now()))),
+    envelope(e), objectClass(type), broker(0), createTime(uint64_t(Duration(now()))),
     destroyTime(0), lastUpdatedTime(createTime)
 {
     int propCount = objectClass->getPropertyCount();
@@ -45,8 +46,8 @@ ObjectImpl::ObjectImpl(Object* e, const SchemaObjectClass* type) :
     }
 }
 
-ObjectImpl::ObjectImpl(const SchemaObjectClass* type, Buffer& buffer, bool prop, bool stat, bool managed) :
-    envelope(new Object(this)), objectClass(type), createTime(0), destroyTime(0), lastUpdatedTime(0)
+ObjectImpl::ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer& buffer, bool prop, bool stat, bool managed) :
+    envelope(new Object(this)), objectClass(type), broker(b), createTime(0), destroyTime(0), lastUpdatedTime(0)
 {
     int idx;
 
@@ -105,6 +106,12 @@ Value* ObjectImpl::getValue(const string& key) const
         return iter->second.get();
 
     return 0;
+}
+
+void ObjectImpl::invokeMethod(const string& methodName, const Value* inArgs, void* context) const
+{
+    if (broker != 0 && objectId.get() != 0)
+        broker->sendMethodRequest(objectId.get(), objectClass, methodName, inArgs, context);
 }
 
 void ObjectImpl::parsePresenceMasks(Buffer& buffer, set<string>& excludeList)
@@ -205,4 +212,5 @@ const ObjectId* Object::getObjectId() const { return impl->getObjectId(); }
 void Object::setObjectId(ObjectId* oid) { impl->setObjectId(oid); }
 const SchemaObjectClass* Object::getClass() const { return impl->getClass(); }
 Value* Object::getValue(char* key) const { return impl->getValue(key); }
+void Object::invokeMethod(const char* m, const Value* a, void* c) const { impl->invokeMethod(m, a, c); }
 

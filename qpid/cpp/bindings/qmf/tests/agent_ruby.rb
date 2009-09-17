@@ -92,37 +92,37 @@ class App < Qmf::AgentHandler
       retText = "OK"
 
       if args['test'] == "big"
-        @parent.set_attr("uint64val", 0x9494949449494949)
-        @parent.set_attr("uint32val", 0xa5a55a5a)
-        @parent.set_attr("uint16val", 0xb66b)
-        @parent.set_attr("uint8val",  0xc7)
+        @parent.uint64val = 0x9494949449494949
+        @parent.uint32val = 0xa5a55a5a
+        @parent.uint16val = 0xb66b
+        @parent.uint8val  =  0xc7
 
-        @parent.set_attr("int64val", 1000000000000000000)
-        @parent.set_attr("int32val", 1000000000)
-        @parent.set_attr("int16val", 10000)
-        @parent.set_attr("int8val",  100)
+        @parent.int64val = 1000000000000000000
+        @parent.int32val = 1000000000
+        @parent.int16val = 10000
+        @parent.int8val  = 100
 
       elsif args['test'] == "small"
-        @parent.set_attr("uint64val", 4)
-        @parent.set_attr("uint32val", 5)
-        @parent.set_attr("uint16val", 6)
-        @parent.set_attr("uint8val",  7)
+        @parent.uint64val = 4
+        @parent.uint32val = 5
+        @parent.uint16val = 6
+        @parent.uint8val  = 7
 
-        @parent.set_attr("int64val", 8)
-        @parent.set_attr("int32val", 9)
-        @parent.set_attr("int16val", 10)
-        @parent.set_attr("int8val",  11)
+        @parent.int64val = 8
+        @parent.int32val = 9
+        @parent.int16val = 10
+        @parent.int8val  = 11
 
       elsif args['test'] == "negative"
-        @parent.set_attr("uint64val", 0)
-        @parent.set_attr("uint32val", 0)
-        @parent.set_attr("uint16val", 0)
-        @parent.set_attr("uint8val",  0)
+        @parent.uint64val = 0
+        @parent.uint32val = 0
+        @parent.uint16val = 0
+        @parent.uint8val  = 0
 
-        @parent.set_attr("int64val", -10000000000)
-        @parent.set_attr("int32val", -100000)
-        @parent.set_attr("int16val", -1000)
-        @parent.set_attr("int8val",  -100)
+        @parent.int64val = -10000000000
+        @parent.int32val = -100000
+        @parent.int16val = -1000
+        @parent.int8val  = -100
 
       else
         retCode = 1
@@ -135,7 +135,7 @@ class App < Qmf::AgentHandler
       oid = @agent.alloc_object_id(2)
       args['child_ref'] = oid
       @child = Qmf::AgentObject.new(@model.child_class)
-      @child.set_attr("name", args.by_key("child_name"))
+      @child.name = args.by_key("child_name")
       @child.set_object_id(oid)
       @agent.method_response(context, 0, "OK", args)
 
@@ -161,18 +161,18 @@ class App < Qmf::AgentHandler
     @agent.set_connection(@connection)
 
     @parent = Qmf::AgentObject.new(@model.parent_class)
-    @parent.set_attr("name", "Parent One")
-    @parent.set_attr("state", "OPERATIONAL")
+    @parent.name  = "Parent One"
+    @parent.state = "OPERATIONAL"
 
-    @parent.set_attr("uint64val", 0)
-    @parent.set_attr("uint32val", 0)
-    @parent.set_attr("uint16val", 0)
-    @parent.set_attr("uint8val",  0)
+    @parent.uint64val = 0
+    @parent.uint32val = 0
+    @parent.uint16val = 0
+    @parent.uint8val  = 0
 
-    @parent.set_attr("int64val", 0)
-    @parent.set_attr("int32val", 0)
-    @parent.set_attr("int16val", 0)
-    @parent.set_attr("int8val",  0)
+    @parent.int64val = 0
+    @parent.int32val = 0
+    @parent.int16val = 0
+    @parent.int8val  = 0
 
     @parent_oid = @agent.alloc_object_id(1)
     @parent.set_object_id(@parent_oid)
