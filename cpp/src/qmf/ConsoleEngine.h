@@ -46,6 +46,7 @@ namespace qmf {
     class MethodResponse {
     public:
         MethodResponse(MethodResponseImpl* impl);
+        MethodResponse(const MethodResponse& from);
         ~MethodResponse();
         uint32_t getStatus() const;
         const Value* getException() const;
@@ -84,8 +85,7 @@ namespace qmf {
             NEW_CLASS       = 4,
             OBJECT_UPDATE   = 5,
             EVENT_RECEIVED  = 7,
-            AGENT_HEARTBEAT = 8,
-            METHOD_RESPONSE = 9
+            AGENT_HEARTBEAT = 8
         };
 
         EventKind       kind;
@@ -96,8 +96,6 @@ namespace qmf {
         void*           context;        // (OBJECT_UPDATE)
         Event*          event;          // (EVENT_RECEIVED)
         uint64_t        timestamp;      // (AGENT_HEARTBEAT)
-        uint32_t        methodHandle;   // (METHOD_RESPONSE)
-        MethodResponse* methodResponse; // (METHOD_RESPONSE)
         QueryResponse*  queryResponse;  // (QUERY_COMPLETE)
     };
 
@@ -113,15 +111,17 @@ namespace qmf {
             UNBIND          = 14,
             SETUP_COMPLETE  = 15,
             STABLE          = 16,
-            QUERY_COMPLETE  = 17
+            QUERY_COMPLETE  = 17,
+            METHOD_RESPONSE = 18
         };
 
         EventKind kind;
-        char*          name;          // ([DECLARE|DELETE]_QUEUE, [UN]BIND)
-        char*          exchange;      // ([UN]BIND)
-        char*          bindingKey;    // ([UN]BIND)
-        void*          context;       // (QUERY_COMPLETE)
-        QueryResponse* queryResponse; // (QUERY_COMPLETE)
+        char*           name;           // ([DECLARE|DELETE]_QUEUE, [UN]BIND)
+        char*           exchange;       // ([UN]BIND)
+        char*           bindingKey;     // ([UN]BIND)
+        void*           context;        // (QUERY_COMPLETE, METHOD_RESPONSE)
+        QueryResponse*  queryResponse;  // (QUERY_COMPLETE)
+        MethodResponse* methodResponse; // (METHOD_RESPONSE)
     };
 
     /**

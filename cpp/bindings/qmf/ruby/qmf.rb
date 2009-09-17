@@ -189,8 +189,16 @@ module Qmf
   ##==============================================================================
 
   class QmfObject
+    include MonitorMixin
     attr_reader :impl, :object_class
     def initialize(cls, kwargs={})
+      super()
+      @cv = new_cond
+      @sync_count = 0
+      @sync_result = nil
+      @allow_sets = :false
+      @broker = kwargs[:broker] if kwargs.include?(:broker)
+
       if cls:
         @object_class = cls
         @impl = Qmfengine::Object.new(@object_class.impl)
@@ -264,6 +272,103 @@ module Qmf
       set_attr(name, get_attr(name) - by)
     end
 
+    def method_missing(name_in, *args)
+      #
+      # Convert the name to a string and determine if it represents an
+      # attribute assignment (i.e. "attr=")
+      #
+      name = name_in.to_s
+      attr_set = (name[name.length - 1] == 61)
+      name = name[0..name.length - 2] if attr_set
+      raise "Sets not permitted on this object" if attr_set && !@allow_sets
+
+      #
+      # If the name matches a property name, set or return the value of the property.
+      #
+      @object_class.properties.each do |prop|
+        if prop.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # Do the same for statistics
+      #
+      @object_class.statistics.each do |stat|
+        if stat.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # If we still haven't found a match for the name, check to see if
+      # it matches a method name.  If so, marshall the arguments and invoke
+      # the method.
+      #
+      @object_class.methods.each do |method|
+        if method.name == name
+          raise "Sets not permitted on methods" if attr_set
+          timeout = 30
+          synchronize do
+            @sync_count = 1
+            @impl.invokeMethod(name, _marshall(method, args), self)
+            @broker.conn.kick if @broker
+            unless @cv.wait(timeout) { @sync_count == 0 }
+              raise "Timed out waiting for response"
+            end
+          end
+
+          return @sync_result
+        end
+      end
+
+      #
+      # This name means nothing to us, pass it up the line to the parent
+      # class's handler.
+      #
+      super.method_missing(name_in, args)
+    end
+
+    def _method_result(result)
+      synchronize do
+        @sync_result = result
+        @sync_count -= 1
+        @cv.signal
+      end
+    end
+
+    #
+    # Convert a Ruby array of arguments (positional) into a Value object of type "map".
+    #
+    private
+    def _marshall(schema, args)
+      map = Qmfengine::Value.new(TYPE_MAP)
+      schema.arguments.each do |arg|
+        if arg.direction == DIR_IN || arg.direction == DIR_IN_OUT
+          map.insert(arg.name, Qmfengine::Value.new(arg.typecode))
+        end
+      end
+
+      marshalled = Arguments.new(map)
+      idx = 0
+      schema.arguments.each do |arg|
+        if arg.direction == DIR_IN || arg.direction == DIR_IN_OUT
+          marshalled[arg.name] = args[idx] unless args[idx] == nil
+          idx += 1
+        end
+      end
+
+      return marshalled.map
+    end
+
     private
     def value(name)
       val = @impl.getValue(name.to_s)
@@ -277,6 +382,7 @@ module Qmf
   class AgentObject < QmfObject
     def initialize(cls, kwargs={})
       super(cls, kwargs)
+      @allow_sets = :true
     end
 
     def destroy
@@ -306,9 +412,6 @@ module Qmf
     end
 
     def index()
-    end
-
-    def method_missing(name, *args)
     end
   end
 
@@ -407,6 +510,22 @@ module Qmf
     end
   end
 
+  class MethodResponse
+    def initialize(impl)
+      puts "start copying..."
+      @impl = Qmfengine::MethodResponse.new(impl)
+      puts "done copying..."
+    end
+
+    def status
+      @impl.getStatus
+    end
+
+    def exception
+      @impl.getException
+    end
+  end
+
   ##==============================================================================
   ## QUERY
   ##==============================================================================
@@ -469,6 +588,14 @@ module Qmf
 
     def name
       @impl.getName
+    end
+
+    def direction
+      @impl.getDirection
+    end
+
+    def typecode
+      @impl.getType
     end
   end
 
@@ -802,7 +929,7 @@ module Qmf
 
   class Broker < ConnectionHandler
     include MonitorMixin
-    attr_reader :impl
+    attr_reader :impl, :conn
 
     def initialize(console, conn)
       super()
@@ -871,9 +998,12 @@ module Qmf
         when Qmfengine::BrokerEvent::QUERY_COMPLETE
           result = []
           for idx in 0...@event.queryResponse.getObjectCount
-            result << ConsoleObject.new(nil, :impl => @event.queryResponse.getObject(idx))
+            result << ConsoleObject.new(nil, :impl => @event.queryResponse.getObject(idx), :broker => self)
           end
           @console._get_result(result, @event.context)
+        when Qmfengine::BrokerEvent::METHOD_RESPONSE
+          obj = @event.context
+          obj._method_result(MethodResponse.new(@event.methodResponse))
         end
         @impl.popEvent
         valid = @impl.getEvent(@event)

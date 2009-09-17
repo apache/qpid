@@ -31,11 +31,14 @@
 
 namespace qmf {
 
+    class BrokerProxyImpl;
+
     struct ObjectImpl {
         typedef boost::shared_ptr<ObjectImpl> Ptr;
         typedef boost::shared_ptr<Value> ValuePtr;
         Object* envelope;
         const SchemaObjectClass* objectClass;
+        BrokerProxyImpl* broker;
         boost::shared_ptr<ObjectIdImpl> objectId;
         uint64_t createTime;
         uint64_t destroyTime;
@@ -44,7 +47,8 @@ namespace qmf {
         mutable std::map<std::string, ValuePtr> statistics;
 
         ObjectImpl(Object* e, const SchemaObjectClass* type);
-        ObjectImpl(const SchemaObjectClass* type, qpid::framing::Buffer& buffer, bool prop, bool stat, bool managed);
+        ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, qpid::framing::Buffer& buffer,
+                   bool prop, bool stat, bool managed);
         ~ObjectImpl();
 
         void destroy();
@@ -52,6 +56,7 @@ namespace qmf {
         void setObjectId(ObjectId* oid) { objectId.reset(oid->impl); }
         const SchemaObjectClass* getClass() const { return objectClass; }
         Value* getValue(const std::string& key) const;
+        void invokeMethod(const std::string& methodName, const Value* inArgs, void* context) const;
 
         void parsePresenceMasks(qpid::framing::Buffer& buffer, std::set<std::string>& excludeList);
         void encodeSchemaKey(qpid::framing::Buffer& buffer) const;

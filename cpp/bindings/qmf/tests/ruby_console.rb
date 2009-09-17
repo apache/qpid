@@ -96,9 +96,24 @@ class App < Qmf::ConsoleHandler
       puts "---- Brokers ----"
       blist.each do |b|
         puts "    ---- Broker ----"
-        puts "    systemRef: #{b.get_attr('systemRef')}"
-        puts "    port     : #{b.get_attr('port')}"
-        puts "    uptime   : #{b.get_attr('uptime') / 1000000000}"
+        puts "    systemRef: #{b.systemRef}"
+        puts "    port     : #{b.port}"
+        puts "    uptime   : #{b.uptime / 1000000000}"
+
+        for rep in 0...0
+          puts "    Pinging..."
+          ret = b.echo(45, 'text string')
+          puts "        ret=#{ret}"
+        end
+      end
+      puts "----"
+
+      qlist = @qmfc.get_objects(Qmf::Query.new(:package => "org.apache.qpid.broker",
+                                               :class => "queue"))
+      puts "---- Queues ----"
+      qlist.each do |q|
+        puts "    ---- Queue ----"
+        puts "    name     : #{q.name}"
       end
       puts "----"
       sleep(5)

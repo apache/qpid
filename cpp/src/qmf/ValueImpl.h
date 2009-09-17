@@ -60,8 +60,7 @@ namespace qmf {
             uint8_t  uuidVal[16];
         } value;
 
-        ValueImpl(Value* e, Typecode t, Typecode at) :
-            envelope(e), typecode(t), valid(false), arrayTypecode(at) {}
+        ValueImpl(Value* e, Typecode t, Typecode at);
         ValueImpl(Typecode t, qpid::framing::Buffer& b);
         ValueImpl(Typecode t);
         ~ValueImpl();
