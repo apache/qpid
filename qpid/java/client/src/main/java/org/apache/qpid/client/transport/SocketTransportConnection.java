@@ -20,36 +20,19 @@
  */
 package org.apache.qpid.client.transport;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.SimpleByteBufferAllocator;
-import org.apache.mina.filter.SSLFilter;
-import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
-import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
-import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-
 import org.apache.qpid.client.SSLConfiguration;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.network.mina.MINANetworkDriver;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sun.net.InetAddressCachePolicy;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.security.GeneralSecurityException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.net.ssl.SSLEngine;
 
 public class SocketTransportConnection implements ITransportConnection
 {

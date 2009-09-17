@@ -20,19 +20,17 @@
  */
 package org.apache.qpid.client.transport;
 
+import java.io.IOException;
+
 import org.apache.mina.common.ConnectFuture;
-import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.vmpipe.QpidVmPipeConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.transport.network.mina.MINANetworkDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class VmPipeTransportConnection implements ITransportConnection
 {

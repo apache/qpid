@@ -62,10 +62,7 @@ import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.pool.Event;
 import org.apache.qpid.pool.Job;
-import org.apache.qpid.pool.PoolingFilter;
-import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -172,14 +169,13 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _networkDriver = driver;
         
         _codecFactory = new AMQCodecFactory(true, this);
-
-        ReadWriteThreadModel threadModel = ReadWriteThreadModel.getInstance();
-        _readJob = new Job(threadModel.getAsynchronousReadFilter(), PoolingFilter.MAX_JOB_EVENTS, true);
-        _writeJob = new Job(threadModel.getAsynchronousWriteFilter(), PoolingFilter.MAX_JOB_EVENTS, false);
+        _poolReference.acquireExecutorService();
+        _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
+        _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
         _actor.message(ConnectionMessages.CON_1001(null, null, false, false));
-        _poolReference.acquireExecutorService();
+
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -212,7 +208,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         try
         {
             final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
-            Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Event(new Runnable()
+            Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Runnable()
             {
                 @Override
                 public void run()
@@ -232,7 +228,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                         }
                     }
                 }
-            }));
+            });
         }
         catch (Exception e)
         {
@@ -459,14 +455,14 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         final ByteBuffer buf = frame.toNioByteBuffer();
         _lastIoTime = System.currentTimeMillis();
         _writtenBytes += buf.remaining();
-        Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Event(new Runnable()
+        Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Runnable()
         {
             @Override
             public void run()
             {
                 _networkDriver.send(buf);
             }
-        }));
+        });
     }
 
     public AMQShortString getContextKey()

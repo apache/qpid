@@ -28,8 +28,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-import javax.net.ssl.SSLEngine;
-
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoAcceptor;
@@ -50,7 +48,6 @@ import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.NewThreadExecutor;
 import org.apache.mina.util.SessionUtil;
-import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
@@ -58,7 +55,6 @@ import org.apache.qpid.thread.QpidThreadExecutor;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.NetworkDriverConfiguration;
 import org.apache.qpid.transport.OpenException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,14 +144,6 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
             sc.setTcpNoDelay(config.getTcpNoDelay());
         }
 
-        // if we do not use the executor pool threading model we get the default
-        // leader follower
-        // implementation provided by MINA
-        if (_executorPool)
-        {
-            sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
-        }
-
         if (sslFactory != null)
         {
             _sslFactory = sslFactory;
@@ -227,14 +215,6 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         }
 
         SocketConnectorConfig cfg = (SocketConnectorConfig) _socketConnector.getDefaultConfig();
-
-        // if we do not use our own thread model we get the MINA default which is to use
-        // its own leader-follower model
-        boolean readWriteThreading = Boolean.getBoolean("amqj.shared_read_write_pool");
-        if (readWriteThreading)
-        {
-            cfg.setThreadModel(ReadWriteThreadModel.getInstance());
-        }
         
         SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();
         scfg.setTcpNoDelay((config != null) ? config.getTcpNoDelay() :  true);
@@ -258,8 +238,6 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
             throw new OpenException("Could not open connection", _lastException);
         }
         _ioSession = future.getSession();
-        ReadWriteThreadModel.getInstance().getAsynchronousReadFilter().createNewJobForSession(_ioSession);
-        ReadWriteThreadModel.getInstance().getAsynchronousWriteFilter().createNewJobForSession(_ioSession);
         _ioSession.setAttachment(engine);
         engine.setNetworkDriver(this);
         _protocolEngine = engine;
