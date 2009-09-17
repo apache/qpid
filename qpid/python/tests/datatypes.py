@@ -148,6 +148,34 @@ class RangedSetTest(TestCase):
     assert range.lower == 0
     assert range.upper == 8
 
+  def testEmpty(self):
+    s = RangedSet()
+    assert s.empty()
+    s.add(0, -1)
+    assert s.empty()
+    s.add(0, 0)
+    assert not s.empty()
+
+  def testMinMax(self):
+    s = RangedSet()
+    assert s.max() is None
+    assert s.min() is None
+    s.add(0, 10)
+    assert s.max() == 10
+    assert s.min() == 0
+    s.add(0, 5)
+    assert s.max() == 10
+    assert s.min() == 0
+    s.add(0, 11)
+    assert s.max() == 11
+    assert s.min() == 0
+    s.add(15, 20)
+    assert s.max() == 20
+    assert s.min() == 0
+    s.add(-10, -5)
+    assert s.max() == 20
+    assert s.min() == -10
+
 class RangeTest(TestCase):
 
   def testIntersect1(self):
