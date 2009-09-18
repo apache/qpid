@@ -186,14 +186,7 @@ public class MINANetworkDriverTest extends TestCase
         _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
         assertFalse("Reader should not have been idle", _countingEngine.getReaderHasBeenIdle());
         _client.setMaxReadIdle(1);
-        try
-        {
-            Thread.sleep(1000);
-        }
-        catch (InterruptedException e)
-        {
-            // Eat it
-        }
+        sleepForAtLeast(1500);
         assertTrue("Reader should have been idle", _countingEngine.getReaderHasBeenIdle());
     } 
     
@@ -211,14 +204,7 @@ public class MINANetworkDriverTest extends TestCase
         _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
         assertFalse("Reader should not have been idle", _countingEngine.getWriterHasBeenIdle());
         _client.setMaxWriteIdle(1);
-        try
-        {
-            Thread.sleep(1000);
-        }
-        catch (InterruptedException e)
-        {
-            // Eat it
-        }
+        sleepForAtLeast(1500);
         assertTrue("Reader should have been idle", _countingEngine.getWriterHasBeenIdle());
     } 
     
@@ -482,6 +468,24 @@ public class MINANetworkDriverTest extends TestCase
             super.received(msg);
             msg.rewind();
             _driver.send(msg);
+        }
+    }
+    
+    public static void sleepForAtLeast(long period)
+    {
+        long start = System.currentTimeMillis();
+        long timeLeft = period;
+        while (timeLeft > 0)
+        {
+            try
+            {
+                Thread.sleep(timeLeft);
+            }
+            catch (InterruptedException e)
+            {
+                // Ignore it
+            }
+            timeLeft = period - (System.currentTimeMillis() - start);
         }
     }
 }
