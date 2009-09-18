@@ -105,7 +105,6 @@ QPID_AUTO_TEST_CASE(testCoincidentErrors) {
     }
 }
 
-#if 0                           // FIXME aconway 2009-07-30:
 // Verify normal cluster-wide errors.
 QPID_AUTO_TEST_CASE(testNormalErrors) {
     // FIXME aconway 2009-04-10: Would like to put a scope just around
@@ -120,7 +119,7 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
 
     {
         ScopedSuppressLogging allQuiet;
-        queueAndsub(c0);
+        queueAndSub(c0);
         c0.session.messageTransfer(content=Message("x", "c0"));
         BOOST_CHECK_EQUAL(c0.lq.get(TIMEOUT).getData(), "x");
 
@@ -258,7 +257,7 @@ QPID_AUTO_TEST_CASE(testPartialFailureMemberLeaves) {
     }
 }
 #endif
-#endif  // FIXME aconway 2009-07-30:
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
