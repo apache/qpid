@@ -522,6 +522,10 @@ module Qmf
     def exception
       @impl.getException
     end
+
+    def arguments
+      Arguments.new(@impl.getArgs)
+    end
   end
 
   ##==============================================================================
