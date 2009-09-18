@@ -107,6 +107,23 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (readError) {
         return false;
     }
+
+    bool ret = true;
+
+    // Check here for read credit
+    if (readCredit.get() != InfiniteCredit) {
+        // TODO In theory should be able to use an atomic operation before taking the lock
+        // but in practice there seems to be an unexplained race in that case
+        ScopedLock<Mutex> l(creditLock);
+        if (--readCredit == 0) {
+            assert(readCredit.get() >= 0);
+            if (readCredit.get() == 0) {
+                aio->stopReading();
+                ret = false;
+            }
+        }
+    }
+
     size_t decoded = 0;
     if (codec) {                // Already initiated
         try {
@@ -149,20 +166,7 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         // Give whole buffer back to aio subsystem
         aio->queueReadBuffer(buff);
     }
-    // Check here for read credit
-    if (readCredit.get() != InfiniteCredit) {
-        // TODO In theory should be able to use an atomic operation before taking the lock
-        // but in practice there seems to be an unexplained race in that case
-        ScopedLock<Mutex> l(creditLock);
-        if (--readCredit == 0) {
-            assert(readCredit.get() >= 0);
-            if (readCredit.get() == 0) {
-                aio->stopReading();
-                return false;
-            }
-        }
-    }
-    return true;
+    return ret;
 }
 
 void AsynchIOHandler::eof(AsynchIO&) {
