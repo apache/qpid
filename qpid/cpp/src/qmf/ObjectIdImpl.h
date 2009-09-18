@@ -34,14 +34,16 @@ namespace qmf {
     };
 
     struct ObjectIdImpl {
-        ObjectId* envelope;
         AgentAttachment* agent;
         uint64_t first;
         uint64_t second;
 
-        ObjectIdImpl(ObjectId* e) : envelope(e), agent(0), first(0), second(0) {}
+        ObjectIdImpl() : agent(0), first(0), second(0) {}
         ObjectIdImpl(qpid::framing::Buffer& buffer);
         ObjectIdImpl(AgentAttachment* agent, uint8_t flags, uint16_t seq, uint64_t object);
+
+        static ObjectId* factory(qpid::framing::Buffer& buffer);
+        static ObjectId* factory(AgentAttachment* agent, uint8_t flags, uint16_t seq, uint64_t object);
 
         void decode(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;

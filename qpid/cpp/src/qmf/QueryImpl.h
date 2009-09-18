@@ -34,39 +34,36 @@ namespace qpid {
 namespace qmf {
 
     struct QueryElementImpl {
-        QueryElementImpl(const std::string& a, const Value* v, ValueOper o) :
-            envelope(new QueryElement(this)), attrName(a), value(v), oper(o) {}
+        QueryElementImpl(const std::string& a, const Value* v, ValueOper o) : attrName(a), value(v), oper(o) {}
         ~QueryElementImpl() {}
         bool evaluate(const Object* object) const;
 
-        QueryElement* envelope;
         std::string attrName;
         const Value* value;
         ValueOper oper;
     };
 
     struct QueryExpressionImpl {
-        QueryExpressionImpl(ExprOper o, const QueryOperand* operand1, const QueryOperand* operand2) :
-            envelope(new QueryExpression(this)), oper(o), left(operand1), right(operand2) {}
+        QueryExpressionImpl(ExprOper o, const QueryOperand* operand1, const QueryOperand* operand2) : oper(o), left(operand1), right(operand2) {}
         ~QueryExpressionImpl() {}
         bool evaluate(const Object* object) const;
 
-        QueryExpression* envelope;
         ExprOper oper;
         const QueryOperand* left;
         const QueryOperand* right;
     };
 
     struct QueryImpl {
-        QueryImpl(Query* e) : envelope(e), select(0) {}
-        QueryImpl(const std::string& c, const std::string& p) :
-            envelope(new Query(this)), packageName(p), className(c) {}
-        QueryImpl(const SchemaClassKey* key) :
-            envelope(new Query(this)), packageName(key->getPackageName()), className(key->getClassName()) {}
-        QueryImpl(const ObjectId* oid) :
-            envelope(new Query(this)), oid(new ObjectId(*oid)) {}
+        // Constructors mapped to public
+        QueryImpl(const std::string& c, const std::string& p) : packageName(p), className(c), select(0), resultLimit(0) {}
+        QueryImpl(const SchemaClassKey* key) : packageName(key->getPackageName()), className(key->getClassName()), select(0), resultLimit(0) {}
+        QueryImpl(const ObjectId* oid) : oid(new ObjectId(*oid)), select(0), resultLimit(0) {}
+
+        // Factory constructors
         QueryImpl(qpid::framing::Buffer& buffer);
+
         ~QueryImpl() {};
+        static Query* factory(qpid::framing::Buffer& buffer);
 
         void setSelect(const QueryOperand* criterion) { select = criterion; }
         void setLimit(uint32_t maxResults) { resultLimit = maxResults; }
@@ -88,7 +85,6 @@ namespace qmf {
 
         void encode(qpid::framing::Buffer& buffer) const;
 
-        Query* envelope;
         std::string packageName;
         std::string className;
         boost::shared_ptr<ObjectId> oid;

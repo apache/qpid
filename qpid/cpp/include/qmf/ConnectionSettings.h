@@ -36,8 +36,6 @@ namespace qmf {
     class ConnectionSettings {
     public:
 
-        ConnectionSettings(const ConnectionSettings& copy);
-
         /**
          * Create a set of default connection settings.
          *
@@ -62,6 +60,11 @@ namespace qmf {
          *    amqps://broker?authmech=PLAIN&authuser=guest&authpass=guest
          */
         QMF_EXTERN ConnectionSettings(const char* url);
+
+        /**
+         * Copy Constructor.
+         */
+        ConnectionSettings(const ConnectionSettings& from);
 
         /**
          * Destroy the connection settings object.

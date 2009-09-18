@@ -36,17 +36,14 @@ namespace qmf {
     // TODO: add a modified flag and accessors
 
     struct ValueImpl {
-        typedef boost::shared_ptr<Value> VPtr;
-        typedef boost::shared_ptr<Object> OPtr;
-        Value* envelope;
         const Typecode typecode;
         bool valid;
 
         ObjectId refVal;
         std::string stringVal;
-        OPtr objectVal;
-        std::map<std::string, VPtr> mapVal;
-        std::vector<VPtr> vectorVal;
+        std::auto_ptr<Object> objectVal;
+        std::map<std::string, Value> mapVal;
+        std::vector<Value> vectorVal;
         Typecode arrayTypecode;
 
         union {
@@ -60,9 +57,17 @@ namespace qmf {
             uint8_t  uuidVal[16];
         } value;
 
-        ValueImpl(Value* e, Typecode t, Typecode at);
+        ValueImpl(const ValueImpl& from) :
+            typecode(from.typecode), valid(from.valid), refVal(from.refVal), stringVal(from.stringVal),
+            objectVal(from.objectVal.get() ? new Object(*(from.objectVal)) : 0),
+            mapVal(from.mapVal), vectorVal(from.vectorVal), arrayTypecode(from.arrayTypecode),
+            value(from.value) {}
+
+        ValueImpl(Typecode t, Typecode at);
         ValueImpl(Typecode t, qpid::framing::Buffer& b);
         ValueImpl(Typecode t);
+        static Value* factory(Typecode t, qpid::framing::Buffer& b);
+        static Value* factory(Typecode t);
         ~ValueImpl();
 
         void encode(qpid::framing::Buffer& b) const;

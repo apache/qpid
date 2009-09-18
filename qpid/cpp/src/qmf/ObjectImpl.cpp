@@ -27,9 +27,7 @@ using namespace qmf;
 using namespace qpid::sys;
 using qpid::framing::Buffer;
 
-ObjectImpl::ObjectImpl(Object* e, const SchemaObjectClass* type) :
-    envelope(e), objectClass(type), broker(0), createTime(uint64_t(Duration(now()))),
-    destroyTime(0), lastUpdatedTime(createTime)
+ObjectImpl::ObjectImpl(const SchemaObjectClass* type) : objectClass(type), broker(0), createTime(uint64_t(Duration(now()))), destroyTime(0), lastUpdatedTime(createTime)
 {
     int propCount = objectClass->getPropertyCount();
     int statCount = objectClass->getStatisticCount();
@@ -47,7 +45,7 @@ ObjectImpl::ObjectImpl(Object* e, const SchemaObjectClass* type) :
 }
 
 ObjectImpl::ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer& buffer, bool prop, bool stat, bool managed) :
-    envelope(new Object(this)), objectClass(type), broker(b), createTime(0), destroyTime(0), lastUpdatedTime(0)
+    objectClass(type), broker(b), createTime(0), destroyTime(0), lastUpdatedTime(0)
 {
     int idx;
 
@@ -55,7 +53,7 @@ ObjectImpl::ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer
         lastUpdatedTime = buffer.getLongLong();
         createTime = buffer.getLongLong();
         destroyTime = buffer.getLongLong();
-        objectId.reset(new ObjectIdImpl(buffer));
+        objectId.reset(ObjectIdImpl::factory(buffer));
     }
 
     if (prop) {
@@ -67,8 +65,8 @@ ObjectImpl::ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer
             if (excludes.count(prop->getName()) != 0) {
                 properties[prop->getName()] = ValuePtr(new Value(prop->getType()));
             } else {
-                ValueImpl* pval = new ValueImpl(prop->getType(), buffer);
-                properties[prop->getName()] = ValuePtr(pval->envelope);
+                Value* pval = ValueImpl::factory(prop->getType(), buffer);
+                properties[prop->getName()] = ValuePtr(pval);
             }
         }
     }
@@ -77,10 +75,16 @@ ObjectImpl::ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer
         int statCount = objectClass->getStatisticCount();
         for (idx = 0; idx < statCount; idx++) {
             const SchemaStatistic* stat = objectClass->getStatistic(idx);
-            ValueImpl* sval = new ValueImpl(stat->getType(), buffer);
-            statistics[stat->getName()] = ValuePtr(sval->envelope);
+            Value* sval = ValueImpl::factory(stat->getType(), buffer);
+            statistics[stat->getName()] = ValuePtr(sval);
         }
     }
+}
+
+Object* ObjectImpl::factory(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer& buffer, bool prop, bool stat, bool managed)
+{
+    ObjectImpl* impl(new ObjectImpl(type, b, buffer, prop, stat, managed));
+    return new Object(impl);
 }
 
 ObjectImpl::~ObjectImpl()
@@ -150,7 +154,7 @@ void ObjectImpl::encodeManagedObjectData(qpid::framing::Buffer& buffer) const
     buffer.putLongLong(lastUpdatedTime);
     buffer.putLongLong(createTime);
     buffer.putLongLong(destroyTime);
-    objectId->encode(buffer);
+    objectId->impl->encode(buffer);
 }
 
 void ObjectImpl::encodeProperties(qpid::framing::Buffer& buffer) const
@@ -203,7 +207,7 @@ void ObjectImpl::encodeStatistics(qpid::framing::Buffer& buffer) const
 // Wrappers
 //==================================================================
 
-Object::Object(const SchemaObjectClass* type) : impl(new ObjectImpl(this, type)) {}
+Object::Object(const SchemaObjectClass* type) : impl(new ObjectImpl(type)) {}
 Object::Object(ObjectImpl* i) : impl(i) {}
 Object::Object(const Object& from) : impl(new ObjectImpl(*(from.impl))) {}
 Object::~Object() { delete impl; }

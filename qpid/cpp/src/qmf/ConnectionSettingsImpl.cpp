@@ -44,13 +44,13 @@ const string attrRetryDelayMin("retryDelayMin");
 const string attrRetryDelayMax("retryDelayMax");
 const string attrRetryDelayFactor("retryDelayFactor");
 
-ConnectionSettingsImpl::ConnectionSettingsImpl(ConnectionSettings* e) :
-    envelope(e), retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2)
+ConnectionSettingsImpl::ConnectionSettingsImpl() :
+    retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2)
 {
 }
 
-ConnectionSettingsImpl::ConnectionSettingsImpl(ConnectionSettings* e, const string& /*url*/) :
-    envelope(e), retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2)
+ConnectionSettingsImpl::ConnectionSettingsImpl(const string& /*url*/) :
+    retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2)
 {
     // TODO: Parse the URL
 }
@@ -251,73 +251,18 @@ void ConnectionSettingsImpl::getRetrySettings(int* min, int* max, int* factor) c
 // Wrappers
 //==================================================================
 
-ConnectionSettings::ConnectionSettings(const ConnectionSettings& from)
-{
-    impl = new ConnectionSettingsImpl(*from.impl);
-}
-
-ConnectionSettings::ConnectionSettings()
-{
-    impl = new ConnectionSettingsImpl(this);
-}
-
-ConnectionSettings::ConnectionSettings(const char* url)
-{
-    impl = new ConnectionSettingsImpl(this, url);
-}
-
-ConnectionSettings::~ConnectionSettings()
-{
-    delete impl;
-}
-
-void ConnectionSettings::setAttr(const char* key, const Value& value)
-{
-    impl->setAttr(key, value);
-}
-
-Value ConnectionSettings::getAttr(const char* key) const
-{
-    return impl->getAttr(key);
-}
-
-const char* ConnectionSettings::getAttrString() const
-{
-    return impl->getAttrString().c_str();
-}
-
-void ConnectionSettings::transportTcp(uint16_t port)
-{
-    impl->transportTcp(port);
-}
-
-void ConnectionSettings::transportSsl(uint16_t port)
-{
-    impl->transportSsl(port);
-}
-
-void ConnectionSettings::transportRdma(uint16_t port)
-{
-    impl->transportRdma(port);
-}
-
-void ConnectionSettings::authAnonymous(const char* username)
-{
-    impl->authAnonymous(username);
-}
-
-void ConnectionSettings::authPlain(const char* username, const char* password)
-{
-    impl->authPlain(username, password);
-}
-
-void ConnectionSettings::authGssapi(const char* serviceName, uint32_t minSsf, uint32_t maxSsf)
-{
-    impl->authGssapi(serviceName, minSsf, maxSsf);
-}
-
-void ConnectionSettings::setRetry(int delayMin, int delayMax, int delayFactor)
-{
-    impl->setRetry(delayMin, delayMax, delayFactor);
-}
+ConnectionSettings::ConnectionSettings(const ConnectionSettings& from) { impl = new ConnectionSettingsImpl(*from.impl); }
+ConnectionSettings::ConnectionSettings() { impl = new ConnectionSettingsImpl(); }
+ConnectionSettings::ConnectionSettings(const char* url) { impl = new ConnectionSettingsImpl(url); }
+ConnectionSettings::~ConnectionSettings() { delete impl; }
+void ConnectionSettings::setAttr(const char* key, const Value& value) { impl->setAttr(key, value); }
+Value ConnectionSettings::getAttr(const char* key) const { return impl->getAttr(key); }
+const char* ConnectionSettings::getAttrString() const { return impl->getAttrString().c_str(); }
+void ConnectionSettings::transportTcp(uint16_t port) { impl->transportTcp(port); }
+void ConnectionSettings::transportSsl(uint16_t port) { impl->transportSsl(port); }
+void ConnectionSettings::transportRdma(uint16_t port) { impl->transportRdma(port); }
+void ConnectionSettings::authAnonymous(const char* username) { impl->authAnonymous(username); }
+void ConnectionSettings::authPlain(const char* username, const char* password) { impl->authPlain(username, password); }
+void ConnectionSettings::authGssapi(const char* serviceName, uint32_t minSsf, uint32_t maxSsf) { impl->authGssapi(serviceName, minSsf, maxSsf); }
+void ConnectionSettings::setRetry(int delayMin, int delayMax, int delayFactor) { impl->setRetry(delayMin, delayMax, delayFactor); }
 

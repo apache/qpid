@@ -45,6 +45,12 @@ QueryImpl::QueryImpl(Buffer& buffer)
     // TODO
 }
 
+Query* QueryImpl::factory(Buffer& buffer)
+{
+    QueryImpl* impl(new QueryImpl(buffer));
+    return new Query(impl);
+}
+
 void QueryImpl::encode(Buffer& buffer) const
 {
     FieldTable ft;
@@ -69,14 +75,17 @@ QueryElement::QueryElement(const char* attrName, const Value* value, ValueOper o
 QueryElement::QueryElement(QueryElementImpl* i) : impl(i) {}
 QueryElement::~QueryElement() { delete impl; }
 bool QueryElement::evaluate(const Object* object) const { return impl->evaluate(object); }
+
 QueryExpression::QueryExpression(ExprOper oper, const QueryOperand* operand1, const QueryOperand* operand2) : impl(new QueryExpressionImpl(oper, operand1, operand2)) {}
 QueryExpression::QueryExpression(QueryExpressionImpl* i) : impl(i) {}
 QueryExpression::~QueryExpression() { delete impl; }
 bool QueryExpression::evaluate(const Object* object) const { return impl->evaluate(object); }
+
 Query::Query(const char* className, const char* packageName) : impl(new QueryImpl(className, packageName)) {}
 Query::Query(const SchemaClassKey* key) : impl(new QueryImpl(key)) {}
 Query::Query(const ObjectId* oid) : impl(new QueryImpl(oid)) {}
 Query::Query(QueryImpl* i) : impl(i) {}
+Query::Query(const Query& from) : impl(new QueryImpl(*(from.impl))) {}
 Query::~Query() { delete impl; }
 void Query::setSelect(const QueryOperand* criterion) { impl->setSelect(criterion); }
 void Query::setLimit(uint32_t maxResults) { impl->setLimit(maxResults); }

@@ -30,7 +30,6 @@ namespace qmf {
     class Object {
     public:
         Object(const SchemaObjectClass* type);
-        Object(ObjectImpl* impl);
         Object(const Object& from);
         virtual ~Object();
 
@@ -41,6 +40,10 @@ namespace qmf {
         Value* getValue(char* key) const;
         void invokeMethod(const char* methodName, const Value* inArgs, void* context) const;
 
+    private:
+        friend class ObjectImpl;
+        friend class AgentEngineImpl;
+        Object(ObjectImpl* impl);
         ObjectImpl* impl;
     };
 }

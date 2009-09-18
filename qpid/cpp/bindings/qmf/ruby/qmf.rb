@@ -512,9 +512,7 @@ module Qmf
 
   class MethodResponse
     def initialize(impl)
-      puts "start copying..."
       @impl = Qmfengine::MethodResponse.new(impl)
-      puts "done copying..."
     end
 
     def status
@@ -896,7 +894,6 @@ module Qmf
       valid = @impl.getEvent(@event)
       while valid
         count += 1
-        puts "Console Event: #{@event.kind}"
         case @event.kind
         when Qmfengine::ConsoleEvent::AGENT_ADDED
         when Qmfengine::ConsoleEvent::AGENT_DELETED
@@ -977,7 +974,6 @@ module Qmf
       valid = @impl.getEvent(@event)
       while valid
         count += 1
-        puts "Broker Event: #{@event.kind}"
         case @event.kind
         when Qmfengine::BrokerEvent::BROKER_INFO
         when Qmfengine::BrokerEvent::DECLARE_QUEUE

@@ -38,6 +38,7 @@
 #include <vector>
 #include <set>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 using namespace std;
 using namespace qmf;
@@ -77,7 +78,7 @@ namespace qmf {
         void stop();
     };
 
-    class ResilientConnectionImpl : public qpid::sys::Runnable {
+    class ResilientConnectionImpl : public qpid::sys::Runnable, public boost::noncopyable {
     public:
         ResilientConnectionImpl(const ConnectionSettings& settings);
         ~ResilientConnectionImpl();

@@ -33,7 +33,6 @@ namespace qmf {
         //        Value();
         Value(const Value& from);
         Value(Typecode t, Typecode arrayType = TYPE_UINT8);
-        Value(ValueImpl* impl);
         ~Value();
 
         Typecode getType() const;
@@ -81,7 +80,7 @@ namespace qmf {
         void setUuid(const uint8_t* val);
 
         bool isObject() const;
-        Object* asObject() const;
+        const Object* asObject() const;
         void setObject(Object* val);
 
         bool isMap() const;
@@ -106,6 +105,12 @@ namespace qmf {
         void appendToArray(Value* val);
         void deleteArrayItem(uint32_t idx);
 
+    private:
+        friend class ValueImpl;
+        friend class BrokerProxyImpl;
+        friend class ObjectImpl;
+        friend class AgentEngineImpl;
+        Value(ValueImpl* impl);
         ValueImpl* impl;
     };
 }

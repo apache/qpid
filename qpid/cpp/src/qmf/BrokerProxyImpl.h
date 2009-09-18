@@ -31,6 +31,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include "boost/shared_ptr.hpp"
+#include "boost/noncopyable.hpp"
 #include <memory>
 #include <string>
 #include <deque>
@@ -39,32 +40,36 @@
 
 namespace qmf {
 
+    typedef boost::shared_ptr<MethodResponse> MethodResponsePtr;
     struct MethodResponseImpl {
-        typedef boost::shared_ptr<MethodResponseImpl> Ptr;
-        MethodResponse* envelope;
         uint32_t status;
-        SchemaMethodImpl* schema;
-        boost::shared_ptr<Value> exception;
-        boost::shared_ptr<Value> arguments;
+        const SchemaMethod* schema;
+        std::auto_ptr<Value> exception;
+        std::auto_ptr<Value> arguments;
 
         MethodResponseImpl(const MethodResponseImpl& from);
-        MethodResponseImpl(qpid::framing::Buffer& buf, SchemaMethodImpl* schema);
+        MethodResponseImpl(qpid::framing::Buffer& buf, const SchemaMethod* schema);
         MethodResponseImpl(uint32_t status, const std::string& text);
-        ~MethodResponseImpl() { delete envelope; }
+        static MethodResponse* factory(qpid::framing::Buffer& buf, const SchemaMethod* schema);
+        static MethodResponse* factory(uint32_t status, const std::string& text);
+        ~MethodResponseImpl() {}
         uint32_t getStatus() const { return status; }
         const Value* getException() const { return exception.get(); }
         const Value* getArgs() const { return arguments.get(); }
     };
 
+    typedef boost::shared_ptr<QueryResponse> QueryResponsePtr;
     struct QueryResponseImpl {
-        typedef boost::shared_ptr<QueryResponseImpl> Ptr;
-        QueryResponse *envelope;
         uint32_t status;
         std::auto_ptr<Value> exception;
-        std::vector<ObjectImpl::Ptr> results;
+        std::vector<ObjectPtr> results;
 
-        QueryResponseImpl() : envelope(new QueryResponse(this)), status(0) {}
-        ~QueryResponseImpl() { delete envelope; }
+        QueryResponseImpl() : status(0) {}
+        static QueryResponse* factory() {
+            QueryResponseImpl* impl(new QueryResponseImpl());
+            return new QueryResponse(impl);
+        }
+        ~QueryResponseImpl() {}
         uint32_t getStatus() const { return status; }
         const Value* getException() const { return exception.get(); }
         uint32_t getObjectCount() const { return results.size(); }
@@ -78,33 +83,33 @@ namespace qmf {
         std::string exchange;
         std::string bindingKey;
         void* context;
-        QueryResponseImpl::Ptr queryResponse;
-        MethodResponseImpl::Ptr methodResponse;
+        QueryResponsePtr queryResponse;
+        MethodResponsePtr methodResponse;
 
         BrokerEventImpl(BrokerEvent::EventKind k) : kind(k), context(0) {}
         ~BrokerEventImpl() {}
         BrokerEvent copy();
     };
 
+    typedef boost::shared_ptr<AgentProxy> AgentProxyPtr;
     struct AgentProxyImpl {
-        typedef boost::shared_ptr<AgentProxyImpl> Ptr;
-        AgentProxy* envelope;
-        ConsoleEngineImpl* console;
-        BrokerProxyImpl* broker;
+        ConsoleEngine& console;
+        BrokerProxy& broker;
         uint32_t agentBank;
         std::string label;
 
-        AgentProxyImpl(ConsoleEngineImpl* c, BrokerProxyImpl* b, uint32_t ab, const std::string& l) :
-            envelope(new AgentProxy(this)), console(c), broker(b), agentBank(ab), label(l) {}
+        AgentProxyImpl(ConsoleEngine& c, BrokerProxy& b, uint32_t ab, const std::string& l) : console(c), broker(b), agentBank(ab), label(l) {}
+        static AgentProxy* factory(ConsoleEngine& c, BrokerProxy& b, uint32_t ab, const std::string& l) {
+            AgentProxyImpl* impl(new AgentProxyImpl(c, b, ab, l));
+            return new AgentProxy(impl);
+        }
         ~AgentProxyImpl() {}
         const std::string& getLabel() const { return label; }
     };
 
-    class BrokerProxyImpl {
+    class BrokerProxyImpl : public boost::noncopyable {
     public:
-        typedef boost::shared_ptr<BrokerProxyImpl> Ptr;
-
-        BrokerProxyImpl(BrokerProxy* e, ConsoleEngine& _console);
+        BrokerProxyImpl(BrokerProxy& pub, ConsoleEngine& _console);
         ~BrokerProxyImpl() {}
 
         void sessionOpened(SessionHandle& sh);
@@ -122,9 +127,9 @@ namespace qmf {
         uint32_t agentCount() const;
         const AgentProxy* getAgent(uint32_t idx) const;
         void sendQuery(const Query& query, void* context, const AgentProxy* agent);
-        void sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxyImpl* agent);
+        void sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent);
         std::string encodeMethodArguments(const SchemaMethod* schema, const Value* args, qpid::framing::Buffer& buffer);
-        void sendMethodRequest(ObjectIdImpl* oid, const SchemaObjectClass* cls, const std::string& method, const Value* args, void* context);
+        void sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls, const std::string& method, const Value* args, void* context);
 
         void addBinding(const std::string& exchange, const std::string& key);
         void staticRelease() { decOutstanding(); }
@@ -133,15 +138,15 @@ namespace qmf {
         friend class StaticContext;
         friend class QueryContext;
         friend class MethodContext;
+        BrokerProxy& publicObject;
         mutable qpid::sys::Mutex lock;
-        BrokerProxy* envelope;
-        ConsoleEngineImpl* console;
+        ConsoleEngine& console;
         std::string queueName;
         qpid::framing::Uuid brokerId;
         SequenceManager seqMgr;
         uint32_t requestsOutstanding;
         bool topicBound;
-        std::vector<AgentProxyImpl::Ptr> agentList;
+        std::vector<AgentProxyPtr> agentList;
         std::deque<MessageImpl::Ptr> xmtQueue;
         std::deque<BrokerEventImpl::Ptr> eventQueue;
 
@@ -152,18 +157,18 @@ namespace qmf {
         BrokerEventImpl::Ptr eventBind(const std::string& exchange, const std::string& queue, const std::string& key);
         BrokerEventImpl::Ptr eventSetupComplete();
         BrokerEventImpl::Ptr eventStable();
-        BrokerEventImpl::Ptr eventQueryComplete(void* context, QueryResponseImpl::Ptr response);
-        BrokerEventImpl::Ptr eventMethodResponse(void* context, MethodResponseImpl::Ptr response);
+        BrokerEventImpl::Ptr eventQueryComplete(void* context, QueryResponsePtr response);
+        BrokerEventImpl::Ptr eventMethodResponse(void* context, MethodResponsePtr response);
 
         void handleBrokerResponse(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handlePackageIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleCommandComplete(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleClassIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
-        MethodResponseImpl::Ptr handleMethodResponse(qpid::framing::Buffer& inBuffer, uint32_t seq, SchemaMethodImpl* schema);
+        MethodResponsePtr handleMethodResponse(qpid::framing::Buffer& inBuffer, uint32_t seq, const SchemaMethod* schema);
         void handleHeartbeatIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleEventIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleSchemaResponse(qpid::framing::Buffer& inBuffer, uint32_t seq);
-        ObjectImpl::Ptr handleObjectIndication(qpid::framing::Buffer& inBuffer, uint32_t seq, bool prop, bool stat);
+        ObjectPtr handleObjectIndication(qpid::framing::Buffer& inBuffer, uint32_t seq, bool prop, bool stat);
         void incOutstandingLH();
         void decOutstanding();
     };
@@ -188,7 +193,7 @@ namespace qmf {
     //
     struct QueryContext : public SequenceContext {
         QueryContext(BrokerProxyImpl& b, void* u) :
-            broker(b), userContext(u), requestsOutstanding(0), queryResponse(new QueryResponseImpl()) {}
+        broker(b), userContext(u), requestsOutstanding(0), queryResponse(QueryResponseImpl::factory()) {}
         virtual ~QueryContext() {}
         void reserve();
         void release();
@@ -198,11 +203,11 @@ namespace qmf {
         BrokerProxyImpl& broker;
         void* userContext;
         uint32_t requestsOutstanding;
-        QueryResponseImpl::Ptr queryResponse;
+        QueryResponsePtr queryResponse;
     };
 
     struct MethodContext : public SequenceContext {
-        MethodContext(BrokerProxyImpl& b, void* u, SchemaMethodImpl* s) : broker(b), userContext(u), schema(s) {}
+        MethodContext(BrokerProxyImpl& b, void* u, const SchemaMethod* s) : broker(b), userContext(u), schema(s) {}
         virtual ~MethodContext() {}
         void reserve() {}
         void release();
@@ -210,8 +215,8 @@ namespace qmf {
 
         BrokerProxyImpl& broker;
         void* userContext;
-        SchemaMethodImpl* schema;
-        MethodResponseImpl::Ptr methodResponse;
+        const SchemaMethod* schema;
+        MethodResponsePtr methodResponse;
     };
 
 

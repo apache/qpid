@@ -21,7 +21,6 @@
  */
 
 #include "qmf/Schema.h"
-#include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
 #include <qpid/framing/Buffer.h>
@@ -52,16 +51,15 @@ namespace qmf {
     };
 
     struct SchemaArgumentImpl {
-        SchemaArgument* envelope;
         std::string name;
         Typecode typecode;
         Direction dir;
         std::string unit;
         std::string description;
 
-        SchemaArgumentImpl(SchemaArgument* e, const char* n, Typecode t) :
-            envelope(e), name(n), typecode(t), dir(DIR_IN) {}
+        SchemaArgumentImpl(const char* n, Typecode t) : name(n), typecode(t), dir(DIR_IN) {}
         SchemaArgumentImpl(qpid::framing::Buffer& buffer);
+        static SchemaArgument* factory(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
         void setDirection(Direction d) { dir = d; }
         void setUnit(const char* val) { unit = val; }
@@ -75,15 +73,15 @@ namespace qmf {
     };
 
     struct SchemaMethodImpl {
-        SchemaMethod* envelope;
         std::string name;
         std::string description;
-        std::vector<SchemaArgumentImpl*> arguments;
+        std::vector<const SchemaArgument*> arguments;
 
-        SchemaMethodImpl(SchemaMethod* e, const char* n) : envelope(e), name(n) {}
+        SchemaMethodImpl(const char* n) : name(n) {}
         SchemaMethodImpl(qpid::framing::Buffer& buffer);
+        static SchemaMethod* factory(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
-        void addArgument(const SchemaArgument& argument);
+        void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc) { description = desc; }
         const std::string& getName() const { return name; }
         const std::string& getDesc() const { return description; }
@@ -93,7 +91,6 @@ namespace qmf {
     };
 
     struct SchemaPropertyImpl {
-        SchemaProperty* envelope;
         std::string name;
         Typecode typecode;
         Access access;
@@ -102,10 +99,9 @@ namespace qmf {
         std::string unit;
         std::string description;
 
-        SchemaPropertyImpl(SchemaProperty* e, const char* n, Typecode t) :
-            envelope(e), name(n), typecode(t), access(ACCESS_READ_ONLY),
-            index(false), optional(false) {}
+        SchemaPropertyImpl(const char* n, Typecode t) : name(n), typecode(t), access(ACCESS_READ_ONLY), index(false), optional(false) {}
         SchemaPropertyImpl(qpid::framing::Buffer& buffer);
+        static SchemaProperty* factory(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
         void setAccess(Access a) { access = a; }
         void setIndex(bool val) { index = val; }
@@ -123,15 +119,14 @@ namespace qmf {
     };
 
     struct SchemaStatisticImpl {
-        SchemaStatistic* envelope;
         std::string name;
         Typecode typecode;
         std::string unit;
         std::string description;
 
-        SchemaStatisticImpl(SchemaStatistic* e, const char* n, Typecode t) :
-            envelope(e), name(n), typecode(t) {}
+        SchemaStatisticImpl(const char* n, Typecode t) : name(n), typecode(t) {}
         SchemaStatisticImpl(qpid::framing::Buffer& buffer);
+        static SchemaStatistic* factory(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
         void setUnit(const char* val) { unit = val; }
         void setDesc(const char* desc) { description = desc; }
@@ -143,7 +138,6 @@ namespace qmf {
     };
 
     struct SchemaClassKeyImpl {
-        const SchemaClassKey* envelope;
         const std::string& package;
         const std::string& name;
         const SchemaHash& hash;
@@ -156,6 +150,8 @@ namespace qmf {
 
         SchemaClassKeyImpl(const std::string& package, const std::string& name, const SchemaHash& hash);
         SchemaClassKeyImpl(qpid::framing::Buffer& buffer);
+        static SchemaClassKey* factory(const std::string& package, const std::string& name, const SchemaHash& hash);
+        static SchemaClassKey* factory(qpid::framing::Buffer& buffer);
 
         const std::string& getPackageName() const { return package; }
         const std::string& getClassName() const { return name; }
@@ -168,24 +164,24 @@ namespace qmf {
     };
 
     struct SchemaObjectClassImpl {
-        typedef boost::shared_ptr<SchemaObjectClassImpl> Ptr;
-        SchemaObjectClass* envelope;
         std::string package;
         std::string name;
         mutable SchemaHash hash;
         mutable bool hasHash;
-        SchemaClassKeyImpl classKey;
-        std::vector<SchemaPropertyImpl*> properties;
-        std::vector<SchemaStatisticImpl*> statistics;
-        std::vector<SchemaMethodImpl*> methods;
+        std::auto_ptr<SchemaClassKey> classKey;
+        std::vector<const SchemaProperty*> properties;
+        std::vector<const SchemaStatistic*> statistics;
+        std::vector<const SchemaMethod*> methods;
 
-        SchemaObjectClassImpl(SchemaObjectClass* e, const char* p, const char* n) :
-        envelope(e), package(p), name(n), hasHash(false), classKey(package, name, hash) {}
+        SchemaObjectClassImpl(const char* p, const char* n) :
+            package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
         SchemaObjectClassImpl(qpid::framing::Buffer& buffer);
+        static SchemaObjectClass* factory(qpid::framing::Buffer& buffer);
+
         void encode(qpid::framing::Buffer& buffer) const;
-        void addProperty(const SchemaProperty& property);
-        void addStatistic(const SchemaStatistic& statistic);
-        void addMethod(const SchemaMethod& method);
+        void addProperty(const SchemaProperty* property);
+        void addStatistic(const SchemaStatistic* statistic);
+        void addMethod(const SchemaMethod* method);
 
         const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const { return properties.size(); }
@@ -197,21 +193,21 @@ namespace qmf {
     };
 
     struct SchemaEventClassImpl {
-        typedef boost::shared_ptr<SchemaEventClassImpl> Ptr;
-        SchemaEventClass* envelope;
         std::string package;
         std::string name;
         mutable SchemaHash hash;
         mutable bool hasHash;
-        SchemaClassKeyImpl classKey;
+        std::auto_ptr<SchemaClassKey> classKey;
         std::string description;
-        std::vector<SchemaArgumentImpl*> arguments;
+        std::vector<const SchemaArgument*> arguments;
 
-        SchemaEventClassImpl(SchemaEventClass* e, const char* p, const char* n) :
-            envelope(e), package(p), name(n), hasHash(false), classKey(package, name, hash) {}
+        SchemaEventClassImpl(const char* p, const char* n) :
+            package(p), name(n), hasHash(false), classKey(SchemaClassKeyImpl::factory(package, name, hash)) {}
         SchemaEventClassImpl(qpid::framing::Buffer& buffer);
+        static SchemaEventClass* factory(qpid::framing::Buffer& buffer);
+
         void encode(qpid::framing::Buffer& buffer) const;
-        void addArgument(const SchemaArgument& argument);
+        void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc) { description = desc; }
 
         const SchemaClassKey* getClassKey() const;

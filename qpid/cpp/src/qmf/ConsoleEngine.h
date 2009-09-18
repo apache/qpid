@@ -45,7 +45,6 @@ namespace qmf {
      */
     class MethodResponse {
     public:
-        MethodResponse(MethodResponseImpl* impl);
         MethodResponse(const MethodResponse& from);
         ~MethodResponse();
         uint32_t getStatus() const;
@@ -53,7 +52,9 @@ namespace qmf {
         const Value* getArgs() const;
 
     private:
+        friend class MethodResponseImpl;
         friend class ConsoleEngineImpl;
+        MethodResponse(MethodResponseImpl* impl);
         MethodResponseImpl* impl;
     };
 
@@ -62,7 +63,6 @@ namespace qmf {
      */
     class QueryResponse {
     public:
-        QueryResponse(QueryResponseImpl* impl);
         ~QueryResponse();
         uint32_t getStatus() const;
         const Value* getException() const;
@@ -70,7 +70,9 @@ namespace qmf {
         const Object* getObject(uint32_t idx) const;
 
     private:
+        friend class QueryResponseImpl;
         friend class QueryContext;
+        QueryResponse(QueryResponseImpl* impl);
         QueryResponseImpl *impl;
     };
 
@@ -129,12 +131,13 @@ namespace qmf {
      */
     class AgentProxy {
     public:
-        AgentProxy(AgentProxyImpl* impl);
         ~AgentProxy();
         const char* getLabel() const;
 
     private:
+        friend class AgentProxyImpl;
         friend class BrokerProxyImpl;
+        AgentProxy(AgentProxyImpl* impl);
         AgentProxyImpl* impl;
     };
 
@@ -163,6 +166,7 @@ namespace qmf {
 
     private:
         friend class ConsoleEngineImpl;
+        friend class StaticContext;
         BrokerProxyImpl* impl;
     };
 

@@ -33,27 +33,29 @@ namespace qmf {
 
     class BrokerProxyImpl;
 
+    typedef boost::shared_ptr<Object> ObjectPtr;
+
     struct ObjectImpl {
-        typedef boost::shared_ptr<ObjectImpl> Ptr;
         typedef boost::shared_ptr<Value> ValuePtr;
-        Object* envelope;
         const SchemaObjectClass* objectClass;
         BrokerProxyImpl* broker;
-        boost::shared_ptr<ObjectIdImpl> objectId;
+        boost::shared_ptr<ObjectId> objectId;
         uint64_t createTime;
         uint64_t destroyTime;
         uint64_t lastUpdatedTime;
         mutable std::map<std::string, ValuePtr> properties;
         mutable std::map<std::string, ValuePtr> statistics;
 
-        ObjectImpl(Object* e, const SchemaObjectClass* type);
+        ObjectImpl(const SchemaObjectClass* type);
         ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, qpid::framing::Buffer& buffer,
                    bool prop, bool stat, bool managed);
+        static Object* factory(const SchemaObjectClass* type, BrokerProxyImpl* b, qpid::framing::Buffer& buffer,
+                               bool prop, bool stat, bool managed);
         ~ObjectImpl();
 
         void destroy();
-        const ObjectId* getObjectId() const { return objectId.get() ? objectId->envelope : 0; }
-        void setObjectId(ObjectId* oid) { objectId.reset(oid->impl); }
+        const ObjectId* getObjectId() const { return objectId.get(); }
+        void setObjectId(ObjectId* oid) { objectId.reset(oid); }
         const SchemaObjectClass* getClass() const { return objectClass; }
         Value* getValue(const std::string& key) const;
         void invokeMethod(const std::string& methodName, const Value* inArgs, void* context) const;
