@@ -564,9 +564,16 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public void writeFrame(AMQDataBlock frame, boolean wait)
     {
-        ByteBuffer buf = frame.toNioByteBuffer();
+        final ByteBuffer buf = frame.toNioByteBuffer();
         _writtenBytes += buf.remaining();
-        _networkDriver.send(buf);
+        Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                _networkDriver.send(buf);
+            }
+        });
         if (PROTOCOL_DEBUG)
         {
             _protocolLogger.debug(String.format("SEND: [%s] %s", this, frame));
