@@ -40,6 +40,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 using namespace std;
 using namespace qmf;
@@ -61,7 +62,7 @@ namespace qmf {
         boost::shared_ptr<Value> arguments;
         string      exchange;
         string      bindingKey;
-        SchemaObjectClass* objectClass;
+        const SchemaObjectClass* objectClass;
 
         AgentEventImpl(AgentEvent::EventKind k) :
             kind(k), sequence(0), object(0), objectClass(0) {}
@@ -74,11 +75,11 @@ namespace qmf {
         uint32_t sequence;
         string   exchange;
         string   key;
-        SchemaMethodImpl* schemaMethod;
+        const SchemaMethod* schemaMethod;
         AgentQueryContext() : schemaMethod(0) {}
     };
 
-    class AgentEngineImpl {
+    class AgentEngineImpl : public boost::noncopyable {
     public:
         AgentEngineImpl(char* label, bool internalStore);
         ~AgentEngineImpl();
@@ -163,8 +164,8 @@ namespace qmf {
             }
         };
 
-        typedef map<AgentClassKey, SchemaObjectClassImpl*, AgentClassKeyComp> ObjectClassMap;
-        typedef map<AgentClassKey, SchemaEventClassImpl*, AgentClassKeyComp>  EventClassMap;
+        typedef map<AgentClassKey, SchemaObjectClass*, AgentClassKeyComp> ObjectClassMap;
+        typedef map<AgentClassKey, SchemaEventClass*, AgentClassKeyComp>  EventClassMap;
 
         struct ClassMaps {
             ObjectClassMap objectClasses;
@@ -180,7 +181,7 @@ namespace qmf {
                                        boost::shared_ptr<ObjectId> oid);
         AgentEventImpl::Ptr eventMethod(uint32_t num, const string& userId, const string& method,
                                         boost::shared_ptr<ObjectId> oid, boost::shared_ptr<Value> argMap,
-                                        SchemaObjectClass* objectClass);
+                                        const SchemaObjectClass* objectClass);
         void sendBufferLH(Buffer& buf, const string& destination, const string& routingKey);
 
         void sendPackageIndicationLH(const string& packageName);
@@ -366,15 +367,15 @@ void AgentEngineImpl::methodResponse(uint32_t sequence, uint32_t status, char* t
     buffer.putLong(status);
     buffer.putMediumString(text);
     if (status == 0) {
-        for (vector<SchemaArgumentImpl*>::const_iterator aIter = context->schemaMethod->arguments.begin();
-             aIter != context->schemaMethod->arguments.end(); aIter++) {
-            const SchemaArgumentImpl* schemaArg = *aIter;
-            if (schemaArg->dir == DIR_OUT || schemaArg->dir == DIR_IN_OUT) {
-                if (argMap.keyInMap(schemaArg->name.c_str())) {
-                    const Value* val = argMap.byKey(schemaArg->name.c_str());
+        for (vector<const SchemaArgument*>::const_iterator aIter = context->schemaMethod->impl->arguments.begin();
+             aIter != context->schemaMethod->impl->arguments.end(); aIter++) {
+            const SchemaArgument* schemaArg = *aIter;
+            if (schemaArg->getDirection() == DIR_OUT || schemaArg->getDirection() == DIR_IN_OUT) {
+                if (argMap.keyInMap(schemaArg->getName())) {
+                    const Value* val = argMap.byKey(schemaArg->getName());
                     val->impl->encode(buffer);
                 } else {
-                    Value val(schemaArg->typecode);
+                    Value val(schemaArg->getType());
                     val.impl->encode(buffer);
                 }
             }
@@ -421,17 +422,16 @@ void AgentEngineImpl::queryComplete(uint32_t sequence)
 void AgentEngineImpl::registerClass(SchemaObjectClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
-    SchemaObjectClassImpl* impl = cls->impl;
 
-    map<string, ClassMaps>::iterator iter = packages.find(impl->package);
+    map<string, ClassMaps>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
     if (iter == packages.end()) {
-        packages[impl->package] = ClassMaps();
-        iter = packages.find(impl->getClassKey()->getPackageName());
+        packages[cls->getClassKey()->getPackageName()] = ClassMaps();
+        iter = packages.find(cls->getClassKey()->getPackageName());
         // TODO: Indicate this package if connected
     }
 
-    AgentClassKey key(impl->getClassKey()->getClassName(), impl->getClassKey()->getHash());
-    iter->second.objectClasses[key] = impl;
+    AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHash());
+    iter->second.objectClasses[key] = cls;
 
     // TODO: Indicate this schema if connected.
 }
@@ -439,17 +439,16 @@ void AgentEngineImpl::registerClass(SchemaObjectClass* cls)
 void AgentEngineImpl::registerClass(SchemaEventClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
-    SchemaEventClassImpl* impl = cls->impl;
 
-    map<string, ClassMaps>::iterator iter = packages.find(impl->package);
+    map<string, ClassMaps>::iterator iter = packages.find(cls->getClassKey()->getPackageName());
     if (iter == packages.end()) {
-        packages[impl->package] = ClassMaps();
-        iter = packages.find(impl->getClassKey()->getPackageName());
+        packages[cls->getClassKey()->getPackageName()] = ClassMaps();
+        iter = packages.find(cls->getClassKey()->getPackageName());
         // TODO: Indicate this package if connected
     }
 
-    AgentClassKey key(impl->getClassKey()->getClassName(), impl->getClassKey()->getHash());
-    iter->second.eventClasses[key] = impl;
+    AgentClassKey key(cls->getClassKey()->getClassName(), cls->getClassKey()->getHash());
+    iter->second.eventClasses[key] = cls;
 
     // TODO: Indicate this schema if connected.
 }
@@ -466,8 +465,8 @@ const ObjectId* AgentEngineImpl::allocObjectId(uint64_t persistId)
     uint16_t sequence  = persistId ? 0 : bootSequence;
     uint64_t objectNum = persistId ? persistId : nextObjectId++;
 
-    ObjectIdImpl* oid = new ObjectIdImpl(&attachment, 0, sequence, objectNum);
-    return oid->envelope;
+    ObjectId* oid = ObjectIdImpl::factory(&attachment, 0, sequence, objectNum);
+    return oid;
 }
 
 const ObjectId* AgentEngineImpl::allocObjectId(uint32_t persistIdLo, uint32_t persistIdHi)
@@ -520,7 +519,7 @@ AgentEventImpl::Ptr AgentEngineImpl::eventQuery(uint32_t num, const string& user
 
 AgentEventImpl::Ptr AgentEngineImpl::eventMethod(uint32_t num, const string& userId, const string& method,
                                                  boost::shared_ptr<ObjectId> oid, boost::shared_ptr<Value> argMap,
-                                                 SchemaObjectClass* objectClass)
+                                                 const SchemaObjectClass* objectClass)
 {
     AgentEventImpl::Ptr event(new AgentEventImpl(AgentEvent::METHOD_CALL));
     event->sequence = num;
@@ -688,10 +687,10 @@ void AgentEngineImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence,
     ClassMaps cMap = pIter->second;
     ObjectClassMap::iterator ocIter = cMap.objectClasses.find(key);
     if (ocIter != cMap.objectClasses.end()) {
-        SchemaObjectClassImpl* oImpl = ocIter->second;
+        SchemaObjectClass* oImpl = ocIter->second;
         Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
         Protocol::encodeHeader(buffer, Protocol::OP_SCHEMA_RESPONSE, sequence);
-        oImpl->encode(buffer);
+        oImpl->impl->encode(buffer);
         sendBufferLH(buffer, rExchange, rKey);
         QPID_LOG(trace, "SENT SchemaResponse: (object) package=" << packageName << " class=" << key.name);
         return;
@@ -699,10 +698,10 @@ void AgentEngineImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence,
 
     EventClassMap::iterator ecIter = cMap.eventClasses.find(key);
     if (ecIter != cMap.eventClasses.end()) {
-        SchemaEventClassImpl* eImpl = ecIter->second;
+        SchemaEventClass* eImpl = ecIter->second;
         Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
         Protocol::encodeHeader(buffer, Protocol::OP_SCHEMA_RESPONSE, sequence);
-        eImpl->encode(buffer);
+        eImpl->impl->encode(buffer);
         sendBufferLH(buffer, rExchange, rKey);
         QPID_LOG(trace, "SENT SchemaResponse: (event) package=" << packageName << " class=" << key.name);
         return;
@@ -768,8 +767,7 @@ void AgentEngineImpl::handleMethodRequest(Buffer& buffer, uint32_t sequence, con
     Mutex::ScopedLock _lock(lock);
     string pname;
     string method;
-    ObjectIdImpl* oidImpl = new ObjectIdImpl(buffer);
-    boost::shared_ptr<ObjectId> oid(oidImpl->envelope);
+    boost::shared_ptr<ObjectId> oid(ObjectIdImpl::factory(buffer));
     buffer.getShortString(pname);
     AgentClassKey classKey(buffer);
     buffer.getShortString(method);
@@ -788,29 +786,29 @@ void AgentEngineImpl::handleMethodRequest(Buffer& buffer, uint32_t sequence, con
         return;
     }
 
-    const SchemaObjectClassImpl* schema = cIter->second;
-    vector<SchemaMethodImpl*>::const_iterator mIter = schema->methods.begin();
-    for (; mIter != schema->methods.end(); mIter++) {
-        if ((*mIter)->name == method)
+    const SchemaObjectClass* schema = cIter->second;
+    vector<const SchemaMethod*>::const_iterator mIter = schema->impl->methods.begin();
+    for (; mIter != schema->impl->methods.end(); mIter++) {
+        if ((*mIter)->getName() == method)
             break;
     }
 
-    if (mIter == schema->methods.end()) {
+    if (mIter == schema->impl->methods.end()) {
         sendMethodErrorLH(sequence, replyTo, MERR_UNKNOWN_METHOD, method);
         return;
     }
 
-    SchemaMethodImpl* schemaMethod = *mIter;
+    const SchemaMethod* schemaMethod = *mIter;
     boost::shared_ptr<Value> argMap(new Value(TYPE_MAP));
-    ValueImpl* value;
-    for (vector<SchemaArgumentImpl*>::const_iterator aIter = schemaMethod->arguments.begin();
-         aIter != schemaMethod->arguments.end(); aIter++) {
-        const SchemaArgumentImpl* schemaArg = *aIter;
-        if (schemaArg->dir == DIR_IN || schemaArg->dir == DIR_IN_OUT)
-            value = new ValueImpl(schemaArg->typecode, buffer);
+    Value* value;
+    for (vector<const SchemaArgument*>::const_iterator aIter = schemaMethod->impl->arguments.begin();
+         aIter != schemaMethod->impl->arguments.end(); aIter++) {
+        const SchemaArgument* schemaArg = *aIter;
+        if (schemaArg->getDirection() == DIR_IN || schemaArg->getDirection() == DIR_IN_OUT)
+            value = ValueImpl::factory(schemaArg->getType(), buffer);
         else
-            value = new ValueImpl(schemaArg->typecode);
-        argMap->insert(schemaArg->name.c_str(), value->envelope);
+            value = ValueImpl::factory(schemaArg->getType());
+        argMap->insert(schemaArg->getName(), value);
     }
 
     AgentQueryContext::Ptr context(new AgentQueryContext);
@@ -821,7 +819,7 @@ void AgentEngineImpl::handleMethodRequest(Buffer& buffer, uint32_t sequence, con
     context->schemaMethod = schemaMethod;
     contextMap[contextNum] = context;
 
-    eventQueue.push_back(eventMethod(contextNum, userId, method, oid, argMap, schema->envelope));
+    eventQueue.push_back(eventMethod(contextNum, userId, method, oid, argMap, schema));
 }
 
 void AgentEngineImpl::handleConsoleAddedIndication()

@@ -31,7 +31,6 @@ namespace qmf {
     public:
         ObjectId();
         ObjectId(const ObjectId& from);
-        ObjectId(ObjectIdImpl* impl);
         ~ObjectId();
 
         uint64_t getObjectNum() const;
@@ -45,6 +44,14 @@ namespace qmf {
         bool operator<=(const ObjectId& other) const;
         bool operator>=(const ObjectId& other) const;
 
+    private:
+        friend class ObjectIdImpl;
+        friend class ObjectImpl;
+        friend class BrokerProxyImpl;
+        friend class QueryImpl;
+        friend class ValueImpl;
+        friend class AgentEngineImpl;
+        ObjectId(ObjectIdImpl* impl);
         ObjectIdImpl* impl;
     };
 }

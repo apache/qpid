@@ -56,7 +56,7 @@ ConsoleEvent ConsoleEventImpl::copy()
 
     ::memset(&item, 0, sizeof(ConsoleEvent));
     item.kind      = kind;
-    item.agent     = agent.get() ? agent->envelope : 0;
+    item.agent     = agent.get();
     item.classKey  = classKey.get();
     item.object    = object;
     item.context   = context;
@@ -68,8 +68,7 @@ ConsoleEvent ConsoleEventImpl::copy()
     return item;
 }
 
-ConsoleEngineImpl::ConsoleEngineImpl(ConsoleEngine* e, const ConsoleSettings& s) :
-    envelope(e), settings(s)
+ConsoleEngineImpl::ConsoleEngineImpl(const ConsoleSettings& s) : settings(s)
 {
     bindingList.push_back(pair<string, string>(string(), "schema.#"));
     if (settings.rcvObjects && settings.rcvEvents && settings.rcvHeartbeats && !settings.userBindings) {
@@ -192,7 +191,7 @@ ClassKind ConsoleEngineImpl::getClassKind(const SchemaClassKey* key) const
         return CLASS_OBJECT;
 
     const EventClassList& eList = pIter->second.second;
-    if (eList.find(key->impl) != eList.end())
+    if (eList.find(key) != eList.end())
         return CLASS_EVENT;
     return CLASS_OBJECT;
 }
@@ -205,10 +204,10 @@ const SchemaObjectClass* ConsoleEngineImpl::getObjectClass(const SchemaClassKey*
         return 0;
 
     const ObjectClassList& oList = pIter->second.first;
-    ObjectClassList::const_iterator iter = oList.find(key->impl);
+    ObjectClassList::const_iterator iter = oList.find(key);
     if (iter == oList.end())
         return 0;
-    return iter->second->envelope;
+    return iter->second;
 }
 
 const SchemaEventClass* ConsoleEngineImpl::getEventClass(const SchemaClassKey* key) const
@@ -219,10 +218,10 @@ const SchemaEventClass* ConsoleEngineImpl::getEventClass(const SchemaClassKey* k
         return 0;
 
     const EventClassList& eList = pIter->second.second;
-    EventClassList::const_iterator iter = eList.find(key->impl);
+    EventClassList::const_iterator iter = eList.find(key);
     if (iter == eList.end())
         return 0;
-    return iter->second->envelope;
+    return iter->second;
 }
 
 void ConsoleEngineImpl::bindPackage(const char* packageName)
@@ -280,7 +279,7 @@ void ConsoleEngineImpl::learnPackage(const string& packageName)
                         (packageName, pair<ObjectClassList, EventClassList>(ObjectClassList(), EventClassList())));
 }
 
-void ConsoleEngineImpl::learnClass(SchemaObjectClassImpl::Ptr cls)
+void ConsoleEngineImpl::learnClass(SchemaObjectClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
     const SchemaClassKey* key = cls->getClassKey();
@@ -289,11 +288,11 @@ void ConsoleEngineImpl::learnClass(SchemaObjectClassImpl::Ptr cls)
         return;
 
     ObjectClassList& list = pIter->second.first;
-    if (list.find(key->impl) == list.end())
-        list[key->impl] = cls;
+    if (list.find(key) == list.end())
+        list[key] = cls;
 }
 
-void ConsoleEngineImpl::learnClass(SchemaEventClassImpl::Ptr cls)
+void ConsoleEngineImpl::learnClass(SchemaEventClass* cls)
 {
     Mutex::ScopedLock _lock(lock);
     const SchemaClassKey* key = cls->getClassKey();
@@ -302,34 +301,34 @@ void ConsoleEngineImpl::learnClass(SchemaEventClassImpl::Ptr cls)
         return;
 
     EventClassList& list = pIter->second.second;
-    if (list.find(key->impl) == list.end())
-        list[key->impl] = cls;
+    if (list.find(key) == list.end())
+        list[key] = cls;
 }
 
-bool ConsoleEngineImpl::haveClass(const SchemaClassKeyImpl& key) const
+bool ConsoleEngineImpl::haveClass(const SchemaClassKey* key) const
 {
     Mutex::ScopedLock _lock(lock);
-    PackageList::const_iterator pIter = packages.find(key.getPackageName());
+    PackageList::const_iterator pIter = packages.find(key->getPackageName());
     if (pIter == packages.end())
         return false;
 
     const ObjectClassList& oList = pIter->second.first;
     const EventClassList& eList = pIter->second.second;
 
-    return oList.find(&key) != oList.end() || eList.find(&key) != eList.end();
+    return oList.find(key) != oList.end() || eList.find(key) != eList.end();
 }
 
-SchemaObjectClassImpl::Ptr ConsoleEngineImpl::getSchema(const SchemaClassKeyImpl& key) const
+SchemaObjectClass* ConsoleEngineImpl::getSchema(const SchemaClassKey* key) const
 {
     Mutex::ScopedLock _lock(lock);
-    PackageList::const_iterator pIter = packages.find(key.getPackageName());
+    PackageList::const_iterator pIter = packages.find(key->getPackageName());
     if (pIter == packages.end())
-        return SchemaObjectClassImpl::Ptr();
+        return 0;
 
     const ObjectClassList& oList = pIter->second.first;
-    ObjectClassList::const_iterator iter = oList.find(&key);
+    ObjectClassList::const_iterator iter = oList.find(key);
     if (iter == oList.end())
-        return SchemaObjectClassImpl::Ptr();
+        return 0;
 
     return iter->second;
 }
@@ -338,7 +337,7 @@ SchemaObjectClassImpl::Ptr ConsoleEngineImpl::getSchema(const SchemaClassKeyImpl
 // Wrappers
 //==================================================================
 
-ConsoleEngine::ConsoleEngine(const ConsoleSettings& settings) : impl(new ConsoleEngineImpl(this, settings)) {}
+ConsoleEngine::ConsoleEngine(const ConsoleSettings& settings) : impl(new ConsoleEngineImpl(settings)) {}
 ConsoleEngine::~ConsoleEngine() { delete impl; }
 bool ConsoleEngine::getEvent(ConsoleEvent& event) const { return impl->getEvent(event); }
 void ConsoleEngine::popEvent() { impl->popEvent(); }

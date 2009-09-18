@@ -46,13 +46,14 @@
 #include <iostream>
 #include <fstream>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace qmf {
 
     struct ConsoleEventImpl {
         typedef boost::shared_ptr<ConsoleEventImpl> Ptr;
         ConsoleEvent::EventKind kind;
-        boost::shared_ptr<AgentProxyImpl> agent;
+        boost::shared_ptr<AgentProxy> agent;
         std::string name;
         boost::shared_ptr<SchemaClassKey> classKey;
         Object* object;
@@ -66,9 +67,9 @@ namespace qmf {
         ConsoleEvent copy();
     };
 
-    class ConsoleEngineImpl {
+    class ConsoleEngineImpl : public boost::noncopyable {
     public:
-        ConsoleEngineImpl(ConsoleEngine* e, const ConsoleSettings& settings = ConsoleSettings());
+        ConsoleEngineImpl(const ConsoleSettings& settings = ConsoleSettings());
         ~ConsoleEngineImpl();
 
         bool getEvent(ConsoleEvent& event) const;
@@ -99,7 +100,6 @@ namespace qmf {
 
     private:
         friend class BrokerProxyImpl;
-        ConsoleEngine* envelope;
         const ConsoleSettings& settings;
         mutable qpid::sys::Mutex lock;
         std::deque<ConsoleEventImpl::Ptr> eventQueue;
@@ -110,22 +110,22 @@ namespace qmf {
         // class key pointers.  The default behavior would be to compare the pointer
         // addresses themselves.
         struct KeyCompare {
-            bool operator()(const SchemaClassKeyImpl* left, const SchemaClassKeyImpl* right) const {
+            bool operator()(const SchemaClassKey* left, const SchemaClassKey* right) const {
                 return *left < *right;
             }
         };
 
-        typedef std::map<const SchemaClassKeyImpl*, SchemaObjectClassImpl::Ptr, KeyCompare> ObjectClassList;
-        typedef std::map<const SchemaClassKeyImpl*, SchemaEventClassImpl::Ptr, KeyCompare> EventClassList;
+        typedef std::map<const SchemaClassKey*, SchemaObjectClass*, KeyCompare> ObjectClassList;
+        typedef std::map<const SchemaClassKey*, SchemaEventClass*, KeyCompare> EventClassList;
         typedef std::map<std::string, std::pair<ObjectClassList, EventClassList> > PackageList;
 
         PackageList packages;
 
         void learnPackage(const std::string& packageName);
-        void learnClass(SchemaObjectClassImpl::Ptr cls);
-        void learnClass(SchemaEventClassImpl::Ptr cls);
-        bool haveClass(const SchemaClassKeyImpl& key) const;
-        SchemaObjectClassImpl::Ptr getSchema(const SchemaClassKeyImpl& key) const;
+        void learnClass(SchemaObjectClass* cls);
+        void learnClass(SchemaEventClass* cls);
+        bool haveClass(const SchemaClassKey* key) const;
+        SchemaObjectClass* getSchema(const SchemaClassKey* key) const;
     };
 }
 

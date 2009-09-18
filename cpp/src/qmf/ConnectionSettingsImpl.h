@@ -29,7 +29,6 @@
 namespace qmf {
 
     class ConnectionSettingsImpl {
-        ConnectionSettings* envelope;
         qpid::client::ConnectionSettings clientSettings;
         mutable std::string attrString;
         int retryDelayMin;
@@ -37,8 +36,8 @@ namespace qmf {
         int retryDelayFactor;
         
     public:
-        ConnectionSettingsImpl(ConnectionSettings* e);
-        ConnectionSettingsImpl(ConnectionSettings* e, const std::string& url);
+        ConnectionSettingsImpl();
+        ConnectionSettingsImpl(const std::string& url);
         ~ConnectionSettingsImpl() {}
         void setAttr(const std::string& key, const Value& value);
         Value getAttr(const std::string& key) const;

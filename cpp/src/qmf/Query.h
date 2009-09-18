@@ -77,7 +77,7 @@ namespace qmf {
         Query(const char* className, const char* packageName);
         Query(const SchemaClassKey* key);
         Query(const ObjectId* oid);
-        Query(QueryImpl* impl);
+        Query(const Query& from);
         ~Query();
 
         void setSelect(const QueryOperand* criterion);
@@ -96,6 +96,10 @@ namespace qmf {
         const char* getOrderBy() const;
         bool getDecreasing() const;
 
+    private:
+        friend class QueryImpl;
+        friend class BrokerProxyImpl;
+        Query(QueryImpl* impl);
         QueryImpl* impl;
     };
 }

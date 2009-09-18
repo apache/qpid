@@ -32,18 +32,29 @@ void AgentAttachment::setBanks(uint32_t broker, uint32_t agent)
         ((uint64_t) (agent  & 0x0fffffff));
 }
 
-ObjectIdImpl::ObjectIdImpl(Buffer& buffer) : envelope(new ObjectId(this)), agent(0)
+ObjectIdImpl::ObjectIdImpl(Buffer& buffer) : agent(0)
 {
     decode(buffer);
 }
 
-ObjectIdImpl::ObjectIdImpl(AgentAttachment* a, uint8_t flags, uint16_t seq, uint64_t object) :
-    envelope(new ObjectId(this)), agent(a)
+ObjectIdImpl::ObjectIdImpl(AgentAttachment* a, uint8_t flags, uint16_t seq, uint64_t object) : agent(a)
 {
     first =
         ((uint64_t) (flags &   0x0f)) << 60 |
         ((uint64_t) (seq   & 0x0fff)) << 48;
     second = object;
+}
+
+ObjectId* ObjectIdImpl::factory(Buffer& buffer)
+{
+    ObjectIdImpl* impl(new ObjectIdImpl(buffer));
+    return new ObjectId(impl);
+}
+
+ObjectId* ObjectIdImpl::factory(AgentAttachment* agent, uint8_t flags, uint16_t seq, uint64_t object)
+{
+    ObjectIdImpl* impl(new ObjectIdImpl(agent, flags, seq, object));
+    return new ObjectId(impl);
 }
 
 void ObjectIdImpl::decode(Buffer& buffer)
@@ -135,58 +146,17 @@ bool ObjectIdImpl::operator>(const ObjectIdImpl& other) const
 // Wrappers
 //==================================================================
 
-ObjectId::ObjectId() : impl(new ObjectIdImpl(this)) {}
-
+ObjectId::ObjectId() : impl(new ObjectIdImpl()) {}
 ObjectId::ObjectId(const ObjectId& from) : impl(new ObjectIdImpl(*(from.impl))) {}
-
 ObjectId::ObjectId(ObjectIdImpl* i) : impl(i) {}
+ObjectId::~ObjectId() { delete impl; }
+uint64_t ObjectId::getObjectNum() const { return impl->getObjectNum(); }
+uint32_t ObjectId::getObjectNumHi() const { return impl->getObjectNumHi(); }
+uint32_t ObjectId::getObjectNumLo() const { return impl->getObjectNumLo(); }
+bool ObjectId::isDurable() const { return impl->isDurable(); }
+bool ObjectId::operator==(const ObjectId& other) const { return *impl == *other.impl; }
+bool ObjectId::operator<(const ObjectId& other) const { return *impl < *other.impl; }
+bool ObjectId::operator>(const ObjectId& other) const { return *impl > *other.impl; }
+bool ObjectId::operator<=(const ObjectId& other) const { return !(*impl > *other.impl); }
+bool ObjectId::operator>=(const ObjectId& other) const { return !(*impl < *other.impl); }
 
-ObjectId::~ObjectId()
-{
-    delete impl;
-}
-
-uint64_t ObjectId::getObjectNum() const
-{
-    return impl->getObjectNum();
-}
-
-uint32_t ObjectId::getObjectNumHi() const
-{
-    return impl->getObjectNumHi();
-}
-
-uint32_t ObjectId::getObjectNumLo() const
-{
-    return impl->getObjectNumLo();
-}
-
-bool ObjectId::isDurable() const
-{
-    return impl->isDurable();
-}
-
-bool ObjectId::operator==(const ObjectId& other) const
-{
-    return *impl == *other.impl;
-}
-
-bool ObjectId::operator<(const ObjectId& other) const
-{
-    return *impl < *other.impl;
-}
-
-bool ObjectId::operator>(const ObjectId& other) const
-{
-    return *impl > *other.impl;
-}
-
-bool ObjectId::operator<=(const ObjectId& other) const
-{
-    return !(*impl > *other.impl);
-}
-
-bool ObjectId::operator>=(const ObjectId& other) const
-{
-    return !(*impl < *other.impl);
-}

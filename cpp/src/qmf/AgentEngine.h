@@ -61,7 +61,7 @@ namespace qmf {
         Value*       arguments;   // Method parameters (METHOD_CALL)
         char*        exchange;    // Exchange for bind (BIND, UNBIND)
         char*        bindingKey;  // Key for bind (BIND, UNBIND)
-        SchemaObjectClass* objectClass; // (METHOD_CALL)
+        const SchemaObjectClass* objectClass; // (METHOD_CALL)
     };
 
     class AgentEngineImpl;

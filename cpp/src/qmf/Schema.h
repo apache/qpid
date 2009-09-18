@@ -42,7 +42,7 @@ namespace qmf {
     class SchemaArgument {
     public:
         SchemaArgument(const char* name, Typecode typecode);
-        SchemaArgument(SchemaArgumentImpl* impl);
+        SchemaArgument(const SchemaArgument& from);
         ~SchemaArgument();
         void setDirection(Direction dir);
         void setUnit(const char* val);
@@ -53,6 +53,11 @@ namespace qmf {
         const char* getUnit() const;
         const char* getDesc() const;
 
+    private:
+        friend class SchemaArgumentImpl;
+        friend class SchemaMethodImpl;
+        friend class SchemaEventClassImpl;
+        SchemaArgument(SchemaArgumentImpl* impl);
         SchemaArgumentImpl* impl;
     };
 
@@ -61,15 +66,20 @@ namespace qmf {
     class SchemaMethod {
     public:
         SchemaMethod(const char* name);
-        SchemaMethod(SchemaMethodImpl* impl);
+        SchemaMethod(const SchemaMethod& from);
         ~SchemaMethod();
-        void addArgument(const SchemaArgument& argument);
+        void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc);
         const char* getName() const;
         const char* getDesc() const;
         int getArgumentCount() const;
         const SchemaArgument* getArgument(int idx) const;
 
+    private:
+        friend class SchemaMethodImpl;
+        friend class SchemaObjectClassImpl;
+        friend class AgentEngineImpl;
+        SchemaMethod(SchemaMethodImpl* impl);
         SchemaMethodImpl* impl;
     };
 
@@ -78,7 +88,7 @@ namespace qmf {
     class SchemaProperty {
     public:
         SchemaProperty(const char* name, Typecode typecode);
-        SchemaProperty(SchemaPropertyImpl* impl);
+        SchemaProperty(const SchemaProperty& from);
         ~SchemaProperty();
         void setAccess(Access access);
         void setIndex(bool val);
@@ -93,6 +103,10 @@ namespace qmf {
         const char* getUnit() const;
         const char* getDesc() const;
 
+    private:
+        friend class SchemaPropertyImpl;
+        friend class SchemaObjectClassImpl;
+        SchemaProperty(SchemaPropertyImpl* impl);
         SchemaPropertyImpl* impl;
     };
 
@@ -101,7 +115,7 @@ namespace qmf {
     class SchemaStatistic {
     public:
         SchemaStatistic(const char* name, Typecode typecode);
-        SchemaStatistic(SchemaStatisticImpl* impl);
+        SchemaStatistic(const SchemaStatistic& from);
         ~SchemaStatistic();
         void setUnit(const char* val);
         void setDesc(const char* desc);
@@ -110,6 +124,10 @@ namespace qmf {
         const char* getUnit() const;
         const char* getDesc() const;
 
+    private:
+        friend class SchemaStatisticImpl;
+        friend class SchemaObjectClassImpl;
+        SchemaStatistic(SchemaStatisticImpl* impl);
         SchemaStatisticImpl* impl;
     };
 
@@ -117,13 +135,21 @@ namespace qmf {
      */
     class SchemaClassKey {
     public:
-        SchemaClassKey(SchemaClassKeyImpl* impl);
+        SchemaClassKey(const SchemaClassKey& from);
         ~SchemaClassKey();
 
         const char* getPackageName() const;
         const char* getClassName() const;
         const uint8_t* getHash() const;
 
+        bool operator==(const SchemaClassKey& other) const;
+        bool operator<(const SchemaClassKey& other) const;
+
+    private:
+        friend class SchemaClassKeyImpl;
+        friend class BrokerProxyImpl;
+        friend class ConsoleEngineImpl;
+        SchemaClassKey(SchemaClassKeyImpl* impl);
         SchemaClassKeyImpl* impl;
     };
 
@@ -132,11 +158,11 @@ namespace qmf {
     class SchemaObjectClass {
     public:
         SchemaObjectClass(const char* package, const char* name);
-        SchemaObjectClass(SchemaObjectClassImpl* impl);
+        SchemaObjectClass(const SchemaObjectClass& from);
         ~SchemaObjectClass();
-        void addProperty(const SchemaProperty& property);
-        void addStatistic(const SchemaStatistic& statistic);
-        void addMethod(const SchemaMethod& method);
+        void addProperty(const SchemaProperty* property);
+        void addStatistic(const SchemaStatistic* statistic);
+        void addMethod(const SchemaMethod* method);
 
         const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const;
@@ -146,6 +172,11 @@ namespace qmf {
         const SchemaStatistic* getStatistic(int idx) const;
         const SchemaMethod* getMethod(int idx) const;
 
+    private:
+        friend class SchemaObjectClassImpl;
+        friend class BrokerProxyImpl;
+        friend class AgentEngineImpl;
+        SchemaObjectClass(SchemaObjectClassImpl* impl);
         SchemaObjectClassImpl* impl;
     };
 
@@ -154,15 +185,20 @@ namespace qmf {
     class SchemaEventClass {
     public:
         SchemaEventClass(const char* package, const char* name);
-        SchemaEventClass(SchemaEventClassImpl* impl);
+        SchemaEventClass(const SchemaEventClass& from);
         ~SchemaEventClass();
-        void addArgument(const SchemaArgument& argument);
+        void addArgument(const SchemaArgument* argument);
         void setDesc(const char* desc);
 
         const SchemaClassKey* getClassKey() const;
         int getArgumentCount() const;
         const SchemaArgument* getArgument(int idx) const;
 
+    private:
+        friend class SchemaEventClassImpl;
+        friend class BrokerProxyImpl;
+        friend class AgentEngineImpl;
+        SchemaEventClass(SchemaEventClassImpl* impl);
         SchemaEventClassImpl* impl;
     };
 }

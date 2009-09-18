@@ -24,7 +24,7 @@ using namespace std;
 using namespace qmf;
 using qpid::framing::Buffer;
 
-ValueImpl::ValueImpl(Typecode t, Buffer& buf) : envelope(new Value(this)), typecode(t)
+ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
 {
     uint64_t first;
     uint64_t second;
@@ -67,14 +67,25 @@ ValueImpl::ValueImpl(Typecode t, Buffer& buf) : envelope(new Value(this)), typec
     }
 }
 
-ValueImpl::ValueImpl(Value* e, Typecode t, Typecode at) :
-    envelope(e), typecode(t), valid(false), arrayTypecode(at)
+ValueImpl::ValueImpl(Typecode t, Typecode at) : typecode(t), valid(false), arrayTypecode(at)
 {
 }
 
-ValueImpl::ValueImpl(Typecode t) : envelope(new Value(this)), typecode(t)
+ValueImpl::ValueImpl(Typecode t) : typecode(t)
 {
     ::memset(&value, 0, sizeof(value));
+}
+
+Value* ValueImpl::factory(Typecode t, Buffer& b)
+{
+    ValueImpl* impl(new ValueImpl(t, b));
+    return new Value(impl);
+}
+
+Value* ValueImpl::factory(Typecode t)
+{
+    ValueImpl* impl(new ValueImpl(t));
+    return new Value(impl);
 }
 
 ValueImpl::~ValueImpl()
@@ -118,9 +129,9 @@ bool ValueImpl::keyInMap(const char* key) const
 Value* ValueImpl::byKey(const char* key)
 {
     if (keyInMap(key)) {
-        map<std::string, VPtr>::iterator iter = mapVal.find(key);
+        map<std::string, Value>::iterator iter = mapVal.find(key);
         if (iter != mapVal.end())
-            return iter->second.get();
+            return &iter->second;
     }
     return 0;
 }
@@ -128,9 +139,9 @@ Value* ValueImpl::byKey(const char* key)
 const Value* ValueImpl::byKey(const char* key) const
 {
     if (keyInMap(key)) {
-        map<std::string, VPtr>::const_iterator iter = mapVal.find(key);
+        map<std::string, Value>::const_iterator iter = mapVal.find(key);
         if (iter != mapVal.end())
-            return iter->second.get();
+            return &iter->second;
     }
     return 0;
 }
@@ -142,12 +153,13 @@ void ValueImpl::deleteKey(const char* key)
 
 void ValueImpl::insert(const char* key, Value* val)
 {
-    mapVal[key] = VPtr(val);
+    pair<string, Value> entry(key, *val);
+    mapVal.insert(entry);
 }
 
 const char* ValueImpl::key(uint32_t idx) const
 {
-    map<std::string, VPtr>::const_iterator iter = mapVal.begin();
+    map<std::string, Value>::const_iterator iter = mapVal.begin();
     for (uint32_t i = 0; i < idx; i++) {
         if (iter == mapVal.end())
             break;
@@ -192,9 +204,9 @@ void ValueImpl::deleteArrayItem(uint32_t)
 //==================================================================
 
 Value::Value(const Value& from) : impl(new ValueImpl(*(from.impl))) {}
-Value::Value(Typecode t, Typecode at) : impl(new ValueImpl(this, t, at)) {}
+Value::Value(Typecode t, Typecode at) : impl(new ValueImpl(t, at)) {}
 Value::Value(ValueImpl* i) : impl(i) {}
-Value::~Value() { delete impl; }
+Value::~Value() { delete impl;}
 
 Typecode Value::getType() const { return impl->getType(); }
 bool Value::isNull() const { return impl->isNull(); }
@@ -230,7 +242,7 @@ bool Value::isUuid() const { return impl->isUuid(); }
 const uint8_t* Value::asUuid() const { return impl->asUuid(); }
 void Value::setUuid(const uint8_t* val) { impl->setUuid(val); }
 bool Value::isObject() const { return impl->isObject(); }
-Object* Value::asObject() const { return impl->asObject(); }
+const Object* Value::asObject() const { return impl->asObject(); }
 void Value::setObject(Object* val) { impl->setObject(val); }
 bool Value::isMap() const { return impl->isMap(); }
 bool Value::keyInMap(const char* key) const { return impl->keyInMap(key); }

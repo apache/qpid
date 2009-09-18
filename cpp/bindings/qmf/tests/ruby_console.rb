@@ -100,7 +100,7 @@ class App < Qmf::ConsoleHandler
         puts "    port     : #{b.port}"
         puts "    uptime   : #{b.uptime / 1000000000}"
 
-        for rep in 0...0
+        for rep in 0...1
           puts "    Pinging..."
           ret = b.echo(45, 'text string')
           puts "        ret=#{ret}"
