@@ -21,8 +21,8 @@
 
 # Run the cli-utility tests.
 MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python
-CLI_DIR=${PYTHON_DIR}/commands
+PYTHON_DIR=${MY_DIR}/../../../python/temp
+CLI_DIR=${PYTHON_DIR}
 
 trap stop_brokers INT TERM QUIT
 

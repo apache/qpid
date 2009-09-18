@@ -24,7 +24,7 @@
 # in both directions
 
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python
+PYTHON_DIR=$srcdir/../../../python/temp
 test -f qpidd.port && QPID_PORT=`cat qpidd.port`
 
 if test -d ${PYTHON_DIR} ;  then
