@@ -789,3 +789,79 @@
    fun:getaddrinfo
    fun:_ZNK4qpid3sys6Socket7connectERKSst
 }
+{
+   dl 0  
+   Memcheck:Leak
+   fun:*dl*
+}
+
+{
+   dl 1
+   Memcheck:Leak
+   fun:*
+   fun:*dl*
+}
+
+{
+   dl 2
+   fun:*
+   fun:*
+   Memcheck:Leak
+   fun:*dl*
+}
+
+{
+   Znwm
+   Memcheck:Leak
+   fun:_Znwm
+}
+
+{
+   Znwj
+   Memcheck:Leak
+   fun:_Znwj
+}
+
+{
+   Znaj
+   Memcheck:Leak
+   fun:_Znaj
+}
+
+{
+   libc res nsend
+   Memcheck:Leak
+   fun:malloc
+   fun:__libc_res_nsend
+}
+
+{
+   new exitfn
+   Memcheck:Leak
+   fun:malloc
+   fun:__new_exitfn
+}
+
+{
+   pthread mutex unlock
+   Memcheck:Param
+   futex(uaddr2)
+   fun:__lll_mutex_unlock_wake
+   fun:pthread_mutex_unlock
+}
+
+{
+   sasl 1
+   Memcheck:Leak
+   fun:*
+   fun:sasl*
+}
+
+{
+   sasl 2
+   Memcheck:Leak
+   fun:*
+   obj:*
+   fun:sasl*
+}
+
