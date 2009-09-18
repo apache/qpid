@@ -103,7 +103,7 @@ class App < Qmf::ConsoleHandler
         for rep in 0...1
           puts "    Pinging..."
           ret = b.echo(45, 'text string')
-          puts "        ret=#{ret}"
+          puts "        status=#{ret.status} text=#{ret.exception.asString} seq=#{ret.arguments['sequence']} body=#{ret.arguments['body']}"
         end
       end
       puts "----"
