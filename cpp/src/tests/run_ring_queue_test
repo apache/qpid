@@ -22,7 +22,7 @@
 
 #setup path to find qpid-config and sender/receiver test progs
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python/temp
+PYTHON_DIR=$srcdir/../../../python
 export PYTHONPATH=$PYTHON_DIR
 export PATH=./:$PYTHON_DIR/commands:$PATH
 

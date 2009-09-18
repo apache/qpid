@@ -43,7 +43,7 @@ while getopts "s:m:b:" opt ; do
 done
 
 MY_DIR=$(dirname $(which $0))
-PYTHON_DIR=${MY_DIR}/../../../python/temp
+PYTHON_DIR=${MY_DIR}/../../../python
 
 trap stop_brokers EXIT
 

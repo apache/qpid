@@ -22,7 +22,7 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python/temp
+PYTHON_DIR=$srcdir/../../../python
 export PYTHONPATH=$PYTHON_DIR
 
 trap stop_brokers INT EXIT
@@ -89,8 +89,8 @@ EOF
     #start first node of primary cluster and set up test queue
     echo Starting primary cluster
     PRIMARY1=$(with_ais_group ../qpidd $GENERAL_OPTS $PRIMARY_OPTS --log-to-file repl.primary.1.tmp) || fail "Could not start node"
-    $PYTHON_DIR/qpid-config -a "localhost:$PRIMARY1" add queue test-queue --generate-queue-events 2
-    $PYTHON_DIR/qpid-config -a "localhost:$PRIMARY1" add queue control-queue --generate-queue-events 1
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$PRIMARY1" add queue test-queue --generate-queue-events 2
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$PRIMARY1" add queue control-queue --generate-queue-events 1
 
     #send 10 messages, consume 5 of them
     for i in `seq 1 10`; do echo Message$i; done | ./sender --port $PRIMARY1
@@ -105,10 +105,10 @@ EOF
     DR1=$(with_ais_group ../qpidd $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.1.tmp)
     DR2=$(with_ais_group ../qpidd $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.2.tmp)
 
-    $PYTHON_DIR/qpid-config -a "localhost:$DR1" add queue test-queue
-    $PYTHON_DIR/qpid-config -a "localhost:$DR1" add queue control-queue
-    $PYTHON_DIR/qpid-config -a "localhost:$DR1" add exchange replication REPLICATION_EXCHANGE
-    $PYTHON_DIR/qpid-route queue add localhost:$DR2 localhost:$PRIMARY2 REPLICATION_EXCHANGE REPLICATION_QUEUE
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$DR1" add queue test-queue
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$DR1" add queue control-queue
+    $PYTHON_DIR/commands/qpid-config -a "localhost:$DR1" add exchange replication REPLICATION_EXCHANGE
+    $PYTHON_DIR/commands/qpid-route queue add localhost:$DR2 localhost:$PRIMARY2 REPLICATION_EXCHANGE REPLICATION_QUEUE
 
     #send more messages to primary
     for i in `seq 11 20`; do echo Message$i; done | ./sender --port $PRIMARY1 --send-eos 1

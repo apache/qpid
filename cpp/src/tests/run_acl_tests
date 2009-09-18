@@ -20,7 +20,7 @@
 #
 
 # Run the acl tests. $srcdir is set by the Makefile.
-PYTHON_DIR=$srcdir/../../../python/temp
+PYTHON_DIR=$srcdir/../../../python
 DATA_DIR=`pwd`/data_dir
 
 trap stop_brokers INT TERM QUIT
