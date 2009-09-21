@@ -28,7 +28,7 @@ public class FailoverBaseCase extends QpidTestCase
 {
 
     public static int FAILING_VM_PORT = 2;
-    public static int FAILING_PORT = DEFAULT_PORT + 100;
+    public static int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
 
     protected int failingPort;
     
