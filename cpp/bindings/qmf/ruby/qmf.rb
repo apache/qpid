@@ -402,13 +402,18 @@ module Qmf
     end
 
     def update()
+      raise "No linkage to broker" unless @broker
+      newer = @broker.console.get_objects(Query.new(:object_id => object_id))
+      raise "Expected exactly one update for this object" unless newer.size == 1
+      mergeUpdate(newer[0])
     end
 
     def mergeUpdate(newObject)
+      @impl.merge(newObject.impl)
     end
 
     def deleted?()
-      @delete_time > 0
+      @impl.isDeleted
     end
 
     def index()
@@ -523,7 +528,11 @@ module Qmf
       @impl.getException
     end
 
-    def arguments
+    def text
+      exception.asString
+    end
+
+    def args
       Arguments.new(@impl.getArgs)
     end
   end
@@ -542,13 +551,13 @@ module Qmf
         if kwargs.include?(:key)
           @impl = Qmfengine::Query.new(kwargs[:key])
         elsif kwargs.include?(:object_id)
-          @impl = Qmfengine::Query.new(kwargs[:object_id])
+          @impl = Qmfengine::Query.new(kwargs[:object_id].impl)
         else
           package = kwargs[:package] if kwargs.include?(:package)
           if kwargs.include?(:class)
             @impl = Qmfengine::Query.new(kwargs[:class], package)
           else
-            raise ArgumentError, "Invalid arguments, use :key or :class[,:package]"
+            raise ArgumentError, "Invalid arguments, use :key, :object_id or :class[,:package]"
           end
         end
       end
@@ -930,7 +939,7 @@ module Qmf
 
   class Broker < ConnectionHandler
     include MonitorMixin
-    attr_reader :impl, :conn
+    attr_reader :impl, :conn, :console
 
     def initialize(console, conn)
       super()

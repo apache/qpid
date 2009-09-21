@@ -59,6 +59,8 @@ namespace qmf {
         const SchemaObjectClass* getClass() const { return objectClass; }
         Value* getValue(const std::string& key) const;
         void invokeMethod(const std::string& methodName, const Value* inArgs, void* context) const;
+        bool isDeleted() const { return destroyTime != 0; }
+        void merge(const Object& from);
 
         void parsePresenceMasks(qpid::framing::Buffer& buffer, std::set<std::string>& excludeList);
         void encodeSchemaKey(qpid::framing::Buffer& buffer) const;

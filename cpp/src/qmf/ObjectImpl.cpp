@@ -118,6 +118,16 @@ void ObjectImpl::invokeMethod(const string& methodName, const Value* inArgs, voi
         broker->sendMethodRequest(objectId.get(), objectClass, methodName, inArgs, context);
 }
 
+void ObjectImpl::merge(const Object& from)
+{
+    for (map<string, ValuePtr>::const_iterator piter = from.impl->properties.begin();
+         piter != from.impl->properties.end(); piter++)
+        properties[piter->first] = piter->second;
+    for (map<string, ValuePtr>::const_iterator siter = from.impl->statistics.begin();
+         siter != from.impl->statistics.end(); siter++)
+        statistics[siter->first] = siter->second;
+}
+
 void ObjectImpl::parsePresenceMasks(Buffer& buffer, set<string>& excludeList)
 {
     int propCount = objectClass->getPropertyCount();
@@ -215,6 +225,8 @@ void Object::destroy() { impl->destroy(); }
 const ObjectId* Object::getObjectId() const { return impl->getObjectId(); }
 void Object::setObjectId(ObjectId* oid) { impl->setObjectId(oid); }
 const SchemaObjectClass* Object::getClass() const { return impl->getClass(); }
-Value* Object::getValue(char* key) const { return impl->getValue(key); }
+Value* Object::getValue(const char* key) const { return impl->getValue(key); }
 void Object::invokeMethod(const char* m, const Value* a, void* c) const { impl->invokeMethod(m, a, c); }
+bool Object::isDeleted() const { return impl->isDeleted(); }
+void Object::merge(const Object& from) { impl->merge(from); }
 
