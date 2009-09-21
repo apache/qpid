@@ -37,8 +37,10 @@ namespace qmf {
         const ObjectId* getObjectId() const;
         void setObjectId(ObjectId* oid);
         const SchemaObjectClass* getClass() const;
-        Value* getValue(char* key) const;
+        Value* getValue(const char* key) const;
         void invokeMethod(const char* methodName, const Value* inArgs, void* context) const;
+        bool isDeleted() const;
+        void merge(const Object& from);
 
     private:
         friend class ObjectImpl;

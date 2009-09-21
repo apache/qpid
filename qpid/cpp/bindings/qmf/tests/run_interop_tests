@@ -88,9 +88,17 @@ if test -d ${PYTHON_DIR} ;  then
         echo "    Ruby agent started at pid $AGENT_PID"
         ${PYTHON_DIR}/qpid-python-test -m python_console -b localhost:$BROKER_PORT $@
         RETCODE=$?
-        stop_ruby_agent
         if test x$RETCODE != x0; then
             echo "FAIL qmf interop tests (Ruby Agent)";
+            TESTS_FAILED=1
+        fi
+
+        echo "    Ruby Agent (external storage) vs. Ruby Console"
+        ruby -I${MY_DIR} -I${MY_DIR}/../ruby -I${RUBY_LIB_DIR} ${MY_DIR}/ruby_console_test.rb localhost $BROKER_PORT $@
+        RETCODE=$?
+        stop_ruby_agent
+        if test x$RETCODE != x0; then
+            echo "FAIL qmf interop tests (Ruby Console/Ruby Agent)";
             TESTS_FAILED=1
         fi
     fi

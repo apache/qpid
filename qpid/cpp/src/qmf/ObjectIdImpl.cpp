@@ -115,7 +115,7 @@ std::string ObjectIdImpl::asString() const
 {
     stringstream val;
 
-    val << getFlags() << "-" << getSequence() << "-" << getBrokerBank() << "-" <<
+    val << (int) getFlags() << "-" << getSequence() << "-" << getBrokerBank() << "-" <<
         getAgentBank() << "-" << getObjectNum();
     return val.str();
 }

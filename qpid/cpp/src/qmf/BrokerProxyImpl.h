@@ -146,7 +146,7 @@ namespace qmf {
         SequenceManager seqMgr;
         uint32_t requestsOutstanding;
         bool topicBound;
-        std::vector<AgentProxyPtr> agentList;
+        std::map<uint32_t, AgentProxyPtr> agentList;
         std::deque<MessageImpl::Ptr> xmtQueue;
         std::deque<BrokerEventImpl::Ptr> eventQueue;
 
@@ -169,6 +169,7 @@ namespace qmf {
         void handleEventIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleSchemaResponse(qpid::framing::Buffer& inBuffer, uint32_t seq);
         ObjectPtr handleObjectIndication(qpid::framing::Buffer& inBuffer, uint32_t seq, bool prop, bool stat);
+        void updateAgentList(ObjectPtr obj);
         void incOutstandingLH();
         void decOutstanding();
     };
