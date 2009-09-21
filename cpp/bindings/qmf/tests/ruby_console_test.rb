@@ -45,7 +45,7 @@ class ConsoleTest < ConsoleTestBase
       result = parent.echo(seq)
       assert_equal(result.status, 0, "Method Response Status")
       assert_equal(result.text, "OK", "Method Response Text")
-      assert_equal(result.args["sequence"], seq, "Echo Response Sequence")
+      assert_equal(result.args.sequence, seq, "Echo Response Sequence")
     end
 
     result = parent.set_numerics("bogus")
@@ -126,7 +126,7 @@ class ConsoleTest < ConsoleTestBase
 
     result = parent.probe_userid
     assert_equal(result.status, 0, "Method Response Status")
-    assert_equal(result.args["userid"], "guest")
+    assert_equal(result.args.userid, "guest")
   end
 
 end
