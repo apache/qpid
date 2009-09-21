@@ -405,11 +405,11 @@ module Qmf
       raise "No linkage to broker" unless @broker
       newer = @broker.console.get_objects(Query.new(:object_id => object_id))
       raise "Expected exactly one update for this object" unless newer.size == 1
-      mergeUpdate(newer[0])
+      merge_update(newer[0])
     end
 
-    def mergeUpdate(newObject)
-      @impl.merge(newObject.impl)
+    def merge_update(new_object)
+      @impl.merge(new_object.impl)
     end
 
     def deleted?()
@@ -468,6 +468,14 @@ module Qmf
 
     def each
       @by_hash.each { |k, v| yield(k, v) }
+    end
+
+    def method_missing(name, *args)
+      if @by_hash.include?(name.to_s)
+        return @by_hash[name.to_s]
+      end
+
+      super.method_missing(name, args)
     end
 
     def by_key(key)
