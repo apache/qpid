@@ -34,6 +34,9 @@
 using namespace qpid::messaging;
 using namespace qpid::sys;
 
+namespace qpid {
+namespace tests {
+
 struct Args : public qpid::Options 
 {
     std::string url;
@@ -139,9 +142,13 @@ struct Consume : Client
                           << ", min=" << minLatency 
                           << ", max=" << maxLatency << std::endl;
             }
-        }        
+        }
     }
 };
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {
