@@ -39,6 +39,8 @@ class ConsoleTestBase < Qmf::ConsoleHandler
       tests << name if name[0..4] == "test_"
     end
 
+    failures = 0
+
     tests.sort.each do |t|
       begin
         print "#{t}..."
@@ -47,10 +49,12 @@ class ConsoleTestBase < Qmf::ConsoleHandler
         puts " Pass"
       rescue
         puts " Fail: #{$!}"
+        failures += 1
       end
     end
 
     @qmfc.del_connection(@broker)
+    exit(1) if failures > 0
   end
 
   def assert_equal(left, right, in_text=nil)
