@@ -189,7 +189,8 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
     {
         synchronized (_brokerListLock)
         {
-            return _connectionDetails.getBrokerDetails(_currentBrokerIndex);
+            _currentBrokerDetail = _connectionDetails.getBrokerDetails(_currentBrokerIndex);
+            return _currentBrokerDetail;
         }
     }   
     
@@ -214,7 +215,15 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
                 broker.getHost().equals(_currentBrokerDetail.getHost()) &&
                 broker.getPort() == _currentBrokerDetail.getPort())
             {
-                return getNextBrokerDetails();
+                if (_connectionDetails.getBrokerCount() > 1)
+                {
+                    return getNextBrokerDetails();
+                }
+                else
+                {
+                    _failedAttemps ++;
+                    return null;
+                }
             }
 
             String delayStr = broker.getProperty(BrokerDetails.OPTIONS_CONNECT_DELAY);
