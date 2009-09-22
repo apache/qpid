@@ -65,7 +65,7 @@ class AsynchIOHandler : public OutputControl {
     QPID_COMMON_EXTERN void giveReadCredit(int32_t credit);
 
     // Input side
-    QPID_COMMON_EXTERN bool readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
+    QPID_COMMON_EXTERN void readbuff(AsynchIO& aio, AsynchIOBufferBase* buff);
     QPID_COMMON_EXTERN void eof(AsynchIO& aio);
     QPID_COMMON_EXTERN void disconnect(AsynchIO& aio);
 

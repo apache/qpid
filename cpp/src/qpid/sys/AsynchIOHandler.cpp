@@ -103,12 +103,10 @@ void AsynchIOHandler::giveReadCredit(int32_t credit) {
         aio->startReading();
 }
 
-bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
+void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (readError) {
-        return false;
+        return;
     }
-
-    bool ret = true;
 
     // Check here for read credit
     if (readCredit.get() != InfiniteCredit) {
@@ -119,7 +117,6 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
             assert(readCredit.get() >= 0);
             if (readCredit.get() == 0) {
                 aio->stopReading();
-                ret = false;
             }
         }
     }
@@ -166,7 +163,6 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         // Give whole buffer back to aio subsystem
         aio->queueReadBuffer(buff);
     }
-    return ret;
 }
 
 void AsynchIOHandler::eof(AsynchIO&) {
