@@ -98,7 +98,7 @@ const FieldTable* Message::getApplicationHeaders() const
     return getAdapter().getApplicationHeaders(frames);
 }
 
-bool Message::isPersistent()
+bool Message::isPersistent() const
 {
     return (getAdapter().isPersistent(frames) || forcePersistentPolicy);
 }

@@ -74,7 +74,7 @@ public:
     bool isImmediate() const;
     QPID_BROKER_EXTERN const framing::FieldTable* getApplicationHeaders() const;
     framing::FieldTable& getOrInsertHeaders();
-    QPID_BROKER_EXTERN bool isPersistent();
+    QPID_BROKER_EXTERN bool isPersistent() const;
     bool requiresAccept();
 
     QPID_BROKER_EXTERN void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
