@@ -71,6 +71,7 @@ class ConnectionHandler : private StateManager,
     std::auto_ptr<Sasl> sasl;
     std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;
     boost::intrusive_ptr<qpid::sys::TimerTask> rcvTimeoutTask;
+    std::string operUserId;
 
     void checkState(STATES s, const std::string& msg);
 
@@ -120,6 +121,7 @@ public:
     std::vector<Url> knownBrokersUrls;
 
     static framing::connection::CloseCode convert(uint16_t replyCode);
+    const std::string& getUserId() const { return operUserId; }
 };
 
 }}

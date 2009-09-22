@@ -82,6 +82,7 @@ class CyrusSasl : public Sasl
     std::string start(const std::string& mechanisms);
     std::string step(const std::string& challenge);
     std::string getMechanism();
+    std::string getUserId();
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
   private:
     sasl_conn_t* conn;    
@@ -264,6 +265,18 @@ std::string CyrusSasl::step(const std::string& challenge)
 std::string CyrusSasl::getMechanism()
 {
     return mechanism;
+}
+
+std::string CyrusSasl::getUserId()
+{
+    int propResult;
+    const char* operName;
+
+    propResult = sasl_getprop(conn, SASL_USERNAME, (const void**) &operName);
+    if (propResult == SASL_OK)
+        return std::string(operName);
+
+    return std::string();
 }
 
 void CyrusSasl::interact(sasl_interact_t* client_interact)

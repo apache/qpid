@@ -257,6 +257,7 @@ void ConnectionHandler::openOk ( const Array& knownBrokers )
         knownBrokersUrls.push_back(Url((*i)->get<std::string>()));
     if (sasl.get()) {
         securityLayer = sasl->getSecurityLayer(maxFrameSize);
+        operUserId = sasl->getUserId();
     }
     setState(OPEN);
     QPID_LOG(debug, "Known-brokers for connection: " << log::formatList(knownBrokersUrls));

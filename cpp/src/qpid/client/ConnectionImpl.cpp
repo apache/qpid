@@ -151,6 +151,12 @@ void ConnectionImpl::open()
  
     handler.waitForOpen();
 
+    // If the SASL layer has provided an "operational" userId for the connection,
+    // put it in the negotiated settings.
+    const std::string& userId(handler.getUserId());
+    if (!userId.empty())
+        handler.username = userId;
+
     //enable security layer if one has been negotiated:
     std::auto_ptr<SecurityLayer> securityLayer = handler.getSecurityLayer();
     if (securityLayer.get()) {

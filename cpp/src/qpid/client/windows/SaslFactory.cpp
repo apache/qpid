@@ -43,6 +43,7 @@ class WindowsSasl : public Sasl
     std::string start(const std::string& mechanisms);
     std::string step(const std::string& challenge);
     std::string getMechanism();
+    std::string getUserId();
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
   private:
     ConnectionSettings settings;
@@ -129,6 +130,11 @@ std::string WindowsSasl::step(const std::string& challenge)
 std::string WindowsSasl::getMechanism()
 {
     return mechanism;
+}
+
+std::string WindowsSasl::getUserId()
+{
+    return std::string(); // TODO - when GSSAPI is supported, return userId for connection.
 }
 
 std::auto_ptr<SecurityLayer> WindowsSasl::getSecurityLayer(uint16_t maxFrameSize)
