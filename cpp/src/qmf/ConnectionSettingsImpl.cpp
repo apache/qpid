@@ -43,14 +43,15 @@ const string attrMaxSsf("maxSsf");
 const string attrRetryDelayMin("retryDelayMin");
 const string attrRetryDelayMax("retryDelayMax");
 const string attrRetryDelayFactor("retryDelayFactor");
+const string attrSendUserId("sendUserId");
 
 ConnectionSettingsImpl::ConnectionSettingsImpl() :
-    retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2)
+    retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2), sendUserId(true)
 {
 }
 
 ConnectionSettingsImpl::ConnectionSettingsImpl(const string& /*url*/) :
-    retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2)
+    retryDelayMin(1), retryDelayMax(64), retryDelayFactor(2), sendUserId(true)
 {
     // TODO: Parse the URL
 }
@@ -77,6 +78,7 @@ void ConnectionSettingsImpl::setAttr(const string& key, const Value& value)
     else if (key == attrRetryDelayMin)    retryDelayMin    = value.asUint();
     else if (key == attrRetryDelayMax)    retryDelayMax    = value.asUint();
     else if (key == attrRetryDelayFactor) retryDelayFactor = value.asUint();
+    else if (key == attrSendUserId)       sendUserId       = value.asBool();
 }
 
 Value ConnectionSettingsImpl::getAttr(const string& key) const

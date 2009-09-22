@@ -40,6 +40,9 @@ class Model
     @parent_class.add_property(Qmf::SchemaProperty.new("int16val", Qmf::TYPE_INT16))
     @parent_class.add_property(Qmf::SchemaProperty.new("int8val", Qmf::TYPE_INT8))
 
+    @parent_class.add_property(Qmf::SchemaProperty.new("sstrval", Qmf::TYPE_SSTR))
+    @parent_class.add_property(Qmf::SchemaProperty.new("lstrval", Qmf::TYPE_LSTR))
+
     @parent_class.add_statistic(Qmf::SchemaStatistic.new("queryCount", Qmf::TYPE_UINT32, :unit => "query", :desc => "Query count"))
 
     method = Qmf::SchemaMethod.new("echo", :desc => "Check responsiveness of the agent object")
@@ -48,6 +51,14 @@ class Model
 
     method = Qmf::SchemaMethod.new("set_numerics", :desc => "Set the numeric values in the object")
     method.add_argument(Qmf::SchemaArgument.new("test", Qmf::TYPE_SSTR, :dir => Qmf::DIR_IN))
+    @parent_class.add_method(method)
+
+    method = Qmf::SchemaMethod.new("set_short_string", :desc => "Set the short string value in the object")
+    method.add_argument(Qmf::SchemaArgument.new("value", Qmf::TYPE_SSTR, :dir => Qmf::DIR_IN_OUT))
+    @parent_class.add_method(method)
+
+    method = Qmf::SchemaMethod.new("set_long_string", :desc => "Set the long string value in the object")
+    method.add_argument(Qmf::SchemaArgument.new("value", Qmf::TYPE_LSTR, :dir => Qmf::DIR_IN_OUT))
     @parent_class.add_method(method)
 
     method = Qmf::SchemaMethod.new("create_child", :desc => "Create a new child object")
@@ -84,12 +95,13 @@ class App < Qmf::AgentHandler
   def method_call(context, name, object_id, args, userId)
 #    puts "Method: user=#{userId} context=#{context} method=#{name} object_num=#{object_id.object_num_low if object_id} args=#{args}"
     
+    retCode = 0
+    retText = "OK"
+
     if name == "echo"
       @agent.method_response(context, 0, "OK", args)
 
     elsif name == "set_numerics"
-      retCode = 0
-      retText = "OK"
 
       if args['test'] == "big"
         @parent.uint64val = 0x9494949449494949
@@ -129,7 +141,11 @@ class App < Qmf::AgentHandler
         retText = "Invalid argument value for test"
       end
 
-      @agent.method_response(context, retCode, retText, args)
+    elsif name == "set_short_string"
+      @parent.sstrval = args['value']
+
+    elsif name == "set_long_string"
+      @parent.lstrval = args['value']
 
     elsif name == "create_child"
       oid = @agent.alloc_object_id(2)
@@ -137,15 +153,16 @@ class App < Qmf::AgentHandler
       @child = Qmf::AgentObject.new(@model.child_class)
       @child.name = args.by_key("child_name")
       @child.set_object_id(oid)
-      @agent.method_response(context, 0, "OK", args)
 
     elsif name == "probe_userid"
       args['userid'] = userId
-      @agent.method_response(context, 0, "OK", args)
 
     else
-      @agent.method_response(context, 1, "Unimplemented Method: #{name}", args)
+      retCode = 1
+      retText = "Unimplemented Method: #{name}"
     end
+
+    @agent.method_response(context, retCode, retText, args)
   end
 
   def main
