@@ -50,7 +50,7 @@ struct TxPublishTest
     TxPublishTest() :
         queue1(new Queue("queue1", false, &store, 0)),
         queue2(new Queue("queue2", false, &store, 0)),
-        msg(MessageUtils::createMessage("exchange", "routing_key", "id")),
+        msg(MessageUtils::createMessage("exchange", "routing_key", false, "id")),
         op(msg)
     {
         msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);

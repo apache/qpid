@@ -34,7 +34,8 @@ namespace tests {
 struct MessageUtils
 {
     static boost::intrusive_ptr<Message> createMessage(const string& exchange="", const string& routingKey="",
-                                                       const Uuid& messageId=Uuid(true), uint64_t contentSize = 0)
+                                                       const bool durable = false, const Uuid& messageId=Uuid(true),
+                                                       uint64_t contentSize = 0)
     {
         boost::intrusive_ptr<broker::Message> msg(new broker::Message());
 
@@ -47,6 +48,8 @@ struct MessageUtils
         props->setContentLength(contentSize);
         props->setMessageId(messageId);
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
+        if (durable)
+            msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setDeliveryMode(2);
         return msg;
     }
 
