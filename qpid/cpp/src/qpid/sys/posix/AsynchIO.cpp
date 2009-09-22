@@ -467,7 +467,8 @@ void AsynchIO::readable(DispatchHandle& h) {
                 threadReadTotal += rc;
                 readTotal += rc;
 
-                if (!readCallback(*this, buff)) {
+                readCallback(*this, buff);
+                if (readingStopped) {
                     // We have been flow controlled.
                     break;
                 }

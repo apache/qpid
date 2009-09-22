@@ -108,7 +108,7 @@ class AsynchIO {
 public:
     typedef AsynchIOBufferBase BufferBase;
 
-    typedef boost::function2<bool, AsynchIO&, BufferBase*> ReadCallback;
+    typedef boost::function2<void, AsynchIO&, BufferBase*> ReadCallback;
     typedef boost::function1<void, AsynchIO&> EofCallback;
     typedef boost::function1<void, AsynchIO&> DisconnectCallback;
     typedef boost::function2<void, AsynchIO&, const Socket&> ClosedCallback;
