@@ -65,13 +65,12 @@ namespace qmf {
         client::Connection& connection;
         client::Session session;
         client::SubscriptionManager* subscriptions;
+        string userId;
         void* userContext;
         vector<string> dests;
         qpid::sys::Thread thread;
 
-        RCSession(ResilientConnectionImpl& ci, const string& n, client::Connection& c, void* uc) :
-            connImpl(ci), name(n), connection(c), session(connection.newSession(name)),
-            subscriptions(new client::SubscriptionManager(session)), userContext(uc), thread(*this) {}
+        RCSession(ResilientConnectionImpl& ci, const string& n, client::Connection& c, void* uc);
         ~RCSession();
         void received(client::Message& msg);
         void run();
@@ -133,6 +132,14 @@ ResilientConnectionEvent ResilientConnectionEventImpl::copy()
     item.errorText      = const_cast<char*>(errorText.c_str());
 
     return item;
+}
+
+RCSession::RCSession(ResilientConnectionImpl& ci, const string& n, client::Connection& c, void* uc) :
+            connImpl(ci), name(n), connection(c), session(connection.newSession(name)),
+            subscriptions(new client::SubscriptionManager(session)), userContext(uc), thread(*this)
+{
+    const qpid::client::ConnectionSettings& operSettings = connection.getNegotiatedSettings();
+    userId = operSettings.username;
 }
 
 RCSession::~RCSession()
@@ -254,6 +261,8 @@ void ResilientConnectionImpl::sendMessage(SessionHandle handle, qmf::Message& me
     string data(message.body, message.length);
     msg.getDeliveryProperties().setRoutingKey(message.routingKey);
     msg.getMessageProperties().setReplyTo(qpid::framing::ReplyTo(message.replyExchange, message.replyKey));
+    if (settings.impl->getSendUserId())
+        msg.getMessageProperties().setUserId(sess->userId);
     msg.setData(data);
 
     try {

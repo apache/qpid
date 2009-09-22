@@ -34,6 +34,7 @@ namespace qmf {
         int retryDelayMin;
         int retryDelayMax;
         int retryDelayFactor;
+        bool sendUserId;
         
     public:
         ConnectionSettingsImpl();
@@ -52,6 +53,7 @@ namespace qmf {
 
         const qpid::client::ConnectionSettings& getClientSettings() const;
         void getRetrySettings(int* delayMin, int* delayMax, int* delayFactor) const;
+        bool getSendUserId() const { return sendUserId; }
     };
 
 }

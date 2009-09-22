@@ -42,8 +42,8 @@ ValueImpl::ValueImpl(Typecode t, Buffer& buf) : typecode(t)
     case TYPE_BOOL      : value.boolVal = (buf.getOctet() != 0);  break;
     case TYPE_FLOAT     : value.floatVal = buf.getFloat();        break;
     case TYPE_DOUBLE    : value.doubleVal = buf.getDouble();      break;
-    case TYPE_INT8      : value.s32 = (int32_t) buf.getOctet();   break;
-    case TYPE_INT16     : value.s32 = (int32_t) buf.getShort();   break;
+    case TYPE_INT8      : value.s32 = (int32_t) ((int8_t) buf.getOctet()); break;
+    case TYPE_INT16     : value.s32 = (int32_t) ((int16_t) buf.getShort()); break;
     case TYPE_INT32     : value.s32 = (int32_t) buf.getLong();    break;
     case TYPE_INT64     : value.s64 = buf.getLongLong();          break;
     case TYPE_UUID      : buf.getBin128(value.uuidVal);           break;

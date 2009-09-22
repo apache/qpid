@@ -97,7 +97,7 @@ class ConsoleTest < ConsoleTestBase
     assert_equal(parent.int8val,  11)
   end
 
-  def _test_C_basic_types_numeric_negative
+  def test_C_basic_types_numeric_negative
     parents = @qmfc.get_objects(Qmf::Query.new(:class =>"parent"))
     assert_equal(parents.size, 1, "Number of parent objects")
     parent = parents[0]
@@ -119,14 +119,68 @@ class ConsoleTest < ConsoleTestBase
     assert_equal(parent.int8val,  -100)
   end
 
-  def _test_D_userid_for_method
+  def test_C_basic_types_string_short
+    parents = @qmfc.get_objects(Qmf::Query.new(:class =>"parent"))
+    assert_equal(parents.size, 1, "Number of parent objects")
+    parent = parents[0]
+
+    strings = []
+    strings << ""
+    strings << "A"
+    strings << "BC"
+    strings << "DEF"
+    strings << "GHIJKLMNOPQRSTUVWXYZ"
+    big = "a"
+    for i in 0...270 
+      big << "X"
+    end
+    strings << big
+
+    strings.each do |str|
+      result = parent.set_short_string(str)
+      assert_equal(result.status, 0, "Method Response Status")
+      compare = str
+      compare = compare[0..254] if compare.size > 255
+      assert_equal(result.args.value, compare, "Value returned by method")
+      parent.update
+      assert_equal(parent.sstrval, compare, "Value stored in the object")
+    end
+  end
+
+  def test_C_basic_types_string_long
+    parents = @qmfc.get_objects(Qmf::Query.new(:class =>"parent"))
+    assert_equal(parents.size, 1, "Number of parent objects")
+    parent = parents[0]
+
+    strings = []
+    strings << ""
+    strings << "A"
+    strings << "BC"
+    strings << "DEF"
+    strings << "GHIJKLMNOPQRSTUVWXYZ"
+    big = "a"
+    for i in 0...270 
+      big << "X"
+    end
+    strings << big
+
+    strings.each do |str|
+      result = parent.set_long_string(str)
+      assert_equal(result.status, 0, "Method Response Status")
+      assert_equal(result.args.value, str, "Value returned by method")
+      parent.update
+      assert_equal(parent.lstrval, str, "Value stored in the object")
+    end
+  end
+
+  def test_D_userid_for_method
     parents = @qmfc.get_objects(Qmf::Query.new(:class => "parent"))
     assert_equal(parents.size, 1, "Number of parent objects")
     parent = parents[0]
 
     result = parent.probe_userid
     assert_equal(result.status, 0, "Method Response Status")
-    assert_equal(result.args.userid, "guest")
+    assert_equal(result.args.userid, "anonymous")
   end
 
 end
