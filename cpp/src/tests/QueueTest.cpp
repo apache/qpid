@@ -817,7 +817,7 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
     BOOST_CHECK_EQUAL(msg02->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
-    intrusive_ptr<Message> msg03 = mkMsg(testStore, std::string(5, 'X'), true);  // transient w/ content
+    intrusive_ptr<Message> msg03 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg03(msg03);
     BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
     msg03->tryReleaseContent();
