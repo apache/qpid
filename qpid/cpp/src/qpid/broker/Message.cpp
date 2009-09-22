@@ -181,11 +181,23 @@ void Message::decodeContent(framing::Buffer& buffer)
     loaded = true;
 }
 
-void Message::releaseContent(MessageStore* _store)
+void Message::tryReleaseContent()
 {
-    if (!store) {
-        store = _store;
+    if (checkContentReleasable()) {
+        releaseContent();
     }
+}
+
+void Message::releaseContent(MessageStore* s)
+{
+    //deprecated, use setStore(store); releaseContent(); instead
+    if (!store) setStore(s);
+    releaseContent();
+}
+
+void Message::releaseContent()
+{
+    sys::Mutex::ScopedLock l(lock);
     if (store) {
         if (!getPersistenceId()) {
             intrusive_ptr<PersistableMessage> pmsg(this);
@@ -234,6 +246,7 @@ bool Message::getContentFrame(const Queue& queue, AMQFrame& frame, uint16_t maxC
 
 void Message::sendContent(const Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const
 {
+    sys::Mutex::ScopedLock l(lock);
     if (isContentReleased() && !frames.isComplete()) {
 
         uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();

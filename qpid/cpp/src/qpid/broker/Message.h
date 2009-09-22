@@ -129,12 +129,9 @@ public:
     QPID_BROKER_EXTERN void decodeHeader(framing::Buffer& buffer);
     QPID_BROKER_EXTERN void decodeContent(framing::Buffer& buffer);
             
-    /**
-     * Releases the in-memory content data held by this
-     * message. Must pass in a store from which the data can
-     * be reloaded.
-     */
-    void releaseContent(MessageStore* store);
+    void tryReleaseContent();
+    void releaseContent();
+    void releaseContent(MessageStore* s);//deprecated, use 'setStore(store); releaseContent();' instead
     void destroy();
 
     bool getContentFrame(const Queue& queue, framing::AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const;

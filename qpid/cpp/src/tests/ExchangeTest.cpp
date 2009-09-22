@@ -60,7 +60,7 @@ QPID_AUTO_TEST_CASE(testMe)
     queue.reset();
     queue2.reset();
 
-    intrusive_ptr<Message> msgPtr(MessageUtils::createMessage("exchange", "key", "id"));
+    intrusive_ptr<Message> msgPtr(MessageUtils::createMessage("exchange", "key", false, "id"));
     DeliverableMessage msg(msgPtr);
     topic.route(msg, "abc", 0);
     direct.route(msg, "abc", 0);

@@ -48,12 +48,26 @@ bool DtxAck::prepare(TransactionContext* ctxt) throw()
 
 void DtxAck::commit() throw()
 {
-    for_each(pending.begin(), pending.end(), mem_fun_ref(&DeliveryRecord::committed));
-    pending.clear();
+    try {
+        for_each(pending.begin(), pending.end(), mem_fun_ref(&DeliveryRecord::committed));
+        pending.clear();
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Failed to commit: " << e.what());
+    } catch(...) {
+        QPID_LOG(error, "Failed to commit (unknown error)");
+    }
+
 }
 
 void DtxAck::rollback() throw()
 {
-    for_each(pending.begin(), pending.end(), mem_fun_ref(&DeliveryRecord::requeue));
-    pending.clear();
+    try {
+        for_each(pending.begin(), pending.end(), mem_fun_ref(&DeliveryRecord::requeue));
+        pending.clear();
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Failed to complete rollback: " << e.what());
+    } catch(...) {
+        QPID_LOG(error, "Failed to complete rollback (unknown error)");
+    }
+
 }

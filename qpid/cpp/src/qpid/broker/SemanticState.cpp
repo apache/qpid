@@ -356,6 +356,9 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
     } else {
         DeliverableMessage deliverable(msg);
         route(msg, deliverable);
+        if (msg->checkContentReleasable()) {
+            msg->releaseContent();
+        }
     }
 }
 
