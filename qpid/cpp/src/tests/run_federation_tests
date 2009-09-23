@@ -21,7 +21,7 @@
 
 # Run the federation tests.
 MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python
+PYTHON_DIR=${MY_DIR}/../../../python/temp
 
 trap stop_brokers INT TERM QUIT
 
