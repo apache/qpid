@@ -111,6 +111,7 @@ public:
         bool requireEncrypted;
         std::string knownHosts;
         uint32_t maxSessionRate;
+        bool asyncQueueEvents;
 
       private:
         std::string getHome();
