@@ -350,9 +350,7 @@ EXTRA_DIST+=fanout_perftest shared_perftest multiq_perftest topic_perftest run_f
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
 
-all: python_prep
+check: python_prep
 
 python_prep :
-	( cd ../../../python ; make install EXEC_PREFIX=temp PYTHON_LIB=temp AMQP_SPEC_DIR=$${PWD}/../specs )
-
-
+	$(MAKE) -C $(abspath $(srcdir)/../../../python) install PREFIX=$(abs_builddir)/../../temp-install PYTHON_LIB=$(abs_builddir)/../../temp-install AMQP_SPEC_DIR=$(abspath $(srcdir)/../../../specs)
