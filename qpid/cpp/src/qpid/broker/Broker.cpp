@@ -91,7 +91,8 @@ Broker::Options::Options(const std::string& name) :
     queueLimit(100*1048576/*100M default limit*/),
     tcpNoDelay(false),
     requireEncrypted(false),
-    maxSessionRate(0)
+    maxSessionRate(0),
+    asyncQueueEvents(true)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -121,7 +122,8 @@ Broker::Options::Options(const std::string& name) :
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
-        ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)");
+        ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
+        ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication");
 }
 
 const std::string empty;
@@ -150,7 +152,7 @@ Broker::Broker(const Broker::Options& conf) :
         *this),
     managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     queueCleaner(queues, timer),
-    queueEvents(poller),
+    queueEvents(poller,!conf.asyncQueueEvents), 
     recovery(true),
     expiryPolicy(new ExpiryPolicy),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
