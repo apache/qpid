@@ -270,11 +270,11 @@ std::string CyrusSasl::getMechanism()
 std::string CyrusSasl::getUserId()
 {
     int propResult;
-    const char* operName;
+    const void* operName;
 
-    propResult = sasl_getprop(conn, SASL_USERNAME, (const void**) &operName);
+    propResult = sasl_getprop(conn, SASL_USERNAME, &operName);
     if (propResult == SASL_OK)
-        return std::string(operName);
+        return std::string((const char*) operName);
 
     return std::string();
 }
