@@ -25,12 +25,12 @@ require 'socket'
 class App < Qmf::ConsoleHandler
 
   def dump_schema
-    packages = @qmfc.get_packages
+    packages = @qmfc.packages
     puts "----- Packages -----"
     packages.each do |p|
       puts p
       puts "    ----- Object Classes -----"
-      classes = @qmfc.get_classes(p)
+      classes = @qmfc.classes(p)
       classes.each do |c|
         puts "    #{c.name}"
 
@@ -59,7 +59,7 @@ class App < Qmf::ConsoleHandler
       end
 
       puts "    ----- Event Classes -----"
-      classes = @qmfc.get_classes(p, Qmf::CLASS_EVENT)
+      classes = @qmfc.classes(p, Qmf::CLASS_EVENT)
       classes.each do |c|
         puts "    #{c.name}"
         puts "        ---- Args ----"
@@ -74,8 +74,8 @@ class App < Qmf::ConsoleHandler
 
   def main
     @settings = Qmf::ConnectionSettings.new
-    @settings.set_attr("host", ARGV[0]) if ARGV.size > 0
-    @settings.set_attr("port", ARGV[1].to_i) if ARGV.size > 1
+    @settings.host = ARGV[0] if ARGV.size > 0
+    @settings.port = ARGV[1].to_i if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
     @qmfc = Qmf::Console.new
 
@@ -84,7 +84,7 @@ class App < Qmf::ConsoleHandler
 
     dump_schema
 
-    agents = @qmfc.get_agents()
+    agents = @qmfc.agents()
     puts "---- Agents ----"
     agents.each do |a|
       puts "  => #{a.label}"
@@ -92,23 +92,25 @@ class App < Qmf::ConsoleHandler
     puts "----"
 
     for idx in 0...20
-      blist = @qmfc.get_objects(Qmf::Query.new(:class => "broker"))
+      blist = @qmfc.objects(Qmf::Query.new(:class => "broker"))
       puts "---- Brokers ----"
       blist.each do |b|
         puts "    ---- Broker ----"
         puts "    systemRef: #{b.systemRef}"
         puts "    port     : #{b.port}"
         puts "    uptime   : #{b.uptime / 1000000000}"
+        puts "  properties : #{b.properties}"
+        puts "  statistics : #{b.statistics}"
 
         for rep in 0...1
           puts "    Pinging..."
           ret = b.echo(45, 'text string')
-          puts "        status=#{ret.status} text=#{ret.exception.asString} seq=#{ret.arguments['sequence']} body=#{ret.arguments['body']}"
+          puts "        status=#{ret.status} text=#{ret.exception.asString} seq=#{ret.args.sequence} body=#{ret.args.body}"
         end
       end
       puts "----"
 
-      qlist = @qmfc.get_objects(Qmf::Query.new(:package => "org.apache.qpid.broker",
+      qlist = @qmfc.objects(Qmf::Query.new(:package => "org.apache.qpid.broker",
                                                :class => "queue"))
       puts "---- Queues ----"
       qlist.each do |q|

@@ -25,8 +25,8 @@ require 'socket'
 class ConsoleTestBase < Qmf::ConsoleHandler
   def initialize
     @settings = Qmf::ConnectionSettings.new
-    @settings.set_attr("host", ARGV[0]) if ARGV.size > 0
-    @settings.set_attr("port", ARGV[1].to_i) if ARGV.size > 1
+    @settings.host = ARGV[0] if ARGV.size > 0
+    @settings.port = ARGV[1].to_i if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
     @qmfc = Qmf::Console.new
 
