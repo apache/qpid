@@ -22,7 +22,7 @@
 # Run the python tests.
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
-QPID_PYTHON_DIR=${QPID_PYTHON_DIR:-`dirname $0`/../../../python}
+QPID_PYTHON_DIR=${QPID_PYTHON_DIR:-`dirname $0`/../../../python/temp}
 FAILING=${FAILING:-/dev/null}
 
 if test -d $QPID_PYTHON_DIR; then
