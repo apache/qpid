@@ -62,6 +62,17 @@ module Qmf
 
       @impl.setAttr(key, v)
     end
+
+    def method_missing(name_in, *args)
+      name = name_in.to_s
+      if name[name.length - 1] == 61
+        attr = name[0..name.length - 2]
+        set_attr(attr, args[0])
+        return
+      end
+
+      super.method_missing(name_in, args)
+    end
   end
 
   class ConnectionHandler
@@ -210,6 +221,22 @@ module Qmf
 
     def object_id
       return ObjectId.new(@impl.getObjectId)
+    end
+
+    def properties
+      list = []
+      @object_class.properties.each do |prop|
+        list << [prop, get_attr(prop.name)]
+      end
+      return list
+    end
+
+    def statistics
+      list = []
+      @object_class.statistics.each do |stat|
+        list << [stat, get_attr(stat.name)]
+      end
+      return list
     end
 
     def get_attr(name)
@@ -403,7 +430,7 @@ module Qmf
 
     def update()
       raise "No linkage to broker" unless @broker
-      newer = @broker.console.get_objects(Query.new(:object_id => object_id))
+      newer = @broker.console.objects(Query.new(:object_id => object_id))
       raise "Expected exactly one update for this object" unless newer.size == 1
       merge_update(newer[0])
     end
@@ -687,11 +714,11 @@ module Qmf
       @impl = i
     end
 
-    def get_package()
+    def package_name()
       @impl.getPackageName()
     end
 
-    def get_class()
+    def class_name()
       @impl.getClassName()
     end
   end
@@ -808,7 +835,7 @@ module Qmf
       @broker_list.delete(broker)
     end
 
-    def get_packages()
+    def packages()
       plist = []
       count = @impl.packageCount
       for i in 0...count
@@ -817,7 +844,7 @@ module Qmf
       return plist
     end
 
-    def get_classes(package, kind=CLASS_OBJECT)
+    def classes(package, kind=CLASS_OBJECT)
       clist = []
       count = @impl.classCount(package)
       for i in 0...count
@@ -854,7 +881,7 @@ module Qmf
       end
     end
 
-    def get_agents(broker = nil)
+    def agents(broker = nil)
       blist = []
       if broker
         blist << broker
@@ -873,7 +900,7 @@ module Qmf
       return agents
     end
 
-    def get_objects(query, kwargs = {})
+    def objects(query, kwargs = {})
       timeout = 30
       if kwargs.include?(:timeout)
         timeout = kwargs[:timeout]
