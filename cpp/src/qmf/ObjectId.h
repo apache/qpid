@@ -45,12 +45,12 @@ namespace qmf {
         bool operator>=(const ObjectId& other) const;
 
     private:
-        friend class ObjectIdImpl;
-        friend class ObjectImpl;
-        friend class BrokerProxyImpl;
-        friend class QueryImpl;
-        friend class ValueImpl;
-        friend class AgentEngineImpl;
+        friend struct ObjectIdImpl;
+        friend struct ObjectImpl;
+        friend class  BrokerProxyImpl;
+        friend struct QueryImpl;
+        friend struct ValueImpl;
+        friend class  AgentEngineImpl;
         ObjectId(ObjectIdImpl* impl);
         ObjectIdImpl* impl;
     };

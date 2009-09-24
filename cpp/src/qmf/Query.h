@@ -25,11 +25,11 @@
 
 namespace qmf {
 
-    struct Object;
+    class Object;
     struct QueryElementImpl;
     struct QueryImpl;
     struct QueryExpressionImpl;
-    struct SchemaClassKey;
+    class  SchemaClassKey;
 
     enum ValueOper {
         O_EQ = 1,
@@ -97,7 +97,7 @@ namespace qmf {
         bool getDecreasing() const;
 
     private:
-        friend class QueryImpl;
+        friend struct QueryImpl;
         friend class BrokerProxyImpl;
         Query(QueryImpl* impl);
         QueryImpl* impl;

@@ -43,8 +43,8 @@ namespace qmf {
         void merge(const Object& from);
 
     private:
-        friend class ObjectImpl;
-        friend class AgentEngineImpl;
+        friend struct ObjectImpl;
+        friend class  AgentEngineImpl;
         Object(ObjectImpl* impl);
         ObjectImpl* impl;
     };
