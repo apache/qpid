@@ -46,6 +46,7 @@ namespace Apache.Qpid.Channel
         public const string TransferMode = "transferMode";
         public const string Brokers = "brokers";
         public const string Shared = "shared";
+        public const string PrefetchLimit = "prefetchLimit";
         public const string MaxBufferPoolSize = "maxBufferPoolSize";
         public const string MaxReceivedMessageSize = "maxReceivedMessageSize";
     }
@@ -55,7 +56,6 @@ namespace Apache.Qpid.Channel
         internal const string BrokerHost = "localhost";
         internal const int BrokerPort = 5672;
         internal const TransferMode TransferMode = System.ServiceModel.TransferMode.Buffered;
-        internal const byte Priority = 4;
         internal const long MaxBufferPoolSize = 64 * 1024;
         internal const int MaxReceivedMessageSize = 5 * 1024 * 1024; //64 * 1024;
     }

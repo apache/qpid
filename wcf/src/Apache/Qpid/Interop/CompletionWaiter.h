@@ -32,7 +32,6 @@ private:
     bool timedOut;
     // has an owner thread
     bool assigned;
-    // can Run (i.e. earlier CompletionWaiters in the queue have completed)
     System::Exception^ runException;
     AsyncCallback^ asyncCallback;
     Threading::Timer ^timer;

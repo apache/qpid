@@ -66,7 +66,6 @@ private:
     void Activate();
     void WaitForCompletion();
 
-//    inline void SetCompletedSynchronously (bool v) { completedSynchronously = v; }
 
     property IntPtr Message {
 	IntPtr get () { 
@@ -78,7 +77,6 @@ private:
 	    GC::SuppressFinalize(this);
 	    return v;
 	}
-	// void set (IntPtr v) { message = v; }
     }
 
     property bool Assigned {
@@ -89,10 +87,10 @@ private:
 	bool get () { return timedOut; }
     }
 
-
     property System::Exception^ RunException {
 	System::Exception^ get() { return runException; }
     }
+
 
  public:
 
