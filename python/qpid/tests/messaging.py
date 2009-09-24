@@ -611,6 +611,7 @@ class SenderTests(Base):
       except InsufficientCapacity:
         caught = True
         break
+    self.snd.sync()
     self.drain(self.rcv, expected=msgs)
     self.ssn.acknowledge()
     assert caught, "did not exceed capacity"
