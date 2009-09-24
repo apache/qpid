@@ -135,9 +135,9 @@ namespace qmf {
         void staticRelease() { decOutstanding(); }
 
     private:
-        friend class StaticContext;
-        friend class QueryContext;
-        friend class MethodContext;
+        friend struct StaticContext;
+        friend struct QueryContext;
+        friend struct MethodContext;
         BrokerProxy& publicObject;
         mutable qpid::sys::Mutex lock;
         ConsoleEngine& console;

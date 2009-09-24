@@ -32,13 +32,13 @@
 namespace qmf {
 
     class ConsoleEngine;
-    class ConsoleEngineImpl;
+    struct ConsoleEngineImpl;
     class BrokerProxyImpl;
     class AgentProxy;
-    class AgentProxyImpl;
-    class MethodResponseImpl;
-    class QueryResponseImpl;
-    class QueryContext;
+    struct AgentProxyImpl;
+    struct MethodResponseImpl;
+    struct QueryResponseImpl;
+    struct QueryContext;
 
     /**
      *
@@ -52,8 +52,8 @@ namespace qmf {
         const Value* getArgs() const;
 
     private:
-        friend class MethodResponseImpl;
-        friend class ConsoleEngineImpl;
+        friend struct MethodResponseImpl;
+        friend struct ConsoleEngineImpl;
         MethodResponse(MethodResponseImpl* impl);
         MethodResponseImpl* impl;
     };
@@ -70,8 +70,8 @@ namespace qmf {
         const Object* getObject(uint32_t idx) const;
 
     private:
-        friend class QueryResponseImpl;
-        friend class QueryContext;
+        friend struct QueryResponseImpl;
+        friend struct QueryContext;
         QueryResponse(QueryResponseImpl* impl);
         QueryResponseImpl *impl;
     };
@@ -135,7 +135,7 @@ namespace qmf {
         const char* getLabel() const;
 
     private:
-        friend class AgentProxyImpl;
+        friend struct AgentProxyImpl;
         friend class BrokerProxyImpl;
         AgentProxy(AgentProxyImpl* impl);
         AgentProxyImpl* impl;
@@ -165,8 +165,8 @@ namespace qmf {
         void sendQuery(const Query& query, void* context, const AgentProxy* agent = 0);
 
     private:
-        friend class ConsoleEngineImpl;
-        friend class StaticContext;
+        friend struct ConsoleEngineImpl;
+        friend struct StaticContext;
         BrokerProxyImpl* impl;
     };
 
@@ -217,7 +217,7 @@ namespace qmf {
 
     private:
         friend class BrokerProxyImpl;
-        friend class AgentProxyImpl;
+        friend struct AgentProxyImpl;
         ConsoleEngineImpl* impl;
     };
 }

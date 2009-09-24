@@ -54,9 +54,9 @@ namespace qmf {
         const char* getDesc() const;
 
     private:
-        friend class SchemaArgumentImpl;
-        friend class SchemaMethodImpl;
-        friend class SchemaEventClassImpl;
+        friend struct SchemaArgumentImpl;
+        friend struct SchemaMethodImpl;
+        friend struct SchemaEventClassImpl;
         SchemaArgument(SchemaArgumentImpl* impl);
         SchemaArgumentImpl* impl;
     };
@@ -76,9 +76,9 @@ namespace qmf {
         const SchemaArgument* getArgument(int idx) const;
 
     private:
-        friend class SchemaMethodImpl;
-        friend class SchemaObjectClassImpl;
-        friend class AgentEngineImpl;
+        friend struct SchemaMethodImpl;
+        friend struct SchemaObjectClassImpl;
+        friend class  AgentEngineImpl;
         SchemaMethod(SchemaMethodImpl* impl);
         SchemaMethodImpl* impl;
     };
@@ -104,8 +104,8 @@ namespace qmf {
         const char* getDesc() const;
 
     private:
-        friend class SchemaPropertyImpl;
-        friend class SchemaObjectClassImpl;
+        friend struct SchemaPropertyImpl;
+        friend struct SchemaObjectClassImpl;
         SchemaProperty(SchemaPropertyImpl* impl);
         SchemaPropertyImpl* impl;
     };
@@ -125,8 +125,8 @@ namespace qmf {
         const char* getDesc() const;
 
     private:
-        friend class SchemaStatisticImpl;
-        friend class SchemaObjectClassImpl;
+        friend struct SchemaStatisticImpl;
+        friend struct SchemaObjectClassImpl;
         SchemaStatistic(SchemaStatisticImpl* impl);
         SchemaStatisticImpl* impl;
     };
@@ -146,9 +146,9 @@ namespace qmf {
         bool operator<(const SchemaClassKey& other) const;
 
     private:
-        friend class SchemaClassKeyImpl;
+        friend struct SchemaClassKeyImpl;
         friend class BrokerProxyImpl;
-        friend class ConsoleEngineImpl;
+        friend struct ConsoleEngineImpl;
         SchemaClassKey(SchemaClassKeyImpl* impl);
         SchemaClassKeyImpl* impl;
     };
@@ -173,9 +173,9 @@ namespace qmf {
         const SchemaMethod* getMethod(int idx) const;
 
     private:
-        friend class SchemaObjectClassImpl;
-        friend class BrokerProxyImpl;
-        friend class AgentEngineImpl;
+        friend struct SchemaObjectClassImpl;
+        friend class  BrokerProxyImpl;
+        friend class  AgentEngineImpl;
         SchemaObjectClass(SchemaObjectClassImpl* impl);
         SchemaObjectClassImpl* impl;
     };
@@ -195,9 +195,9 @@ namespace qmf {
         const SchemaArgument* getArgument(int idx) const;
 
     private:
-        friend class SchemaEventClassImpl;
-        friend class BrokerProxyImpl;
-        friend class AgentEngineImpl;
+        friend struct SchemaEventClassImpl;
+        friend class  BrokerProxyImpl;
+        friend class  AgentEngineImpl;
         SchemaEventClass(SchemaEventClassImpl* impl);
         SchemaEventClassImpl* impl;
     };

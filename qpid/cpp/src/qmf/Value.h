@@ -106,10 +106,10 @@ namespace qmf {
         void deleteArrayItem(uint32_t idx);
 
     private:
-        friend class ValueImpl;
-        friend class BrokerProxyImpl;
-        friend class ObjectImpl;
-        friend class AgentEngineImpl;
+        friend struct ValueImpl;
+        friend class  BrokerProxyImpl;
+        friend struct ObjectImpl;
+        friend class  AgentEngineImpl;
         Value(ValueImpl* impl);
         ValueImpl* impl;
     };
