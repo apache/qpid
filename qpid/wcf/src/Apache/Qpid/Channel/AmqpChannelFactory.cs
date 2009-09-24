@@ -32,6 +32,7 @@ namespace Apache.Qpid.Channel
         AmqpChannelProperties channelProperties;
         long maxBufferPoolSize;
         bool shared;
+	int prefetchLimit;
 
         internal AmqpChannelFactory(AmqpTransportBindingElement bindingElement, BindingContext context)
             : base(context.Binding)
@@ -39,6 +40,7 @@ namespace Apache.Qpid.Channel
             this.bindingElement = bindingElement;
             this.channelProperties = bindingElement.ChannelProperties.Clone();
             this.shared = bindingElement.Shared;
+            this.prefetchLimit = bindingElement.PrefetchLimit;
             this.maxBufferPoolSize = bindingElement.MaxBufferPoolSize;
             Collection<MessageEncodingBindingElement> messageEncoderBindingElements
                 = context.BindingParameters.FindAll<MessageEncodingBindingElement>();
@@ -91,7 +93,7 @@ namespace Apache.Qpid.Channel
 
         protected override TChannel OnCreateChannel(EndpointAddress remoteAddress, Uri via)
         {
-            return (TChannel)(object) new AmqpTransportChannel(this, this.channelProperties, remoteAddress, this.messageEncoderFactory.Encoder, this.maxBufferPoolSize, this.shared);
+            return (TChannel)(object) new AmqpTransportChannel(this, this.channelProperties, remoteAddress, this.messageEncoderFactory.Encoder, this.maxBufferPoolSize, this.shared, this.prefetchLimit);
         }
 
     }

@@ -29,6 +29,7 @@ namespace Apache.Qpid.Channel
     {
         AmqpChannelProperties channelProperties;
         bool shared;
+	int prefetchLimit;
 
         public AmqpTransportBindingElement()
         {
@@ -41,6 +42,7 @@ namespace Apache.Qpid.Channel
         {
             this.channelProperties = other.channelProperties.Clone();
             this.shared = other.shared;
+            this.prefetchLimit = other.prefetchLimit;
         }
 
         public override IChannelFactory<TChannel> BuildChannelFactory<TChannel>(BindingContext context)
@@ -96,6 +98,12 @@ namespace Apache.Qpid.Channel
         {
             get { return this.channelProperties.BrokerPort; }
             set { this.channelProperties.BrokerPort = value; }
+        }
+
+        public int PrefetchLimit
+        {
+            get { return this.prefetchLimit; }
+            set { this.prefetchLimit = value; }
         }
 
         public bool Shared

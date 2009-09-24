@@ -50,6 +50,7 @@ namespace Apache.Qpid.Channel
         private MessageEncoder encoder;
         private AmqpChannelProperties factoryChannelProperties;
         private bool shared;
+        private int prefetchLimit;
         private string encoderContentType;
 
         // input = 0-10 queue, output = 0-10 exchange
@@ -68,7 +69,7 @@ namespace Apache.Qpid.Channel
         private AsyncTimeSpanCaller asyncOpenCaller;
         private AsyncTimeSpanCaller asyncCloseCaller;
 
-        internal AmqpTransportChannel(ChannelManagerBase factory, AmqpChannelProperties channelProperties, EndpointAddress remoteAddress, MessageEncoder msgEncoder, long maxBufferPoolSize, bool sharedConnection)
+        internal AmqpTransportChannel(ChannelManagerBase factory, AmqpChannelProperties channelProperties, EndpointAddress remoteAddress, MessageEncoder msgEncoder, long maxBufferPoolSize, bool sharedConnection, int prefetchLimit)
             : base(factory)
         {
             this.isInputChannel = (factory is ChannelListenerBase) || (factory is AmqpChannelFactory<IInputChannel>);
@@ -80,6 +81,7 @@ namespace Apache.Qpid.Channel
 
             this.factoryChannelProperties = channelProperties;
             this.shared = sharedConnection;
+            this.prefetchLimit = prefetchLimit;
             this.remoteAddress = remoteAddress;
 
             // pull out host, port, queue, and connection arguments
@@ -128,6 +130,7 @@ namespace Apache.Qpid.Channel
             if (this.isInputChannel)
             {
                 this.inputLink = ConnectionManager.GetInputLink(this.factoryChannelProperties, shared, false, this.queueName);
+                this.inputLink.PrefetchLimit = this.prefetchLimit;
             }
             else
             {
@@ -287,7 +290,7 @@ namespace Apache.Qpid.Channel
 
             return false;
         }
- 
+
         public IAsyncResult BeginTryReceive(TimeSpan timeout, AsyncCallback callback, object state)
         {
             return this.inputLink.BeginTryReceive(timeout, callback, state);
@@ -464,7 +467,7 @@ namespace Apache.Qpid.Channel
             }
             return amqpMessage;
         }
-     
+
 
         private Message QpidToWcf(AmqpMessage amqpMessage)
         {
@@ -531,7 +534,7 @@ namespace Apache.Qpid.Channel
                 {
                     this.bufferManager.ReturnBuffer(managedBuffer);
                 }
-            }  
+            }
 
             return wcfMessage;
         }
