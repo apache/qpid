@@ -147,6 +147,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER_LANGUAGE = "broker.language";
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
+    private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_VERSION = "broker.version";
     protected static final String BROKER_READY = "broker.ready";
     private static final String BROKER_STOPPED = "broker.stopped";
@@ -169,6 +170,7 @@ public class QpidTestCase extends TestCase
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
+    private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
 
@@ -235,6 +237,19 @@ public class QpidTestCase extends TestCase
             {
                 _logger.error("exception stopping broker", e);
             }
+            
+            if(_brokerCleanBetweenTests)
+            {
+            	try
+            	{
+            		cleanBroker();
+            	}
+            	catch (Exception e)
+            	{
+            		_logger.error("exception cleaning up broker", e);
+            	}
+            }
+            
             _logger.info("==========  stop " + _testName + " ==========");
 
             if (redirected)
