@@ -79,6 +79,9 @@ protected:
         Exchange* parent;
     };
            
+    typedef boost::shared_ptr<const std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> > > ConstBindingList;
+    typedef boost::shared_ptr<      std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> > > BindingList;
+    void doRoute(Deliverable& msg, ConstBindingList b);
     void routeIVE();
            
 
