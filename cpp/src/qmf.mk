@@ -20,12 +20,14 @@
 #
 # qmf library makefile fragment, to be included in Makefile.am
 # 
-lib_LTLIBRARIES +=				\
-  libqmfcommon.la				\
-  libqmfagent.la
+lib_LTLIBRARIES +=	\
+  libqmf.la		\
+  libqmfengine.la
 
-# Public header files
-nobase_include_HEADERS +=			\
+#
+# Public headers for the QMF API
+#
+QMF_API =					\
   ../include/qpid/agent/ManagementAgent.h	\
   ../include/qpid/agent/QmfAgentImportExport.h	\
   ../include/qmf/Agent.h			\
@@ -34,45 +36,75 @@ nobase_include_HEADERS +=			\
   ../include/qmf/ConnectionSettings.h		\
   ../include/qmf/AgentObject.h
 
-libqmfcommon_la_SOURCES =			\
-  qmf/BrokerProxyImpl.cpp			\
-  qmf/BrokerProxyImpl.h				\
-  qmf/ConnectionSettingsImpl.cpp		\
-  qmf/ConnectionSettingsImpl.h			\
-  qmf/ConsoleEngineImpl.cpp			\
-  qmf/ConsoleEngineImpl.h			\
-  qmf/ConsoleEngine.h				\
-  qmf/Event.h					\
-  qmf/Message.h					\
-  qmf/MessageImpl.cpp				\
-  qmf/MessageImpl.h				\
-  qmf/Object.h					\
-  qmf/ObjectId.h				\
-  qmf/ObjectIdImpl.cpp				\
-  qmf/ObjectIdImpl.h				\
-  qmf/ObjectImpl.cpp				\
-  qmf/ObjectImpl.h				\
-  qmf/Protocol.cpp				\
-  qmf/Protocol.h				\
-  qmf/Query.h					\
-  qmf/QueryImpl.cpp				\
-  qmf/QueryImpl.h				\
-  qmf/ResilientConnection.cpp			\
-  qmf/ResilientConnection.h			\
-  qmf/SequenceManager.cpp			\
-  qmf/SequenceManager.h				\
-  qmf/Schema.h					\
-  qmf/SchemaImpl.cpp				\
-  qmf/SchemaImpl.h				\
-  qmf/Typecode.h				\
-  qmf/Value.h					\
-  qmf/ValueImpl.cpp				\
-  qmf/ValueImpl.h
+#
+# Public headers for the QMF Engine API
+#
+QMF_ENGINE_API =				\
+  ../include/qmf/engine/Agent.h			\
+  ../include/qmf/engine/Console.h		\
+  ../include/qmf/engine/Event.h			\
+  ../include/qmf/engine/Message.h		\
+  ../include/qmf/engine/Object.h		\
+  ../include/qmf/engine/ObjectId.h		\
+  ../include/qmf/engine/Query.h			\
+  ../include/qmf/engine/ResilientConnection.h	\
+  ../include/qmf/engine/Schema.h		\
+  ../include/qmf/engine/Typecode.h		\
+  ../include/qmf/engine/Value.h
 
-libqmfagent_la_SOURCES =			\
-  qmf/AgentEngine.cpp				\
-  qmf/AgentEngine.h				\
-  qpid/agent/ManagementAgentImpl.cpp		\
-  qpid/agent/ManagementAgentImpl.h
+# Public header files
+nobase_include_HEADERS +=	\
+  $(QMF_API)			\
+  $(QMF_ENGINE_API)
 
-libqmfagent_la_LIBADD = libqpidclient.la libqmfcommon.la
+libqmf_la_SOURCES =			\
+  $(QMF_API)				\
+  qpid/agent/ManagementAgentImpl.cpp
+
+libqmfengine_la_SOURCES =			\
+  $(QMF_ENGINE_API)				\
+  qmf/engine/Agent.cpp				\
+  qmf/engine/BrokerProxyImpl.cpp		\
+  qmf/engine/BrokerProxyImpl.h			\
+  qmf/engine/ConnectionSettingsImpl.cpp		\
+  qmf/engine/ConnectionSettingsImpl.h		\
+  qmf/engine/ConsoleImpl.cpp			\
+  qmf/engine/ConsoleImpl.h			\
+  qmf/engine/MessageImpl.cpp			\
+  qmf/engine/MessageImpl.h			\
+  qmf/engine/ObjectIdImpl.cpp			\
+  qmf/engine/ObjectIdImpl.h			\
+  qmf/engine/ObjectImpl.cpp			\
+  qmf/engine/ObjectImpl.h			\
+  qmf/engine/Protocol.cpp			\
+  qmf/engine/Protocol.h				\
+  qmf/engine/QueryImpl.cpp			\
+  qmf/engine/QueryImpl.h			\
+  qmf/engine/ResilientConnection.cpp		\
+  qmf/engine/SequenceManager.cpp		\
+  qmf/engine/SequenceManager.h			\
+  qmf/engine/SchemaImpl.cpp			\
+  qmf/engine/SchemaImpl.h			\
+  qmf/engine/ValueImpl.cpp			\
+  qmf/engine/ValueImpl.h
+
+libqmf_la_LIBADD = libqmfengine.la
+libqmfengine_la_LIBADD = libqpidclient.la
+
+# Library Version Information:
+#
+#  CURRENT  => API/ABI version.  Bump this if the interface changes
+#  REVISION => Version of underlying implementation.
+#              Bump if implementation changes but API/ABI doesn't
+#  AGE      => Number of API/ABI versions this is backward compatible with
+#
+QMF_CURRENT  = 1
+QMF_REVISION = 0
+QMF_AGE      = 0
+
+QMF_ENGINE_CURRENT  = 1
+QMF_ENGINE_REVISION = 0
+QMF_ENGINE_AGE      = 0
+
+libqmf_la_LDFLAGS = -version-info $(QMF_CURRENT):$(QMF_REVISION):$(QMF_AGE)
+libqmfengine_la_LDFLAGS = -version-info $(QMF_ENGINE_CURRENT):$(QMF_ENGINE_REVISION):$(QMF_ENGINE_AGE)

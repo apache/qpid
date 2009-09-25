@@ -38,7 +38,7 @@ lib_LTLIBRARIES = _qmfengine.la
 #_qmfengine_la_LDFLAGS = -avoid-version -module -shrext "$(PYTHON_SO)"
 #_qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".so"
 _qmfengine_la_LDFLAGS = -avoid-version -module -shared
-_qmfengine_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfagent.la
+_qmfengine_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmf.la
 _qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC)
 nodist__qmfengine_la_SOURCES = qmfengine.cpp
 

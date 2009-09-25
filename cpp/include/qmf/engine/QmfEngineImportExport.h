@@ -1,3 +1,6 @@
+#ifndef QMF_ENGINE_IMPORT_EXPORT_H
+#define QMF_ENGINE_IMPORT_EXPORT_H
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,42 +20,14 @@
  * under the License.
  */
 
-%{
+#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
+#  if defined(QMF_EXPORT) || defined (qmfcommon_EXPORTS)
+#    define QMFE_EXTERN __declspec(dllexport)
+#  else
+#    define QMFE_EXTERN __declspec(dllimport)
+#  endif
+#else
+#  define QMFE_EXTERN
+#endif
 
-#include "qmf/engine/Agent.h"
-#include "qmf/engine/Console.h"
-#include "qmf/engine/ResilientConnection.h"
-
-%}
-
-%include <qmf/engine/QmfEngineImportExport.h>
-%include <qmf/engine/Query.h>
-%include <qmf/engine/Message.h>
-%include <qmf/engine/Agent.h>
-%include <qmf/engine/Console.h>
-%include <qmf/engine/ConnectionSettings.h>
-%include <qmf/engine/ResilientConnection.h>
-%include <qmf/engine/Typecode.h>
-%include <qmf/engine/Schema.h>
-%include <qmf/engine/Value.h>
-%include <qmf/engine/ObjectId.h>
-%include <qmf/engine/Object.h>
-
-
-%inline {
-
-using namespace std;
-using namespace qmf::engine;
-
-namespace qmf {
-namespace engine {
-
-}
-}
-}
-
-
-%{
-
-%};
-
+#endif

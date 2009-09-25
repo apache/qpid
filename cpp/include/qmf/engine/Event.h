@@ -1,3 +1,6 @@
+#ifndef _QmfEngineEvent_
+#define _QmfEngineEvent_
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -6,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,42 +20,13 @@
  * under the License.
  */
 
-%{
-
-#include "qmf/engine/Agent.h"
-#include "qmf/engine/Console.h"
-#include "qmf/engine/ResilientConnection.h"
-
-%}
-
-%include <qmf/engine/QmfEngineImportExport.h>
-%include <qmf/engine/Query.h>
-%include <qmf/engine/Message.h>
-%include <qmf/engine/Agent.h>
-%include <qmf/engine/Console.h>
-%include <qmf/engine/ConnectionSettings.h>
-%include <qmf/engine/ResilientConnection.h>
-%include <qmf/engine/Typecode.h>
-%include <qmf/engine/Schema.h>
-%include <qmf/engine/Value.h>
-%include <qmf/engine/ObjectId.h>
-%include <qmf/engine/Object.h>
-
-
-%inline {
-
-using namespace std;
-using namespace qmf::engine;
-
 namespace qmf {
 namespace engine {
 
-}
+    class Event {
+    };
 }
 }
 
-
-%{
-
-%};
+#endif
 

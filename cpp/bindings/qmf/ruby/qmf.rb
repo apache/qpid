@@ -570,6 +570,10 @@ module Qmf
     def args
       Arguments.new(@impl.getArgs)
     end
+
+    def method_missing(name, *extra_args)
+      args.__send__(name, extra_args)
+    end
   end
 
   ##==============================================================================
@@ -643,6 +647,10 @@ module Qmf
     def typecode
       @impl.getType
     end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaMethod
@@ -669,6 +677,10 @@ module Qmf
     def name
       @impl.getName
     end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaProperty
@@ -689,6 +701,10 @@ module Qmf
     def name
       @impl.getName
     end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaStatistic
@@ -705,6 +721,10 @@ module Qmf
 
     def name
       @impl.getName
+    end
+
+    def to_s
+      name
     end
   end
 
@@ -816,7 +836,7 @@ module Qmf
     def initialize(handler = nil, kwargs={})
       super()
       @handler = handler
-      @impl = Qmfengine::ConsoleEngine.new
+      @impl = Qmfengine::Console.new
       @event = Qmfengine::ConsoleEvent.new
       @broker_list = []
       @cv = new_cond
@@ -902,9 +922,15 @@ module Qmf
 
     def objects(query, kwargs = {})
       timeout = 30
+      kwargs.merge!(query) if query.class == Hash
+
       if kwargs.include?(:timeout)
         timeout = kwargs[:timeout]
+        kwargs.delete(:timeout)
       end
+
+      query = Query.new(kwargs) if query.class == Hash
+
       synchronize do
         @sync_count = 1
         @sync_result = []
@@ -916,6 +942,18 @@ module Qmf
 
         return @sync_result
       end
+    end
+
+    # Return one and only one object or nil.
+    def object(query, kwargs = {})
+      objs = objects(query, kwargs)
+      return objs.length == 1 ? objs[0] : nil
+    end
+
+    # Return the first of potentially many objects.
+    def first_object(query, kwargs = {})
+      objs = objects(query, kwargs)
+      return objs.length > 0 ? objs[0] : nil
     end
 
     def _get_result(list, context)
@@ -1120,7 +1158,7 @@ module Qmf
       end
       @conn = nil
       @handler = handler
-      @impl = Qmfengine::AgentEngine.new(@agentLabel)
+      @impl = Qmfengine::Agent.new(@agentLabel)
       @event = Qmfengine::AgentEvent.new
       @xmtMessage = Qmfengine::Message.new
     end
