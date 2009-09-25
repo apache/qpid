@@ -62,6 +62,11 @@ class ConsoleTestBase < Qmf::ConsoleHandler
     raise "Assertion failed: #{left} != #{right}#{text}" unless left == right
   end
 
+  def assert(condition, in_text=nil)
+    text = " (#{in_text})" if in_text
+    raise "Assertion failed: #{left} != #{right}#{text}" unless condition
+  end
+
   def fail(text)
     raise text
   end

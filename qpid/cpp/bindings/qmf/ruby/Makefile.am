@@ -23,23 +23,22 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src
 
 EXTRA_DIST = ruby.i
 BUILT_SOURCES = qmfengine.cpp
-generated_file_list = qmfengine.cpp
 
 rubylibdir = $(RUBY_LIB)
 
 dist_rubylib_DATA = qmf.rb
 
-$(generated_file_list): $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
+qmfengine.cpp: $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
 	$(SWIG) -ruby -c++ -Wall -I/usr/include $(INCLUDES) $(QPID_CXXFLAGS) -o qmfengine.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = qmfengine.la
 
 qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
-qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfagent.la
+qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfengine.la
 qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
 nodist_qmfengine_la_SOURCES = qmfengine.cpp
 
-CLEANFILES = $(generated_file_list)
+CLEANFILES = qmfengine.cpp
 
 endif # HAVE_RUBY_DEVEL

@@ -38,9 +38,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_B_basic_method_invocation
-    parents = @qmfc.objects(Qmf::Query.new(:class => "parent"))
-    assert_equal(parents.size, 1, "Number of 'parent' objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class => "parent")
+    assert(parent, "Number of 'parent' objects")
     for seq in 0...10
       result = parent.echo(seq)
       assert_equal(result.status, 0, "Method Response Status")
@@ -54,9 +53,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_C_basic_types_numeric_big
-    parents = @qmfc.objects(Qmf::Query.new(:class =>"parent"))
-    assert_equal(parents.size, 1, "Number of parent objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
 
     result = parent.set_numerics("big")
     assert_equal(result.status, 0, "Method Response Status")
@@ -76,9 +74,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_C_basic_types_numeric_small
-    parents = @qmfc.objects(Qmf::Query.new(:class =>"parent"))
-    assert_equal(parents.size, 1, "Number of parent objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
 
     result = parent.set_numerics("small")
     assert_equal(result.status, 0, "Method Response Status")
@@ -98,9 +95,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_C_basic_types_numeric_negative
-    parents = @qmfc.objects(Qmf::Query.new(:class =>"parent"))
-    assert_equal(parents.size, 1, "Number of parent objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
 
     result = parent.set_numerics("negative")
     assert_equal(result.status, 0, "Method Response Status")
@@ -120,9 +116,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_C_basic_types_string_short
-    parents = @qmfc.objects(Qmf::Query.new(:class =>"parent"))
-    assert_equal(parents.size, 1, "Number of parent objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
 
     strings = []
     strings << ""
@@ -148,9 +143,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_C_basic_types_string_long
-    parents = @qmfc.objects(Qmf::Query.new(:class =>"parent"))
-    assert_equal(parents.size, 1, "Number of parent objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class =>"parent")
+    assert(parent, "Number of parent objects")
 
     strings = []
     strings << ""
@@ -174,9 +168,8 @@ class ConsoleTest < ConsoleTestBase
   end
 
   def test_D_userid_for_method
-    parents = @qmfc.objects(Qmf::Query.new(:class => "parent"))
-    assert_equal(parents.size, 1, "Number of parent objects")
-    parent = parents[0]
+    parent = @qmfc.object(:class => "parent")
+    assert(parent, "Number of parent objects")
 
     result = parent.probe_userid
     assert_equal(result.status, 0, "Method Response Status")

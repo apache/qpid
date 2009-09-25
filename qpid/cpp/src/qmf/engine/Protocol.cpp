@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,42 +17,36 @@
  * under the License.
  */
 
-%{
-
-#include "qmf/engine/Agent.h"
-#include "qmf/engine/Console.h"
-#include "qmf/engine/ResilientConnection.h"
-
-%}
-
-%include <qmf/engine/QmfEngineImportExport.h>
-%include <qmf/engine/Query.h>
-%include <qmf/engine/Message.h>
-%include <qmf/engine/Agent.h>
-%include <qmf/engine/Console.h>
-%include <qmf/engine/ConnectionSettings.h>
-%include <qmf/engine/ResilientConnection.h>
-%include <qmf/engine/Typecode.h>
-%include <qmf/engine/Schema.h>
-%include <qmf/engine/Value.h>
-%include <qmf/engine/ObjectId.h>
-%include <qmf/engine/Object.h>
-
-
-%inline {
+#include "qmf/engine/Protocol.h"
+#include "qpid/framing/Buffer.h"
 
 using namespace std;
 using namespace qmf::engine;
+using namespace qpid::framing;
 
-namespace qmf {
-namespace engine {
 
+bool Protocol::checkHeader(Buffer& buf, uint8_t *opcode, uint32_t *seq)
+{
+    if (buf.available() < 8)
+        return false;
+
+    uint8_t h1 = buf.getOctet();
+    uint8_t h2 = buf.getOctet();
+    uint8_t h3 = buf.getOctet();
+
+    *opcode = buf.getOctet();
+    *seq    = buf.getLong();
+
+    return h1 == 'A' && h2 == 'M' && h3 == '3';
 }
+
+void Protocol::encodeHeader(qpid::framing::Buffer& buf, uint8_t opcode, uint32_t seq)
+{
+    buf.putOctet('A');
+    buf.putOctet('M');
+    buf.putOctet('3');
+    buf.putOctet(opcode);
+    buf.putLong (seq);
 }
-}
 
-
-%{
-
-%};
 
