@@ -206,45 +206,22 @@ void XmlExchange::route(Deliverable& msg, const string& routingKey, const FieldT
     PreRoute pr(msg, this);
     try {
         XmlBinding::vector::ConstPtr p;
-       {
+        BindingList b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
+        {
             RWlock::ScopedRlock l(lock);
-           p = bindingsMap[routingKey].snapshot();
-           if (!p) return;
-       }
-        int count(0);
+            p = bindingsMap[routingKey].snapshot();
+            if (!p.get()) return;
+        }
 
         for (std::vector<XmlBinding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++) {
             if (matches((*i)->xquery, msg, args, (*i)->parse_message_content)) { 
-                msg.deliverTo((*i)->queue);
-                count++;
-                QPID_LOG(trace, "Delivered to queue" );
-
-                if ((*i)->mgmtBinding != 0)
-                    (*i)->mgmtBinding->inc_msgMatched ();
+                b->push_back(*i);
             }
-       }
-       if (!count) {
-           QPID_LOG(warning, "XMLExchange " << getName() << ": could not route message with query " << routingKey);
-           if (mgmtExchange != 0) {
-               mgmtExchange->inc_msgDrops  ();
-               mgmtExchange->inc_byteDrops (msg.contentSize ());
-           }
-       } else {
-           if (mgmtExchange != 0) {
-               mgmtExchange->inc_msgRoutes  (count);
-               mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
-           }
-       }
-
-       if (mgmtExchange != 0) {
-           mgmtExchange->inc_msgReceives  ();
-           mgmtExchange->inc_byteReceives (msg.contentSize ());
-       }
+        }
+        doRoute(msg, b);
     } catch (...) {
         QPID_LOG(warning, "XMLExchange " << getName() << ": exception routing message with query " << routingKey);
     }
-      
-
 }
 
 

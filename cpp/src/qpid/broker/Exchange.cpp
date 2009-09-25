@@ -76,6 +76,36 @@ Exchange::PreRoute::~PreRoute(){
     }
 }
 
+void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
+{
+    int count = 0;
+
+    if (b.get()) {
+        for(std::vector<Binding::shared_ptr>::const_iterator i = b->begin(); i != b->end(); i++, count++) {
+            msg.deliverTo((*i)->queue);
+            if ((*i)->mgmtBinding != 0)
+                (*i)->mgmtBinding->inc_msgMatched();
+        }
+    }
+
+    if (mgmtExchange != 0)
+    {
+        mgmtExchange->inc_msgReceives  ();
+        mgmtExchange->inc_byteReceives (msg.contentSize ());
+        if (count == 0)
+        {
+            //QPID_LOG(warning, "Exchange " << getName() << " could not route message; no matching binding found");
+            mgmtExchange->inc_msgDrops  ();
+            mgmtExchange->inc_byteDrops (msg.contentSize ());
+        }
+        else
+        {
+            mgmtExchange->inc_msgRoutes  (count);
+            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
+        }
+    }
+}
+
 void Exchange::routeIVE(){
     if (ive && lastMsg.get()){
         DeliverableMessage dmsg(lastMsg);
