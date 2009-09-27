@@ -41,11 +41,13 @@ QMF_API =					\
 #
 QMF_ENGINE_API =				\
   ../include/qmf/engine/Agent.h			\
+  ../include/qmf/engine/ConnectionSettings.h	\
   ../include/qmf/engine/Console.h		\
   ../include/qmf/engine/Event.h			\
   ../include/qmf/engine/Message.h		\
   ../include/qmf/engine/Object.h		\
   ../include/qmf/engine/ObjectId.h		\
+  ../include/qmf/engine/QmfEngineImportExport.h	\
   ../include/qmf/engine/Query.h			\
   ../include/qmf/engine/ResilientConnection.h	\
   ../include/qmf/engine/Schema.h		\
@@ -59,7 +61,8 @@ nobase_include_HEADERS +=	\
 
 libqmf_la_SOURCES =			\
   $(QMF_API)				\
-  qpid/agent/ManagementAgentImpl.cpp
+  qpid/agent/ManagementAgentImpl.cpp	\
+  qpid/agent/ManagementAgentImpl.h
 
 libqmfengine_la_SOURCES =			\
   $(QMF_ENGINE_API)				\
