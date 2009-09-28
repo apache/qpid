@@ -70,7 +70,7 @@ public class QpidTestCase extends TestCase
     protected final String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
-    private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
@@ -189,6 +189,7 @@ public class QpidTestCase extends TestCase
     public static final String TOPIC = "topic";
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
+    protected static final String INDEX = "index";
 
     public QpidTestCase(String name)
     {
@@ -976,7 +977,12 @@ public class QpidTestCase extends TestCase
 
     public Message createNextMessage(Session session, int msgCount) throws JMSException
     {
-        return session.createMessage();
+        Message message = session.createMessage();
+
+        message.setIntProperty(INDEX, msgCount);
+
+        return message;
+
     }
 
     public ConnectionURL getConnectionURL() throws NamingException
