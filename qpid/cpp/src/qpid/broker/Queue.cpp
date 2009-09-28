@@ -712,7 +712,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg,
         msg->addTraceId(traceId);
     }
 
-    if (msg->isPersistent() && store) {
+    if ((msg->isPersistent() || msg->checkContentReleasable()) && store) {
         msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg);
         store->enqueue(ctxt, pmsg, *this);
@@ -743,7 +743,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
             dequeued(msg);
         }
     }
-    if (msg.payload->isPersistent() && store) {
+    if ((msg.payload->isPersistent() || msg.payload->checkContentReleasable()) && store) {
         msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
         boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
         store->dequeue(ctxt, pmsg, *this);

@@ -81,6 +81,10 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
     int count = 0;
 
     if (b.get()) {
+        // Block the content release if the message is transient AND there is more than one binding
+        if (!msg.getMessage().isPersistent() && b->size() > 1)
+            msg.getMessage().blockContentRelease();
+
         for(std::vector<Binding::shared_ptr>::const_iterator i = b->begin(); i != b->end(); i++, count++) {
             msg.deliverTo((*i)->queue);
             if ((*i)->mgmtBinding != 0)
