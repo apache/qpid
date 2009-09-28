@@ -21,7 +21,7 @@
 
 # Run the federation tests.
 MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python/temp
+. `dirname $0`/python_env.sh
 
 trap stop_brokers INT TERM QUIT
 
@@ -42,7 +42,7 @@ if test -d ${PYTHON_DIR} ;  then
     echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
     PYTHONPATH=${PYTHON_DIR}:${MY_DIR}
     export PYTHONPATH
-    ${PYTHON_DIR}/qpid-python-test -m federation -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT $@
+    $PYTHON_COMMANDS/qpid-python-test -m federation -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT $@
     RETCODE=$?
     stop_brokers
     if test x$RETCODE != x0; then 

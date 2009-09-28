@@ -21,7 +21,8 @@
 
 # Run a test of the replication feature
 MY_DIR=`dirname \`which $0\``
-PYTHON_DIR=${MY_DIR}/../../../python
+. `dirname $0`/python_env.sh
+
 trap stop_brokers INT TERM QUIT
 
 stop_brokers() {
@@ -47,21 +48,21 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     export PYTHONPATH
     echo "Running replication test between localhost:$BROKER_A and localhost:$BROKER_B"
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
-    $PYTHON_DIR/commands/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
+    $PYTHON_COMMANDS/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
 
     #create test queues
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-a --generate-queue-events 2
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-b --generate-queue-events 2
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-c --generate-queue-events 1
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 2
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-e --generate-queue-events 1
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-a --generate-queue-events 2
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-b --generate-queue-events 2
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-c --generate-queue-events 1
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 2
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-e --generate-queue-events 1
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-a
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-b
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-c
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-e
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-a
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-b
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-c
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-e
     #queue-d deliberately not declared on DR; this error case should be handled
 
     #publish and consume from test queues on broker A:
@@ -125,13 +126,13 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
     BROKER_B=`cat qpidd.port`
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
-    $PYTHON_DIR/commands/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
+    $PYTHON_COMMANDS/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-e --generate-queue-events 2
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-e
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 1
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-d
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-e --generate-queue-events 2
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-e
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue queue-d --generate-queue-events 1
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-d
 
     i=1
     while [ $i -le 10 ]; do
@@ -153,9 +154,9 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
     BROKER_B=`cat qpidd.port`
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add queue queue-e
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
-    $PYTHON_DIR/commands/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-e
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
+    $PYTHON_COMMANDS/qpid-route --ack 5 queue add "localhost:$BROKER_B" "localhost:$BROKER_A" replication replication
     # now send another 15
     i=11
     while [ $i -le 15 ]; do

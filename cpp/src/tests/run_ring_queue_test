@@ -22,9 +22,8 @@
 
 #setup path to find qpid-config and sender/receiver test progs
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python/temp
-export PYTHONPATH=$PYTHON_DIR
-export PATH=./:$PYTHON_DIR/commands:$PATH
+. `dirname $0`/python_env.sh
+export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
 
 #set port to connect to via env var
 test -s qpidd.port && QPID_PORT=`cat qpidd.port`

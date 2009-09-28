@@ -22,7 +22,7 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python/temp
+. $srcdir/python_env.sh
 
 trap stop_brokers EXIT
 
@@ -61,22 +61,21 @@ start_brokers() {
 }
 
 setup() {
-    export PYTHONPATH=$PYTHON_DIR
     #create exchange on both cluster and single broker
-    $PYTHON_DIR/qpid-config -a "localhost:$BROKER_A" add exchange direct test-exchange
-    $PYTHON_DIR/qpid-config -a "localhost:$NODE_1" add exchange direct test-exchange
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add exchange direct test-exchange
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$NODE_1" add exchange direct test-exchange
 
     #create dynamic routes for test exchange
-    $PYTHON_DIR/qpid-route dynamic add "localhost:$NODE_2" "localhost:$BROKER_A" test-exchange
-    $PYTHON_DIR/qpid-route dynamic add "localhost:$BROKER_A" "localhost:$NODE_2" test-exchange
+    $PYTHON_COMMANDS/qpid-route dynamic add "localhost:$NODE_2" "localhost:$BROKER_A" test-exchange
+    $PYTHON_COMMANDS/qpid-route dynamic add "localhost:$BROKER_A" "localhost:$NODE_2" test-exchange
 
     #create test queue on cluster and bind it to the test exchange
-    $PYTHON_DIR/qpid-config -a "localhost:$NODE_1" add queue test-queue
-    $PYTHON_DIR/qpid-config -a "localhost:$NODE_1" bind test-exchange test-queue to-cluster
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$NODE_1" add queue test-queue
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$NODE_1" bind test-exchange test-queue to-cluster
 
     #create test queue on single broker and bind it to the test exchange
-    $PYTHON_DIR/qpid-config -a "localhost:$BROKER_A" add queue test-queue
-    $PYTHON_DIR/qpid-config -a "localhost:$BROKER_A" bind test-exchange test-queue from-cluster
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" add queue test-queue
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_A" bind test-exchange test-queue from-cluster
 }
 
 run_test_pull_to_cluster_two_consumers() {
