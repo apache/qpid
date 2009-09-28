@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -8,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,20 +17,10 @@
 # under the License.
 #
 
-# Simple test of encode/decode of a double in application headers
-# TODO: this should be expanded to cover a wider set of types and go
-# in both directions
-
-srcdir=`dirname $0`
-. `dirname $0`/python_env.sh
-test -f qpidd.port && QPID_PORT=`cat qpidd.port`
-
-if test -d ${PYTHON_DIR} ;  then
-    ./header_test -p $QPID_PORT
-    PYTHONPATH=$PYTHON_DIR:$PYTHONPATH
-    export PYTHONPATH
-    $srcdir/header_test.py "localhost" $QPID_PORT
-else 
-    echo "Skipping header test as python libs not found"
-fi
+# Environment for python tests
+test -d python || { echo "WARNING: skipping `basename $0`, no python directory."; exit 0; }
+PYTHON_DIR=$PWD/python
+PYTHON_COMMANDS=$PYTHON_DIR/commands
+PYTHONPATH=$PYTHON_DIR
+export PYTHONPATH PYTHON_DIR
 

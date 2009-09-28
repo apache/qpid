@@ -19,4 +19,5 @@
 # under the License.
 #
 
-./run_cluster_tests long_cluster_tests
+srcdir=`dirname $0`
+$srcdir/run_cluster_tests long_cluster_tests

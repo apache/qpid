@@ -22,6 +22,7 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src
 PUBLIC_INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include # Use public API only
 
 abs_builddir=@abs_builddir@
+abs_srcdir=@abs_srcdir@
 extra_libs = 
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
@@ -275,7 +276,6 @@ qpid_stream_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_stream_SOURCES=qpid_stream.cpp
 qpid_stream_LDADD=$(lib_client) 
 
-
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
     srcdir=$(srcdir) \
@@ -311,7 +311,7 @@ EXTRA_DIST +=								\
   TxMocks.h								\
   replication_test							\
   run_perftest								\
-  ring_queue_test								\
+  ring_queue_test							\
   run_ring_queue_test
 
 check_LTLIBRARIES += libdlclose_noop.la
@@ -327,30 +327,44 @@ LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_p
  run_failover_soak reliable_replication_test \
  federated_cluster_test_with_node_failure
 
-EXTRA_DIST+=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test \
-  federated_cluster_test_with_node_failure \
-  tests.sln \
-  client_test.vcproj \
-  consume.vcproj \
-  echotest.vcproj \
-  header_test.vcproj \
-  latencytest.vcproj \
-  perftest.vcproj \
-  publish.vcproj \
-  receiver.vcproj \
-  sender.vcproj \
-  shlibtest.vcproj \
-  topic_listener.vcproj \
-  topic_publisher.vcproj \
-  txjob.vcproj \
-  txshift.vcproj \
-  txtest.vcproj \
-  unit_test.vcproj
+EXTRA_DIST+=						\
+	python_env.sh					\
+	fanout_perftest					\
+	shared_perftest					\
+	multiq_perftest					\
+	topic_perftest					\
+	run_failover_soak				\
+	reliable_replication_test			\
+	federated_cluster_test_with_node_failure	\
+	tests.sln					\
+	client_test.vcproj				\
+	consume.vcproj					\
+	echotest.vcproj					\
+	header_test.vcproj				\
+	latencytest.vcproj				\
+	perftest.vcproj					\
+	publish.vcproj					\
+	receiver.vcproj					\
+	sender.vcproj					\
+	shlibtest.vcproj				\
+	topic_listener.vcproj				\
+	topic_publisher.vcproj				\
+	txjob.vcproj					\
+	txshift.vcproj					\
+	txtest.vcproj					\
+	unit_test.vcproj
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
 
 check: python_prep
 
-python_prep :
-	$(MAKE) -C $(abspath $(srcdir)/../../../python) install PREFIX=$(abs_builddir)/../../temp-install PYTHON_LIB=$(abs_builddir)/../../temp-install AMQP_SPEC_DIR=$(abspath $(srcdir)/../../../specs)
+PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
+PYTHON_BLD_DIR=$(abs_builddir)/python
+AMQP_SPEC_DIR=$(abs_srcdir)/../../../specs
+
+python_prep:
+	if test -d $(PYTHON_SRC_DIR) -a -d $(AMQP_SPEC_DIR); \
+	then $(MAKE) -C $(PYTHON_SRC_DIR) install PREFIX=$(PYTHON_BLD_DIR) PYTHON_LIB=$(PYTHON_BLD_DIR) EXEC_PREFIX=$(PYTHON_BLD_DIR)/commands AMQP_SPEC_DIR=$(AMQP_SPEC_DIR); \
+	else echo "WARNING: python client not built, missing one of $(PYTHON_SRC_DIR) $(AMQP_SPEC_DIR)"; fi
+
