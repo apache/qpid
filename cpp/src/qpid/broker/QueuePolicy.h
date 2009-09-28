@@ -47,6 +47,7 @@ class QueuePolicy
     static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
 
   public:
+    typedef std::deque<QueuedMessage> Messages;
     static QPID_BROKER_EXTERN const std::string maxCountKey;
     static QPID_BROKER_EXTERN const std::string maxSizeKey;
     static QPID_BROKER_EXTERN const std::string typeKey;
@@ -68,7 +69,7 @@ class QueuePolicy
     void encode(framing::Buffer& buffer) const;
     void decode ( framing::Buffer& buffer );
     uint32_t encodedSize() const;
-
+    virtual void getPendingDequeues(Messages& result);
 
     static QPID_BROKER_EXTERN std::auto_ptr<QueuePolicy> createQueuePolicy(const std::string& name, const qpid::framing::FieldTable& settings);
     static QPID_BROKER_EXTERN std::auto_ptr<QueuePolicy> createQueuePolicy(const std::string& name, uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
@@ -80,7 +81,6 @@ class QueuePolicy
                                                        const QueuePolicy&);
   protected:
     const std::string name;
-    qpid::sys::Mutex lock;
 
     QueuePolicy(const std::string& name, uint32_t maxCount, uint64_t maxSize, const std::string& type = REJECT);
 
@@ -105,8 +105,8 @@ class RingQueuePolicy : public QueuePolicy
     void dequeued(const QueuedMessage&);
     bool isEnqueued(const QueuedMessage&);
     bool checkLimit(boost::intrusive_ptr<Message> msg);
+    void getPendingDequeues(Messages& result);
   private:
-    typedef std::deque<QueuedMessage> Messages;
     Messages pendingDequeues;
     Messages queue;
     const bool strict;

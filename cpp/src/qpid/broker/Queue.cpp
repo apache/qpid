@@ -208,11 +208,10 @@ void Queue::process(boost::intrusive_ptr<Message>& msg){
 }
 
 void Queue::requeue(const QueuedMessage& msg){
-    if (!isEnqueued(msg)) return;
-
     QueueListeners::NotificationSet copy;
     {    
         Mutex::ScopedLock locker(messageLock);
+        if (!isEnqueued(msg)) return;
         msg.payload->enqueueComplete(); // mark the message as enqueued
         messages.push_front(msg);
         listeners.populate(copy);
@@ -603,7 +602,6 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
             else QPID_LOG(warning, "Enqueue manager not set, events not generated for " << getName());
         }
         if (policy.get()) {
-            Mutex::ScopedUnlock locker(messageLock);   
             policy->enqueued(qm);
         }
     }
@@ -696,7 +694,14 @@ void Queue::setLastNodeFailure()
 bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg, bool suppressPolicyCheck)
 {
     if (policy.get() && !suppressPolicyCheck) {
-        policy->tryEnqueue(msg);
+        Messages dequeues;
+        {
+            Mutex::ScopedLock locker(messageLock);
+            policy->tryEnqueue(msg);
+            policy->getPendingDequeues(dequeues);
+        }
+        //depending on policy, may have some dequeues that need to performed without holding the lock
+        for_each(dequeues.begin(), dequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));        
     }
 
     if (inLastNodeFailure && persistLastNode){
@@ -1070,12 +1075,6 @@ void Queue::enqueued(const QueuedMessage& m)
 bool Queue::isEnqueued(const QueuedMessage& msg)
 {
     return !policy.get() || policy->isEnqueued(msg);
-}
-
-void Queue::addPendingDequeue(const QueuedMessage& msg)
-{
-    //assumes lock is held - true at present but rather nasty as this is a public method
-    pendingDequeues.push_back(msg);    
 }
 
 QueueListeners& Queue::getListeners() { return listeners; }
