@@ -46,6 +46,10 @@
   <logger name="org.apache.qpid.test.utils.QpidTestCase">
     <level value="ALL"/>
   </logger>
+  
+  <logger name="org.apache.commons">
+    <level value="WARN"/>
+  </logger>
 
   <root>
     <level value="${root.logging.level}"/>
