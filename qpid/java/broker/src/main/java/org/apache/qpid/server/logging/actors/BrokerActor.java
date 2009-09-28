@@ -36,4 +36,12 @@ public class BrokerActor extends AbstractActor
 
         _logString = "[Broker] ";
     }
+
+    public BrokerActor(String name, RootMessageLogger logger)
+    {
+        super(logger);
+
+        _logString = "[Broker(" + name + ")] ";
+    }
+
 }
