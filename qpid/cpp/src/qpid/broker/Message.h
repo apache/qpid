@@ -108,7 +108,7 @@ public:
         return frames.isA<T>();
     }
 
-    uint32_t getRequiredCredit() const;
+    uint32_t getRequiredCredit();
 
     void encode(framing::Buffer& buffer) const;
     void encodeContent(framing::Buffer& buffer) const;
@@ -186,6 +186,7 @@ public:
     mutable boost::intrusive_ptr<Message> empty;
     MessageCallback* enqueueCallback;
     MessageCallback* dequeueCallback;
+    uint32_t requiredCredit;
     static std::string updateDestination;
 };
 
