@@ -91,6 +91,7 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.mina.common.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1559,6 +1560,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     suspendChannel(true);
                 }
 
+                // Let the dispatcher know that all the incomming messages
+                // should be rolled back(reject/release)
+                _rollbackMark.set(_highestDeliveryTag.get());
+
+                syncDispatchQueue();      
+
+                _dispatcher.rollback();
+
                 releaseForRollback();
 
                 sendRollback();
@@ -1851,26 +1860,58 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     void failoverPrep()
     {
-        startDispatcherIfNecessary();
         syncDispatchQueue();
     }
 
     void syncDispatchQueue()
     {
-        final CountDownLatch signal = new CountDownLatch(1);
-        _queue.add(new Dispatchable() {
-            public void dispatch(AMQSession ssn)
+        if (Thread.currentThread() == _dispatcherThread)
+        {
+            while (!_closed.get() && !_queue.isEmpty())
             {
-                signal.countDown();
+                Dispatchable disp;
+                try
+                {
+                    disp = (Dispatchable) _queue.take();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                // Check just in case _queue becomes empty, it shouldn't but
+                // better than an NPE.
+                if (disp == null)
+                {
+                    _logger.debug("_queue became empty during sync.");
+                    break;
+                }
+
+                disp.dispatch(AMQSession.this);
             }
-        });
-        try
-        {
-            signal.await();
         }
-        catch (InterruptedException e)
+        else
         {
-            throw new RuntimeException(e);
+            startDispatcherIfNecessary();
+
+            final CountDownLatch signal = new CountDownLatch(1);
+
+            _queue.add(new Dispatchable()
+            {
+                public void dispatch(AMQSession ssn)
+                {
+                    signal.countDown();
+                }
+            });
+
+            try
+            {
+                signal.await();
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
