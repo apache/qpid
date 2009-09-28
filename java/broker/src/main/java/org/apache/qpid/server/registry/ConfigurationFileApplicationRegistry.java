@@ -42,18 +42,22 @@ import java.io.File;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
+    private String _registryName;
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
         super(new ServerConfiguration(configurationURL));
     }
 
-    public void initialise() throws Exception
+    public void initialise(int instanceID) throws Exception
     {
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration, 
                                                        new Log4jMessageLogger());
+        
+        _registryName = String.valueOf(instanceID);
+
         // Set the Actor for current log messages
-        CurrentActor.set(new BrokerActor(_rootMessageLogger));
+        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
 
         CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));        
 
@@ -83,7 +87,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     public void close() throws Exception
     {
         //Set the Actor for Broker Shutdown
-        CurrentActor.set(new BrokerActor(_rootMessageLogger));
+        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
         try
         {
             super.close();

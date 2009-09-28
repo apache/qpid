@@ -50,7 +50,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         super(new ServerConfiguration(new PropertiesConfiguration()));
     }
 
-    public void initialise() throws Exception
+    public void initialise(int instanceID) throws Exception
     {
         _logger.info("Initialising NullApplicationRegistry");
 

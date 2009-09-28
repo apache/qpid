@@ -21,7 +21,6 @@
 package org.apache.qpid.server.util;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -31,7 +30,6 @@ import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLManager;
-import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
@@ -45,7 +43,6 @@ import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
 
@@ -75,7 +72,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
     	_config = config;
     }
 
-    public void initialise() throws Exception
+    public void initialise(int instanceID) throws Exception
     {
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
                                                        new Log4jMessageLogger());
