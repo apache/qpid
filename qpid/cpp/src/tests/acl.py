@@ -260,8 +260,8 @@ class ACLTests(TestBase010):
 
         try:
             queue_options = {}
-            queue_options["qpid.max_count"] = "200"
-            queue_options["qpid.max_size"] = "500"  
+            queue_options["qpid.max_count"] = 200
+            queue_options["qpid.max_size"] = 500  
             session.queue_declare(queue="q5", exclusive=True, arguments=queue_options)
             self.fail("ACL should deny queue create request with name=q2, qpid.max_size=500 and qpid.max_count=200");
         except qpid.session.SessionException, e:
@@ -270,8 +270,8 @@ class ACLTests(TestBase010):
 
         try:
             queue_options = {}
-            queue_options["qpid.max_count"] = "200"
-            queue_options["qpid.max_size"] = "100"  
+            queue_options["qpid.max_count"] = 200
+            queue_options["qpid.max_size"] = 100  
             session.queue_declare(queue="q2", exclusive=True, arguments=queue_options)
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
@@ -362,8 +362,8 @@ class ACLTests(TestBase010):
         
         try:
             queue_options = {}
-            queue_options["qpid.max_count"] = "200"
-            queue_options["qpid.max_size"] = "500"  
+            queue_options["qpid.max_count"] = 200
+            queue_options["qpid.max_size"] = 500  
             session.queue_declare(queue="q5", arguments=queue_options)
             self.fail("ACL should deny queue create request with name=q2 maxqueuesize=500 maxqueuecount=200");
         except qpid.session.SessionException, e:
@@ -372,8 +372,8 @@ class ACLTests(TestBase010):
 
         try:
             queue_options = {}
-            queue_options["qpid.max_count"] = "100"
-            queue_options["qpid.max_size"] = "500"  
+            queue_options["qpid.max_count"] = 100
+            queue_options["qpid.max_size"] = 500 
             session.queue_declare(queue="q5", arguments=queue_options)  
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
