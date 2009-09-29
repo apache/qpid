@@ -645,52 +645,55 @@ add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
                           ${Boost_FILESYSTEM_LIBRARY})
 
-# QMF agent library
-#module_hdr += \
-#  qpid/agent/ManagementAgent.h \
-#  qpid/agent/ManagementAgentImpl.h
-set (qmfagent_SOURCES
-    qmf/AgentEngine.cpp
-    qmf/AgentEngine.h
+# QMF library
+# Library Version Information (CURRENT.REVISION.AGE):
+#
+#  CURRENT  => API/ABI version.  Bump this if the interface changes
+#  REVISION => Version of underlying implementation.
+#              Bump if implementation changes but API/ABI doesn't
+#  AGE      => Number of API/ABI versions this is backward compatible with
+set (qmf_version 1.0.0)
+set (qmfengine_version 1.0.0)
+
+set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.cpp
     qpid/agent/ManagementAgentImpl.h
     )
-add_library (qmfagent SHARED ${qmfagent_SOURCES})
-target_link_libraries (qmfagent qmfcommon)
-set_target_properties (qmfagent PROPERTIES
-                       VERSION ${qpidc_version})
+add_library (qmf SHARED ${qmf_SOURCES})
+target_link_libraries (qmf qmfengine)
+set_target_properties (qmf PROPERTIES
+                       VERSION ${qmf_version})
 
-set (qmfcommon_SOURCES
-    qmf/ConnectionSettingsImpl.cpp
-    qmf/ConnectionSettingsImpl.h
-    qmf/ConsoleEngine.h
-    qmf/Event.h
-    qmf/Message.h
-    qmf/MessageImpl.cpp
-    qmf/MessageImpl.h
-    qmf/Object.h
-    qmf/ObjectId.h
-    qmf/ObjectIdImpl.cpp
-    qmf/ObjectIdImpl.h
-    qmf/ObjectImpl.cpp
-    qmf/ObjectImpl.h
-    qmf/Query.h
-    qmf/QueryImpl.cpp
-    qmf/QueryImpl.h
-    qmf/ResilientConnection.cpp
-    qmf/ResilientConnection.h
-    qmf/Schema.h
-    qmf/SchemaImpl.cpp
-    qmf/SchemaImpl.h
-    qmf/Typecode.h
-    qmf/Value.h
-    qmf/ValueImpl.cpp
-    qmf/ValueImpl.h
+set (qmfengine_SOURCES
+     qmf/engine/Agent.cpp
+     qmf/engine/BrokerProxyImpl.cpp
+     qmf/engine/BrokerProxyImpl.h
+     qmf/engine/ConnectionSettingsImpl.cpp
+     qmf/engine/ConnectionSettingsImpl.h
+     qmf/engine/ConsoleImpl.cpp
+     qmf/engine/ConsoleImpl.h
+     qmf/engine/MessageImpl.cpp
+     qmf/engine/MessageImpl.h
+     qmf/engine/ObjectIdImpl.cpp
+     qmf/engine/ObjectIdImpl.h
+     qmf/engine/ObjectImpl.cpp
+     qmf/engine/ObjectImpl.h
+     qmf/engine/Protocol.cpp
+     qmf/engine/Protocol.h
+     qmf/engine/QueryImpl.cpp
+     qmf/engine/QueryImpl.h
+     qmf/engine/ResilientConnection.cpp
+     qmf/engine/SequenceManager.cpp
+     qmf/engine/SequenceManager.h
+     qmf/engine/SchemaImpl.cpp
+     qmf/engine/SchemaImpl.h
+     qmf/engine/ValueImpl.cpp
+     qmf/engine/ValueImpl.h
     )
-add_library (qmfcommon SHARED ${qmfcommon_SOURCES})
-target_link_libraries (qmfcommon qpidclient)
-set_target_properties (qmfcommon PROPERTIES
-                       VERSION ${qpidc_version})
+add_library (qmfengine SHARED ${qmfengine_SOURCES})
+target_link_libraries (qmfengine qpidclient)
+set_target_properties (qmfengine PROPERTIES
+                       VERSION ${qmfengine_version})
 
 # QMF console library
 #module_hdr += \
