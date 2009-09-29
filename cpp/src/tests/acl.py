@@ -220,10 +220,11 @@ class ACLTests(TestBase010):
         """
         aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q1 durable=true passive=true\n')
-        aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true\n')
+        aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl deny bob@QPID access queue name=q3\n')
         aclf.write('acl deny bob@QPID purge queue name=q3\n')
-        aclf.write('acl deny bob@QPID delete queue name=q4\n')                
+        aclf.write('acl deny bob@QPID delete queue name=q4\n')  
+        aclf.write('acl deny bob@QPID create queue name=q5 maxqueuesize=1000 maxqueuecount=100\n')              
         aclf.write('acl allow all all')
         aclf.close()        
         
@@ -241,18 +242,40 @@ class ACLTests(TestBase010):
             session = self.get_session('bob','bob')
         
         try:
-            session.queue_declare(queue="q2", exclusive=True)
-            self.fail("ACL should deny queue create request with name=q2 exclusive=true");
+            queue_options = {}
+            queue_options["qpid.policy_type"] = "ring" 
+            session.queue_declare(queue="q2", exclusive=True, arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=q2 exclusive=true qpid.policy_type=ring");
         except qpid.session.SessionException, e:
             self.assertEqual(530,e.args[0].error_code) 
             session = self.get_session('bob','bob')
         
         try:
-            session.queue_declare(queue="q2", durable=True)            
+            queue_options = {}
+            queue_options["qpid.policy_type"] = "ring_strict"   
+            session.queue_declare(queue="q2", exclusive=True, arguments=queue_options)            
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
-                self.fail("ACL should allow queue create request for q2 with any parameter other than exclusive=true");
+                self.fail("ACL should allow queue create request with name=q2 exclusive=true qpid.policy_type=ring_strict");
 
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = "200"
+            queue_options["qpid.max_size"] = "500"  
+            session.queue_declare(queue="q5", exclusive=True, arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=q2, qpid.max_size=500 and qpid.max_count=200");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code) 
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = "200"
+            queue_options["qpid.max_size"] = "100"  
+            session.queue_declare(queue="q2", exclusive=True, arguments=queue_options)
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request with name=q2, qpid.max_size=100 and qpid.max_count=200 ");
         try:
             session.queue_declare(queue="q3", exclusive=True)
             session.queue_declare(queue="q4", durable=True)
@@ -300,12 +323,13 @@ class ACLTests(TestBase010):
         """
         aclf = ACLFile()
         aclf.write('acl allow bob@QPID create queue name=q1 durable=true passive=true\n')
-        aclf.write('acl allow bob@QPID create queue name=q2 exclusive=true\n')
+        aclf.write('acl allow bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl allow bob@QPID access queue name=q3\n')
         aclf.write('acl allow bob@QPID purge queue name=q3\n')
         aclf.write('acl allow bob@QPID create queue name=q3\n')                
         aclf.write('acl allow bob@QPID create queue name=q4\n')                
-        aclf.write('acl allow bob@QPID delete queue name=q4\n')                
+        aclf.write('acl allow bob@QPID delete queue name=q4\n')   
+        aclf.write('acl allow bob@QPID create queue name=q5 maxqueuesize=1000 maxqueuecount=100\n')                   
         aclf.write('acl allow guest@QPID all all\n')
         aclf.write('acl deny all all')
         aclf.close()        
@@ -337,10 +361,31 @@ class ACLTests(TestBase010):
             session = self.get_session('bob','bob')
         
         try:
-            session.queue_declare(queue="q2", exclusive=True)            
+            queue_options = {}
+            queue_options["qpid.max_count"] = "200"
+            queue_options["qpid.max_size"] = "500"  
+            session.queue_declare(queue="q5", arguments=queue_options)
+            self.fail("ACL should deny queue create request with name=q2 maxqueuesize=500 maxqueuecount=200");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code) 
+            session = self.get_session('bob','bob')
+
+        try:
+            queue_options = {}
+            queue_options["qpid.max_count"] = "100"
+            queue_options["qpid.max_size"] = "500"  
+            session.queue_declare(queue="q5", arguments=queue_options)  
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
-                self.fail("ACL should allow queue create request for q2 with exclusive=true");
+                self.fail("ACL should allow queue create request with name=q2 maxqueuesize=500 maxqueuecount=200");
+
+        try:
+            queue_options = {}
+            queue_options["qpid.policy_type"] = "ring"
+            session.queue_declare(queue="q2", exclusive=True, arguments=queue_options)            
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow queue create request for q2 with exclusive=true policytype=ring");
 
         try:
             session.queue_declare(queue="q3")
@@ -733,7 +778,7 @@ class ACLTests(TestBase010):
    # ACL publish tests
    #=====================================
    
-    def test_publish_acl(self):
+    def test_publish_acl_allow_mode(self):
         """
         Test various publish acl
         """
@@ -779,4 +824,61 @@ class ACLTests(TestBase010):
             session.message_transfer(destination="amq.direct", message=Message(props,"Test"))
         except qpid.session.SessionException, e:
             if (530 == e.args[0].error_code):
-                self.fail("ACL should allow message transfer to exchange amq.direct");
+                self.fail("ACL should allow message transfer to exchange amq.direct with routing key rk2");
+
+
+    def test_publish_acl_deny_mode(self):
+        """
+        Test various publish acl
+        """
+        aclf = ACLFile()
+        aclf.write('acl allow bob@QPID publish exchange name=amq.direct routingkey=rk1\n')
+        aclf.write('acl allow bob@QPID publish exchange name=amq.topic\n')
+        aclf.write('acl allow bob@QPID publish exchange name=myEx routingkey=rk2\n')
+        aclf.write('acl allow bob@QPID create exchange\n')    
+        aclf.write('acl allow guest@QPID all all \n')    
+        aclf.write('acl deny all all')
+        aclf.close()        
+        
+        result = self.reload_acl()
+        if (result.text.find("format error",0,len(result.text)) != -1):
+            self.fail(result)        
+        
+        session = self.get_session('bob','bob')
+            
+        props = session.delivery_properties(routing_key="rk2")
+               
+        try:            
+            session.message_transfer(destination="amq.direct", message=Message(props,"Test"))
+            self.fail("ACL should deny message transfer to name=amq.direct routingkey=rk2");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+            session = self.get_session('bob','bob')                        
+            
+        try:
+            session.message_transfer(destination="amq.topic", message=Message(props,"Test"))
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow message transfer to exchange amq.topic with any routing key");               
+                        
+        try:
+            session.exchange_declare(exchange='myEx', type='direct', durable=False)
+            session.message_transfer(destination="myEx", message=Message(props,"Test"))
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow message transfer to exchange myEx with routing key=rk2");               
+                        
+        props = session.delivery_properties(routing_key="rk1")
+
+        try:
+            session.message_transfer(destination="myEx", message=Message(props,"Test"))
+            self.fail("ACL should deny message transfer to name=myEx routingkey=rk1");
+        except qpid.session.SessionException, e:
+            self.assertEqual(530,e.args[0].error_code)
+            session = self.get_session('bob','bob')                                                
+
+        try:
+            session.message_transfer(destination="amq.direct", message=Message(props,"Test"))
+        except qpid.session.SessionException, e:
+            if (530 == e.args[0].error_code):
+                self.fail("ACL should allow message transfer to exchange amq.direct with routing key rk1");

@@ -40,7 +40,8 @@ enum Action {ACT_CONSUME, ACT_PUBLISH, ACT_CREATE, ACT_ACCESS, ACT_BIND,
 enum Property {PROP_NAME, PROP_DURABLE, PROP_OWNER, PROP_ROUTINGKEY,
                PROP_PASSIVE, PROP_AUTODELETE, PROP_EXCLUSIVE, PROP_TYPE,
                PROP_ALTERNATE, PROP_QUEUENAME, PROP_SCHEMAPACKAGE,
-               PROP_SCHEMACLASS};
+               PROP_SCHEMACLASS, PROP_POLICYTYPE, PROP_MAXQUEUESIZE,
+               PROP_MAXQUEUECOUNT};
 enum AclResult {ALLOW, ALLOWLOG, DENY, DENYLOG};	
 
 } // namespace acl
@@ -132,6 +133,9 @@ class AclHelper {
         if (str.compare("queuename") == 0) return PROP_QUEUENAME;
         if (str.compare("schemapackage") == 0) return PROP_SCHEMAPACKAGE;
         if (str.compare("schemaclass") == 0) return PROP_SCHEMACLASS;
+        if (str.compare("policytype") == 0) return PROP_POLICYTYPE;
+        if (str.compare("maxqueuesize") == 0) return PROP_MAXQUEUESIZE;
+        if (str.compare("maxqueuecount") == 0) return PROP_MAXQUEUECOUNT; 
         throw str;
     }
     static inline std::string getPropertyStr(const Property p) {
@@ -148,6 +152,9 @@ class AclHelper {
           case PROP_QUEUENAME: return "queuename";
           case PROP_SCHEMAPACKAGE: return "schemapackage";
           case PROP_SCHEMACLASS: return "schemaclass";
+          case PROP_POLICYTYPE: return "policytype";
+          case PROP_MAXQUEUESIZE: return "maxqueuesize";
+          case PROP_MAXQUEUECOUNT: return "maxqueuecount"; 
           default: assert(false); // should never get here
         }
         return "";
@@ -217,11 +224,14 @@ class AclHelper {
         // == Queues ==
 
         propSetPtr p4(new propSet);
-        p3->insert(PROP_ALTERNATE);
-        p3->insert(PROP_PASSIVE);
-        p3->insert(PROP_DURABLE);
-        p3->insert(PROP_EXCLUSIVE);
-        p3->insert(PROP_AUTODELETE);
+        p4->insert(PROP_ALTERNATE);
+        p4->insert(PROP_PASSIVE);
+        p4->insert(PROP_DURABLE);
+        p4->insert(PROP_EXCLUSIVE);
+        p4->insert(PROP_AUTODELETE);
+        p4->insert(PROP_POLICYTYPE);
+        p4->insert(PROP_MAXQUEUESIZE);
+        p4->insert(PROP_MAXQUEUECOUNT);
 
         actionMapPtr a1(new actionMap);
         a1->insert(actionPair(ACT_ACCESS,  p0));
