@@ -363,6 +363,9 @@ PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
 PYTHON_BLD_DIR=$(abs_builddir)/python
 AMQP_SPEC_DIR=$(abs_srcdir)/../../../specs
 
+# Generate python client as part of the all-am target so it gets built before tests.
+all-am: python_prep
+
 python_prep:
 	if test -d $(PYTHON_SRC_DIR) -a -d $(AMQP_SPEC_DIR); \
 	then $(MAKE) -C $(PYTHON_SRC_DIR) install PREFIX=$(PYTHON_BLD_DIR) PYTHON_LIB=$(PYTHON_BLD_DIR) EXEC_PREFIX=$(PYTHON_BLD_DIR)/commands AMQP_SPEC_DIR=$(AMQP_SPEC_DIR); \
