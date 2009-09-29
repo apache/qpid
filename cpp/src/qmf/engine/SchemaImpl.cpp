@@ -326,12 +326,13 @@ bool SchemaClassKeyImpl::operator<(const SchemaClassKeyImpl& other) const
     return hash < other.hash;
 }
 
-string SchemaClassKeyImpl::str() const
+const string& SchemaClassKeyImpl::str() const
 {
     Uuid printableHash(hash.get());
     stringstream str;
     str << package << ":" << name << "(" << printableHash << ")";
-    return str.str();
+    repr = str.str();
+    return repr;
 }
 
 SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) : hasHash(true), classKey(SchemaClassKeyImpl::factory(package, name, hash))
@@ -579,6 +580,7 @@ SchemaClassKey::~SchemaClassKey() { delete impl; }
 const char* SchemaClassKey::getPackageName() const { return impl->getPackageName().c_str(); }
 const char* SchemaClassKey::getClassName() const { return impl->getClassName().c_str(); }
 const uint8_t* SchemaClassKey::getHash() const { return impl->getHash(); }
+const char* SchemaClassKey::asString() const { return impl->str().c_str(); }
 bool SchemaClassKey::operator==(const SchemaClassKey& other) const { return *impl == *(other.impl); }
 bool SchemaClassKey::operator<(const SchemaClassKey& other) const { return *impl < *(other.impl); }
 

@@ -57,11 +57,13 @@ ConsoleEvent ConsoleEventImpl::copy()
     ::memset(&item, 0, sizeof(ConsoleEvent));
     item.kind      = kind;
     item.agent     = agent.get();
-    item.classKey  = classKey.get();
-    item.object    = object;
+    item.classKey  = classKey;
+    item.object    = object.get();
     item.context   = context;
     item.event     = event;
     item.timestamp = timestamp;
+    item.hasProps  = hasProps;
+    item.hasStats  = hasStats;
 
     STRING_REF(name);
 
@@ -274,9 +276,11 @@ void ConsoleImpl::endSync(SyncQuery& sync)
 void ConsoleImpl::learnPackage(const string& packageName)
 {
     Mutex::ScopedLock _lock(lock);
-    if (packages.find(packageName) == packages.end())
+    if (packages.find(packageName) == packages.end()) {
         packages.insert(pair<string, pair<ObjectClassList, EventClassList> >
                         (packageName, pair<ObjectClassList, EventClassList>(ObjectClassList(), EventClassList())));
+        eventNewPackage(packageName);
+    }
 }
 
 void ConsoleImpl::learnClass(SchemaObjectClass* cls)
@@ -288,8 +292,10 @@ void ConsoleImpl::learnClass(SchemaObjectClass* cls)
         return;
 
     ObjectClassList& list = pIter->second.first;
-    if (list.find(key) == list.end())
+    if (list.find(key) == list.end()) {
         list[key] = cls;
+        eventNewClass(key);
+    }
 }
 
 void ConsoleImpl::learnClass(SchemaEventClass* cls)
@@ -301,8 +307,10 @@ void ConsoleImpl::learnClass(SchemaEventClass* cls)
         return;
 
     EventClassList& list = pIter->second.second;
-    if (list.find(key) == list.end())
+    if (list.find(key) == list.end()) {
         list[key] = cls;
+        eventNewClass(key);
+    }
 }
 
 bool ConsoleImpl::haveClass(const SchemaClassKey* key) const
@@ -331,6 +339,57 @@ SchemaObjectClass* ConsoleImpl::getSchema(const SchemaClassKey* key) const
         return 0;
 
     return iter->second;
+}
+
+void ConsoleImpl::eventAgentAdded(boost::shared_ptr<AgentProxy> agent)
+{
+    ConsoleEventImpl::Ptr event(new ConsoleEventImpl(ConsoleEvent::AGENT_ADDED));
+    event->agent = agent;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(event);
+}
+
+void ConsoleImpl::eventAgentDeleted(boost::shared_ptr<AgentProxy> agent)
+{
+    ConsoleEventImpl::Ptr event(new ConsoleEventImpl(ConsoleEvent::AGENT_DELETED));
+    event->agent = agent;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(event);
+}
+
+void ConsoleImpl::eventNewPackage(const string& packageName)
+{
+    ConsoleEventImpl::Ptr event(new ConsoleEventImpl(ConsoleEvent::NEW_PACKAGE));
+    event->name = packageName;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(event);
+}
+
+void ConsoleImpl::eventNewClass(const SchemaClassKey* key)
+{
+    ConsoleEventImpl::Ptr event(new ConsoleEventImpl(ConsoleEvent::NEW_CLASS));
+    event->classKey = key;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(event);
+}
+
+void ConsoleImpl::eventObjectUpdate(ObjectPtr object, bool prop, bool stat)
+{
+    ConsoleEventImpl::Ptr event(new ConsoleEventImpl(ConsoleEvent::OBJECT_UPDATE));
+    event->object = object;
+    event->hasProps = prop;
+    event->hasStats = stat;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(event);
+}
+
+void ConsoleImpl::eventAgentHeartbeat(boost::shared_ptr<AgentProxy> agent, uint64_t timestamp)
+{
+    ConsoleEventImpl::Ptr event(new ConsoleEventImpl(ConsoleEvent::AGENT_HEARTBEAT));
+    event->agent = agent;
+    event->timestamp = timestamp;
+    Mutex::ScopedLock _lock(lock);
+    eventQueue.push_back(event);
 }
 
 //==================================================================

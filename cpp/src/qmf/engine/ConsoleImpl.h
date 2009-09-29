@@ -56,14 +56,16 @@ namespace engine {
         ConsoleEvent::EventKind kind;
         boost::shared_ptr<AgentProxy> agent;
         std::string name;
-        boost::shared_ptr<SchemaClassKey> classKey;
-        Object* object;
+        const SchemaClassKey* classKey;
+        boost::shared_ptr<Object> object;
         void* context;
         Event* event;
         uint64_t timestamp;
+        bool hasProps;
+        bool hasStats;
 
         ConsoleEventImpl(ConsoleEvent::EventKind k) :
-            kind(k), object(0), context(0), event(0), timestamp(0) {}
+            kind(k), classKey(0), context(0), event(0), timestamp(0) {}
         ~ConsoleEventImpl() {}
         ConsoleEvent copy();
     };
@@ -101,6 +103,7 @@ namespace engine {
 
     private:
         friend class BrokerProxyImpl;
+        friend struct StaticContext;
         const ConsoleSettings& settings;
         mutable qpid::sys::Mutex lock;
         std::deque<ConsoleEventImpl::Ptr> eventQueue;
@@ -127,6 +130,13 @@ namespace engine {
         void learnClass(SchemaEventClass* cls);
         bool haveClass(const SchemaClassKey* key) const;
         SchemaObjectClass* getSchema(const SchemaClassKey* key) const;
+
+        void eventAgentAdded(boost::shared_ptr<AgentProxy> agent);
+        void eventAgentDeleted(boost::shared_ptr<AgentProxy> agent);
+        void eventNewPackage(const std::string& packageName);
+        void eventNewClass(const SchemaClassKey* key);
+        void eventObjectUpdate(ObjectPtr object, bool prop, bool stat);
+        void eventAgentHeartbeat(boost::shared_ptr<AgentProxy> agent, uint64_t timestamp);
     };
 }
 }

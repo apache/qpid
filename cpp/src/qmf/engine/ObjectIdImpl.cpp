@@ -111,13 +111,14 @@ void ObjectIdImpl::fromString(const std::string& repr)
     agent = 0;
 }
 
-std::string ObjectIdImpl::asString() const
+const string& ObjectIdImpl::asString() const
 {
     stringstream val;
 
     val << (int) getFlags() << "-" << getSequence() << "-" << getBrokerBank() << "-" <<
         getAgentBank() << "-" << getObjectNum();
-    return val.str();
+    repr = val.str();
+    return repr;
 }
 
 bool ObjectIdImpl::operator==(const ObjectIdImpl& other) const
@@ -154,6 +155,7 @@ uint64_t ObjectId::getObjectNum() const { return impl->getObjectNum(); }
 uint32_t ObjectId::getObjectNumHi() const { return impl->getObjectNumHi(); }
 uint32_t ObjectId::getObjectNumLo() const { return impl->getObjectNumLo(); }
 bool ObjectId::isDurable() const { return impl->isDurable(); }
+const char* ObjectId::str() const { return impl->asString().c_str(); }
 bool ObjectId::operator==(const ObjectId& other) const { return *impl == *other.impl; }
 bool ObjectId::operator<(const ObjectId& other) const { return *impl < *other.impl; }
 bool ObjectId::operator>(const ObjectId& other) const { return *impl > *other.impl; }

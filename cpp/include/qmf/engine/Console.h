@@ -94,12 +94,14 @@ namespace engine {
         EventKind       kind;
         AgentProxy*     agent;          // (AGENT_[ADDED|DELETED|HEARTBEAT])
         char*           name;           // (NEW_PACKAGE)
-        SchemaClassKey* classKey;       // (NEW_CLASS)
+        const SchemaClassKey* classKey; // (NEW_CLASS)
         Object*         object;         // (OBJECT_UPDATE)
         void*           context;        // (OBJECT_UPDATE)
         Event*          event;          // (EVENT_RECEIVED)
         uint64_t        timestamp;      // (AGENT_HEARTBEAT)
         QueryResponse*  queryResponse;  // (QUERY_COMPLETE)
+        bool            hasProps;
+        bool            hasStats;
     };
 
     /**
@@ -136,6 +138,8 @@ namespace engine {
         const char* getLabel() const;
 
     private:
+        friend struct StaticContext;
+        friend struct QueryContext;
         friend struct AgentProxyImpl;
         friend class BrokerProxyImpl;
         AgentProxy(AgentProxyImpl* impl);
@@ -219,6 +223,7 @@ namespace engine {
     private:
         friend class BrokerProxyImpl;
         friend struct AgentProxyImpl;
+        friend struct StaticContext;
         ConsoleImpl* impl;
     };
 }

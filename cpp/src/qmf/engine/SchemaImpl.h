@@ -142,6 +142,7 @@ namespace engine {
         const std::string& package;
         const std::string& name;
         const SchemaHash& hash;
+        mutable std::string repr;
 
         // The *Container elements are only used if there isn't an external place to
         // store these values.
@@ -161,7 +162,7 @@ namespace engine {
         void encode(qpid::framing::Buffer& buffer) const;
         bool operator==(const SchemaClassKeyImpl& other) const;
         bool operator<(const SchemaClassKeyImpl& other) const;
-        std::string str() const;
+        const std::string& str() const;
     };
 
     struct SchemaObjectClassImpl {

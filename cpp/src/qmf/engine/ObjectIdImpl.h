@@ -38,6 +38,7 @@ namespace engine {
         AgentAttachment* agent;
         uint64_t first;
         uint64_t second;
+        mutable std::string repr;
 
         ObjectIdImpl() : agent(0), first(0), second(0) {}
         ObjectIdImpl(qpid::framing::Buffer& buffer);
@@ -49,7 +50,7 @@ namespace engine {
         void decode(qpid::framing::Buffer& buffer);
         void encode(qpid::framing::Buffer& buffer) const;
         void fromString(const std::string& repr);
-        std::string asString() const;
+        const std::string& asString() const;
         uint8_t getFlags() const { return (first & 0xF000000000000000LL) >> 60; }
         uint16_t getSequence() const { return (first & 0x0FFF000000000000LL) >> 48; }
         uint32_t getBrokerBank() const { return (first & 0x0000FFFFF0000000LL) >> 28; }

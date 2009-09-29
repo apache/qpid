@@ -171,15 +171,20 @@ void RCSession::received(client::Message& msg)
     MessageImpl qmsg;
     qmsg.body = msg.getData();
 
-    qpid::framing::MessageProperties p = msg.getMessageProperties();
-    if (p.hasReplyTo()) {
-        const qpid::framing::ReplyTo& rt = p.getReplyTo();
+    qpid::framing::DeliveryProperties dp = msg.getDeliveryProperties();
+    if (dp.hasRoutingKey()) {
+        qmsg.routingKey = dp.getRoutingKey();
+    }
+
+    qpid::framing::MessageProperties mp = msg.getMessageProperties();
+    if (mp.hasReplyTo()) {
+        const qpid::framing::ReplyTo& rt = mp.getReplyTo();
         qmsg.replyExchange = rt.getExchange();
         qmsg.replyKey = rt.getRoutingKey();
     }
 
-    if (p.hasUserId()) {
-        qmsg.userId = p.getUserId();
+    if (mp.hasUserId()) {
+        qmsg.userId = mp.getUserId();
     }
 
     connImpl.EnqueueEvent(ResilientConnectionEvent::RECV, userContext, qmsg);
