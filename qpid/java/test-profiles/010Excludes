@@ -95,3 +95,4 @@ org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
 
 // QPID-2118 : 0-10 Java client has differrent error handling to 0-8 code path
 org.apache.qpid.test.client.message.SelectorTest#testSelectorWithJMSMessageID
+org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
