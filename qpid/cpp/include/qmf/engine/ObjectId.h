@@ -38,6 +38,7 @@ namespace engine {
         uint32_t getObjectNumHi() const;
         uint32_t getObjectNumLo() const;
         bool isDurable() const;
+        const char* str() const;
 
         bool operator==(const ObjectId& other) const;
         bool operator<(const ObjectId& other) const;

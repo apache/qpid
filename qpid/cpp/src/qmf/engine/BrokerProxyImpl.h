@@ -36,6 +36,7 @@
 #include <string>
 #include <deque>
 #include <map>
+#include <set>
 #include <vector>
 
 namespace qmf {
@@ -98,6 +99,7 @@ namespace engine {
         BrokerProxy& broker;
         uint32_t agentBank;
         std::string label;
+        std::set<uint32_t> inFlightSequences;
 
         AgentProxyImpl(Console& c, BrokerProxy& b, uint32_t ab, const std::string& l) : console(c), broker(b), agentBank(ab), label(l) {}
         static AgentProxy* factory(Console& c, BrokerProxy& b, uint32_t ab, const std::string& l) {
@@ -106,6 +108,13 @@ namespace engine {
         }
         ~AgentProxyImpl() {}
         const std::string& getLabel() const { return label; }
+        void addSequence(uint32_t seq) { inFlightSequences.insert(seq); }
+        void delSequence(uint32_t seq) { inFlightSequences.erase(seq); }
+        void releaseInFlight(SequenceManager& seqMgr) {
+            for (std::set<uint32_t>::iterator iter = inFlightSequences.begin(); iter != inFlightSequences.end(); iter++)
+                seqMgr.release(*iter);
+            inFlightSequences.clear();
+        }
     };
 
     class BrokerProxyImpl : public boost::noncopyable {
@@ -166,7 +175,7 @@ namespace engine {
         void handleCommandComplete(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleClassIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
         MethodResponsePtr handleMethodResponse(qpid::framing::Buffer& inBuffer, uint32_t seq, const SchemaMethod* schema);
-        void handleHeartbeatIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
+        void handleHeartbeatIndication(qpid::framing::Buffer& inBuffer, uint32_t seq, const std::string& routingKey);
         void handleEventIndication(qpid::framing::Buffer& inBuffer, uint32_t seq);
         void handleSchemaResponse(qpid::framing::Buffer& inBuffer, uint32_t seq);
         ObjectPtr handleObjectIndication(qpid::framing::Buffer& inBuffer, uint32_t seq, bool prop, bool stat);
@@ -186,7 +195,7 @@ namespace engine {
         virtual ~StaticContext() {}
         void reserve() {}
         void release() { broker.staticRelease(); }
-        bool handleMessage(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer);
+        bool handleMessage(uint8_t opcode, uint32_t sequence, const std::string& routingKey, qpid::framing::Buffer& buffer);
         BrokerProxyImpl& broker;
     };
 
@@ -199,7 +208,7 @@ namespace engine {
         virtual ~QueryContext() {}
         void reserve();
         void release();
-        bool handleMessage(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer);
+        bool handleMessage(uint8_t opcode, uint32_t sequence, const std::string& routingKey, qpid::framing::Buffer& buffer);
 
         mutable qpid::sys::Mutex lock;
         BrokerProxyImpl& broker;
@@ -213,7 +222,7 @@ namespace engine {
         virtual ~MethodContext() {}
         void reserve() {}
         void release();
-        bool handleMessage(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer);
+        bool handleMessage(uint8_t opcode, uint32_t sequence, const std::string& routingKey, qpid::framing::Buffer& buffer);
 
         BrokerProxyImpl& broker;
         void* userContext;

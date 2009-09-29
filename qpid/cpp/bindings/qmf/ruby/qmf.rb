@@ -469,6 +469,10 @@ module Qmf
       return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
         (@impl.getObjectNumLo == other.impl.getObjectNumLo)
     end
+
+    def to_s
+      @impl.str
+    end
   end
 
   class Arguments
@@ -734,12 +738,16 @@ module Qmf
       @impl = i
     end
 
-    def package_name()
-      @impl.getPackageName()
+    def package_name
+      @impl.getPackageName
     end
 
-    def class_name()
-      @impl.getClassName()
+    def class_name
+      @impl.getClassName
+    end
+
+    def to_s
+      @impl.asString
     end
   end
 
@@ -982,12 +990,18 @@ module Qmf
         count += 1
         case @event.kind
         when Qmfengine::ConsoleEvent::AGENT_ADDED
+          @handler.agent_added(AgentProxy.new(@event.agent, nil)) if @handler
         when Qmfengine::ConsoleEvent::AGENT_DELETED
+          @handler.agent_deleted(AgentProxy.new(@event.agent, nil)) if @handler
         when Qmfengine::ConsoleEvent::NEW_PACKAGE
+          @handler.new_package(@event.name) if @handler
         when Qmfengine::ConsoleEvent::NEW_CLASS
+          @handler.new_class(SchemaClassKey.new(@event.classKey)) if @handler
         when Qmfengine::ConsoleEvent::OBJECT_UPDATE
+          @handler.object_update(ConsoleObject.new(nil, :impl => @event.object), @event.hasProps, @event.hasStats) if @handler
         when Qmfengine::ConsoleEvent::EVENT_RECEIVED
         when Qmfengine::ConsoleEvent::AGENT_HEARTBEAT
+          @handler.agent_heartbeat(AgentProxy.new(@event.agent, nil), @event.timestamp) if @handler
         when Qmfengine::ConsoleEvent::METHOD_RESPONSE
         end
         @impl.popEvent

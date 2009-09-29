@@ -65,7 +65,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       tagGenerator("sgen"),
       dtxSelected(false),
       authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isFederationLink()),
-      userID(getSession().getConnection().getUserId().substr(0,getSession().getConnection().getUserId().find('@')))
+      userID(getSession().getConnection().getUserId())
 {
     acl = getSession().getBroker().getAcl();
 }

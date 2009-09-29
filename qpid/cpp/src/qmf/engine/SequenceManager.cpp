@@ -68,14 +68,14 @@ void SequenceManager::releaseAll()
     contextMap.clear();
 }
 
-void SequenceManager::dispatch(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer)
+void SequenceManager::dispatch(uint8_t opcode, uint32_t sequence, const string& routingKey, qpid::framing::Buffer& buffer)
 {
     Mutex::ScopedLock _lock(lock);
     bool done;
 
     if (sequence == 0) {
         if (unsolicitedContext.get() != 0) {
-            done = unsolicitedContext->handleMessage(opcode, sequence, buffer);
+            done = unsolicitedContext->handleMessage(opcode, sequence, routingKey, buffer);
             if (done)
                 unsolicitedContext->release();
         }
@@ -85,7 +85,7 @@ void SequenceManager::dispatch(uint8_t opcode, uint32_t sequence, qpid::framing:
     map<uint32_t, SequenceContext::Ptr>::iterator iter = contextMap.find(sequence);
     if (iter != contextMap.end()) {
         if (iter->second != 0) {
-            done = iter->second->handleMessage(opcode, sequence, buffer);
+            done = iter->second->handleMessage(opcode, sequence, routingKey, buffer);
             if (done) {
                 iter->second->release();
                 contextMap.erase(iter);

@@ -40,7 +40,7 @@ namespace engine {
         virtual ~SequenceContext() {}
 
         virtual void reserve() = 0;
-        virtual bool handleMessage(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer) = 0;
+        virtual bool handleMessage(uint8_t opcode, uint32_t sequence, const std::string& routingKey, qpid::framing::Buffer& buffer) = 0;
         virtual void release() = 0;
     };
 
@@ -52,7 +52,7 @@ namespace engine {
         uint32_t reserve(SequenceContext::Ptr ctx = SequenceContext::Ptr());
         void release(uint32_t sequence);
         void releaseAll();
-        void dispatch(uint8_t opcode, uint32_t sequence, qpid::framing::Buffer& buffer);
+        void dispatch(uint8_t opcode, uint32_t sequence, const std::string& routingKey, qpid::framing::Buffer& buffer);
 
     private:
         mutable qpid::sys::Mutex lock;

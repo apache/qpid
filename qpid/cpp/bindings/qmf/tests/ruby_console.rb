@@ -24,6 +24,36 @@ require 'socket'
 
 class App < Qmf::ConsoleHandler
 
+  def agent_added(agent)
+    puts "AgentAdded: #{agent.label}"
+  end
+
+  def agent_deleted(agent)
+    puts "AgentDeleted: #{agent.label}"
+  end
+
+  def new_package(package)
+    puts "NewPackage: #{package}"
+  end
+
+  def new_class(class_key)
+    puts "NewClass: #{class_key}"
+  end
+
+  def object_update(object, hasProps, hasStats)
+    puts "ObjectUpdate: #{object.object_class.name} props=#{hasProps} stats=#{hasStats}"
+  end
+
+  def event_received(event); end
+
+  def agent_heartbeat(agent, timestamp)
+    puts "AgentHeartbeat: #{agent.label} time=#{timestamp/1000000000}"
+  end
+
+  def method_response(resp); end
+  def broker_info(broker); end
+
+
   def dump_schema
     packages = @qmfc.packages
     puts "----- Packages -----"
@@ -77,12 +107,12 @@ class App < Qmf::ConsoleHandler
     @settings.host = ARGV[0] if ARGV.size > 0
     @settings.port = ARGV[1].to_i if ARGV.size > 1
     @connection = Qmf::Connection.new(@settings)
-    @qmfc = Qmf::Console.new
+    @qmfc = Qmf::Console.new(self)
 
     @broker = @qmfc.add_connection(@connection)
     @broker.waitForStable
 
-    dump_schema
+    ##dump_schema
 
     agents = @qmfc.agents()
     puts "---- Agents ----"

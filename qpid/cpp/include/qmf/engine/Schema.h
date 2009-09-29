@@ -142,6 +142,7 @@ namespace engine {
         const char* getPackageName() const;
         const char* getClassName() const;
         const uint8_t* getHash() const;
+        const char* asString() const;
 
         bool operator==(const SchemaClassKey& other) const;
         bool operator<(const SchemaClassKey& other) const;
