@@ -11,6 +11,7 @@ max_prefetch=1000
 
 log=debug
 amqj.logging.level=${log}
+amqj.server.logging.level=${log}
 amqj.protocol.logging.level=${log}
 root.logging.level=warn
 log4j.configuration=file:///${test.profiles}/log4j-test.xml

@@ -261,6 +261,7 @@
       <jvmarg value="${jvm.args}"/>
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
+      <sysproperty key="amqj.server.logging.level" value="${amqj.server.logging.level}"/>
       <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
       <sysproperty key="log4j.debug" value="${log4j.debug}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
