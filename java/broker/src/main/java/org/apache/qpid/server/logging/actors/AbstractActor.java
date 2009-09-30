@@ -60,4 +60,9 @@ public abstract class AbstractActor implements LogActor
         return _rootLogger;
     }
 
+    public String toString()
+    {
+        return _logString;
+    }
+
 }
