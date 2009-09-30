@@ -144,6 +144,7 @@ public class RollbackOrderTest extends QpidTestCase
                 }
                 catch (JMSException e)
                 {
+                    System.out.println("Error:" + e.getMessage());
                     exceptions[(int)count.getCount()] = e;
                 }
                 catch (AssertionFailedError cf)
@@ -154,6 +155,7 @@ public class RollbackOrderTest extends QpidTestCase
                         count.countDown();
                     }
 
+                    System.out.println("Error:" + cf.getMessage());
                     System.err.println(cf.getMessage());
                     cf.printStackTrace();
                     failed.set(true);
@@ -175,11 +177,15 @@ public class RollbackOrderTest extends QpidTestCase
             }
         }
 
+//        _consumer.close();
+        _connection.close();
+        
         assertFalse("Exceptions thrown during test run, Check Std.err.", failed.get());
     }
 
     @Override public void tearDown() throws Exception
     {
+
         drainQueue(_queue);
 
         super.tearDown();
