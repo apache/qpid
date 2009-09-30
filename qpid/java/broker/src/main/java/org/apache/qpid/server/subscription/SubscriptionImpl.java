@@ -630,11 +630,19 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public QueueEntry getLastSeenEntry()
     {
-        return _queueContext.get();
+        QueueEntry entry = _queueContext.get();
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug(_logActor + ": lastSeenEntry: " + (entry == null ? "null" : entry.debugIdentity()));
+        }        
+
+        return entry;
     }
 
     public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newvalue)
     {
+        _logger.debug(debugIdentity() + " Setting Last Seen To:" + (newvalue == null ? "nullNV" : newvalue.debugIdentity()));
         return _queueContext.compareAndSet(expected,newvalue);
     }
 
