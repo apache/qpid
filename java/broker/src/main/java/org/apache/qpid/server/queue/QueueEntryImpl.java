@@ -177,7 +177,15 @@ public class QueueEntryImpl implements QueueEntry
 
     public String debugIdentity()
     {
-        return getMessage().debugIdentity();
+        AMQMessage message = getMessage();
+        if (message == null)
+        {
+            return "null";
+        }
+        else
+        {
+            return message.debugIdentity();
+        }
     }
 
 
