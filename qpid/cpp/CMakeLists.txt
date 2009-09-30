@@ -28,6 +28,10 @@ include (CTest)
 
 set (qpidc_version 0.5)
 
+if (WIN32)
+   set (CMAKE_DEBUG_POSTFIX "d")
+endif (WIN32)
+
 # set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_subdirectory(managementgen)
@@ -35,10 +39,6 @@ add_subdirectory(managementgen)
 add_subdirectory(src)
 # add_subdirectory(docs/api)
 # add_subdirectory(docs/man)
-
-# if (WIN32)
-#    do something Microsoft specific
-# endif (WIN32)
 
 
 install(FILES  LICENSE NOTICE README SSL RELEASE_NOTES DESIGN
