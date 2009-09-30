@@ -74,7 +74,9 @@ public class QpidTestCase extends TestCase
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
-    private Map<String, String> _setProperties = new HashMap<String, String>();
+    private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
+    private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
+
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
 
     /**
@@ -487,21 +489,23 @@ public class QpidTestCase extends TestCase
 
 
             // Add default test logging levels that are used by the log4j-test
+            // Use the convenience methods to push the current logging setting
+            // in to the external broker's QPID_OPTS string.
             if (System.getProperty("amqj.protocol.logging.level") != null)
             {
-                setSystemProperty("amqj.protocol.logging.level", System.getProperty("amqj.protocol.logging.level"));
+                setSystemProperty("amqj.protocol.logging.level");
             }
             if (System.getProperty("root.logging.level") != null)
             {
-                setSystemProperty("root.logging.level", System.getProperty("root.logging.level"));
+                setSystemProperty("root.logging.level");
             }
 
 
             String QPID_OPTS = " ";
             // Add all the specified system properties to QPID_OPTS
-            if (!_setProperties.isEmpty())
+            if (!_propertiesSetForBroker.isEmpty())
             {
-                for (String key : _setProperties.keySet())
+                for (String key : _propertiesSetForBroker.keySet())
                 {
                     QPID_OPTS += "-D" + key + "=" + System.getProperty(key) + " ";
                 }
@@ -526,7 +530,7 @@ public class QpidTestCase extends TestCase
 
             if (!p.await(30, TimeUnit.SECONDS))
             {
-                _logger.info("broker failed to become ready:" + p.getStopLine());
+                _logger.info("broker failed to become ready (" + p.ready + "):" + p.getStopLine());
                 //Ensure broker has stopped
                 process.destroy();
                 cleanBroker();
@@ -704,28 +708,87 @@ public class QpidTestCase extends TestCase
     }
 
     /**
+     * Set a System property that is to be applied only to the external test
+     * broker.
+     *
+     * This is a convenience method to enable the setting of a -Dproperty=value
+     * entry in QPID_OPTS
+     *
+     * This is only useful for the External Java Broker tests.
+     *
+     * @param property the property name
+     * @param value the value to set the property to
+     */
+    protected void setBrokerOnlySystemProperty(String property, String value)
+    {
+        if (!_propertiesSetForBroker.containsKey(property))
+        {
+            _propertiesSetForBroker.put(property, value);
+        }
+
+    }    
+
+    /**
+     * Set a System (-D) property for this test run.
+     *
+     * This convenience method copies the current VMs System Property
+     * for the external VM Broker.
+     *
+     * @param property the System property to set
+     */
+    protected void setSystemProperty(String property)
+    {
+        setSystemProperty(property, System.getProperty(property));
+    }
+
+    /**
      * Set a System property for the duration of this test.
      *
      * When the test run is complete the value will be reverted.
+     *
+     * The values set using this method will also be propogated to the external
+     * Java Broker via a -D value defined in QPID_OPTS.
+     *
+     * If the value should not be set on the broker then use
+     * setTestClientSystemProperty(). 
      *
      * @param property the property to set
      * @param value    the new value to use
      */
     protected void setSystemProperty(String property, String value)
     {
-        if (!_setProperties.containsKey(property))
+        // Record the value for the external broker
+        _propertiesSetForBroker.put(property, value);
+
+        //Set the value for the test client vm aswell.        
+        setTestClientSystemProperty(property, value);
+    }
+
+    /**
+     * Set a System (-D) property for the external Broker of this test.
+     *
+     * @param property The property to set
+     * @param value the value to set it to.
+     */
+    protected void setTestClientSystemProperty(String property, String value)
+    {
+        if (!_propertiesSetForTestOnly.containsKey(property))
         {
-            _setProperties.put(property, System.getProperty(property));
-        }
+            // Record the current value so we can revert it later.
+            _propertiesSetForTestOnly.put(property, System.getProperty(property));
+        }                                                                     
 
         System.setProperty(property, value);
     }
 
+    /**
+     * Restore the System property values that were set before this test run.
+     */
     protected void revertSystemProperties()
     {
-        for (String key : _setProperties.keySet())
+        for (String key : _propertiesSetForTestOnly.keySet())
         {
-            String value = _setProperties.get(key);
+            String value = _propertiesSetForTestOnly.get(key);
             if (value != null)
             {
                 System.setProperty(key, value);
@@ -735,6 +798,12 @@ public class QpidTestCase extends TestCase
                 System.clearProperty(key);
             }
         }
+
+        _propertiesSetForTestOnly.clear();
+
+        // We don't change the current VMs settings for Broker only properties
+        // so we can just clear this map
+        _propertiesSetForBroker.clear();
     }
 
     /**

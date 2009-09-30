@@ -90,10 +90,10 @@ public class BrokerStartupTest extends AbstractTestLogging
 
             // Set the broker to use info level logging, which is the qpid-server
             // default. Rather than debug which is the test default.
-            setSystemProperty("amqj.server.logging.level","info");
+            setBrokerOnlySystemProperty("amqj.server.logging.level", "info");
             // Set the logging defaults to info for this test.
-            setSystemProperty("amqj.logging.level","info");
-            setSystemProperty("root.logging.level","info");
+            setBrokerOnlySystemProperty("amqj.logging.level", "info");
+            setBrokerOnlySystemProperty("root.logging.level", "info");
 
             startBroker();
 
