@@ -18,6 +18,7 @@
 
 #include "qpid/acl/AclData.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/IntegerTypes.h"
 #include <boost/lexical_cast.hpp>
 
 namespace qpid {
