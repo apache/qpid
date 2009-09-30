@@ -209,8 +209,8 @@ def make(nd):
 from qpid_config import amqp_spec as file
 pclfile = "%s.ops.pcl" % file
 
-if False and (os.path.exists(pclfile) and
-              os.path.getmtime(pclfile) > os.path.getmtime(file)):
+if os.path.exists(pclfile) and \
+      os.path.getmtime(pclfile) > os.path.getmtime(file):
   f = open(pclfile, "read")
   types = pickle.load(f)
   f.close()
