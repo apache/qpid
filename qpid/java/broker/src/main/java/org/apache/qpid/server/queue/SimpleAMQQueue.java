@@ -1338,7 +1338,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
      * Looks up the next node for the subscription and attempts to deliver it.
      *
      * @param sub
-     * @return
+     * @return true if we have completed all possible deliveries for this sub.
      * @throws AMQException
      */
     private boolean attemptDelivery(Subscription sub) throws AMQException
@@ -1349,7 +1349,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         if (subActive)
         {
             QueueEntry node = moveSubscriptionToNextNode(sub);
-            _logger.debug(sub + ": attempt delivery: " + node.debugIdentity());
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug(sub + ": attempting Delivery: " + node.debugIdentity());
+            }
             if (!(node.isAcquired() || node.isDeleted()))
             {
                 if (sub.hasInterest(node))
