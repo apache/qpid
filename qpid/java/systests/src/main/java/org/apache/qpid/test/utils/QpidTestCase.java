@@ -467,6 +467,15 @@ public class QpidTestCase extends TestCase
             env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
             env.put("QPID_WORK", System.getProperty("QPID_WORK"));
 
+
+            // Use the environment variable to set amqj.logging.level for the broker
+            // The value used is a 'server' value in the test configuration to
+            // allow a differentiation between the client and broker logging levels.            
+            if (System.getProperty("amqj.server.logging.level") != null)
+            {
+                setBrokerEnvironment("AMQJ_LOGGING_LEVEL", System.getProperty("amqj.server.logging.level"));
+            }
+            
             // Add all the environment settings the test requested
             if (!_env.isEmpty())
             {
@@ -475,6 +484,18 @@ public class QpidTestCase extends TestCase
                     env.put(entry.getKey(), entry.getValue());
                 }
             }
+
+
+            // Add default test logging levels that are used by the log4j-test
+            if (System.getProperty("amqj.protocol.logging.level") != null)
+            {
+                setSystemProperty("amqj.protocol.logging.level", System.getProperty("amqj.protocol.logging.level"));
+            }
+            if (System.getProperty("root.logging.level") != null)
+            {
+                setSystemProperty("root.logging.level", System.getProperty("root.logging.level"));
+            }
+
 
             String QPID_OPTS = " ";
             // Add all the specified system properties to QPID_OPTS

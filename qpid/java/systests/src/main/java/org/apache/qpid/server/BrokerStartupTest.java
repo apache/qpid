@@ -88,6 +88,13 @@ public class BrokerStartupTest extends AbstractTestLogging
             Logger.getLogger("qpid.protocol").setLevel(Level.WARN);
             Logger.getLogger("org.apache.qpid").setLevel(Level.WARN);
 
+            // Set the broker to use info level logging, which is the qpid-server
+            // default. Rather than debug which is the test default.
+            setSystemProperty("amqj.server.logging.level","info");
+            // Set the logging defaults to info for this test.
+            setSystemProperty("amqj.logging.level","info");
+            setSystemProperty("root.logging.level","info");
+
             startBroker();
 
             assertEquals("Log4j could not load desired configruation.",
