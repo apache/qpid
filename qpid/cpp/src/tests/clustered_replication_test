@@ -55,25 +55,7 @@ stop_brokers() {
 }
 
 if test -d $PYTHON_DIR; then
-    id -nG | grep '\<ais\>' >/dev/null || \
-        NOGROUP="You are not a member of the ais group."
-    ps -u root | grep 'aisexec\|corosync' >/dev/null || \
-        NOAISEXEC="The aisexec or corosync daemon is not running as root"
-
-    if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
-        cat <<EOF
-
-    =========== WARNING: NOT RUNNING AIS TESTS ==============
-
-    Not running cluster replication test because:
-    $NOGROUP
-    $NOAISEXEC
-
-    ==========================================================
-
-EOF
-        exit 0;
-    fi
+    . $srcdir/ais_check
 
     #todo: these cluster names need to be unique to prevent clashes
     PRIMARY_CLUSTER=PRIMARY_$(hostname)_$(pwd)

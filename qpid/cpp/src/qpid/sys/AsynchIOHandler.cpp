@@ -110,6 +110,13 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
 
     // Check here for read credit
     if (readCredit.get() != InfiniteCredit) {
+        if (readCredit.get() == 0) {
+            // FIXME aconway 2009-10-01:  Workaround to avoid "false wakeups".
+            // readbuff is sometimes called with no credit.
+            // This should be fixed somewhere else to avoid such calls.
+            aio->unread(buff);
+            return;
+        }
         // TODO In theory should be able to use an atomic operation before taking the lock
         // but in practice there seems to be an unexplained race in that case
         ScopedLock<Mutex> l(creditLock);

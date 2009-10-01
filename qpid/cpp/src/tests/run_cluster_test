@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,16 +19,8 @@
 # under the License.
 #
 
-. `dirname $0`/ais_check
 
-host=127.0.0.1
-
-MODULES=${MODULES:-../.libs}
-MESSAGES=${MESSAGES:-300000}
-REPORT_FREQUENCY=${REPORT_FREQUENCY:-`expr $MESSAGES / 20`}
-VERBOSITY=${VERBOSITY:-1}
-DURABILITY=${DURABILITY:-1}
-
-rm -f soak-*.log
-exec ./failover_soak $MODULES ./declare_queues ./replaying_sender ./resuming_receiver $MESSAGES $REPORT_FREQUENCY $VERBOSITY $DURABILITY
-
+# Run the tests
+srcdir=`dirname $0`
+. $srcdir/ais_check
+with_ais_group $srcdir/run_test ./cluster_test

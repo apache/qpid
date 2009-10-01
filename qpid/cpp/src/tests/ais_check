@@ -47,9 +47,3 @@ with_ais_group() {
     id -nG | grep '\<ais\>' >/dev/null || { echo "You are not a member of the ais group."; exit 1; }
     echo $* | newgrp ais
 }
-
-# Run the tests
-srcdir=`dirname $0`
-with_ais_group $srcdir/run_test ./cluster_test || ERROR=1
-exit $ERROR
-
