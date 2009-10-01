@@ -1,11 +1,10 @@
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,6 +34,7 @@ import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
+import org.apache.qpid.server.AMQChannel;
 
 /*
 *
@@ -96,6 +96,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final Executor _asyncDelivery;
     private final AtomicLong _totalMessagesReceived = new AtomicLong();
 
+    private final ConcurrentMap<AMQChannel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQChannel, Boolean>();
+
     /** max allowed size(KB) of a single message */
     public long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
 
@@ -121,6 +123,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private AtomicBoolean _stopped = new AtomicBoolean(false);
     private LogSubject _logSubject;
     private LogActor _logActor;
+
+
+    private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
+    private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -628,6 +634,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new FailedDequeueException(_name.toString(), e);
         }
+
+        checkCapacity();
 
     }
 
@@ -1173,6 +1181,58 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
+    public void checkCapacity(AMQChannel channel)
+    {
+        if(_capacity != 0l)
+        {
+            if(_atomicQueueSize.get() > _capacity)
+            {
+                //Overfull log message
+                _logActor.message(_logSubject, QueueMessages.QUE_1003(_atomicQueueSize.get(), _capacity));
+
+                if(_blockedChannels.putIfAbsent(channel, Boolean.TRUE)==null)
+                {
+                    channel.block(this);
+                }
+
+                if(_atomicQueueSize.get() <= _flowResumeCapacity)
+                {
+
+                    //Underfull log message
+                    _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+
+                   channel.unblock(this);
+                   _blockedChannels.remove(channel);
+
+                }
+
+            }
+
+
+
+        }
+    }
+
+    private void checkCapacity()
+    {
+        if(_capacity != 0L)
+        {
+            if(_atomicQueueSize.get() <= _flowResumeCapacity)
+            {
+                //Underfull log message
+                _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+
+
+                for(AMQChannel c : _blockedChannels.keySet())
+                {
+                    c.unblock(this);
+                    _blockedChannels.remove(c);
+                }
+            }
+        }
+    }
+
+
     public void deliverAsync()
     {
         Runner runner = new Runner(_stateChangeCount.incrementAndGet());
@@ -1544,6 +1604,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
+
     public void checkMessageStatus() throws AMQException
     {
 
@@ -1651,6 +1712,27 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
+    public long getCapacity()
+    {
+        return _capacity;
+    }
+
+    public void setCapacity(long capacity)
+    {
+        _capacity = capacity;
+    }
+
+    public long getFlowResumeCapacity()
+    {
+        return _flowResumeCapacity;
+    }
+
+    public void setFlowResumeCapacity(long flowResumeCapacity)
+    {
+        _flowResumeCapacity = flowResumeCapacity;
+    }
+
+
     public Set<NotificationCheck> getNotificationChecks()
     {
         return _notificationChecks;
@@ -1720,6 +1802,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             setMaximumMessageSize(config.getMaximumMessageSize());
             setMaximumMessageCount(config.getMaximumMessageCount());
             setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
+            _capacity = config.getCapacity();
+            _flowResumeCapacity = config.getFlowResumeCapacity();
         }
     }
 }

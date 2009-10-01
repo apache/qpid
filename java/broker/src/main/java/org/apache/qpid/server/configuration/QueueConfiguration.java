@@ -108,4 +108,14 @@ public class QueueConfiguration
         return _config.getLong("minimumAlertRepeatGap", _vHostConfig.getMinimumAlertRepeatGap());
     }
 
+    public long getCapacity()
+    {
+        return _config.getLong("capacity", _vHostConfig.getCapacity());
+    }
+
+    public long getFlowResumeCapacity()
+    {
+        return _config.getLong("flowResumeCapacity", _vHostConfig.getFlowResumeCapacity());
+    }
+
 }

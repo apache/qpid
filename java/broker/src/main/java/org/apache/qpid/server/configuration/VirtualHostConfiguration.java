@@ -166,4 +166,15 @@ public class VirtualHostConfiguration
         return _config.getLong("queues.minimumAlertRepeatGap", 0);
     }
 
+
+    public long getCapacity()
+    {
+        return _config.getLong("queues.capacity", 0l);
+    }
+
+    public long getFlowResumeCapacity()
+    {
+        return _config.getLong("queues.flowResumeCapacity", getCapacity());
+    }
+
 }

@@ -97,6 +97,7 @@ public class LocalTransactionalContext implements TransactionalContext
             try
             {
                 QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
+                _queue.checkCapacity(_channel);
 
                 if(entry.immediateAndNotDelivered())
                 {
