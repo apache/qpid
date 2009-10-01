@@ -38,9 +38,6 @@ const size_t EventHeader::HEADER_SIZE =
     sizeof(uint8_t) +  // type
     sizeof(uint64_t) + // connection pointer only, CPG provides member ID.
     sizeof(uint32_t)  // payload size
-#ifdef QPID_LATENCY_METRIC
-    + sizeof(int64_t)           // timestamp
-#endif
     ;
 
 EventHeader::EventHeader(EventType t, const ConnectionId& c,  size_t s)
@@ -61,9 +58,6 @@ void EventHeader::decode(const MemberId& m, framing::Buffer& buf) {
         throw Exception("Invalid multicast event type");
     connectionId = ConnectionId(m, buf.getLongLong());
     size = buf.getLong();
-#ifdef QPID_LATENCY_METRIC
-    latency_metric_timestamp = buf.getLongLong();
-#endif
 }
 
 Event Event::decodeCopy(const MemberId& m, framing::Buffer& buf) {
@@ -97,9 +91,6 @@ void EventHeader::encode(Buffer& b) const {
     b.putOctet(type);
     b.putLongLong(connectionId.getNumber());
     b.putLong(size);
-#ifdef QPID_LATENCY_METRIC
-    b.putLongLong(latency_metric_timestamp);
-#endif
 }
 
 // Encode my header in my buffer.

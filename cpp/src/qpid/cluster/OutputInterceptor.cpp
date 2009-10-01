@@ -24,7 +24,6 @@
 #include "qpid/framing/ClusterConnectionDeliverDoOutputBody.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"
-#include "qpid/sys/LatencyTracker.h"
 #include <boost/current_function.hpp>
 
 
@@ -40,16 +39,9 @@ OutputInterceptor::OutputInterceptor(Connection& p, sys::ConnectionOutputHandler
     : parent(p), closing(false), next(&h), sendMax(1), sent(0), sentDoOutput(false)
 {}
 
-#if defined QPID_LATENCY_TRACKER
-extern sys::LatencyTracker<const AMQBody*> doOutputTracker;
-#endif
-
 void OutputInterceptor::send(framing::AMQFrame& f) {
-    LATENCY_TRACK(doOutputTracker.finish(f.getBody()));
-    {
-        sys::Mutex::ScopedLock l(lock);
-        next->send(f);
-    }
+    sys::Mutex::ScopedLock l(lock);
+    next->send(f);
 }
 
 void OutputInterceptor::activateOutput() {

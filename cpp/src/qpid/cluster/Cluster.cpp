@@ -120,7 +120,6 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
-#include "qpid/sys/LatencyTracker.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
@@ -328,20 +327,14 @@ void Cluster::deliver(
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     Event e(Event::decodeCopy(from, buf));
-    LATENCY_TRACK(if (e.getConnectionId().getMember() == self) mcast.cpgLatency.finish());
     deliverEvent(e);
 }
 
-LATENCY_TRACK(sys::LatencyTracker<const char*> eventQueueLatencyTracker("EventQueue");)
-    LATENCY_TRACK(sys::LatencyTracker<const AMQBody*> frameQueueLatencyTracker("FrameQueue");)
-
-    void Cluster::deliverEvent(const Event& e) {
-    LATENCY_TRACK(eventQueueLatencyTracker.start(e.getData());)
-        deliverEventQueue.push(e);
+void Cluster::deliverEvent(const Event& e) {
+    deliverEventQueue.push(e);
 }
 
 void Cluster::deliverFrame(const EventFrame& e) {
-    LATENCY_TRACK(frameQueueLatencyTracker.start(e.frame.getBody()));
     deliverFrameQueue.push(e);
 }
 
@@ -354,7 +347,6 @@ const ClusterUpdateOfferBody* castUpdateOffer(const framing::AMQBody* body) {
 // Handler for deliverEventQueue.
 // This thread decodes frames from events.
 void Cluster::deliveredEvent(const Event& e) {
-    LATENCY_TRACK(eventQueueLatencyTracker.finish(e.getData()));
     if (e.isCluster()) {
         QPID_LOG(trace, *this << " DLVR: " << e);
         EventFrame ef(e, e.getFrame());
@@ -400,13 +392,9 @@ void Cluster::flagError(
         error.error(connection, type, map.getFrameSeq(), map.getMembers(), msg);
 }
 
-LATENCY_TRACK(sys::LatencyTracker<const AMQBody*> doOutputTracker("DoOutput");)
-
 // Handler for deliverFrameQueue.
 // This thread executes the main logic.
-    void Cluster::deliveredFrame(const EventFrame& efConst) {
-    LATENCY_TRACK(frameQueueLatencyTracker.finish(e.frame.getBody()));
-    LATENCY_TRACK(if (e.frame.getBody()->type() == CONTENT_BODY) doOutputTracker.start(e.frame.getBody()));
+void Cluster::deliveredFrame(const EventFrame& efConst) {
     Mutex::ScopedLock l(lock);
     if (state == LEFT) return;
     EventFrame e(efConst);
@@ -438,7 +426,6 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
             throw Exception(QPID_MSG("Invalid cluster control"));
     }
     else if (state >= CATCHUP) {
-        LATENCY_TRACK(LatencyScope ls(processLatency));
         map.incrementFrameSeq();
         ConnectionPtr connection = getConnection(e, l);
         if (connection) {
