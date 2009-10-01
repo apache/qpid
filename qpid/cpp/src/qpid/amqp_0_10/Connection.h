@@ -47,7 +47,7 @@ class Connection  : public sys::ConnectionCodec,
 
     FrameQueue frameQueue;
     FrameQueue workQueue;
-    bool frameQueueClosed;
+    bool pushClosed, popClosed;
     mutable sys::Mutex frameQueueLock;
     sys::OutputControl& output;
     std::auto_ptr<sys::ConnectionInputHandler> connection;
