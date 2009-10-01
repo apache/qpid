@@ -144,12 +144,16 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = ::qmf::org::apache::qpid::cluster;
 
-/** NOTE: increment this number whenever any incompatible changes in
+/**
+ * NOTE: must increment this number whenever any incompatible changes in
  * cluster protocol/behavior are made. It allows early detection and
  * sensible reporting of an attempt to mix different versions in a
  * cluster.
+ *
+ * Currently use SVN revision to avoid clashes with versions from
+ * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 2;
+const uint32_t Cluster::CLUSTER_VERSION = 820783;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
