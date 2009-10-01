@@ -32,6 +32,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +77,7 @@ public class QpidTestCase extends TestCase
 
     private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
     private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
+    private Map<org.apache.log4j.Logger, Level> _loggerLevelSetForTest = new HashMap<org.apache.log4j.Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
 
@@ -192,6 +194,7 @@ public class QpidTestCase extends TestCase
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
     protected static final String INDEX = "index";
+    ;
 
     public QpidTestCase(String name)
     {
@@ -818,6 +821,40 @@ public class QpidTestCase extends TestCase
     }
 
     /**
+     * Adjust the VMs Log4j Settings just for this test run
+     *
+     * @param logger the logger to change
+     * @param level the level to set
+     */
+    protected void setLoggerLevel(org.apache.log4j.Logger logger, Level level)
+    {
+        assertNotNull("Cannot set level of null logger", logger);
+        assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
+
+        if (!_loggerLevelSetForTest.containsKey(logger))
+        {
+            // Record the current value so we can revert it later.
+            _loggerLevelSetForTest.put(logger, logger.getLevel());
+        }
+
+        logger.setLevel(level);
+    }
+
+    /**
+     * Restore the logging levels defined by this test.
+     */
+    protected void revertLoggingLevels()
+    {
+        for (org.apache.log4j.Logger logger : _loggerLevelSetForTest.keySet())
+        {
+            logger.setLevel(_loggerLevelSetForTest.get(logger));
+        }
+
+        _loggerLevelSetForTest.clear();
+
+    }
+
+    /**
      * Check whether the broker is an 0.8
      *
      * @return true if the broker is an 0_8 version, false otherwise.
@@ -991,6 +1028,7 @@ public class QpidTestCase extends TestCase
         }
 
         revertSystemProperties();
+        revertLoggingLevels();
     }
 
     /**

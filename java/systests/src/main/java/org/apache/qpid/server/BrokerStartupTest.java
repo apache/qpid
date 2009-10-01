@@ -78,15 +78,16 @@ public class BrokerStartupTest extends AbstractTestLogging
             // Add an invalid value
             _broker += " -l invalid";
 
-            // The release-bin build of the broker uses this log4j configuration
-            // so set up the broker environment to use it for this test.
-            // Also include -Dlog4j.debug so we can validate that it picked up this config
-            setBrokerEnvironment("QPID_OPTS", "-Dlog4j.debug -Dlog4j.configuration=file:" + System.getProperty(QPID_HOME) + "/../broker/src/main/java/log4j.properties");
+            // The  broker has a built in default log4j configuration set up
+            // so if the the broker cannot load the -l value it will use default
+            // use this default. Test that this is correctly loaded, by
+            // including -Dlog4j.debug so we can validate.
+            setBrokerEnvironment("QPID_OPTS", "-Dlog4j.debug");
 
             // Disable all client logging so we can test for broker DEBUG only.
-            Logger.getRootLogger().setLevel(Level.WARN);
-            Logger.getLogger("qpid.protocol").setLevel(Level.WARN);
-            Logger.getLogger("org.apache.qpid").setLevel(Level.WARN);
+            setLoggerLevel(Logger.getRootLogger(), Level.WARN);
+            setLoggerLevel(Logger.getLogger("qpid.protocol"), Level.WARN);
+            setLoggerLevel(Logger.getLogger("org.apache.qpid"), Level.WARN);
 
             // Set the broker to use info level logging, which is the qpid-server
             // default. Rather than debug which is the test default.
