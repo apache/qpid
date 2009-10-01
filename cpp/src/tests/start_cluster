@@ -23,20 +23,17 @@
 #
 
 # Execute command with the ais group set.
-with_ais_group() {
-    id -nG | grep '\<ais\>' >/dev/null || { echo "You are not a member of the ais group." 1>&2; exit 1; }
-    echo $* | newgrp ais
-}
+. `dirname $0`/ais_check
 
 rm -f cluster*.log cluster.ports qpidd.port
 
 SIZE=${1:-3}; shift
 CLUSTER=`pwd`		# Cluster name=pwd, avoid clashes.
-OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --auth=no $@"
+OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --auth=no --log-enable notice+ --log-enable debug+:cluster $@"
 
 for (( i=0; i<SIZE; ++i )); do
     DDIR=`mktemp -d /tmp/start_cluster.XXXXXXXXXX`
-    PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS  --data-dir=$DDIR`  || exit 1
+    PORT=`with_ais_group ../qpidd  -p0 --log-to-file=cluster$i.log $OPTS --data-dir=$DDIR`  || exit 1
     echo $PORT >> cluster.ports
 done
 

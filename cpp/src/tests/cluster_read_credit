@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -19,16 +18,10 @@
 # under the License.
 #
 
-. `dirname $0`/ais_check
+# Regression test for http://issues.apache.org/jira/browse/QPID-2086
 
-host=127.0.0.1
-
-MODULES=${MODULES:-../.libs}
-MESSAGES=${MESSAGES:-300000}
-REPORT_FREQUENCY=${REPORT_FREQUENCY:-`expr $MESSAGES / 20`}
-VERBOSITY=${VERBOSITY:-1}
-DURABILITY=${DURABILITY:-1}
-
-rm -f soak-*.log
-exec ./failover_soak $MODULES ./declare_queues ./replaying_sender ./resuming_receiver $MESSAGES $REPORT_FREQUENCY $VERBOSITY $DURABILITY
-
+srcdir=`dirname $0`
+. $srcdir/ais_check
+$srcdir/start_cluster 1 --cluster-read-max=2 || exit 1
+trap $srcdir/stop_cluster EXIT
+seq 1 10000 | ./sender --port `cat cluster.ports` --routing-key no-such-queue
