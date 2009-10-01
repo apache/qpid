@@ -26,7 +26,6 @@
 #include "qpid/cluster/Event.h"
 #include "qpid/sys/PollableQueue.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/sys/LatencyTracker.h"
 #include <boost/shared_ptr.hpp>
 #include <deque>
 
@@ -57,8 +56,6 @@ class Multicaster
     void mcast(const Event& e);
     /** End holding mode, held events are mcast */
     void release();
-    
-    LATENCY_TRACK(sys::LatencyCounter cpgLatency;)
     
   private:
     typedef sys::PollableQueue<Event> PollableEventQueue;
