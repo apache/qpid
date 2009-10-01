@@ -507,7 +507,7 @@ public class QpidTestCase extends TestCase
             {
                 for (String key : _propertiesSetForBroker.keySet())
                 {
-                    QPID_OPTS += "-D" + key + "=" + System.getProperty(key) + " ";
+                    QPID_OPTS += "-D" + key + "=" + _propertiesSetForBroker.get(key) + " ";
                 }
 
                 if (env.containsKey("QPID_OPTS"))
