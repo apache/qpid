@@ -27,13 +27,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
@@ -42,12 +41,8 @@ import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.UnauthorizedAccessException;
+import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
@@ -59,6 +54,7 @@ import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.logging.actors.AMQPChannelActor;
@@ -118,6 +114,11 @@ public class AMQChannel
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
     private boolean _closing;
+
+    private final ConcurrentMap<AMQQueue, Boolean> _blockingQueues = new ConcurrentHashMap<AMQQueue, Boolean>();
+
+    private final AtomicBoolean _blocking = new AtomicBoolean(false);
+
 
     private LogActor _actor;
     private LogSubject _logSubject;
@@ -798,6 +799,7 @@ public class AMQChannel
                 _actor.message(_logSubject, ChannelMessages.CHN_1002("Started"));
             }
 
+
             // This section takes two different approaches to perform to perform
             // the same function. Ensuring that the Subscription has taken note
             // of the change in Channel State
@@ -977,5 +979,38 @@ public class AMQChannel
     public LogActor getLogActor()
     {
         return _actor;
+    }
+
+    public void block(AMQQueue queue)
+    {
+        if(_blockingQueues.putIfAbsent(queue, Boolean.TRUE) == null)
+        {
+
+            if(_blocking.compareAndSet(false,true))
+            {
+                _actor.message(_logSubject, ChannelMessages.CHN_1005(queue.getName().toString()));
+                flow(false);
+            }
+        }
+    }
+
+    public void unblock(AMQQueue queue) 
+    {
+        if(_blockingQueues.remove(queue))
+        {
+            if(_blocking.compareAndSet(true,false))
+            {
+                _actor.message(_logSubject, ChannelMessages.CHN_1006());
+
+                flow(true);
+            }
+        }
+    }
+
+    private void flow(boolean flow)
+    {
+        MethodRegistry methodRegistry = _session.getMethodRegistry();
+        AMQMethodBody responseBody = methodRegistry.createChannelFlowBody(flow);
+        _session.writeFrame(responseBody.generateFrame(_channelId));
     }
 }

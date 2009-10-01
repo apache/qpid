@@ -160,6 +160,17 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void setMinimumAlertRepeatGap(long value);
 
 
+    long getCapacity();
+
+    void setCapacity(long capacity);
+
+
+    long getFlowResumeCapacity();
+
+    void setFlowResumeCapacity(long flowResumeCapacity);
+
+
+
     void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
 
     long clearQueue(StoreContext storeContext) throws AMQException;
@@ -179,6 +190,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void deliverAsync();
 
     void stop();
+
+    void checkCapacity(AMQChannel channel);
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
