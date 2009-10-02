@@ -36,25 +36,29 @@ int main(int argc, char* argv[])
 {
     try
     {
-        {
-            BootstrapOptions bootOptions(argv[0]);
-            string           defaultPath (bootOptions.module.loadDir);
-            // Parse only the common, load, and log options to see which
-            // modules need to be loaded.  Once the modules are loaded,
-            // the command line will be re-parsed with all of the
-            // module-supplied options.
+        BootstrapOptions bootOptions(argv[0]);
+        string           defaultPath (bootOptions.module.loadDir);
+        // Parse only the common, load, and log options to see which
+        // modules need to be loaded.  Once the modules are loaded,
+        // the command line will be re-parsed with all of the
+        // module-supplied options.
+        try {
             bootOptions.parse (argc, argv, bootOptions.common.config, true);
             qpid::log::Logger::instance().configure(bootOptions.log);
+        } catch (const std::exception& e) {
+            // Couldn't configure logging so write the message direct to stderr.
+            cerr << "Unexpected error: " << e.what() << endl;
+            return 1;
+        }
 
-            for (vector<string>::iterator iter = bootOptions.module.load.begin();
-                 iter != bootOptions.module.load.end();
-                 iter++)
-                qpid::tryShlib (iter->data(), false);
+        for (vector<string>::iterator iter = bootOptions.module.load.begin();
+             iter != bootOptions.module.load.end();
+             iter++)
+            qpid::tryShlib (iter->data(), false);
 
-            if (!bootOptions.module.noLoad) {
-                bool isDefault = defaultPath == bootOptions.module.loadDir;
-                qpid::loadModuleDir (bootOptions.module.loadDir, isDefault);
-            }
+        if (!bootOptions.module.noLoad) {
+            bool isDefault = defaultPath == bootOptions.module.loadDir;
+            qpid::loadModuleDir (bootOptions.module.loadDir, isDefault);
         }
 
         // Parse options
