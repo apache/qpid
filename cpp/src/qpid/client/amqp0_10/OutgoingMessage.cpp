@@ -33,24 +33,11 @@ namespace amqp0_10 {
 using qpid::messaging::Address;
 using qpid::messaging::MessageImplAccess;
 
-template <class T> void encode(const qpid::messaging::Message& from, qpid::client::Message& to)
-{
-    T codec;
-    MessageImplAccess::get(from).getEncodedContent(codec, to.getData());
-    to.getMessageProperties().setContentType(T::contentType);
-}
-
 void OutgoingMessage::convert(const qpid::messaging::Message& from)
 {
     //TODO: need to avoid copying as much as possible
-    if (from.getContent().isList()) {
-        encode<ListCodec>(from, message);
-    } else if (from.getContent().isMap()) {
-        encode<MapCodec>(from, message);
-    } else {
-        message.setData(from.getBytes());
-        message.getMessageProperties().setContentType(from.getContentType());
-    }
+    message.setData(from.getContent());
+    message.getMessageProperties().setContentType(from.getContentType());
     const Address& address = from.getReplyTo();
     if (!address.value.empty()) {
         message.getMessageProperties().setReplyTo(AddressResolution::convert(address));

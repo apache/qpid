@@ -686,6 +686,10 @@ libqpidclient_la_SOURCES =			\
   qpid/messaging/Address.cpp			\
   qpid/messaging/Connection.cpp			\
   qpid/messaging/Filter.cpp			\
+  qpid/messaging/ListContent.cpp		\
+  qpid/messaging/ListView.cpp			\
+  qpid/messaging/MapContent.cpp			\
+  qpid/messaging/MapView.cpp			\
   qpid/messaging/Message.cpp			\
   qpid/messaging/MessageImpl.h			\
   qpid/messaging/MessageImpl.cpp		\
@@ -790,8 +794,11 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/Connection.h 	\
   ../include/qpid/messaging/Codec.h 	        \
   ../include/qpid/messaging/Filter.h 		\
+  ../include/qpid/messaging/ListContent.h 	\
+  ../include/qpid/messaging/ListView.h 		\
+  ../include/qpid/messaging/MapContent.h 	\
+  ../include/qpid/messaging/MapView.h 		\
   ../include/qpid/messaging/Message.h 		\
-  ../include/qpid/messaging/MessageContent.h 	\
   ../include/qpid/messaging/MessageListener.h 	\
   ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Receiver.h 	        \

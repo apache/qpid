@@ -20,6 +20,7 @@
  */
 
 #include <qpid/messaging/Connection.h>
+#include <qpid/messaging/MapContent.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Sender.h>
 #include <qpid/messaging/Session.h>
@@ -43,14 +44,16 @@ int main(int argc, char** argv) {
         Sender sender = session.createSender("message_queue");
 
         Message message;
-        message.getContent()["id"] = 987654321;
-        message.getContent()["name"] = "Widget";
-        message.getContent()["price"] = 0.99;//bad use of floating point number, just an example!
+        MapContent content(message);
+        content["id"] = 987654321;
+        content["name"] = "Widget";
+        content["price"] = 0.99;//bad use of floating point number, just an example!
         Variant::List colours;
         colours.push_back(Variant("red"));
         colours.push_back(Variant("green"));
         colours.push_back(Variant("white"));
-        message.getContent()["colours"] = colours;
+        content["colours"] = colours;
+        content.encode();
 	
         sender.send(message);
         session.sync();

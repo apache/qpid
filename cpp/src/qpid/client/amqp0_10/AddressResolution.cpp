@@ -362,21 +362,12 @@ void QueueSink::send(qpid::client::AsyncSession& session, const std::string&, Ou
 
 void QueueSink::cancel(qpid::client::AsyncSession&, const std::string&) {}
 
-template <class T> void encode(qpid::messaging::Message& from)
-{
-    T codec;
-    from.encode(codec);
-    from.setContentType(T::contentType);
-}
-
 void translate(const Variant::Map& from, FieldTable& to);//implementation in Codecs.cpp
 
 void convert(qpid::messaging::Message& from, qpid::client::Message& to)
 {
     //TODO: need to avoid copying as much as possible
-    if (from.getContent().isList()) encode<ListCodec>(from);
-    if (from.getContent().isMap())  encode<MapCodec>(from);
-    to.setData(from.getBytes());
+    to.setData(from.getContent());
     to.getDeliveryProperties().setRoutingKey(from.getSubject());
     //TODO: set other delivery properties
     to.getMessageProperties().setContentType(from.getContentType());

@@ -27,7 +27,7 @@ namespace messaging {
 Message::Message(const std::string& bytes) : impl(new MessageImpl(bytes)) {}
 Message::Message(const char* bytes, size_t count) : impl(new MessageImpl(bytes, count)) {}
 
-Message::Message(const Message& m) : impl(new MessageImpl(m.getBytes())) {}
+Message::Message(const Message& m) : impl(new MessageImpl(m.getContent())) {}
 Message::~Message() { delete impl; }
 
 Message& Message::operator=(const Message& m) { *impl = *m.impl; return *this; }
@@ -44,27 +44,15 @@ const std::string& Message::getContentType() const { return impl->getContentType
 const VariantMap& Message::getHeaders() const { return impl->getHeaders(); }
 VariantMap& Message::getHeaders() { return impl->getHeaders(); }
 
-void Message::setBytes(const std::string& c) { impl->setBytes(c); }
-void Message::setBytes(const char* chars, size_t count) { impl->setBytes(chars, count); }
-const std::string& Message::getBytes() const { return impl->getBytes(); }
-std::string& Message::getBytes() { return impl->getBytes(); }
+void Message::setContent(const std::string& c) { impl->setBytes(c); }
+void Message::setContent(const char* chars, size_t count) { impl->setBytes(chars, count); }
+const std::string& Message::getContent() const { return impl->getBytes(); }
+std::string& Message::getContent() { return impl->getBytes(); }
 
-const char* Message::getRawContent() const { return impl->getBytes().data(); }
-size_t Message::getContentSize() const { return impl->getBytes().size(); }
-
-MessageContent& Message::getContent() { return *impl; }
-const MessageContent& Message::getContent() const { return *impl; }
-void Message::setContent(const std::string& s) { *impl = s; }
-void Message::setContent(const Variant::Map& m) { *impl = m; }
-void Message::setContent(const Variant::List& l) { *impl = l; }
-
-void Message::encode(Codec& codec) { impl->encode(codec); }
-
-void Message::decode(Codec& codec) { impl->decode(codec); }
-
-std::ostream& operator<<(std::ostream& out, const MessageContent& content)
+void Message::getContent(std::pair<const char*, size_t>& content) const
 {
-    return content.print(out);
+    content.first = impl->getBytes().data();
+    content.second = impl->getBytes().size();
 }
 
 }} // namespace qpid::messaging

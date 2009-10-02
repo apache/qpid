@@ -24,15 +24,9 @@
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
 
-#include <cstdlib>
 #include <iostream>
 
-#include <sstream>
-
 using namespace qpid::messaging;
-
-using std::stringstream;
-using std::string;
 
 int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
@@ -47,7 +41,7 @@ int main(int argc, char** argv) {
             Message message = receiver.fetch();
             std::cout << "Message: " << message.getContent() << std::endl;
             session.acknowledge();
-            if (message.getContent().asString() == "That's all, folks!") {
+            if (message.getContent() == "That's all, folks!") {
                 std::cout << "Cancelling receiver" << std::endl;
                 receiver.cancel();
                 break;

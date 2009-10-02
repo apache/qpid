@@ -22,6 +22,10 @@
 #include "test_tools.h"
 #include "BrokerFixture.h"
 #include "qpid/messaging/Connection.h"
+#include "qpid/messaging/ListContent.h"
+#include "qpid/messaging/ListView.h"
+#include "qpid/messaging/MapContent.h"
+#include "qpid/messaging/MapView.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageListener.h"
 #include "qpid/messaging/Receiver.h"
@@ -160,7 +164,7 @@ struct MessageDataCollector : MessageListener
     std::vector<std::string> messageData;
 
     void received(Message& message) {
-        messageData.push_back(message.getBytes());
+        messageData.push_back(message.getContent());
     }
 };
 
@@ -169,7 +173,7 @@ std::vector<std::string> fetch(Receiver& receiver, int count, qpid::sys::Duratio
     std::vector<std::string> data;
     Message message;
     for (int i = 0; i < count && receiver.fetch(message, timeout); i++) {
-        data.push_back(message.getBytes());
+        data.push_back(message.getContent());
     }
     return data;
 }
@@ -183,7 +187,7 @@ QPID_AUTO_TEST_CASE(testSimpleSendReceive)
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
     fix.session.acknowledge();
-    BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
 }
 
 QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
@@ -199,7 +203,7 @@ QPID_AUTO_TEST_CASE(testSendReceiveHeaders)
     Message in;
     for (uint i = 0; i < 10; ++i) {
         BOOST_CHECK(receiver.fetch(in, 5 * qpid::sys::TIME_SEC));
-        BOOST_CHECK_EQUAL(in.getBytes(), out.getBytes());
+        BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
         BOOST_CHECK_EQUAL(in.getHeaders()["a"].asUint32(), i);
         fix.session.acknowledge();
     }
@@ -229,22 +233,22 @@ QPID_AUTO_TEST_CASE(testSimpleTopic)
     Receiver sub1 = fix.session.createReceiver(fix.topic);
     sub1.setCapacity(10u);
     sub1.start();
-    msg.setBytes("two");
+    msg.setContent("two");
     sender.send(msg);
     Receiver sub2 = fix.session.createReceiver(fix.topic);
     sub2.setCapacity(10u);
     sub2.start();
-    msg.setBytes("three");
+    msg.setContent("three");
     sender.send(msg);
     Receiver sub3 = fix.session.createReceiver(fix.topic);
     sub3.setCapacity(10u);
     sub3.start();
-    msg.setBytes("four");
+    msg.setContent("four");
     sender.send(msg);
     BOOST_CHECK_EQUAL(fetch(sub2, 2), boost::assign::list_of<std::string>("three")("four"));
     sub2.cancel();
 
-    msg.setBytes("five");
+    msg.setContent("five");
     sender.send(msg);
     BOOST_CHECK_EQUAL(fetch(sub1, 4), boost::assign::list_of<std::string>("two")("three")("four")("five"));
     BOOST_CHECK_EQUAL(fetch(sub3, 2), boost::assign::list_of<std::string>("four")("five"));
@@ -274,7 +278,7 @@ QPID_AUTO_TEST_CASE(testSessionFetch)
     for (uint i = 0; i < fix.queues.size(); i++) {
         Message msg;
         BOOST_CHECK(fix.session.fetch(msg, qpid::sys::TIME_SEC));
-        BOOST_CHECK_EQUAL(msg.getBytes(), (boost::format("Message_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1)).str());
     }
 }
 
@@ -307,13 +311,16 @@ QPID_AUTO_TEST_CASE(testMapMessage)
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
     Message out;
-    out.getContent().asMap()["abc"] = "def";
-    out.getContent().asMap()["pi"] = 3.14f;
+    MapContent content(out);
+    content["abc"] = "def";
+    content["pi"] = 3.14f;
+    content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
-    BOOST_CHECK_EQUAL(in.getContent().asMap()["abc"].asString(), "def");
-    BOOST_CHECK_EQUAL(in.getContent().asMap()["pi"].asFloat(), 3.14f);
+    MapView view(in);
+    BOOST_CHECK_EQUAL(view["abc"].asString(), "def");
+    BOOST_CHECK_EQUAL(view["pi"].asFloat(), 3.14f);
     fix.session.acknowledge();
 }
 
@@ -322,23 +329,31 @@ QPID_AUTO_TEST_CASE(testListMessage)
     QueueFixture fix;
     Sender sender = fix.session.createSender(fix.queue);
     Message out;
-    out.getContent() = Variant::List();
-    out.getContent() << "abc";
-    out.getContent() << 1234;
-    out.getContent() << "def";
-    out.getContent() << 56.789;
+    ListContent content(out);
+    content.push_back(Variant("abc"));
+    content.push_back(Variant(1234));
+    content.push_back(Variant("def"));
+    content.push_back(Variant(56.789));
+    content.encode();
     sender.send(out);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
-    Variant::List& list = in.getContent().asList();
-    BOOST_CHECK_EQUAL(list.size(), out.getContent().asList().size());
-    BOOST_CHECK_EQUAL(list.front().asString(), "abc");
-    list.pop_front();
-    BOOST_CHECK_EQUAL(list.front().asInt64(), 1234);
-    list.pop_front();
-    BOOST_CHECK_EQUAL(list.front().asString(), "def");
-    list.pop_front();
-    BOOST_CHECK_EQUAL(list.front().asDouble(), 56.789);
+    ListView view(in);
+    BOOST_CHECK_EQUAL(view.size(), content.size());
+    BOOST_CHECK_EQUAL(view.front().asString(), "abc");
+    BOOST_CHECK_EQUAL(view.back().asDouble(), 56.789);
+
+    ListView::const_iterator i = view.begin();
+    BOOST_CHECK(i != view.end());
+    BOOST_CHECK_EQUAL(i->asString(), "abc");
+    BOOST_CHECK(++i != view.end());
+    BOOST_CHECK_EQUAL(i->asInt64(), 1234);
+    BOOST_CHECK(++i != view.end());
+    BOOST_CHECK_EQUAL(i->asString(), "def");
+    BOOST_CHECK(++i != view.end());
+    BOOST_CHECK_EQUAL(i->asDouble(), 56.789);
+    BOOST_CHECK(++i == view.end());
+
     fix.session.acknowledge();
 }
 
@@ -352,10 +367,10 @@ QPID_AUTO_TEST_CASE(testReject)
     sender.send(m2);
     Receiver receiver = fix.session.createReceiver(fix.queue);
     Message in = receiver.fetch(5 * qpid::sys::TIME_SEC);
-    BOOST_CHECK_EQUAL(in.getBytes(), m1.getBytes());
+    BOOST_CHECK_EQUAL(in.getContent(), m1.getContent());
     fix.session.reject(in);
     in = receiver.fetch(5 * qpid::sys::TIME_SEC);
-    BOOST_CHECK_EQUAL(in.getBytes(), m2.getBytes());
+    BOOST_CHECK_EQUAL(in.getContent(), m2.getContent());
     fix.session.acknowledge();
 }
 
@@ -384,15 +399,15 @@ QPID_AUTO_TEST_CASE(testAvailable)
     for (uint i = 0; i < 5; ++i) {
         BOOST_CHECK_EQUAL(fix.session.available(), 15u - 2*i);
         BOOST_CHECK_EQUAL(r1.available(), 10u - i);
-        BOOST_CHECK_EQUAL(r1.fetch().getBytes(), (boost::format("A_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(r1.fetch().getContent(), (boost::format("A_%1%") % (i+1)).str());
         BOOST_CHECK_EQUAL(r2.available(), 5u - i);
-        BOOST_CHECK_EQUAL(r2.fetch().getBytes(), (boost::format("B_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(r2.fetch().getContent(), (boost::format("B_%1%") % (i+1)).str());
         fix.session.acknowledge();
     }
     for (uint i = 5; i < 10; ++i) {
         BOOST_CHECK_EQUAL(fix.session.available(), 10u - i);
         BOOST_CHECK_EQUAL(r1.available(), 10u - i);
-        BOOST_CHECK_EQUAL(r1.fetch().getBytes(), (boost::format("A_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(r1.fetch().getContent(), (boost::format("A_%1%") % (i+1)).str());
     }
 }
 
@@ -405,7 +420,7 @@ QPID_AUTO_TEST_CASE(testPendingAck)
     }
     Receiver receiver = fix.session.createReceiver(fix.queue);
     for (uint i = 0; i < 10; ++i) {
-        BOOST_CHECK_EQUAL(receiver.fetch().getBytes(), (boost::format("Message_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(receiver.fetch().getContent(), (boost::format("Message_%1%") % (i+1)).str());
     }
     BOOST_CHECK_EQUAL(fix.session.pendingAck(), 0u);
     fix.session.acknowledge();
@@ -431,7 +446,7 @@ QPID_AUTO_TEST_CASE(testPendingSend)
 
     Receiver receiver = fix.session.createReceiver(fix.queue);
     for (uint i = 0; i < 10; ++i) {
-        BOOST_CHECK_EQUAL(receiver.fetch().getBytes(), (boost::format("Message_%1%") % (i+1)).str());
+        BOOST_CHECK_EQUAL(receiver.fetch().getContent(), (boost::format("Message_%1%") % (i+1)).str());
     }
     fix.session.acknowledge();
 }
