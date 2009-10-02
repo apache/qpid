@@ -97,5 +97,5 @@ org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
 org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 
 //QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
-org.apache.qpid.server.queue.ProducerFlowControlTest
+org.apache.qpid.server.queue.ProducerFlowControlTest#*
 
