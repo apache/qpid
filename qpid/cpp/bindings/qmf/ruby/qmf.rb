@@ -252,7 +252,7 @@ module Qmf
       when TYPE_SSTR, TYPE_LSTR then val.asString
       when TYPE_ABSTIME then val.asInt64
       when TYPE_DELTATIME then val.asUint64
-      when TYPE_REF then val.asObjectId
+      when TYPE_REF then ObjectId.new(val.asObjectId)
       when TYPE_BOOL then val.asBool
       when TYPE_FLOAT then val.asFloat
       when TYPE_DOUBLE then val.asDouble
@@ -463,11 +463,19 @@ module Qmf
     end
 
     def object_num_high
-      return @impl.getObjectNumHi
+      @impl.getObjectNumHi
     end
 
     def object_num_low
-      return @impl.getObjectNumLo
+      @impl.getObjectNumLo
+    end
+
+    def broker_bank
+      @impl.getBrokerBank
+    end
+
+    def agent_bank
+      @impl.getAgentBank
     end
 
     def ==(other)
@@ -522,7 +530,7 @@ module Qmf
       when TYPE_SSTR, TYPE_LSTR                 then val.asString
       when TYPE_ABSTIME                         then val.asInt64
       when TYPE_DELTATIME                       then val.asUint64
-      when TYPE_REF                             then val.asObjectId
+      when TYPE_REF                             then ObjectId.new(val.asObjectId)
       when TYPE_BOOL                            then val.asBool
       when TYPE_FLOAT                           then val.asFloat
       when TYPE_DOUBLE                          then val.asDouble
@@ -796,7 +804,15 @@ module Qmf
       @impl.addMethod(meth.impl)
     end
 
-    def name
+    def class_key
+      SchemaClassKey.new(@impl.getClassKey)
+    end
+
+    def package_name
+      @impl.getClassKey.getPackageName
+    end
+
+    def class_name
       @impl.getClassKey.getClassName
     end
   end
@@ -1027,14 +1043,23 @@ module Qmf
     def label
       @impl.getLabel
     end
+
+    def broker_bank
+      @impl.getBrokerBank
+    end
+
+    def agent_bank
+      @impl.getAgentBank
+    end
   end
 
   class Broker < ConnectionHandler
     include MonitorMixin
-    attr_reader :impl, :conn, :console
+    attr_reader :impl, :conn, :console, :broker_bank
 
     def initialize(console, conn)
       super()
+      @broker_bank = 1
       @console = console
       @conn = conn
       @session = nil
@@ -1281,5 +1306,4 @@ module Qmf
       do_events
     end
   end
-
 end

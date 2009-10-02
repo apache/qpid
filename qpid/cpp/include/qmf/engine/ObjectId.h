@@ -39,6 +39,10 @@ namespace engine {
         uint32_t getObjectNumLo() const;
         bool isDurable() const;
         const char* str() const;
+        uint8_t getFlags() const;
+        uint16_t getSequence() const;
+        uint32_t getBrokerBank() const;
+        uint32_t getAgentBank() const;
 
         bool operator==(const ObjectId& other) const;
         bool operator<(const ObjectId& other) const;
