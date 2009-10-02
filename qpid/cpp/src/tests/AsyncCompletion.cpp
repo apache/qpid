@@ -70,9 +70,11 @@ class AsyncCompletionMessageStore : public NullMessageStore {
 QPID_AUTO_TEST_SUITE(AsyncCompletionTestSuite)
 
 QPID_AUTO_TEST_CASE(testWaitTillComplete) {
-    AsyncCompletionMessageStore* store = new AsyncCompletionMessageStore;
     SessionFixture fix;
-    fix.broker->setStore(store); // Broker will delete store.
+    AsyncCompletionMessageStore* store = new AsyncCompletionMessageStore;
+    boost::shared_ptr<qpid::broker::MessageStore> p;
+    p.reset(store);
+    fix.broker->setStore(p);
     AsyncSession s = fix.session;
 
     static const int count = 3;

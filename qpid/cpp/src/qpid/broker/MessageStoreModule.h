@@ -26,6 +26,7 @@
 #include "qpid/broker/RecoveryManager.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -35,9 +36,9 @@ namespace broker {
  */
 class MessageStoreModule : public MessageStore
 {
-    MessageStore* store;
+    boost::shared_ptr<MessageStore> store;
   public:
-    MessageStoreModule(MessageStore* store);
+    MessageStoreModule(boost::shared_ptr<MessageStore>& store);
 
     bool init(const Options* options);
     void truncateInit(const bool pushDownStoreFiles = false);
