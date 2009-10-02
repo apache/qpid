@@ -31,7 +31,7 @@ class ConsoleTestBase < Qmf::ConsoleHandler
     @qmfc = Qmf::Console.new
 
     @broker = @qmfc.add_connection(@connection)
-    @broker.waitForStable
+    @broker.wait_for_stable
 
     tests = []
     methods.each do |m|

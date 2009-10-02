@@ -56,7 +56,7 @@ ConnectionSettingsImpl::ConnectionSettingsImpl(const string& /*url*/) :
     // TODO: Parse the URL
 }
 
-void ConnectionSettingsImpl::setAttr(const string& key, const Value& value)
+bool ConnectionSettingsImpl::setAttr(const string& key, const Value& value)
 {
     if      (key == attrProtocol)     clientSettings.protocol     = value.asString();
     else if (key == attrHost)         clientSettings.host         = value.asString();
@@ -79,6 +79,9 @@ void ConnectionSettingsImpl::setAttr(const string& key, const Value& value)
     else if (key == attrRetryDelayMax)    retryDelayMax    = value.asUint();
     else if (key == attrRetryDelayFactor) retryDelayFactor = value.asUint();
     else if (key == attrSendUserId)       sendUserId       = value.asBool();
+    else
+        return false;
+    return true;
 }
 
 Value ConnectionSettingsImpl::getAttr(const string& key) const
@@ -257,7 +260,7 @@ ConnectionSettings::ConnectionSettings(const ConnectionSettings& from) { impl = 
 ConnectionSettings::ConnectionSettings() { impl = new ConnectionSettingsImpl(); }
 ConnectionSettings::ConnectionSettings(const char* url) { impl = new ConnectionSettingsImpl(url); }
 ConnectionSettings::~ConnectionSettings() { delete impl; }
-void ConnectionSettings::setAttr(const char* key, const Value& value) { impl->setAttr(key, value); }
+bool ConnectionSettings::setAttr(const char* key, const Value& value) { return impl->setAttr(key, value); }
 Value ConnectionSettings::getAttr(const char* key) const { return impl->getAttr(key); }
 const char* ConnectionSettings::getAttrString() const { return impl->getAttrString().c_str(); }
 void ConnectionSettings::transportTcp(uint16_t port) { impl->transportTcp(port); }

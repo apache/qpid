@@ -41,7 +41,7 @@ namespace engine {
         ConnectionSettingsImpl();
         ConnectionSettingsImpl(const std::string& url);
         ~ConnectionSettingsImpl() {}
-        void setAttr(const std::string& key, const Value& value);
+        bool setAttr(const std::string& key, const Value& value);
         Value getAttr(const std::string& key) const;
         const std::string& getAttrString() const;
         void transportTcp(uint16_t port);

@@ -60,7 +60,8 @@ module Qmf
         raise ArgumentError, "Value for attribute '#{key}' has unsupported type: #{val.class}"
       end
 
-      @impl.setAttr(key, v)
+      good = @impl.setAttr(key, v)
+      raise "Invalid attribute '#{key}'" unless good
     end
 
     def method_missing(name_in, *args)
@@ -96,10 +97,15 @@ module Qmf
       @new_conn_handlers = []
       @conn_handlers_to_delete = []
       @conn_handlers = []
+      @connected = nil
 
       @thread = Thread.new do
         run
       end
+    end
+
+    def connected?
+      @connected
     end
 
     def kick
@@ -123,7 +129,6 @@ module Qmf
 
     def run()
       eventImpl = Qmfengine::ResilientConnectionEvent.new
-      connected = nil
       new_handlers = nil
       del_handlers = nil
       bt_count = 0
@@ -140,7 +145,7 @@ module Qmf
 
         new_handlers.each do |nh|
           @conn_handlers << nh
-          nh.conn_event_connected() if connected
+          nh.conn_event_connected() if @connected
         end
         new_handlers = nil
 
@@ -154,10 +159,10 @@ module Qmf
           begin
             case eventImpl.kind
             when Qmfengine::ResilientConnectionEvent::CONNECTED
-              connected = :true
+              @connected = :true
               @conn_handlers.each { |h| h.conn_event_connected() }
             when Qmfengine::ResilientConnectionEvent::DISCONNECTED
-              connected = nil
+              @connected = nil
               @conn_handlers.each { |h| h.conn_event_disconnected(eventImpl.errorText) }
             when Qmfengine::ResilientConnectionEvent::SESSION_CLOSED
               eventImpl.sessionContext.handler.sess_event_session_closed(eventImpl.sessionContext, eventImpl.errorText)
@@ -1049,7 +1054,7 @@ module Qmf
       @operational = :false
     end
 
-    def waitForStable(timeout = nil)
+    def wait_for_stable(timeout = nil)
       synchronize do
         return if @stable
         if timeout

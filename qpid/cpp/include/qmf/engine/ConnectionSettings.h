@@ -79,8 +79,10 @@ namespace engine {
          *
          * @param value Reference to a value to be stored as the attribute.  The type of the value
          *              is specific to the key.
+         *
+         * @return True if success, False if invalid attribute
          */
-        QMFE_EXTERN void setAttr(const char* key, const Value& value);
+        QMFE_EXTERN bool setAttr(const char* key, const Value& value);
 
         /**
          * Get the value of an attribute.

@@ -110,7 +110,7 @@ class App < Qmf::ConsoleHandler
     @qmfc = Qmf::Console.new(self)
 
     @broker = @qmfc.add_connection(@connection)
-    @broker.waitForStable
+    @broker.wait_for_stable
 
     ##dump_schema
 
