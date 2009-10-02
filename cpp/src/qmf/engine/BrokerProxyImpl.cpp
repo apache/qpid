@@ -730,6 +730,8 @@ bool MethodContext::handleMessage(uint8_t opcode, uint32_t sequence, const strin
 AgentProxy::AgentProxy(AgentProxyImpl* i) : impl(i) {}
 AgentProxy::~AgentProxy() { delete impl; }
 const char* AgentProxy::getLabel() const { return impl->getLabel().c_str(); }
+uint32_t AgentProxy::getBrokerBank() const { return impl->getBrokerBank(); }
+uint32_t AgentProxy::getAgentBank() const { return impl->getAgentBank(); }
 
 BrokerProxy::BrokerProxy(Console& console) : impl(new BrokerProxyImpl(*this, console)) {}
 BrokerProxy::~BrokerProxy() { delete impl; }

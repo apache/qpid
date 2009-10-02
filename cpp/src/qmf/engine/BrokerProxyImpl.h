@@ -108,6 +108,8 @@ namespace engine {
         }
         ~AgentProxyImpl() {}
         const std::string& getLabel() const { return label; }
+        uint32_t getBrokerBank() const { return 1; }
+        uint32_t getAgentBank() const { return agentBank; }
         void addSequence(uint32_t seq) { inFlightSequences.insert(seq); }
         void delSequence(uint32_t seq) { inFlightSequences.erase(seq); }
         void releaseInFlight(SequenceManager& seqMgr) {

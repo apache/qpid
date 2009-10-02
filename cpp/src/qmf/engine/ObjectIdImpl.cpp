@@ -156,6 +156,10 @@ uint32_t ObjectId::getObjectNumHi() const { return impl->getObjectNumHi(); }
 uint32_t ObjectId::getObjectNumLo() const { return impl->getObjectNumLo(); }
 bool ObjectId::isDurable() const { return impl->isDurable(); }
 const char* ObjectId::str() const { return impl->asString().c_str(); }
+uint8_t ObjectId::getFlags() const { return impl->getFlags(); }
+uint16_t ObjectId::getSequence() const { return impl->getSequence(); }
+uint32_t ObjectId::getBrokerBank() const { return impl->getBrokerBank(); }
+uint32_t ObjectId::getAgentBank() const { return impl->getAgentBank(); }
 bool ObjectId::operator==(const ObjectId& other) const { return *impl == *other.impl; }
 bool ObjectId::operator<(const ObjectId& other) const { return *impl < *other.impl; }
 bool ObjectId::operator>(const ObjectId& other) const { return *impl > *other.impl; }

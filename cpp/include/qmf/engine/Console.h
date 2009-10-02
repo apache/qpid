@@ -136,6 +136,8 @@ namespace engine {
     public:
         ~AgentProxy();
         const char* getLabel() const;
+        uint32_t getBrokerBank() const;
+        uint32_t getAgentBank() const;
 
     private:
         friend struct StaticContext;
