@@ -24,6 +24,8 @@ require 'test_base'
 class ConsoleTest < ConsoleTestBase
 
   def test_A_agent_presence
+    assert(@connection.connected?, "Connection not connected")
+
     agents = []
     count = 0
     while agents.size == 0
@@ -35,6 +37,14 @@ class ConsoleTest < ConsoleTestBase
 
     agentList = @qmfc.agents
     assert_equal(agentList.size, 2, "Number of agents reported by Console")
+  end
+
+  def test_A_connection_settings
+    begin
+      @settings.bogusAttribute = 25
+      fail("Connection settings accepted bogus attribute")
+    rescue
+    end
   end
 
   def test_B_basic_method_invocation
