@@ -210,8 +210,10 @@ Broker::Broker(const Broker::Options& conf) :
         (*i)->earlyInitialize(*this);
 
     // If no plugin store module registered itself, set up the null store.
-    if (store.get() == 0)
-        setStore (new NullMessageStore());
+    if (store.get() == 0) {
+        boost::shared_ptr<MessageStore> p(new NullMessageStore());
+        setStore (p);
+    }
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
 
@@ -298,7 +300,7 @@ boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
     return boost::intrusive_ptr<Broker>(new Broker(opts));
 }
 
-void Broker::setStore (MessageStore* _store)
+void Broker::setStore (boost::shared_ptr<MessageStore>& _store)
 {
     store.reset(new MessageStoreModule (_store));
     queues.setStore     (store.get());

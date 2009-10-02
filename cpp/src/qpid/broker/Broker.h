@@ -172,7 +172,7 @@ public:
     /** Shut down the broker */
     virtual void shutdown();
 
-    QPID_BROKER_EXTERN void setStore (MessageStore*);
+    QPID_BROKER_EXTERN void setStore (boost::shared_ptr<MessageStore>& store);
     MessageStore& getStore() { return *store; }
     void setAcl (AclModule* _acl) {acl = _acl;}
     AclModule* getAcl() { return acl; }
