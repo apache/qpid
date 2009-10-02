@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
             request.setContent(s[i]);
             sender.send(request);
             Message response = receiver.fetch();
-            std::cout << request.getContent().asString() << " -> " << response.getContent().asString() << std::endl;
+            std::cout << request.getContent() << " -> " << response.getContent() << std::endl;
 	}
         connection.close();
         return 0;

@@ -51,17 +51,17 @@ int main(int argc, char** argv) {
             const Address& address = request.getReplyTo();
             if (address) {
                 Sender sender = session.createSender(address);
-                std::string s = request.getContent().asString();
+                std::string s = request.getContent();
                 std::transform(s.begin(), s.end(), s.begin(), toupper);
                 Message response(s);
                 sender.send(response);
                 std::cout << "Processed request: " 
-                          << request.getContent().asString() 
+                          << request.getContent() 
                           << " -> " 
-                          << response.getContent().asString() << std::endl;
+                          << response.getContent() << std::endl;
                 session.acknowledge();
             } else {
-                std::cerr << "Error: no reply address specified for request: " << request.getContent().asString() << std::endl;
+                std::cerr << "Error: no reply address specified for request: " << request.getContent() << std::endl;
                 session.reject(request);
             }
         }
