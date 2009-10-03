@@ -28,9 +28,26 @@ function Get-ScriptPath
 if (Test-Path qpidd.port) {
    Remove-Item qpidd.port
 }
+
+# Test runs from the tests directory but the broker executable is one level
+# up, and most likely in a subdirectory from there based on what build type.
+# Look around for it before trying to start it.
+$subs = "Debug","Release","MinSizeRel","RelWithDebInfo"
+foreach ($sub in $subs) {
+  $prog = "..\$sub\qpidd.exe"
+  if (Test-Path $prog) {
+     break
+  }
+}
+if (!(Test-Path $prog)) {
+    "Cannot locate qpidd.exe"
+    exit 1
+}
+$cmdline = "$prog --auth=no --no-module-dir --port=0 --log-to-file qpidd.log $args | foreach { set-content qpidd.port `$_ }"
+$cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
 $srcdir = Get-ScriptPath
-. $srcdir\background.ps1 {
-  ..\Debug\qpidd --auth=no --no-module-dir --port=0 --log-to-file qpidd.log $args | foreach { set-content qpidd.port $_ } }
+. $srcdir\background.ps1 $cmdblock
+
 $wait_time = 0
 while (!(Test-Path qpidd.port) -and ($wait_time -lt 10)) {
    Start-Sleep 2
