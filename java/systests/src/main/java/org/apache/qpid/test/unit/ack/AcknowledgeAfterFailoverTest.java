@@ -54,6 +54,14 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest implements Con
         NUM_MESSAGES = 10;
     }
 
+    /**
+     * Override default init to add connectionListener so we can verify that
+     * failover took place
+     *
+     * @param transacted create a transacted session for this test
+     * @param mode if not transacted what ack mode to use for this test
+     * @throws Exception if a problem occured during test setup.
+     */
     @Override
     protected void init(boolean transacted, int mode) throws Exception
     {
@@ -242,75 +250,6 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest implements Con
     public void testDirtyAckingTransacted() throws Exception
     {
         testDirtyAcking(true, Session.SESSION_TRANSACTED);
-    }
-
-    /**
-     * If a transacted session has failed over whilst it has uncommitted sent
-     * data then we need to throw a TransactedRolledbackException on commit()
-     *
-     * The alternative would be to maintain a replay buffer so that the message
-     * could be resent. This is not currently implemented
-     *
-     * @throws Exception if something goes wrong.
-     */
-    public void testDirtySendingTransacted() throws Exception
-    {
-        Session producerSession = _connection.createSession(true, Session.SESSION_TRANSACTED);
-
-        // Ensure we get failover notifications
-        ((AMQConnection) _connection).setConnectionListener(this);        
-
-        MessageProducer producer = producerSession.createProducer(_queue);
-
-        // Create and send message 0
-        Message msg = producerSession.createMessage();
-        msg.setIntProperty(INDEX, 0);
-        producer.send(msg);
-
-        // DON'T commit message .. fail connection
-
-        failBroker(getFailingPort());
-
-        // Ensure destination exists for sending
-        producerSession.createConsumer(_queue).close();
-
-        // Send the next message
-        msg.setIntProperty(INDEX, 1);
-        try
-        {
-            producer.send(msg);
-            fail("Should fail with Qpid as we provide early warning of the dirty session via a JMSException.");
-        }
-        catch (JMSException jmse)
-        {
-            assertEquals("Early warning of dirty session not correct",
-                         "Failover has occurred and session is dirty so unable to send.", jmse.getMessage());
-        }
-
-        // Ignore that the session is dirty and attempt to commit to validate the
-        // exception is thrown. AND that the above failure notification did NOT
-        // clean up the session.
-
-        try
-        {
-            producerSession.commit();
-            fail("Session is dirty we should get an TransactionRolledBackException");
-        }
-        catch (TransactionRolledBackException trbe)
-        {
-            // Normal path.
-        }
-
-        // Resend messages
-        msg.setIntProperty(INDEX, 0);
-        producer.send(msg);
-        msg.setIntProperty(INDEX, 1);
-        producer.send(msg);
-
-        producerSession.commit();
-
-        assertEquals("Wrong number of messages on queue", 2,
-                     ((AMQSession) producerSession).getQueueDepth((AMQDestination) _queue));
     }
 
     // AMQConnectionListener Interface.. used so we can validate that we
