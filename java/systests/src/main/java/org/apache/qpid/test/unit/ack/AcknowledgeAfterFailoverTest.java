@@ -28,6 +28,9 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
+/**
+ *
+ */
 public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
 {
 
@@ -35,15 +38,24 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
     public void setUp() throws Exception
     {
         super.setUp();
+        // This must be even for the test to run correctly.
+        // Otherwise we will kill the standby broker
+        // not the one we are connected to.
+        // The test will still pass but it will not be exactly
+        // as described.
         NUM_MESSAGES = 10;
     }
 
     protected void prepBroker(int count) throws Exception
     {
-        //Stop the connection whilst we repopulate the broker, or the no_ack
-        // test will drain the msgs before we can check we put the right number
-        // back on again.
-//        _connection.stop();
+        if (count % 2 == 1)
+        {
+            failBroker(getFailingPort());
+        }
+        else
+        {
+            failBroker(getPort());
+        }
 
         Connection connection = getConnection();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
@@ -60,38 +72,9 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
 
         connection.close();
 
-//        _connection.start();
-    }
-
-    @Override
-    public void doAcknowlegement(Message msg) throws JMSException
-    {
-        //Acknowledge current message
-        super.doAcknowlegement(msg);
-
-        int msgCount = msg.getIntProperty(INDEX);
-
-        if (msgCount % 2 == 0)
-        {
-            failBroker(getFailingPort());
-        }
-        else
-        {
-            failBroker(getPort());
-        }
-
         try
         {
-            prepBroker(NUM_MESSAGES - msgCount - 1);
-        }
-        catch (Exception e)
-        {
-            fail("Unable to prep new broker," + e.getMessage());
-        }
-
-        try
-        {
-            if (msgCount % 2 == 0)
+            if (count % 2 == 1)
             {
                 startBroker(getFailingPort());
             }
@@ -104,6 +87,91 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
         {
             fail("Unable to start failover broker," + e.getMessage());
         }
+    }
+
+    @Override
+    public void doAcknowlegement(Message msg) throws JMSException
+    {
+        //Acknowledge current message
+        super.doAcknowlegement(msg);
+
+        try
+        {
+            prepBroker(NUM_MESSAGES - msg.getIntProperty(INDEX) - 1);
+        }
+        catch (Exception e)
+        {
+            fail("Unable to prep new broker," + e.getMessage());
+        }
 
     }
+
+    /**
+     * @param transacted
+     * @param mode
+     *
+     * @throws Exception
+     */
+    protected void testDirtyAcking(boolean transacted, int mode) throws Exception
+    {
+        NUM_MESSAGES = 2;
+        //Test Dirty Failover Fails
+        init(transacted, mode);
+
+        _connection.start();
+
+        Message msg = _consumer.receive(1500);
+
+        int count = 0;
+        assertNotNull("Message " + count + " not correctly received.", msg);
+        assertEquals("Incorrect message received", count, msg.getIntProperty(INDEX));
+        count++;
+
+        //Don't acknowledge just prep the next broker
+
+        try
+        {
+            prepBroker(count);
+        }
+        catch (Exception e)
+        {
+            fail("Unable to prep new broker," + e.getMessage());
+        }
+
+        // Consume the next message
+        msg = _consumer.receive(1500);
+        assertNotNull("Message " + count + " not correctly received.", msg);
+        assertEquals("Incorrect message received", count, msg.getIntProperty(INDEX));
+
+        if (_consumerSession.getTransacted())
+        {
+            _consumerSession.commit();
+        }
+        else
+        {
+            try
+            {
+                msg.acknowledge();
+                fail("Session is dirty we should get an IllegalStateException");
+            }
+            catch (IllegalStateException ise)
+            {
+                assertEquals("Incorrect Exception thrown", "has failed over", ise.getMessage());
+            }
+        }
+
+        assertEquals("Wrong number of messages on queue", 0,
+                     ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
+    }
+
+    public void testDirtyClientAck() throws Exception
+    {
+        testDirtyAcking(false, Session.CLIENT_ACKNOWLEDGE);
+    }
+
+    public void testDirtyTransacted() throws Exception
+    {
+        testDirtyAcking(true, Session.SESSION_TRANSACTED);
+    }
+
 }
