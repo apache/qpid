@@ -21,20 +21,19 @@
 # TODO: this should be expanded to cover a wider set of types and go
 # in both directions
 
-$srcdir = Split-Path $myInvocation.ScriptName
-$PYTHON_DIR = $srcdir\..\..\..\python
+$srcdir = Split-Path $myInvocation.InvocationName
+$PYTHON_DIR = "$srcdir\..\..\..\python"
 if (Test-Path qpidd.port) {
    set-item -path env:QPID_PORT -value (get-content -path qpidd.port -totalcount 1)
 }
 
 if (Test-Path $PYTHON_DIR -pathType Container) {
-    ./header_test -p $QPID_PORT
+    Invoke-Expression "$env:OUTDIR\header_test -p $env:QPID_PORT"
     $env:PYTHONPATH="$PYTHON_DIR;$env:PYTHONPATH"
-    $srcdir/header_test.py "localhost" $QPID_PORT
+    python "$srcdir/header_test.py" "localhost" "$env:QPID_PORT"
     exit $LASTEXITCODE
 }
 else {
     "Skipping header test as python libs not found"
     exit 0
 }
-

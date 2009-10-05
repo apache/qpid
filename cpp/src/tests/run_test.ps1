@@ -52,7 +52,6 @@ if (Test-Path qpidd.port) {
    set-item -path env:QPID_PORT -value (get-content -path qpidd.port -totalcount 1)
 }
 
-#$p = new-object System.Diagnostics.Process
 $si = new-object System.Diagnostics.ProcessStartInfo
 $si.WorkingDirectory = $pwd
 $si.UseShellExecute = $true
@@ -67,6 +66,6 @@ else {
       $si.Arguments = $args[1..$args.length-1]
    }
 }
-$p = [diagnostics.process]::Start($si)
+$p = [System.Diagnostics.Process]::Start($si)
 $p.WaitForExit()
 exit $?
