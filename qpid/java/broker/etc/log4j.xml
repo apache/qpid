@@ -87,6 +87,10 @@
         <priority value="debug"/>
     </category-->
 
+    <!-- Set the commons logging that the XML parser uses to WARN, it is very chatty at debug -->
+        <logger name="org.apache.commons">
+          <level value="WARN"/>
+        </logger>
 
     <!-- Log all info events to file -->
     <root>
