@@ -159,7 +159,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
                 }
                 catch (IOException e)
                 {
-                    throw new BindException(String.format("Could not bind to {0}:{2}", addr, port));
+                    throw new BindException(String.format("Could not bind to %1s:%2s", addr, port));
                 }
             }
         }
@@ -171,7 +171,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
             }
             catch (IOException e)
             {
-                throw new BindException(String.format("Could not bind to *:{1}", port));
+                throw new BindException(String.format("Could not bind to *:%1s", port));
             }
         }
         _acceptingConnections  = true;
