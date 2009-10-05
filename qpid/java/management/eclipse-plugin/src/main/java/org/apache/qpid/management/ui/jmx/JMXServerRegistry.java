@@ -255,6 +255,11 @@ public class JMXServerRegistry extends ServerRegistry
         //iterate over all the notification lists for mbeans with subscribed notifications
         for (List<NotificationObject> list : _notificationsMap.values())
         {
+            if(list == null || list.isEmpty())
+            {
+                continue;
+            }
+            
             //Check the source vhost of the first notification
             NotificationObject notification  = list.get(0);
             

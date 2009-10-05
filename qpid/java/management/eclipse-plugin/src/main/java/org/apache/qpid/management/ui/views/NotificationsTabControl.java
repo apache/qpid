@@ -28,6 +28,7 @@ import static org.apache.qpid.management.ui.Constants.FONT_ITALIC;
 import static org.apache.qpid.management.ui.Constants.SUBSCRIBE_BUTTON;
 import static org.apache.qpid.management.ui.Constants.UNSUBSCRIBE_BUTTON;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
@@ -163,8 +164,8 @@ public class NotificationsTabControl extends VHNotificationsTabControl
     protected void addButtons()
     {    
         Composite composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
-        composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-        composite.setLayout(new GridLayout());
+        composite.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
+        composite.setLayout(new GridLayout(2,false));
         
         // Add Clear Button
         _clearButton = _toolkit.createButton(composite, BUTTON_CLEAR, SWT.PUSH | SWT.CENTER);
@@ -173,17 +174,36 @@ public class NotificationsTabControl extends VHNotificationsTabControl
         gridData.widthHint = 80;
         _clearButton.setLayoutData(gridData);
         _clearButton.addSelectionListener(new SelectionAdapter()
-            {
-                public void widgetSelected(SelectionEvent e)
-                {    
-                    if (_mbean == null)
-                        return;
-                    
-                    IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
-                    ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
+        {
+            public void widgetSelected(SelectionEvent e)
+            {    
+                if (_mbean == null)
+                {
+                    return;
+                }
+
+                ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
+                IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
+                if(!ss.isEmpty())
+                {
                     serverRegistry.clearNotifications(_mbean, ss.toList());
                 }
-            });
+                else if(_notifications != null)
+                {
+                    synchronized(this)
+                    {
+                        List<NotificationObject> newList = new ArrayList<NotificationObject>();
+                        newList.addAll(_notifications);
+                        serverRegistry.clearNotifications(_mbean, newList);
+                    }
+                }
+                
+                refresh();
+            }
+        });
+        //add description
+        Label desc = _toolkit.createLabel(composite,"Clears the selected Notifications, or all if none are selected");
+        desc.setLayoutData(new GridData(SWT.LEFT,SWT.CENTER, false, false));
     }
 
     @Override
@@ -348,8 +368,10 @@ public class NotificationsTabControl extends VHNotificationsTabControl
     {
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);        
         List<NotificationObject> newList = serverRegistry.getNotifications(_mbean);
-        _notifications = newList;
-        
-        _tableViewer.setInput(_notifications);
+        synchronized(this)
+        {
+            _notifications = newList;
+            _tableViewer.setInput(_notifications);
+        }
     }
 }
