@@ -527,6 +527,10 @@ set (libqpidclient_SOURCES
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/Filter.cpp
+     qpid/messaging/ListContent.cpp
+     qpid/messaging/ListView.cpp
+     qpid/messaging/MapContent.cpp
+     qpid/messaging/MapView.cpp
      qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
