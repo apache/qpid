@@ -19,9 +19,6 @@
 
 # Run the C++ topic test
 
-# Clean up old log files
-Get-Item subscriber_*.log | Remove-Item
-
 # Parameters with default values: s (subscribers) m (messages) b (batches)
 #                                 h (host) t (false; use transactions)
 param (
@@ -32,23 +29,28 @@ param (
   [switch] $t           # transactional
 )
 
+# Clean up old log files
+Get-Item subscriber_*.log | Remove-Item
+
+if ($t) {
+    $transactional = "--transactional --durable"
+}
+
 function subscribe {
-    "Start subscriber $args[0]"
-    $LOG = "subscriber_$args[0].log"
-    . $srcdir\background.ps1 {
-      $env:OUTDIR\topic_listener $TRANSACTIONAL > $LOG 2>&1
-      if ($LastExitCode -ne 0) { Remove-Item $LOG }
-    } -inconsole
+    param ([int]$num)
+    "Start subscriber $num"
+    $LOG = "subscriber_$num.log"
+    $cmdline = "$env:OUTDIR\topic_listener $transactional > $LOG 2>&1
+                if (`$LastExitCode -ne 0) { Remove-Item $LOG }"
+    $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
+    . $srcdir\background.ps1 $cmdblock
 }
 
-publish() {
-    if ($t) {
-      $transactional = "--transactional --durable"
-    }
-    $env:OUTDIR\topic_publisher --messages $messages --batches $batches --subscribers $subscribers $host $transactional 2>&1
+function publish {
+    Invoke-Expression "$env:OUTDIR\topic_publisher --messages $messages --batches $batches --subscribers $subscribers $host $transactional" 2>&1
 }
 
-$srcdir = Split-Path $myInvocation.ScriptName
+$srcdir = Split-Path $MyInvocation.MyCommand.Path
 if ($broker.length) {
   $broker = "-h$broker"
 }
