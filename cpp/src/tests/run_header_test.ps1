@@ -21,19 +21,50 @@
 # TODO: this should be expanded to cover a wider set of types and go
 # in both directions
 
+<<<<<<< .mine
 $srcdir = Split-Path $myInvocation.InvocationName
 $PYTHON_DIR = "$srcdir\..\..\..\python"
+if (!(Test-Path $PYTHON_DIR -pathType Container)) {
+    "Skipping header test as python libs not found"
+    exit 0
+}
+
+=======
+$srcdir = Split-Path $myInvocation.InvocationName
+$PYTHON_DIR = "$srcdir\..\..\..\python"
+>>>>>>> .r822090
 if (Test-Path qpidd.port) {
    set-item -path env:QPID_PORT -value (get-content -path qpidd.port -totalcount 1)
 }
 
+<<<<<<< .mine
+# Test runs from the tests directory but the test executables are in a
+# subdirectory based on the build type. Look around for it before trying
+# to start it.
+$subs = "Debug","Release","MinSizeRel","RelWithDebInfo"
+foreach ($sub in $subs) {
+  $prog = ".\$sub\header_test.exe"
+  if (Test-Path $prog) {
+     break
+  }
+=======
 if (Test-Path $PYTHON_DIR -pathType Container) {
     Invoke-Expression "$env:OUTDIR\header_test -p $env:QPID_PORT"
     $env:PYTHONPATH="$PYTHON_DIR;$env:PYTHONPATH"
     python "$srcdir/header_test.py" "localhost" "$env:QPID_PORT"
     exit $LASTEXITCODE
+>>>>>>> .r822090
 }
-else {
-    "Skipping header test as python libs not found"
-    exit 0
+if (!(Test-Path $prog)) {
+    "Cannot locate header_test.exe"
+    exit 1
 }
+<<<<<<< .mine
+
+Invoke-Expression "$prog -p $env:QPID_PORT" | Write-Output
+$env:PYTHONPATH="$PYTHON_DIR;$env:PYTHONPATH"
+Invoke-Expression "python $srcdir/header_test.py localhost $env:QPID_PORT" | Write-Output
+exit $LASTEXITCODE
+
+=======
+>>>>>>> .r822090
