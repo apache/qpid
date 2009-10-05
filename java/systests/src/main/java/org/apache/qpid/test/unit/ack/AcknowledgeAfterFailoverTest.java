@@ -20,19 +20,27 @@
  */
 package org.apache.qpid.test.unit.ack;
 
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.jms.ConnectionListener;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TransactionRolledBackException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
  */
-public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
+public class AcknowledgeAfterFailoverTest extends AcknowledgeTest implements ConnectionListener
 {
+
+    protected CountDownLatch _failoverCompleted = new CountDownLatch(1);
 
     @Override
     public void setUp() throws Exception
@@ -44,6 +52,13 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
         // The test will still pass but it will not be exactly
         // as described.
         NUM_MESSAGES = 10;
+    }
+
+    @Override
+    protected void init(boolean transacted, int mode) throws Exception
+    {
+        super.init(transacted, mode);
+        ((AMQConnection) _connection).setConnectionListener(this);
     }
 
     protected void prepBroker(int count) throws Exception
@@ -107,10 +122,17 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
     }
 
     /**
-     * @param transacted
-     * @param mode
+     * Test that Acking/Committing a message received before failover causes
+     * an exception at commit/ack time.
      *
-     * @throws Exception
+     * Expected behaviour is that in:
+     * * tx mode commit() throws a transacted RolledBackException
+     * * client ack mode throws an IllegalStateException
+     *
+     * @param transacted is this session trasacted
+     * @param mode       What ack mode should be used if not trasacted
+     *
+     * @throws Exception if something goes wrong.
      */
     protected void testDirtyAcking(boolean transacted, int mode) throws Exception
     {
@@ -125,27 +147,55 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
         int count = 0;
         assertNotNull("Message " + count + " not correctly received.", msg);
         assertEquals("Incorrect message received", count, msg.getIntProperty(INDEX));
-        count++;
 
-        //Don't acknowledge just prep the next broker
-
+        //Don't acknowledge just prep the next broker. Without changing count
+        // Prep the new broker to have all all the messages so we can validate
+        // that they can all be correctly received.
         try
         {
-            prepBroker(count);
+
+            //Stop the connection so we can validate the number of message count
+            // on the queue is correct after failover
+            _connection.stop();
+            failBroker(getFailingPort());
+
+            //Get the connection to the first (main port) broker.
+            Connection connection = getConnection();//getConnectionFactory("connection1").getConnectionURL());
+            // Use a transaction to send messages so we can be sure they arrive.
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            // ensure destination is created.
+            session.createConsumer(_queue).close();
+
+            sendMessage(session, _queue, NUM_MESSAGES);
+
+            assertEquals("Wrong number of messages on queue", NUM_MESSAGES,
+                         ((AMQSession) session).getQueueDepth((AMQDestination) _queue));
+
+            connection.close();
+
+            //restart connection
+            _connection.start();
         }
         catch (Exception e)
         {
             fail("Unable to prep new broker," + e.getMessage());
         }
 
-        // Consume the next message
+        // Consume the next message - don't check what it is as a normal would
+        // assume it is msg 1 but as we've fallen over it is msg 0 again.
         msg = _consumer.receive(1500);
-        assertNotNull("Message " + count + " not correctly received.", msg);
-        assertEquals("Incorrect message received", count, msg.getIntProperty(INDEX));
 
         if (_consumerSession.getTransacted())
         {
-            _consumerSession.commit();
+            try
+            {
+                _consumerSession.commit();
+                fail("Session is dirty we should get an TransactionRolledBackException");
+            }
+            catch (TransactionRolledBackException trbe)
+            {
+                //expected path
+            }
         }
         else
         {
@@ -154,10 +204,30 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
                 msg.acknowledge();
                 fail("Session is dirty we should get an IllegalStateException");
             }
-            catch (IllegalStateException ise)
+            catch (javax.jms.IllegalStateException ise)
             {
                 assertEquals("Incorrect Exception thrown", "has failed over", ise.getMessage());
+                // Recover the sesion and try again.
+                _consumerSession.recover();
             }
+        }
+
+        msg = _consumer.receive(1500);
+        // Validate we now get the first message back
+        assertEquals(0, msg.getIntProperty(INDEX));
+
+        msg = _consumer.receive(1500);
+        // and the second message
+        assertEquals(1, msg.getIntProperty(INDEX));
+
+        // And now verify that we can now commit the clean session
+        if (_consumerSession.getTransacted())
+        {
+            _consumerSession.commit();
+        }
+        else
+        {
+            msg.acknowledge();
         }
 
         assertEquals("Wrong number of messages on queue", 0,
@@ -169,9 +239,129 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest
         testDirtyAcking(false, Session.CLIENT_ACKNOWLEDGE);
     }
 
-    public void testDirtyTransacted() throws Exception
+    public void testDirtyAckingTransacted() throws Exception
     {
         testDirtyAcking(true, Session.SESSION_TRANSACTED);
+    }
+
+    /**
+     * If a transacted session has failed over whilst it has uncommitted sent
+     * data then we need to throw a TransactedRolledbackException on commit()
+     *
+     * The alternative would be to maintain a replay buffer so that the message
+     * could be resent. This is not currently implemented
+     *
+     * @throws Exception if something goes wrong.
+     */
+    public void testDirtySendingTransacted() throws Exception
+    {
+        Session producerSession = _connection.createSession(true, Session.SESSION_TRANSACTED);
+
+        // Ensure we get failover notifications
+        ((AMQConnection) _connection).setConnectionListener(this);        
+
+        MessageProducer producer = producerSession.createProducer(_queue);
+
+        // Create and send message 0
+        Message msg = producerSession.createMessage();
+        msg.setIntProperty(INDEX, 0);
+        producer.send(msg);
+
+        // DON'T commit message .. fail connection
+
+        failBroker(getFailingPort());
+
+        // Ensure destination exists for sending
+        producerSession.createConsumer(_queue).close();
+
+        // Send the next message
+        msg.setIntProperty(INDEX, 1);
+        try
+        {
+            producer.send(msg);
+            fail("Should fail with Qpid as we provide early warning of the dirty session via a JMSException.");
+        }
+        catch (JMSException jmse)
+        {
+            assertEquals("Early warning of dirty session not correct",
+                         "Failover has occurred and session is dirty so unable to send.", jmse.getMessage());
+        }
+
+        // Ignore that the session is dirty and attempt to commit to validate the
+        // exception is thrown. AND that the above failure notification did NOT
+        // clean up the session.
+
+        try
+        {
+            producerSession.commit();
+            fail("Session is dirty we should get an TransactionRolledBackException");
+        }
+        catch (TransactionRolledBackException trbe)
+        {
+            // Normal path.
+        }
+
+        // Resend messages
+        msg.setIntProperty(INDEX, 0);
+        producer.send(msg);
+        msg.setIntProperty(INDEX, 1);
+        producer.send(msg);
+
+        producerSession.commit();
+
+        assertEquals("Wrong number of messages on queue", 2,
+                     ((AMQSession) producerSession).getQueueDepth((AMQDestination) _queue));
+    }
+
+    // AMQConnectionListener Interface.. used so we can validate that we
+    // actually failed over.
+
+    public void bytesSent(long count)
+    {
+    }
+
+    public void bytesReceived(long count)
+    {
+    }
+
+    public boolean preFailover(boolean redirect)
+    {
+        //Allow failover
+        return true;
+    }
+
+    public boolean preResubscribe()
+    {
+        //Allow failover
+        return true;
+    }
+
+    public void failoverComplete()
+    {
+        _failoverCompleted.countDown();
+    }
+
+    /**
+     * Override so we can block until failover has completd
+     *
+     * @param port
+     */
+    @Override
+    public void failBroker(int port)
+    {
+        super.failBroker(port);
+
+        try
+        {
+            if (!_failoverCompleted.await(DEFAULT_FAILOVER_TIME, TimeUnit.MILLISECONDS))
+            {
+                fail("Failover did not occur in specified time:" + DEFAULT_FAILOVER_TIME);
+            }
+        }
+        catch (InterruptedException e)
+        {
+            fail("Failover was interuppted");
+        }
     }
 
 }
