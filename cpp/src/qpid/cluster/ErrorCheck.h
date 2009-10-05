@@ -84,6 +84,7 @@ class ErrorCheck
     SequenceNumber frameSeq;
     ErrorType type;
     Connection* connection;
+    std::string message;
 };
 
 }} // namespace qpid::cluster
