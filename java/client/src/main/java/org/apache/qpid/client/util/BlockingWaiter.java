@@ -253,7 +253,7 @@ public abstract class BlockingWaiter<T>
         }
         else
         {
-            System.err.println("WARNING: new error arrived while old one not yet processed");
+            System.err.println("WARNING: new error '" + e == null ? "null" : e.getMessage() + "' arrived while old one not yet processed:" + _error.getMessage());
         }
 
         try
