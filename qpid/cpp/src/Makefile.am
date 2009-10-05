@@ -82,7 +82,7 @@ specs=$(amqp_0_10_xml) $(top_srcdir)/xml/cluster.xml
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
-rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate gen $(specs) all $(srcdir)/rubygen.mk
+rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate . ../include $(specs) all $(srcdir)/rubygen.mk
 
 $(rgen_srcs) $(srcdir)/rubygen.mk: rgen.timestamp
 rgen.timestamp: $(rgen_generator) $(specs)
@@ -91,7 +91,7 @@ $(rgen_generator):
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -q -b -o gen/qmf \
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -q -b -o qmf \
 	$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml
@@ -109,7 +109,7 @@ include $(srcdir)/managementgen.mk
 ## Compiler flags
 AM_CXXFLAGS = $(WARNING_CFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-INCLUDES = -Igen -I$(srcdir)/gen -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(srcdir) -I=$(builddir)
 
 #
 # Destination for intalled programs and tests defined here

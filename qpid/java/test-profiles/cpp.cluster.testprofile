@@ -2,7 +2,7 @@ include=cpp
 
 broker.modules=--load-module ${broker.module.cluster} --cluster-name cpp-java-test-cluster
 
-test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/010ExcludeList
+profile.excludes=XAExcludes 010PrefetchExcludes 010TransientExcludes
 
 profile.clustered=true
 profile.failoverMsgCount=10

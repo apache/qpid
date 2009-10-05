@@ -383,7 +383,8 @@ EOS
       end
     end
 
-    h_file("qpid/framing/#{classname}.h") { 
+    public_api("qpid/framing/#{classname}.h")
+    h_file("qpid/framing/#{classname}.h") {       
       if (s.kind_of? AmqpMethod)
         gen <<EOS
 #include "qpid/framing/AMQMethodBody.h"
@@ -604,9 +605,10 @@ EOS
     structs.each { |s| define_struct(s) }
     @amqp.methods_.each { |m| define_struct(m) }
     #generate a single include file containing the list of structs for convenience
+    public_api("qpid/framing/amqp_structs.h")
     h_file("qpid/framing/amqp_structs.h") { structs.each { |s| genl "#include \"qpid/framing/#{s.cppname}.h\"" } }
   end
 end
 
-StructGen.new(ARGV[0], $amqp).generate()
+StructGen.new($outdir, $amqp).generate()
 

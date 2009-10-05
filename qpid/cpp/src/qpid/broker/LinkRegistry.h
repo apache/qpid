@@ -75,6 +75,7 @@ namespace broker {
         static std::string createKey(const TcpAddress& address);
 
     public:
+        LinkRegistry (); // Only used in store tests
         LinkRegistry (Broker* _broker);
         std::pair<boost::shared_ptr<Link>, bool>
             declare(std::string& host,

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import java.util.LinkedList;
+
 import javax.management.MBeanServerConnection;
 
 import static org.apache.qpid.management.ui.Constants.*;
@@ -29,6 +31,7 @@ import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.actions.BackAction;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
@@ -71,6 +74,10 @@ public class MBeanView extends ViewPart
     private TabFolder _typeTabFolder = null;
     
     private TabFolder _notificationTabFolder = null;
+
+    private LinkedList<Object> _backHistory;
+    private BackAction _backAction;
+    
     /*
      * Listener for the selection events in the navigation view
      */ 
@@ -89,6 +96,10 @@ public class MBeanView extends ViewPart
             // an mbeantype. For mbeantype selection(eg Connection, Queue, Exchange) _mbean will remain null.
             _mbean = null;
             clearView();
+            
+            //clear the back history, it is only for use when opening subsequent mbeans not in the nav tree
+            _backHistory.clear();
+            _backAction.setEnabled(false);
             
             // If a selected node(mbean) gets unregistered from mbean server, mbeanview should 
             // make the tabfolber for that mbean invisible
@@ -111,9 +122,35 @@ public class MBeanView extends ViewPart
     
     public void openMBean(ManagedBean mbean)
     {
+        openMBean(mbean, false);
+    }
+    
+    private void openMBean(ManagedBean mbean, boolean undoing)
+    {
         if(mbean == null)
         {
             return;
+        }
+        
+        //if an mbean is about to be opened (but not returning to using back) from the mbean view,
+        //then record the current viewed area/object as a means of back history
+        if(!undoing)
+        {
+            if(_backHistory.isEmpty())
+            {
+                //ensure the button is enabled if this is to be the first history item
+                _backAction.setEnabled(true);
+            }
+            
+            if(_mbean == null)
+            {
+                //queue etc selection area is open, record the tree object
+                _backHistory.addLast(_selectedNode);
+            }
+            else
+            {
+                _backHistory.addLast(_mbean); 
+            }
         }
         
         _mbean = mbean;
@@ -121,12 +158,12 @@ public class MBeanView extends ViewPart
         try
         {
             clearView();
+            
+            setFormTitle();
             showMBean(mbean);
             
             _form.layout(true);
             _form.getBody().layout(true, true);
-            
-            setFormTitle();
         }
         catch(Exception ex)
         {
@@ -311,6 +348,11 @@ public class MBeanView extends ViewPart
         createNotificationsTabFolder();
         
         ViewUtility.setMBeanView(this);
+        
+        _backAction = new BackAction();
+        getViewSite().getActionBars().getToolBarManager().add(_backAction);
+        _backAction.setEnabled(false);
+        _backHistory = new LinkedList<Object>();
     }
     
     private void refreshTab(TabItem tab)
@@ -433,10 +475,12 @@ public class MBeanView extends ViewPart
     
     public void mbeanUnregistered(ManagedBean mbean)
     {
-        //if the mbean is actually open, clear the view
+        //if the mbean is actually open, clear the view and empty the Back history
         if(mbean == _mbean)
         {
             clearView();
+            _backHistory.clear();
+            _backAction.setEnabled(false);
             ViewUtility.popupInfoMessage("MBean Unregistered", 
                     "The open MBean was unregistered from the server.");
         }
@@ -501,5 +545,46 @@ public class MBeanView extends ViewPart
     {
         IActionBars bars = getViewSite().getActionBars();
         bars.getStatusLineManager().setMessage(message);
+    }
+
+    public void back() throws Exception
+    {
+        if(_backHistory.isEmpty())
+        {
+            return;
+        }
+        
+        Object previous = _backHistory.removeLast();
+        if(_backHistory.isEmpty())
+        {
+            //if this is the last history item, disable the action button
+            _backAction.setEnabled(false);
+        }
+        
+        if(previous instanceof ManagedBean)
+        {
+            openMBean((ManagedBean)previous, true);
+        }
+        else if (previous instanceof TreeObject)
+        {
+            _mbean = null;
+            clearView();
+            setFormTitle();
+            
+            TreeObject node = (TreeObject) previous;
+            String mbeanType = node.getType();
+            
+            if (NODE_TYPE_TYPEINSTANCE.equals(mbeanType))
+            {
+                generateTypeTabFolder();
+            }
+            else if (NODE_TYPE_MBEANTYPE.equals(mbeanType))
+            {
+                showTypeTabFolder(node.getName());
+            }
+        }
+        
+        _form.layout(true);
+        _form.getBody().layout(true, true);
     }
 }

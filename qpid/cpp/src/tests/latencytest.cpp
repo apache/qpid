@@ -281,27 +281,39 @@ void Stats::print()
     double aux_avg = (totalLatency / count);
     if (!opts.cumulative) {
         if (!opts.csv) {
-            std::cout << "Latency(ms): min=" << minLatency << ", max=" <<
+            if (count) {
+                std::cout << "Latency(ms): min=" << minLatency << ", max=" <<
 	                 maxLatency << ", avg=" << aux_avg; 
+            } else {
+                std::cout << "Stalled: no samples for interval";
+            }
         } else {
-  	    std::cout << value << "," << minLatency << "," << maxLatency <<
+            if (count) {
+          	    std::cout << value << "," << minLatency << "," << maxLatency <<
     				     "," << aux_avg;
+            } else {
+          	    std::cout << value << "," << minLatency << "," << maxLatency <<
+    				     ", Stalled";
+            }
         }
     } else {
-	if (already_have_stats) {
-            c_avg = (c_min + aux_avg) / 2;
-            if (c_min > minLatency) c_min = minLatency;
-            if (c_max < maxLatency) c_max = maxLatency;
+       if (count) {
+            if (already_have_stats) {
+                c_avg = (c_min + aux_avg) / 2;
+                if (c_min > minLatency) c_min = minLatency;
+                if (c_max < maxLatency) c_max = maxLatency;
+            } else {
+                c_avg = aux_avg;
+                c_min = minLatency;
+                c_max = maxLatency;
+                already_have_stats = true;
+            }
+  	        std::cout << value << "," << c_min << "," << c_max <<
+    				     "," << c_avg;
         } else {
-            c_avg = aux_avg;
-            c_min = minLatency;
-            c_max = maxLatency;
-            already_have_stats = true;
+            std::cout << "Stalled: no samples for interval";
         }
-  	std::cout << value << "," << c_min << "," << c_max <<
-    				 "," << c_avg;
     }
-        
 }
 
 void Stats::reset()

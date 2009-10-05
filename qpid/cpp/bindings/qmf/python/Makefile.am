@@ -19,7 +19,7 @@
 
 if HAVE_PYTHON_DEVEL
 
-INCLUDES = -I$(top_srcdir)/src/qmf -I$(top_srcdir)/src -I$(top_builddir)/src/gen
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src/qmf -I$(top_srcdir)/src -I$(top_builddir)/src
 
 EXTRA_DIST = python.i
 

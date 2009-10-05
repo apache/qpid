@@ -3,4 +3,4 @@ broker=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT -c @CONFIG_FILE 
 broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work/derbyDB
 broker.ready=Qpid Broker Ready
 
-test.excludesfile=${test.profiles}/ExcludeList ${test.profiles}/XAExcludeList ${test.profiles}/08ExcludeList-nonvm ${test.profiles}/08ExcludeList-nopersistence
+profile.excludes=08TransientExcludes 08StandaloneExcludes

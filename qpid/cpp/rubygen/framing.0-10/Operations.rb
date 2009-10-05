@@ -115,7 +115,7 @@ EOS
   end
 end
 
-OperationsGen.new("client",ARGV[0], $amqp).generate()
-OperationsGen.new("server",ARGV[0], $amqp).generate()
-OperationsGen.new("all",ARGV[0], $amqp).generate()
+OperationsGen.new("client",$outdir, $amqp).generate()
+OperationsGen.new("server",$outdir, $amqp).generate()
+OperationsGen.new("all",$outdir, $amqp).generate()
 

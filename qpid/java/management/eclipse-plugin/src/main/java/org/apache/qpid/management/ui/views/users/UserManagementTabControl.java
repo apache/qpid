@@ -265,7 +265,17 @@ public class UserManagementTabControl extends TabControl
                                                                         selectionIndex).getData();
                     String user = selectedLogger.get(USERNAME).toString();
                     InputDialog id = new InputDialog(setPasswordButton.getShell(),"Set Password",
-                                        "Please enter the new password for '" + user + "':",null,null);
+                                        "Please enter the new password for '" + user + "':",null,null){
+                        @Override
+                        protected Control createDialogArea(Composite parent)
+                        {
+                            Control control = super.createDialogArea(parent);
+                            //set the Text field echo char to '*' to mask the password 
+                            getText().setEchoChar('*');
+                            //return the normal result
+                            return control;
+                        }
+                    };
                     
                     int returnValue;
                     while((returnValue = id.open()) == InputDialog.OK)
@@ -686,6 +696,8 @@ public class UserManagementTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     
@@ -708,7 +720,7 @@ public class UserManagementTabControl extends TabControl
         passwordComposite.setLayout(new GridLayout(2,false));
         
         _toolkit.createLabel(passwordComposite,"Password:").setBackground(shell.getBackground());
-        final Text passwordText = new Text(passwordComposite, SWT.BORDER);
+        final Text passwordText = new Text(passwordComposite, SWT.BORDER | SWT.PASSWORD);
         passwordText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
         Group buttonGroup = new Group(shell, SWT.NONE);
@@ -786,6 +798,8 @@ public class UserManagementTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     

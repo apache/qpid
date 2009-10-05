@@ -25,6 +25,7 @@ import static org.apache.qpid.management.ui.Constants.RESULT;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -829,6 +830,7 @@ public class QueueOperationsTabControl extends TabControl
         }
         else
         {
+            Collections.sort(queueList);
             destinationCombo.setItems(queueList.toArray(new String[0]));
         }
         destinationCombo.select(0);
@@ -880,6 +882,8 @@ public class QueueOperationsTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     
@@ -949,6 +953,8 @@ public class QueueOperationsTabControl extends TabControl
 
         shell.setDefaultButton(okButton);
         shell.pack();
+        ViewUtility.centerChildInParentShell(parent, shell);
+        
         shell.open();
     }
     

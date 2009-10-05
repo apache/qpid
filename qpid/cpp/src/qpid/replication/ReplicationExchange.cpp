@@ -42,12 +42,18 @@ ReplicationExchange::ReplicationExchange(const std::string& name, bool durable,
     : Exchange(name, durable, _args, parent, broker), queues(qr), sequence(args.getAsInt64(SEQUENCE_VALUE)), init(false)
 {
     args.setInt64(SEQUENCE_VALUE, sequence);
+    if (mgmtExchange != 0)
+        mgmtExchange->set_type(typeName);
 }
 
 std::string ReplicationExchange::getType() const { return typeName; }            
 
 void ReplicationExchange::route(Deliverable& msg, const std::string& /*routingKey*/, const FieldTable* args)
 {
+    if (mgmtExchange != 0) {
+        mgmtExchange->inc_msgReceives();
+        mgmtExchange->inc_byteReceives(msg.contentSize());
+    }
     if (args) {
         int eventType = args->getAsInt(REPLICATION_EVENT_TYPE);
         if (eventType) {
@@ -57,7 +63,7 @@ void ReplicationExchange::route(Deliverable& msg, const std::string& /*routingKe
                 handleEnqueueEvent(args, msg);
                 return;
               case DEQUEUE:
-                handleDequeueEvent(args);
+                handleDequeueEvent(args, msg);
                 return;
               default:
                 throw IllegalArgumentException(QPID_MSG("Illegal value for " << REPLICATION_EVENT_TYPE << ": " << eventType));
@@ -65,6 +71,10 @@ void ReplicationExchange::route(Deliverable& msg, const std::string& /*routingKe
         }
     } else {
         QPID_LOG(warning, "Dropping unexpected message with no headers");
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        }
     }
 }
 
@@ -79,12 +89,20 @@ void ReplicationExchange::handleEnqueueEvent(const FieldTable* args, Deliverable
         headers.erase(REPLICATION_EVENT_TYPE);
         msg.deliverTo(queue);
         QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgRoutes();
+            mgmtExchange->inc_byteRoutes( msg.contentSize());
+        }
     } else {
         QPID_LOG(error, "Cannot enqueue replicated message. Queue " << queueName << " does not exist");
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        }
     }
 }
 
-void ReplicationExchange::handleDequeueEvent(const FieldTable* args)
+void ReplicationExchange::handleDequeueEvent(const FieldTable* args, Deliverable& msg)
 {
     std::string queueName = args->getAsString(REPLICATION_TARGET_QUEUE);
     Queue::shared_ptr queue = queues.find(queueName);
@@ -94,11 +112,23 @@ void ReplicationExchange::handleDequeueEvent(const FieldTable* args)
         if (queue->acquireMessageAt(position, dequeued)) {
             queue->dequeue(0, dequeued);
             QPID_LOG(debug, "Processed replicated 'dequeue' event from " << queueName << " at position " << position);
+            if (mgmtExchange != 0) {
+                mgmtExchange->inc_msgRoutes();
+                mgmtExchange->inc_byteRoutes(msg.contentSize());
+            }
         } else {
             QPID_LOG(warning, "Could not acquire message " << position << " from " << queueName);
+            if (mgmtExchange != 0) {
+                mgmtExchange->inc_msgDrops();
+                mgmtExchange->inc_byteDrops(msg.contentSize());
+            }
         }
     } else {
         QPID_LOG(error, "Cannot process replicated 'dequeue' event. Queue " << queueName << " does not exist");
+        if (mgmtExchange != 0) {
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        }
     }
 }
 
