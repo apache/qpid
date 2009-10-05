@@ -51,7 +51,7 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest implements Con
         // not the one we are connected to.
         // The test will still pass but it will not be exactly
         // as described.
-        NUM_MESSAGES = 10;
+        NUM_MESSAGES = 6;
     }
 
     /**
