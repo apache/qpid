@@ -23,15 +23,23 @@ package org.apache.qpid.server.management;
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.logging.messages.ConnectionMessages;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.log4j.Logger;
 
 import javax.management.remote.MBeanServerForwarder;
 import javax.management.remote.JMXPrincipal;
+import javax.management.remote.JMXConnectionNotification;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.JMException;
+import javax.management.NotificationListener;
+import javax.management.Notification;
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -49,7 +57,7 @@ import java.util.Properties;
  * the logic for allowing the users to invoke MBean operations and implements the restrictions for readOnly, readWrite
  * and admin users.
  */
-public class MBeanInvocationHandlerImpl implements InvocationHandler
+public class MBeanInvocationHandlerImpl implements InvocationHandler, NotificationListener
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
 
@@ -59,6 +67,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
     private static Properties _userRoles = new Properties();
+    private static ManagementActor  _logActor;
 
     private static HashSet<String> _adminOnlyMethods = new HashSet<String>();
     {
@@ -71,6 +80,9 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     {
         final InvocationHandler handler = new MBeanInvocationHandlerImpl();
         final Class[] interfaces = new Class[]{MBeanServerForwarder.class};
+
+
+        _logActor = new ManagementActor(CurrentActor.get().getRootMessageLogger());
 
         Object proxy = Proxy.newProxyInstance(MBeanServerForwarder.class.getClassLoader(), interfaces, handler);
         return MBeanServerForwarder.class.cast(proxy);
@@ -254,4 +266,23 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 
         return false;
     }
+
+    public void handleNotification(Notification notification, Object handback)
+    {
+        // only RMI Connections are serviced here, Local API atta  
+        // rmi://169.24.29.116 guest 3
+        String[] connectionData = ((JMXConnectionNotification) notification).getConnectionId().split(" ");
+        String user = connectionData[1];
+
+        if (notification.getType().equals(JMXConnectionNotification.OPENED))
+        {
+            _logActor.message(ManagementConsoleMessages.MNG_1007(user));
+        }
+        else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
+                 notification.getType().equals(JMXConnectionNotification.FAILED))
+        {
+            _logActor.message(ManagementConsoleMessages.MNG_1008());
+        }
+    }
 }
+

@@ -25,6 +25,7 @@ from fnmatch import fnmatchcase as match
 from getopt import GetoptError
 from logging import getLogger, StreamHandler, Formatter, Filter, \
     WARN, DEBUG, ERROR
+from qpid.harness import Skipped
 from qpid.util import URL
 
 levels = {
@@ -50,6 +51,8 @@ parser.add_option("-v", "--log-level", metavar="LEVEL", default="WARN",
 parser.add_option("-c", "--log-category", metavar="CATEGORY", action="append",
                   dest="log_categories", default=[],
                   help="log only categories matching CATEGORY pattern")
+parser.add_option("-m", "--module", action="append", default=[],
+                  dest="modules", help="add module to test search path")
 parser.add_option("-i", "--ignore", action="append", default=[],
                   help="ignore tests matching IGNORE pattern")
 parser.add_option("-I", "--ignore-file", metavar="IFILE", action="append",
@@ -101,7 +104,10 @@ for a in args:
   includes.append(a.strip())
 
 if not includes:
-  includes.append("*")
+  if opts.modules:
+    includes.append("*")
+  else:
+    includes.extend(["qpid.tests.*", "tests.*", "tests_0-10.*"])
 
 def is_ignored(path):
   for p in excludes:
@@ -117,15 +123,21 @@ def is_included(path):
       return True
   return False
 
+def is_smart():
+  return sys.stdout.isatty() and os.environ.get("TERM", "dumb") != "dumb"
+
 def width():
-  if sys.stdout.isatty():
+  if is_smart():
     s = struct.pack("HHHH", 0, 0, 0, 0)
     fd_stdout = sys.stdout.fileno()
     x = fcntl.ioctl(fd_stdout, termios.TIOCGWINSZ, s)
     rows, cols, xpx, ypx = struct.unpack("HHHH", x)
     return cols
   else:
-    return 80
+    try:
+      return int(os.environ.get("COLUMNS", "80"))
+    except ValueError:
+      return 80
 
 WIDTH = width()
 
@@ -142,13 +154,14 @@ def vt100_attrs(*attrs):
 vt100_reset = vt100_attrs(0)
 
 KEYWORDS = {"pass": (32,),
+            "skip": (33,),
             "fail": (31,),
             "start": (34,),
             "total": (34,),
             "ignored": (33,),
             "selected": (34,)}
 
-COLORIZE = sys.stdout.isatty()
+COLORIZE = is_smart()
 
 def colorize_word(word, text=None):
   if text is None:
@@ -164,9 +177,6 @@ def colorize(text, *attrs):
 def indent(text):
   lines = text.split("\n")
   return "  %s" % "\n  ".join(lines)
-
-from qpid.testlib import testrunner
-testrunner.setBroker(str(config.broker))
 
 class Interceptor:
 
@@ -264,16 +274,27 @@ root.setLevel(WARN)
 
 log = getLogger("qpid.test")
 
+PASS = "pass"
+SKIP = "skip"
+FAIL = "fail"
+
 class Runner:
 
   def __init__(self):
     self.exceptions = []
+    self.skip = False
 
   def passed(self):
     return not self.exceptions
 
+  def skipped(self):
+    return self.skip
+
   def failed(self):
-    return self.exceptions
+    return self.exceptions and not self.skip
+
+  def halt(self):
+    return self.exceptions or self.skip
 
   def run(self, name, phase):
     try:
@@ -281,18 +302,28 @@ class Runner:
     except KeyboardInterrupt:
       raise
     except:
-      self.exceptions.append((name, sys.exc_info()))
+      exi = sys.exc_info()
+      if issubclass(exi[0], Skipped):
+        self.skip = True
+      self.exceptions.append((name, exi))
 
   def status(self):
     if self.passed():
-      return "pass"
+      return PASS
+    elif self.skipped():
+      return SKIP
+    elif self.failed():
+      return FAIL
     else:
-      return "fail"
+      return None
 
   def print_exceptions(self):
     for name, info in self.exceptions:
-      print "Error during %s:" % name
-      print indent("".join(traceback.format_exception(*info))).rstrip()
+      if issubclass(info[0], Skipped):
+        print indent("".join(traceback.format_exception_only(*info[:2]))).rstrip()
+      else:
+        print "Error during %s:" % name
+        print indent("".join(traceback.format_exception(*info))).rstrip()
 
 ST_WIDTH = 8
 
@@ -329,11 +360,11 @@ def run_test(name, test, config):
       sys.stdout.write("\n")
     sys.stdout.write(output)
   print " %s" % colorize_word(runner.status())
-  if runner.failed():
+  if runner.failed() or runner.skipped():
     runner.print_exceptions()
   root.setLevel(level)
   filter.patterns = patterns
-  return runner.passed()
+  return runner.status()
 
 class FunctionTest:
 
@@ -373,13 +404,13 @@ class MethodTest:
 
     if hasattr(inst, "configure"):
       runner.run("configure", lambda: inst.configure(config))
-      if runner.failed(): return runner
+      if runner.halt(): return runner
     if hasattr(inst, "setUp"):
       runner.run("setup", inst.setUp)
-      if runner.failed(): return runner
+      if runner.halt(): return runner
     elif hasattr(inst, "setup"):
       runner.run("setup", inst.setup)
-      if runner.failed(): return runner
+      if runner.halt(): return runner
 
     runner.run("test", test)
 
@@ -473,7 +504,9 @@ class Harness:
               objects.append(child)
       self.scanned.append(obj)
 
-modules = "qpid.tests", "tests", "tests_0-10"
+modules = opts.modules
+if not modules:
+  modules.extend(["qpid.tests", "tests", "tests_0-8", "tests_0-9", "tests_0-10"])
 h = Harness()
 for name in modules:
   m = __import__(name, None, None, ["dummy"])
@@ -485,13 +518,17 @@ total = len(filtered) + len(ignored)
 
 passed = 0
 failed = 0
+skipped = 0
 for t in filtered:
   if list_only:
     print t.name()
   else:
-    if t.run():
+    st = t.run()
+    if st == PASS:
       passed += 1
-    else:
+    elif st == SKIP:
+      skipped += 1
+    elif st == FAIL:
       failed += 1
       if opts.hoe:
         break
@@ -499,6 +536,10 @@ for t in filtered:
 run = passed + failed
 
 if not list_only:
+  if passed:
+    _pass = "pass"
+  else:
+    _pass = "fail"
   if failed:
     outcome = "fail"
   else:
@@ -507,12 +548,22 @@ if not list_only:
     ign = "ignored"
   else:
     ign = "pass"
+  if skipped:
+    skip = "skip"
+  else:
+    skip = "pass"
   print colorize("Totals:", 1), \
       colorize_word("total", "%s tests" % total) + ",", \
-      colorize_word("pass", "%s passed" % passed) + ",", \
+      colorize_word(_pass, "%s passed" % passed) + ",", \
+      colorize_word(skip, "%s skipped" % skipped) + ",", \
       colorize_word(ign, "%s ignored" % len(ignored)) + ",", \
       colorize_word(outcome, "%s failed" % failed),
   if opts.hoe and failed > 0:
     print " -- (halted after %s)" % run
   else:
     print
+
+if failed or skipped:
+  sys.exit(1)
+else:
+  sys.exit(0)

@@ -27,30 +27,24 @@ python client. The "tests_0-10", "tests_0-9", and "tests_0-8"
 directories contain protocol level conformance tests for AMQP brokers
 of the specified version.
 
-Simplest way to run the tests:
+The qpid-python-test script may be used to run these tests. It will by
+default run the python unit tests and the 0-10 conformance tests:
 
   1. Run a broker on the default port
 
-  2. ./run-tests -s <version>
+  2. ./qpid-python-test
 
-Where <version> is one of "0-8", "0-9", or "0-10-errata".
+If you wish to run the 0-8 or 0-9 conformence tests, they may be
+selected as follows:
 
-See the run-tests usage for for additional options:
+  1. Run a broker on the default port
 
-  ./run-tests -h
+  2. ./qpid-python-test tests_0-8.*
 
-== Expected failures ==
+        -- or --
 
-Certain tests are expected to fail due to incomplete functionality or
-unresolved interop issues. To skip expected failures for the C++ or
-Java brokers:
+     ./qpid-python-test tests_0-9.*
 
-  ./run-tests -I <file-name>
+See the qpid-python-test usage for for additional options:
 
-Where <file-name> is one of the following files:
-
-  * cpp_failing_0-10.txt
-  * cpp_failing_0-9.txt
-  * cpp_failing_0-8.txt
-  * java_failing_0-9.txt
-  * java_failing_0-8.txt
+  ./qpid-python-test -h

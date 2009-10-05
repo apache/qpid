@@ -223,7 +223,7 @@ Broker::Broker(const Broker::Options& conf) :
         }
         else {
             QPID_LOG(notice, "Cluster recovery: recovered journal data discarded and journal files pushed down");
-            store->discardInit(true);
+            store->truncateInit(true); // save old files in subdir
         }
     }
 

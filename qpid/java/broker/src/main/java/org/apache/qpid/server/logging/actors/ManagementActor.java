@@ -20,13 +20,27 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 
 import java.text.MessageFormat;
-import java.security.Principal;
 
+/**
+ * NOTE: This actor is not thread safe.
+ *
+ * Sharing of a ManagementActor instance between threads may result in an
+ * incorrect actor value being logged.
+ *
+ * This is due to the fact that calls to message will dynamically query the
+ * thread name and use that to set the log format during each message() call.
+ *
+ * This is currently not an issue as each MBean operation creates a new Actor
+ * that is unique for each operation.
+ */
 public class ManagementActor extends AbstractActor
 {
+    String _lastThreadName = null;
 
     /**
      * LOG FORMAT for the ManagementActor,
@@ -37,21 +51,68 @@ public class ManagementActor extends AbstractActor
      * 1 - User ID
      * 2 - IP
      */
-    public static final String MANAGEMENT_FORMAT = "mng:{0}({1}@{2})";
+    public static final String MANAGEMENT_FORMAT = "mng:{0}({1})";
 
-    /**
-     * //todo Correct interface to provide connection details
-     * @param user
-     * @param rootLogger The RootLogger to use for this Actor
-     */
-    public ManagementActor(Principal user, RootMessageLogger rootLogger)
+    /** @param rootLogger The RootLogger to use for this Actor */
+    public ManagementActor(RootMessageLogger rootLogger)
     {
         super(rootLogger);
 
-        _logString = "["+ MessageFormat.format(MANAGEMENT_FORMAT,
-                                          "<MNG:ConnectionID>",
-                                          user.getName(),
-                                          "<MNG:RemoteAddress>")
-                     + "] ";
     }
+
+    private void updateLogString()
+    {
+        String currentName = Thread.currentThread().getName();
+
+        String actor;
+        // Record the last thread name so we don't have to recreate the log string
+        if (!currentName.equals(_lastThreadName))
+        {
+            _lastThreadName = currentName;
+
+            // Management Thread names have this format.
+            //RMI TCP Connection(2)-169.24.29.116
+            // This is true for both LocalAPI and JMX Connections
+            // However to be defensive lets test.
+
+            String[] split = currentName.split("\\(");
+            if (split.length == 2)
+            {
+                String connectionID = split[1].split("\\)")[0];
+                String ip = currentName.split("-")[1];
+
+                actor = MessageFormat.format(MANAGEMENT_FORMAT,
+                                             connectionID,
+                                             ip);
+            }
+            else
+            {
+                // This is a precautionary path as it is not expected to occur
+                // however rather than adjusting the thread name of the two
+                // tests that will use this it is safer all round to do this.
+                // it is also currently used by tests :
+                // AMQBrokerManagerMBeanTest
+                // ExchangeMBeanTest
+                actor = currentName;
+            }
+
+            _logString = "[" + actor + "] ";
+
+        }
+    }
+
+    @Override
+    public void message(LogSubject subject, LogMessage message)
+    {
+        updateLogString();
+        super.message(subject, message);
+    }
+
+    @Override
+    public void message(LogMessage message)
+    {
+        updateLogString();
+        super.message(message);
+    }
+
 }

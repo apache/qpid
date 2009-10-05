@@ -19,7 +19,7 @@
  * under the License.
  *
  */
-#include "qpid/broker/Timer.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/Monitor.h"
 #include "unit_test.h"
 #include <math.h>
@@ -28,7 +28,6 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 
-using namespace qpid::broker;
 using namespace qpid::sys;
 using boost::intrusive_ptr;
 using boost::dynamic_pointer_cast;

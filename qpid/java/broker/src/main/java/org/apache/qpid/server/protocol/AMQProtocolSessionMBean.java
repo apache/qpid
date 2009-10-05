@@ -66,7 +66,9 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 
@@ -187,7 +189,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void commitTransactions(int channelId) throws JMException
     {
-        CurrentActor.set(getLogActor());
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             AMQChannel channel = _session.getChannel(channelId);
@@ -216,7 +218,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void rollbackTransactions(int channelId) throws JMException
     {
-        CurrentActor.set(getLogActor());
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             AMQChannel channel = _session.getChannel(channelId);
@@ -281,7 +283,22 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                                                          0,
                                                          0);
 
-        CurrentActor.set(getLogActor());
+        // This seems ugly but because we use closeConnection in both normal
+        // broker operation and as part of the management interface it cannot
+        // be avoided. The Current Actor will be null when this method is
+        // called via the Management interface. This is because we allow the
+        // Local API connection with JConsole. If we did not allow that option
+        // then the CurrentActor could be set in our JMX Proxy object.
+        // As it is we need to set the CurrentActor on all MBean methods
+        // Ideally we would not have a single method that can be called from
+        // two contexts.        
+        boolean removeActor = false;
+        if (CurrentActor.get() == null)
+        {
+            removeActor = true;
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        }
+
         try
         {
             _session.writeFrame(responseBody.generateFrame(0));
@@ -298,19 +315,11 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         }
         finally
         {
-            CurrentActor.remove();
+            if (removeActor)
+            {
+                CurrentActor.remove();
+            }
         }
-    }
-
-    /**
-     * Return the LogActor for this MBean Session
-     * //fixme currently simply returning the managed sessions LogActor, should
-     * be the ManagementActor
-     * @return
-     */
-    private LogActor getLogActor()
-    {
-        return _session.getLogActor();
     }
 
     @Override

@@ -55,7 +55,6 @@ public class ServerConfiguration implements SignalHandler
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
     public static final String DEFAULT_STATUS_UPDATES = "on";
-    public static final String DEFAULT_ADVANCED_LOCALE = Locale.US.toString();
 
     private static final int DEFAULT_FRAME_SIZE = 65536;
     private static final int DEFAULT_PORT = 5672;
@@ -150,7 +149,7 @@ public class ServerConfiguration implements SignalHandler
             {
                 XMLConfiguration vhostConfiguration = new XMLConfiguration((String) thing);
                 List hosts = vhostConfiguration.getList("virtualhost.name");
-                for (int j = 0; j < hosts.size(); j++)
+                    for (int j = 0; j < hosts.size(); j++)
                 {
                     String name = (String) hosts.get(j);
                     // Add the keys of the virtual host to the main config then bail out
@@ -221,12 +220,18 @@ public class ServerConfiguration implements SignalHandler
     public Locale getLocale()
     {
 
-        String localeString = getConfig().getString(ADVANCED_LOCALE, DEFAULT_ADVANCED_LOCALE);
+        String localeString = getConfig().getString(ADVANCED_LOCALE);
         // Expecting locale of format langauge_country_variant
+
+        // If the configuration does not have a defined locale use the JVM default 
+        if (localeString == null)
+        {
+            return Locale.getDefault();
+        }
 
         String[] parts = localeString.split("_");
 
-        Locale locale = null;
+        Locale locale;
         switch (parts.length)
         {
             case 1:

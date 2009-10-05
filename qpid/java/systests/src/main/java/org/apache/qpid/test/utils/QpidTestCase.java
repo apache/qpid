@@ -145,7 +145,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_VERSION = "broker.version";
-    private static final String BROKER_READY = "broker.ready";
+    protected static final String BROKER_READY = "broker.ready";
     private static final String BROKER_STOPPED = "broker.stopped";
     private static final String TEST_OUTPUT = "test.output";
 
@@ -362,6 +362,16 @@ public class QpidTestCase extends TestCase
     }
 
     /**
+     * Return the management portin use by the broker on this main port
+     * @param mainPort the broker's main port.
+     * @return the management port that corresponds to the broker on the given port
+     */
+    protected int getManagementPort(int mainPort)
+    {
+        return mainPort + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
+    }
+
+    /**
      * Get the Port that is use by the current broker
      *
      * @return the current port
@@ -392,7 +402,7 @@ public class QpidTestCase extends TestCase
         return _broker
                 .replace("@PORT", "" + port)
                 .replace("@SSL_PORT", "" + (port - 1))
-                .replace("@MPORT", "" + (port + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT)))
+                .replace("@MPORT", "" + getManagementPort(port))
                 .replace("@CONFIG_FILE", _configFile.toString());
     }
 
@@ -508,34 +518,6 @@ public class QpidTestCase extends TestCase
         {
             TransportConnection.killVMBroker(port);
             ApplicationRegistry.remove(port);
-        }
-    }
-
-    public void nukeBroker() throws Exception
-    {
-        nukeBroker(0);
-    }
-
-    public void nukeBroker(int port) throws Exception
-    {
-        Process proc = _brokers.get(getPort(port));
-        if (proc == null)
-        {
-            stopBroker(port);
-        }
-        else
-        {
-            String command = "pkill -KILL -f " + getBrokerCommand(getPort(port));
-            try
-            {
-                Runtime.getRuntime().exec(command);
-            }
-            catch (Exception e)
-            {
-                // Can't do that, try the old fashioned way
-                _logger.warn("Could not run " + command + ", killing with stopBroker()");
-                stopBroker(port);
-            }
         }
     }
 

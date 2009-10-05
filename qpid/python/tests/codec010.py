@@ -20,21 +20,17 @@
 import time
 
 from unittest import TestCase
-from qpid.spec010 import load
 from qpid.codec010 import StringCodec
-from qpid.testlib import testrunner
 from qpid.datatypes import timestamp, uuid4
+from qpid.ops import PRIMITIVE
 
 class CodecTest(TestCase):
 
-  def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10.xml"))
-
   def check(self, type, value, compare=True):
-    t = self.spec[type]
-    sc = StringCodec(self.spec)
-    t.encode(sc, value)
-    decoded = t.decode(sc)
+    t = PRIMITIVE[type]
+    sc = StringCodec()
+    sc.write_primitive(t, value)
+    decoded = sc.read_primitive(t)
     if compare:
       assert decoded == value, "%s, %s" % (decoded, value)
     return decoded

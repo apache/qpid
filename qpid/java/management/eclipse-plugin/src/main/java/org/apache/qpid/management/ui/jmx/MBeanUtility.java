@@ -23,6 +23,7 @@ package org.apache.qpid.management.ui.jmx;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -275,6 +276,72 @@ public class MBeanUtility
         attributeModel.setAttributeValue(attribute, value);
         return value;
     }
+    
+
+    /**
+     * Returns a List of Object arrays containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
+     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
+     */
+    public static List<List<Object>> getQueueAttributes(List<ManagedBean> mbeans, String[] attributes)
+    {
+        List<List<Object>> results = new ArrayList<List<Object>>();
+        
+        MBeanServerConnection mbsc = null;
+        if(mbeans.isEmpty())
+        {
+            return results;
+        }
+        else
+        {
+            ManagedBean mbean = mbeans.get(0);
+            JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(mbean);
+            mbsc = serverRegistry.getServerConnection();
+        }
+        
+        if(mbsc == null)
+        {
+            return results;
+        }
+        
+        for(ManagedBean mbean : mbeans)
+        {
+            HashMap<String,Object> tempResults = new HashMap<String,Object>();
+            
+            ObjectName objName = ((JMXManagedObject)mbean).getObjectName();
+            try
+            {
+                AttributeList list = mbsc.getAttributes(objName, attributes);
+                
+                for (Attribute attr : list.toArray(new Attribute[0]))
+                {
+                    tempResults.put(attr.getName(), attr.getValue());
+                }
+                
+                List<Object> attributeValues = new ArrayList<Object>(attributes.length);
+                
+                for(int i = 0; i <attributes.length; i++)
+                {
+                    if(tempResults.containsKey(attributes[i]))
+                    {
+                        attributeValues.add(tempResults.get(attributes[i]));
+                    }
+                    else
+                    {
+                        attributeValues.add(new String("-"));
+                    }
+                }
+                
+                results.add(attributeValues);
+            }
+            catch (Exception ignore)
+            {
+                continue;
+            }
+        }
+        
+        return results;
+    }
+    
     
     /**
      * Retrieves the attribute values from MBeanSever and stores in the server registry.

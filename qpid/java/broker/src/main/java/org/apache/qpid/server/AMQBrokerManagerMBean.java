@@ -39,8 +39,8 @@ package org.apache.qpid.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -50,6 +50,7 @@ import javax.management.ObjectName;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.exchange.Exchange;
@@ -60,9 +61,12 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.AMQQueueMBean;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -77,7 +81,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final MessageStore _messageStore;
 
     private final VirtualHost.VirtualHostMBean _virtualHostMBean;
-    
+
     @MBeanConstructor("Creates the Broker Manager MBean")
     public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
@@ -114,26 +118,67 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     }
     
     /**
-     * Returns a Map keyed by QueueName, detailing its associated QueueDepth in bytes.
+     * Returns a list containing the names of the attributes available for the Queue mbeans.
      * @since Qpid JMX API 1.3
      * @throws IOException
      */
-    public Map<String,Long> viewQueueNamesDepths() throws IOException
+    public List<String> retrieveQueueAttributeNames() throws IOException
     {
-        Map<String,Long> queueDepthMap = new HashMap<String,Long>(_queueRegistry.getQueues().size());
+        List<String> attributeList = new ArrayList<String>();
+        for(String attr : ManagedQueue.QUEUE_ATTRIBUTES)
+        {
+            attributeList.add(attr);
+        }
         
-        String queueName;
-        Long queueDepth;
+        Collections.sort(attributeList);
 
+        return attributeList;
+    }
+    
+    /**
+     * Returns a List of Object Lists containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
+     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
+     * @since Qpid JMX API 1.3
+     * @throws IOException
+     */
+    public List<List<Object>> retrieveQueueAttributeValues(String[] attributes) throws IOException
+    {
+        if(_queueRegistry.getQueues().size() == 0)
+        {
+            return new ArrayList<List<Object>>();
+        }
+        
+        List<List<Object>> queueAttributesList = new ArrayList<List<Object>>(_queueRegistry.getQueues().size());
+        
+        int attributesLength = attributes.length;
+        
         for(AMQQueue queue : _queueRegistry.getQueues())
         {
-            queueName = queue.getName().toString();
-            queueDepth = queue.getQueueDepth();
+            AMQQueueMBean mbean = (AMQQueueMBean) queue.getManagedObject();
             
-            queueDepthMap.put(queueName,queueDepth);
+            if(mbean == null)
+            {
+                continue;
+            }
+            
+            List<Object> attributeValues = new ArrayList<Object>(attributesLength);
+            
+            for(int i=0; i < attributesLength; i++)
+            {
+                try
+                {
+                    attributeValues.add(mbean.getAttribute(attributes[i]));
+                }
+                catch (Exception e)
+                {
+                    attributeValues.add(new String("-"));
+                }
+            }
+            
+            queueAttributesList.add(attributeValues);
         }
-
-        return queueDepthMap;
+        
+        return queueAttributesList;
     }
     
     /**
@@ -146,6 +191,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
     {
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             synchronized (_exchangeRegistry)
@@ -167,6 +213,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             throw new MBeanException(ex, "Error in creating exchange " + exchangeName);
         }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     /**
@@ -182,6 +232,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         // boolean inUse = false;
         // Check if there are queue-bindings with the exchange and unregister
         // when there are no bindings.
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             _exchangeRegistry.unregisterExchange(new AMQShortString(exchangeName), false);
@@ -189,6 +240,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         catch (AMQException ex)
         {
             throw new MBeanException(ex, "Error in unregistering exchange " + exchangeName);
+        }
+        finally
+        {
+            CurrentActor.remove();
         }
     }
 
@@ -209,6 +264,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The queue \"" + queueName + "\" already exists.");
         }
 
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             AMQShortString ownerShortString = null;
@@ -232,6 +288,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             jme.initCause(ex);
             throw new MBeanException(jme, "Error in creating queue " + queueName);
         }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     private VirtualHost getVirtualHost()
@@ -253,6 +313,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The Queue " + queueName + " is not a registerd queue.");
         }
 
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
             queue.delete();
@@ -264,6 +325,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             JMException jme = new JMException(ex.getMessage());
             jme.initCause(ex);
             throw new MBeanException(jme, "Error in deleting queue " + queueName);
+        }
+        finally
+        {
+            CurrentActor.remove();    
         }
     }
 

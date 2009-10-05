@@ -41,7 +41,7 @@ AMQFrame::AMQFrame(const boost::intrusive_ptr<AMQBody>& b) : body(b) { init(); }
 
 AMQFrame::AMQFrame(const AMQBody& b) : body(b.clone()) { init(); }
 
-AMQFrame::~AMQFrame() { init(); }
+AMQFrame::~AMQFrame() {}
 
 AMQBody* AMQFrame::getBody() {
     // Non-const AMQBody* may be used to modify the body.

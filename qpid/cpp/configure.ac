@@ -514,6 +514,7 @@ AC_CONFIG_FILES([
   examples/tradedemo/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile
+  bindings/qmf/tests/Makefile
   managementgen/Makefile
   etc/Makefile
   src/Makefile

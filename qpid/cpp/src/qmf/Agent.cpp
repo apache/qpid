@@ -239,7 +239,6 @@ AgentImpl::AgentImpl(char* _label, bool i) :
 
 AgentImpl::~AgentImpl()
 {
-    cout << "AgentImpl::~AgentImpl" << endl;
 }
 
 void AgentImpl::setStoreDir(char* path)
@@ -859,7 +858,6 @@ Agent::Agent(char* label, bool internalStore)
 
 Agent::~Agent()
 {
-    cout << "Agent::~Agent" << endl;
     delete impl;
 }
 

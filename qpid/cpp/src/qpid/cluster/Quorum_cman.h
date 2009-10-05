@@ -22,26 +22,40 @@
  *
  */
 
+#include <qpid/sys/DispatchHandle.h>
+#include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+#include <memory>
+
 extern "C" {
 #include <libcman.h>
 }
 
 namespace qpid {
-
-class Options;
+namespace sys {
+class Poller;
+}
 
 namespace cluster {
+class Cluster;
 
 class Quorum {
   public:
-    Quorum();
+    Quorum(boost::function<void ()> onError);
     ~Quorum();
-    void init();
-    bool isQuorate();
+    void start(boost::shared_ptr<sys::Poller>);
     
   private:
+    void dispatch(sys::DispatchHandle&);
+    void disconnect(sys::DispatchHandle&);
+    int getFd();
+    void watch(int fd);
+    
     bool enable;
     cman_handle_t cman;
+    int cmanFd;
+    std::auto_ptr<sys::DispatchHandleRef> dispatchHandle;
+    boost::shared_ptr<sys::Poller> poller;
 };
 
 

@@ -101,8 +101,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     broker::Broker& getBroker() const;
     Multicaster& getMulticast() { return mcast; }
 
-    void checkQuorum();
-
     const ClusterSettings& getSettings() const { return settings; }
 
     void deliverFrame(const EventFrame&);
@@ -169,7 +167,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 
         cpg_handle_t /*handle*/,
-        struct cpg_name *group,
+        const struct cpg_name *group,
         uint32_t /*nodeid*/,
         uint32_t /*pid*/,
         void* /*msg*/,
@@ -179,10 +177,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     
     void configChange( // CPG config change callback.
         cpg_handle_t /*handle*/,
-        struct cpg_name */*group*/,
-        struct cpg_address */*members*/, int /*nMembers*/,
-        struct cpg_address */*left*/, int /*nLeft*/,
-        struct cpg_address */*joined*/, int /*nJoined*/
+        const struct cpg_name */*group*/,
+        const struct cpg_address */*members*/, int /*nMembers*/,
+        const struct cpg_address */*left*/, int /*nLeft*/,
+        const struct cpg_address */*joined*/, int /*nJoined*/
     );
 
     // == Called in management threads.

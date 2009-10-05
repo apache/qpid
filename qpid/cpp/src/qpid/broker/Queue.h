@@ -323,10 +323,10 @@ namespace qpid {
              * Must be >= the current sequence number.
              * Used by cluster to replicate queues.
              */
-            void setPosition(framing::SequenceNumber pos);
+            QPID_BROKER_EXTERN void setPosition(framing::SequenceNumber pos);
             /** return current position sequence number for the next message on the queue.
             */
-            framing::SequenceNumber getPosition();
+            QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
             int getEventMode();
             void setQueueEventManager(QueueEvents&);
             QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);

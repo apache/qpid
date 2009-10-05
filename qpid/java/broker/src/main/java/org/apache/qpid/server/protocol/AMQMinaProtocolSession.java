@@ -657,10 +657,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         if (!_closed)
         {
-            _closed = true;
-            
-            _actor.message(ConnectionMessages.CON_1002());
-
             if (_virtualHost != null)
             {
                 _virtualHost.getConnectionRegistry().deregisterConnection(this);
@@ -676,6 +672,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             {
                 task.doTask(this);
             }
+
+            _closed = true;
+
+            CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
         }
     }
 

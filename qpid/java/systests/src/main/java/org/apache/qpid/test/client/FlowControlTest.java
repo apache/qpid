@@ -196,13 +196,17 @@ public class FlowControlTest extends QpidTestCase
         {
             System.err.println("Test Run:" + ++run);
             Thread.sleep(1000);
+            try
+            {
+                test.startBroker();
+                test.testBasicBytesFlowControl();
 
-            test.startBroker();
-            test.testBasicBytesFlowControl();
-
-            Thread.sleep(1000);
-            
-            test.stopBroker();
+                Thread.sleep(1000);
+            }
+            finally
+            {
+                test.stopBroker();
+            }
         }
     }
 }

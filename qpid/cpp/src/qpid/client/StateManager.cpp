@@ -60,6 +60,18 @@ void StateManager::setState(int s)
     stateLock.notifyAll();
 }
 
+bool StateManager::setState(int s, int expected)
+{
+    Monitor::ScopedLock l(stateLock);
+    if (state == expected) {
+        state = s;
+        stateLock.notifyAll();
+        return true;
+    } else {
+        return false;
+    }
+}
+
 int StateManager::getState() const
 {
     Monitor::ScopedLock l(stateLock);

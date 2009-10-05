@@ -256,6 +256,18 @@ check_PROGRAMS+=datagen
 datagen_SOURCES=datagen.cpp
 datagen_LDADD=$(lib_common)
 
+check_PROGRAMS+=qrsh_server
+qrsh_server_SOURCES=qrsh_server.cpp
+qrsh_server_LDADD=$(lib_client)
+
+check_PROGRAMS+=qrsh_run
+qrsh_run_SOURCES=qrsh_run.cpp
+qrsh_run_LDADD=$(lib_client)
+
+check_PROGRAMS+=qrsh
+qrsh_SOURCES=qrsh.cpp
+qrsh_LDADD=$(lib_client)
+
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
@@ -305,9 +317,8 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
 # Not run under valgrind, too slow
 
 LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
- run_failover_soak  \
+ run_failover_soak reliable_replication_test \
  federated_cluster_test_with_node_failure
-# TODO: renable the temporarily disabled the failing reliable_replication_test when QPID-1984 is resolved.
 
 EXTRA_DIST+=fanout_perftest shared_perftest multiq_perftest topic_perftest run_failover_soak reliable_replication_test \
   federated_cluster_test_with_node_failure \

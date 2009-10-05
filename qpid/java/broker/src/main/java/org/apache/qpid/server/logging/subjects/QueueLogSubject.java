@@ -33,12 +33,12 @@ public class QueueLogSubject extends AbstractLogSubject
      * 0 - Virtualhost name
      * 1 - queue name
      */
-    protected static String BINDING_FORMAT = "vh(/{0})/qu({1})";
+    public static String LOG_FORMAT = "vh(/{0})/qu({1})";
 
     /** Create an QueueLogSubject that Logs in the following format. */
     public QueueLogSubject(AMQQueue queue)
     {
-        setLogStringWithFormat(BINDING_FORMAT,
+        setLogStringWithFormat(LOG_FORMAT,
                                queue.getVirtualHost().getName(),
                                queue.getName());
     }

@@ -21,15 +21,20 @@
  * under the License.
  *
  */
+
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
+
 namespace qpid {
 namespace cluster {
+class Cluster;
 
 /** Null implementation of quorum. */
 
 class Quorum {
   public:
-    void init() {}
-    bool isQuorate() { return true; }
+    Quorum(boost::function<void ()>) {}
+    void start(boost::shared_ptr<sys::Poller>) {}
 };
 
 #endif  /*!QPID_CLUSTER_QUORUM_NULL_H*/

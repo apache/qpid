@@ -174,17 +174,23 @@ void Link::closed (int, std::string text)
         destroy();
 }
 
+void Link::checkClosePermission()
+{
+    Mutex::ScopedLock mutex(lock);
+    
+    AclModule* acl = getBroker()->getAcl();
+    std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
+    if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
+        throw NotAllowedException("ACL denied delete link request");
+    }
+}
+
+
 void Link::destroy ()
 {
     Bridges toDelete;
     {
         Mutex::ScopedLock mutex(lock);
-
-        AclModule* acl = getBroker()->getAcl();
-        std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
-        if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
-            throw NotAllowedException("ACL denied delete link request");
-        }
 
         QPID_LOG (info, "Inter-broker link to " << host << ":" << port << " removed by management");
         if (connection)
@@ -412,9 +418,14 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
     switch (op)
     {
     case _qmf::Link::METHOD_CLOSE :
-        closing = true;
-        if (state != STATE_CONNECTING)
-            destroy();
+        checkClosePermission();
+        if (!closing) {
+	    closing = true;
+	    if (state != STATE_CONNECTING && connection) {
+                //connection can only be closed on the connections own IO processing thread
+                connection->requestIOProcessing(boost::bind(&Link::destroy, this));
+	    }
+        }
         return Manageable::STATUS_OK;
 
     case _qmf::Link::METHOD_BRIDGE :

@@ -29,7 +29,7 @@ class ManagementTest (TestBase010):
     Tests for the management hooks
     """
 
-    def test_broker_connectivity_oldAPI (self):
+    def disabled_test_broker_connectivity_oldAPI (self):
         """
         Call the "echo" method on the broker to verify it is alive and talking.
         """

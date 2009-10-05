@@ -21,6 +21,7 @@
 package org.apache.qpid.management.ui.views;
 
 import static org.apache.qpid.management.ui.Constants.*;
+import static org.apache.qpid.management.ui.ApplicationRegistry.DATA_DIR;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,8 +83,7 @@ import org.eclipse.ui.part.ViewPart;
 public class NavigationView extends ViewPart
 {
     public static final String ID = "org.apache.qpid.management.ui.navigationView";
-    public static final String APP_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
-    public static final String INI_FILENAME = APP_DIR + File.separator + "qpidmc_navigation.ini";
+    public static final String INI_FILENAME = DATA_DIR + File.separator + "qpidmc_navigation.ini";
 
     private static final String INI_SERVERS = "Servers";
     private static final String INI_QUEUES = QUEUE + "s";
@@ -322,6 +322,8 @@ public class NavigationView extends ViewPart
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
 
+        _treeViewer.refresh();
+        
         expandInitialMBeanView(serverNode);
         
         //(re)select the server node now that it is connected to force a selectionEvent
@@ -338,12 +340,12 @@ public class NavigationView extends ViewPart
      */
     private void createConfigFile()
     {
-        File dir = new File(APP_DIR);
+        File dir = new File(DATA_DIR);
         if (!dir.exists())
         {
             if(!dir.mkdir())
             {
-                System.out.println("Could not create application data directory " + APP_DIR);
+                System.out.println("Could not create application data directory " + DATA_DIR);
                 System.exit(1);
             }
         }

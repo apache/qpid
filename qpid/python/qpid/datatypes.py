@@ -84,7 +84,7 @@ class Message:
   def get(self, name):
     if self.headers:
       for h in self.headers:
-        if h._type.name == name:
+        if h.NAME == name:
           return h
     return None
 
@@ -93,7 +93,7 @@ class Message:
       self.headers = []
     idx = 0
     while idx < len(self.headers):
-      if self.headers[idx]._type == header._type:
+      if self.headers[idx].NAME == header.NAME:
         self.headers[idx] = header
         return
       idx += 1
@@ -102,7 +102,7 @@ class Message:
   def clear(self, name):
     idx = 0
     while idx < len(self.headers):
-      if self.headers[idx]._type.name == name:
+      if self.headers[idx].NAME == name:
         del self.headers[idx]
         return
       idx += 1

@@ -19,7 +19,7 @@
 from qpid.client import Client, Closed
 from qpid.queue import Empty
 from qpid.content import Content
-from qpid.testlib import testrunner, TestBase
+from qpid.testlib import TestBase
 
 class TxTests(TestBase):
     """

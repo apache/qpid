@@ -25,8 +25,10 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 
 /*
@@ -145,6 +147,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
     private LogSubject _logSubject;
+    private LogActor _logActor;
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -181,6 +184,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
         _logSubject = new QueueLogSubject(this);
+        _logActor = new QueueActor(this, CurrentActor.get().getRootMessageLogger());
 
         // Log the correct creation message
 
@@ -197,6 +201,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         CurrentActor.get().message(_logSubject,
                                    QueueMessages.QUE_1001(String.valueOf(_owner),
                                                           priorities,
+                                                          _owner != null,
                                                           autoDelete,
                                                           durable, !durable,
                                                           priorities > 0));
@@ -910,30 +915,23 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
      */
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition)
     {
-        List<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-
-        QueueEntryIterator it = _entries.iterator();
-
-        long index = 1;
-        for ( ; index < fromPosition && !it.atTail(); index++)
+        List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
-            it.advance();
-        }
+            private long position = 0;
+            
+            public boolean accept(QueueEntry entry)
+            {
+                position++;
+                return (position >= fromPosition) && (position <= toPosition);
+            }
 
-        if(index < fromPosition)
-        {
-            //The queue does not contain enough entries to reach our range.
-            //return the empty list.
-            return queueEntries;
-        }
-
-        for ( ; index <= toPosition && !it.atTail(); index++)
-        {
-            it.advance();
-            queueEntries.add(it.getNode());
-        }
-
-        return queueEntries;
+            public boolean filterComplete()
+            {
+                return position >= toPosition;
+            }
+        });
+        
+        return entries;
     }
 
     public void moveMessagesToAnotherQueue(final long fromMessageId,
@@ -1258,12 +1256,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             try
             {
+                CurrentActor.set(_logActor);
                 processQueue(this);
             }
             catch (AMQException e)
             {
                 _logger.error(e);
             }
+            finally
+            {
+                CurrentActor.remove();
+            }
+
 
         }
 

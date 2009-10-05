@@ -18,7 +18,6 @@
  */
 
 %include stl.i
-%trackobjects;
 
 %module qmfengine
 
@@ -32,9 +31,19 @@
     $result = (VALUE) $1;
 }
 
+%typemap (in) uint16_t
+{
+    $1 = NUM2UINT ($input);
+}
+
+%typemap (out) uint16_t
+{
+    $result = UINT2NUM((unsigned short) $1);
+}
+
 %typemap (in) uint32_t
 {
-    $1 = FIX2UINT ((uint32_t) $input);
+    $1 = NUM2UINT ($input);
 }
 
 %typemap (out) uint32_t
@@ -48,7 +57,7 @@
 
 %typemap (in) uint64_t
 {
-    $1 = FIX2ULONG ((uint64_t) $input);
+    $1 = NUM2ULONG ($input);
 }
 
 %typemap (out) uint64_t

@@ -259,57 +259,6 @@ public class ManagementLoggingTest extends AbstractTestLogging
             }
         }
     }
-
-    /**
-     * Description:
-     * Using the default configuration validate that the RMI ConnectorServer socket is correctly reported as being opened
-     * Input:
-     * The default configuration file
-     * Output:
-     *
-     * <date> MESSAGE MNG-1002 : Starting : RMI ConnectorServer : Listening on port 9099
-     *
-     * Constraints:
-     * The RMI ConnectorServer and Registry log messages do not have a prescribed order
-     * Validation Steps:
-     *
-     * 1. The MNG ID is correct
-     * 2. The specified port is the correct '9099'
-     */
-    public void testManagementStartupRMIConnectorServer() throws Exception
-    {
-        // This test only works on external java brokers due to the fact that
-        // Management is disabled on InVM brokers.
-        if (isJavaBroker() && isExternalBroker())
-        {
-            //Ensure management is on
-            setConfigurationProperty("management.enabled", "true");
-
-            startBroker();
-
-            // Now we can create the monitor as _outputFile will now be defined
-            _monitor = new LogMonitor(_outputFile);
-
-            List<String> results = _monitor.findMatches(MNG_PREFIX);
-            try
-            {
-                // Validation
-
-                assertTrue("MNGer message not logged", results.size() > 0);
-
-            }
-            catch (AssertionFailedError afe)
-            {
-                System.err.println("Log Dump:");
-                for (String log : results)
-                {
-                    System.err.println(log);
-                }
-                throw afe;
-            }
-        }
-    }
-
     /**
      * Description:
      * Using the default configuration with SSL enabled for the management port the SSL Keystore path should be reported via MNG-1006

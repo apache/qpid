@@ -43,6 +43,8 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 public class DirectExchange extends AbstractExchange
 {
@@ -129,6 +131,7 @@ public class DirectExchange extends AbstractExchange
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
             }
 
+            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
             try
             {
                 queue.bind(DirectExchange.this, new AMQShortString(binding), null);
@@ -136,6 +139,10 @@ public class DirectExchange extends AbstractExchange
             catch (AMQException ex)
             {
                 throw new MBeanException(ex);
+            }
+            finally
+            {
+                CurrentActor.remove();
             }
         }
 

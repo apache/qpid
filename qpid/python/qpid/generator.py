@@ -19,42 +19,38 @@
 
 import sys
 
-from spec010 import Control
+from ops import *
 
-def METHOD(module, inst):
-  method = lambda self, *args, **kwargs: self.invoke(inst, args, kwargs)
+def METHOD(module, op):
+  method = lambda self, *args, **kwargs: self.invoke(op, args, kwargs)
   if sys.version_info[:2] > (2, 3):
-    method.__name__ = str(inst.pyname)
-    method.__doc__ = str(inst.pydoc)
+    method.__name__ = op.__name__
+    method.__doc__ = op.__doc__
     method.__module__ = module
   return method
 
-def generate(spec, module, predicate=lambda x: True):
-  dict = {"spec": spec}
+def generate(module, operations):
+  dict = {}
 
-  for name, enum in spec.enums.items():
-    dict[name] = enum
+  for name, enum in ENUMS.items():
+    if isinstance(name, basestring):
+      dict[name] = enum
 
-  for name, st in spec.structs_by_name.items():
-    dict[name] = METHOD(module, st)
+  for name, op in COMPOUND.items():
+    if isinstance(name, basestring):
+      dict[name] = METHOD(module, op)
 
-  for st in spec.structs.values():
-    dict[st.name] = METHOD(module, st)
-
-  for name, inst in spec.instructions.items():
-    if predicate(inst):
-      dict[name] = METHOD(module, inst)
+  for name, op in operations.items():
+    if isinstance(name, basestring):
+      dict[name] = METHOD(module, op)
 
   return dict
 
-def invoker(name, spec, predicate=lambda x: True):
-  return type("%s_%s_%s" % (name, spec.major, spec.minor),
-              (), generate(spec, invoker.__module__, predicate))
+def invoker(name, operations):
+  return type(name, (), generate(invoker.__module__, operations))
 
-def command_invoker(spec):
-  is_command = lambda cmd: cmd.track == spec["track.command"].value
-  return invoker("CommandInvoker", spec, is_command)
+def command_invoker():
+  return invoker("CommandInvoker", COMMANDS)
 
-def control_invoker(spec):
-  is_control = lambda inst: isinstance(inst, Control)
-  return invoker("ControlInvoker", spec, is_control)
+def control_invoker():
+  return invoker("ControlInvoker", CONTROLS)

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.management.Managable;
+import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -242,4 +243,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     }
 
     void configure(QueueConfiguration config);
+    
+    ManagedObject getManagedObject();
 }

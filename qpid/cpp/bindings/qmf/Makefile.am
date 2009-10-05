@@ -17,6 +17,9 @@
 # under the License.
 #
 
-EXTRA_DIST = qmfengine.i
-SUBDIRS    = ruby
+if HAVE_SWIG
 
+EXTRA_DIST = qmfengine.i
+SUBDIRS = ruby tests
+
+endif

@@ -115,6 +115,7 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(srcdir) -I=$(bu
 # Destination for intalled programs and tests defined here
 #
 qpidexecdir = $(libexecdir)/qpid
+AM_CXXFLAGS += -DQPID_EXEC_DIR=\"$(qpidexecdir)\"
 qpidexec_PROGRAMS =
 qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/tests
@@ -376,6 +377,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/InitiationHandler.h		\
   qpid/framing/InputHandler.h			\
   qpid/framing/Invoker.h			\
+  qpid/framing/IsInSequenceSet.h		\
   qpid/framing/MethodBodyFactory.h		\
   qpid/framing/MethodContent.h			\
   qpid/framing/ModelMethod.h			\
@@ -406,6 +408,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/log/OstreamOutput.h			\
   qpid/log/Selector.cpp				\
   qpid/log/Statement.cpp			\
+  qpid/management/Manageable.cpp		\
+  qpid/management/ManagementObject.cpp		\
   qpid/memory.h					\
   qpid/pointer_to_other.h			\
   qpid/ptr_map.h				\
@@ -477,8 +481,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/Broker.h \
   qpid/broker/BrokerImportExport.h \
-  qpid/broker/BrokerSingleton.cpp \
-  qpid/broker/BrokerSingleton.h \
   qpid/broker/Connection.cpp \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionFactory.cpp \
@@ -601,8 +603,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SignalHandler.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
-  qpid/broker/Timer.cpp \
-  qpid/broker/Timer.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
@@ -616,13 +616,11 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.cpp \
   qpid/broker/Vhost.h \
-  qpid/management/IdAllocator.h			\
-  qpid/management/Manageable.cpp		\
+  qpid/management/IdAllocator.h \
   qpid/management/ManagementAgent.cpp \
-  qpid/management/ManagementAgent.h		\
+  qpid/management/ManagementAgent.h \
   qpid/management/ManagementExchange.cpp \
-  qpid/management/ManagementExchange.h		\
-  qpid/management/ManagementObject.cpp		\
+  qpid/management/ManagementExchange.h \
   qpid/sys/TCPIOPlugin.cpp
 
 

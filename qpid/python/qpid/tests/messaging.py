@@ -22,6 +22,7 @@
 
 import time
 from qpid.tests import Test
+from qpid.harness import Skipped
 from qpid.messaging import Connection, ConnectError, Disconnected, Empty, Message, UNLIMITED, uuid4
 from Queue import Queue, Empty as QueueEmpty
 
@@ -42,7 +43,10 @@ class Base(Test):
   def setup(self):
     self.test_id = uuid4()
     self.broker = self.config.broker
-    self.conn = self.setup_connection()
+    try:
+      self.conn = self.setup_connection()
+    except ConnectError, e:
+      raise Skipped(e)
     self.ssn = self.setup_session()
     self.snd = self.setup_sender()
     self.rcv = self.setup_receiver()
@@ -65,7 +69,7 @@ class Base(Test):
     receiver = ssn.receiver("ping-queue")
     msg = receiver.fetch(0)
     ssn.acknowledge()
-    assert msg.content == content
+    assert msg.content == content, "expected %r, got %r" % (content, msg.content)
 
   def drain(self, rcv, limit=None):
     contents = []

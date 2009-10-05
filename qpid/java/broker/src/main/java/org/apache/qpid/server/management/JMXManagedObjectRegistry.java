@@ -34,9 +34,16 @@ import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
+import javax.management.NotificationListener;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotificationFilter;
+import javax.management.NotificationFilterSupport;
+import javax.management.InstanceNotFoundException;
+import javax.management.relation.MBeanServerNotificationFilter;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.management.remote.rmi.RMIJRMPServerImpl;
 import javax.management.remote.rmi.RMIServerImpl;
@@ -47,6 +54,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -275,7 +283,17 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
         MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
         cs.setMBeanServerForwarder(mbsf);
+
+        NotificationFilterSupport filter = new NotificationFilterSupport();
+        filter.enableType(JMXConnectionNotification.OPENED);
+        filter.enableType(JMXConnectionNotification.CLOSED);
+        filter.enableType(JMXConnectionNotification.FAILED);
+        // Get the handler that is used by the above MBInvocationHandler Proxy.
+        // which is the MBeanInvocationHandlerImpl and so also a NotificationListener
+        cs.addNotificationListener((NotificationListener) Proxy.getInvocationHandler(mbsf), filter, null);
+
         cs.start();
+
 
         CurrentActor.get().message(ManagementConsoleMessages.MNG_1004());
     }

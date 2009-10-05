@@ -21,10 +21,10 @@
 import os, signal, sys, unittest
 from testlib import TestBaseCluster
 
-class ClusterTests(TestBaseCluster):
+class ShortTests(TestBaseCluster):
     """Basic cluster with async store tests"""
     
-    def test_Cluster_01_Initialization(self):
+    def test_01_Initialization(self):
         """Start a single cluster containing several nodes, and stop it again"""
         try:
             clusterName = "cluster-01"
@@ -34,7 +34,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
 
-    def test_Cluster_02_MultipleClusterInitialization(self):
+    def test_02_MultipleClusterInitialization(self):
         """Start several clusters each with several nodes and stop them again"""
         try:
             for i in range(0, 5):
@@ -48,7 +48,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
         
-    def test_Cluster_03_AddRemoveNodes(self):
+    def test_03_AddRemoveNodes(self):
         """Create a multi-node cluster, then kill some nodes and add some new ones (not those killed)"""
         try:
             clusterName = "cluster-03"
@@ -68,7 +68,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
 
-    def test_Cluster_04_RemoveRestoreNodes(self):
+    def test_04_RemoveRestoreNodes(self):
         """Create a multi-node cluster, then kill some of the nodes and restart them"""
         try:
             clusterName = "cluster-04"
@@ -95,7 +95,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
         
-    def test_Cluster_05_KillAllNodesThenRecover(self):
+    def test_05_KillAllNodesThenRecover(self):
         """Create a multi-node cluster, then kill *all* nodes, then restart the cluster"""
         try:
             clusterName = "cluster-05"
@@ -107,7 +107,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
     
-    def test_Cluster_06_PublishConsume(self):
+    def test_06_PublishConsume(self):
         """Publish then consume 100 messages from a single cluster"""
         try:
             dh = TestBaseCluster.DirectExchangeTestHelper(self, "cluster-06", 3, "test-exchange-06", ["test-queue-06"])
@@ -117,7 +117,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
     
-    def test_Cluster_07_MultiplePublishConsume(self):
+    def test_07_MultiplePublishConsume(self):
         """Staggered publish and consume on a single cluster"""
         try:
             dh = TestBaseCluster.DirectExchangeTestHelper(self, "cluster-07", 3, "test-exchange-07", ["test-queue-07"])
@@ -135,7 +135,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
     
-    def test_Cluster_08_MsgPublishConsumeAddRemoveNodes(self):
+    def test_08_MsgPublishConsumeAddRemoveNodes(self):
         """Staggered publish and consume interleaved with adding and removing nodes on a single cluster"""
         try:
             dh = TestBaseCluster.DirectExchangeTestHelper(self, "cluster-08", 3, "test-exchange-08", ["test-queue-08"])
@@ -159,7 +159,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
      
-    def test_Cluster_09_MsgPublishConsumeRemoveRestoreNodes(self):
+    def test_09_MsgPublishConsumeRemoveRestoreNodes(self):
         """Publish and consume messages interleaved with adding and restoring previous nodes on a single cluster"""
         try:
             dh = TestBaseCluster.DirectExchangeTestHelper(self, "cluster-09", 6, "test-exchange-09", ["test-queue-09"])
@@ -184,7 +184,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
    
-    def test_Cluster_10_LinearNodeKillCreateProgression(self):
+    def test_10_LinearNodeKillCreateProgression(self):
         """Publish and consume messages while linearly killing all original nodes and replacing them with new ones"""
         try:
             dh = TestBaseCluster.DirectExchangeTestHelper(self, "cluster-10", 4, "test-exchange-10", ["test-queue-10"])
@@ -204,7 +204,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
     
-    def test_Cluster_11_CircularNodeKillRestoreProgression(self):
+    def test_11_CircularNodeKillRestoreProgression(self):
         """Publish and consume messages while circularly killing all original nodes and restoring them again"""
         try:
             dh = TestBaseCluster.DirectExchangeTestHelper(self, "cluster-11", 4, "test-exchange-11", ["test-queue-11"])
@@ -226,7 +226,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise
         
-    def test_Cluster_12_KillAllNodesRecoverMessages(self):
+    def test_12_KillAllNodesRecoverMessages(self):
         """Create a cluster, add and delete messages, kill all nodes then recover cluster and messages"""
         if not self._storeEnable:
             print " No store loaded, skipped"
@@ -253,7 +253,7 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise         
     
-    def test_Cluster_13_TopicExchange(self):
+    def test_13_TopicExchange(self):
         """Create topic exchange in a cluster and make sure it behaves correctly"""
         try:
             topicQueueNameKeyList = {"test-queue-13-A" : "#.A", "test-queue-13-B" : "*.B", "test-queue-13-C" : "C.#", "test-queue-13-D" : "D.*"}
@@ -290,7 +290,80 @@ class ClusterTests(TestBaseCluster):
             self.killAllClusters(True)
             raise  
      
-    def test_Cluster_14_FanoutExchange(self):
+    def test_14_FanoutExchange(self):
+        """Create fanout exchange in a cluster and make sure it behaves correctly"""
+        try:
+            fanoutQueueNameList = ["test-queue-14-A", "test-queue-14-B", "test-queue-14-C"]
+            fh = TestBaseCluster.FanoutExchangeTestHelper(self, "cluster-14", 4, "test-exchange-14", fanoutQueueNameList)
+            # Place initial 20 messages, retrieve 10
+            fh.sendMsgs(20)
+            fh.receiveMsgs(10)
+            # Kill and add some nodes
+            fh.killNode(0)
+            fh.killNode(2)
+            fh.addNodes(2)
+            # Place another 20 messages, retrieve 20
+            fh.sendMsgs(20)
+            fh.receiveMsgs(20)
+            # Kill and add another node
+            fh.killNode(4)
+            fh.addNodes()
+            # Add another 2 queues
+            fh.addQueues(["test-queue-14-D", "test-queue-14-E"])
+            # Place another 20 messages, retrieve 20
+            fh.sendMsgs(20)
+            fh.receiveMsgs(20)     
+            # Kill all nodes but one
+            fh.killNode(1)
+            fh.killNode(3)
+            fh.killNode(6)
+            # Check messages
+            fh.finalizeTest()
+        except:
+            self.killAllClusters(True)
+            raise
+
+class LongTests(TestBaseCluster):
+    """Basic cluster with async store tests"""
+    
+    def test_01_TopicExchange(self):
+        """Create topic exchange in a cluster and make sure it behaves correctly"""
+        try:
+            topicQueueNameKeyList = {"test-queue-13-A" : "#.A", "test-queue-13-B" : "*.B", "test-queue-13-C" : "C.#", "test-queue-13-D" : "D.*"}
+            th = TestBaseCluster.TopicExchangeTestHelper(self, "cluster-13", 4, "test-exchange-13", topicQueueNameKeyList)
+             # Place initial messages
+            th.sendMsgs("C.hello.A", 10)
+            th.sendMsgs("hello.world", 10) # matches none of the queues
+            th.sendMsgs("D.hello.A", 10)
+            th.sendMsgs("hello.B", 20)
+            th.sendMsgs("D.hello", 20)
+            # Kill and add some nodes
+            th.killNode(0)
+            th.killNode(2)
+            th.addNodes(2)
+            # Pull 10 messages from each queue
+            th.receiveMsgs(10)
+            # Kill and add another node
+            th.killNode(4)
+            th.addNodes()
+            # Add two more queues
+            th.addQueues({"test-queue-13-E" : "#.bye.A", "test-queue-13-F" : "#.bye.B"})
+            # Place more messages
+            th.sendMsgs("C.bye.A", 10)
+            th.sendMsgs("hello.bye", 20) # matches none of the queues
+            th.sendMsgs("hello.bye.B", 20)
+            th.sendMsgs("D.bye", 20)
+            # Kill all nodes but one
+            th.killNode(1)
+            th.killNode(3)
+            th.killNode(6)
+            # Pull all remaining messages from each queue and check messages
+            th.finalizeTest()
+        except:
+            self.killAllClusters(True)
+            raise  
+     
+    def test_02_FanoutExchange(self):
         """Create fanout exchange in a cluster and make sure it behaves correctly"""
         try:
             fanoutQueueNameList = ["test-queue-14-A", "test-queue-14-B", "test-queue-14-C"]

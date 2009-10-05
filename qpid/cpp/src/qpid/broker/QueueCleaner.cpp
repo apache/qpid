@@ -28,6 +28,11 @@ namespace broker {
 
 QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer& t) : queues(q), timer(t) {}
 
+QueueCleaner::~QueueCleaner()
+{
+    if (task) task->cancel();
+}
+
 void QueueCleaner::start(qpid::sys::Duration p)
 {
     task = new Task(*this, p);

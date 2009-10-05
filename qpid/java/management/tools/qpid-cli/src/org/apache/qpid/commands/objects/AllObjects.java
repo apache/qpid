@@ -28,7 +28,7 @@ public class AllObjects extends ObjectNames
 
     public AllObjects(MBeanServerConnection mbsc)
     {
-        ObjectNames(mbsc);
+        super(mbsc);
     }
 
     public void setQueryString(String object, String name)

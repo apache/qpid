@@ -172,7 +172,6 @@ module Qmf
           @by_hash[@map.key(a)] = by_key(@map.key(a))
           a += 1
         end
-
       end
 
       def [] (key)
@@ -486,21 +485,21 @@ module Qmf
         end
       end
 
-      def set_attr(name, value)
+      def set_attr(name, v)
         val = value(name)
         case val.getType
-        when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(value)
-        when TYPE_UINT64 then val.setUint64(value)
-        when TYPE_SSTR, TYPE_LSTR then value ? val.setString(value) : val.setString('')
-        when TYPE_ABSTIME then val.setInt64(value)
-        when TYPE_DELTATIME then val.setUint64(value)
-        when TYPE_REF then val.setObjectId(value.impl)
-        when TYPE_BOOL then value ? val.setBool(value) : val.setBool(0)
-        when TYPE_FLOAT then val.setFloat(value)
-        when TYPE_DOUBLE then val.setDouble(value)
-        when TYPE_UUID then val.setUuid(value)
-        when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(value)
-        when TYPE_INT64 then val.setInt64(value)
+        when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(v)
+        when TYPE_UINT64 then val.setUint64(v)
+        when TYPE_SSTR, TYPE_LSTR then v ? val.setString(v) : val.setString('')
+        when TYPE_ABSTIME then val.setInt64(v)
+        when TYPE_DELTATIME then val.setUint64(v)
+        when TYPE_REF then val.setObjectId(v.impl)
+        when TYPE_BOOL then v ? val.setBool(v) : val.setBool(0)
+        when TYPE_FLOAT then val.setFloat(v)
+        when TYPE_DOUBLE then val.setDouble(v)
+        when TYPE_UUID then val.setUuid(v)
+        when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(v)
+        when TYPE_INT64 then val.setInt64(v)
         when TYPE_MAP
         when TYPE_OBJECT
         when TYPE_LIST

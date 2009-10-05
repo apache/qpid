@@ -19,66 +19,56 @@
 
 import os, tempfile, shutil, stat
 from unittest import TestCase
-from qpid.spec010 import load
 from qpid.codec010 import Codec, StringCodec
-from qpid.testlib import testrunner
-from qpid.datatypes import Struct
+from qpid.ops import *
 
 class SpecTest(TestCase):
 
-  def setUp(self):
-    self.spec = load(testrunner.get_spec_file("amqp.0-10-qpid-errata.xml"))
-
   def testSessionHeader(self):
-    hdr = self.spec["session.header"]
-    sc = StringCodec(self.spec)
-    hdr.encode(sc, Struct(hdr, sync=True))
+    sc = StringCodec()
+    sc.write_compound(Header(sync=True))
     assert sc.encoded == "\x01\x01"
 
-    sc = StringCodec(self.spec)
-    hdr.encode(sc, Struct(hdr, sync=False))
+    sc = StringCodec()
+    sc.write_compound(Header(sync=False))
     assert sc.encoded == "\x01\x00"
 
-  def encdec(self, type, value):
-    sc = StringCodec(self.spec)
-    type.encode(sc, value)
-    decoded = type.decode(sc)
+  def encdec(self, value):
+    sc = StringCodec()
+    sc.write_compound(value)
+    decoded = sc.read_compound(value.__class__)
     return decoded
 
   def testMessageProperties(self):
-    mp = self.spec["message.message_properties"]
-    rt = self.spec["message.reply_to"]
-
-    props = Struct(mp, content_length=3735928559L,
-                   reply_to=Struct(rt, exchange="the exchange name",
-                                   routing_key="the routing key"))
-    dec = self.encdec(mp, props)
+    props = MessageProperties(content_length=3735928559L,
+                              reply_to=ReplyTo(exchange="the exchange name",
+                                               routing_key="the routing key"))
+    dec = self.encdec(props)
     assert props.content_length == dec.content_length
     assert props.reply_to.exchange == dec.reply_to.exchange
     assert props.reply_to.routing_key == dec.reply_to.routing_key
 
   def testMessageSubscribe(self):
-    ms = self.spec["message.subscribe"]
-    cmd = Struct(ms, exclusive=True, destination="this is a test")
-    dec = self.encdec(self.spec["message.subscribe"], cmd)
+    cmd = MessageSubscribe(exclusive=True, destination="this is a test")
+    dec = self.encdec(cmd)
     assert cmd.exclusive == dec.exclusive
     assert cmd.destination == dec.destination
 
   def testXid(self):
-    xid = self.spec["dtx.xid"]
-    sc = StringCodec(self.spec)
-    st = Struct(xid, format=0, global_id="gid", branch_id="bid")
-    xid.encode(sc, st)
+    sc = StringCodec()
+    xid = Xid(format=0, global_id="gid", branch_id="bid")
+    sc.write_compound(xid)
     assert sc.encoded == '\x00\x00\x00\x10\x06\x04\x07\x00\x00\x00\x00\x00\x03gid\x03bid'
-    assert xid.decode(sc).__dict__ == st.__dict__
+    dec = sc.read_compound(Xid)
+    assert xid.__dict__ == dec.__dict__
 
-  def testLoadReadOnly(self):
-    spec = "amqp.0-10-qpid-errata.xml"
-    f = testrunner.get_spec_file(spec)
-    dest = tempfile.mkdtemp()
-    shutil.copy(f, dest)
-    shutil.copy(os.path.join(os.path.dirname(f), "amqp.0-10.dtd"), dest)
-    os.chmod(dest, stat.S_IRUSR | stat.S_IXUSR)
-    fname = os.path.join(dest, spec)
-    load(fname)
-    assert not os.path.exists("%s.pcl" % fname)
+#   def testLoadReadOnly(self):
+#     spec = "amqp.0-10-qpid-errata.xml"
+#     f = testrunner.get_spec_file(spec)
+#     dest = tempfile.mkdtemp()
+#     shutil.copy(f, dest)
+#     shutil.copy(os.path.join(os.path.dirname(f), "amqp.0-10.dtd"), dest)
+#     os.chmod(dest, stat.S_IRUSR | stat.S_IXUSR)
+#     fname = os.path.join(dest, spec)
+#     load(fname)
+#     assert not os.path.exists("%s.pcl" % fname)

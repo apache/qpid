@@ -85,7 +85,8 @@ namespace qpid {
             void startConnectionLH();        // Start the IO Connection
             void destroy();                  // Called when mgmt deletes this link
             void ioThreadProcessing();       // Called on connection's IO thread by request
-            bool tryFailover();               // Called during maintenance visit
+            bool tryFailover();              // Called during maintenance visit
+            void checkClosePermission();     // ACL check for explict mgmt call to close this link
 
         public:
             typedef boost::shared_ptr<Link> shared_ptr;

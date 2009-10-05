@@ -54,6 +54,37 @@ public interface ManagedQueue
     String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
     String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
     
+    //Individual attribute name constants
+    String ATTR_NAME = "Name";
+    String ATTR_OWNER = "Owner";
+    String ATTR_MAX_MSG_AGE = "MaximumMessageAge";
+    String ATTR_MAX_MSG_COUNT = "MaximumMessageCount";
+    String ATTR_MAX_QUEUE_DEPTH = "MaximumQueueDepth";
+    String ATTR_MAX_MSG_SIZE = "MaximumMessageSize";
+    String ATTR_DURABLE = "Durable";
+    String ATTR_AUTODELETE = "AutoDelete";
+    String ATTR_CONSUMER_COUNT = "ConsumerCount";
+    String ATTR_ACTIVE_CONSUMER_COUNT = "ActiveConsumerCount";
+    String ATTR_MSG_COUNT = "MessageCount";
+    String ATTR_QUEUE_DEPTH = "QueueDepth";
+    String ATTR_RCVD_MSG_COUNT = "ReceivedMessageCount";
+    
+    //All attribute names constant
+    String[] QUEUE_ATTRIBUTES = new String[]{
+            ATTR_NAME,
+            ATTR_OWNER,
+            ATTR_MAX_MSG_AGE,
+            ATTR_MAX_MSG_COUNT,
+            ATTR_MAX_QUEUE_DEPTH,
+            ATTR_MAX_MSG_SIZE,
+            ATTR_DURABLE,
+            ATTR_AUTODELETE,
+            ATTR_CONSUMER_COUNT,
+            ATTR_ACTIVE_CONSUMER_COUNT,
+            ATTR_MSG_COUNT,
+            ATTR_QUEUE_DEPTH,
+            ATTR_RCVD_MSG_COUNT
+    };
     
     /**
      * Returns the Name of the ManagedQueue.
@@ -260,14 +291,18 @@ public interface ManagedQueue
     void deleteMessageFromTop() throws IOException, JMException;
 
     /**
-     * Clears the queue by deleting all the undelivered messages from the queue.
+     * Clears the queue by deleting all the messages from the queue that have not been acquired by consumers"
+     * 
+     * Since Qpid JMX API 1.3 this returns the number of messages deleted. Prior to this, the return type was void.
+     * @return the number of messages deleted
      * @throws IOException
      * @throws JMException
      */
     @MBeanOperation(name="clearQueue",
-                    description="Clears the queue by deleting all the undelivered messages from the queue",
+                    description="Clears the queue by deleting all the messages from the queue " +
+                    		"that have not been acquired by consumers",
                     impact= MBeanOperationInfo.ACTION)
-    void clearQueue() throws IOException, JMException;
+    Long clearQueue() throws IOException, JMException;
 
     /**
      * Moves the messages in given range of message Ids to given Queue. QPID-170

@@ -1,0 +1,16 @@
+#!/bin/sh
+# Tests for the watchdog plug-in
+
+# Start a broker with  watchdog, freeze it with kill -STOP, verify that it is killed.
+export QPID_WATCHDOG_EXE=$PWD/../qpidd_watchdog
+PORT=`../qpidd -dp0 --no-data-dir --auth=no --no-module-dir --load-module $PWD/../.libs/watchdog.so --log-to-file=qpidd_watchdog.log --watchdog-interval 1`
+PID=`../qpidd -cp $PORT`
+kill -STOP $PID
+sleep 2
+
+if kill -0 $PID 2>/dev/null; then
+    echo "Hung process did not die."
+    kill $PID
+else
+    true
+fi

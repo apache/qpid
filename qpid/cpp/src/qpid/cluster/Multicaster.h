@@ -29,6 +29,7 @@
 #include "qpid/sys/LatencyTracker.h"
 #include <boost/shared_ptr.hpp>
 #include <deque>
+#include <vector>
 
 namespace qpid {
 
@@ -72,7 +73,7 @@ class Multicaster
     PollableEventQueue queue;
     bool holding;
     PlainEventQueue holdingQueue;
-    std::vector<struct ::iovec> ioVector;
+    std::vector<  ::iovec> ioVector;
 };
 }} // namespace qpid::cluster
 

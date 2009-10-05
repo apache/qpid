@@ -263,9 +263,8 @@ public class ServerConfigurationTest extends TestCase
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
 
-        String defaultParts[] = ServerConfiguration.DEFAULT_ADVANCED_LOCALE.split("_");
-        // The Default is en_US so will split well
-        Locale defaultLocale = new Locale(defaultParts[0],defaultParts[1]);
+        // The Default is what ever the VMs default is
+        Locale defaultLocale = Locale.getDefault();
 
         assertEquals(defaultLocale, serverConfig.getLocale());
 

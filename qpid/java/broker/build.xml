@@ -60,7 +60,7 @@
 
   <target name="check_velocity_deps">
     <uptodate property="velocity.notRequired" targetfile="${velocity.timestamp}">
-      <srcfiles dir="${velocity.properties.dir}" includes="LogMessages.properties" />
+      <srcfiles dir="${velocity.properties.dir}" includes="LogMessages**" />
       <srcfiles dir="src/velocity/" includes="**/*.java **/*.vm" />
     </uptodate>
   </target>

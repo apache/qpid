@@ -910,8 +910,7 @@ public class AMQChannel
 
     public void setCredit(final long prefetchSize, final int prefetchCount)
     {
-        //fixme
-//        _actor.message(ChannelMessages.CHN_100X(prefetchSize, prefetchCount);
+        _actor.message(ChannelMessages.CHN_1004(prefetchSize, prefetchCount));
         _creditManager.setCreditLimits(prefetchSize, prefetchCount);
     }
 

@@ -533,7 +533,6 @@ set (libqpidbroker_SOURCES
      qpid/amqp_0_10/Connection.h
      qpid/amqp_0_10/Connection.cpp
      qpid/broker/Broker.cpp
-     qpid/broker/BrokerSingleton.cpp
      qpid/broker/Exchange.cpp
      qpid/broker/ExpiryPolicy.cpp
      qpid/broker/Queue.cpp
@@ -586,7 +585,6 @@ set (libqpidbroker_SOURCES
      qpid/broker/SessionHandler.h
      qpid/broker/SessionHandler.cpp
      qpid/broker/System.cpp
-     qpid/broker/Timer.cpp
      qpid/broker/TopicExchange.cpp
      qpid/broker/TxAccept.cpp
      qpid/broker/TxBuffer.cpp

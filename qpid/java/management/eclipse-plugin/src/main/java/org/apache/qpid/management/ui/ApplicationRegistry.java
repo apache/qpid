@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -47,6 +49,8 @@ public abstract class ApplicationRegistry
     //max supported broker management interface supported by this release of the management console
     public static final int SUPPORTED_QPID_JMX_API_MAJOR_VERSION = 1;
     public static final int SUPPORTED_QPID_JMX_API_MINOR_VERSION = 3;
+    
+    public static final String DATA_DIR = System.getProperty("user.home") + File.separator + ".qpidmc";
     
     static
     {
