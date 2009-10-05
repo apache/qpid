@@ -33,6 +33,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 import org.apache.commons.configuration.Configuration;
 
@@ -280,6 +281,15 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean getBlockOnQueueFull()
+    {
+        return false;
+    }
+
+    public void setBlockOnQueueFull(boolean block)
+    {
+    }
+
     public long getMinimumAlertRepeatGap()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
@@ -294,7 +304,6 @@ public class MockAMQQueue implements AMQQueue
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
-
 
     public void checkMessageStatus() throws AMQException
     {
@@ -336,6 +345,10 @@ public class MockAMQQueue implements AMQQueue
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public void checkCapacity(AMQChannel channel)
+    {               
+    }
+
     public ManagedObject getManagedObject()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -346,10 +359,29 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-
     public void setMinimumAlertRepeatGap(long value)
     {
         
+    }
+
+    public long getCapacity()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setCapacity(long capacity)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public long getFlowResumeCapacity()
+    {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setFlowResumeCapacity(long flowResumeCapacity)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void configure(QueueConfiguration config)

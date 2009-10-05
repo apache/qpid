@@ -91,6 +91,7 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.mina.common.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +113,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AMQSession<C extends BasicMessageConsumer, P extends BasicMessageProducer> extends Closeable implements Session, QueueSession, TopicSession
 {
+
 
 
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
@@ -198,16 +200,32 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
      * not need to be attached to a queue.
      */
-    protected static final boolean DEFAULT_IMMEDIATE = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
+    protected final boolean DEFAULT_IMMEDIATE = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
 
     /**
      * The default value for mandatory flag used by producers created by this session is true. That is, server will not
      * silently drop messages where no queue is connected to the exchange for the message.
      */
-    protected static final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
+    protected final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
+
+    protected final boolean DEFAULT_WAIT_ON_SEND = Boolean.parseBoolean(System.getProperty("qpid.default_wait_on_send", "false"));
+
+    /**
+     * The period to wait while flow controlled before sending a log message confirming that the session is still
+     * waiting on flow control being revoked
+     */
+    protected final long FLOW_CONTROL_WAIT_PERIOD = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+
+    /**
+     * The period to wait while flow controlled before declaring a failure
+     */
+    public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
+    protected final long FLOW_CONTROL_WAIT_FAILURE = Long.getLong("qpid.flow_control_wait_failure",
+                                                                  DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
 
     protected final boolean DECLARE_QUEUES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_queues", "true"));
+
     protected final boolean DECLARE_EXCHANGES =
         Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
 
@@ -778,7 +796,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (AMQException e)
         {
-            throw new JMSAMQException("Failed to commit: " + e.getMessage(), e);
+            throw new JMSAMQException("Failed to commit: " + e.getMessage() + ":" + e.getCause(), e);
         }
         catch (FailoverException e)
         {
@@ -1559,6 +1577,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     suspendChannel(true);
                 }
 
+                // Let the dispatcher know that all the incomming messages
+                // should be rolled back(reject/release)
+                _rollbackMark.set(_highestDeliveryTag.get());
+
+                syncDispatchQueue();      
+
+                _dispatcher.rollback();
+
                 releaseForRollback();
 
                 sendRollback();
@@ -1851,26 +1877,58 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     void failoverPrep()
     {
-        startDispatcherIfNecessary();
         syncDispatchQueue();
     }
 
     void syncDispatchQueue()
     {
-        final CountDownLatch signal = new CountDownLatch(1);
-        _queue.add(new Dispatchable() {
-            public void dispatch(AMQSession ssn)
+        if (Thread.currentThread() == _dispatcherThread)
+        {
+            while (!_closed.get() && !_queue.isEmpty())
             {
-                signal.countDown();
+                Dispatchable disp;
+                try
+                {
+                    disp = (Dispatchable) _queue.take();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                // Check just in case _queue becomes empty, it shouldn't but
+                // better than an NPE.
+                if (disp == null)
+                {
+                    _logger.debug("_queue became empty during sync.");
+                    break;
+                }
+
+                disp.dispatch(AMQSession.this);
             }
-        });
-        try
-        {
-            signal.await();
         }
-        catch (InterruptedException e)
+        else
         {
-            throw new RuntimeException(e);
+            startDispatcherIfNecessary();
+
+            final CountDownLatch signal = new CountDownLatch(1);
+
+            _queue.add(new Dispatchable()
+            {
+                public void dispatch(AMQSession ssn)
+                {
+                    signal.countDown();
+                }
+            });
+
+            try
+            {
+                signal.await();
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -2233,7 +2291,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private P createProducerImpl(Destination destination, boolean mandatory, boolean immediate)
             throws JMSException
     {
-        return createProducerImpl(destination, mandatory, immediate, false);
+        return createProducerImpl(destination, mandatory, immediate, DEFAULT_WAIT_ON_SEND);
     }
 
     private P createProducerImpl(final Destination destination, final boolean mandatory,
@@ -2704,15 +2762,26 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public void setFlowControl(final boolean active)
     {
         _flowControl.setFlowControl(active);
+        _logger.warn("Broker enforced flow control " + (active ? "no longer in effect" : "has been enforced"));
     }
 
-    public void checkFlowControl() throws InterruptedException
+    public void checkFlowControl() throws InterruptedException, JMSException
     {
+        long expiryTime = 0L;
         synchronized (_flowControl)
         {
-            while (!_flowControl.getFlowControl())
+            while (!_flowControl.getFlowControl() &&
+                   (expiryTime == 0L ? (expiryTime = System.currentTimeMillis() + FLOW_CONTROL_WAIT_FAILURE)
+                                     : expiryTime) >= System.currentTimeMillis() )
             {
-                _flowControl.wait();
+
+                _flowControl.wait(FLOW_CONTROL_WAIT_PERIOD);
+                _logger.warn("Message send delayed by " + (System.currentTimeMillis() + FLOW_CONTROL_WAIT_FAILURE - expiryTime)/1000 + "s due to broker enforced flow control");
+            }
+            if(!_flowControl.getFlowControl())
+            {
+                _logger.error("Message send failed due to timeout waiting on broker enforced flow control");
+                throw new JMSException("Unable to send message for " + FLOW_CONTROL_WAIT_FAILURE/1000 + " seconds due to broker enforced flow control");
             }
         }
 

@@ -14,8 +14,6 @@ org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 // QPID-1823: this takes ages to run
 org.apache.qpid.client.SessionCreateTest#*
 
-org.apache.qpid.test.client.RollbackOrderTest#*
-
 // QPID-2097 exclude it from the InVM test runs until InVM JMX Interface is reliable
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#*
 org.apache.qpid.server.queue.ModelTest#*

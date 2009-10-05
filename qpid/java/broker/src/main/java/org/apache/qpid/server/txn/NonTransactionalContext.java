@@ -96,6 +96,7 @@ public class NonTransactionalContext implements TransactionalContext
 
         StoreContext.clearCurrentContext();
 
+        queue.checkCapacity(_channel);
 
         //following check implements the functionality
         //required by the 'immediate' flag:

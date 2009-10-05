@@ -27,11 +27,103 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
+import java.util.HashMap;
 
 
 public class AMQQueueFactory
 {
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
+
+    private abstract static class QueueProperty
+    {
+
+        private final AMQShortString _argumentName;
+
+
+        public QueueProperty(String argumentName)
+        {
+            _argumentName = new AMQShortString(argumentName);
+        }
+
+        public AMQShortString getArgumentName()
+        {
+            return _argumentName;
+        }
+
+
+        public abstract void setPropertyValue(AMQQueue queue, Object value);
+
+    }
+
+    private abstract static class QueueLongProperty extends QueueProperty
+    {
+
+        public QueueLongProperty(String argumentName)
+        {
+            super(argumentName);
+        }
+
+        public void setPropertyValue(AMQQueue queue, Object value)
+        {
+            if(value instanceof Number)
+            {
+                setPropertyValue(queue, ((Number)value).longValue());
+            }
+
+        }
+
+        abstract void setPropertyValue(AMQQueue queue, long value);
+
+
+    }
+
+    private static final QueueProperty[] DECLAREABLE_PROPERTIES = {
+            new QueueLongProperty("x-qpid-maximum-message-age")
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setMaximumMessageAge(value);
+                }
+            },
+            new QueueLongProperty("x-qpid-maximum-message-size")
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setMaximumMessageSize(value);
+                }
+            },
+            new QueueLongProperty("x-qpid-maximum-message-count")
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setMaximumMessageCount(value);
+                }
+            },
+            new QueueLongProperty("x-qpid-minimum-alert-repeat-gap")
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setMinimumAlertRepeatGap(value);
+                }
+            },
+            new QueueLongProperty("x-qpid-capacity")
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setCapacity(value);
+                }
+            },
+            new QueueLongProperty("x-qpid-flow-resume-capacity")
+            {
+                public void setPropertyValue(AMQQueue queue, long value)
+                {
+                    queue.setFlowResumeCapacity(value);
+                }
+            }
+
+    };
+
+
 
     public static AMQQueue createAMQQueueImpl(AMQShortString name,
                                               boolean durable,
@@ -55,6 +147,18 @@ public class AMQQueueFactory
         //Register the new queue
         virtualHost.getQueueRegistry().registerQueue(q);
         q.configure(virtualHost.getConfiguration().getQueueConfiguration(name.asString()));
+
+        if(arguments != null)
+        {
+            for(QueueProperty p : DECLAREABLE_PROPERTIES)
+            {
+                if(arguments.containsKey(p.getArgumentName()))
+                {
+                    p.setPropertyValue(q, arguments.get(p.getArgumentName()));
+                }
+            }
+        }
+
         return q;
     }
 

@@ -22,13 +22,11 @@ package org.apache.qpid.test.utils;
 
 import javax.jms.Connection;
 
-import org.apache.qpid.util.FileUtils;
-
 public class FailoverBaseCase extends QpidTestCase
 {
 
     public static int FAILING_VM_PORT = 2;
-    public static int FAILING_PORT = DEFAULT_PORT + 100;
+    public static int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
 
     protected int failingPort;
     
@@ -54,7 +52,7 @@ public class FailoverBaseCase extends QpidTestCase
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
-        setSystemProperty("QPID_WORK", System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
+        setSystemProperty("QPID_WORK", System.getProperty("QPID_WORK")+"/"+getFailingPort());
         startBroker(failingPort);
     }
 
@@ -78,7 +76,6 @@ public class FailoverBaseCase extends QpidTestCase
     {
     	stopBroker(_broker.equals(VM)?FAILING_PORT:FAILING_PORT);
         super.tearDown();
-        FileUtils.deleteDirectory(System.getProperty("java.io.tmpdir")+"/"+getFailingPort());
     }
 
 

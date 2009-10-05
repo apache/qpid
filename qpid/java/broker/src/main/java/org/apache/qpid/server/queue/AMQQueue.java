@@ -29,6 +29,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -170,6 +171,17 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void setMinimumAlertRepeatGap(long value);
 
 
+    long getCapacity();
+
+    void setCapacity(long capacity);
+
+
+    long getFlowResumeCapacity();
+
+    void setFlowResumeCapacity(long flowResumeCapacity);
+
+
+
     void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
 
     long clearQueue(StoreContext storeContext) throws AMQException;
@@ -193,6 +205,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     boolean isExclusive();
 
     Map<String, Object> getArguments();
+
+    void checkCapacity(AMQChannel channel);
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription

@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.management.JMException;
 
@@ -30,6 +32,7 @@ import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
+import org.apache.qpid.server.AMQChannel;
 
 /*
 *
@@ -123,6 +126,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private final Executor _asyncDelivery;
     private final AtomicLong _totalMessagesReceived = new AtomicLong();
 
+    private final ConcurrentMap<AMQChannel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQChannel, Boolean>();
+
     /** max allowed size(KB) of a single message */
     public long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
 
@@ -148,6 +153,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private AtomicBoolean _stopped = new AtomicBoolean(false);
     private LogSubject _logSubject;
     private LogActor _logActor;
+
+
+    private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
+    private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -575,6 +584,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         _deliveredMessages.incrementAndGet();
         sub.send(entry);
+
         setLastSeenEntry(sub,entry);
     }
 
@@ -683,6 +693,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new FailedDequeueException(_name.toString(), e);
         }
+
+        checkCapacity();
 
     }
 
@@ -1233,11 +1245,61 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
+    public void checkCapacity(AMQChannel channel)
+    {
+        if(_capacity != 0l)
+        {
+            if(_atomicQueueSize.get() > _capacity)
+            {
+                //Overfull log message
+                _logActor.message(_logSubject, QueueMessages.QUE_1003(_atomicQueueSize.get(), _capacity));
+
+                if(_blockedChannels.putIfAbsent(channel, Boolean.TRUE)==null)
+                {
+                    channel.block(this);
+                }
+
+                if(_atomicQueueSize.get() <= _flowResumeCapacity)
+                {
+
+                    //Underfull log message
+                    _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+
+                   channel.unblock(this);
+                   _blockedChannels.remove(channel);
+
+                }
+
+            }
+
+
+
+        }
+    }
+
+    private void checkCapacity()
+    {
+        if(_capacity != 0L)
+        {
+            if(_atomicQueueSize.get() <= _flowResumeCapacity)
+            {
+                //Underfull log message
+                _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+
+
+                for(AMQChannel c : _blockedChannels.keySet())
+                {
+                    c.unblock(this);
+                    _blockedChannels.remove(c);
+                }
+            }
+        }
+    }
+
+
     public void deliverAsync()
     {
-        _stateChangeCount.incrementAndGet();
-
-        Runner runner = new Runner();
+        Runner runner = new Runner(_stateChangeCount.incrementAndGet());
 
         if (_asynchronousRunner.compareAndSet(null, runner))
         {
@@ -1250,13 +1312,23 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _asyncDelivery.execute(new SubFlushRunner(sub));
     }
 
+
     private class Runner implements ReadWriteRunnable
     {
+        String _name;
+        public Runner(long count)
+        {
+            _name = "QueueRunner-" + count + "-" + _logActor;
+        }
+
         public void run()
         {
+            String originalName = Thread.currentThread().getName();
             try
             {
+                Thread.currentThread().setName(_name);
                 CurrentActor.set(_logActor);
+
                 processQueue(this);
             }
             catch (AMQException e)
@@ -1266,9 +1338,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             finally
             {
                 CurrentActor.remove();
+                Thread.currentThread().setName(originalName);
             }
-
-
         }
 
         public boolean isRead()
@@ -1279,6 +1350,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         public boolean isWrite()
         {
             return true;
+        }
+
+        public String toString()
+        {
+            return _name;
         }
     }
 
@@ -1293,26 +1369,35 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         public void run()
         {
-            boolean complete = false;
-            try
-            {
-                CurrentActor.set(_sub.getLogActor());
-                complete = flushSubscription(_sub, new Long(MAX_ASYNC_DELIVERIES));
 
-            }
-            catch (AMQException e)
-            {
-                _logger.error(e);
+            String originalName = Thread.currentThread().getName();
+            try{
+                Thread.currentThread().setName("SubFlushRunner-"+_sub);
+
+                boolean complete = false;
+                try
+                {
+                    CurrentActor.set(_sub.getLogActor());
+                    complete = flushSubscription(_sub, new Long(MAX_ASYNC_DELIVERIES));
+
+                }
+                catch (AMQException e)
+                {
+                    _logger.error(e);
+                }
+                finally
+                {
+                    CurrentActor.remove();
+                }
+                if (!complete && !_sub.isSuspended())
+                {
+                    _asyncDelivery.execute(this);
+                }
             }
             finally
             {
-                CurrentActor.remove();
+                Thread.currentThread().setName(originalName);
             }
-            if (!complete && !_sub.isSuspended())
-            {
-                _asyncDelivery.execute(this);
-            }
-
 
         }
 
@@ -1341,7 +1426,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             try
             {
                 sub.getSendLock();
-                atTail =  attemptDelivery(sub);
+                atTail = attemptDelivery(sub);
                 if (atTail && sub.isAutoClose())
                 {
                     unregisterSubscription(sub);
@@ -1371,44 +1456,48 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return atTail;
     }
 
+    /**
+     * Attempt delivery for the given subscription.
+     *
+     * Looks up the next node for the subscription and attempts to deliver it.
+     *
+     * @param sub
+     * @return true if we have completed all possible deliveries for this sub.
+     * @throws AMQException
+     */
     private boolean attemptDelivery(Subscription sub) throws AMQException
     {
         boolean atTail = false;
 
-        boolean subActive = sub.isActive();
+        boolean subActive = sub.isActive() && !sub.isSuspended();
         if (subActive)
         {
-
 
             QueueEntry node  = getNextAvailableEntry(sub);
 
             if (node != null && !(node.isAcquired() || node.isDeleted()))
             {
-                if (!sub.isSuspended())
+                if (sub.hasInterest(node))
                 {
-                    if (sub.hasInterest(node))
+                    if (!sub.wouldSuspend(node))
                     {
-                        if (!sub.wouldSuspend(node))
+                        if (sub.acquires() && !node.acquire(sub))
                         {
-                            if (sub.acquires() && !node.acquire(sub))
-                            {
-                                sub.onDequeue(node);
-                            }
-                            else
-                            {
-                                deliverMessage(sub, node);
-                            }
+                            sub.onDequeue(node);
+                        }
+                        else
+                        {
+                            deliverMessage(sub, node);
+                        }
 
-                        }
-                        else // Not enough Credit for message and wouldSuspend
-                        {
-                            //QPID-1187 - Treat the subscription as suspended for this message
-                            // and wait for the message to be removed to continue delivery.
-                            subActive = false;
-                            node.addStateChangeListener(new QueueEntryListener(sub, node));
-                        }
                     }
-
+                    else // Not enough Credit for message and wouldSuspend
+                    {
+                        //QPID-1187 - Treat the subscription as suspended for this message
+                        // and wait for the message to be removed to continue delivery.
+                        subActive = false;
+                        node.addStateChangeListener(new QueueEntryListener(sub, node));
+                    }
                 }
 
             }
@@ -1488,6 +1577,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         _asynchronousRunner.compareAndSet(runner, null);
 
+        // For every message enqueue/requeue the we fire deliveryAsync() which
+        // increases _stateChangeCount. If _sCC changes whilst we are in our loop
+        // (detected by setting previousStateChangeCount to stateChangeCount in the loop body)
+        // then we will continue to run for a maximum of iterations.
+        // So whilst delivery/rejection is going on a processQueue thread will be running
         while (iterations != 0 && ((previousStateChangeCount != (stateChangeCount = _stateChangeCount.get())) || deliveryIncomplete) && _asynchronousRunner.compareAndSet(null, runner))
         {
             // we want to have one extra loop after every subscription has reached the point where it cannot move
@@ -1507,7 +1601,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             //iterate over the subscribers and try to advance their pointer
             while (subscriptionIter.advance())
             {
-                boolean closeConsumer = false;
                 Subscription sub = subscriptionIter.getNode().getSubscription();
                 sub.getSendLock();
                 try
@@ -1551,6 +1644,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         // therefore we should schedule this runner again (unless someone beats us to it :-) ).
         if (iterations == 0 && _asynchronousRunner.compareAndSet(null, runner))
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Rescheduling runner:" + runner);
+            }
             _asyncDelivery.execute(runner);
         }
     }
@@ -1663,6 +1760,27 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
+    public long getCapacity()
+    {
+        return _capacity;
+    }
+
+    public void setCapacity(long capacity)
+    {
+        _capacity = capacity;
+    }
+
+    public long getFlowResumeCapacity()
+    {
+        return _flowResumeCapacity;
+    }
+
+    public void setFlowResumeCapacity(long flowResumeCapacity)
+    {
+        _flowResumeCapacity = flowResumeCapacity;
+    }
+
+
     public Set<NotificationCheck> getNotificationChecks()
     {
         return _notificationChecks;
@@ -1732,6 +1850,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             setMaximumMessageSize(config.getMaximumMessageSize());
             setMaximumMessageCount(config.getMaximumMessageCount());
             setMinimumAlertRepeatGap(config.getMinimumAlertRepeatGap());
+            _capacity = config.getCapacity();
+            _flowResumeCapacity = config.getFlowResumeCapacity();
         }
     }
 }

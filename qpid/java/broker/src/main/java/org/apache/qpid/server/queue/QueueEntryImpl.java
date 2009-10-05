@@ -46,7 +46,6 @@ public class QueueEntryImpl implements QueueEntry
 
     private MessageReference _message;
 
-
     private Set<Subscription> _rejectedBy = null;
 
     private volatile EntryState _state = AVAILABLE_STATE;
@@ -197,7 +196,6 @@ public class QueueEntryImpl implements QueueEntry
     {
         _stateUpdater.set(this,AVAILABLE_STATE);
     }
-
 
     public boolean immediateAndNotDelivered() 
     {
@@ -419,4 +417,5 @@ public class QueueEntryImpl implements QueueEntry
     {
         return _queueEntryList;
     }
+
 }

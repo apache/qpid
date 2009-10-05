@@ -103,6 +103,8 @@ public class ServerConfiguration implements SignalHandler
         envVarMap.put("QPID_MAXIMUMQUEUEDEPTH", "maximumQueueDepth");
         envVarMap.put("QPID_MAXIMUMMESSAGESIZE", "maximumMessageSize");
         envVarMap.put("QPID_MINIMUMALERTREPEATGAP", "minimumAlertRepeatGap");
+        envVarMap.put("QPID_QUEUECAPACITY", "capacity");
+        envVarMap.put("QPID_FLOWRESUMECAPACITY", "flowResumeCapacity");
         envVarMap.put("QPID_SOCKETRECEIVEBUFFER", "connector.socketReceiveBuffer");
         envVarMap.put("QPID_SOCKETWRITEBUFFER", "connector.socketWriteBuffer");
         envVarMap.put("QPID_TCPNODELAY", "connector.tcpNoDelay");
@@ -289,7 +291,6 @@ public class ServerConfiguration implements SignalHandler
         return conf;
     }
 
-    @Override
     public void handle(Signal arg0)
     {
         try
@@ -505,6 +506,16 @@ public class ServerConfiguration implements SignalHandler
     public long getMinimumAlertRepeatGap()
     {
         return getConfig().getLong("minimumAlertRepeatGap", 0);
+    }
+
+    public long getCapacity()
+    {
+        return getConfig().getLong("capacity", 0L);
+    }
+
+    public long getFlowResumeCapacity()
+    {
+        return getConfig().getLong("flowResumeCapacity", getCapacity());
     }
 
     public int getProcessors()

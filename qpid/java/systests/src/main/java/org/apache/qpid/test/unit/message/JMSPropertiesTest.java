@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.Destination;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
@@ -105,7 +106,8 @@ public class JMSPropertiesTest extends QpidTestCase
         assertEquals("JMS Type mismatch", sentMsg.getJMSType(), rm.getJMSType());
         assertEquals("JMS Reply To mismatch", sentMsg.getJMSReplyTo(), rm.getJMSReplyTo());
         assertTrue("JMSMessageID Does not start ID:", rm.getJMSMessageID().startsWith("ID:"));
-
+        assertEquals("JMS Default priority should be 4",Message.DEFAULT_PRIORITY,rm.getJMSPriority());   
+        
         //Validate that the JMSX values are correct
         assertEquals("JMSXGroupID is not as expected:", JMSXGroupID_VALUE, rm.getStringProperty("JMSXGroupID"));
         assertEquals("JMSXGroupSeq is not as expected:", JMSXGroupSeq_VALUE, rm.getIntProperty("JMSXGroupSeq"));

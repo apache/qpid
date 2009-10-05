@@ -195,6 +195,12 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
     public void releaseForRollback()
     {
+        // Reject all the messages that have been received in this session and
+        // have not yet been acknowledged. Should look to remove
+        // _deliveredMessageTags and use _txRangeSet as used by 0-10.
+        // Otherwise messages will be able to arrive out of order to a second
+        // consumer on the queue. Whilst this is within the JMS spec it is not
+        // user friendly and avoidable.
         while (true)
         {
             Long tag = _deliveredMessageTags.poll();
@@ -204,11 +210,6 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
             }
 
             rejectMessage(tag, true);
-        }
-
-        if (_dispatcher != null)
-        {
-            _dispatcher.rollback();
         }
     }
 

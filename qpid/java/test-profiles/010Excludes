@@ -92,3 +92,10 @@ org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
 
 // QPID-2084 : this test needs more work for 0-10
 org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
+
+// QPID-2118 : 0-10 Java client has differrent error handling to 0-8 code path
+org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
+
+//QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
+org.apache.qpid.server.queue.ProducerFlowControlTest#*
+

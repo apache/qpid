@@ -414,9 +414,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     public void releaseForRollback()
     {
-        startDispatcherIfNecessary();
-        syncDispatchQueue();
-        _dispatcher.rollback();
         getQpidSession().messageRelease(_txRangeSet, Option.SET_REDELIVERED);
         _txRangeSet.clear();
         _txSize = 0;
