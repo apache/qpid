@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -37,7 +38,6 @@ import org.apache.qpid.server.configuration.management.ConfigurationManagementMB
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,9 +49,15 @@ public class ServerConfiguration implements SignalHandler
 
     private Configuration _config;
 
+    // Default Configuration values
+    //todo make these all public, to make validation of configuration easier.
+    public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
+    public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
+    public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
+    public static final String DEFAULT_STATUS_UPDATES = "on";
+    public static final String DEFAULT_ADVANCED_LOCALE = Locale.US.toString();
+
     private static final int DEFAULT_FRAME_SIZE = 65536;
-    private static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
-    private static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     private static final int DEFAULT_PORT = 5672;
     private static final int DEFAUL_SSL_PORT = 8672;
     private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
@@ -63,15 +69,23 @@ public class ServerConfiguration implements SignalHandler
     private SecurityConfiguration _securityConfiguration = null;
 
     private File _configFile;
-    
+
     private Logger _log = LoggerFactory.getLogger(this.getClass());
 
     private ConfigurationManagementMBean _mbean;
-    
+
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
-    
+
+    // Configuration values to be read from the configuration file
+    //todo Move all properties to static values to ensure system testing can be performed.
+    public static final String CONNECTOR_PROTECTIO_ENABLED = "connector.protectio.enabled";
+    public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
+    public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
+    public static final String STATUS_UPDATES = "status-updates";
+    public static final String ADVANCED_LOCALE = "advanced.locale";
+
     {
         envVarMap.put("QPID_PORT", "connector.port");
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
@@ -96,16 +110,16 @@ public class ServerConfiguration implements SignalHandler
         envVarMap.put("QPID_ENABLEPOOLEDALLOCATOR", "advanced.enablePooledAllocator");
         envVarMap.put("QPID_STATUS-UPDATES", "status-updates");
     }
-    
+
     public ServerConfiguration(File configurationURL) throws ConfigurationException
     {
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
-        try 
+        try
         {
             Signal sig = new sun.misc.Signal("HUP");
             sun.misc.Signal.handle(sig, this);
-        } 
+        }
         catch (IllegalArgumentException e)
         {
             // We're on something that doesn't handle SIGHUP, how sad, Windows. 
@@ -115,16 +129,16 @@ public class ServerConfiguration implements SignalHandler
     public ServerConfiguration(Configuration conf) throws ConfigurationException
     {
         setConfig(conf);
-        
+
         substituteEnvironmentVariables();
-        
+
         _jmxPort = getConfig().getInt("management.jmxport", 8999);
         _securityConfiguration = new SecurityConfiguration(conf.subset("security"));
 
         setupVirtualHosts(conf);
-        
+
     }
-    
+
     private void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
         List vhosts = conf.getList("virtualhosts");
@@ -140,7 +154,7 @@ public class ServerConfiguration implements SignalHandler
                 {
                     String name = (String) hosts.get(j);
                     // Add the keys of the virtual host to the main config then bail out
-                    
+
                     Configuration myConf = vhostConfiguration.subset("virtualhost." + name);
                     Iterator k = myConf.getKeys();
                     while (k.hasNext())
@@ -169,13 +183,13 @@ public class ServerConfiguration implements SignalHandler
             String val = System.getenv(var.getKey());
             if (val != null)
             {
-                getConfig().setProperty(var.getValue(), val); 
+                getConfig().setProperty(var.getValue(), val);
             }
         }
     }
 
     private final static Configuration parseConfig(File file) throws ConfigurationException
-    {      
+    {
         ConfigurationFactory factory = new ConfigurationFactory();
         factory.setConfigurationFileName(file.getAbsolutePath());
         Configuration conf = factory.getConfiguration();
@@ -188,9 +202,56 @@ public class ServerConfiguration implements SignalHandler
         return conf;
     }
 
-    public boolean getStatusEnabled()
+    /**
+     * Check the configuration file to see if status updates are enabled.  
+     * @return true if status updates are enabled
+     */
+    public boolean getStatusUpdatesEnabled()
     {
-        return getConfig().getBoolean("status-updates", true);
+        // Retrieve the setting from configuration but default to on.
+        String value = getConfig().getString(STATUS_UPDATES, DEFAULT_STATUS_UPDATES);
+
+        return value.equalsIgnoreCase("on");
+    }
+
+    /**
+     * The currently defined {@see Locale} for this broker
+     * @return the configuration defined locale
+     */
+    public Locale getLocale()
+    {
+
+        String localeString = getConfig().getString(ADVANCED_LOCALE, DEFAULT_ADVANCED_LOCALE);
+        // Expecting locale of format langauge_country_variant
+
+        String[] parts = localeString.split("_");
+
+        Locale locale = null;
+        switch (parts.length)
+        {
+            case 1:
+                locale = new Locale(localeString);
+                break;
+            case 2:
+                locale = new Locale(parts[0], parts[1]);
+                break;
+            default:
+                String variant = parts[2];
+                // If we have a variant such as the Java doc suggests for Spanish
+                // Traditional_WIN we may end up with more than 3 parts on a
+                // split with '_'. So we should recombine the variant.
+                if (parts.length > 3)
+                {
+                    for (int index = 3; index < parts.length; index++)
+                    {
+                        variant = variant + "_" + parts[index];
+                    }
+                }
+
+                locale = new Locale(parts[0], parts[1], variant);
+        }
+
+        return locale;
     }
 
     // Our configuration class needs to make the interpolate method
@@ -202,7 +263,7 @@ public class ServerConfiguration implements SignalHandler
             return super.interpolate(obj);
         }
     }
-    
+
     private final static Configuration flatConfig(File file) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
@@ -238,7 +299,7 @@ public class ServerConfiguration implements SignalHandler
         catch (ConfigurationException e)
         {
              _log.error("Could not reload configuration file", e);
-        }        
+        }
     }
 
     public void reparseConfigFile() throws ConfigurationException
@@ -248,7 +309,7 @@ public class ServerConfiguration implements SignalHandler
             Configuration newConfig = parseConfig(_configFile);
             _securityConfiguration = new SecurityConfiguration(newConfig.subset("security"));
             ApplicationRegistry.getInstance().getAccessManager().configurePlugins(_securityConfiguration);
-            
+
             VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
             for (String hostname : _virtualHosts.keySet())
             {
@@ -343,17 +404,17 @@ public class ServerConfiguration implements SignalHandler
 
     public boolean getProtectIOEnabled()
     {
-        return getConfig().getBoolean("broker.connector.protectio.enabled", false);
+        return getConfig().getBoolean(CONNECTOR_PROTECTIO_ENABLED, DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED);
     }
 
     public int getBufferReadLimit()
     {
-        return getConfig().getInt("broker.connector.protectio.readBufferLimitSize", DEFAULT_BUFFER_READ_LIMIT_SIZE);
+        return getConfig().getInt(CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_READ_LIMIT_SIZE);
     }
 
     public int getBufferWriteLimit()
     {
-        return getConfig().getInt("broker.connector.protectio.writeBufferLimitSize", DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
+        return getConfig().getInt(CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
     }
 
     public boolean getSynchedClocks()
@@ -543,17 +604,8 @@ public class ServerConfiguration implements SignalHandler
 
     public long getHousekeepingCheckPeriod()
     {
-        return getConfig().getLong("housekeeping.checkPeriod", 
-                   getConfig().getLong("housekeeping.expiredMessageCheckPeriod", 
+        return getConfig().getLong("housekeeping.checkPeriod",
+                   getConfig().getLong("housekeeping.expiredMessageCheckPeriod",
                            DEFAULT_HOUSEKEEPING_PERIOD));
     }
-
-    public boolean getStatusUpdates()
-    {
-        // Retrieve the setting from configuration but default to on.
-        String value = getConfig().getString("status-updates", "on");
-
-        return value.equalsIgnoreCase("on");
-    }
-
 }

@@ -57,9 +57,9 @@ public abstract class AbstractTestLogSubject extends TestCase
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, logger);
 
-        LogActor actor_actor = new TestBlankActor(rootLogger);
+        LogActor actor = new TestBlankActor(rootLogger);
 
-        actor_actor.message(_subject, new LogMessage()
+        actor.message(_subject, new LogMessage()
         {
             public String toString()
             {
@@ -228,7 +228,7 @@ public abstract class AbstractTestLogSubject extends TestCase
     {
         List<Object> logs = performLog();
 
-        assertEquals("Log has to many messagse", 1, logs.size());
+        assertEquals("Log has incorrect message count", 1, logs.size());
 
         validateLogStatement(String.valueOf(logs.get(0)));
     }
@@ -252,7 +252,7 @@ public abstract class AbstractTestLogSubject extends TestCase
 
         List<Object> logs = performLog();
 
-        assertEquals("Log has to many messagse", 0, logs.size());
+        assertEquals("Log has incorrect message count", 0, logs.size());
     }
 
 }

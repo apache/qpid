@@ -20,12 +20,9 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ExchangeLogSubjectTest extends AbstractTestLogSubject
 {

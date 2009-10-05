@@ -35,6 +35,8 @@
         <qpidnio>false</qpidnio>
         <protectio>
             <enabled>false</enabled>
+            <readBufferLimitSize>262144</readBufferLimitSize>
+            <writeBufferLimitSize>262144</writeBufferLimitSize>
         </protectio>
         <transport>nio</transport>
         <port>5672</port>
@@ -59,6 +61,7 @@
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
         <enableJMSXUserID>false</enableJMSXUserID>
+        <locale>en_US</locale>
     </advanced>
 
     <security>
@@ -131,6 +134,8 @@
     <queue>
         <auto_register>true</auto_register>
     </queue>
+
+    <status-updates>ON</status-updates>
 
     <virtualhosts>${conf}/virtualhosts-systests.xml</virtualhosts>
 </broker>

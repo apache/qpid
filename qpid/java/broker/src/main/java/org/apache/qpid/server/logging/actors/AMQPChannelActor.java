@@ -24,7 +24,6 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.text.MessageFormat;
 

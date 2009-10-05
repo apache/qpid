@@ -41,11 +41,17 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 
 public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener
 {
+
+    private static final AtomicLong idGenerator = new AtomicLong(0);
+    // Create a simple ID that increments for ever new Subscription
+    private final long _subscriptionID = idGenerator.getAndIncrement();
+
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final Lock _stateChangeLock = new ReentrantLock();
 
@@ -569,4 +575,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _queue.flushSubscription(this);
         stop();
     }
+
+    public long getSubscriptionID()
+    {
+        return _subscriptionID;
+    }
+
 }

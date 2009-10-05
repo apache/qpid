@@ -61,6 +61,7 @@ private:
     Callback writableCallback;
     Callback disconnectedCallback;
     CallbackQueue interruptedCallbacks;
+    CallbackQueue callbacks; // Double buffer
     Poller::shared_ptr poller;
     Mutex stateLock;
     enum {
