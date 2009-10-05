@@ -1,7 +1,5 @@
-package org.apache.qpid.test.unit.ack;
-
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,133 +19,138 @@ package org.apache.qpid.test.unit.ack;
  *
  */
 
+package org.apache.qpid.test.unit.ack;
+
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.FailoverBaseCase;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.MessageProducer;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.test.utils.QpidTestCase;
-
-public class AcknowledgeTest extends QpidTestCase
+public class AcknowledgeTest extends FailoverBaseCase
 {
-    protected static int NUM_MESSAGES = 100;
-    protected Connection _con;
+    protected int NUM_MESSAGES;
+    protected Connection _connection;
     protected Queue _queue;
-    private MessageProducer _producer;
-    private Session _producerSession;
-	private Session _consumerSession;
-	private MessageConsumer _consumerA;
+    protected Session _consumerSession;
+    protected MessageConsumer _consumer;
+    protected MessageProducer _producer;
 
     @Override
     protected void setUp() throws Exception
     {
         super.setUp();
-        _queue = (Queue) getInitialContext().lookup("queue");
+        NUM_MESSAGES = 10;
+
+        _queue = getTestQueue();
 
         //Create Producer put some messages on the queue
-        _con = getConnection();
-        _con.start();
+        _connection = getConnection();
     }
 
-	private void init(boolean transacted, int mode) throws JMSException {
-		_producerSession = _con.createSession(true, Session.AUTO_ACKNOWLEDGE);
-        _consumerSession = _con.createSession(transacted, mode);
-        _producer = _producerSession.createProducer(_queue);
-        _consumerA = _consumerSession.createConsumer(_queue);
-	}
+    protected void init(boolean transacted, int mode) throws Exception
+    {
+        _consumerSession = _connection.createSession(transacted, mode);
+        _consumer = _consumerSession.createConsumer(_queue);
+        _producer = _consumerSession.createProducer(_queue);
+
+        // These should all end up being prefetched by session
+        sendMessage(_consumerSession, _queue, 1);
+
+        assertEquals("Wrong number of messages on queue", 1,
+                     ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
+    }
 
     /**
-     * Produces and consumes messages an either ack or commit the receipt of those messages
-     *
      * @param transacted
      * @param mode
+     *
      * @throws Exception
      */
-    private void testMessageAck(boolean transacted, int mode) throws Exception
+    protected void testAcking(boolean transacted, int mode) throws Exception
     {
-    	init(transacted, mode);
-        sendMessage(_producerSession, _queue, NUM_MESSAGES/2);
-        _producerSession.commit();
-        MessageConsumer consumerB = _consumerSession.createConsumer(_queue);
-        sendMessage(_producerSession, _queue, NUM_MESSAGES/2);
-        _producerSession.commit();
-        int count = 0;
-        Message msg = consumerB.receive(1500);
-        while (msg != null) 
-        {
-        	if (mode == Session.CLIENT_ACKNOWLEDGE)
-            {
-        		msg.acknowledge();
-            }
-        	count++;
-        	msg = consumerB.receive(1500);
-        }
-        if (transacted)
-        {
-        	_consumerSession.commit();
-        }  
-        _consumerA.close();
-        consumerB.close();
-        _consumerSession.close();
-        assertEquals("Wrong number of messages on queue", NUM_MESSAGES - count,
-                        ((AMQSession) _producerSession).getQueueDepth((AMQDestination) _queue));
+        init(transacted, mode);
 
-        // Clean up messages that may be left on the queue
-        _consumerSession = _con.createSession(transacted, mode);
-        _consumerA = _consumerSession.createConsumer(_queue);
-        msg = _consumerA.receive(1500);
-        while (msg != null)
+        _connection.start();
+
+        Message msg = _consumer.receive(1500);
+
+        int count = 0;
+        while (count < NUM_MESSAGES)
         {
-            if (mode == Session.CLIENT_ACKNOWLEDGE)
+            assertNotNull("Message " + count + " not correctly received.", msg);
+            assertEquals("Incorrect message received", count, msg.getIntProperty(INDEX));
+            count++;
+
+            if (count < NUM_MESSAGES)
             {
-                msg.acknowledge();
+                //Send the next message
+                _producer.send(createNextMessage(_consumerSession, count));
             }
-            msg = _consumerA.receive(1500);
+
+            doAcknowlegement(msg);
+
+            msg = _consumer.receive(1500);
         }
-        _consumerA.close();
-        if (transacted)
+
+        assertEquals("Wrong number of messages on queue", 0,
+                     ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
+    }
+
+    /**
+     * Perform the acknowledgement of messages if additionally required.
+     *
+     * @param msg
+     *
+     * @throws JMSException
+     */
+    protected void doAcknowlegement(Message msg) throws JMSException
+    {
+        if (_consumerSession.getTransacted())
         {
             _consumerSession.commit();
         }
-        _consumerSession.close();
-    }
-    
-    public void test2ConsumersAutoAck() throws Exception
-    {
-    	testMessageAck(false, Session.AUTO_ACKNOWLEDGE);
+
+        if (_consumerSession.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        {
+            msg.acknowledge();
+        }
     }
 
-    public void test2ConsumersClientAck() throws Exception
+    public void testClientAck() throws Exception
     {
-    	testMessageAck(true, Session.CLIENT_ACKNOWLEDGE);
+        testAcking(false, Session.CLIENT_ACKNOWLEDGE);
     }
-    
-    public void test2ConsumersTx() throws Exception
+
+    public void testAutoAck() throws Exception
     {
-    	testMessageAck(true, Session.AUTO_ACKNOWLEDGE);
+        testAcking(false, Session.AUTO_ACKNOWLEDGE);
     }
-    
-    public void testIndividualAck() throws Exception
+
+    public void testTransacted() throws Exception
     {
-        init(false, Session.CLIENT_ACKNOWLEDGE);
-        sendMessage(_producerSession, _queue, 3);
-        _producerSession.commit();
-        Message msg = null;
-        for (int i = 0; i < 2; i++)
-        {
-            msg = _consumerA.receive(RECEIVE_TIMEOUT);
-            ((AbstractJMSMessage)msg).acknowledgeThis();
-        }
-        msg = _consumerA.receive(RECEIVE_TIMEOUT);
-        msg.acknowledge();
-        _con.close();
+        testAcking(true, Session.SESSION_TRANSACTED);
     }
-    
+
+    public void testDupsOk() throws Exception
+    {
+        testAcking(false, Session.DUPS_OK_ACKNOWLEDGE);
+    }
+
+    public void testNoAck() throws Exception
+    {
+        testAcking(false, AMQSession.NO_ACKNOWLEDGE);
+    }
+
+    public void testPreAck() throws Exception
+    {
+        testAcking(false, AMQSession.PRE_ACKNOWLEDGE);
+    }
+
 }
