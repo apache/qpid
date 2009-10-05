@@ -28,10 +28,12 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class AcknowledgeOnMessageTest extends AcknowledgeTest implements MessageListener
 {
     private CountDownLatch _receviedAll;
+    private AtomicReference<Exception> _causeOfFailure = new AtomicReference<Exception>(null);
 
     @Override
     public void setUp() throws Exception
@@ -49,14 +51,21 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
     protected void testAcking(boolean transacted, int mode) throws Exception
     {
         init(transacted, mode);
-
         _consumer.setMessageListener(this);
 
         _connection.start();
 
-        if (!_receviedAll.await(DEFAULT_FAILOVER_TIME, TimeUnit.MILLISECONDS))
+        if (!_receviedAll.await(10000L, TimeUnit.MILLISECONDS))
         {
-            fail("failover did not complete");
+            fail("All messages not received.");
+        }
+
+        // Check to see if we ended due to an exception in the onMessage handler
+        Exception cause = _causeOfFailure.get();
+        if (cause != null)
+        {
+            cause.printStackTrace();
+            fail(cause.getMessage());
         }
 
         _consumer.close();
@@ -91,8 +100,17 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
         }
     }
 
+    /**
+     * Pass the given exception back to the waiting thread to fail the test run.
+     * @param e The exception that is causing the test to fail.  
+     */
     protected void fail(Exception e)
     {
-
+       _causeOfFailure.set(e);
+        // End the test.
+        while (_receviedAll.getCount() != 0)
+        {
+            _receviedAll.countDown();
+        }
     }
 }

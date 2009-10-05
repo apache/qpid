@@ -60,6 +60,7 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -777,8 +778,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         try
         {
+            //Check that we are clean to commit.
+            if (_failedOverDirty)
+            {
+                rollback();
 
-            // TGM FIXME: what about failover?
+                throw new TransactionRolledBackException("Connection failover has occured since last send. " +
+                                                         "Forced rollback");
+            }
+
+
             // Acknowledge all delivered messages
             while (true)
             {
@@ -1509,6 +1518,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             sendRecover();
 
+            markClean();
+            
             if (!isSuspended)
             {
                 suspendChannel(false);
