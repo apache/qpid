@@ -108,6 +108,52 @@ public class AMQQueueMBeanTest extends TestCase
         //Ensure that the data has been removed from the Store
         verifyBrokerState();
     }
+    
+    public void testDeleteMessages() throws Exception
+    {
+        int messageCount = 10;
+        sendMessages(messageCount, true);
+        assertEquals("", messageCount, _queueMBean.getMessageCount().intValue());
+        assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
+        long queueDepth = (messageCount * MESSAGE_SIZE);
+        assertTrue(_queueMBean.getQueueDepth() == queueDepth);
+
+        //delete first message
+        _queueMBean.deleteMessages(1L,1L);
+        assertTrue(_queueMBean.getMessageCount() == (messageCount - 1));
+        assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
+        try
+        {
+            _queueMBean.viewMessageContent(1L);
+            fail("Message should no longer be on the queue");
+        }
+        catch(Exception e)
+        {
+            
+        }
+        
+        //delete last message, leaving 2nd to 9th
+        _queueMBean.deleteMessages(10L,10L);
+        assertTrue(_queueMBean.getMessageCount() == (messageCount - 2));
+        assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
+        try
+        {
+            _queueMBean.viewMessageContent(10L);
+            fail("Message should no longer be on the queue");
+        }
+        catch(Exception e)
+        {
+            
+        }
+
+        //delete remaining messages, leaving none
+        _queueMBean.deleteMessages(2L,9L);
+        assertTrue(_queueMBean.getMessageCount() == (0));
+        assertTrue(_queueMBean.getReceivedMessageCount() == messageCount);
+
+        //Ensure that the data has been removed from the Store
+        verifyBrokerState();
+    }
 
     // todo: collect to a general testing class -duplicated from Systest/MessageReturntest
     private void verifyBrokerState()
@@ -187,7 +233,7 @@ public class AMQQueueMBeanTest extends TestCase
     {
         try
         {
-            _queueMBean.viewMessages(0, 3);
+            _queueMBean.viewMessages(0L, 3L);
             fail();
         }
         catch (JMException ex)
@@ -197,7 +243,7 @@ public class AMQQueueMBeanTest extends TestCase
 
         try
         {
-            _queueMBean.viewMessages(2, 1);
+            _queueMBean.viewMessages(2L, 1L);
             fail();
         }
         catch (JMException ex)
@@ -207,8 +253,20 @@ public class AMQQueueMBeanTest extends TestCase
 
         try
         {
-            _queueMBean.viewMessages(-1, 1);
+            _queueMBean.viewMessages(-1L, 1L);
             fail();
+        }
+        catch (JMException ex)
+        {
+
+        }
+        
+        try
+        {
+            long end = Integer.MAX_VALUE;
+            end+=2;
+            _queueMBean.viewMessages(1L, end);
+            fail("Expected Exception due to oversized(> 2^31) message range");
         }
         catch (JMException ex)
         {

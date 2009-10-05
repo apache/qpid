@@ -169,6 +169,8 @@ public abstract class ServerRegistry
     
     public abstract List<NotificationObject> getNotifications(ManagedBean mbean);
     
+    public abstract List<NotificationObject> getNotifications(String virtualhost);
+    
     public abstract boolean hasSubscribedForNotifications(ManagedBean mbean, String name, String type);
     
     public abstract void clearNotifications(ManagedBean mbean, List<NotificationObject> list);

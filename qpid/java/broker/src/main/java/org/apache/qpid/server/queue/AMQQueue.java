@@ -122,6 +122,17 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     List<Long> getMessagesOnTheQueue(int num, int offest);
 
     QueueEntry getMessageOnTheQueue(long messageId);
+    
+    /**
+     * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
+     * 
+     * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1. 
+     * Using 0 in the 'to' field will return an empty list regardless of the 'from' value.
+     * @param fromPosition
+     * @param toPosition
+     * @return
+     */
+    public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition);
 
 
     void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
