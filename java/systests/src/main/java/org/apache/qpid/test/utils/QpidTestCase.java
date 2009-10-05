@@ -22,8 +22,10 @@ import junit.framework.TestResult;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -80,6 +82,8 @@ public class QpidTestCase extends TestCase
     private Map<org.apache.log4j.Logger, Level> _loggerLevelSetForTest = new HashMap<org.apache.log4j.Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
+
+    protected static final String INDEX = "index";
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -183,7 +187,7 @@ public class QpidTestCase extends TestCase
     private Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
     private InitialContext _initialContext;
-    private AMQConnectionFactory _connectionFactory;
+    protected AMQConnectionFactory _connectionFactory;
 
     private String _testName;
 
@@ -193,8 +197,6 @@ public class QpidTestCase extends TestCase
     public static final String TOPIC = "topic";
     /** Map to hold test defined environment properties */
     private Map<String, String> _env;
-    protected static final String INDEX = "index";
-    ;
 
     public QpidTestCase(String name)
     {
@@ -929,7 +931,7 @@ public class QpidTestCase extends TestCase
         {
             if (Boolean.getBoolean("profile.use_ssl"))
             {
-                _connectionFactory = getConnectionFactory("ssl");
+                _connectionFactory = getConnectionFactory("default.ssl");
             }
             else
             {
@@ -1019,6 +1021,17 @@ public class QpidTestCase extends TestCase
         return getClass().getSimpleName() + "-" + getName();
     }
 
+    /**
+     * Return a Queue specific for this test.
+     * Uses getTestQueueName() as the name of the queue
+     * @return
+     */
+    public Queue getTestQueue()
+    {
+        return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, getTestQueueName());
+    }
+
+
     protected void tearDown() throws java.lang.Exception
     {
         try
@@ -1070,17 +1083,23 @@ public class QpidTestCase extends TestCase
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count) throws Exception
     {
-        return sendMessage(session, destination, count, 0);
+        return sendMessage(session, destination, count, 0, 0);
     }
 
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count, int batchSize) throws Exception
     {
+        return sendMessage(session, destination, count, 0, batchSize);
+    }    
+
+    public List<Message> sendMessage(Session session, Destination destination,
+                                     int count, int offset, int batchSize) throws Exception
+    {
         List<Message> messages = new ArrayList<Message>(count);
 
         MessageProducer producer = session.createProducer(destination);
 
-        for (int i = 0; i < count; i++)
+        for (int i = offset; i < (count + offset); i++)
         {
             Message next = createNextMessage(session, i);
 
@@ -1099,8 +1118,11 @@ public class QpidTestCase extends TestCase
         }
 
         // Ensure we commit the last messages
-        if (session.getTransacted() && (batchSize > 0) &&
-            (count / batchSize != 0))
+        // Commit the session if we are transacted and
+        // we have no batchSize or
+        // our count is not divible by batchSize. 
+        if (session.getTransacted() &&
+            ( batchSize == 0 || count % batchSize != 0))
         {
             session.commit();
         }
@@ -1111,7 +1133,6 @@ public class QpidTestCase extends TestCase
     public Message createNextMessage(Session session, int msgCount) throws JMSException
     {
         Message message = session.createMessage();
-
         message.setIntProperty(INDEX, msgCount);
 
         return message;

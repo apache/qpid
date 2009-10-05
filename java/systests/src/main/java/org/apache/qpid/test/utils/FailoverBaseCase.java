@@ -22,45 +22,41 @@ package org.apache.qpid.test.utils;
 
 import org.apache.qpid.util.FileUtils;
 
-import javax.jms.Connection;
+import javax.naming.NamingException;
+
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FailoverBaseCase extends QpidTestCase
 {
-
-<<<<<<< HEAD:qpid/java/systests/src/main/java/org/apache/qpid/test/utils/FailoverBaseCase.java
-=======
     protected static final Logger _logger = LoggerFactory.getLogger(FailoverBaseCase.class);
 
->>>>>>> be4ef1c... Update to FBC to ensure second broker is shutdown in the event of an exception during super.tearDown. This may have been the cause of CI stuck brokers:qpid/java/systests/src/main/java/org/apache/qpid/test/utils/FailoverBaseCase.java
     public static int FAILING_VM_PORT = 2;
     public static int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
+    public static final long DEFAULT_FAILOVER_TIME = 10000L;
 
     protected int failingPort;
-    
-    private boolean failedOver = false;
 
-    public FailoverBaseCase()
+    protected int getFailingPort()
     {
         if (_broker.equals(VM))
         {
-            failingPort = FAILING_VM_PORT;
+            return FAILING_VM_PORT;
         }
         else
         {
-        	failingPort = FAILING_PORT;
+        	return FAILING_PORT;
         }
-    }
-    
-    protected int getFailingPort()
-    {
-        return failingPort;
     }
 
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
-        setSystemProperty("QPID_WORK", System.getProperty("QPID_WORK")+"/"+getFailingPort());
-        startBroker(failingPort);
+        // Set QPID_WORK to $QPID_WORK/<getFailingPort()>
+        // or /tmp/<getFailingPort()> if QPID_WORK not set.
+        setSystemProperty("QPID_WORK", System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir")) + "/" + getFailingPort());
+        startBroker(getFailingPort());
     }
 
     /**
@@ -69,15 +65,24 @@ public class FailoverBaseCase extends QpidTestCase
      * @return a connection 
      * @throws Exception
      */
-    public Connection getConnection() throws Exception
+    @Override
+    public AMQConnectionFactory getConnectionFactory() throws NamingException
     {
-        Connection conn =
-        	(Boolean.getBoolean("profile.use_ssl"))?
-        			getConnectionFactory("failover.ssl").createConnection("guest", "guest"):		
-        			getConnectionFactory("failover").createConnection("guest", "guest");
-        _connections.add(conn);
-        return conn;
+        _logger.info("get ConnectionFactory");
+        if (_connectionFactory == null)
+        {
+            if (Boolean.getBoolean("profile.use_ssl"))
+            {
+                _connectionFactory = getConnectionFactory("failover.ssl");
+            }
+            else
+            {
+                _connectionFactory = getConnectionFactory("failover");
+            }
+        }
+        return _connectionFactory;
     }
+
 
     public void tearDown() throws Exception
     {
@@ -95,24 +100,17 @@ public class FailoverBaseCase extends QpidTestCase
     }
 
 
-    /**
-     * Only used of VM borker.
-     */
-    public void failBroker()
+    public void failBroker(int port)
     {
-        failedOver = true;
         try
         {
-            stopBroker(getFailingPort());
+            stopBroker(port);
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
         }
     }
-    
-    protected void setFailingPort(int p)
-    {
-        failingPort = p;
-    }
+
+        
 }
