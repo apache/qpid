@@ -20,11 +20,18 @@
  */
 package org.apache.qpid.test.utils;
 
+import org.apache.qpid.util.FileUtils;
+
 import javax.jms.Connection;
 
 public class FailoverBaseCase extends QpidTestCase
 {
 
+<<<<<<< HEAD:qpid/java/systests/src/main/java/org/apache/qpid/test/utils/FailoverBaseCase.java
+=======
+    protected static final Logger _logger = LoggerFactory.getLogger(FailoverBaseCase.class);
+
+>>>>>>> be4ef1c... Update to FBC to ensure second broker is shutdown in the event of an exception during super.tearDown. This may have been the cause of CI stuck brokers:qpid/java/systests/src/main/java/org/apache/qpid/test/utils/FailoverBaseCase.java
     public static int FAILING_VM_PORT = 2;
     public static int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
 
@@ -74,8 +81,17 @@ public class FailoverBaseCase extends QpidTestCase
 
     public void tearDown() throws Exception
     {
-    	stopBroker(_broker.equals(VM)?FAILING_PORT:FAILING_PORT);
-        super.tearDown();
+        try
+        {
+            super.tearDown();
+        }
+        finally
+        {
+            // Ensure we shutdown any secondary brokers, even if we are unable
+            // to cleanly tearDown the QTC.
+            stopBroker(getFailingPort());
+            FileUtils.deleteDirectory(System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir")) + "/" + getFailingPort());
+        }
     }
 
 
