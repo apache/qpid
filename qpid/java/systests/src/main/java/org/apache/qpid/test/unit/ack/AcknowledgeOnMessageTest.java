@@ -32,14 +32,22 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AcknowledgeOnMessageTest extends AcknowledgeTest implements MessageListener
 {
-    private CountDownLatch _receviedAll;
-    private AtomicReference<Exception> _causeOfFailure = new AtomicReference<Exception>(null);
+    protected CountDownLatch _receviedAll;
+    protected AtomicReference<Exception> _causeOfFailure = new AtomicReference<Exception>(null);
 
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
+    }
+
+    @Override
+    public void init(boolean transacted, int mode) throws Exception
+    {
         _receviedAll = new CountDownLatch(NUM_MESSAGES);
+
+        super.init(transacted, mode);
+        _consumer.setMessageListener(this);
     }
 
     /**
@@ -51,13 +59,22 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
     protected void testAcking(boolean transacted, int mode) throws Exception
     {
         init(transacted, mode);
-        _consumer.setMessageListener(this);
 
         _connection.start();
 
         if (!_receviedAll.await(10000L, TimeUnit.MILLISECONDS))
         {
-            fail("All messages not received.");
+            // Check to see if we ended due to an exception in the onMessage handler
+            Exception cause = _causeOfFailure.get();
+            if (cause != null)
+            {
+                cause.printStackTrace();
+                fail(cause.getMessage());
+            }
+            else
+            {
+                fail("All messages not received:" + _receviedAll.getCount() + "/" + NUM_MESSAGES);
+            }
         }
 
         // Check to see if we ended due to an exception in the onMessage handler
@@ -102,11 +119,12 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
 
     /**
      * Pass the given exception back to the waiting thread to fail the test run.
-     * @param e The exception that is causing the test to fail.  
+     *
+     * @param e The exception that is causing the test to fail.
      */
     protected void fail(Exception e)
     {
-       _causeOfFailure.set(e);
+        _causeOfFailure.set(e);
         // End the test.
         while (_receviedAll.getCount() != 0)
         {
