@@ -46,7 +46,7 @@ public class AcknowledgeTest extends FailoverBaseCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        NUM_MESSAGES = 10;
+        NUM_MESSAGES = 5;
 
         _queue = getTestQueue();
 

@@ -22,6 +22,8 @@ package org.apache.qpid.test.unit.ack;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.JMSAMQException;
+import org.apache.qpid.client.failover.FailoverException;
 
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -62,7 +64,24 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
 
         _connection.start();
 
-        if (!_receviedAll.await(10000L, TimeUnit.MILLISECONDS))
+        int lastCount = (int) _receviedAll.getCount();
+
+        boolean complete = _receviedAll.await(5000L, TimeUnit.MILLISECONDS);
+
+        while (!complete)
+        {
+            int currentCount = (int) _receviedAll.getCount();
+
+            // make sure we have received a message in the last cycle.
+            if (lastCount == currentCount)
+            {
+                break;
+            }
+
+            complete = _receviedAll.await(5000L, TimeUnit.MILLISECONDS);
+        }
+
+        if (!complete)
         {
             // Check to see if we ended due to an exception in the onMessage handler
             Exception cause = _causeOfFailure.get();
@@ -73,7 +92,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             }
             else
             {
-                fail("All messages not received:" + _receviedAll.getCount() + "/" + NUM_MESSAGES);
+                fail("All messages not received missing:" + _receviedAll.getCount() + "/" + NUM_MESSAGES);
             }
         }
 
@@ -85,7 +104,20 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             fail(cause.getMessage());
         }
 
-        _consumer.close();
+        try
+        {
+            _consumer.close();
+        }
+        catch (JMSAMQException amqe)
+        {
+            if (amqe.getLinkedException() instanceof FailoverException)
+            {
+                fail("QPID-143 : Auto Ack can acknowledge message from previous session after failver. If failover occurs between deliver and ack.");
+            }
+            // else Rethrow for TestCase to catch.
+            throw amqe;
+        }
+
         _consumerSession.close();
 
         assertEquals("Wrong number of messages on queue", 0,
@@ -113,6 +145,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
         }
         catch (Exception e)
         {
+            // This will end the test run by counting down _receviedAll 
             fail(e);
         }
     }
