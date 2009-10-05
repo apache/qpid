@@ -29,6 +29,11 @@
 
 #include <unistd.h>
 
+// This is a macro instead of a function because we don't want to
+// evaluate the MSG argument unless there is an error.
+#define CPG_CHECK(RESULT, MSG) \
+    if ((RESULT) != CPG_OK) throw Exception(errorStr((RESULT), (MSG)))
+
 namespace qpid {
 namespace cluster {
 
@@ -36,7 +41,7 @@ using namespace std;
 
 Cpg* Cpg::cpgFromHandle(cpg_handle_t handle) {
     void* cpg=0;
-    check(cpg_context_get(handle, &cpg), "Cannot get CPG instance.");
+    CPG_CHECK(cpg_context_get(handle, &cpg), "Cannot get CPG instance.");
     if (!cpg) throw Exception("Cannot get CPG instance.");
     return reinterpret_cast<Cpg*>(cpg);
 }
@@ -66,7 +71,7 @@ void Cpg::globalConfigChange(
 
 int Cpg::getFd() {
     int fd;
-    check(cpg_fd_get(handle, &fd), "Cannot get CPG file descriptor");
+    CPG_CHECK(cpg_fd_get(handle, &fd), "Cannot get CPG file descriptor");
     return fd;
 }
 
@@ -84,8 +89,8 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
         sys::sleep(5);
         err = cpg_initialize(&handle, &callbacks);
     }
-    check(err, "Failed to initialize CPG.");
-    check(cpg_context_set(handle, this), "Cannot set CPG context");
+    CPG_CHECK(err, "Failed to initialize CPG.");
+    CPG_CHECK(cpg_context_set(handle, this), "Cannot set CPG context");
     // Note: CPG is currently unix-specific. If CPG is ported to
     // windows then this needs to be refactored into
     // qpid::sys::<platform>
@@ -102,11 +107,11 @@ Cpg::~Cpg() {
 
 void Cpg::join(const std::string& name) {
     group = name;
-    check(cpg_join(handle, &group), cantJoinMsg(group));
+    CPG_CHECK(cpg_join(handle, &group), cantJoinMsg(group));
 }
     
 void Cpg::leave() {
-    check(cpg_leave(handle, &group), cantLeaveMsg(group));
+    CPG_CHECK(cpg_leave(handle, &group), cantLeaveMsg(group));
 }
 
 
@@ -115,14 +120,14 @@ void Cpg::leave() {
 bool Cpg::mcast(const iovec* iov, int iovLen) {
     // Check for flow control
     cpg_flow_control_state_t flowState;
-    check(cpg_flow_control_state_get(handle, &flowState), "Cannot get CPG flow control status.");
+    CPG_CHECK(cpg_flow_control_state_get(handle, &flowState), "Cannot get CPG flow control status.");
     if (flowState == CPG_FLOW_CONTROL_ENABLED)
         return false;
 
     cpg_error_t result;
     do {
         result = cpg_mcast_joined(handle, CPG_TYPE_AGREED, const_cast<iovec*>(iov), iovLen);
-        if (result != CPG_ERR_TRY_AGAIN) check(result, cantMcastMsg(group));
+        if (result != CPG_ERR_TRY_AGAIN) CPG_CHECK(result, cantMcastMsg(group));
     } while(result == CPG_ERR_TRY_AGAIN);
     return true;
 }
@@ -131,20 +136,20 @@ void Cpg::shutdown() {
     if (!isShutdown) {
         QPID_LOG(debug,"Shutting down CPG");
         isShutdown=true;
-        check(cpg_finalize(handle), "Error in shutdown of CPG");
+        CPG_CHECK(cpg_finalize(handle), "Error in shutdown of CPG");
     }
 }
 
 void Cpg::dispatchOne() {
-    check(cpg_dispatch(handle,CPG_DISPATCH_ONE), "Error in CPG dispatch");
+    CPG_CHECK(cpg_dispatch(handle,CPG_DISPATCH_ONE), "Error in CPG dispatch");
 }
 
 void Cpg::dispatchAll() {
-    check(cpg_dispatch(handle,CPG_DISPATCH_ALL), "Error in CPG dispatch");
+    CPG_CHECK(cpg_dispatch(handle,CPG_DISPATCH_ALL), "Error in CPG dispatch");
 }
 
 void Cpg::dispatchBlocking() {
-    check(cpg_dispatch(handle,CPG_DISPATCH_BLOCKING), "Error in CPG dispatch");
+    CPG_CHECK(cpg_dispatch(handle,CPG_DISPATCH_BLOCKING), "Error in CPG dispatch");
 }
 
 string Cpg::errorStr(cpg_error_t err, const std::string& msg) {
@@ -184,7 +189,7 @@ std::string Cpg::cantMcastMsg(const Name& group) {
 
 MemberId Cpg::self() const {
     unsigned int nodeid;
-    check(cpg_local_get(handle, &nodeid), "Cannot get local CPG identity");
+    CPG_CHECK(cpg_local_get(handle, &nodeid), "Cannot get local CPG identity");
     return MemberId(nodeid, getpid());
 }
 

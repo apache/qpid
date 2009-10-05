@@ -46,6 +46,7 @@ public class MockAMQQueue implements AMQQueue
 {
     private boolean _deleted = false;
     private AMQShortString _name;
+    private VirtualHost _virtualhost;
 
     private PrincipalHolder _principalHolder;
 
@@ -79,9 +80,14 @@ public class MockAMQQueue implements AMQQueue
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public void setVirtualHost(VirtualHost virtualhost)
+    {
+        _virtualhost = virtualhost;
+    }
+
     public VirtualHost getVirtualHost()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _virtualhost;
     }
 
     public void bind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException

@@ -21,25 +21,22 @@
 package org.apache.qpid.server.protocol;
 
 import junit.framework.TestCase;
-
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 
 import javax.management.JMException;
+import java.security.Principal;
 
-/**
- * Test class to test MBean operations for AMQMinaProtocolSession.
- */
+/** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class AMQProtocolSessionMBeanTest extends TestCase
 {
     /** Used for debugging. */
@@ -56,11 +53,11 @@ public class AMQProtocolSessionMBeanTest extends TestCase
         int channelCount = _mbean.channels().size();
         assertTrue(channelCount == 1);
         AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue_" + System.currentTimeMillis()),
-                                                                   false,
-                                                                   new AMQShortString("test"),
-                                                                   true,
-                                                                   _protocolSession.getVirtualHost(), null);
-        AMQChannel channel = new AMQChannel(_protocolSession,2, _messageStore);
+                                                            false,
+                                                            new AMQShortString("test"),
+                                                            true,
+                                                            _protocolSession.getVirtualHost(), null);
+        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
         channel.setDefaultQueue(queue);
         _protocolSession.addChannel(channel);
         channelCount = _mbean.channels().size();
@@ -114,8 +111,16 @@ public class AMQProtocolSessionMBeanTest extends TestCase
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         _protocolSession =
-            new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
-                null);
+                new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true),
+                                           null);
+        // Need to authenticate session for it to work, (well for logging to work)
+        _protocolSession.setAuthorizedID(new Principal()
+        {
+            public String getName()
+            {
+                return "AMQProtocolSessionMBeanTestUser";
+            }
+        });
         _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
         _channel = new AMQChannel(_protocolSession, 1, _messageStore);
         _protocolSession.addChannel(_channel);

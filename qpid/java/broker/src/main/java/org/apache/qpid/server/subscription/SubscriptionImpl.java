@@ -22,6 +22,7 @@ package org.apache.qpid.server.subscription;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -68,6 +69,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     
     private QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final Lock _stateChangeLock;
+
+    private static final AtomicLong idGenerator = new AtomicLong(0);
+    // Create a simple ID that increments for ever new Subscription
+    private final long _subscriptionID = idGenerator.getAndIncrement();
+
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -533,6 +539,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public AMQShortString getConsumerTag()
     {
         return _consumerTag;
+    }
+
+    public long getSubscriptionID()
+    {
+        return _subscriptionID;
     }
 
     public AMQProtocolSession getProtocolSession()

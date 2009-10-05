@@ -120,10 +120,6 @@ class Cpg : public sys::IOHandle {
     static std::string cantLeaveMsg(const Name&);
     static std::string cantMcastMsg(const Name&);
 
-    static void check(cpg_error_t result, const std::string& msg) {
-        if (result != CPG_OK) throw Exception(errorStr(result, msg));
-    }
-
     static Cpg* cpgFromHandle(cpg_handle_t);
 
     static void globalDeliver(

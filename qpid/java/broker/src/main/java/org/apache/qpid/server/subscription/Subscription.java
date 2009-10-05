@@ -50,6 +50,8 @@ public interface Subscription
 
     AMQShortString getConsumerTag();
 
+    long getSubscriptionID();
+
     boolean isSuspended();
 
     boolean hasInterest(QueueEntry msg);

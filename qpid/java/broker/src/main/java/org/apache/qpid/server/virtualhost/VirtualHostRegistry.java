@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -32,6 +35,12 @@ public class VirtualHostRegistry
 
 
     private String _defaultVirtualHostName;
+    private ApplicationRegistry _applicationRegistry;
+
+    public VirtualHostRegistry(ApplicationRegistry applicationRegistry)
+    {
+        _applicationRegistry = applicationRegistry;
+    }
 
     public synchronized void registerVirtualHost(VirtualHost host) throws Exception
     {
@@ -66,5 +75,10 @@ public class VirtualHostRegistry
     public Collection<VirtualHost> getVirtualHosts()
     {
         return new ArrayList<VirtualHost>(_registry.values());
+    }
+
+    public ApplicationRegistry getApplicationRegistry()
+    {
+        return _applicationRegistry;
     }
 }

@@ -228,6 +228,8 @@ void SemanticState::record(const DeliveryRecord& delivery)
     unacked.push_back(delivery);
 }
 
+const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
+
 SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent, 
                                           const string& _name, 
                                           Queue::shared_ptr _queue, 
@@ -255,7 +257,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     msgCredit(0), 
     byteCredit(0),
     notifyEnabled(true),
-    syncFrequency(_arguments.getAsInt("qpid.sync_frequency")),
+    syncFrequency(_arguments.getAsInt(QPID_SYNC_FREQUENCY)),
     deliveryCount(0)
 {}
 

@@ -181,18 +181,21 @@ uint32_t SystemInfo::getParentProcessId()
 
 std::string SystemInfo::getProcessName()
 {
+    std::string name;
+
     // Only want info for the current process, so ask for something specific.
     // The module info won't be used here but it keeps the snapshot limited to
     // the current process so a search through all processes is not needed.
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
     if (snap == INVALID_HANDLE_VALUE)
-        return 0;
+        return name;
     PROCESSENTRY32 entry;
     entry.dwSize = sizeof(entry);
     if (!Process32First(snap, &entry))
         entry.szExeFile[0] = '\0';
     CloseHandle(snap);
-    return std::string(entry.szExeFile);
+    name = entry.szExeFile;
+    return name;
 }
 
 }} // namespace qpid::sys

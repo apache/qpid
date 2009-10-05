@@ -20,7 +20,18 @@
  */
 package org.apache.qpid.util;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * FileUtils provides some simple helper methods for working with files. It follows the convention of wrapping all
@@ -46,7 +57,8 @@ public class FileUtils
     {
         BufferedInputStream is = null;
 
-        try{
+        try
+        {
             try
             {
                 is = new BufferedInputStream(new FileInputStream(filename));
@@ -57,7 +69,9 @@ public class FileUtils
             }
 
             return readStreamAsString(is);
-        }finally {
+        }
+        finally
+        {
             if (is != null)
             {
                 try
@@ -210,68 +224,69 @@ public class FileUtils
     /*
      * Deletes a given file
      */
-     public static boolean deleteFile(String filePath)
-     {
-         return delete(new File(filePath), false);
-     }
+    public static boolean deleteFile(String filePath)
+    {
+        return delete(new File(filePath), false);
+    }
 
     /*
      * Deletes a given empty directory 
      */
-     public static boolean deleteDirectory(String directoryPath)
-     {
-         File directory = new File(directoryPath);
+    public static boolean deleteDirectory(String directoryPath)
+    {
+        File directory = new File(directoryPath);
 
-         if (directory.isDirectory())
-         {
-           if (directory.listFiles().length == 0)
-           {
-               return delete(directory, true);
-           }
-         }
+        if (directory.isDirectory())
+        {
+            if (directory.listFiles().length == 0)
+            {
+                return delete(directory, true);
+            }
+        }
 
-         return false;
-     }
+        return false;
+    }
 
-     /**
-      * Delete a given file/directory,
-      * A directory will always require the recursive flag to be set.
-      * if a directory is specified and recursive set then delete the whole tree
-      * @param file the File object to start at
-      * @param recursive boolean to recurse if a directory is specified.
-      * @return <code>true</code> if and only if the file or directory is
-      *          successfully deleted; <code>false</code> otherwise
-      */
-     public static boolean delete(File file, boolean recursive)
-     {
-         boolean success = true;
+    /**
+     * Delete a given file/directory,
+     * A directory will always require the recursive flag to be set.
+     * if a directory is specified and recursive set then delete the whole tree
+     *
+     * @param file      the File object to start at
+     * @param recursive boolean to recurse if a directory is specified.
+     *
+     * @return <code>true</code> if and only if the file or directory is
+     *         successfully deleted; <code>false</code> otherwise
+     */
+    public static boolean delete(File file, boolean recursive)
+    {
+        boolean success = true;
 
-         if (file.isDirectory())
-         {
-             if (recursive)
-             {
-                 File[] files = file.listFiles();
+        if (file.isDirectory())
+        {
+            if (recursive)
+            {
+                File[] files = file.listFiles();
 
-                 // This can occur if the file is deleted outside the JVM
-                 if (files == null)
-                 {
-                     return false;
-                 }
+                // This can occur if the file is deleted outside the JVM
+                if (files == null)
+                {
+                    return false;
+                }
 
-                 for (int i = 0; i < files.length; i++)
-                 {
-                     success = delete(files[i], true) && success;
-                 }
+                for (int i = 0; i < files.length; i++)
+                {
+                    success = delete(files[i], true) && success;
+                }
 
-                 return success && file.delete();
-             }
+                return success && file.delete();
+            }
 
-             return false;
-         }
+            return false;
+        }
 
-         return file.delete();
-     }
-
+        return file.delete();
+    }
 
     public static class UnableToCopyException extends Exception
     {
@@ -294,7 +309,6 @@ public class FileUtils
             throw new IllegalArgumentException("Unable to copy '" + source.toString() + "' to '" + dst + "' a file with same name exists.");
         }
 
-
         if (source.isFile())
         {
             copy(source, dst);
@@ -303,22 +317,48 @@ public class FileUtils
         //else we have a source directory
         if (!dst.isDirectory() && !dst.mkdir())
         {
-             throw new UnableToCopyException("Unable to create destination directory");
+            throw new UnableToCopyException("Unable to create destination directory");
         }
-
 
         for (File file : source.listFiles())
         {
-           if (file.isFile())
-           {
-               copy(file, new File(dst.toString() + File.separator + file.getName()));
-           }
-           else
-           {
-               copyRecursive(file, new File(dst + File.separator + file.getName()));
-           }
+            if (file.isFile())
+            {
+                copy(file, new File(dst.toString() + File.separator + file.getName()));
+            }
+            else
+            {
+                copyRecursive(file, new File(dst + File.separator + file.getName()));
+            }
         }
 
+    }
 
+    /**
+     * Checks the specified file for instances of the search string.
+     *
+     * @param file the file to search
+     * @param search the search String
+     *
+     * @throws java.io.IOException
+     * @return the list of matching entries
+     */
+    public static List<String> searchFile(File file, String search)
+            throws IOException
+    {
+
+        List<String> results = new LinkedList<String>();
+
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        while (reader.ready())
+        {
+            String line = reader.readLine();
+            if (line.contains(search))
+            {
+                results.add(line);
+            }
+        }
+
+        return results;
     }
 }

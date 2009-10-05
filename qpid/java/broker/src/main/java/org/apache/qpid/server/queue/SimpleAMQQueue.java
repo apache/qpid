@@ -274,6 +274,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void bind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
     {
+
         exchange.registerQueue(routingKey, this, arguments);
         if (isDurable() && exchange.isDurable())
         {
@@ -281,6 +282,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
         _bindings.addBinding(routingKey, arguments, exchange);
+//        ExchangeBinding binding = new ExchangeBinding(routingKey, exchange, arguments);
+
+        //fixme MR logging in progress
+//        _bindings.addBinding(binding);
+//
+//        if (_logger.isMessageEnabled(binding))
+//        {
+//            _logger.message(binding, "QM-1001 : Created Binding");
+//        }
     }
 
     public void unBind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
