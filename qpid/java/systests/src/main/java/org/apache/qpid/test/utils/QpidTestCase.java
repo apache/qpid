@@ -1021,14 +1021,19 @@ public class QpidTestCase extends TestCase
 
     protected void tearDown() throws java.lang.Exception
     {
-        // close all the connections used by this test.
-        for (Connection c : _connections)
+        try
         {
-            c.close();
+            // close all the connections used by this test.
+            for (Connection c : _connections)
+            {
+                c.close();
+            }
         }
-
-        revertSystemProperties();
-        revertLoggingLevels();
+        finally{
+            // Ensure any problems with close does not interfer with property resets
+            revertSystemProperties();
+            revertLoggingLevels();
+        }
     }
 
     /**
