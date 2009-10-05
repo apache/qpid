@@ -202,6 +202,16 @@ bool SessionImpl::isCompleteUpTo(const SequenceNumber& id)
     return f.result;
 }
 
+framing::SequenceNumber SessionImpl::getCompleteUpTo()
+{
+    SequenceNumber firstIncomplete;
+    {
+        Lock l(state);
+        firstIncomplete = incompleteIn.front();
+    }
+    return --firstIncomplete;
+}
+
 struct MarkCompleted 
 {
     const SequenceNumber& id;
@@ -319,7 +329,7 @@ struct MethodContentAdaptor : MethodContent
 
 }
     
-Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
+Future SessionImpl::send(const AMQBody& command, const FrameSet& content, bool reframe) {
     Acquire a(sendLock);
     SequenceNumber id = nextOut++;
     {
@@ -337,7 +347,7 @@ Future SessionImpl::send(const AMQBody& command, const FrameSet& content) {
     frame.setEof(false);
     handleOut(frame);
 
-    if (content.isComplete()) {
+    if (reframe) {
         MethodContentAdaptor c(content);
         sendContent(c);
     } else {

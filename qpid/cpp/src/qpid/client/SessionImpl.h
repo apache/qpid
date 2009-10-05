@@ -25,6 +25,7 @@
 #include "qpid/client/Demux.h"
 #include "qpid/client/Execution.h"
 #include "qpid/client/Results.h"
+#include "qpid/client/ClientImportExport.h"
 
 #include "qpid/SessionId.h"
 #include "qpid/SessionState.h"
@@ -86,7 +87,15 @@ public:
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
-    Future send(const framing::AMQBody& command, const framing::FrameSet& content);
+    /**
+     * This method takes the content as a FrameSet; if reframe=false,
+     * the caller is resposnible for ensuring that the header and
+     * content frames in that set are correct for this connection
+     * (right flags, right fragmentation etc). If reframe=true, then
+     * the header and content from the frameset will be copied and
+     * reframed correctly for the connection.
+     */
+    QPID_CLIENT_EXTERN Future send(const framing::AMQBody& command, const framing::FrameSet& content, bool reframe=false);
     void sendRawFrame(framing::AMQFrame& frame);
 
     Demux& getDemux();
@@ -94,6 +103,7 @@ public:
     void markCompleted(const framing::SequenceSet& ids, bool notifyPeer);
     bool isComplete(const framing::SequenceNumber& id);
     bool isCompleteUpTo(const framing::SequenceNumber& id);
+    framing::SequenceNumber getCompleteUpTo();
     void waitForCompletion(const framing::SequenceNumber& id);
     void sendCompletion();
     void sendFlush();

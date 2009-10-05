@@ -19,7 +19,7 @@
 
 if HAVE_RUBY_DEVEL
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src/qmf -I$(top_srcdir)/src -I$(top_builddir)/src
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
 
 EXTRA_DIST = ruby.i
 BUILT_SOURCES = qmfengine.cpp
@@ -36,7 +36,7 @@ rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = qmfengine.la
 
 qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
-qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfcommon.la
+qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfagent.la
 qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
 nodist_qmfengine_la_SOURCES = qmfengine.cpp
 

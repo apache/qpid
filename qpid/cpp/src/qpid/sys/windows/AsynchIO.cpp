@@ -45,19 +45,6 @@ namespace {
     typedef qpid::sys::ScopedLock<qpid::sys::Mutex>  QLock;
 
 /*
- * We keep per thread state to avoid locking overhead. The assumption is that
- * on average all the connections are serviced by all the threads so the state
- * recorded in each thread is about the same. If this turns out not to be the
- * case we could rebalance the info occasionally.  
- */
-QPID_TSS int threadReadTotal = 0;
-QPID_TSS int threadMaxRead = 0;
-QPID_TSS int threadReadCount = 0;
-QPID_TSS int threadWriteTotal = 0;
-QPID_TSS int threadWriteCount = 0;
-QPID_TSS int64_t threadMaxReadTimeNs = 2 * 1000000; // start at 2ms
-
-/*
  * The function pointers for AcceptEx and ConnectEx need to be looked up
  * at run time. Make sure this is done only once.
  */
@@ -642,12 +629,10 @@ void AsynchIO::close(void) {
 }
 
 void AsynchIO::readComplete(AsynchReadResult *result) {
-    ++threadReadCount;
     int status = result->getStatus();
     size_t bytes = result->getTransferred();
     if (status == 0 && bytes > 0) {
         bool restartRead = true;     // May not if receiver doesn't want more
-        threadReadTotal += bytes;
         if (readCallback)
             restartRead = readCallback(*this, result->getBuff());
         if (restartRead)
@@ -674,10 +659,8 @@ void AsynchIO::writeComplete(AsynchWriteResult *result) {
     size_t bytes = result->getTransferred();
     AsynchIO::BufferBase *buff = result->getBuff();
     if (buff != 0) {
-        ++threadWriteCount;
         writeInProgress = false;
         if (status == 0 && bytes > 0) {
-            threadWriteTotal += bytes;
             if (bytes < result->getRequested()) // Still more to go; resubmit
                 startWrite(buff);
             else

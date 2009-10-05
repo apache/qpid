@@ -27,9 +27,9 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
+import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.xml.QpidLog4JConfigurator;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.FixedSizeByteBufferAllocator;
 import org.apache.mina.common.IoAcceptor;
@@ -62,9 +62,11 @@ import org.apache.qpid.server.transport.QpidAcceptor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Properties;
 
 /**
  * Main entry point for AMQPD.
@@ -73,8 +75,8 @@ import java.net.InetSocketAddress;
 @SuppressWarnings({"AccessStaticViaInstance"})
 public class Main
 {
-    private static final Logger _logger = Logger.getLogger(Main.class);
-    public static final Logger _brokerLogger = Logger.getLogger("Qpid.Broker");
+    private static Logger _logger;
+    private static Logger _brokerLogger;
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
@@ -206,7 +208,7 @@ public class Main
             }
             catch (InitException e)
             {
-                System.out.println(e.getMessage());
+                System.out.println("Initialisation Error : " + e.getMessage());
                 _brokerLogger.error("Initialisation Error : " + e.getMessage());
                 shutdown(1);
             }
@@ -499,7 +501,18 @@ public class Main
 
     public static void main(String[] args)
     {
-
+        //if the -Dlog4j.configuration property has not been set, enable the init override
+        //to stop Log4J wondering off and picking up the first log4j.xml/properties file it
+        //finds from the classpath when we get the first Loggers
+        if(System.getProperty("log4j.configuration") == null)
+        {
+            System.setProperty("log4j.defaultInitOverride", "true");
+        }
+        
+        //now that the override status is know, we can instantiate the Loggers
+        _logger = Logger.getLogger(Main.class);
+        _brokerLogger = Logger.getLogger("Qpid.Broker");
+        
         new Main(args);
     }
 
@@ -531,7 +544,7 @@ public class Main
         return ip;
     }
 
-    private void configureLogging(File logConfigFile, int logWatchTime)
+    private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
@@ -542,18 +555,43 @@ public class Main
                 System.out.println("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every "
                                    + logWatchTime + " seconds");
                 // log4j expects the watch interval in milliseconds
-                DOMConfigurator.configureAndWatch(logConfigFile.getAbsolutePath(), logWatchTime * 1000);
+                try
+                {
+                    QpidLog4JConfigurator.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
+                }
+                catch (Exception e)
+                {
+                    throw new InitException(e.getMessage(),e);
+                }
             }
             else
             {
-                DOMConfigurator.configure(logConfigFile.getAbsolutePath());
+                try
+                {
+                    QpidLog4JConfigurator.configure(logConfigFile.getPath());
+                }
+                catch (Exception e)
+                {
+                    throw new InitException(e.getMessage(),e);
+                }
             }
         }
         else
         {
             System.err.println("Logging configuration error: unable to read file " + logConfigFile.getAbsolutePath());
-            System.err.println("Using basic log4j configuration");
-            BasicConfigurator.configure();
+            System.err.println("Using the fallback internal log4j.properties configuration");
+            
+            InputStream propsFile = this.getClass().getResourceAsStream("/log4j.properties");
+            if(propsFile == null)
+            {
+                throw new IOException("Unable to load the fallback internal log4j.properties configuration file");
+            }
+            else
+            {
+                Properties fallbackProps = new Properties();
+                fallbackProps.load(propsFile);
+                PropertyConfigurator.configure(fallbackProps);
+            }
         }
     }
 

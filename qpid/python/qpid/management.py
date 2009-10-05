@@ -234,8 +234,7 @@ class managementClient:
   #========================================================
   # User API - interacts with the class's user
   #========================================================
-  def __init__ (self, amqpSpec, ctrlCb=None, configCb=None, instCb=None, methodCb=None, closeCb=None):
-    self.spec     = amqpSpec
+  def __init__ (self, unused=None, ctrlCb=None, configCb=None, instCb=None, methodCb=None, closeCb=None):
     self.ctrlCb   = ctrlCb
     self.configCb = configCb
     self.instCb   = instCb
@@ -268,7 +267,7 @@ class managementClient:
 
     self.channels.append (mch)
     self.incOutstanding (mch)
-    codec = Codec (self.spec)
+    codec = Codec ()
     self.setHeader (codec, ord ('B'))
     msg = mch.message(codec.encoded)
     mch.send ("qpid.management", msg)
@@ -285,7 +284,7 @@ class managementClient:
 
   def getObjects (self, channel, userSequence, className, bank=0):
     """ Request immediate content from broker """
-    codec = Codec (self.spec)
+    codec = Codec ()
     self.setHeader (codec, ord ('G'), userSequence)
     ft = {}
     ft["_class"] = className
@@ -353,7 +352,7 @@ class managementClient:
   #========================================================
   def topicCb (self, ch, msg):
     """ Receive messages via the topic queue of a particular channel. """
-    codec = Codec (self.spec, msg.body)
+    codec = Codec (msg.body)
     while True:
       hdr = self.checkHeader (codec)
       if hdr == None:
@@ -372,7 +371,7 @@ class managementClient:
 
   def replyCb (self, ch, msg):
     """ Receive messages via the reply queue of a particular channel. """
-    codec = Codec (self.spec, msg.body)
+    codec = Codec (msg.body)
     hdr   = self.checkHeader (codec)
     if hdr == None:
       return
@@ -498,7 +497,7 @@ class managementClient:
       data = codec.read_uuid ()
     elif typecode == 15: # FTABLE
       data = {}
-      sc = Codec(codec.spec, codec.read_vbin32())
+      sc = Codec(codec.read_vbin32())
       if sc.encoded:
         count = sc.read_uint32()
         while count > 0:
@@ -599,7 +598,7 @@ class managementClient:
       self.ctrlCb (ch.context, self.CTRL_BROKER_INFO, ch.brokerInfo)
 
     # Send a package request
-    sendCodec = Codec (self.spec)
+    sendCodec = Codec ()
     seq = self.seqMgr.reserve ("outstanding")
     self.setHeader (sendCodec, ord ('P'), seq)
     smsg = ch.message(sendCodec.encoded)
@@ -611,7 +610,7 @@ class managementClient:
       self.packages[pname] = {}
 
       # Send a class request
-      sendCodec = Codec (self.spec)
+      sendCodec = Codec ()
       seq = self.seqMgr.reserve ("outstanding")
       self.setHeader (sendCodec, ord ('Q'), seq)
       self.incOutstanding (ch)
@@ -631,7 +630,7 @@ class managementClient:
 
     if (cname, hash) not in self.packages[pname]:
       # Send a schema request
-      sendCodec = Codec (self.spec)
+      sendCodec = Codec ()
       seq = self.seqMgr.reserve ("outstanding")
       self.setHeader (sendCodec, ord ('S'), seq)
       self.incOutstanding (ch)
@@ -885,7 +884,7 @@ class managementClient:
 
   def method (self, channel, userSequence, objId, classId, methodName, args):
     """ Invoke a method on an object """
-    codec = Codec (self.spec)
+    codec = Codec ()
     sequence = self.seqMgr.reserve ((userSequence, classId, methodName))
     self.setHeader (codec, ord ('M'), sequence)
     objId.encode(codec)

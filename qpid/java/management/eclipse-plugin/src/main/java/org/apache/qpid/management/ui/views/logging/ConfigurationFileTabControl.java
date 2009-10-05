@@ -30,6 +30,7 @@ import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
@@ -80,6 +81,7 @@ public class ConfigurationFileTabControl extends TabControl
     private String[] _availableLoggerLevels;
     private TabularDataSupport _configFileLoggerLevels = null;
     private LoggingManagement _lmmb;
+    private ApiVersion _ApiVersion;
     
     static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
     static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
@@ -91,6 +93,7 @@ public class ConfigurationFileTabControl extends TabControl
         _lmmb = (LoggingManagement)
                 MBeanServerInvocationHandler.newProxyInstance(mbsc, mbean.getObjectName(),
                                                             LoggingManagement.class, false);
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createScrolledForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
@@ -191,11 +194,15 @@ public class ConfigurationFileTabControl extends TabControl
         }
         
         Label noteLabel = _toolkit.createLabel(_headerComposite, 
-                "NOTE: These options modify the config file. " +
-                "Changes take effect if LogWatch is enabled " +
-                "or the broker is restarted.");
+                "NOTE: These options modify the configuration file. " +
+                "Changes only take effect automatically if LogWatch is enabled.");
+        Label noteLabel2 = _toolkit.createLabel(_headerComposite, 
+                "A child Logger set to a non-inherited Level in the Runtime tab " +
+                "will retain that value after the file is reloaded.");
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
         noteLabel.setLayoutData(gridData);
+        gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
+        noteLabel2.setLayoutData(gridData);
         
         Group configFileLoggerLevelsGroup = new Group(_paramsComposite, SWT.SHADOW_NONE);
         configFileLoggerLevelsGroup.setBackground(_paramsComposite.getBackground());
@@ -275,7 +282,7 @@ public class ConfigurationFileTabControl extends TabControl
             public void mouseUp(MouseEvent e){}
         });
         
-        final Button logLevelEditButton = _toolkit.createButton(configFileLoggerLevelsGroup, "Edit Selected Logger...", SWT.PUSH);
+        final Button logLevelEditButton = _toolkit.createButton(configFileLoggerLevelsGroup, "Edit Selected Logger(s)...", SWT.PUSH);
         logLevelEditButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         logLevelEditButton.setEnabled(false);
         logLevelEditButton.addSelectionListener(new SelectionAdapter()
@@ -341,6 +348,43 @@ public class ConfigurationFileTabControl extends TabControl
         _logWatchIntervalLabel = _toolkit.createLabel(logWatchIntervalGroup, "-");
         _logWatchIntervalLabel.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         _logWatchIntervalLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true));
+        
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            Group reloadConfigFileGroup = new Group(attributesComposite, SWT.SHADOW_NONE);
+            reloadConfigFileGroup.setBackground(attributesComposite.getBackground());
+            reloadConfigFileGroup.setText("Reload Configuration File");
+            gridData = new GridData(SWT.LEFT, SWT.TOP, true, false);
+            reloadConfigFileGroup.setLayoutData(gridData);
+            reloadConfigFileGroup.setLayout(new GridLayout());
+
+            final Button reloadConfigFileButton = _toolkit.createButton(reloadConfigFileGroup, "Reload Config File", SWT.PUSH);
+            reloadConfigFileButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+            reloadConfigFileButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    int response = ViewUtility.popupOkCancelConfirmationMessage("Reload", 
+                                                                            "Reload Logging Configuration File?");
+                    if (response == SWT.OK)
+                    {
+                        try
+                        {
+                            _lmmb.reloadConfigFile();
+                            ViewUtility.operationResultFeedback(null, "Reloaded Logging Configuration File", null);
+
+                        }
+                        catch (Exception ex)
+                        {
+                            ViewUtility.operationFailedStatusBarMessage("Error Reloading Logging Configuration File");
+                            MBeanUtility.handleException(_mbean, ex);
+                        }
+
+                        refresh(_mbean);;
+                    }
+                }
+            });
+        }
     }
 
 
@@ -362,7 +406,7 @@ public class ConfigurationFileTabControl extends TabControl
                 selectedLoggers.add(user);
             }
 
-            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Config File Logger Level");
+            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Config File Logger Level(s)");
             
             _toolkit.createLabel(shell, "Logger(s): ").setBackground(shell.getBackground());
 

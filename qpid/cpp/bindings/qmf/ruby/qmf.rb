@@ -30,14 +30,40 @@ module Qmf
         end
     end
 
-    class ConnectionSettings < Qmfengine::ConnectionSettings
+    class ConnectionSettings
+      attr_reader :impl
+
+      def initialize(url = nil)
+        if url
+          @impl = Qmfengine::ConnectionSettings.new(url)
+        else
+          @impl = Qmfengine::ConnectionSettings.new()
+        end
+      end
+
+      def set_attr(key, val)
+        if val.class == String
+          v = Qmfengine::Value.new(TYPE_LSTR)
+          v.setString(val)
+        elsif val.class == TrueClass or val.class == FalseClass
+          v = Qmfengine::Value.new(TYPE_BOOL)
+          v.setBool(val)
+        elsif val.class == Fixnum
+          v = Qmfengine::Value.new(TYPE_UINT32)
+          v.setUint(val)
+        else
+          raise ArgumentError, "Value for attribute '#{key}' has unsupported type: #{val.class}"
+        end
+
+        @impl.setAttr(key, v)
+      end
     end
 
-    class ConnectionEvent
+    class ConnectionHandler
         def conn_event_connected(); end
         def conn_event_disconnected(error); end
-        def conn_event_session_closed(context, error); end
-        def conn_event_recv(context, message); end
+        def sess_event_session_closed(context, error); end
+        def sess_event_recv(context, message); end
     end
 
     class Query
@@ -63,16 +89,11 @@ module Qmf
       end
     end
 
-    class AgentHandler
-      def get_query(context, query, userId); end
-      def method_call(context, name, object_id, args, userId); end
-    end
-
     class Connection
       attr_reader :impl
 
-      def initialize(settings, event_handler = nil, delay_min = 1, delay_max = 128, delay_factor = 2)
-        @impl = Qmfengine::ResilientConnection.new(settings, delay_min, delay_max, delay_factor)
+      def initialize(settings)
+        @impl = Qmfengine::ResilientConnection.new(settings.impl)
         @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
         @impl.setNotifyFd(@sockEngine.fileno)
         @new_conn_handlers = Array.new
@@ -153,11 +174,18 @@ module Qmf
           @impl = Qmfengine::ObjectId.new
         end
       end
+
       def object_num_high
         return @impl.getObjectNumHi
       end
+
       def object_num_low
         return @impl.getObjectNumLo
+      end
+
+      def ==(other)
+        return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
+           (@impl.getObjectNumLo == other.impl.getObjectNumLo)
       end
     end
 
@@ -232,7 +260,12 @@ module Qmf
       end
     end
 
-    class Agent
+    class AgentHandler
+      def get_query(context, query, userId); end
+      def method_call(context, name, object_id, args, userId); end
+    end
+
+    class Agent < ConnectionHandler
       def initialize(handler, label="")
         if label == ""
           @agentLabel = "rb-%s.%d" % [Socket.gethostname, Process::pid]
@@ -241,7 +274,7 @@ module Qmf
         end
         @conn = nil
         @handler = handler
-        @impl = Qmfengine::Agent.new(@agentLabel)
+        @impl = Qmfengine::AgentEngine.new(@agentLabel)
         @event = Qmfengine::AgentEvent.new
         @xmtMessage = Qmfengine::Message.new
       end

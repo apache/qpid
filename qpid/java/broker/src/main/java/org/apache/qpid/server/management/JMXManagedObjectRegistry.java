@@ -35,11 +35,7 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.management.NotificationListener;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotificationFilter;
 import javax.management.NotificationFilterSupport;
-import javax.management.InstanceNotFoundException;
-import javax.management.relation.MBeanServerNotificationFilter;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
@@ -82,6 +78,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     public static final int PORT_EXPORT_OFFSET = 100;
 
     private final MBeanServer _mbeanServer;
+    private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
     
 
@@ -120,7 +117,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();        
         PrincipalDatabase db = map.get(jmxDatabaseName);
 
-        final JMXConnectorServer cs;
         HashMap<String,Object> env = new HashMap<String,Object>();
 
         //Socket factories for the RMIConnectorServer, either default or SLL depending on configuration
@@ -246,7 +242,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 "service:jmx:rmi://"+hostname+":"+(port+PORT_EXPORT_OFFSET)+"/jndi/rmi://"+hostname+":"+port+"/jmxrmi");
 
         final JMXServiceURL internalUrl = new JMXServiceURL("rmi", hostname, port+PORT_EXPORT_OFFSET);
-        cs = new RMIConnectorServer(internalUrl, env, rmiConnectorServerStub, _mbeanServer)
+        _cs = new RMIConnectorServer(internalUrl, env, rmiConnectorServerStub, _mbeanServer)
         {   
             @Override  
             public synchronized void start() throws IOException
@@ -282,7 +278,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         //Add the custom invoker as an MBeanServerForwarder, and start the RMIConnectorServer.
         MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
-        cs.setMBeanServerForwarder(mbsf);
+        _cs.setMBeanServerForwarder(mbsf);
 
         NotificationFilterSupport filter = new NotificationFilterSupport();
         filter.enableType(JMXConnectionNotification.OPENED);
@@ -290,9 +286,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         filter.enableType(JMXConnectionNotification.FAILED);
         // Get the handler that is used by the above MBInvocationHandler Proxy.
         // which is the MBeanInvocationHandlerImpl and so also a NotificationListener
-        cs.addNotificationListener((NotificationListener) Proxy.getInvocationHandler(mbsf), filter, null);
+        _cs.addNotificationListener((NotificationListener) Proxy.getInvocationHandler(mbsf), filter, null);
 
-        cs.start();
+        _cs.start();
 
 
         CurrentActor.get().message(ManagementConsoleMessages.MNG_1004());
@@ -375,6 +371,19 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             // Stopping the RMI registry
             UnicastRemoteObject.unexportObject(_rmiRegistry, true);
+        }
+        
+        if (_cs != null)
+        {
+            // Stopping the JMX ConnectorServer
+            try
+            {
+                _cs.stop();
+            }
+            catch (IOException e)
+            {
+                _log.warn("Error while closing the JMX ConnectorServer: " + e.getMessage());
+            }
         }
         
         //ObjectName query to gather all Qpid related MBeans

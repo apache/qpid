@@ -132,7 +132,7 @@ class Serial:
     return hash(self.value)
 
   def __cmp__(self, other):
-    if other is None:
+    if other.__class__ not in (int, long, Serial):
       return 1
 
     other = serial(other)
@@ -150,7 +150,10 @@ class Serial:
     return Serial(self.value + other)
 
   def __sub__(self, other):
-    return Serial(self.value - other)
+    if isinstance(other, Serial):
+      return self.value - other.value
+    else:
+      return Serial(self.value - other)
 
   def __repr__(self):
     return "serial(%s)" % self.value
@@ -169,7 +172,7 @@ class Range:
 
   def __contains__(self, n):
     return self.lower <= n and n <= self.upper
-    
+
   def __iter__(self):
     i = self.lower
     while i <= self.upper:
@@ -230,7 +233,7 @@ class RangedSet:
 
   def add(self, lower, upper = None):
     self.add_range(Range(lower, upper))
-    
+
   def __iter__(self):
     return iter(self.ranges)
 

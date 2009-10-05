@@ -26,3 +26,10 @@ try:
   from socket import SHUT_RDWR
 except ImportError:
   SHUT_RDWR = 2
+
+try:
+  from traceback import format_exc
+except ImportError:
+  import sys, traceback
+  def format_exc():
+    return "".join(traceback.format_exception(*sys.exc_info()))

@@ -19,7 +19,8 @@ log4j.debug=false
 test.port=15672
 test.mport=18999
 test.port.ssl=15671
-test.port.alt=15673
+test.port.alt=15772
+test.port.alt.ssl=15771
 
 test.exclude=true
 profile.excludes=08TransientExcludes

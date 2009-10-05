@@ -212,7 +212,6 @@ class ManagementData:
     sock.settimeout(10)
     self.conn   = Connection (sock,
                               username=self.broker.username, password=self.broker.password)
-    self.spec = self.conn.spec
     def aborted():
       raise Timeout("Waiting for connection to be established with broker")
     oldAborted = self.conn.aborted
@@ -223,7 +222,7 @@ class ManagementData:
     sock.settimeout(oldTimeout)
     self.conn.aborted = oldAborted
 
-    self.mclient = managementClient (self.spec, self.ctrlHandler, self.configHandler,
+    self.mclient = managementClient ("unused", self.ctrlHandler, self.configHandler,
                                      self.instHandler, self.methodReply, self.closeHandler)
     self.mclient.schemaListener (self.schemaHandler)
     self.mch = self.mclient.addChannel (self.conn.session(self.sessionId))

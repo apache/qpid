@@ -615,7 +615,6 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             if(_state.compareAndSet(State.SUSPENDED, State.ACTIVE))
             {
                 _stateListener.stateChange(this, State.SUSPENDED, State.ACTIVE);
-                CurrentActor.get().message(_logSubject,SubscriptionMessages.SUB_1003(_state.get().toString()));
             }
             else
             {
@@ -628,9 +627,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
             {
                 _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
-                CurrentActor.get().message(_logSubject,SubscriptionMessages.SUB_1003(_state.get().toString()));
             }
         }
+        CurrentActor.get().message(_logSubject,SubscriptionMessages.SUB_1003(_state.get().toString()));
     }
 
     public State getState()

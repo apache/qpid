@@ -28,10 +28,13 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.TabControl;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -43,6 +46,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -55,6 +60,8 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
@@ -199,6 +206,8 @@ public class ConnectionOperationsTabControl extends TabControl
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(tableSorter);
+        _table.setSortColumn(_table.getColumn(0));
+        _table.setSortDirection(SWT.UP);
         
         Composite buttonsComposite = _toolkit.createComposite(viewChannelsGroup);
         gridData = new GridData(SWT.RIGHT, SWT.BOTTOM, false, false);
@@ -276,6 +285,19 @@ public class ConnectionOperationsTabControl extends TabControl
                 }
 
             }
+        });
+        
+        //listener for double clicking to open the selection mbean
+        _table.addMouseListener(new MouseListener()                                              
+        {
+            // MouseListener implementation
+            public void mouseDoubleClick(MouseEvent event)
+            {
+                openMBean(_table);
+            }
+            
+            public void mouseDown(MouseEvent e){}
+            public void mouseUp(MouseEvent e){}
         });
         
         _tableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
@@ -463,6 +485,44 @@ public class ConnectionOperationsTabControl extends TabControl
                 comparison = -comparison;
             }
             return comparison;
+        }
+    }
+    
+    private void openMBean(Table table)
+    {
+        int selectionIndex = table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        CompositeData channelResult = (CompositeData) table.getItem(selectionIndex).getData();
+        String queueName = (String) channelResult.get(DEFAULT_QUEUE);
+        
+        if(queueName == null)
+        {
+            return;
+        }
+        
+        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
+        ManagedBean selectedMBean = serverRegistry.getQueue(queueName, _mbean.getVirtualHostName());
+
+        if(selectedMBean == null)
+        {
+            ViewUtility.popupErrorMessage("Error", "Unable to retrieve the selected MBean to open it");
+            return;
+        }
+
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
+        try
+        {
+            view.openMBean(selectedMBean);
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(selectedMBean, ex);
         }
     }
 

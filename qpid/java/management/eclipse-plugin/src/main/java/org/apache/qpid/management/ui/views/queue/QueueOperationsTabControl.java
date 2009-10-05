@@ -299,8 +299,8 @@ public class QueueOperationsTabControl extends TabControl
         //message table
         Composite tableAndButtonsComposite = _toolkit.createComposite(messagesGroup);
         gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-        gridData.minimumHeight = 220;
-        gridData.heightHint = 220;
+        gridData.minimumHeight = 180;
+        gridData.heightHint = 180;
         tableAndButtonsComposite.setLayoutData(gridData);
         tableAndButtonsComposite.setLayout(new GridLayout(2,false));
                
@@ -358,6 +358,8 @@ public class QueueOperationsTabControl extends TabControl
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(tableSorter);
+        _table.setSortColumn(_table.getColumn(0));
+        _table.setSortDirection(SWT.UP);
         
         //Side Buttons
         Composite buttonsComposite = _toolkit.createComposite(tableAndButtonsComposite);
@@ -492,12 +494,12 @@ public class QueueOperationsTabControl extends TabControl
         headerEtcComposite.setLayoutData(gridData);
         headerEtcComposite.setLayout(new GridLayout());
         
-        final Text headerText = new Text(headerEtcComposite, SWT.WRAP | SWT.BORDER );
+        final Text headerText = new Text(headerEtcComposite, SWT.WRAP | SWT.BORDER | SWT.V_SCROLL);
         headerText.setText("Select a message to view its header.");
         headerText.setEditable(false);
         data = new GridData(SWT.LEFT, SWT.TOP, false, false);
-        data.minimumHeight = 230;
-        data.heightHint = 230;
+        data.minimumHeight = 210;
+        data.heightHint = 210;
         data.minimumWidth = 500;
         data.widthHint = 500;
         headerText.setLayoutData(data);
@@ -570,10 +572,16 @@ public class QueueOperationsTabControl extends TabControl
                     String[] msgHeader = (String[]) selectedMsg.get(MSG_HEADER);
                     headerText.setText("");
                     String lineSeperator = System.getProperty("line.separator");
-                    for(String s: msgHeader)
+                    int size = msgHeader.length;
+                    for(int i=0; i < size; i++)
                     {
-                        headerText.append(s + lineSeperator);
+                        headerText.append(msgHeader[i]);
+                        if(!(i == size - 1))
+                        {
+                            headerText.append(lineSeperator);
+                        }
                     }
+                    headerText.setSelection(0);
                 }
                 
                 if (_table.getSelectionCount() > 1)

@@ -54,6 +54,19 @@ class SerialTest(TestCase):
     d[serial(0)] = "zero"
     assert d[0] == "zero"
 
+  def testAdd(self):
+    assert serial(2) + 2 == serial(4)
+    assert serial(2) + 2 == 4
+
+  def testSub(self):
+    delta = serial(4) - serial(2)
+    assert isinstance(delta, int) or isinstance(delta, long)
+    assert delta == 2
+
+    delta = serial(4) - 2
+    assert isinstance(delta, Serial)
+    assert delta == serial(2)
+
 class RangedSetTest(TestCase):
 
   def check(self, ranges):

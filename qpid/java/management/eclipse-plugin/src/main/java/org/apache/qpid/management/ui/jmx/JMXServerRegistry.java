@@ -22,6 +22,7 @@ package org.apache.qpid.management.ui.jmx;
 
 import static org.apache.qpid.management.ui.Constants.ALL;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -29,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.management.ListenerNotFoundException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.Notification;
@@ -116,25 +116,54 @@ public class JMXServerRegistry extends ServerRegistry
      * removes all listeners from the mbean server. This is required when user
      * disconnects the Qpid server connection
      */
-    public void closeServerConnection() throws Exception
+    public void closeServerConnection() throws IOException
     {
         try
         {
+            //remove the listener from the JMXConnector
             if (_jmxc != null && _clientListener != null)
-                _jmxc.removeConnectionNotificationListener(_clientListener);
-
-            if (_mbsc != null && _clientListener != null)
-                _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
-
-            // remove mbean notification listeners
-            for (String mbeanName : _subscribedNotificationMap.keySet())
             {
-                _mbsc.removeNotificationListener(new ObjectName(mbeanName), _notificationListener);
+                _jmxc.removeConnectionNotificationListener(_clientListener);
             }
         }
-        catch (ListenerNotFoundException ex)
+        catch (Exception e)
         {
-            MBeanUtility.printOutput(ex.toString());
+            //ignore
+        }
+
+        try
+        {
+            //remove the listener from the MBeanServerDelegate MBean
+            if (_mbsc != null && _clientListener != null)
+            {
+                _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
+            }
+        }
+        catch (Exception e)
+        {
+            //ignore
+        }
+
+        if (_mbsc != null && _clientListener != null)
+        {
+            //remove any listeners from the Qpid MBeans
+            for (String mbeanName : _subscribedNotificationMap.keySet())
+            {
+                try
+                {
+                    _mbsc.removeNotificationListener(new ObjectName(mbeanName), _notificationListener);
+                }
+                catch (Exception e)
+                {
+                    //ignore
+                }
+            }
+        }
+
+        //close the JMXConnector
+        if (_jmxc != null)
+        {
+            _jmxc.close();
         }
     }
     

@@ -1112,7 +1112,7 @@ def downloadSource(source, destination):
             command = SVN_BIN+" co "+url+" "+targetdir
             if (source.getElementsByTagName(REVISION).length > 0):
                 revision =  getValue(source.getElementsByTagName(REVISION)[0])
-		command = SVN_BIN+" co "+url+"@"+revision+" "+targetdir
+		command = SVN_BIN+" co -r"+revision+" "+url+" "+targetdir
         else:
             if (type == HTTP):
                 command = WGET_BIN+" --no-directories -P "+targetdir+" "+url

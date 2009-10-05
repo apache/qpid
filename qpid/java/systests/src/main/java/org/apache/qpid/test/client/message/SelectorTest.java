@@ -20,7 +20,7 @@ public class SelectorTest extends QpidTestCase
     {
         Connection conn = getConnection();
         conn.start();
-        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session = conn.createSession(true, Session.AUTO_ACKNOWLEDGE);
 
         Destination dest = session.createQueue("SelectorQueue");
         
@@ -32,12 +32,15 @@ public class SelectorTest extends QpidTestCase
             Message msg = session.createTextMessage("Msg" + String.valueOf(i));
             prod.send(msg);
         }
+        session.commit();
         
         Message msg1 = consumer.receive(1000);
         Message msg2 = consumer.receive(1000);
         
         Assert.assertNotNull("Msg1 should not be null", msg1);
         Assert.assertNotNull("Msg2 should not be null", msg2);
+        
+        session.commit();
         
         prod.setDisableMessageID(true);
         
@@ -47,14 +50,15 @@ public class SelectorTest extends QpidTestCase
             prod.send(msg);
         }
         
+        session.commit();
         Message msg3 = consumer.receive(1000);        
         Assert.assertNull("Msg3 should be null", msg3);
-        
+        session.commit();
         consumer = session.createConsumer(dest,"JMSMessageID IS NULL");
         
         Message msg4 = consumer.receive(1000);
         Message msg5 = consumer.receive(1000);
-        
+        session.commit();
         Assert.assertNotNull("Msg4 should not be null", msg4);
         Assert.assertNotNull("Msg5 should not be null", msg5);
     }

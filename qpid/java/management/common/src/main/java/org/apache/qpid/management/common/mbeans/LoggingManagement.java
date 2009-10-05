@@ -36,7 +36,7 @@ import javax.management.openmbean.TabularData;
 public interface LoggingManagement
 {
     String TYPE = "LoggingManagement";
-    int VERSION = 1;
+    int VERSION = 2;
     
     //TabularType and contained CompositeType key/description information
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
@@ -106,6 +106,15 @@ public interface LoggingManagement
     
     //****** log4j XML configuration file operations ****** //
     
+    /**
+     * Reloads the log4j configuration file, applying any changes made. 
+     * 
+     * @throws IOException
+     * @since Qpid JMX API 1.3
+     */
+    @MBeanOperation(name = "reloadConfigFile", description = "Reload the log4j xml configuration file", impact = MBeanOperationInfo.ACTION)
+    void reloadConfigFile() throws IOException;
+
     /**
      * Updates the level of an existing Log4J logger within the xml configuration file
      * @param logger The name of the logger

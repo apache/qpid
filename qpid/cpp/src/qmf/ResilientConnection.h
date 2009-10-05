@@ -21,8 +21,7 @@
  */
 
 #include <qmf/Message.h>
-#include <qpid/client/Connection.h>
-#include <qpid/client/ConnectionSettings.h>
+#include <qmf/ConnectionSettings.h>
 #include <string>
 
 namespace qmf {
@@ -68,10 +67,7 @@ namespace qmf {
          *@param delayMax Maximum delay (in seconds) between retries.
          *@param delayFactor Factor to multiply retry delay by after each failure.
          */
-        ResilientConnection(qpid::client::ConnectionSettings& settings,
-                            int delayMin = 1,
-                            int delayMax = 128,
-                            int delayFactor = 2);
+        ResilientConnection(ConnectionSettings& settings);
         ~ResilientConnection();
 
         /**

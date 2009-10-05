@@ -451,6 +451,7 @@ set (libqpidcommon_SOURCES
      qpid/framing/FieldValue.cpp
      qpid/framing/FrameSet.cpp
      qpid/framing/FrameDecoder.cpp
+     qpid/framing/List.cpp
      qpid/framing/ProtocolInitiation.cpp
      qpid/framing/ProtocolVersion.cpp
      qpid/framing/SendContent.cpp
@@ -522,6 +523,35 @@ set (libqpidclient_SOURCES
      qpid/client/SubscriptionImpl.cpp
      qpid/client/SubscriptionManager.cpp
      qpid/client/SubscriptionManagerImpl.cpp
+     qpid/messaging/Address.cpp
+     qpid/messaging/Connection.cpp
+     qpid/messaging/ConnectionImpl.h
+     qpid/messaging/Filter.cpp
+     qpid/messaging/Message.cpp
+     qpid/messaging/Receiver.cpp
+     qpid/messaging/ReceiverImpl.h
+     qpid/messaging/Session.cpp
+     qpid/messaging/SessionImpl.h
+     qpid/messaging/Sender.cpp
+     qpid/messaging/SenderImpl.h
+     qpid/messaging/Variant.cpp
+     qpid/client/amqp0_10/AddressResolution.h
+     qpid/client/amqp0_10/AddressResolution.cpp
+     qpid/client/amqp0_10/Codecs.cpp
+     qpid/client/amqp0_10/CompletionTracker.h
+     qpid/client/amqp0_10/CompletionTracker.cpp
+     qpid/client/amqp0_10/ConnectionImpl.h
+     qpid/client/amqp0_10/ConnectionImpl.cpp
+     qpid/client/amqp0_10/IncomingMessages.h
+     qpid/client/amqp0_10/IncomingMessages.cpp
+     qpid/client/amqp0_10/MessageSink.h
+     qpid/client/amqp0_10/MessageSource.h
+     qpid/client/amqp0_10/ReceiverImpl.h
+     qpid/client/amqp0_10/ReceiverImpl.cpp
+     qpid/client/amqp0_10/SessionImpl.h
+     qpid/client/amqp0_10/SessionImpl.cpp
+     qpid/client/amqp0_10/SenderImpl.h
+     qpid/client/amqp0_10/SenderImpl.cpp
 )
 add_library (qpidclient SHARED ${libqpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon)
@@ -615,10 +645,10 @@ target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRA
 #  qpid/agent/ManagementAgent.h \
 #  qpid/agent/ManagementAgentImpl.h
 set (qmfagent_SOURCES
-     ../include/qpid/agent/ManagementAgent.h
-     qpid/agent/ManagementAgentImpl.cpp
-     qpid/agent/ManagementAgentImpl.h
-     qmf/Agent.cpp
+    qmf/AgentEngine.cpp
+    qmf/AgentEngine.h
+    qpid/agent/ManagementAgentImpl.cpp
+    qpid/agent/ManagementAgentImpl.h
     )
 add_library (qmfagent SHARED ${qmfagent_SOURCES})
 target_link_libraries (qmfagent qmfcommon)
@@ -626,14 +656,31 @@ set_target_properties (qmfagent PROPERTIES
                        VERSION ${qpidc_version})
 
 set (qmfcommon_SOURCES
-    qmf/Agent.cpp
-    qmf/ResilientConnection.cpp
+    qmf/ConnectionSettingsImpl.cpp
+    qmf/ConnectionSettingsImpl.h
+    qmf/ConsoleEngine.h
+    qmf/Event.h
+    qmf/Message.h
     qmf/MessageImpl.cpp
-    qmf/SchemaImpl.cpp
-    qmf/ValueImpl.cpp
+    qmf/MessageImpl.h
+    qmf/Object.h
+    qmf/ObjectId.h
     qmf/ObjectIdImpl.cpp
+    qmf/ObjectIdImpl.h
     qmf/ObjectImpl.cpp
+    qmf/ObjectImpl.h
+    qmf/Query.h
     qmf/QueryImpl.cpp
+    qmf/QueryImpl.h
+    qmf/ResilientConnection.cpp
+    qmf/ResilientConnection.h
+    qmf/Schema.h
+    qmf/SchemaImpl.cpp
+    qmf/SchemaImpl.h
+    qmf/Typecode.h
+    qmf/Value.h
+    qmf/ValueImpl.cpp
+    qmf/ValueImpl.h
     )
 add_library (qmfcommon SHARED ${qmfcommon_SOURCES})
 target_link_libraries (qmfcommon qpidclient)

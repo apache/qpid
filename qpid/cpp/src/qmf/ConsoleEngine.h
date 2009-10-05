@@ -1,5 +1,5 @@
-#ifndef _QmfConsole_
-#define _QmfConsole_
+#ifndef _QmfConsoleEngine_
+#define _QmfConsoleEngine_
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,7 +21,6 @@
  */
 
 #include <qmf/ManagedConnection.h>
-#include <qmf/Agent.h>
 #include <qmf/Broker.h>
 #include <qmf/Package.h>
 #include <qmf/SchemaClassTable.h>
@@ -50,10 +49,10 @@ namespace qmf {
             getTimeout(20) {}
     };
 
-    class Console {
+    class ConsoleEngine {
     public:
-        Console(ConsoleHandler* handler = 0, ConsoleSettings settings = ConsoleSettings());
-        ~Console();
+        ConsoleEngine(ConsoleHandler* handler = 0, ConsoleSettings settings = ConsoleSettings());
+        ~ConsoleEngine();
 
         Broker* addConnection(ManagedConnection& connection);
         void delConnection(Broker* broker);
@@ -66,6 +65,7 @@ namespace qmf {
         void bindClass(const SchemaClass& otype);
         void bindClass(const std::string& packageName, const std::string& className);
 
+        /*
         void getAgents(std::set<Agent>& agents, Broker* = 0);
         void getObjects(std::vector<Object>& objects, const std::string& typeName,
                         const std::string& packageName = "",
@@ -75,6 +75,7 @@ namespace qmf {
                         const std::map<std::string, std::string>& query,
                         Broker* broker = 0,
                         Agent* agent = 0);
+        */
     };
 }
 

@@ -32,6 +32,17 @@ class FederationTests(TestBase010):
     def remote_port(self):
         return int(self.defines["remote-port"])
 
+    def verify_cleanup(self):
+        attempts = 0
+        total = len(self.qmf.getObjects(_class="bridge")) + len(self.qmf.getObjects(_class="link"))
+        while total > 0:
+            attempts += 1
+            if attempts >= 10:
+                self.fail("Bridges and links didn't clean up")
+                return
+            sleep(1)
+            total = len(self.qmf.getObjects(_class="bridge")) + len(self.qmf.getObjects(_class="link"))
+
     def test_bridge_create_and_close(self):
         self.startQmf();
         qmf = self.qmf
@@ -51,9 +62,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
     def test_pull_from_exchange(self):
         session = self.session
@@ -98,9 +107,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
     def test_push_to_exchange(self):
         session = self.session
@@ -144,9 +151,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
     def test_pull_from_queue(self):
         session = self.session
@@ -199,9 +204,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
     def test_tracing_automatic(self):
         remoteUrl = "%s:%d" % (self.remote_host(), self.remote_port())
@@ -312,9 +315,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
     def test_dynamic_fanout(self):
         session = self.session
@@ -358,9 +359,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
 
     def test_dynamic_direct(self):
@@ -405,10 +404,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
-
+        self.verify_cleanup()
 
     def test_dynamic_topic(self):
         session = self.session
@@ -452,9 +448,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
+        self.verify_cleanup()
 
     def test_dynamic_topic_reorigin(self):
         session = self.session
@@ -512,11 +506,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
-
-
+        self.verify_cleanup()
         
     def test_dynamic_direct_reorigin(self):
         session = self.session
@@ -574,11 +564,7 @@ class FederationTests(TestBase010):
         result = link.close()
         self.assertEqual(result.status, 0)
 
-        sleep(3)
-        self.assertEqual(len(qmf.getObjects(_class="bridge")), 0)
-        self.assertEqual(len(qmf.getObjects(_class="link")), 0)
-
-
+        self.verify_cleanup()
 
     def getProperty(self, msg, name):
         for h in msg.headers:

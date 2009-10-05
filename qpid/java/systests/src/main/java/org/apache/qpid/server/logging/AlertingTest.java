@@ -65,6 +65,15 @@ public class AlertingTest extends AbstractTestLogging
         setupConnection();
     }
 
+    @Override
+    public void tearDown() throws Exception
+    {
+        // Ensure queue is clean for next run.
+        drainQueue(_destination);
+        super.tearDown();
+    }
+
+
     /**
      * Create a new connection and ensure taht our destination queue is created
      * and bound.

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
@@ -37,7 +38,10 @@ import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.TabControl;
 import org.apache.qpid.management.ui.views.ViewUtility;
+import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
@@ -46,12 +50,15 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -78,10 +85,11 @@ public class RuntimeTabControl extends TabControl
     private Label _runtimeRootLoggerLevelLabel = null;
     private String[] _availableLoggerLevels;
     private TabularDataSupport _runtimeLoggerLevels = null;
+    private ArrayList<String> _configFileLoggerNames = new ArrayList<String>();
     private LoggingManagement _lmmb;
     
-    static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
-    static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
+    private static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
+    private static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
     
     public RuntimeTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -148,6 +156,26 @@ public class RuntimeTabControl extends TabControl
             MBeanUtility.handleException(_mbean, e2);
         }
         
+
+        try
+        {
+            TabularDataSupport confLoggers = (TabularDataSupport) _lmmb.viewConfigFileLoggerLevels();
+            ArrayList<String> confLoggerNames = new ArrayList<String>();
+            
+            for(Object obj : confLoggers.values())
+            {
+                CompositeData comp = (CompositeData) obj;
+                confLoggerNames.add((String) comp.get(LOGGER_NAME));
+            }
+            
+            _configFileLoggerNames = confLoggerNames;
+        }
+        catch(Exception e2)
+        {
+            //dont signal the failure, just dont highlight the config file loggers, empty the existing list.
+            _configFileLoggerNames.clear();
+        }
+        
         _runtimeRootLoggerLevelLabel.setText(String.valueOf(runtimeRootLoggerLevel));
         _tableViewer.setInput(_runtimeLoggerLevels);
 
@@ -174,8 +202,13 @@ public class RuntimeTabControl extends TabControl
         Label noteLabel = _toolkit.createLabel(_headerComposite, 
                 "NOTE: These options modify only the live runtime settings. " +
                 "Non-default values will be lost following broker restart.");
+        Label noteLabel2 = _toolkit.createLabel(_headerComposite, 
+                "Loggers currently defined in the configuration file are " +
+                "highlighted. The other Loggers inherit a Level by default.");
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
         noteLabel.setLayoutData(gridData);
+        gridData = new GridData(SWT.FILL, SWT.FILL, false, true);
+        noteLabel2.setLayoutData(gridData);
         
         Group effectiveRuntimeLoggerLevelsGroup = new Group(_paramsComposite, SWT.SHADOW_NONE);
         effectiveRuntimeLoggerLevelsGroup.setBackground(_paramsComposite.getBackground());
@@ -239,7 +272,7 @@ public class RuntimeTabControl extends TabControl
         }
         
         _tableViewer.setContentProvider(new LoggingTableContentProvider());
-        _tableViewer.setLabelProvider(new LoggingTableLabelProvider());
+        _tableViewer.setLabelProvider(new RuntimeLoggingTableLabelProvider());
         _tableViewer.setSorter(tableSorter);
         _table.setSortColumn(_table.getColumn(0));
         _table.setSortDirection(SWT.UP);
@@ -254,7 +287,7 @@ public class RuntimeTabControl extends TabControl
             public void mouseUp(MouseEvent e){}
         });
         
-        final Button logLevelEditButton = _toolkit.createButton(effectiveRuntimeLoggerLevelsGroup, "Edit Selected Logger...", SWT.PUSH);
+        final Button logLevelEditButton = _toolkit.createButton(effectiveRuntimeLoggerLevelsGroup, "Edit Selected Logger(s)...", SWT.PUSH);
         logLevelEditButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         logLevelEditButton.setEnabled(false);
         logLevelEditButton.addSelectionListener(new SelectionAdapter()
@@ -326,7 +359,7 @@ public class RuntimeTabControl extends TabControl
                 selectedLoggers.add(user);
             }
 
-            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Runtime Logger Level");
+            final Shell shell = ViewUtility.createModalDialogShell(parent, "Set Runtime Logger Level(s)");
             
             _toolkit.createLabel(shell, "Logger(s): ").setBackground(shell.getBackground());
 
@@ -509,5 +542,54 @@ public class RuntimeTabControl extends TabControl
         ViewUtility.centerChildInParentShell(parent, shell);
 
         shell.open();
+    }
+    
+    /**
+     * Label Provider class for the RuntimeLoggers table viewer
+     */
+    public class RuntimeLoggingTableLabelProvider extends LabelProvider implements ITableLabelProvider, IColorProvider
+    {
+        
+        @Override
+        public String getColumnText(Object element, int columnIndex)
+        {
+            switch (columnIndex)
+            {
+                case 0 : // logger name column 
+                    return (String) ((CompositeDataSupport) element).get(LOGGER_NAME);
+                case 1 : // logger level column 
+                    return (String) ((CompositeDataSupport) element).get(LOGGER_LEVEL);
+                default :
+                    return "-";
+            }
+        }
+
+        @Override
+        public Image getColumnImage(Object element, int columnIndex)
+        {
+            return null;
+        }
+
+        @Override
+        public Color getBackground(Object element)
+        {
+            return null;
+        }
+
+        @Override
+        public Color getForeground(Object element)
+        {
+            String loggerName = (String) ((CompositeData) element).get(LOGGER_NAME);
+            if(_configFileLoggerNames.contains(loggerName))
+            {
+                return Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
     }
 }
