@@ -129,6 +129,7 @@ class SemanticState : private boost::noncopyable {
         const framing::FieldTable& getArguments() const { return arguments; }
 
         SemanticState& getParent() { return *parent; }
+        const SemanticState& getParent() const { return *parent; }
     };
 
   private:
@@ -163,6 +164,7 @@ class SemanticState : private boost::noncopyable {
     ~SemanticState();
 
     SessionContext& getSession() { return session; }
+    const SessionContext& getSession() const { return session; }
 
     ConsumerImpl& find(const std::string& destination);
     

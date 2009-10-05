@@ -209,9 +209,16 @@ class MessageUpdater {
             ClusterConnectionProxy(session).expiryId(*expiryId);
         }
 
+        // We can't send a broker::Message via the normal client API,
+        // and it would be expensive to copy it into a client::Message
+        // so we go a bit under the client API covers here.
+        //
         SessionBase_0_10Access sb(session);
+        // Disable client code that clears the delivery-properties.exchange
+        sb.get()->setDoClearDeliveryPropertiesExchange(false);
         framing::MessageTransferBody transfer(
-            framing::ProtocolVersion(), UpdateClient::UPDATE, message::ACCEPT_MODE_NONE, message::ACQUIRE_MODE_PRE_ACQUIRED);
+            framing::ProtocolVersion(), UpdateClient::UPDATE, message::ACCEPT_MODE_NONE,
+            message::ACQUIRE_MODE_PRE_ACQUIRED);
         
         sb.get()->send(transfer, message.payload->getFrames(), !message.payload->isContentReleased());
         if (message.payload->isContentReleased()){

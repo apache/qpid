@@ -28,7 +28,7 @@
 #include "qpid/sys/OutputControl.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/OwnershipToken.h"
-
+#include "qpid/SessionId.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -45,6 +45,7 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
     virtual framing::AMQP_ClientProxy& getProxy() = 0;
     virtual Broker& getBroker() = 0;
     virtual uint16_t getChannel() const = 0;
+    virtual const SessionId& getSessionId() const = 0;
 };
 
 }} // namespace qpid::broker

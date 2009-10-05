@@ -130,6 +130,8 @@ public:
      */
     boost::shared_ptr<ConnectionImpl> getConnection();
 
+    void setDoClearDeliveryPropertiesExchange(bool b=true) { doClearDeliveryPropertiesExchange = b; }
+
 private:
     enum State {
         INACTIVE,
@@ -242,6 +244,8 @@ private:
 
     // Only keep track of message credit 
     sys::Semaphore* sendMsgCredit;
+
+    bool doClearDeliveryPropertiesExchange;
 
   friend class client::SessionHandler;
 };

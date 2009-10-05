@@ -118,6 +118,8 @@ class SessionState : public qpid::SessionState,
 
     bool processSendCredit(uint32_t msgs);
 
+    const SessionId& getSessionId() const { return getId(); }
+
   private:
 
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
