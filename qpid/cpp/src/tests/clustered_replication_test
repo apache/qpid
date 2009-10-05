@@ -30,10 +30,6 @@ fail() {
     echo $1
     exit 1
 }
-with_ais_group() {
-    id -nG | grep '\<ais\>' >/dev/null || { echo "You are not a member of the ais group." 1>&2; exit 1; }
-    echo $* | newgrp ais
-}
 
 stop_brokers() {
     if [[ $PRIMARY1 ]] ; then

@@ -30,7 +30,7 @@ namespace qpid {
 namespace cluster {
 
 /**
- * A keyless exchange (like fanout exchange) that does not modify deliver-properties.exchange
+ * A keyless exchange (like fanout exchange) that does not modify delivery-properties.exchange
  * on messages.
  */
 class UpdateExchange : public broker::FanOutExchange
