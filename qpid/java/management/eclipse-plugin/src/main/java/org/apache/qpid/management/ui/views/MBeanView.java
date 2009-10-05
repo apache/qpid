@@ -173,11 +173,11 @@ public class MBeanView extends ViewPart
             if (NODE_TYPE_TYPEINSTANCE.equals(mbeanType))
             {
                 // An virtual host instance is selected
-                refreshTypeTabFolder(_typeTabFolder.getItem(0));
+                generateTypeTabFolder();
             }
             else if (NODE_TYPE_MBEANTYPE.equals(mbeanType))
             {
-                refreshTypeTabFolder(_selectedNode.getName());
+                showTypeTabFolder(_selectedNode.getName());
             } 
             else if (NOTIFICATIONS.equals(mbeanType))
             {
@@ -307,12 +307,7 @@ public class MBeanView extends ViewPart
         
         // Add selection listener for selection events in the Navigation view
         getSite().getPage().addSelectionListener(NavigationView.ID, _selectionListener); 
-        
-        // Add mbeantype TabFolder. This will list all the mbeans under a mbeantype (eg Queue, Exchange).
-        // Using this list mbeans will be added in the navigation view
-        _typeTabFolder = MBeanTabFolderFactory.generateMBeanTypeTabFolder(_form.getBody());
-        _typeTabFolder.setVisible(false);
-        
+
         createNotificationsTabFolder();
         
         ViewUtility.setMBeanView(this);
@@ -370,32 +365,48 @@ public class MBeanView extends ViewPart
         _notificationTabFolder.setVisible(true);
     }
     
-    /**
-     * Refreshes the Selected mbeantype tab. The control lists all the available mbeans
-     * for an mbeantype(eg Queue, Exchange etc)
-     * @param tab
-     * @throws Exception
-     */
-    private void refreshTypeTabFolder(TabItem tab) throws Exception
+
+
+    private void generateTypeTabFolder() throws Exception
     {
-        refreshTab(tab);
-        _typeTabFolder.setSelection(tab);
-        _typeTabFolder.setVisible(true);
+        if (_typeTabFolder != null && !_typeTabFolder.isDisposed())
+        {
+            _typeTabFolder.dispose();
+        }
+        
+        //Generates the full Queue/Connection/Exchange selection tab set
+        _typeTabFolder = MBeanTabFolderFactory.generateMBeanTypeTabFolder(
+                                            _form.getBody(), getServer(), getVirtualHost());
+        refreshTab(_typeTabFolder.getItem(0));
     }
     
-    private void refreshTypeTabFolder(String type) throws Exception
+    private void showTypeTabFolder(String type) throws Exception
     {
+        if (_typeTabFolder != null && !_typeTabFolder.isDisposed())
+        {
+            _typeTabFolder.dispose();
+        }
+        
         if (CONNECTION.equals(type))
         {
-            refreshTypeTabFolder(_typeTabFolder.getItem(0));
+            //Generates the Connection selection tab
+            _typeTabFolder = MBeanTabFolderFactory.generateConnectionTypeTabFolder(
+                    _form.getBody(), getServer(), getVirtualHost());
+            refreshTab(_typeTabFolder.getItem(0));
         }
         else if (EXCHANGE.equals(type))
         {
-            refreshTypeTabFolder(_typeTabFolder.getItem(1));
+            //Generates the Exchange selection tab
+            _typeTabFolder = MBeanTabFolderFactory.generateExchangeTypeTabFolder(
+                    _form.getBody(), getServer(), getVirtualHost());
+            refreshTab(_typeTabFolder.getItem(0));
         }
         else if (QUEUE.equals(type))
         {
-            refreshTypeTabFolder(_typeTabFolder.getItem(2));
+            //Generates the Queue selection tab
+            _typeTabFolder = MBeanTabFolderFactory.generateQueueTypeTabFolder(
+                    _form.getBody(), getServer(), getVirtualHost());
+            refreshTab(_typeTabFolder.getItem(0));
         }
     }
 

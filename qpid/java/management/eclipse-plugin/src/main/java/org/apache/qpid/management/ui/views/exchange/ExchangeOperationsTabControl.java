@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.management.ui.views.exchange;
 
+import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
+import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALUES;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -29,11 +32,14 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.TabControl;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -45,6 +51,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
@@ -60,6 +68,8 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 
@@ -79,6 +89,7 @@ public class ExchangeOperationsTabControl extends TabControl
             
     private TabularDataSupport _bindings = null;
     private ManagedExchange _emb;
+    private ApiVersion _ApiVersion;
     
     static final String BINDING_KEY = ManagedExchange.COMPOSITE_ITEM_NAMES[0];
     static final String QUEUES = ManagedExchange.COMPOSITE_ITEM_NAMES[1];
@@ -87,6 +98,7 @@ public class ExchangeOperationsTabControl extends TabControl
     {
         super(tabFolder);
         _mbean = mbean;
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _emb = (ManagedExchange) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedExchange.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
@@ -130,10 +142,26 @@ public class ExchangeOperationsTabControl extends TabControl
         }
         catch (Exception e)
         {
-            MBeanUtility.handleException(mbean,e);
+            MBeanUtility.handleException(_mbean,e);
         }
 
         _keysTableViewer.setInput(_bindings);
+        
+        //if we have a Qpid JMX API 1.3+ server
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            //if it is a fanout exchange
+            if(isFanoutExchange())
+            {
+                //if there are any queue bindings, there is a single wildcard binding key
+                //auto-select it to show all the queues bound to the exchange
+                if (_keysTable.getItemCount() == 1)
+                {
+                    _keysTable.setSelection(0);
+                    updateQueuesTable();
+                }
+            }
+        }
 
         layout();
     }
@@ -260,22 +288,23 @@ public class ExchangeOperationsTabControl extends TabControl
         _queuesTableViewer.setSorter(queuesTableSorter);
         _queuesTableViewer.setInput(new String[]{"Select a binding key to view queues"});
         
+        //listener for double clicking to open the selection mbean
+        _queuesTable.addMouseListener(new MouseListener()                                              
+        {
+            // MouseListener implementation
+            public void mouseDoubleClick(MouseEvent event)
+            {
+                openMBean(_queuesTable);
+            }
+            
+            public void mouseDown(MouseEvent e){}
+            public void mouseUp(MouseEvent e){}
+        });
+        
         _keysTableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
             public void selectionChanged(SelectionChangedEvent evt)
             {
-                int selectionIndex = _keysTable.getSelectionIndex();
-
-                if (selectionIndex != -1)
-                {
-                	final CompositeData selectedMsg = (CompositeData)_keysTable.getItem(selectionIndex).getData();
-
-                	String[] queues = (String[]) selectedMsg.get(QUEUES);
-                	_queuesTableViewer.setInput(queues);
-                }
-                else
-                {
-                	_queuesTableViewer.setInput(new String[]{"Select a binding key to view queues"});
-                }
+                updateQueuesTable();
             }
         });
         
@@ -296,6 +325,28 @@ public class ExchangeOperationsTabControl extends TabControl
         
     }
 
+    private void updateQueuesTable()
+    {
+        int selectionIndex = _keysTable.getSelectionIndex();
+
+        if (selectionIndex != -1)
+        {
+            final CompositeData selectedMsg = (CompositeData)_keysTable.getItem(selectionIndex).getData();
+
+            String[] queues = (String[]) selectedMsg.get(QUEUES);
+            _queuesTableViewer.setInput(queues);
+        }
+        else
+        {
+            _queuesTableViewer.setInput(new String[]{"Select a binding key to view queues"});
+        }
+    }
+    
+    private boolean isFanoutExchange()
+    {
+        return _mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase(DEFAULT_EXCHANGE_TYPE_VALUES[1]);
+
+    }
     
     /**
      * Content Provider class for the table viewer
@@ -477,6 +528,10 @@ public class ExchangeOperationsTabControl extends TabControl
         _toolkit.createLabel(bindingComposite,"Binding:").setBackground(shell.getBackground());
         final Text bindingText = new Text(bindingComposite, SWT.BORDER);
         bindingText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        if(isFanoutExchange())
+        {
+            bindingText.setText("*");
+        }
 
         Composite okCancelButtonsComp = _toolkit.createComposite(shell);
         okCancelButtonsComp.setBackground(shell.getBackground());
@@ -507,7 +562,7 @@ public class ExchangeOperationsTabControl extends TabControl
             {
                 String binding = bindingText.getText();
                 
-                if (binding == null || binding.length() == 0)
+                if (!isFanoutExchange() && (binding == null || binding.length() == 0))
                 {                            
                     ViewUtility.popupErrorMessage("Create New Binding", "Please enter a valid binding");
                     return;
@@ -543,5 +598,36 @@ public class ExchangeOperationsTabControl extends TabControl
         shell.setDefaultButton(okButton);
         shell.pack();
         shell.open();
+    }
+    
+    private void openMBean(Table table)
+    {
+        int selectionIndex = table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        String queueName = (String) table.getItem(selectionIndex).getData();
+        ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
+        ManagedBean selectedMBean = serverRegistry.getQueue(queueName, _mbean.getVirtualHostName());
+
+        if(selectedMBean == null)
+        {
+            ViewUtility.popupErrorMessage("Error", "Unable to retrieve the selected MBean to open it");
+            return;
+        }
+
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
+        try
+        {
+            view.openMBean(selectedMBean);
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(selectedMBean, ex);
+        }
     }
 }

@@ -30,6 +30,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
@@ -210,15 +211,20 @@ public class GenerateLogMessages
      * type checking during compilation whilst allowing the log message to
      * maintain formatting controls.
      *
+     * OPTIONS
+     *
      * The returned hashMap contains the following structured data:
      *
      * - name - ClassName ('Broker')
-     *   list - methodName ('BRK_1001')
-     *        - name ('BRK-1001')
-     *        - format ('Startup : Version: {0} Build: {1}')
-     *        - parameters (list)
-     *             - type ('String'|'Number')
-     *             - name ('param1')
+     * - list[logEntryData] - methodName ('BRK_1001')
+     *                      - name ('BRK-1001')
+     *                      - format ('Startup : Version: {0} Build: {1}')
+     *                      - parameters (list)
+     *                          - type ('String'|'Number')
+     *                          - name ('param1')
+     *                      - options (list)
+     *                          - name ('opt1')
+     *                          - value ('AutoDelete')
      *
      * @param messsageName the name to give the Class e.g. 'Broker'
      * @param messageKey the 3-digit key to extract the messages e.g. 'BRK'
@@ -228,7 +234,7 @@ public class GenerateLogMessages
     private HashMap<String, Object> prepareType(String messsageName, String messageKey) throws InvalidTypeException
     {
         // Load the LogMessages Resource Bundle
-        ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages");
+        ResourceBundle _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.LogMessages", Locale.US);
 
         Enumeration<String> messageKeys = _messages.getKeys();
 
@@ -265,79 +271,187 @@ public class GenerateLogMessages
                 // Javadoc of the method.
                 logEntryData.put("format", logMessage);
 
-                // Split the string on the start brace '{' this will give us the
-                // details for each parameter that this message contains.
-                String[] parametersString = logMessage.split("\\{");
-                // Taking an example of 'Text {n[,type]} text {m} more text {p}'
-                // This would give us:
-                // 0 - Text
-                // 1 - n[,type]} text
-                // 2 - m} more text
-                // 3 - p}
+                // Add the parameters for this message
+                logEntryData.put("parameters", extractParameters(logMessage));
 
-                // Create the parameter list for this item
-                List<HashMap<String, String>> parameters = new LinkedList<HashMap<String, String>>();
+                //Add the options for this messagse
+                logEntryData.put("options", extractOptions(logMessage));
 
-                // Add the parameter list to this log entry data
-                logEntryData.put("parameters", parameters);
-
-                // Add the data to the list of messages
+                //Add this entry to the list for this class
                 logMessageList.add(logEntryData);
-
-                // Check that we have some parameters to process
-                // Skip 0 as that will not be the first entry
-                //  Text {n[,type]} text {m} more text {p}
-                if (parametersString.length > 1)
-                {
-                    for (int index = 1; index < parametersString.length; index++)
-                    {
-                        // Use a HashMap to store the type,name of the parameter
-                        // for easy retrieval in the macro template
-                        HashMap<String, String> parameter = new HashMap<String, String>();
-
-                        // Check for any properties of the parameter :
-                        // e.g. {0} vs {0,number} vs {0,number,xxxx}
-                        int typeIndex = parametersString[index].indexOf(",");
-
-                        // The parameter type
-                        String type;
-
-                        //Be default all types are Strings
-                        if (typeIndex == -1)
-                        {
-                            type = "String";
-                        }
-                        else
-                        {
-                            //Check string ',....}' for existence of number
-                            // to identify this parameter as an integer
-                            // This allows for a style value to be present
-                            // Only check the text inside the braces '{}'
-                            int typeIndexEnd = parametersString[index].indexOf("}", typeIndex);
-                            String typeString = parametersString[index].substring(typeIndex, typeIndexEnd);
-                            if (typeString.contains("number"))
-                            {
-                                type = "Number";
-                            }
-                            else
-                            {
-                                throw new InvalidTypeException("Invalid type(" + typeString + ") index (" + parameter.size() + ") in message:" + logMessage);
-                            }
-
-                        }
-
-                        //Store the data
-                        parameter.put("type", type);
-                        // Simply name the parameters by index.
-                        parameter.put("name", "param" + index);
-
-                        parameters.add(parameter);
-                    }
-                }
             }
         }
 
         return messageTypeData;
+    }
+
+    /**
+     * This method is responsible for extracting the options form the given log
+     * message and providing a HashMap with the expected data:
+     *                      - options (list)
+     *                          - name ('opt1')
+     *                          - value ('AutoDelete')
+     *
+     * The options list that this method provides must contain HashMaps that
+     * have two entries. A 'name' and a 'value' these strings are important as
+     * they are used in LogMessage.vm to extract the stored String during
+     * processing of the template.
+     *
+     * The 'name' is a unique string that is used to name the boolean parameter
+     * and refer to it later in the method body.
+     *
+     * The 'value' is used to provide documentation in the generated class to
+     * aid readability.
+     *
+     * @param logMessage the message from the properties file
+     * @return list of option data
+     */
+    private List<HashMap<String, String>> extractOptions(String logMessage)
+    {
+        // Split the string on the start brace '{' this will give us the
+        // details for each parameter that this message contains.
+        // NOTE: Simply splitting on '[' prevents the use of nested options.
+        // Currently there is no demand for nested options        
+        String[] optionString = logMessage.split("\\[");
+        // Taking an example of:
+        // 'Text {n,type,format} [option] text {m} [option with param{p}] more'
+        // This would give us:
+        // 0 - Text {n,type,format}
+        // 1 - option] text {m}
+        // 2 - option with param{p}] more
+
+        // Create the parameter list for this item
+        List<HashMap<String, String>> options = new LinkedList<HashMap<String, String>>();
+
+        // Check that we have some parameters to process
+        // Skip 0 as that will not be the first entry
+        //  Text {n,type,format} [option] text {m} [option with param{p}] more
+        if (optionString.length > 1)
+        {
+            for (int index = 1; index < optionString.length; index++)
+            {
+                // Use a HashMap to store the type,name of the parameter
+                // for easy retrieval in the macro template
+                HashMap<String, String> option = new HashMap<String, String>();
+
+                // Locate the end of the Option
+                // NOTE: it is this simple matching on the first ']' that
+                // prevents the nesting of options.
+                // Currently there is no demand for nested options
+                int end = optionString[index].indexOf("]");
+
+                // The parameter type
+                String value = optionString[index].substring(0, end);
+
+                // Simply name the parameters by index.
+                option.put("name", "opt" + index);
+
+                //Store the value e.g. AutoDelete
+                // We trim as we don't need to include any whitespace that is
+                // used for formating. This is only used to aid readability of
+                // of the generated code.
+                option.put("value", value.trim());
+
+                options.add(option);
+            }
+        }
+
+        return options;
+    }
+
+    /**
+     * This method is responsible for extract the parameters that are requried
+     * for this log message. The data is returned in a HashMap that has the
+     * following structure:
+     *                      - parameters (list)
+     *                          - type ('String'|'Number')
+     *                          - name ('param1')
+     *
+     * The parameters list that is provided must contain HashMaps that have the
+     * two named entries. A 'type' and a 'name' these strings are importans as
+     * they are used in LogMessage.vm to extract and the stored String during
+     * processing of the template
+     *
+     * The 'type' and 'name' values are used to populate the method signature.
+     * This is what gives us the compile time validation of log messages.
+     *
+     * The 'name' must be unique as there may be many parameters. The value is
+     * also used in the method body to pass the values through to the
+     * MessageFormat class for formating the log message.
+     *
+     * @param logMessage the message from the properties file
+     * @return list of option data
+     * @throws InvalidTypeException if the FormatType is specified and is not 'number'
+     */
+    private List<HashMap<String, String>> extractParameters(String logMessage)
+            throws InvalidTypeException
+    {
+        // Split the string on the start brace '{' this will give us the
+        // details for each parameter that this message contains.
+        String[] parametersString = logMessage.split("\\{");
+        // Taking an example of 'Text {n[,type]} text {m} more text {p}'
+        // This would give us:
+        // 0 - Text
+        // 1 - n[,type]} text
+        // 2 - m} more text
+        // 3 - p}
+
+        // Create the parameter list for this item
+        List<HashMap<String, String>> parameters = new LinkedList<HashMap<String, String>>();
+
+        // Check that we have some parameters to process
+        // Skip 0 as that will not be the first entry
+        //  Text {n[,type]} text {m} more text {p}
+        if (parametersString.length > 1)
+        {
+            for (int index = 1; index < parametersString.length; index++)
+            {
+                // Use a HashMap to store the type,name of the parameter
+                // for easy retrieval in the macro template
+                HashMap<String, String> parameter = new HashMap<String, String>();
+
+                // Check for any properties of the parameter :
+                // e.g. {0} vs {0,number} vs {0,number,xxxx}
+                int typeIndex = parametersString[index].indexOf(",");
+
+
+                // The parameter type
+                String type;
+
+                //Be default all types are Strings
+                if (typeIndex == -1)
+                {
+                    type = "String";
+                }
+                else
+                {
+                    //Check string ',....}' for existence of number
+                    // to identify this parameter as an integer
+                    // This allows for a style value to be present
+                    // Only check the text inside the braces '{}'
+                    int typeIndexEnd = parametersString[index].indexOf("}", typeIndex);
+                    String typeString = parametersString[index].substring(typeIndex, typeIndexEnd);
+                    if (typeString.contains("number"))
+                    {
+                        type = "Number";
+                    }
+                    else
+                    {
+                        throw new InvalidTypeException("Invalid type(" + typeString + ") index (" + parameter.size() + ") in message:" + logMessage);
+                    }
+
+                }
+
+                //Store the data
+                parameter.put("type", type);
+                // Simply name the parameters by index.
+                parameter.put("name", "param" + index);
+
+                parameters.add(parameter);
+            }
+        }
+
+        return parameters;
     }
 
     /**

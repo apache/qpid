@@ -39,6 +39,8 @@ package org.apache.qpid.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -75,7 +77,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final MessageStore _messageStore;
 
     private final VirtualHost.VirtualHostMBean _virtualHostMBean;
-
+    
     @MBeanConstructor("Creates the Broker Manager MBean")
     public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
     {
@@ -109,6 +111,29 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         
         return exchangeTypes.toArray(new String[0]);
+    }
+    
+    /**
+     * Returns a Map keyed by QueueName, detailing its associated QueueDepth in bytes.
+     * @since Qpid JMX API 1.3
+     * @throws IOException
+     */
+    public Map<String,Long> viewQueueNamesDepths() throws IOException
+    {
+        Map<String,Long> queueDepthMap = new HashMap<String,Long>(_queueRegistry.getQueues().size());
+        
+        String queueName;
+        Long queueDepth;
+
+        for(AMQQueue queue : _queueRegistry.getQueues())
+        {
+            queueName = queue.getName().toString();
+            queueDepth = queue.getQueueDepth();
+            
+            queueDepthMap.put(queueName,queueDepth);
+        }
+
+        return queueDepthMap;
     }
     
     /**

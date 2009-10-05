@@ -23,16 +23,24 @@ package org.apache.qpid.management.ui.views.type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
 
 import static org.apache.qpid.management.ui.Constants.QUEUE;
+import static org.apache.qpid.management.ui.Constants.ATTRIBUTE_QUEUE_DEPTH;
 
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.AttributeData;
 import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.NavigationView;
+import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -49,22 +57,60 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 
 public class QueueTypeTabControl extends MBeanTypeTabControl
 {   
-    private HashMap<ManagedBean, Long> _queueDepths = new HashMap<ManagedBean, Long>();
-    private HashMap<ManagedBean, Long> _activeConsumerCounts = new HashMap<ManagedBean, Long>();
-
+    private MBeanServerConnection _mbsc;
+    private ManagedBroker _vhmb;
+    //Map for storing queue depths for servers using Qpid JMX API 1.2 and below
+    private Map<ManagedBean,Long> _queueDepths = new HashMap<ManagedBean, Long>();
     
-    public QueueTypeTabControl(TabFolder tabFolder)
+    public QueueTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost)
     {
-        super(tabFolder,QUEUE);
+        super(tabFolder,server,virtualHost,QUEUE);
+        _mbsc = (MBeanServerConnection) _serverRegistry.getServerConnection();
+        _vhmb = (ManagedBroker) MBeanServerInvocationHandler.newProxyInstance(_mbsc, 
+                                _vhostMbean.getObjectName(), ManagedBroker.class, false);
+    }
+    
+    @Override
+    public void refresh(ManagedBean mbean)
+    {
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            //Qpid JMX API 1.3+, use this virtualhosts VirtualHostManager MBean
+            //to retrieve the Queue Name and Queue Depth
+            
+            Map<String,Long> queueNamesDepths = null;
+            try
+            {
+                queueNamesDepths = _vhmb.viewQueueNamesDepths();
+            }
+            catch(Exception e)
+            {
+                MBeanUtility.handleException(_vhostMbean, e);
+            }
+            
+            _tableViewer.setInput(queueNamesDepths);
+        }
+        else
+        {
+            //Qpid JMX API 1.2 or below, use the ManagedBeans and look
+            //up the attribute value for each
+            _mbeans = getMbeans();
+            _tableViewer.setInput(_mbeans);
+        }
+
+        layout();
     }
     
     @Override
     protected List<ManagedBean> getMbeans()
     {
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(MBeanView.getServer());
+        
         try
         {
             return extractQueueDetails(serverRegistry.getQueues(MBeanView.getVirtualHost()));
@@ -80,36 +126,47 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     private List<ManagedBean> extractQueueDetails(List<ManagedBean> list) throws Exception
     {
         _queueDepths.clear();
-        _activeConsumerCounts.clear();
-        
+
         List<ManagedBean> items = new ArrayList<ManagedBean>();
         for (ManagedBean mbean : list)
         {         
-            AttributeData data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_DEPTH);
+            AttributeData data = MBeanUtility.getAttributeData(mbean, ATTRIBUTE_QUEUE_DEPTH);
             _queueDepths.put(mbean, Long.valueOf(data.getValue().toString()));
-            data = MBeanUtility.getAttributeData(mbean, Constants.ATTRIBUTE_QUEUE_CONSUMERCOUNT);
-            _activeConsumerCounts.put(mbean, Long.valueOf(data.getValue().toString()));
-            
+
             items.add(mbean);
         }
 
         return items;
     }
-    
+
     @Override
     protected void createTable(Composite tableComposite)
     {
-        _table = new Table (tableComposite, SWT.SINGLE | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
+        _table = new Table (tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
         _table.setLinesVisible (true);
         _table.setHeaderVisible (true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(data);
         
         _tableViewer = new TableViewer(_table);
-        final TableSorter tableSorter = new TableSorter();
+
+        String[] titles = new String[]{"Queue Name", "Queue Depth"};
+        int[] bounds = new int[]{325, 200};
         
-        String[] titles = { "Name", "QueueDepth", "Active Consumer Count"};
-        int[] bounds = { 250, 175, 175};
+        final TableSorter tableSorter;
+        
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            //QpidJMX API 1.3+ using the new getQueueNamesDepths method in VHostManager MBean.
+            //requires sorting Map.Entry elements
+            tableSorter = new NewerTableSorter();
+        }
+        else
+        {
+            //QpidJMX API 1.2 or below. Requires sorting ManagedBeans and using the _queueDepths map
+            tableSorter = new OlderTableSorter();
+        }
+                
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;
@@ -145,17 +202,27 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
 
         }
         
-        _tableViewer.setContentProvider(new ContentProviderImpl());
-        _tableViewer.setLabelProvider(new LabelProviderImpl());
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            _tableViewer.setContentProvider(new NewerContentProviderImpl());
+            _tableViewer.setLabelProvider(new NewerLabelProviderImpl());
+        }
+        else
+        {
+            _tableViewer.setContentProvider(new OlderContentProviderImpl());
+            _tableViewer.setLabelProvider(new OlderLabelProviderImpl());
+        }
+        
+        _tableViewer.setUseHashlookup(true);
         _tableViewer.setSorter(tableSorter);
         _table.setSortColumn(_table.getColumn(0));
         _table.setSortDirection(SWT.UP);
     }
     
     /**
-     * Content Provider class for the table viewer
+     * Content Provider class for the table viewer for Qpid JMX API 1.2 and below.
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private class OlderContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)
@@ -176,9 +243,9 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     }
     
     /**
-     * Label Provider class for the table viewer
+     * Label Provider class for the table viewer for Qpid JMX API 1.2 and below.
      */
-    private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
+    private class OlderLabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
         @Override
         public String getColumnText(Object element, int columnIndex)
@@ -190,9 +257,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
                 case 0 : // name column 
                     return mbean.getName();
                 case 1 : // queue depth column 
-                    return getQueueDepthString(mbean, _queueDepths.get(mbean));
-                case 2 : // consumer count column
-                    return String.valueOf(_activeConsumerCounts.get(mbean));
+                    return getQueueDepthString(_queueDepths.get(mbean));
                 default:
                     return "-";
             }
@@ -205,12 +270,18 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         }    
     }
     
-    private String getQueueDepthString(ManagedBean mbean, Long value)
+    private String getQueueDepthString(Long value)
     {
-        if (mbean.getVersion() == 1)  //mbean is v1 and returns KB
-        {           
-            Double mb = 1024.0;
-            
+        if(value == null)
+        {
+            return "-";
+        }
+
+        if (_ApiVersion.lessThanOrEqualTo(1,1))
+        {
+            //Qpid JMX API 1.1 or below, returns KB  
+            double mb = 1024.0;
+
             if(value > mb) //MB
             {
                 return String.format("%.3f", (Double)(value / mb)) + " MB";
@@ -220,11 +291,12 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
                 return value + " KB";
             }
         }
-        else  //mbean is v2+ and returns Bytes
+        else
         {
+            //Qpid JMX API 1.2 or above, returns Bytes
             double mb = 1024.0 * 1024.0;
             double kb = 1024.0;
-            
+
             if(value >= mb) //MB
             {
                 return String.format("%.3f", (Double)(value / mb)) + " MB";
@@ -239,18 +311,19 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
             }
         }
     }
+    
 
     /**
-     * Sorter class for the table viewer.
+     * Abstract sorter class for the table viewer.
      *
      */
-    private class TableSorter extends ViewerSorter
+    private abstract class TableSorter extends ViewerSorter
     {
-        private int column;
-        private static final int ASCENDING = 0;
-        private static final int DESCENDING = 1;
+        protected int column;
+        protected static final int ASCENDING = 0;
+        protected static final int DESCENDING = 1;
 
-        private int direction;
+        protected int direction;
 
         public TableSorter()
         {
@@ -274,6 +347,21 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         }
 
         @Override
+        public abstract int compare(Viewer viewer, Object e1, Object e2);
+    }
+    
+    /**
+     * sorter class for the table viewer for Qpid JMX API 1.2 and below.
+     *
+     */
+    private class OlderTableSorter extends TableSorter
+    {
+        public OlderTableSorter()
+        {
+            super();
+        }
+
+        @Override
         public int compare(Viewer viewer, Object e1, Object e2)
         {
             ManagedBean mbean1 = (ManagedBean) e1;
@@ -287,9 +375,44 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
                     break;
                 case 1: //queue depth
                     comparison = _queueDepths.get(mbean1).compareTo(_queueDepths.get(mbean2));
+                default:
+                    comparison = 0;
+            }
+            // If descending order, flip the direction
+            if(direction == DESCENDING)
+            {
+                comparison = -comparison;
+            }
+            return comparison;
+        }
+    }
+    
+    /**
+     * sorter class for the table viewer for Qpid JMX API 1.3 and above.
+     *
+     */
+    private class NewerTableSorter extends TableSorter
+    {
+        public NewerTableSorter()
+        {
+            super();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public int compare(Viewer viewer, Object e1, Object e2)
+        {
+            Map.Entry<String, Long> queue1 = (Map.Entry<String, Long>) e1;
+            Map.Entry<String, Long> queue2 = (Map.Entry<String, Long>) e2;
+            
+            int comparison = 0;
+            switch(column)
+            {
+                case 0://name
+                    comparison = (queue1.getKey()).compareTo(queue2.getKey());
                     break;
-                case 2: //active consumer count
-                    comparison = _activeConsumerCounts.get(mbean1).compareTo(_activeConsumerCounts.get(mbean2));
+                case 1://queue depth
+                    comparison = (queue1.getValue()).compareTo(queue2.getValue());;
                     break;
                 default:
                     comparison = 0;
@@ -303,4 +426,152 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         }
     }
 
+    /**
+     * Content Provider class for the table viewer for Qpid JMX API 1.3 and above.
+     */
+    private class NewerContentProviderImpl  implements IStructuredContentProvider
+    {
+        
+        public void inputChanged(Viewer v, Object oldInput, Object newInput)
+        {
+            
+        }
+        
+        public void dispose()
+        {
+            
+        }
+        
+        @SuppressWarnings("unchecked")
+        public Object[] getElements(Object parent)
+        {
+            Map<String, Long> map = (Map<String, Long>) parent;
+            return map.entrySet().toArray(new Map.Entry[0]);
+        }
+    }
+    
+    /**
+     * Label Provider class for the table viewer for for Qpid JMX API 1.3 and above.
+     */
+    private class NewerLabelProviderImpl extends LabelProvider implements ITableLabelProvider
+    {
+        @SuppressWarnings("unchecked")
+        @Override
+        public String getColumnText(Object element, int columnIndex)
+        {
+            Map.Entry<String, Long> queue = (Map.Entry<String, Long>) element;
+            
+            switch (columnIndex)
+            {
+                case 0 : // name column 
+                    return queue.getKey();
+                case 1 : // depth column 
+                    return getQueueDepthString(queue.getValue());
+                default :
+                    return "-";
+            }
+        }
+        
+        @Override
+        public Image getColumnImage(Object element, int columnIndex)
+        {
+            return null;
+        }    
+    }
+    
+    @Override
+    protected void addMBeanToFavourites()
+    {
+        int selectionIndex = _table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+
+        int[] selectedIndices = _table.getSelectionIndices();
+        
+        ArrayList<ManagedBean> selectedMBeans = new ArrayList<ManagedBean>();
+        
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            //if we have Qpid JMX API 1.3+ the entries are created from Map.Entry<String,Long>
+            for(int index = 0; index < selectedIndices.length ; index++)
+            {
+                Map.Entry<String, Long> queueEntry = (Map.Entry<String, Long>) _table.getItem(selectedIndices[index]).getData();
+                String queueName = queueEntry.getKey();
+                selectedMBeans.add(_serverRegistry.getQueue(queueName, _virtualHost));
+            }
+        }
+        else
+        {
+            //if we have a Qpid JMX API 1.2 or less server, entries are created from ManagedBeans directly
+            for(int index = 0; index < selectedIndices.length ; index++)
+            {
+                ManagedBean mbean = (ManagedBean) _table.getItem(selectedIndices[index]).getData();
+                selectedMBeans.add(mbean);
+            }
+        }
+
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        NavigationView view = (NavigationView)window.getActivePage().findView(NavigationView.ID);
+        
+        ManagedBean bean = null;
+        try
+        {
+            for(ManagedBean mbean: selectedMBeans)
+            {
+                bean = mbean;
+                view.addManagedBean(mbean);
+            }
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(bean, ex);
+        }
+    }
+    
+    @Override
+    protected void openMBean()
+    {
+        int selectionIndex = _table.getSelectionIndex();
+
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        ManagedBean selectedMBean;
+        
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        {
+            //if we have Qpid JMX API 1.3+ the entries are created from Map.Entry<String,Long>
+            Map.Entry<String, Long> queueEntry = (Map.Entry<String, Long>) _table.getItem(selectionIndex).getData();
+
+            String queueName = queueEntry.getKey();
+            selectedMBean = _serverRegistry.getQueue(queueName, _virtualHost);
+        }
+        else
+        {
+            //if we have a Qpid JMX API 1.2 or less server, entries are created from ManagedBeans directly
+            selectedMBean = (ManagedBean)_table.getItem(selectionIndex).getData();
+        }
+
+        if(selectedMBean == null)
+        {
+            ViewUtility.popupErrorMessage("Error", "Unable to retrieve the selected MBean to open it");
+            return;
+        }
+
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow(); 
+        MBeanView view = (MBeanView) window.getActivePage().findView(MBeanView.ID);
+        try
+        {
+            view.openMBean(selectedMBean);
+        }
+        catch (Exception ex)
+        {
+            MBeanUtility.handleException(selectedMBean, ex);
+        }
+    }
 }
