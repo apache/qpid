@@ -256,7 +256,7 @@ public class ServerConfiguration implements SignalHandler
 
     // Our configuration class needs to make the interpolate method
     // public so it can be called below from the config method.
-    private static class MyConfiguration extends CompositeConfiguration
+    public static class MyConfiguration extends CompositeConfiguration
     {
         public String interpolate(String obj)
         {
@@ -264,7 +264,7 @@ public class ServerConfiguration implements SignalHandler
         }
     }
 
-    private final static Configuration flatConfig(File file) throws ConfigurationException
+    public final static Configuration flatConfig(File file) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
         // interpolation takes place accross the entirety of the

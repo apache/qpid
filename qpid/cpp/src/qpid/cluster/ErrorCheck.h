@@ -25,6 +25,7 @@
 #include "qpid/cluster/types.h"
 #include "qpid/cluster/Multicaster.h"
 #include "qpid/framing/enum.h"
+#include "qpid/framing/SequenceNumber.h"
 #include <boost/function.hpp>
 #include <deque>
 #include <set>
@@ -49,11 +50,12 @@ class ErrorCheck
   public:
     typedef std::set<MemberId> MemberSet;
     typedef framing::cluster::ErrorType ErrorType;
+    typedef framing::SequenceNumber SequenceNumber;
     
     ErrorCheck(Cluster&);
 
     /** A local error has occured */
-    void error(Connection&, ErrorType, uint64_t frameSeq, const MemberSet&,
+    void error(Connection&, ErrorType, SequenceNumber frameSeq, const MemberSet&,
                const std::string& msg);
 
     /** Called when a frame is delivered */
@@ -66,7 +68,8 @@ class ErrorCheck
 
     bool isUnresolved() const { return type != NONE; }
 
-
+    /** Respond to an error check saying we had no error. */
+    void respondNone(const MemberId&, uint8_t type, SequenceNumber frameSeq);
     
   private:
     static const ErrorType NONE = framing::cluster::ERROR_TYPE_NONE;
@@ -78,7 +81,7 @@ class ErrorCheck
     Multicaster& mcast;
     FrameQueue frames;
     MemberSet unresolved;
-    uint64_t frameSeq;
+    SequenceNumber frameSeq;
     ErrorType type;
     Connection* connection;
 };

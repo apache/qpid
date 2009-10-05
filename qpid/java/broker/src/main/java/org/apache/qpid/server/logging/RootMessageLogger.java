@@ -37,6 +37,14 @@ public interface RootMessageLogger
      */
     boolean isMessageEnabled(LogActor actor, LogSubject subject);
 
+    /**
+     * Determine if  the LogActor should be generating log messages.
+     *
+     * @param actor   The actor requesting the logging
+     *
+     * @return boolean true if the message should be logged.
+     */
+    boolean isMessageEnabled(LogActor actor);
 
     /**
      * Log the raw message to the configured logger.

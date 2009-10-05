@@ -22,6 +22,7 @@
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/ptr_map.h"
 
 #include <boost/format.hpp>
@@ -33,7 +34,7 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager(Timer& t) : store(0), timer(t) {}
+DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(t) {}
 
 DtxManager::~DtxManager() {}
 
@@ -130,8 +131,7 @@ void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
     }
     timeout = intrusive_ptr<DtxTimeout>(new DtxTimeout(secs, *this, xid));
     record->setTimeout(timeout);
-    timer.add(boost::static_pointer_cast<TimerTask>(timeout));
-    
+    timer.add(timeout);
 }
 
 uint32_t DtxManager::getTimeout(const std::string& xid)

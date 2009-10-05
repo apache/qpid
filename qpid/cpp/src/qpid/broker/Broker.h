@@ -36,7 +36,6 @@
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/broker/Vhost.h"
 #include "qpid/broker/System.h"
-#include "qpid/broker/Timer.h"
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
@@ -49,6 +48,7 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 
@@ -115,13 +115,14 @@ public:
       private:
         std::string getHome();
     };
- 
+
   private:
     typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
 
     boost::shared_ptr<sys::Poller> poller;
+    sys::Timer timer;
     Options config;
     ProtocolFactoryMap protocolFactories;
     std::auto_ptr<MessageStore> store;
@@ -132,7 +133,6 @@ public:
     ExchangeRegistry exchanges;
     LinkRegistry links;
     boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
-    Timer timer;
     DtxManager dtxManager;
     SessionManager sessionManager;
     management::ManagementAgent* managementAgent;
@@ -148,8 +148,6 @@ public:
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
 
   public:
-
-  
     virtual ~Broker();
 
     QPID_BROKER_EXTERN Broker(const Options& configuration);
@@ -188,7 +186,7 @@ public:
 
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) { expiryPolicy = e; }
     boost::intrusive_ptr<ExpiryPolicy> getExpiryPolicy() { return expiryPolicy; }
-    
+
     SessionManager& getSessionManager() { return sessionManager; }
     const std::string& getFederationTag() const { return federationTag; }
 
@@ -197,7 +195,7 @@ public:
     management::Manageable::status_t  ManagementMethod (uint32_t methodId,
                                                         management::Args& args,
                                                         std::string& text);
-    
+
     /** Add to the broker's protocolFactorys */
     void registerProtocolFactory(const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
 
@@ -229,7 +227,7 @@ public:
     boost::shared_ptr<sys::ConnectionCodec::Factory> getConnectionFactory() { return factory; }
     void setConnectionFactory(boost::shared_ptr<sys::ConnectionCodec::Factory> f) { factory = f; }
 
-    Timer& getTimer() { return timer; }
+    sys::Timer& getTimer() { return timer; }
 
     boost::function<std::vector<Url> ()> getKnownBrokers;
 
@@ -242,7 +240,5 @@ public:
 };
 
 }}
-            
-
 
 #endif  /*!_Broker_*/

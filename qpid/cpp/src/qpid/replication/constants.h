@@ -26,6 +26,7 @@ const std::string REPLICATION_EVENT_TYPE("qpid.replication.type");
 const std::string REPLICATION_EVENT_SEQNO("qpid.replication.seqno");
 const std::string REPLICATION_TARGET_QUEUE("qpid.replication.target_queue");
 const std::string DEQUEUED_MESSAGE_POSITION("qpid.replication.message");
+const std::string QUEUE_MESSAGE_POSITION("qpid.replication.queue.position");
 
 const int ENQUEUE(1);
 const int DEQUEUE(2);

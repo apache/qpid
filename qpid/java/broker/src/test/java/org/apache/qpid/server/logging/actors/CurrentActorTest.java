@@ -26,9 +26,8 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.MockProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
@@ -61,27 +60,16 @@ public class CurrentActorTest extends TestCase
     final Exception[] _errors = new Exception[THREADS];
 
     // Create a single session for this test.
-    AMQProtocolSession session;
+    AMQProtocolSession _session;
 
-    public void setUp()
+    public void setUp() throws AMQException
     {
         // Create a single session for this test.
-        // Re-use is ok as we are testing the LogActor object is set correctly,
-        // not the value of the output.
-        session = new MockProtocolSession(new MemoryMessageStore());
-        // Use the first Virtualhost that has been defined to initialise
-        // the MockProtocolSession. This prevents a NPE when the
-        // AMQPActor attempts to lookup the name of the VHost.
-        try
-        {
-            session.setVirtualHost(ApplicationRegistry.getInstance().
-                    getVirtualHostRegistry().getVirtualHosts().
-                    toArray(new VirtualHost[1])[0]);
-        }
-        catch (AMQException e)
-        {
-            fail("Unable to set virtualhost on session:" + e.getMessage());
-        }
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
+        // Create a single session for this test.
+        _session = new InternalTestProtocolSession(virtualHost);
     }
 
     public void testFIFO() throws AMQException
@@ -89,7 +77,7 @@ public class CurrentActorTest extends TestCase
         // Create a new actor using retrieving the rootMessageLogger from
         // the default ApplicationRegistry.
         //fixme reminder that we need a better approach for broker testing.
-        AMQPConnectionActor connectionActor = new AMQPConnectionActor(session,
+        AMQPConnectionActor connectionActor = new AMQPConnectionActor(_session,
                                                                       ApplicationRegistry.getInstance().
                                                                               getRootMessageLogger());
 
@@ -120,7 +108,7 @@ public class CurrentActorTest extends TestCase
          * to push the actor on to the stack
          */
 
-        AMQChannel channel = new AMQChannel(session, 1, session.getVirtualHost().getMessageStore());
+        AMQChannel channel = new AMQChannel(_session, 1, _session.getVirtualHost().getMessageStore());
 
         AMQPChannelActor channelActor = new AMQPChannelActor(channel,
                                                              ApplicationRegistry.getInstance().
@@ -218,7 +206,7 @@ public class CurrentActorTest extends TestCase
             // Create a new actor using retrieving the rootMessageLogger from
             // the default ApplicationRegistry.
             //fixme reminder that we need a better approach for broker testing.
-            AMQPConnectionActor actor = new AMQPConnectionActor(session,
+            AMQPConnectionActor actor = new AMQPConnectionActor(_session,
                                                                 ApplicationRegistry.getInstance().
                                                                         getRootMessageLogger());
 

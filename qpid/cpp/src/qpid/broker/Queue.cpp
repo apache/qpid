@@ -677,20 +677,24 @@ void Queue::setLastNodeFailure()
 {
     if (persistLastNode){
         Mutex::ScopedLock locker(messageLock);
-    	for ( Messages::iterator i = messages.begin(); i != messages.end(); ++i ) {
-            if (lastValueQueue) checkLvqReplace(*i);
-            // don't force a message twice to disk.
-            if(!i->payload->isStoredOnQueue(shared_from_this())) {
-                i->payload->forcePersistent();
-                if (i->payload->isForcedPersistent() ){
-            	    enqueue(0, i->payload);
+        try {
+    	    for ( Messages::iterator i = messages.begin(); i != messages.end(); ++i ) {
+                if (lastValueQueue) checkLvqReplace(*i);
+                // don't force a message twice to disk.
+                if(!i->payload->isStoredOnQueue(shared_from_this())) {
+                    i->payload->forcePersistent();
+                    if (i->payload->isForcedPersistent() ){
+            	        enqueue(0, i->payload);
+                    }
                 }
-            }
-    	}
+    	    }
+        } catch (const std::exception& e) {
+            // Could not go into last node standing (for example journal not large enough)
+            QPID_LOG(error, "Unable to fail to last node standing for queue: " << name << " : " << e.what());
+        }
         inLastNodeFailure = true;
     }
 }
-
 
 // return true if store exists, 
 bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg)
@@ -1010,6 +1014,10 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
 void Queue::setPosition(SequenceNumber n) {
     Mutex::ScopedLock locker(messageLock);
     sequence = n;
+}
+
+SequenceNumber Queue::getPosition() {
+    return sequence;
 }
 
 int Queue::getEventMode() { return eventMode; }

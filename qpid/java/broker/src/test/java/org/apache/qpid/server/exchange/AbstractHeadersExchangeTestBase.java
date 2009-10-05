@@ -35,6 +35,7 @@ import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.log4j.Logger;
@@ -475,14 +476,14 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                                                                          new LinkedList<RequiredDeliveryException>()
         );
 
-        Message(String id, String... headers) throws AMQException
+        Message(AMQProtocolSession protocolSession, String id, String... headers) throws AMQException
         {
-            this(id, getHeaders(headers));
+            this(protocolSession, id, getHeaders(headers));
         }
 
-        Message(String id, FieldTable headers) throws AMQException
+        Message(AMQProtocolSession protocolSession, String id, FieldTable headers) throws AMQException
         {
-            this(_messageStore.getNewMessageId(),getPublishRequest(id), getContentHeader(headers), null);
+            this(protocolSession, _messageStore.getNewMessageId(),getPublishRequest(id), getContentHeader(headers), null);
         }
 
         public IncomingMessage getIncomingMessage()
@@ -490,7 +491,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
             return _incoming;
         }
 
-        private Message(long messageId,
+        private Message(AMQProtocolSession protocolsession, long messageId,
                         MessagePublishInfo publish,
                         ContentHeaderBody header,
                         List<ContentBody> bodies) throws AMQException
@@ -499,7 +500,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
 
 
             
-            _incoming = new TestIncomingMessage(getMessageId(),publish,_txnContext,new MockProtocolSession(_messageStore));
+            _incoming = new TestIncomingMessage(getMessageId(),publish, _txnContext, protocolsession);
             _incoming.setContentHeaderBody(header);
 
 

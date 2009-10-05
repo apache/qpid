@@ -32,6 +32,10 @@ public abstract class AbstractActor implements LogActor
 
     public AbstractActor(RootMessageLogger rootLogger)
     {
+        if(rootLogger == null)
+        {
+            throw new NullPointerException("RootMessageLogger cannot be null");
+        }
         _rootLogger = rootLogger;
     }
 
@@ -42,4 +46,18 @@ public abstract class AbstractActor implements LogActor
             _rootLogger.rawMessage(_logString + String.valueOf(subject) + message);
         }
     }
+
+    public void message(LogMessage message)
+    {
+        if (_rootLogger.isMessageEnabled(this))
+        {
+            _rootLogger.rawMessage(_logString + message);
+        }
+    }
+
+    public RootMessageLogger getRootMessageLogger()
+    {
+        return _rootLogger;
+    }
+
 }

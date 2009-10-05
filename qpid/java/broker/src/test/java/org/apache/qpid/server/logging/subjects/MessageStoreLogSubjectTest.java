@@ -20,24 +20,40 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-public class ConnectionLogSubjectTest extends AbstractTestLogSubject
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+
+public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
 {
+    VirtualHost _testVhost;
 
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _subject = new ConnectionLogSubject(_session);
+        _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
+                getVirtualHost("test");
+
+        _subject = new MessagesStoreLogSubject(_testVhost, _testVhost.getMessageStore());
     }
 
     /**
-     * MESSAGE [Blank][con:0(MockProtocolSessionUser@null/test)] <Log Message>
-     *
+     * Validate that the logged Subject  message is as expected:
+     * MESSAGE [Blank][vh(/test)/ms(MemoryMessageStore)] <Log Message>
      * @param message the message whos format needs validation
      */
+    @Override
     protected void validateLogStatement(String message)
     {
-        verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
+        verifyVirtualHost(message, _testVhost);
+
+        String msSlice = getSlice("ms", message);
+
+        assertNotNull("MessageStore not found:" + message, msSlice);
+
+        assertEquals("MessageStore not correct",
+                     _testVhost.getMessageStore().getClass().getSimpleName(),
+                     msSlice);
     }
 
 }

@@ -39,12 +39,14 @@ public class ProtocolVersion  implements Comparable
 {
     private final byte _majorVersion;
     private final byte _minorVersion;
+    private final String _stringFormat;
 
 
     public ProtocolVersion(byte majorVersion, byte minorVersion)
     {
         _majorVersion = majorVersion;
         _minorVersion = minorVersion;
+        _stringFormat = _majorVersion+"-"+_minorVersion;
     }
 
     public byte getMajorVersion()
@@ -57,6 +59,10 @@ public class ProtocolVersion  implements Comparable
         return _minorVersion;
     }
 
+    public String toString()
+    {
+        return _stringFormat;
+    }
 
     public int compareTo(Object o)
     {

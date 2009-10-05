@@ -40,4 +40,21 @@ public interface LogActor
      * @param message The message to log
      */
     public void message(LogSubject subject, LogMessage message);
-} 
+
+    /**
+     * Logs the specified LogMessage against this actor
+     *
+     * Currently logging has a global setting however this will later be revised and
+     * as such the LogActor will need to take into consideration any new configuration
+     * as a means of enabling the logging of LogActors and LogSubjects.
+     *
+     * @param message The message to log
+     */
+    public void message(LogMessage message);
+
+    /**
+     *
+     * @return the RootMessageLogger that is currently in use by this LogActor.
+     */
+    RootMessageLogger getRootMessageLogger();
+}

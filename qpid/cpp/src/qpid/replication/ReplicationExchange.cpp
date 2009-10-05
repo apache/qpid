@@ -83,15 +83,29 @@ void ReplicationExchange::handleEnqueueEvent(const FieldTable* args, Deliverable
     std::string queueName = args->getAsString(REPLICATION_TARGET_QUEUE);
     Queue::shared_ptr queue = queues.find(queueName);
     if (queue) {
-        FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
-        headers.erase(REPLICATION_TARGET_QUEUE);
-        headers.erase(REPLICATION_EVENT_SEQNO);
-        headers.erase(REPLICATION_EVENT_TYPE);
-        msg.deliverTo(queue);
-        QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
-        if (mgmtExchange != 0) {
-            mgmtExchange->inc_msgRoutes();
-            mgmtExchange->inc_byteRoutes( msg.contentSize());
+
+        SequenceNumber seqno1(args->getAsInt(QUEUE_MESSAGE_POSITION));
+
+        // note that queue will ++ before enqueue.      
+        if (queue->getPosition() > --seqno1) // test queue.pos < seqnumber
+        {
+            QPID_LOG(error, "Cannot enqueue replicated message. Destination Queue " << queueName << " ahead of source queue");
+            mgmtExchange->inc_msgDrops();
+            mgmtExchange->inc_byteDrops(msg.contentSize());
+        } else {
+            queue->setPosition(seqno1);  
+
+            FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
+            headers.erase(REPLICATION_TARGET_QUEUE);
+            headers.erase(REPLICATION_EVENT_SEQNO);
+            headers.erase(REPLICATION_EVENT_TYPE);
+            headers.erase(QUEUE_MESSAGE_POSITION);
+            msg.deliverTo(queue);
+            QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
+            if (mgmtExchange != 0) {
+                mgmtExchange->inc_msgRoutes();
+                mgmtExchange->inc_byteRoutes( msg.contentSize());
+            }
         }
     } else {
         QPID_LOG(error, "Cannot enqueue replicated message. Queue " << queueName << " does not exist");

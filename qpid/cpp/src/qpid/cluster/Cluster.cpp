@@ -66,7 +66,7 @@
  * 
  * Events are either
  *  - Connection events: non-0 connection number and are associated with a connection.
- *  - Cluster Events: 0 connection number, are not associated with a connectin.
+ *  - Cluster Events: 0 connection number, are not associated with a connection.
  * 
  * Events are further categorized as:
  *  - Control: carries method frame(s) that affect cluster behavior.
@@ -149,7 +149,7 @@ namespace _qmf = ::qmf::org::apache::qpid::cluster;
  * sensible reporting of an attempt to mix different versions in a
  * cluster.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 1;
+const uint32_t Cluster::CLUSTER_VERSION = 2;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -163,7 +163,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     void updateOffer(uint64_t updatee, const Uuid& id, uint32_t version) { cluster.updateOffer(member, updatee, id, version, l); }
     void retractOffer(uint64_t updatee) { cluster.retractOffer(member, updatee, l); }
     void messageExpired(uint64_t id) { cluster.messageExpired(member, id, l); }
-    void errorCheck(uint8_t type, uint64_t frameSeq) { cluster.errorCheck(member, type, frameSeq, l); }
+    void errorCheck(uint8_t type, const framing::SequenceNumber& frameSeq) { cluster.errorCheck(member, type, frameSeq, l); }
 
     void shutdown() { cluster.shutdown(member, l); }
 
@@ -869,15 +869,12 @@ void Cluster::messageExpired(const MemberId&, uint64_t id, Lock&) {
     expiryPolicy->deliverExpire(id);
 }
 
-void Cluster::errorCheck(const MemberId&, uint8_t type, uint64_t frameSeq, Lock&) {
-    // If we handle an errorCheck at this point (rather than in the
-    // ErrorCheck class) then we have processed succesfully past the
-    // point of the error.
-    if (state >= CATCHUP && type != ERROR_TYPE_NONE) {
-        QPID_LOG(notice, *this << " error " << frameSeq << " did not occur locally.");
-        mcast.mcastControl(
-            ClusterErrorCheckBody(ProtocolVersion(), ERROR_TYPE_NONE, frameSeq), self);
-    }
+void Cluster::errorCheck(const MemberId& from, uint8_t type, framing::SequenceNumber frameSeq, Lock&) {
+    // If we see an errorCheck here (rather than in the ErrorCheck
+    // class) then we have processed succesfully past the point of the
+    // error.
+    if (state >= CATCHUP) // Don't respond pre catchup, we don't know what happened
+        error.respondNone(from, type, frameSeq);
 }
 
 

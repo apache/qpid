@@ -31,15 +31,15 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.SecurityConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.MockPluginManager;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.queue.MockProtocolSession;
-import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class ACLManagerTest extends TestCase
 {
@@ -64,8 +64,13 @@ public class ACLManagerTest extends TestCase
         
         _pluginManager = new MockPluginManager("");
         _authzManager = new ACLManager(_conf, _pluginManager);
-        
-        _session = new MockProtocolSession(new TestableMemoryMessageStore());
+
+
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
+        // Create a single session for this test.
+        _session = new InternalTestProtocolSession(virtualHost);
     }
     
     public void testACLManagerConfigurationPluginManager() throws Exception

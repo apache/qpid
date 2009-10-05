@@ -40,6 +40,11 @@ public class RootMessageLoggerImpl implements RootMessageLogger
         return _enabled;
     }
 
+    public boolean isMessageEnabled(LogActor actor)
+    {
+        return _enabled;
+    }
+
     public void rawMessage(String message)
     {
         _rawLogger.rawMessage(MESSAGE + message);

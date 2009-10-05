@@ -20,24 +20,26 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-public class ConnectionLogSubjectTest extends AbstractTestLogSubject
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.store.MessageStore;
+
+public class MessagesStoreLogSubject extends AbstractLogSubject
 {
 
-    public void setUp() throws Exception
-    {
-        super.setUp();
-
-        _subject = new ConnectionLogSubject(_session);
-    }
-
     /**
-     * MESSAGE [Blank][con:0(MockProtocolSessionUser@null/test)] <Log Message>
+     * LOG FORMAT for the MessagesStoreLogSubject,
+     * Uses a MessageFormat call to insert the requried values according to
+     * these indicies:
      *
-     * @param message the message whos format needs validation
+     * 0 - Virtualhost Name
+     * 1 - Message Store Type
      */
-    protected void validateLogStatement(String message)
-    {
-        verifyConnection(_session.getSessionID(), "InternalTestProtocolSession", "127.0.0.1:1", "test", message);
-    }
+    protected static String BINDING_FORMAT = "vh(/{0})/ms({1})";
 
+    /** Create an ExchangeLogSubject that Logs in the following format. */
+    public MessagesStoreLogSubject(VirtualHost vhost, MessageStore store)
+    {
+        setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
+                               store.getClass().getSimpleName());
+    }
 }

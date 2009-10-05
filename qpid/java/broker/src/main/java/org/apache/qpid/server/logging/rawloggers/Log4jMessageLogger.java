@@ -41,6 +41,7 @@ public class Log4jMessageLogger implements RawMessageLogger
         _level = Level.toLevel(level);
 
         _rawMessageLogger = Logger.getLogger(logger);
+        _rawMessageLogger.setLevel(_level);
     }
 
     public void rawMessage(String message)

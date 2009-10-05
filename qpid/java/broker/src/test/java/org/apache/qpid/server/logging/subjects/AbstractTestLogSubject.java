@@ -36,6 +36,9 @@ import org.apache.qpid.server.logging.actors.TestBlankActor;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 import java.util.List;
 
@@ -43,6 +46,19 @@ public abstract class AbstractTestLogSubject extends TestCase
 {
     protected Configuration _config = new PropertiesConfiguration();
     protected LogSubject _subject = null;
+
+    AMQProtocolSession _session;
+
+    public void setUp() throws Exception
+    {
+        super.setUp();
+
+        VirtualHost virtualHost = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
+        // Create a single session for this test.
+        _session = new InternalTestProtocolSession(virtualHost);
+    }
 
     protected List<Object> performLog() throws ConfigurationException
     {
@@ -96,15 +112,19 @@ public abstract class AbstractTestLogSubject extends TestCase
         assertEquals("Username not as expected", userNameParts[0], user);
 
         // Extract IP.
+        // The connection will be of the format - guest@/127.0.0.1:1/test
+        // and so our userNamePart will be '/127.0.0.1:1/test'
         String[] ipParts = userNameParts[1].split("/");
 
+        // We will have three sections
         assertEquals("Unable to split IP from rest of Connection:"
-                     + userNameParts[1], 2, ipParts.length);
+                     + userNameParts[1], 3, ipParts.length);
 
-        assertEquals("IP not as expected", ipParts[0], ipString);
+        // We need to skip the first '/' split will be empty so validate 1 as IP
+        assertEquals("IP not as expected", ipString, ipParts[1]);
 
-        //Finally check vhost
-        assertEquals("Virtualhost name not as expected.", vhost, ipParts[1]);
+        //Finally check vhost which is section 2
+        assertEquals("Virtualhost name not as expected.", vhost, ipParts[2]);
     }
 
     /**
@@ -172,7 +192,7 @@ public abstract class AbstractTestLogSubject extends TestCase
      * @param message the message to search
      * @param vhost   the vhostName to check against
      */
-    protected void verifyVirtualHost(String message, VirtualHost vhost)
+    static public void verifyVirtualHost(String message, VirtualHost vhost)
     {
         String vhostSlice = getSlice("vh", message);
 
@@ -199,7 +219,7 @@ public abstract class AbstractTestLogSubject extends TestCase
      *
      * @return the slice if found otherwise null is returned
      */
-    protected String getSlice(String sliceID, String message)
+    static public String getSlice(String sliceID, String message)
     {
         int indexOfSlice = message.indexOf(sliceID + "(");
 

@@ -324,6 +324,9 @@ namespace qpid {
              * Used by cluster to replicate queues.
              */
             void setPosition(framing::SequenceNumber pos);
+            /** return current position sequence number for the next message on the queue.
+            */
+            framing::SequenceNumber getPosition();
             int getEventMode();
             void setQueueEventManager(QueueEvents&);
             QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);

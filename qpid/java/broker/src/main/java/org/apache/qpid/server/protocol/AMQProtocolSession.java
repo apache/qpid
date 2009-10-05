@@ -29,6 +29,8 @@ import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -38,6 +40,8 @@ import java.security.Principal;
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, PrincipalHolder
 {
     long getSessionID();
+
+    LogActor getLogActor();
 
     public static final class ProtocolSessionIdentifier
     {
