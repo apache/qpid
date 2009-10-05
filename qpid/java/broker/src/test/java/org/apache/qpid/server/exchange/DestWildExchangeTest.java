@@ -62,7 +62,7 @@ public class DestWildExchangeTest extends TestCase
 
     public void tearDown()
     {
-        ApplicationRegistry.remove(1); 
+        ApplicationRegistry.remove(); 
     }
 
 

@@ -28,6 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -53,6 +54,10 @@ public class TxAckTest extends TestCase
     {
         super.setUp();
 
+
+        // Highlight that this test will cause the creation of an AR
+        ApplicationRegistry.getInstance();
+
         //ack only 5th msg
         individual = new Scenario(10, Arrays.asList(5l), Arrays.asList(1l, 2l, 3l, 4l, 6l, 7l, 8l, 9l, 10l));
         individual.update(5, false);
@@ -77,6 +82,10 @@ public class TxAckTest extends TestCase
     	individual.stop();
     	multiple.stop();
     	combined.stop();
+
+        // Ensure we close the AR we created
+        ApplicationRegistry.remove();
+        super.tearDown();
     }
 
     public void testPrepare() throws AMQException
@@ -121,10 +130,8 @@ public class TxAckTest extends TestCase
                                                                           new LinkedList<RequiredDeliveryException>()
             );
 
-            PropertiesConfiguration env = new PropertiesConfiguration();
-            env.setProperty("name", "test");
-            VirtualHost virtualHost = new VirtualHost(new VirtualHostConfiguration("test", env), null);
-            
+            VirtualHost virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
+
             _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false, null, false,
                     virtualHost, null);
 

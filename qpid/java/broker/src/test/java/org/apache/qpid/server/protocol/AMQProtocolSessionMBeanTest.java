@@ -26,6 +26,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -109,20 +110,17 @@ public class AMQProtocolSessionMBeanTest extends TestCase
     {
         super.setUp();
 
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _protocolSession =
-                new AMQMinaProtocolSession(new TestIoSession(), appRegistry.getVirtualHostRegistry(), new AMQCodecFactory(true));
-        // Need to authenticate session for it to work, (well for logging to work)
-        _protocolSession.setAuthorizedID(new Principal()
-        {
-            public String getName()
-            {
-                return "AMQProtocolSessionMBeanTestUser";
-            }
-        });
-        _protocolSession.setVirtualHost(appRegistry.getVirtualHostRegistry().getVirtualHost("test"));
+        VirtualHost vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
+        _protocolSession = new InternalTestProtocolSession(vhost);
+
         _channel = new AMQChannel(_protocolSession, 1, _messageStore);
         _protocolSession.addChannel(_channel);
         _mbean = (AMQProtocolSessionMBean) _protocolSession.getManagedObject();
+    }
+
+    @Override
+    protected void tearDown()
+    {
+        ApplicationRegistry.remove();
     }
 }

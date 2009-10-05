@@ -36,6 +36,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class PrincipalPermissionsTest extends TestCase
 {
@@ -65,6 +66,9 @@ public class PrincipalPermissionsTest extends TestCase
     @Override
     public void setUp()
     {
+        //Highlight that this test will cause a new AR to be created
+        ApplicationRegistry.getInstance();        
+
         _perms = new PrincipalPermissions(_user);
         try 
         {
@@ -78,7 +82,15 @@ public class PrincipalPermissionsTest extends TestCase
             fail(e.getMessage());
         }
     }
-    
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        //Ensure we close the opened Registry
+        ApplicationRegistry.remove();
+    }
+
+
     public void testPrincipalPermissions()
     {
         assertNotNull(_perms);

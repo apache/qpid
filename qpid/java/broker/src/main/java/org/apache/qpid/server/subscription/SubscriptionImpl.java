@@ -34,6 +34,12 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.SubscriptionActor;
+import org.apache.qpid.server.logging.messages.SubscriptionMessages;
+import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -66,14 +72,15 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private final ClientDeliveryMethod _deliveryMethod;
     private final RecordDeliveryMethod _recordMethod;
-    
+
     private QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final Lock _stateChangeLock;
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
     private final long _subscriptionID = idGenerator.getAndIncrement();
-
+    private LogSubject _logSubject;
+    private LogActor _logActor;
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -281,7 +288,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
 
-    
+
     public SubscriptionImpl(AMQChannel channel , AMQProtocolSession protocolSession,
                             AMQShortString consumerTag, FieldTable arguments,
                             boolean noLocal, FlowCreditManager creditManager,
@@ -330,13 +337,52 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
 
-    public synchronized void setQueue(AMQQueue queue)
+    public synchronized void setQueue(AMQQueue queue, boolean exclusive)
     {
         if(getQueue() != null)
         {
             throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
+
+        _logSubject = new SubscriptionLogSubject(this);
+        _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
+
+        if (CurrentActor.get().getRootMessageLogger().
+                isMessageEnabled(CurrentActor.get(), _logSubject))
+        {
+            // Get the string value of the filters
+            String filterLogString = null;
+            if (_filters != null && _filters.hasFilters())
+            {
+                filterLogString = _filters.toString();
+            }
+
+            if (isAutoClose())
+            {
+                if (filterLogString == null)
+                {
+                    filterLogString = "";
+                }
+                else
+                {
+                    filterLogString += ",";
+                }
+                filterLogString += "AutoClose";
+            }
+
+            if (isBrowser())
+            {
+                // We do not need to check for null here as all Browsers are AutoClose
+                filterLogString +=",Browser";
+            }
+
+            CurrentActor.get().
+                    message(_logSubject,
+                            SubscriptionMessages.SUB_1001(filterLogString,
+                                                          queue.isDurable() && exclusive,
+                                                          filterLogString != null));
+        }
     }
 
     public String toString()
@@ -494,20 +540,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         }
 
 
-        if (closed)
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Called close() on a closed subscription");
-            }
-
-            return;
-        }
-
-        if (_logger.isInfoEnabled())
-        {
-            _logger.info("Closing subscription (" + debugIdentity() + "):" + this);
-        }
+        //Log Subscription closed
+        CurrentActor.get().message(_logSubject, SubscriptionMessages.SUB_1002());
     }
 
     public boolean isClosed()
@@ -551,9 +585,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         return _channel.getProtocolSession();
     }
 
+    public LogActor getLogActor()
+    {
+        return _logActor;
+    }
+
     public AMQQueue getQueue()
     {
-        return _queue;        
+        return _queue;
     }
 
     public void onDequeue(final QueueEntry queueEntry)
@@ -570,7 +609,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public void creditStateChanged(boolean hasCredit)
     {
-        
+
         if(hasCredit)
         {
             if(_state.compareAndSet(State.SUSPENDED, State.ACTIVE))

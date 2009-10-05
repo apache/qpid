@@ -36,6 +36,7 @@ import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedObject;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
@@ -1151,7 +1152,42 @@ public class NavigationView extends ViewPart
             }
             else
             {
-                return ApplicationRegistry.getImage(MBEAN_IMAGE);
+                ManagedObject obj = node.getManagedObject();
+                if(obj instanceof ManagedBean)
+                {
+                    ManagedBean mbean = (ManagedBean) obj;
+                    String mbeanType = mbean.getType();
+
+                    if(mbeanType.equals(LoggingManagement.TYPE))
+                    {
+                        return ApplicationRegistry.getImage(LOGGING_MANAGEMENT_IMAGE);
+                    }
+                    else if(mbeanType.equals(UserManagement.TYPE))
+                    {
+                        return ApplicationRegistry.getImage(USER_MANAGEMENT_IMAGE);
+                    }
+                    else if(mbeanType.equals(ConfigurationManagement.TYPE))
+                    {
+                        return ApplicationRegistry.getImage(CONFIGURATION_MANAGEMENT_IMAGE);
+                    }
+                    else if(mbeanType.equals(ServerInformation.TYPE))
+                    {
+                        return ApplicationRegistry.getImage(SERVER_INFO_IMAGE);
+                    }
+                    else if(mbeanType.equals("VirtualHost.VirtualHostManager"))
+                    {
+                        return ApplicationRegistry.getImage(VHOST_MANAGER_IMAGE);
+                    }
+                    else
+                    {
+                        return ApplicationRegistry.getImage(MBEAN_IMAGE);
+                    }
+                    
+                }
+                else
+                {
+                    return ApplicationRegistry.getImage(MBEAN_IMAGE);
+                }
             }
         }
 

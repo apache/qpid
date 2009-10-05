@@ -24,6 +24,10 @@ import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.subjects.QueueLogSubject;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.messages.QueueMessages;
 
 /*
 *
@@ -140,6 +144,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private AtomicReference _asynchronousRunner = new AtomicReference(null);
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
+    private LogSubject _logSubject;
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -174,6 +179,27 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _entries = entryListFactory.createQueueEntryList(this);
 
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
+
+        _logSubject = new QueueLogSubject(this);
+
+        // Log the correct creation message
+
+        // Extract the number of priorities for this Queue.
+        // Leave it as 0 if we are a SimpleQueueEntryList
+        int priorities = 0;
+        if (entryListFactory instanceof PriorityQueueList.Factory)
+        {
+            priorities = ((PriorityQueueList)_entries).getPriorities();
+        }
+
+        // Log the creation of this Queue.
+        // The priorities display is toggled on if we set priorities > 0
+        CurrentActor.get().message(_logSubject,
+                                   QueueMessages.QUE_1001(String.valueOf(_owner),
+                                                          priorities,
+                                                          autoDelete,
+                                                          durable, !durable,
+                                                          priorities > 0));
 
         try
         {
@@ -282,15 +308,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
         _bindings.addBinding(routingKey, arguments, exchange);
-//        ExchangeBinding binding = new ExchangeBinding(routingKey, exchange, arguments);
-
-        //fixme MR logging in progress
-//        _bindings.addBinding(binding);
-//
-//        if (_logger.isMessageEnabled(binding))
-//        {
-//            _logger.message(binding, "QM-1001 : Created Binding");
-//        }
     }
 
     public void unBind(Exchange exchange, AMQShortString routingKey, FieldTable arguments) throws AMQException
@@ -342,7 +359,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         if (!isDeleted())
         {
-            subscription.setQueue(this);
+            subscription.setQueue(this, exclusive);
             _subscriptionList.add(subscription);
             if (isDeleted())
             {
@@ -497,7 +514,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
         _managedObject.checkForNotification(entry.getMessage());
-        
+
         return entry;
     }
 
@@ -881,11 +898,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return entryList;
 
     }
-    
+
     /**
      * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
-     * 
-     * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1. 
+     *
+     * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1.
      * Using 0 in the 'to' field will return an empty list regardless of the 'from' value.
      * @param fromPosition
      * @param toPosition
@@ -894,7 +911,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public List<QueueEntry> getMessagesRangeOnTheQueue(final long fromPosition, final long toPosition)
     {
         List<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
-        
+
         QueueEntryIterator it = _entries.iterator();
 
         long index = 1;
@@ -902,20 +919,20 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             it.advance();
         }
-        
+
         if(index < fromPosition)
         {
             //The queue does not contain enough entries to reach our range.
             //return the empty list.
             return queueEntries;
         }
-        
+
         for ( ; index <= toPosition && !it.atTail(); index++)
         {
             it.advance();
             queueEntries.add(it.getNode());
         }
-        
+
         return queueEntries;
     }
 
@@ -1201,6 +1218,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             _deleteTaskList.clear();
             stop();
+            
+            //Log Queue Deletion
+            CurrentActor.get().message(_logSubject, QueueMessages.QUE_1002());
+
         }
         return getMessageCount();
 
@@ -1271,6 +1292,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             boolean complete = false;
             try
             {
+                CurrentActor.set(_sub.getLogActor());
                 complete = flushSubscription(_sub, new Long(MAX_ASYNC_DELIVERIES));
 
             }
@@ -1278,10 +1300,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 _logger.error(e);
             }
+            finally
+            {
+                CurrentActor.remove();
+            }
             if (!complete && !_sub.isSuspended())
             {
                 _asyncDelivery.execute(this);
             }
+
 
         }
 
@@ -1307,7 +1334,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         while (!sub.isSuspended() && !atTail && iterations != 0)
         {
-            try 
+            try
             {
                 sub.getSendLock();
                 atTail =  attemptDelivery(sub);
@@ -1538,8 +1565,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             if (!node.isDeleted() && node.expired() && node.acquire())
             {
                 node.discard(storeContext);
-            } 
-            else 
+            }
+            else
             {
                 _managedObject.checkForNotification(node.getMessage());
             }

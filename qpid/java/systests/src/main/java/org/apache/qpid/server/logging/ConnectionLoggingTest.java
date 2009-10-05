@@ -20,15 +20,10 @@
 */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.test.unit.client.forwardall.Client;
-
 import javax.jms.Connection;
 import java.io.File;
 import java.util.List;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.SortedSet;
-import java.util.Collections;
 import java.util.TreeSet;
 
 public class ConnectionLoggingTest extends AbstractTestLogging
@@ -70,6 +65,8 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         Connection connection = getConnection();
 
         List<String> results = _monitor.findMatches(CONNECTION_PREFIX);
+
+        assertTrue("No CON messages logged", results.size() > 0);        
 
         // Validation
         // We should have at least three messages when running InVM but when running External
@@ -174,12 +171,12 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         assertTrue("Message does not end with close:" + log, log.endsWith("Close"));
 
         // Extract connection ID to validate there is a CON-1001 messasge for it
-        int connectionID = extractConnectionID(log);
+        int connectionID = getConnectionID(log);
 
         //Previous log message should be the open
         log = getLog(results.get(resultsSize - 2));
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
         validateMessageID("CON-1001",log);
-        assertEquals("Connection IDs do not match", connectionID, extractConnectionID(fromActor(log)));
+        assertEquals("Connection IDs do not match", connectionID, getConnectionID(fromActor(log)));
     }
 }

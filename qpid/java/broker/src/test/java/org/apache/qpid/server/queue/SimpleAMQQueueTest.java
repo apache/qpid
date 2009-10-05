@@ -94,7 +94,7 @@ public class SimpleAMQQueueTest extends TestCase
     {
         super.setUp();
         //Create Application Registry for test
-        ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance(1);
+        ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
         _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), env), _store);
@@ -107,7 +107,7 @@ public class SimpleAMQQueueTest extends TestCase
     protected void tearDown()
     {
         _queue.stop();
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
     public void testCreateQueue() throws AMQException

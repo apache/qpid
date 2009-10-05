@@ -136,12 +136,12 @@ public class MessageStoreTest extends TestCase
 
     protected void setUp()
     {
-        ApplicationRegistry.getInstance(1);
+        ApplicationRegistry.getInstance();
     }
 
     protected void tearDown()
     {
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
     protected void runTestWithStore(Configuration configuration)

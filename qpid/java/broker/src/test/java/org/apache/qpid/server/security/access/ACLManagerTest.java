@@ -72,6 +72,14 @@ public class ACLManagerTest extends TestCase
         // Create a single session for this test.
         _session = new InternalTestProtocolSession(virtualHost);
     }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        // Correctly Close the AR we created
+        ApplicationRegistry.remove();
+        super.tearDown();
+    }    
     
     public void testACLManagerConfigurationPluginManager() throws Exception
     {

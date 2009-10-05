@@ -24,6 +24,8 @@ package org.apache.qpid.server.subscription;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
@@ -87,6 +89,11 @@ public class MockSubscription implements Subscription
     public SubscriptionAcquiredState getOwningState()
     {
         return new QueueEntry.SubscriptionAcquiredState(this);
+    }
+
+    public LogActor getLogActor()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public AMQQueue getQueue()
@@ -176,7 +183,7 @@ public class MockSubscription implements Subscription
         _queueContext = queueContext;
     }
 
-    public void setQueue(AMQQueue queue)
+    public void setQueue(AMQQueue queue, boolean exclusive)
     {
         this.queue = queue;
     }

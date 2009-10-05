@@ -27,6 +27,8 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -91,6 +93,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     public void start() throws IOException, ConfigurationException
     {
+
+        CurrentActor.get().message(ManagementConsoleMessages.MNG_1001());
+        
         //check if system properties are set to use the JVM's out-of-the-box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
         {
@@ -160,6 +165,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 
                 _log.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
                 _startupLog.info("JMX ConnectorServer using SSL keystore file " + ksf.getAbsolutePath());
+
+                CurrentActor.get().message(ManagementConsoleMessages.MNG_1006(ksf.getAbsolutePath()));
             }
 
             //check the key store password is set
@@ -186,6 +193,10 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                      (port +PORT_EXPORT_OFFSET) + ") with SSL");
             _startupLog.warn("Starting JMX ConnectorServer on port '"+ port + "' (+" + 
                      (port +PORT_EXPORT_OFFSET) + ") with SSL");
+
+            CurrentActor.get().message(ManagementConsoleMessages.MNG_1002("SSL RMI Registry", port));
+            CurrentActor.get().message(ManagementConsoleMessages.MNG_1002("SSL RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
+
         }
         else
         {
@@ -195,6 +206,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
             _log.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
             _startupLog.warn("Starting JMX ConnectorServer on port '" + port + "' (+" + (port +PORT_EXPORT_OFFSET) + ")");
+            CurrentActor.get().message(ManagementConsoleMessages.MNG_1002("RMI Registry", port));
+            CurrentActor.get().message(ManagementConsoleMessages.MNG_1002("RMI ConnectorServer", port + PORT_EXPORT_OFFSET));
         }
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
@@ -233,7 +246,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 try
                 {   
                     //manually bind the connector server to the registry at key 'jmxrmi', like the out-of-the-box agent                        
-                    _rmiRegistry.bind("jmxrmi", rmiConnectorServerStub);   
+                    _rmiRegistry.bind("jmxrmi", rmiConnectorServerStub);
                 }
                 catch (AlreadyBoundException abe)
                 {   
@@ -263,6 +276,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
         cs.setMBeanServerForwarder(mbsf);
         cs.start();
+
+        CurrentActor.get().message(ManagementConsoleMessages.MNG_1004());
     }
 
     /*
@@ -366,6 +381,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _log.error("Exception unregistering MBean '"+ name +"': " + e.getMessage());
             }
         }
+
+        CurrentActor.get().message(ManagementConsoleMessages.MNG_1005());        
     }
 
 }

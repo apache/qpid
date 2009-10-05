@@ -18,28 +18,25 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.subjects;
+package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.rawloggers.SystemOutMessageLogger;
 
-public class MessagesStoreLogSubject extends AbstractLogSubject
+public class StartupRootMessageLogger extends RootMessageLoggerImpl
 {
-
-    /**
-     * LOG FORMAT for the MessagesStoreLogSubject,
-     * Uses a MessageFormat call to insert the requried values according to
-     * these indicies:
-     *
-     * 0 - Virtualhost Name
-     * 1 - Message Store Type
-     */
-    protected static String BINDING_FORMAT = "vh(/{0})/ms({1})";
-
-    /** Create an ExchangeLogSubject that Logs in the following format. */
-    public MessagesStoreLogSubject(VirtualHost vhost, MessageStore store)
+    public StartupRootMessageLogger() throws ConfigurationException
     {
-        setLogStringWithFormat(BINDING_FORMAT, vhost.getName(),
-                               store.getClass().getSimpleName());
+        super(new ServerConfiguration(new PropertiesConfiguration()),
+              new SystemOutMessageLogger());
     }
+
+    @Override
+    public boolean isMessageEnabled(LogActor actor, LogSubject subject)
+    {
+        return true;
+    }
+
 }

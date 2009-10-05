@@ -57,8 +57,12 @@ public class AMQPChannelActorTest extends TestCase
     AMQProtocolSession _session;
     AMQChannel _channel;
 
-    public void setUp() throws ConfigurationException, AMQException
+    public void setUp() throws Exception, AMQException
     {
+        super.setUp();
+        //Highlight that this test will cause a new AR to be created
+        ApplicationRegistry.getInstance();
+
         Configuration config = new PropertiesConfiguration();
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
@@ -84,9 +88,13 @@ public class AMQPChannelActorTest extends TestCase
 
     }
 
-    public void tearDown()
+    public void tearDown() throws Exception
     {
         _rawLogger.clearLogMessages();
+        // Correctly Close the AR we created
+        ApplicationRegistry.remove();
+
+        super.tearDown();
     }
 
     /**

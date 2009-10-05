@@ -34,7 +34,7 @@ public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
         _testVhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().
                 getVirtualHost("test");
 
-        _subject = new MessagesStoreLogSubject(_testVhost, _testVhost.getMessageStore());
+        _subject = new MessageStoreLogSubject(_testVhost, _testVhost.getMessageStore());
     }
 
     /**

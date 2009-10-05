@@ -32,7 +32,7 @@ import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
-import org.apache.qpid.server.logging.actors.TestBlankActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.UnitTestMessageLogger;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -60,6 +60,14 @@ public abstract class AbstractTestLogSubject extends TestCase
         _session = new InternalTestProtocolSession(virtualHost);
     }
 
+    public void tearDown() throws Exception
+    {
+        // Correctly Close the AR that we created above
+        ApplicationRegistry.remove();
+
+        super.tearDown();
+    }
+
     protected List<Object> performLog() throws ConfigurationException
     {
         if (_subject == null)
@@ -73,7 +81,7 @@ public abstract class AbstractTestLogSubject extends TestCase
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, logger);
 
-        LogActor actor = new TestBlankActor(rootLogger);
+        LogActor actor = new TestLogActor(rootLogger);
 
         actor.message(_subject, new LogMessage()
         {

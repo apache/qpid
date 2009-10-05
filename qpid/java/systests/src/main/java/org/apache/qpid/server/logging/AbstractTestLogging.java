@@ -20,13 +20,15 @@
  */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.LogMonitor;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 public class AbstractTestLogging extends QpidTestCase
 {
@@ -37,6 +39,13 @@ public class AbstractTestLogging extends QpidTestCase
     {
         super.setUp();
         _monitor = new LogMonitor(_outputFile);
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        _monitor.close();
+        super.tearDown();
     }
 
     /**
@@ -53,10 +62,9 @@ public class AbstractTestLogging extends QpidTestCase
                      _monitor.findMatches(log).size());
     }
 
-
     protected void validateMessageID(String id, String log)
     {
-        assertEquals("Incorrect message",id, getMessageID(log));
+        assertEquals("Incorrect message", id, getMessageID(log));
     }
 
     protected String getMessageID(String log)
@@ -123,6 +131,7 @@ public class AbstractTestLogging extends QpidTestCase
      * The brackets '[ ]' are not included in the returned String.
      *
      * @param log The log message to process
+     *
      * @return the Subject string or the empty string ("") if the subject can't be identified.
      */
     protected String fromSubject(String log)
@@ -158,6 +167,7 @@ public class AbstractTestLogging extends QpidTestCase
      * The brackets '[ ]' are not included in the returned String.
      *
      * @param log the Log Message
+     *
      * @return the Actor segment or "" if unable to locate '[ ]' section
      */
     protected String fromActor(String log)
@@ -175,6 +185,21 @@ public class AbstractTestLogging extends QpidTestCase
     }
 
     /**
+     * Return the message String from the given message section
+     *
+     * @param log the Message Section
+     *
+     * @return the Message String.
+     */
+    protected String getMessageString(String log)
+    {
+        // Remove the Log ID from the returned String
+        int start = log.indexOf(":") + 1;
+
+        return log.substring(start).trim();
+    }
+
+    /**
      * Given our log message extract the connection ID:
      *
      * The log string will contain the connectionID identified by 'con:'
@@ -189,9 +214,10 @@ public class AbstractTestLogging extends QpidTestCase
      * Integer then return -1.
      *
      * @param log the log String to process
+     *
      * @return the connection ID or -1.
      */
-    protected int extractConnectionID(String log)
+    protected int getConnectionID(String log)
     {
         int conIDStart = log.indexOf("con:") + 4;
         int conIDEnd = log.indexOf("(", conIDStart);
@@ -213,7 +239,9 @@ public class AbstractTestLogging extends QpidTestCase
      * as we know it to be formatted.
      *
      * This starts with the string MESSAGE
+     *
      * @param rawLog the raw log
+     *
      * @return the log we are expecting to be printed without the log4j prefixes
      */
     protected String getLog(String rawLog)
@@ -223,40 +251,70 @@ public class AbstractTestLogging extends QpidTestCase
     }
 
     /**
-       * Given a list of messages that have been pulled out of a log file
-       * Process the results splitting the log statements in to lists based on the
-       * actor's connection ID.
-       *
-       * So for each log entry extract the Connecition ID from the Actor of the log
-       *
-       * Then use that as a key to a HashMap storing the list of log messages for
-       * that connection.
-       *
-       * @param logMessages The list of mixed connection log messages
-       * @return Map indexed by connection id to a list of log messages just for that connection.
-       */
-      protected HashMap<Integer,List<String>> splitResultsOnConnectionID(List<String> logMessages)
-      {
-          HashMap<Integer,List<String>> connectionSplitList = new HashMap<Integer, List<String>>();
+     * Given a list of messages that have been pulled out of a log file
+     * Process the results splitting the log statements in to lists based on the
+     * actor's connection ID.
+     *
+     * So for each log entry extract the Connecition ID from the Actor of the log
+     *
+     * Then use that as a key to a HashMap storing the list of log messages for
+     * that connection.
+     *
+     * @param logMessages The list of mixed connection log messages
+     *
+     * @return Map indexed by connection id to a list of log messages just for that connection.
+     */
+    protected HashMap<Integer, List<String>> splitResultsOnConnectionID(List<String> logMessages)
+    {
+        HashMap<Integer, List<String>> connectionSplitList = new HashMap<Integer, List<String>>();
 
-          for (String log : logMessages)
-          {
-              // Get the connectionID from the Actor in the Message Log.
-              int cID = extractConnectionID(fromActor(getLog(log)));
+        for (String log : logMessages)
+        {
+            // Get the connectionID from the Actor in the Message Log.
+            int cID = getConnectionID(fromActor(getLog(log)));
 
-              List<String> connectionData = connectionSplitList.get(cID);
+            List<String> connectionData = connectionSplitList.get(cID);
 
-              // Create the initial List if we don't have one already
-              if (connectionData == null)
-              {
-                  connectionData = new LinkedList<String>();
-                  connectionSplitList.put(cID, connectionData);
-              }
+            // Create the initial List if we don't have one already
+            if (connectionData == null)
+            {
+                connectionData = new LinkedList<String>();
+                connectionSplitList.put(cID, connectionData);
+            }
 
-              // Store the log
-              connectionData.add(log);
-          }
+            // Store the log
+            connectionData.add(log);
+        }
 
-          return connectionSplitList;
-      }
+        return connectionSplitList;
+    }
+
+    /**
+     * Filter the give result set by the specficifed virtualhost.
+     * This is done using the getSlice to identify the virtualhost (vh) in the
+     * log message
+     *
+     * @param results         full list of logs
+     * @param virtualHostName the virtualhostName to filter on
+     *
+     * @return the list of messages only for that virtualhost
+     */
+    protected List<String> filterResultsByVirtualHost(List<String> results, String virtualHostName)
+    {
+        List<String> filteredResults = new LinkedList<String>();
+        Iterator<String> iterator = results.iterator();
+
+        while (iterator.hasNext())
+        {
+            String log = iterator.next();
+
+            if (AbstractTestLogSubject.getSlice("vh", log).equals(virtualHostName))
+            {
+                filteredResults.add(log);
+            }
+        }
+
+        return filteredResults;
+    }
+
 }

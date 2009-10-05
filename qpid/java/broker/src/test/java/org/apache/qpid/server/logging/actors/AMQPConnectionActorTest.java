@@ -54,17 +54,26 @@ public class AMQPConnectionActorTest extends TestCase
     LogActor _amqpActor;
     UnitTestMessageLogger _rawLogger;
 
-    public void setUp() throws ConfigurationException, AMQException
+    public void setUp() throws Exception, AMQException
     {
+        super.setUp();
+        //Highlight that this test will cause a new AR to be created
+        ApplicationRegistry.getInstance();
+
         Configuration config = new PropertiesConfiguration();
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
         setUpWithConfig(serverConfig);
     }
 
-    public void tearDown()
+    public void tearDown() throws Exception
     {
         _rawLogger.clearLogMessages();
+
+        // Correctly Close the AR we created
+        ApplicationRegistry.remove();
+
+        super.tearDown();        
     }
 
     private void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException

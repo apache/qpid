@@ -40,6 +40,8 @@ import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 
 import java.util.Collection;
@@ -77,7 +79,11 @@ public class TestApplicationRegistry extends ApplicationRegistry
     {
         _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
                                                        new Log4jMessageLogger());
-        
+
+        //Add a Test Actor as a lot of our System Tests reach in to the broker
+        // and manipulate it so the CurrentActor is not set.
+        CurrentActor.set(new TestLogActor(_rootMessageLogger));
+
         Properties users = new Properties();
 
         users.put("guest", "guest");
@@ -137,6 +143,19 @@ public class TestApplicationRegistry extends ApplicationRegistry
         return _messageStore;
     }
 
+    @Override
+    public void close() throws Exception
+    {
+        try
+        {
+            super.close();
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
+    }
+    
 }
 
 

@@ -58,7 +58,8 @@ public class ManagementConsoleTest extends TestCase
     @Override
     protected void tearDown() throws Exception
     {
-        ApplicationRegistry.removeAll();
+        // Correctly Close the AR that we created above
+        ApplicationRegistry.remove();
     }
 
     /**

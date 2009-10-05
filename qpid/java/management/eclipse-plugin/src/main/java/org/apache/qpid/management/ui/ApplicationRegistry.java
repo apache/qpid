@@ -64,6 +64,16 @@ public abstract class ApplicationRegistry
                 PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT));
         imageRegistry.put(Constants.NOTIFICATION_IMAGE,
                 org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/notifications.gif"));
+        imageRegistry.put(Constants.LOGGING_MANAGEMENT_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/logging_management.gif"));
+        imageRegistry.put(Constants.USER_MANAGEMENT_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/user_management.gif"));
+        imageRegistry.put(Constants.CONFIGURATION_MANAGEMENT_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/configuration_management.gif"));
+        imageRegistry.put(Constants.SERVER_INFO_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/server_information.gif"));
+        imageRegistry.put(Constants.VHOST_MANAGER_IMAGE,
+                org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/virtualhost_manager.gif"));
     }
     
     static

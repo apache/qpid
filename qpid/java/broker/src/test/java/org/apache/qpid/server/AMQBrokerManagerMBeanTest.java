@@ -33,6 +33,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
 {
     private QueueRegistry _queueRegistry;
     private ExchangeRegistry _exchangeRegistry;
+    private VirtualHost _vHost;
 
     public void testExchangeOperations() throws Exception
     {
@@ -44,9 +45,8 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange2)) == null);
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) == null);
 
-        VirtualHost vHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
         mbean.createNewExchange(exchange1, "direct", false);
         mbean.createNewExchange(exchange2, "topic", false);
         mbean.createNewExchange(exchange3, "headers", false);
@@ -67,9 +67,8 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     public void testQueueOperations() throws Exception
     {
         String queueName = "testQueue_" + System.currentTimeMillis();
-        VirtualHost vHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
 
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
 
@@ -85,7 +84,15 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     {
         super.setUp();
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-        _queueRegistry = appRegistry.getVirtualHostRegistry().getVirtualHost("test").getQueueRegistry();
-        _exchangeRegistry = appRegistry.getVirtualHostRegistry().getVirtualHost("test").getExchangeRegistry();
+        _vHost = appRegistry.getVirtualHostRegistry().getVirtualHost("test");
+        _queueRegistry = _vHost.getQueueRegistry();
+        _exchangeRegistry = _vHost.getExchangeRegistry();
+    }
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        //Ensure we close the opened Registry
+        ApplicationRegistry.remove();
     }
 }

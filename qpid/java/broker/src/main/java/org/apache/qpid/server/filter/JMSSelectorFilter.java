@@ -53,4 +53,10 @@ public class JMSSelectorFilter implements MessageFilter
     {
         return _selector;
     }
+
+    @Override
+    public String toString()
+    {
+        return "JMSSelector("+_selector+")";
+    }
 }

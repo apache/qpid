@@ -21,7 +21,6 @@ package org.apache.qpid.server.configuration;
 
 
 import junit.framework.TestCase;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
@@ -39,11 +38,22 @@ public class VirtualHostConfigurationTest extends TestCase
 
     @Override
     protected void setUp() throws Exception
-    {   
+    {
+        super.setUp();
+        //Highlight that this test will cause a new AR to be created
+        ApplicationRegistry.getInstance();
         // Fill config file with stuff
         configXml = new XMLConfiguration();
         configXml.setRootElementName("virtualhosts");
         configXml.addProperty("virtualhost(-1).name", "test");
+    }
+
+    public void tearDown() throws Exception
+    {
+        //Correctly close the AR we created
+        ApplicationRegistry.remove();
+
+        super.tearDown();
     }
     
     public void testQueuePriority() throws Exception

@@ -104,6 +104,11 @@ public class Constants
     public final static String OPEN_FOLDER_IMAGE = "OpenFolderImage";
     public final static String MBEAN_IMAGE = "MBeanImage";
     public final static String NOTIFICATION_IMAGE = "NotificationImage";
+    public final static String LOGGING_MANAGEMENT_IMAGE = "LoggingManagementImage";
+    public final static String USER_MANAGEMENT_IMAGE = "UserManagementImage";
+    public final static String CONFIGURATION_MANAGEMENT_IMAGE = "ConfigurationManagementImage";
+    public final static String SERVER_INFO_IMAGE = "ServerInfoImage";
+    public final static String VHOST_MANAGER_IMAGE = "VhostManagerImage";
     
     public final static String FONT_BUTTON = "ButtonFont";
     public final static String FONT_BOLD = "BoldFont";

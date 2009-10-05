@@ -18,16 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.actors;
+package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.logging.RootMessageLogger;
-
-public class TestBlankActor extends AbstractActor
+public class TransientQueueLoggingTest extends DurableQueueLoggingTest
 {
-    public TestBlankActor(RootMessageLogger rootLogger)
+    public void setUp() throws Exception
     {
-        super(rootLogger);
-        _logString = "[Blank]";
+        super.setUp();
+        _durable = false;
     }
 }
-    

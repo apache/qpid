@@ -46,7 +46,7 @@ public class AMQQueueFactoryTest extends TestCase
     public void tearDown()
     {
         assertEquals("Queue was not registered in virtualhost", 1, _queueRegistry.getQueues().size());
-        ApplicationRegistry.remove(1);
+        ApplicationRegistry.remove();
     }
 
 

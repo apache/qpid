@@ -55,11 +55,6 @@ public class MockAMQQueue implements AMQQueue
        _name = new AMQShortString(name);
     }
 
-    public MockAMQQueue()
-    {
-       
-    }
-
     public AMQShortString getName()
     {
         return _name;

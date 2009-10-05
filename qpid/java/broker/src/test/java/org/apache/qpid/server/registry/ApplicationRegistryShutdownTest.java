@@ -22,6 +22,7 @@ package org.apache.qpid.server.registry;
 
 import junit.framework.TestCase;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.AMQException;
 
 import java.security.Security;
 import java.security.Provider;
@@ -37,12 +38,23 @@ import java.util.LinkedList;
 public class ApplicationRegistryShutdownTest extends TestCase
 {
 
-    ApplicationRegistry _registry;
+    IApplicationRegistry _registry;
 
     public void setUp() throws Exception
     {
+        //Highlight that this test will cause a new AR to be created
+        // This must used TestAppRegistry but during the test getInstance()
+        // will be called so we must ensure to do the remove()
         _registry = new TestApplicationRegistry();
     }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        // Correctly Close the AR we created        
+    	ApplicationRegistry.remove();
+    }
+
 
     /**
      * QPID-1399 : Ensure that the Authentiction manager unregisters any SASL providers created during

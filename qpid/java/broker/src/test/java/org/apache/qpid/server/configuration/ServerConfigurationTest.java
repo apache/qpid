@@ -49,13 +49,17 @@ public class ServerConfigurationTest extends TestCase
     @Override
     public void setUp()
     {
+        //Highlight that this test will cause a new AR to be created
+        ApplicationRegistry.getInstance();
+
         _config = new XMLConfiguration();
     }
     
     @Override
-    public void tearDown()
+    public void tearDown() throws Exception
     {
-        ApplicationRegistry.removeAll();
+        //Correctly Close the AR we created
+        ApplicationRegistry.remove();
     }
 
     public void testSetJMXManagementPort() throws ConfigurationException

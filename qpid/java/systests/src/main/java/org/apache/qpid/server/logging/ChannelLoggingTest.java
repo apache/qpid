@@ -119,6 +119,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last channel message should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow Off
@@ -128,7 +130,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1002", log);
-        assertTrue("Message should be Flow Stopped", fromMessage(log).endsWith("Flow Stopped"));
+        assertEquals("Message should be Flow Stopped", "Flow Stopped", getMessageString(fromMessage(log)));
 
     }
 
@@ -171,6 +173,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last two channel messages should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
@@ -181,7 +185,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1002", log);
-        assertTrue("Message should be Flow Started", fromMessage(log).endsWith("Flow Started"));
+        assertEquals("Message should be Flow Started", "Flow Started", getMessageString(fromMessage(log)));
 
     }
 
@@ -218,6 +222,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last two channel messages should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
@@ -228,7 +234,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1003", log);
-        assertTrue("Message should be Close:" + fromMessage(log), fromMessage(log).endsWith("Close"));
+        assertEquals("Message should be Close", "Close",getMessageString(fromMessage(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromActor(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromSubject(log)));
     }
@@ -263,6 +269,8 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         List<String> results = _monitor.findMatches(CHANNEL_PREFIX);
 
+        assertTrue("No CHN messages logged", results.size() > 0);
+
         // The last two channel messages should be:
         //
         // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
@@ -273,7 +281,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         String log = getLog(results.get(resultSize - 1));
 
         validateMessageID("CHN-1003", log);
-        assertTrue("Message should be Close:" + fromMessage(getLog(log)), fromMessage(log).endsWith("Close"));
+        assertEquals("Message should be Close", "Close",getMessageString(fromMessage(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromActor(log)));
         assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromSubject(log)));
     }

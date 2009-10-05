@@ -29,6 +29,12 @@ import org.apache.qpid.server.flow.CreditCreditManager;
 import org.apache.qpid.server.flow.WindowCreditManager;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.SubscriptionActor;
+import org.apache.qpid.server.logging.messages.SubscriptionMessages;
+import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.transport.ServerSession;
@@ -83,6 +89,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private ConcurrentHashMap<Integer, QueueEntry> _sentMap = new ConcurrentHashMap<Integer, QueueEntry>();
     private static final Struct[] EMPTY_STRUCT_ARRAY = new Struct[0];
 
+    private LogSubject _logSubject;
+    private LogActor _logActor;
+
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
                              MessageAcquireMode acquireMode,
@@ -100,6 +109,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _creditManager.addStateListener(this);
         _state.set(_creditManager.hasCredit() ? State.ACTIVE : State.SUSPENDED);
 
+        _logSubject = new SubscriptionLogSubject(this);
+        _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
+
     }
 
     public AMQQueue getQueue()
@@ -112,7 +124,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _owningState;
     }
 
-    public void setQueue(AMQQueue queue)
+    public void setQueue(AMQQueue queue, boolean exclusive)
     {
         if(getQueue() != null)
         {
@@ -580,5 +592,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         return _subscriptionID;
     }
+
+    public LogActor getLogActor()
+    {
+        return _logActor;
+    }
+
 
 }

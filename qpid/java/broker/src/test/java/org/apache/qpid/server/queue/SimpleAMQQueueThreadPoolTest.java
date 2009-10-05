@@ -36,7 +36,7 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
     public void test() throws AMQException
     {
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
-        VirtualHost test = ApplicationRegistry.getInstance(1).getVirtualHostRegistry().getVirtualHost("test");
+        VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
 
         try
         {
@@ -54,7 +54,7 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
         }
         finally
         {
-            ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove();
         }       
     }
 }

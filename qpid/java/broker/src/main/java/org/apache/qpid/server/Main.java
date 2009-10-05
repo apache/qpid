@@ -20,14 +20,6 @@
  */
 package org.apache.qpid.server;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-
-import javax.management.NotCompliantMBeanException;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -54,7 +46,11 @@ import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.information.management.ServerInformationMBean;
+import org.apache.qpid.server.logging.StartupRootMessageLogger;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -62,6 +58,13 @@ import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.transport.QpidAcceptor;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 /**
  * Main entry point for AMQPD.
@@ -75,7 +78,7 @@ public class Main
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
-    private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
+    public static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     private static final int IPV4_ADDRESS_LENGTH = 4;
 
@@ -197,7 +200,9 @@ public class Main
         {
             try
             {
+                CurrentActor.set(new BrokerActor(new StartupRootMessageLogger()));
                 startup();
+                CurrentActor.remove();
             }
             catch (InitException e)
             {
@@ -239,7 +244,7 @@ public class Main
         }
         else
         {
-            System.out.println("Using configuration file " + configFile.getAbsolutePath());
+            CurrentActor.get().message(BrokerMessages.BRK_1006(configFile.getAbsolutePath()));
         }
 
         String logConfig = commandLine.getOptionValue("l");
@@ -274,75 +279,94 @@ public class Main
         updateManagementPort(serverConfig, commandLine.getOptionValue("m"));
 
         ApplicationRegistry.initialise(config);
-        
-        configureLoggingManagementMBean(logConfigFile, logWatchTime);
 
-        ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
-        configMBean.register();
-        
-        ServerInformationMBean sysInfoMBean = 
-            new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
-        sysInfoMBean.register();
-        
-        //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
-        // that are causing the broker build to pick up the wrong properties file and hence say
-        // Starting Qpid Client 
-        _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
-                           + " build: " + QpidProperties.getBuildVersion());
+        // We have already loaded the BrokerMessages class by this point so we
+        // need to refresh the locale setting incase we had a different value in
+        // the configuration.
+        BrokerMessages.reload();
 
-        ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
-
-        // the MINA default is currently to use the pooled allocator although this may change in future
-        // once more testing of the performance of the simple allocator has been done
-        if (!serverConfig.getEnablePooledAllocator())
+        // AR.initialise() sets its own actor so we now need to set the actor
+        // for the remainder of the startup        
+        CurrentActor.set(new BrokerActor(config.getRootMessageLogger()));
+        try
         {
-            ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
+            configureLoggingManagementMBean(logConfigFile, logWatchTime);
+
+            ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
+            configMBean.register();
+
+            ServerInformationMBean sysInfoMBean =
+                    new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
+            sysInfoMBean.register();
+
+            //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
+            // that are causing the broker build to pick up the wrong properties file and hence say
+            // Starting Qpid Client
+            _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
+                               + " build: " + QpidProperties.getBuildVersion());
+
+            ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
+
+            // the MINA default is currently to use the pooled allocator although this may change in future
+            // once more testing of the performance of the simple allocator has been done
+            if (!serverConfig.getEnablePooledAllocator())
+            {
+                ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
+            }
+
+            if (serverConfig.getUseBiasedWrites())
+            {
+                System.setProperty("org.apache.qpid.use_write_biased_pool", "true");
+            }
+
+            int port = serverConfig.getPort();
+
+            String portStr = commandLine.getOptionValue("p");
+            if (portStr != null)
+            {
+                try
+                {
+                    port = Integer.parseInt(portStr);
+                }
+                catch (NumberFormatException e)
+                {
+                    throw new InitException("Invalid port: " + portStr, e);
+                }
+            }
+
+            bind(port, serverConfig);
+
+            // TODO - Fix to use a proper binding
+            int port_0_10 = port + 1;
+
+            IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
+    
+            final ConnectionDelegate delegate =
+                    new org.apache.qpid.server.transport.ServerConnectionDelegate(appRegistry, "localhost");
+    
+    
+            ConnectionBinding cb = new ConnectionBinding()
+            {
+                public Connection connection()
+                {
+                    ServerConnection conn = new ServerConnection();
+                    conn.setConnectionDelegate(delegate);
+                    return conn;
+                }
+            };
+    
+            org.apache.qpid.transport.network.io.IoAcceptor ioa = new org.apache.qpid.transport.network.io.IoAcceptor
+                ("0.0.0.0", port_0_10, cb);
+            ioa.start();
+        }
+        finally
+        {
+            // Startup is complete so remove the AR initialised Startup actor
+            CurrentActor.remove();
         }
 
-        if(serverConfig.getUseBiasedWrites())
-        {
-            System.setProperty("org.apache.qpid.use_write_biased_pool","true");
-        }
-
-        int port = serverConfig.getPort();
-
-        String portStr = commandLine.getOptionValue("p");
-        if (portStr != null)
-        {
-            try
-            {
-                port = Integer.parseInt(portStr);
-            }
-            catch (NumberFormatException e)
-            {
-                throw new InitException("Invalid port: " + portStr, e);
-            }
-        }
-        
-        bind(port, serverConfig);
 
 
-        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-
-        final ConnectionDelegate delegate =
-                new org.apache.qpid.server.transport.ServerConnectionDelegate(appRegistry, "localhost");
-
-
-        ConnectionBinding cb = new ConnectionBinding()
-        {
-            public Connection connection()
-            {
-                ServerConnection conn = new ServerConnection();
-                conn.setConnectionDelegate(delegate);
-                return conn;
-            }
-        };
-
-        int port_0_10 = port + 1;
-
-        org.apache.qpid.transport.network.io.IoAcceptor ioa = new org.apache.qpid.transport.network.io.IoAcceptor
-            ("0.0.0.0", port_0_10, cb);
-        ioa.start();
     }
 
     /**
@@ -415,7 +439,7 @@ public class Main
                     bindAddress = new InetSocketAddress(InetAddress.getByAddress(parseIP(bindAddr)), port);
                 }
 
-                bind(acceptor, bindAddress, handler, sconfig);
+                bind(new QpidAcceptor(acceptor,"TCP"), bindAddress, handler, sconfig);
 
                 //fixme  qpid.AMQP should be using qpidproperties to get value
                 _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
@@ -427,7 +451,7 @@ public class Main
                 try
                 {
 
-                    bind(acceptor, new InetSocketAddress(config.getSSLPort()), handler, sconfig);
+                    bind(new QpidAcceptor(acceptor, "TCP/SSL"), new InetSocketAddress(config.getSSLPort()), handler, sconfig);
 
                     //fixme  qpid.AMQP should be using qpidproperties to get value
                     _brokerLogger.info("Qpid.AMQP listening on SSL port " + config.getSSLPort());
@@ -442,6 +466,9 @@ public class Main
             //fixme  qpid.AMQP should be using qpidproperties to get value
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
+
+            CurrentActor.get().message(BrokerMessages.BRK_1004());
+
         }
         catch (Exception e)
         {
@@ -461,9 +488,11 @@ public class Main
      *
      * @throws IOException from the acceptor.bind command
      */
-    private void bind(IoAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
+    private void bind(QpidAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
     {
-        acceptor.bind(bindAddress, handler, sconfig);
+        acceptor.getIoAcceptor().bind(bindAddress, handler, sconfig);
+
+        CurrentActor.get().message(BrokerMessages.BRK_1002(acceptor.toString(), bindAddress.getPort()));
 
         ApplicationRegistry.getInstance().addAcceptor(bindAddress, acceptor);
     }
@@ -506,6 +535,7 @@ public class Main
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
+            CurrentActor.get().message(BrokerMessages.BRK_1007(logConfigFile.getAbsolutePath()));            
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {
