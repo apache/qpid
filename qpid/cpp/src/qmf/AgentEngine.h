@@ -101,7 +101,7 @@ namespace qmf {
          *@param item The Message structure describing the message to be produced.
          *@return true if the Message is valid, false if there are no messages to send.
          */
-        bool getXmtMessage(Message& item);
+        bool getXmtMessage(Message& item) const;
 
         /**
          * Remove and discard one message from the head of the transmit queue.
@@ -113,7 +113,7 @@ namespace qmf {
          *@param event The event iff the return value is true
          *@return true if event is valid, false if there are no events to process
          */
-        bool getEvent(AgentEvent& event);
+        bool getEvent(AgentEvent& event) const;
 
         /**
          * Remove and discard one event from the head of the event queue.
@@ -182,7 +182,7 @@ namespace qmf {
          *@return The objectId of the managed object.
          */
         const ObjectId* addObject(Object& obj, uint64_t persistId);
-        const ObjectId* addObject(Object& obj, uint32_t persistIdLo, uint32_t persistIdHi);
+        //        const ObjectId* addObject(Object& obj, uint32_t persistIdLo, uint32_t persistIdHi);
 
         /**
          * Allocate an object-id for an object that will be managed by the application.

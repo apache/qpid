@@ -20,6 +20,8 @@
 #include "qmf/SchemaImpl.h"
 #include <qpid/framing/Buffer.h>
 #include <qpid/framing/FieldTable.h>
+#include <qpid/framing/Uuid.h>
+#include <string.h>
 #include <string>
 #include <vector>
 
@@ -27,6 +29,7 @@ using namespace std;
 using namespace qmf;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
+using qpid::framing::Uuid;
 
 SchemaHash::SchemaHash()
 {
@@ -34,7 +37,7 @@ SchemaHash::SchemaHash()
         hash[idx] = 0x5A;
 }
 
-void SchemaHash::encode(Buffer& buffer)
+void SchemaHash::encode(Buffer& buffer) const
 {
     buffer.putBin128(hash);
 }
@@ -61,6 +64,21 @@ void SchemaHash::update(const char* data, uint32_t len)
         *first = *first << 1;
         *first = *first ^ *second;
     }
+}
+
+bool SchemaHash::operator==(const SchemaHash& other) const
+{
+    return ::memcmp(&hash, &other.hash, 16) == 0;
+}
+
+bool SchemaHash::operator<(const SchemaHash& other) const
+{
+    return ::memcmp(&hash, &other.hash, 16) < 0;
+}
+
+bool SchemaHash::operator>(const SchemaHash& other) const
+{
+    return ::memcmp(&hash, &other.hash, 16) > 0;
 }
 
 SchemaArgumentImpl::SchemaArgumentImpl(Buffer& buffer) : envelope(new SchemaArgument(this))
@@ -240,15 +258,59 @@ void SchemaStatisticImpl::updateHash(SchemaHash& hash) const
     hash.update(description);
 }
 
-SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) : envelope(new SchemaObjectClass(this)), hasHash(true)
+SchemaClassKeyImpl::SchemaClassKeyImpl(const string& p, const string& n, const SchemaHash& h) :
+    envelope(new SchemaClassKey(this)), package(p), name(n), hash(h) {}
+
+SchemaClassKeyImpl::SchemaClassKeyImpl(Buffer& buffer) :
+    envelope(new SchemaClassKey(this)), package(packageContainer), name(nameContainer), hash(hashContainer)
+{
+    buffer.getShortString(packageContainer);
+    buffer.getShortString(nameContainer);
+    hashContainer.decode(buffer);
+}    
+
+void SchemaClassKeyImpl::encode(Buffer& buffer) const
+{
+    buffer.putShortString(package);
+    buffer.putShortString(name);
+    hash.encode(buffer);
+}
+
+bool SchemaClassKeyImpl::operator==(const SchemaClassKeyImpl& other) const
+{
+    return package == other.package &&
+        name == other.name &&
+        hash == other.hash;
+}
+
+bool SchemaClassKeyImpl::operator<(const SchemaClassKeyImpl& other) const
+{
+    if (package < other.package) return true;
+    if (package > other.package) return false;
+    if (name < other.name) return true;
+    if (name > other.name) return false;
+    return hash < other.hash;
+}
+
+string SchemaClassKeyImpl::str() const
+{
+    Uuid printableHash(hash.get());
+    stringstream str;
+    str << package << ":" << name << "(" << printableHash << ")";
+    return str.str();
+}
+
+SchemaObjectClassImpl::SchemaObjectClassImpl(Buffer& buffer) :
+    envelope(new SchemaObjectClass(this)), hasHash(true), classKey(package, name, hash)
 {
     buffer.getShortString(package);
     buffer.getShortString(name);
     hash.decode(buffer);
 
-    uint16_t propCount   = buffer.getShort();
-    uint16_t statCount   = buffer.getShort();
-    uint16_t methodCount = buffer.getShort();
+    /*uint8_t hasParentClass =*/ buffer.getOctet(); // TODO: Parse parent-class indicator
+    uint16_t propCount     = buffer.getShort();
+    uint16_t statCount     = buffer.getShort();
+    uint16_t methodCount   = buffer.getShort();
 
     for (uint16_t idx = 0; idx < propCount; idx++) {
         SchemaPropertyImpl* property = new SchemaPropertyImpl(buffer);
@@ -288,7 +350,7 @@ void SchemaObjectClassImpl::encode(Buffer& buffer) const
         (*iter)->encode(buffer);
 }
 
-const uint8_t* SchemaObjectClassImpl::getHash() const
+const SchemaClassKey* SchemaObjectClassImpl::getClassKey() const
 {
     if (!hasHash) {
         hasHash = true;
@@ -305,7 +367,7 @@ const uint8_t* SchemaObjectClassImpl::getHash() const
             (*iter)->updateHash(hash);
     }
 
-    return hash.get();
+    return classKey.envelope;
 }
 
 void SchemaObjectClassImpl::addProperty(const SchemaProperty& property)
@@ -353,13 +415,15 @@ const SchemaMethod* SchemaObjectClassImpl::getMethod(int idx) const
     return 0;
 }
 
-SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) : envelope(new SchemaEventClass(this)), hasHash(true)
+SchemaEventClassImpl::SchemaEventClassImpl(Buffer& buffer) :
+    envelope(new SchemaEventClass(this)), hasHash(true), classKey(package, name, hash)
 {
     buffer.getShortString(package);
     buffer.getShortString(name);
     hash.decode(buffer);
+    buffer.putOctet(0); // No parent class
 
-    uint16_t argCount   = buffer.getShort();
+    uint16_t argCount = buffer.getShort();
 
     for (uint16_t idx = 0; idx < argCount; idx++) {
         SchemaArgumentImpl* argument = new SchemaArgumentImpl(buffer);
@@ -380,7 +444,7 @@ void SchemaEventClassImpl::encode(Buffer& buffer) const
         (*iter)->encode(buffer);
 }
 
-const uint8_t* SchemaEventClassImpl::getHash() const
+const SchemaClassKey* SchemaEventClassImpl::getClassKey() const
 {
     if (!hasHash) {
         hasHash = true;
@@ -390,7 +454,7 @@ const uint8_t* SchemaEventClassImpl::getHash() const
              iter != arguments.end(); iter++)
             (*iter)->updateHash(hash);
     }
-    return hash.get();
+    return classKey.envelope;
 }
 
 void SchemaEventClassImpl::addArgument(const SchemaArgument& argument)
@@ -408,334 +472,79 @@ const SchemaArgument* SchemaEventClassImpl::getArgument(int idx) const
     return 0;
 }
 
+
 //==================================================================
 // Wrappers
 //==================================================================
 
-SchemaArgument::SchemaArgument(const char* name, Typecode typecode)
-{
-    impl = new SchemaArgumentImpl(this, name, typecode);
-}
-
+SchemaArgument::SchemaArgument(const char* name, Typecode typecode) { impl = new SchemaArgumentImpl(this, name, typecode); }
 SchemaArgument::SchemaArgument(SchemaArgumentImpl* i) : impl(i) {}
-
-SchemaArgument::~SchemaArgument()
-{
-    delete impl;
-}
-
-void SchemaArgument::setDirection(Direction dir)
-{
-    impl->setDirection(dir);
-}
-
-void SchemaArgument::setUnit(const char* val)
-{
-    impl->setUnit(val);
-}
-
-void SchemaArgument::setDesc(const char* desc)
-{
-    impl->setDesc(desc);
-}
-
-const char* SchemaArgument::getName() const
-{
-    return impl->getName().c_str();
-}
-
-Typecode SchemaArgument::getType() const
-{
-    return impl->getType();
-}
-
-Direction SchemaArgument::getDirection() const
-{
-    return impl->getDirection();
-}
-
-const char* SchemaArgument::getUnit() const
-{
-    return impl->getUnit().c_str();
-}
-
-const char* SchemaArgument::getDesc() const
-{
-    return impl->getDesc().c_str();
-}
-
-SchemaMethod::SchemaMethod(const char* name)
-{
-    impl = new SchemaMethodImpl(this, name);
-}
-
+SchemaArgument::~SchemaArgument() { delete impl; }
+void SchemaArgument::setDirection(Direction dir) { impl->setDirection(dir); }
+void SchemaArgument::setUnit(const char* val) { impl->setUnit(val); }
+void SchemaArgument::setDesc(const char* desc) { impl->setDesc(desc); }
+const char* SchemaArgument::getName() const { return impl->getName().c_str(); }
+Typecode SchemaArgument::getType() const { return impl->getType(); }
+Direction SchemaArgument::getDirection() const { return impl->getDirection(); }
+const char* SchemaArgument::getUnit() const { return impl->getUnit().c_str(); }
+const char* SchemaArgument::getDesc() const { return impl->getDesc().c_str(); }
+SchemaMethod::SchemaMethod(const char* name) { impl = new SchemaMethodImpl(this, name); }
 SchemaMethod::SchemaMethod(SchemaMethodImpl* i) : impl(i) {}
-
-SchemaMethod::~SchemaMethod()
-{
-    delete impl;
-}
-
-void SchemaMethod::addArgument(const SchemaArgument& argument)
-{
-    impl->addArgument(argument);
-}
-
-void SchemaMethod::setDesc(const char* desc)
-{
-    impl->setDesc(desc);
-}
-
-const char* SchemaMethod::getName() const
-{
-    return impl->getName().c_str();
-}
-
-const char* SchemaMethod::getDesc() const
-{
-    return impl->getDesc().c_str();
-}
-
-int SchemaMethod::getArgumentCount() const
-{
-    return impl->getArgumentCount();
-}
-
-const SchemaArgument* SchemaMethod::getArgument(int idx) const
-{
-    return impl->getArgument(idx);
-}
-
-SchemaProperty::SchemaProperty(const char* name, Typecode typecode)
-{
-    impl = new SchemaPropertyImpl(this, name, typecode);
-}
-
+SchemaMethod::~SchemaMethod() { delete impl; }
+void SchemaMethod::addArgument(const SchemaArgument& argument) { impl->addArgument(argument); }
+void SchemaMethod::setDesc(const char* desc) { impl->setDesc(desc); }
+const char* SchemaMethod::getName() const { return impl->getName().c_str(); }
+const char* SchemaMethod::getDesc() const { return impl->getDesc().c_str(); }
+int SchemaMethod::getArgumentCount() const { return impl->getArgumentCount(); }
+const SchemaArgument* SchemaMethod::getArgument(int idx) const { return impl->getArgument(idx); }
+SchemaProperty::SchemaProperty(const char* name, Typecode typecode) { impl = new SchemaPropertyImpl(this, name, typecode); }
 SchemaProperty::SchemaProperty(SchemaPropertyImpl* i) : impl(i) {}
-
-SchemaProperty::~SchemaProperty()
-{
-    delete impl;
-}
-
-void SchemaProperty::setAccess(Access access)
-{
-    impl->setAccess(access);
-}
-
-void SchemaProperty::setIndex(bool val)
-{
-    impl->setIndex(val);
-}
-
-void SchemaProperty::setOptional(bool val)
-{
-    impl->setOptional(val);
-}
-
-void SchemaProperty::setUnit(const char* val)
-{
-    impl->setUnit(val);
-}
-
-void SchemaProperty::setDesc(const char* desc)
-{
-    impl->setDesc(desc);
-}
-
-const char* SchemaProperty::getName() const
-{
-    return impl->getName().c_str();
-}
-
-Typecode SchemaProperty::getType() const
-{
-    return impl->getType();
-}
-
-Access SchemaProperty::getAccess() const
-{
-    return impl->getAccess();
-}
-
-bool SchemaProperty::isIndex() const
-{
-    return impl->isIndex();
-}
-
-bool SchemaProperty::isOptional() const
-{
-    return impl->isOptional();
-}
-
-const char* SchemaProperty::getUnit() const
-{
-    return impl->getUnit().c_str();
-}
-
-const char* SchemaProperty::getDesc() const
-{
-    return impl->getDesc().c_str();
-}
-
-SchemaStatistic::SchemaStatistic(const char* name, Typecode typecode)
-{
-    impl = new SchemaStatisticImpl(this, name, typecode);
-}
-
+SchemaProperty::~SchemaProperty() { delete impl; }
+void SchemaProperty::setAccess(Access access) { impl->setAccess(access); }
+void SchemaProperty::setIndex(bool val) { impl->setIndex(val); }
+void SchemaProperty::setOptional(bool val) { impl->setOptional(val); }
+void SchemaProperty::setUnit(const char* val) { impl->setUnit(val); }
+void SchemaProperty::setDesc(const char* desc) { impl->setDesc(desc); }
+const char* SchemaProperty::getName() const { return impl->getName().c_str(); }
+Typecode SchemaProperty::getType() const { return impl->getType(); }
+Access SchemaProperty::getAccess() const { return impl->getAccess(); }
+bool SchemaProperty::isIndex() const { return impl->isIndex(); }
+bool SchemaProperty::isOptional() const { return impl->isOptional(); }
+const char* SchemaProperty::getUnit() const { return impl->getUnit().c_str(); }
+const char* SchemaProperty::getDesc() const { return impl->getDesc().c_str(); }
+SchemaStatistic::SchemaStatistic(const char* name, Typecode typecode) { impl = new SchemaStatisticImpl(this, name, typecode); }
 SchemaStatistic::SchemaStatistic(SchemaStatisticImpl* i) : impl(i) {}
-
-SchemaStatistic::~SchemaStatistic()
-{
-    delete impl;
-}
-
-void SchemaStatistic::setUnit(const char* val)
-{
-    impl->setUnit(val);
-}
-
-void SchemaStatistic::setDesc(const char* desc)
-{
-    impl->setDesc(desc);
-}
-
-const char* SchemaStatistic::getName() const
-{
-    return impl->getName().c_str();
-}
-
-Typecode SchemaStatistic::getType() const
-{
-    return impl->getType();
-}
-
-const char* SchemaStatistic::getUnit() const
-{
-    return impl->getUnit().c_str();
-}
-
-const char* SchemaStatistic::getDesc() const
-{
-    return impl->getDesc().c_str();
-}
-
-SchemaObjectClass::SchemaObjectClass(const char* package, const char* name)
-{
-    impl = new SchemaObjectClassImpl(this, package, name);
-}
-
+SchemaStatistic::~SchemaStatistic() { delete impl; }
+void SchemaStatistic::setUnit(const char* val) { impl->setUnit(val); }
+void SchemaStatistic::setDesc(const char* desc) { impl->setDesc(desc); }
+const char* SchemaStatistic::getName() const { return impl->getName().c_str(); }
+Typecode SchemaStatistic::getType() const { return impl->getType(); }
+const char* SchemaStatistic::getUnit() const { return impl->getUnit().c_str(); }
+const char* SchemaStatistic::getDesc() const { return impl->getDesc().c_str(); }
+SchemaClassKey::SchemaClassKey(SchemaClassKeyImpl* i) : impl(i) {}
+SchemaClassKey::~SchemaClassKey() { delete impl; }
+const char* SchemaClassKey::getPackageName() const { return impl->getPackageName().c_str(); }
+const char* SchemaClassKey::getClassName() const { return impl->getClassName().c_str(); }
+const uint8_t* SchemaClassKey::getHash() const { return impl->getHash(); }
+SchemaObjectClass::SchemaObjectClass(const char* package, const char* name) { impl = new SchemaObjectClassImpl(this, package, name); }
 SchemaObjectClass::SchemaObjectClass(SchemaObjectClassImpl* i) : impl(i) {}
-
-SchemaObjectClass::~SchemaObjectClass()
-{
-    delete impl;
-}
-
-void SchemaObjectClass::addProperty(const SchemaProperty& property)
-{
-    impl->addProperty(property);
-}
-
-void SchemaObjectClass::addStatistic(const SchemaStatistic& statistic)
-{
-    impl->addStatistic(statistic);
-}
-
-void SchemaObjectClass::addMethod(const SchemaMethod& method)
-{
-    impl->addMethod(method);
-}
-
-const char* SchemaObjectClass::getPackage() const
-{
-    return impl->getPackage().c_str();
-}
-
-const char* SchemaObjectClass::getName() const
-{
-    return impl->getName().c_str();
-}
-
-const uint8_t* SchemaObjectClass::getHash() const
-{
-    return impl->getHash();
-}
-
-int SchemaObjectClass::getPropertyCount() const
-{
-    return impl->getPropertyCount();
-}
-
-int SchemaObjectClass::getStatisticCount() const
-{
-    return impl->getStatisticCount();
-}
-
-int SchemaObjectClass::getMethodCount() const
-{
-    return impl->getMethodCount();
-}
-
-const SchemaProperty* SchemaObjectClass::getProperty(int idx) const
-{
-    return impl->getProperty(idx);
-}
-
-const SchemaStatistic* SchemaObjectClass::getStatistic(int idx) const
-{
-    return impl->getStatistic(idx);
-}
-
-const SchemaMethod* SchemaObjectClass::getMethod(int idx) const
-{
-    return impl->getMethod(idx);
-}
-
-SchemaEventClass::SchemaEventClass(const char* package, const char* name)
-{
-    impl = new SchemaEventClassImpl(this, package, name);
-}
-
+SchemaObjectClass::~SchemaObjectClass() { delete impl; }
+void SchemaObjectClass::addProperty(const SchemaProperty& property) { impl->addProperty(property); }
+void SchemaObjectClass::addStatistic(const SchemaStatistic& statistic) { impl->addStatistic(statistic); }
+void SchemaObjectClass::addMethod(const SchemaMethod& method) { impl->addMethod(method); }
+const SchemaClassKey* SchemaObjectClass::getClassKey() const { return impl->getClassKey(); }
+int SchemaObjectClass::getPropertyCount() const { return impl->getPropertyCount(); }
+int SchemaObjectClass::getStatisticCount() const { return impl->getStatisticCount(); }
+int SchemaObjectClass::getMethodCount() const { return impl->getMethodCount(); }
+const SchemaProperty* SchemaObjectClass::getProperty(int idx) const { return impl->getProperty(idx); }
+const SchemaStatistic* SchemaObjectClass::getStatistic(int idx) const { return impl->getStatistic(idx); }
+const SchemaMethod* SchemaObjectClass::getMethod(int idx) const { return impl->getMethod(idx); }
+SchemaEventClass::SchemaEventClass(const char* package, const char* name) { impl = new SchemaEventClassImpl(this, package, name); }
 SchemaEventClass::SchemaEventClass(SchemaEventClassImpl* i) : impl(i) {}
-
-SchemaEventClass::~SchemaEventClass()
-{
-    delete impl;
-}
-
-void SchemaEventClass::addArgument(const SchemaArgument& argument)
-{
-    impl->addArgument(argument);
-}
-
-void SchemaEventClass::setDesc(const char* desc)
-{
-    impl->setDesc(desc);
-}
-
-const char* SchemaEventClass::getPackage() const
-{
-    return impl->getPackage().c_str();
-}
-
-const char* SchemaEventClass::getName() const
-{
-    return impl->getName().c_str();
-}
-
-const uint8_t* SchemaEventClass::getHash() const
-{
-    return impl->getHash();
-}
-
-int SchemaEventClass::getArgumentCount() const
-{
-    return impl->getArgumentCount();
-}
-
-const SchemaArgument* SchemaEventClass::getArgument(int idx) const
-{
-    return impl->getArgument(idx);
-}
+SchemaEventClass::~SchemaEventClass() { delete impl; }
+void SchemaEventClass::addArgument(const SchemaArgument& argument) { impl->addArgument(argument); }
+void SchemaEventClass::setDesc(const char* desc) { impl->setDesc(desc); }
+const SchemaClassKey* SchemaEventClass::getClassKey() const { return impl->getClassKey(); }
+int SchemaEventClass::getArgumentCount() const { return impl->getArgumentCount(); }
+const SchemaArgument* SchemaEventClass::getArgument(int idx) const { return impl->getArgument(idx); }
 

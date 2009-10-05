@@ -158,18 +158,6 @@ public class LogMonitorTest extends TestCase
         validateLogDoesNotContainsMessage(_monitor, notLogged);
     }
 
-    public void testWaitForMessage_Found() throws IOException
-    {
-        String message = getName() + ": Test Message";
-
-        long TIME_OUT = 2000;
-
-        logMessageWithDelay(message, TIME_OUT / 2);
-
-        assertTrue("Message was not logged ",
-                    _monitor.waitForMessage(message, TIME_OUT));
-    }
-
     public void testWaitForMessage_Timeout() throws IOException
     {
         String message = getName() + ": Test Message";

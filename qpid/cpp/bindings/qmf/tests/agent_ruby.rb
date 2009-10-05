@@ -53,7 +53,10 @@ class Model
     method = Qmf::SchemaMethod.new("create_child", :desc => "Create a new child object")
     method.add_argument(Qmf::SchemaArgument.new("child_name", Qmf::TYPE_LSTR, :dir => Qmf::DIR_IN))
     method.add_argument(Qmf::SchemaArgument.new("child_ref", Qmf::TYPE_REF, :dir => Qmf::DIR_OUT))
+    @parent_class.add_method(method)
 
+    method = Qmf::SchemaMethod.new("probe_userid", :desc => "Return the user-id for this method call")
+    method.add_argument(Qmf::SchemaArgument.new("userid", Qmf::TYPE_SSTR, :dir => Qmf::DIR_OUT))
     @parent_class.add_method(method)
 
     @child_class = Qmf::SchemaObjectClass.new("org.apache.qpid.qmf", "child")
@@ -69,8 +72,7 @@ end
 
 class App < Qmf::AgentHandler
   def get_query(context, query, userId)
-#    puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id.object_num_low if query.object_id}"
-    #@parent.inc_attr("queryCount")
+#   puts "Query: user=#{userId} context=#{context} class=#{query.class_name} object_num=#{query.object_id.object_num_low if query.object_id}"
     if query.class_name == 'parent'
         @agent.query_response(context, @parent)
     elsif query.object_id == @parent_oid
@@ -90,37 +92,37 @@ class App < Qmf::AgentHandler
       retText = "OK"
 
       if args['test'] == "big"
-        @parent.set_attr("uint64val", 0x9494949449494949)
-        @parent.set_attr("uint32val", 0xa5a55a5a)
-        @parent.set_attr("uint16val", 0xb66b)
-        @parent.set_attr("uint8val",  0xc7)
+        @parent.uint64val = 0x9494949449494949
+        @parent.uint32val = 0xa5a55a5a
+        @parent.uint16val = 0xb66b
+        @parent.uint8val  =  0xc7
 
-        @parent.set_attr("int64val", 1000000000000000000)
-        @parent.set_attr("int32val", 1000000000)
-        @parent.set_attr("int16val", 10000)
-        @parent.set_attr("int8val",  100)
+        @parent.int64val = 1000000000000000000
+        @parent.int32val = 1000000000
+        @parent.int16val = 10000
+        @parent.int8val  = 100
 
       elsif args['test'] == "small"
-        @parent.set_attr("uint64val", 4)
-        @parent.set_attr("uint32val", 5)
-        @parent.set_attr("uint16val", 6)
-        @parent.set_attr("uint8val",  7)
+        @parent.uint64val = 4
+        @parent.uint32val = 5
+        @parent.uint16val = 6
+        @parent.uint8val  = 7
 
-        @parent.set_attr("int64val", 8)
-        @parent.set_attr("int32val", 9)
-        @parent.set_attr("int16val", 10)
-        @parent.set_attr("int8val",  11)
+        @parent.int64val = 8
+        @parent.int32val = 9
+        @parent.int16val = 10
+        @parent.int8val  = 11
 
       elsif args['test'] == "negative"
-        @parent.set_attr("uint64val", 0)
-        @parent.set_attr("uint32val", 0)
-        @parent.set_attr("uint16val", 0)
-        @parent.set_attr("uint8val",  0)
+        @parent.uint64val = 0
+        @parent.uint32val = 0
+        @parent.uint16val = 0
+        @parent.uint8val  = 0
 
-        @parent.set_attr("int64val", -10000000000)
-        @parent.set_attr("int32val", -100000)
-        @parent.set_attr("int16val", -1000)
-        @parent.set_attr("int8val",  -100)
+        @parent.int64val = -10000000000
+        @parent.int32val = -100000
+        @parent.int16val = -1000
+        @parent.int8val  = -100
 
       else
         retCode = 1
@@ -132,10 +134,17 @@ class App < Qmf::AgentHandler
     elsif name == "create_child"
       oid = @agent.alloc_object_id(2)
       args['child_ref'] = oid
-      @child = Qmf::QmfObject.new(@model.child_class)
-      @child.set_attr("name", args.by_key("child_name"))
+      @child = Qmf::AgentObject.new(@model.child_class)
+      @child.name = args.by_key("child_name")
       @child.set_object_id(oid)
       @agent.method_response(context, 0, "OK", args)
+
+    elsif name == "probe_userid"
+      args['userid'] = userId
+      @agent.method_response(context, 0, "OK", args)
+
+    else
+      @agent.method_response(context, 1, "Unimplemented Method: #{name}", args)
     end
   end
 
@@ -151,19 +160,19 @@ class App < Qmf::AgentHandler
 
     @agent.set_connection(@connection)
 
-    @parent = Qmf::QmfObject.new(@model.parent_class)
-    @parent.set_attr("name", "Parent One")
-    @parent.set_attr("state", "OPERATIONAL")
+    @parent = Qmf::AgentObject.new(@model.parent_class)
+    @parent.name  = "Parent One"
+    @parent.state = "OPERATIONAL"
 
-    @parent.set_attr("uint64val", 0)
-    @parent.set_attr("uint32val", 0)
-    @parent.set_attr("uint16val", 0)
-    @parent.set_attr("uint8val",  0)
+    @parent.uint64val = 0
+    @parent.uint32val = 0
+    @parent.uint16val = 0
+    @parent.uint8val  = 0
 
-    @parent.set_attr("int64val", 0)
-    @parent.set_attr("int32val", 0)
-    @parent.set_attr("int16val", 0)
-    @parent.set_attr("int8val",  0)
+    @parent.int64val = 0
+    @parent.int32val = 0
+    @parent.int16val = 0
+    @parent.int8val  = 0
 
     @parent_oid = @agent.alloc_object_id(1)
     @parent.set_object_id(@parent_oid)

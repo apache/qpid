@@ -95,7 +95,7 @@ set(unit_tests_to_build
     InlineAllocator
     InlineVector
     ClientSessionTest
-    MessagingSessionTest
+    MessagingSessionTests
     SequenceSet
     StringUtils
     IncompleteMessageList

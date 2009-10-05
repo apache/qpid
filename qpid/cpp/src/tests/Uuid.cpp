@@ -24,6 +24,9 @@
 
 #include <set>
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(UuidTestSuite)
 
 using namespace std;
@@ -77,3 +80,5 @@ QPID_AUTO_TEST_CASE(testUuidEncodeDecode) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

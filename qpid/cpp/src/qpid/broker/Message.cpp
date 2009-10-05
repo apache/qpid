@@ -362,7 +362,7 @@ boost::intrusive_ptr<Message>& Message::getReplacementMessage(const Queue* qfor)
     Replacement::iterator i = replacement.find(qfor);
     if (i != replacement.end()){
         return i->second;
-    }		 
+    }           
     return empty;
 }
 

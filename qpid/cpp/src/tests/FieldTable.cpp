@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,6 +28,9 @@
 #include "unit_test.h"
 
 using namespace qpid::framing;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(FieldTableTestSuite)
 
@@ -57,7 +60,7 @@ QPID_AUTO_TEST_CASE(testAssignment)
     a.setInt("B", 1234);
     b = a;
     a.setString("A", "CCCC");
-    
+
     BOOST_CHECK(string("CCCC") == a.getAsString("A"));
     BOOST_CHECK(string("BBBB") == b.getAsString("A"));
     BOOST_CHECK_EQUAL(1234, a.getAsInt("B"));
@@ -69,7 +72,7 @@ QPID_AUTO_TEST_CASE(testAssignment)
     {
         FieldTable c;
         c = a;
-        
+
         char* buff = static_cast<char*>(::alloca(c.encodedSize()));
         Buffer wbuffer(buff, c.encodedSize());
         wbuffer.put(c);
@@ -102,7 +105,7 @@ QPID_AUTO_TEST_CASE(testNestedValues)
         list.push_back(List::ValuePtr(new Unsigned32Value(u)));
         list.push_back(List::ValuePtr(new Str8Value("yellow")));
         list.push_back(List::ValuePtr(new DoubleValue(d)));
-        
+
         a.setString("id", "A");
         b.setString("id", "B");
         a.setTable("B", b);
@@ -192,7 +195,7 @@ QPID_AUTO_TEST_CASE(test64GetAndSetConverts)
     FieldTable args;
     args.setInt64("a",100);
     args.setInt64("b",-(int64_t) ((int64_t) 1<<34));
-    
+
     args.setUInt64("c",1u);
     args.setUInt64("d",(uint64_t) ((uint64_t) 1<<34));
     BOOST_CHECK_EQUAL(1u, args.getAsUInt64("c"));
@@ -204,5 +207,7 @@ QPID_AUTO_TEST_CASE(test64GetAndSetConverts)
     BOOST_CHECK_EQUAL((int64_t) ((int64_t) 1<<34), args.getAsInt64("d"));
 
 }
- 
+
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

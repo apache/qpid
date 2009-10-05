@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,6 +24,9 @@
 #include "unit_test.h"
 
 using namespace qpid::messaging;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(VariantSuite)
 
@@ -87,20 +90,20 @@ QPID_AUTO_TEST_CASE(testAssignment)
 {
     Variant value("abc");
     Variant other = value;
-    BOOST_CHECK_EQUAL(STRING, value.getType());
+    BOOST_CHECK_EQUAL(VAR_STRING, value.getType());
     BOOST_CHECK_EQUAL(other.getType(), value.getType());
     BOOST_CHECK_EQUAL(other.asString(), value.asString());
 
     const uint32_t i(1000);
     value = i;
-    BOOST_CHECK_EQUAL(UINT32, value.getType());
-    BOOST_CHECK_EQUAL(STRING, other.getType());    
+    BOOST_CHECK_EQUAL(VAR_UINT32, value.getType());
+    BOOST_CHECK_EQUAL(VAR_STRING, other.getType());
 }
 
 QPID_AUTO_TEST_CASE(testList)
-{    
+{
     const std::string s("abc");
-    const float f(9.876);
+    const float f(9.876f);
     const int16_t x(1000);
 
     Variant value = Variant::List();
@@ -108,20 +111,20 @@ QPID_AUTO_TEST_CASE(testList)
     value.asList().push_back(Variant(f));
     value.asList().push_back(Variant(x));
     BOOST_CHECK_EQUAL(3u, value.asList().size());
-    Variant::List::const_iterator i = value.asList().begin(); 
+    Variant::List::const_iterator i = value.asList().begin();
 
     BOOST_CHECK(i != value.asList().end());
-    BOOST_CHECK_EQUAL(STRING, i->getType());
+    BOOST_CHECK_EQUAL(VAR_STRING, i->getType());
     BOOST_CHECK_EQUAL(s, i->asString());
     i++;
 
     BOOST_CHECK(i != value.asList().end());
-    BOOST_CHECK_EQUAL(FLOAT, i->getType());
+    BOOST_CHECK_EQUAL(VAR_FLOAT, i->getType());
     BOOST_CHECK_EQUAL(f, i->asFloat());
     i++;
 
     BOOST_CHECK(i != value.asList().end());
-    BOOST_CHECK_EQUAL(INT16, i->getType());
+    BOOST_CHECK_EQUAL(VAR_INT16, i->getType());
     BOOST_CHECK_EQUAL(x, i->asInt16());
     i++;
 
@@ -129,9 +132,9 @@ QPID_AUTO_TEST_CASE(testList)
 }
 
 QPID_AUTO_TEST_CASE(testMap)
-{    
+{
     const std::string red("red");
-    const float pi(3.14);
+    const float pi(3.14f);
     const int16_t x(1000);
 
     Variant value = Variant::Map();
@@ -140,18 +143,20 @@ QPID_AUTO_TEST_CASE(testMap)
     value.asMap()["my-key"] = x;
     BOOST_CHECK_EQUAL(3u, value.asMap().size());
 
-    BOOST_CHECK_EQUAL(STRING, value.asMap()["colour"].getType());
+    BOOST_CHECK_EQUAL(VAR_STRING, value.asMap()["colour"].getType());
     BOOST_CHECK_EQUAL(red, value.asMap()["colour"].asString());
 
-    BOOST_CHECK_EQUAL(FLOAT, value.asMap()["pi"].getType());
+    BOOST_CHECK_EQUAL(VAR_FLOAT, value.asMap()["pi"].getType());
     BOOST_CHECK_EQUAL(pi, value.asMap()["pi"].asFloat());
-    
-    BOOST_CHECK_EQUAL(INT16, value.asMap()["my-key"].getType());
+
+    BOOST_CHECK_EQUAL(VAR_INT16, value.asMap()["my-key"].getType());
     BOOST_CHECK_EQUAL(x, value.asMap()["my-key"].asInt16());
 
     value.asMap()["my-key"] = "now it's a string";
-    BOOST_CHECK_EQUAL(STRING, value.asMap()["my-key"].getType());
+    BOOST_CHECK_EQUAL(VAR_STRING, value.asMap()["my-key"].getType());
     BOOST_CHECK_EQUAL(std::string("now it's a string"), value.asMap()["my-key"].asString());
 }
- 
+
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

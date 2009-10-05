@@ -35,6 +35,7 @@ namespace qmf {
     struct SchemaStatisticImpl;
     struct SchemaObjectClassImpl;
     struct SchemaEventClassImpl;
+    struct SchemaClassKeyImpl;
 
     /**
      */
@@ -114,6 +115,20 @@ namespace qmf {
 
     /**
      */
+    class SchemaClassKey {
+    public:
+        SchemaClassKey(SchemaClassKeyImpl* impl);
+        ~SchemaClassKey();
+
+        const char* getPackageName() const;
+        const char* getClassName() const;
+        const uint8_t* getHash() const;
+
+        SchemaClassKeyImpl* impl;
+    };
+
+    /**
+     */
     class SchemaObjectClass {
     public:
         SchemaObjectClass(const char* package, const char* name);
@@ -123,9 +138,7 @@ namespace qmf {
         void addStatistic(const SchemaStatistic& statistic);
         void addMethod(const SchemaMethod& method);
 
-        const char* getPackage() const;
-        const char* getName() const;
-        const uint8_t* getHash() const;
+        const SchemaClassKey* getClassKey() const;
         int getPropertyCount() const;
         int getStatisticCount() const;
         int getMethodCount() const;
@@ -146,9 +159,7 @@ namespace qmf {
         void addArgument(const SchemaArgument& argument);
         void setDesc(const char* desc);
 
-        const char* getPackage() const;
-        const char* getName() const;
-        const uint8_t* getHash() const;
+        const SchemaClassKey* getClassKey() const;
         int getArgumentCount() const;
         const SchemaArgument* getArgument(int idx) const;
 

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,6 +42,9 @@ using namespace qpid::framing;
 using namespace qpid::replication::constants;
 using boost::assign::list_of;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(ReplicationTestSuite)
 
 // The CMake-based build passes in the module suffix; if it's not there, this
@@ -63,7 +66,7 @@ qpid::broker::Broker::Options getBrokerOpts(const std::vector<std::string>& args
     return opts;
 }
 
-QPID_AUTO_TEST_CASE(testReplicationExchange) 
+QPID_AUTO_TEST_CASE(testReplicationExchange)
 {
     qpid::broker::Broker::Options brokerOpts(getBrokerOpts(list_of<string>("qpidd")
                                                            ("--replication-exchange-name=qpid.replication")));
@@ -79,7 +82,7 @@ QPID_AUTO_TEST_CASE(testReplicationExchange)
 
     f.session.queueDeclare(arg::queue=eventQ, arg::exclusive=true, arg::autoDelete=true, arg::arguments=eventQopts);
     f.session.exchangeBind(arg::exchange="qpid.replication", arg::queue=eventQ, arg::bindingKey=dataQ);
-    
+
     f.session.queueDeclare(arg::queue=eventQ2, arg::exclusive=true, arg::autoDelete=true, arg::arguments=eventQopts);
     f.session.exchangeBind(arg::exchange="qpid.replication", arg::queue=eventQ2, arg::bindingKey=dataQ2);
 
@@ -133,3 +136,5 @@ QPID_AUTO_TEST_CASE(testReplicationExchange)
 
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

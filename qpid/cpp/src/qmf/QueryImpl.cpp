@@ -18,54 +18,77 @@
  */
 
 #include "qmf/QueryImpl.h"
+#include "qmf/ObjectIdImpl.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/framing/FieldTable.h"
 
 using namespace std;
 using namespace qmf;
+using namespace qpid::framing;
+
+bool QueryElementImpl::evaluate(const Object* /*object*/) const
+{
+    // TODO: Implement this
+    return false;
+}
+
+bool QueryExpressionImpl::evaluate(const Object* /*object*/) const
+{
+    // TODO: Implement this
+    return false;
+}
+
+QueryImpl::QueryImpl(Buffer& buffer)
+{
+    FieldTable ft;
+    ft.decode(buffer);
+    // TODO
+}
+
+void QueryImpl::encode(Buffer& buffer) const
+{
+    FieldTable ft;
+
+    if (oid.get() != 0) {
+        ft.setString("_objectid", oid->impl->asString());
+    } else {
+        if (!packageName.empty())
+            ft.setString("_package", packageName);
+        ft.setString("_class", className);
+    }
+
+    ft.encode(buffer);
+}
+
 
 //==================================================================
 // Wrappers
 //==================================================================
 
-Query::Query() : impl(new QueryImpl(this)) {}
+QueryElement::QueryElement(const char* attrName, const Value* value, ValueOper oper) : impl(new QueryElementImpl(attrName, value, oper)) {}
+QueryElement::QueryElement(QueryElementImpl* i) : impl(i) {}
+QueryElement::~QueryElement() { delete impl; }
+bool QueryElement::evaluate(const Object* object) const { return impl->evaluate(object); }
+QueryExpression::QueryExpression(ExprOper oper, const QueryOperand* operand1, const QueryOperand* operand2) : impl(new QueryExpressionImpl(oper, operand1, operand2)) {}
+QueryExpression::QueryExpression(QueryExpressionImpl* i) : impl(i) {}
+QueryExpression::~QueryExpression() { delete impl; }
+bool QueryExpression::evaluate(const Object* object) const { return impl->evaluate(object); }
+Query::Query(const char* className, const char* packageName) : impl(new QueryImpl(className, packageName)) {}
+Query::Query(const SchemaClassKey* key) : impl(new QueryImpl(key)) {}
+Query::Query(const ObjectId* oid) : impl(new QueryImpl(oid)) {}
 Query::Query(QueryImpl* i) : impl(i) {}
-
-Query::~Query()
-{
-    delete impl;
-}
-
-const char* Query::getPackage() const
-{
-    return impl->getPackage();
-}
-
-const char* Query::getClass() const
-{
-    return impl->getClass();
-}
-
-const ObjectId* Query::getObjectId() const
-{
-    return impl->getObjectId();
-}
-
-int Query::whereCount() const
-{
-    return impl->whereCount();
-}
-
-Query::Oper Query::whereOper() const
-{
-    return impl->whereOper();
-}
-
-const char* Query::whereKey() const
-{
-    return impl->whereKey();
-}
-
-const Value* Query::whereValue() const
-{
-    return impl->whereValue();
-}
+Query::~Query() { delete impl; }
+void Query::setSelect(const QueryOperand* criterion) { impl->setSelect(criterion); }
+void Query::setLimit(uint32_t maxResults) { impl->setLimit(maxResults); }
+void Query::setOrderBy(const char* attrName, bool decreasing) { impl->setOrderBy(attrName, decreasing); }
+const char* Query::getPackage() const { return impl->getPackage().c_str(); }
+const char* Query::getClass() const { return impl->getClass().c_str(); }
+const ObjectId* Query::getObjectId() const { return impl->getObjectId(); }
+bool Query::haveSelect() const { return impl->haveSelect(); }
+bool Query::haveLimit() const { return impl->haveLimit(); }
+bool Query::haveOrderBy() const { return impl->haveOrderBy(); }
+const QueryOperand* Query::getSelect() const { return impl->getSelect(); }
+uint32_t Query::getLimit() const { return impl->getLimit(); }
+const char* Query::getOrderBy() const { return impl->getOrderBy().c_str(); }
+bool Query::getDecreasing() const { return impl->getDecreasing(); }
 

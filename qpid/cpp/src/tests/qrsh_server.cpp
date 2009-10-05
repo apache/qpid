@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,7 +43,8 @@ using namespace qpid::framing;
 using namespace std;
 
 
-
+namespace qpid {
+namespace tests {
 
 int
 mrand ( int max_desired_val )
@@ -54,7 +55,7 @@ mrand ( int max_desired_val )
 
 
 
-char * 
+char *
 file2str ( char const * file_name )
 {
   FILE * fp = fopen ( file_name, "r" );
@@ -71,9 +72,9 @@ file2str ( char const * file_name )
 
   if ( ! content )
   {
-    fprintf ( stderr, 
-              "file2str error: can't malloc %d bytes.\n", 
-              (int)file_len 
+    fprintf ( stderr,
+              "file2str error: can't malloc %d bytes.\n",
+              (int)file_len
             );
     return 0;
   }
@@ -123,9 +124,9 @@ class QrshServer : public MessageListener
     bool myMessage            ( Message const & message );
 
     /* ----------------------------------------------
-     * Special Commands 
+     * Special Commands
      * These are commands that the qrsh_server executes
-     * directly, rather than through a child process 
+     * directly, rather than through a child process
      * instance of qrsh_run.
      */
     void runCommand           ( Message const & message );
@@ -157,9 +158,9 @@ class QrshServer : public MessageListener
     char const * skipWord  ( char const * s );
 
 
-    void string_replaceAll ( string & str, 
-                             string & target, 
-                             string & replacement 
+    void string_replaceAll ( string & str,
+                             string & target,
+                             string & replacement
                            );
 
 
@@ -186,12 +187,12 @@ class QrshServer : public MessageListener
 
 
 
-QrshServer::QrshServer ( SubscriptionManager & subs, 
+QrshServer::QrshServer ( SubscriptionManager & subs,
                          char const * name,
                          char const * qrsh_run_path,
                          char const * host,
                          int          port
-                       ) 
+                       )
     : subscriptions ( subs ),
       name ( name ),
       qrsh_run_path ( qrsh_run_path ),
@@ -202,11 +203,11 @@ QrshServer::QrshServer ( SubscriptionManager & subs,
 {
     data_dir << "/tmp/qrsh_"
              << getpid();
-  
+
     if(mkdir ( data_dir.str().c_str(), 0777 ) )
     {
-        fprintf ( stderr, 
-                  "QrshServer::QrshServer error: can't mkdir |%s|\n", 
+        fprintf ( stderr,
+                  "QrshServer::QrshServer error: can't mkdir |%s|\n",
                   data_dir.str().c_str()
                 );
         exit ( 1 );
@@ -239,21 +240,21 @@ QrshServer::start ( )
                       << name;
 
     send ( announcement_data.str() );
-  
+
     saidHello = true;
 }
 
 
 
 
-void 
+void
 QrshServer::send ( string const & content )
 {
     try
     {
         Message message;
         message.setData ( content );
-  
+
         Connection connection;
         connection.open ( host, port );
         Session session = connection.newSession ( );
@@ -289,7 +290,7 @@ QrshServer::sayHello ( )
 
 
 
-void 
+void
 QrshServer::sayName  ( )
 {
     fprintf ( stderr, "My name is: |%s|\n", name.c_str() );
@@ -343,7 +344,7 @@ QrshServer::getStraw ( Message const & message )
                 break;
             }
         }
-    
+
         if ( i_win && (ties <= 0) )
         {
             myStraw = 0;
@@ -364,10 +365,10 @@ QrshServer::getStraw ( Message const & message )
 /*
  * "APB" command (all-points-bullitens (commands that are not addressed
  * specifically to any server)) are handled directly, here.
- * Because if I return simply "true", the normal command processing code 
+ * Because if I return simply "true", the normal command processing code
  * will misinterpret the command.
  */
-bool 
+bool
 QrshServer::myMessage ( Message const & message )
 {
     int const maxlen = 100;
@@ -414,7 +415,7 @@ QrshServer::myMessage ( Message const & message )
     {
         return true;
     }
-    else 
+    else
     if ( ! strcmp ( first_word, "any" ) )
     {
         straws.clear();
@@ -443,7 +444,7 @@ QrshServer::rememberIntroduction ( Message const & message )
 
 
 
-void 
+void
 QrshServer::addAlias ( Message const & message )
 {
     char alias[1000];
@@ -463,8 +464,8 @@ QrshServer::getNames ( )
 
     if ( ! dir )
     {
-        fprintf ( stderr, 
-                  "QrshServer::getNames error: could not open dir |%s|.\n", 
+        fprintf ( stderr,
+                  "QrshServer::getNames error: could not open dir |%s|.\n",
                   data_dir.str().c_str()
                 );
         return;
@@ -491,8 +492,8 @@ QrshServer::getNames ( )
             }
             else
             {
-                /* 
-                 * Fail silently.  The non-existence of this file 
+                /*
+                 * Fail silently.  The non-existence of this file
                  * is not necessarily an error.
                  */
             }
@@ -504,9 +505,9 @@ QrshServer::getNames ( )
 
 
 void
-QrshServer::string_replaceAll ( string & str, 
-                                string & target, 
-                                string & replacement 
+QrshServer::string_replaceAll ( string & str,
+                                string & target,
+                                string & replacement
                               )
 {
     int target_size = target.size();
@@ -519,7 +520,7 @@ QrshServer::string_replaceAll ( string & str,
 
 
 
-bool 
+bool
 QrshServer::isProcessName ( char const * str )
 {
     getNames();
@@ -537,12 +538,12 @@ QrshServer::isProcessName ( char const * str )
 
 
 
-int 
+int
 QrshServer::string_countWords ( char const * s1 )
 {
     int count = 0;
     char const * s2 = s1 + 1;
-  
+
     if ( ! isspace(* s1) )
     {
         ++ count;
@@ -603,7 +604,7 @@ QrshServer::get ( Message const & request_message )
      */
     char file_or_process_name[1000];
     sscanf ( request_message.getData().c_str(), "%*s%*s%s", file_or_process_name );
-  
+
     if ( isProcessName ( file_or_process_name ) )
     {
         stringstream desired_file_name;
@@ -612,13 +613,13 @@ QrshServer::get ( Message const & request_message )
                           << file_or_process_name
                           << '/';
         char requested_output_stream[1000];
-        if(1 != sscanf ( request_message.getData().c_str(), 
-                         "%*s%*s%*s%s", 
-                         requested_output_stream 
+        if(1 != sscanf ( request_message.getData().c_str(),
+                         "%*s%*s%*s%s",
+                         requested_output_stream
                        )
           )
         {
-            fprintf ( stderr, 
+            fprintf ( stderr,
                       "QrshServer::get error: Can't read requested data file name from this message: |%s|\n",
                       request_message.getData().c_str()
                     );
@@ -674,7 +675,7 @@ QrshServer::exited ( Message const & message )
     if ( truncated_command )
     {
         stringstream ss;
-        ss << qrsh_run_path 
+        ss << qrsh_run_path
            << ' '
            << data_dir.str()
            << ' '
@@ -706,9 +707,9 @@ QrshServer::exited ( Message const & message )
                 fprintf ( stderr, "qrsh_server error awaiting child!\n" );
                 exit ( 1 );
             }
-      
+
             exit_code >>= 8;
-    
+
             stringstream data;
             data << "wait_response "
                  << exit_code;
@@ -731,7 +732,7 @@ QrshServer::wait ( Message const & message )
         // The second word is "exec_wait".
         // The third word is the symbolic name of the command to wait for.
         // The fact that there are exactly three words means that this
-        // must be a command that has already been named and started -- 
+        // must be a command that has already been named and started --
         // we just need to find its pid and wait on it.
         pre_existing = true;
     }
@@ -762,7 +763,7 @@ QrshServer::wait ( Message const & message )
     if ( truncated_command )
     {
         stringstream ss;
-        ss << qrsh_run_path 
+        ss << qrsh_run_path
            << ' '
            << data_dir.str()
            << ' '
@@ -795,7 +796,7 @@ QrshServer::wait ( Message const & message )
                 exit ( 1 );
             }
         }
-    
+
         exit_code >>= 8;
 
         stringstream data;
@@ -810,7 +811,7 @@ QrshServer::wait ( Message const & message )
 
 
 
-char const * 
+char const *
 QrshServer::skipWord ( char const * s )
 {
     if(! (s && *s) )
@@ -884,7 +885,7 @@ QrshServer::getArgs ( char const * str )
         arg_len = 0;
     }
 
-    done: 
+    done:
 
     if ( arg_len > 0 )
         lengths.push_back ( arg_len );
@@ -896,8 +897,8 @@ QrshServer::getArgs ( char const * str )
     for ( int i = 0; i < n_args; ++ i )
     {
         argv[i] = ( char *) malloc ( lengths[i] + 1 );
-        strncpy ( argv[i], 
-                  str + start_positions[i], 
+        strncpy ( argv[i],
+                  str + start_positions[i],
                   lengths[i]
                 );
         argv[i][lengths[i]] = 0;
@@ -971,12 +972,12 @@ QrshServer::runCommand ( Message const & message )
          * qrsh_run, which will save all its data in the qrsh dir.
          */
         stringstream ss;
-        ss << qrsh_run_path 
+        ss << qrsh_run_path
            << ' '
            << data_dir.str()
            << ' '
            << s;
-    
+
         if ( ! fork() )
         {
             char ** argv = getArgs ( ss.str().c_str() );
@@ -988,8 +989,8 @@ QrshServer::runCommand ( Message const & message )
 
 
 
-void 
-QrshServer::received ( Message & message ) 
+void
+QrshServer::received ( Message & message )
 {
     if ( myMessage ( message ) )
         runCommand ( message );
@@ -997,7 +998,9 @@ QrshServer::received ( Message & message )
 
 
 
+}} // namespace qpid::tests
 
+using namespace qpid::tests;
 
 /*
  *  fixme mick Mon Aug  3 10:29:26 EDT 2009
@@ -1024,23 +1027,23 @@ main ( int /*argc*/, char** argv )
 
         // Declare queues.
         string myQueue = session.getId().getName();
-        session.queueDeclare ( arg::queue=myQueue, 
+        session.queueDeclare ( arg::queue=myQueue,
                                arg::exclusive=true,
                                arg::autoDelete=true);
 
-        session.exchangeBind ( arg::exchange="amq.fanout", 
-                               arg::queue=myQueue, 
+        session.exchangeBind ( arg::exchange="amq.fanout",
+                               arg::queue=myQueue,
                                arg::bindingKey="my-key");
-  
+
         // Create a server and subscribe it to my queue.
         SubscriptionManager subscriptions ( session );
-        QrshServer server ( subscriptions, 
+        QrshServer server ( subscriptions,
                             argv[1],         // server name
                             argv[2],         // qrsh exe path
                             host,
                             port
                           );
-        subscriptions.subscribe ( server, myQueue );  
+        subscriptions.subscribe ( server, myQueue );
 
         // Receive messages until the subscription is cancelled
         // by QrshServer::received()
@@ -1048,7 +1051,7 @@ main ( int /*argc*/, char** argv )
 
         connection.close();
     }
-    catch(const exception& error) 
+    catch(const exception& error)
     {
         cout << error.what() << endl;
         return 1;

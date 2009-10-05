@@ -24,6 +24,9 @@
 using namespace qpid;
 using namespace qpid::broker;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(RetryListTestSuite)
 
 struct RetryListFixture
@@ -36,7 +39,7 @@ struct RetryListFixture
     {
         urls.push_back(Url(s));
     }
-    
+
     void addExpectation(const std::string& host, uint16_t port)
     {
         expected.push_back(TcpAddress(host, port));
@@ -57,7 +60,7 @@ struct RetryListFixture
     }
 };
 
-QPID_AUTO_TEST_CASE(testWithSingleAddress) 
+QPID_AUTO_TEST_CASE(testWithSingleAddress)
 {
     RetryListFixture test;
     test.addUrl("amqp:host:5673");
@@ -65,7 +68,7 @@ QPID_AUTO_TEST_CASE(testWithSingleAddress)
     test.check();
 }
 
-QPID_AUTO_TEST_CASE(testWithSingleUrlOfMultipleAddresses) 
+QPID_AUTO_TEST_CASE(testWithSingleUrlOfMultipleAddresses)
 {
     RetryListFixture test;
     test.addUrl("amqp:host1,host2:2222,tcp:host3:5673,host4:1");
@@ -78,7 +81,7 @@ QPID_AUTO_TEST_CASE(testWithSingleUrlOfMultipleAddresses)
     test.check();
 }
 
-QPID_AUTO_TEST_CASE(testWithMultipleUrlsOfMultipleAddresses) 
+QPID_AUTO_TEST_CASE(testWithMultipleUrlsOfMultipleAddresses)
 {
     RetryListFixture test;
     test.addUrl("amqp:my-host");
@@ -97,10 +100,12 @@ QPID_AUTO_TEST_CASE(testWithMultipleUrlsOfMultipleAddresses)
     test.check();
 }
 
-QPID_AUTO_TEST_CASE(testEmptyList) 
+QPID_AUTO_TEST_CASE(testEmptyList)
 {
     RetryListFixture test;
     test.check();
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

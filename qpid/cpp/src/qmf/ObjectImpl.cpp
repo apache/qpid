@@ -19,6 +19,7 @@
 
 #include "qmf/ObjectImpl.h"
 #include "qmf/ValueImpl.h"
+#include "qmf/BrokerProxyImpl.h"
 #include <qpid/sys/Time.h>
 
 using namespace std;
@@ -27,7 +28,7 @@ using namespace qpid::sys;
 using qpid::framing::Buffer;
 
 ObjectImpl::ObjectImpl(Object* e, const SchemaObjectClass* type) :
-    envelope(e), objectClass(type), createTime(uint64_t(Duration(now()))),
+    envelope(e), objectClass(type), broker(0), createTime(uint64_t(Duration(now()))),
     destroyTime(0), lastUpdatedTime(createTime)
 {
     int propCount = objectClass->getPropertyCount();
@@ -45,30 +46,40 @@ ObjectImpl::ObjectImpl(Object* e, const SchemaObjectClass* type) :
     }
 }
 
-ObjectImpl::ObjectImpl(const SchemaObjectClass* type, Buffer& buffer) :
-    envelope(new Object(this)), objectClass(type), createTime(uint64_t(Duration(now()))),
-    destroyTime(0), lastUpdatedTime(createTime)
+ObjectImpl::ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, Buffer& buffer, bool prop, bool stat, bool managed) :
+    envelope(new Object(this)), objectClass(type), broker(b), createTime(0), destroyTime(0), lastUpdatedTime(0)
 {
-    int propCount = objectClass->getPropertyCount();
-    int statCount = objectClass->getStatisticCount();
     int idx;
-    set<string> excludes;
 
-    parsePresenceMasks(buffer, excludes);
-    for (idx = 0; idx < propCount; idx++) {
-        const SchemaProperty* prop = objectClass->getProperty(idx);
-        if (excludes.count(prop->getName()) != 0) {
-            properties[prop->getName()] = ValuePtr(new Value(prop->getType()));
-        } else {
-            ValueImpl* pval = new ValueImpl(prop->getType(), buffer);
-            properties[prop->getName()] = ValuePtr(pval->envelope);
+    if (managed) {
+        lastUpdatedTime = buffer.getLongLong();
+        createTime = buffer.getLongLong();
+        destroyTime = buffer.getLongLong();
+        objectId.reset(new ObjectIdImpl(buffer));
+    }
+
+    if (prop) {
+        int propCount = objectClass->getPropertyCount();
+        set<string> excludes;
+        parsePresenceMasks(buffer, excludes);
+        for (idx = 0; idx < propCount; idx++) {
+            const SchemaProperty* prop = objectClass->getProperty(idx);
+            if (excludes.count(prop->getName()) != 0) {
+                properties[prop->getName()] = ValuePtr(new Value(prop->getType()));
+            } else {
+                ValueImpl* pval = new ValueImpl(prop->getType(), buffer);
+                properties[prop->getName()] = ValuePtr(pval->envelope);
+            }
         }
     }
 
-    for (idx = 0; idx < statCount; idx++) {
-        const SchemaStatistic* stat = objectClass->getStatistic(idx);
-        ValueImpl* sval = new ValueImpl(stat->getType(), buffer);
-        statistics[stat->getName()] = ValuePtr(sval->envelope);
+    if (stat) {
+        int statCount = objectClass->getStatisticCount();
+        for (idx = 0; idx < statCount; idx++) {
+            const SchemaStatistic* stat = objectClass->getStatistic(idx);
+            ValueImpl* sval = new ValueImpl(stat->getType(), buffer);
+            statistics[stat->getName()] = ValuePtr(sval->envelope);
+        }
     }
 }
 
@@ -82,7 +93,7 @@ void ObjectImpl::destroy()
     // TODO - flag deletion
 }
 
-Value* ObjectImpl::getValue(const string& key)
+Value* ObjectImpl::getValue(const string& key) const
 {
     map<string, ValuePtr>::const_iterator iter;
 
@@ -95,6 +106,12 @@ Value* ObjectImpl::getValue(const string& key)
         return iter->second.get();
 
     return 0;
+}
+
+void ObjectImpl::invokeMethod(const string& methodName, const Value* inArgs, void* context) const
+{
+    if (broker != 0 && objectId.get() != 0)
+        broker->sendMethodRequest(objectId.get(), objectClass, methodName, inArgs, context);
 }
 
 void ObjectImpl::parsePresenceMasks(Buffer& buffer, set<string>& excludeList)
@@ -123,9 +140,9 @@ void ObjectImpl::parsePresenceMasks(Buffer& buffer, set<string>& excludeList)
 
 void ObjectImpl::encodeSchemaKey(qpid::framing::Buffer& buffer) const
 {
-    buffer.putShortString(objectClass->getPackage());
-    buffer.putShortString(objectClass->getName());
-    buffer.putBin128(const_cast<uint8_t*>(objectClass->getHash()));
+    buffer.putShortString(objectClass->getClassKey()->getPackageName());
+    buffer.putShortString(objectClass->getClassKey()->getClassName());
+    buffer.putBin128(const_cast<uint8_t*>(objectClass->getClassKey()->getHash()));
 }
 
 void ObjectImpl::encodeManagedObjectData(qpid::framing::Buffer& buffer) const
@@ -133,7 +150,7 @@ void ObjectImpl::encodeManagedObjectData(qpid::framing::Buffer& buffer) const
     buffer.putLongLong(lastUpdatedTime);
     buffer.putLongLong(createTime);
     buffer.putLongLong(destroyTime);
-    objectId->impl->encode(buffer);
+    objectId->encode(buffer);
 }
 
 void ObjectImpl::encodeProperties(qpid::framing::Buffer& buffer) const
@@ -187,36 +204,13 @@ void ObjectImpl::encodeStatistics(qpid::framing::Buffer& buffer) const
 //==================================================================
 
 Object::Object(const SchemaObjectClass* type) : impl(new ObjectImpl(this, type)) {}
-
 Object::Object(ObjectImpl* i) : impl(i) {}
-
-Object::~Object()
-{
-    delete impl;
-}
-
-void Object::destroy()
-{
-    impl->destroy();
-}
-
-const ObjectId* Object::getObjectId() const
-{
-    return impl->getObjectId();
-}
-
-void Object::setObjectId(ObjectId* oid)
-{
-    impl->setObjectId(oid);
-}
-
-const SchemaObjectClass* Object::getClass() const
-{
-    return impl->getClass();
-}
-
-Value* Object::getValue(char* key)
-{
-    return impl->getValue(key);
-}
+Object::Object(const Object& from) : impl(new ObjectImpl(*(from.impl))) {}
+Object::~Object() { delete impl; }
+void Object::destroy() { impl->destroy(); }
+const ObjectId* Object::getObjectId() const { return impl->getObjectId(); }
+void Object::setObjectId(ObjectId* oid) { impl->setObjectId(oid); }
+const SchemaObjectClass* Object::getClass() const { return impl->getClass(); }
+Value* Object::getValue(char* key) const { return impl->getValue(key); }
+void Object::invokeMethod(const char* m, const Value* a, void* c) const { impl->invokeMethod(m, a, c); }
 

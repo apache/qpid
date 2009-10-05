@@ -156,7 +156,7 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
 
 	// This will parse the document using either Xerces or FastXDM, depending
 	// on your XQilla configuration. FastXDM can be as much as 10x faster.
-	
+
           Sequence seq(context->parseDocument(xml));
 
           if(!seq.isEmpty() && seq.first()->isNode()) {
@@ -206,11 +206,11 @@ void XmlExchange::route(Deliverable& msg, const string& routingKey, const FieldT
     PreRoute pr(msg, this);
     try {
         XmlBinding::vector::ConstPtr p;
-	{
+       {
             RWlock::ScopedRlock l(lock);
-	    p = bindingsMap[routingKey].snapshot();
-	    if (!p) return;
-	}
+           p = bindingsMap[routingKey].snapshot();
+           if (!p) return;
+       }
         int count(0);
 
         for (std::vector<XmlBinding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++) {
@@ -222,24 +222,24 @@ void XmlExchange::route(Deliverable& msg, const string& routingKey, const FieldT
                 if ((*i)->mgmtBinding != 0)
                     (*i)->mgmtBinding->inc_msgMatched ();
             }
-	}
-	if (!count) {
-	    QPID_LOG(warning, "XMLExchange " << getName() << ": could not route message with query " << routingKey);
-	    if (mgmtExchange != 0) {
-	        mgmtExchange->inc_msgDrops  ();
-		mgmtExchange->inc_byteDrops (msg.contentSize ());
-	    }
-	} else {
-	    if (mgmtExchange != 0) {
-	        mgmtExchange->inc_msgRoutes  (count);
-		mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
-	    }
-	}
+       }
+       if (!count) {
+           QPID_LOG(warning, "XMLExchange " << getName() << ": could not route message with query " << routingKey);
+           if (mgmtExchange != 0) {
+               mgmtExchange->inc_msgDrops  ();
+               mgmtExchange->inc_byteDrops (msg.contentSize ());
+           }
+       } else {
+           if (mgmtExchange != 0) {
+               mgmtExchange->inc_msgRoutes  (count);
+               mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
+           }
+       }
 
-	if (mgmtExchange != 0) {
-	    mgmtExchange->inc_msgReceives  ();
-	    mgmtExchange->inc_byteReceives (msg.contentSize ());
-	}
+       if (mgmtExchange != 0) {
+           mgmtExchange->inc_msgReceives  ();
+           mgmtExchange->inc_byteReceives (msg.contentSize ());
+       }
     } catch (...) {
         QPID_LOG(warning, "XMLExchange " << getName() << ": exception routing message with query " << routingKey);
     }

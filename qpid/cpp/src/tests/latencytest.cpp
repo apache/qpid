@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,6 +40,9 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
+namespace qpid {
+namespace tests {
+
 typedef std::vector<std::string> StringSet;
 
 struct Args : public qpid::TestOptions {
@@ -64,7 +67,7 @@ struct Args : public qpid::TestOptions {
              durable(false), base("latency-test"), singleConnect(false)
 
     {
-        addOptions()            
+        addOptions()
 
             ("size", optValue(size, "N"), "message size")
             ("concurrentTests", optValue(concurrentConnections, "N"), "number of concurrent test setups, will create another publisher,\
@@ -73,9 +76,9 @@ struct Args : public qpid::TestOptions {
             ("count", optValue(count, "N"), "number of messages to send")
             ("rate", optValue(rate, "N"), "target message rate (causes count to be ignored)")
             ("sync", optValue(sync), "send messages synchronously")
-            ("report-frequency", optValue(reportFrequency, "N"), 
+            ("report-frequency", optValue(reportFrequency, "N"),
              "number of milliseconds to wait between reports (ignored unless rate specified)")
-            ("time-limit", optValue(timeLimit, "N"), 
+            ("time-limit", optValue(timeLimit, "N"),
              "test duration, in seconds")
             ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)")
             ("ack", optValue(ack, "N"), "Ack frequency in messages (defaults to half the prefetch value)")
@@ -98,7 +101,7 @@ uint64_t current_time()
     return t;
 }
 
-struct Stats 
+struct Stats
 {
     Mutex lock;
     uint count;
@@ -132,7 +135,7 @@ public:
 };
 
 class Receiver : public Client, public MessageListener
-{    
+{
     SubscriptionManager mgr;
     uint count;
     Stats& stats;
@@ -168,7 +171,7 @@ class Test
     Receiver receiver;
     Sender sender;
     AbsTime begin;
-    
+
 public:
     Test(const string& q) : queue(q), receiver(queue, stats), sender(queue, receiver), begin(now()) {}
     void start();
@@ -186,7 +189,7 @@ Client::Client(const string& q) : queue(q)
         connection = &localConnection;
         opts.open(localConnection);
     }
-    session = connection->newSession();       
+    session = connection->newSession();
 }
 
 void Client::start()
@@ -235,7 +238,7 @@ Receiver::Receiver(const string& q, Stats& s) : Client(q), mgr(session), count(0
         settings.acceptMode = ACCEPT_MODE_NONE;
         settings.flowControl = FlowControl::unlimited();
     }
-    mgr.subscribe(*this, queue, settings);    
+    mgr.subscribe(*this, queue, settings);
 }
 
 void Receiver::test()
@@ -283,7 +286,7 @@ void Stats::print()
         if (!opts.csv) {
             if (count) {
                 std::cout << "Latency(ms): min=" << minLatency << ", max=" <<
-	                 maxLatency << ", avg=" << aux_avg; 
+	                 maxLatency << ", avg=" << aux_avg;
             } else {
                 std::cout << "Stalled: no samples for interval";
             }
@@ -368,7 +371,7 @@ void Sender::sendByRate()
         Duration delay(sentAt, waitTill);
         if (delay < 0)
             ++missedRate;
-        else 
+        else
             sys::usleep(delay / TIME_USEC);
         if (timeLimit != 0 && Duration(start, now()) > timeLimit) {
             session.sync();
@@ -382,7 +385,7 @@ string Sender::generateData(uint size)
 {
     if (size < chars.length()) {
         return chars.substr(0, size);
-    }   
+    }
     std::string data;
     for (uint i = 0; i < (size / chars.length()); i++) {
         data += chars;
@@ -392,34 +395,38 @@ string Sender::generateData(uint size)
 }
 
 
-void Test::start() 
-{ 
-    receiver.start(); 
+void Test::start()
+{
+    receiver.start();
     begin = AbsTime(now());
-    sender.start(); 
+    sender.start();
 }
 
-void Test::join() 
-{ 
-    sender.join(); 
-    receiver.join(); 
+void Test::join()
+{
+    sender.join();
+    receiver.join();
     AbsTime end = now();
     Duration time(begin, end);
     double msecs(time / TIME_MSEC);
     if (!opts.csv) {
-        std::cout << "Sent " << receiver.getCount() << " msgs through " << queue 
+        std::cout << "Sent " << receiver.getCount() << " msgs through " << queue
                   << " in " << msecs << "ms (" << (receiver.getCount() * 1000 / msecs) << " msgs/s) ";
     }
     stats.print();
     std::cout << std::endl;
 }
 
-void Test::report() 
-{ 
+void Test::report()
+{
     stats.print();
     std::cout << std::endl;
     stats.reset();
 }
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {

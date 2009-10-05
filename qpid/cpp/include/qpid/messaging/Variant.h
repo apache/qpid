@@ -44,21 +44,21 @@ struct InvalidConversion : public qpid::Exception
 };
 
 enum VariantType {
-    VOID = 0,
-    BOOL,
-    UINT8,
-    UINT16,
-    UINT32,
-    UINT64,
-    INT8,
-    INT16,
-    INT32,
-    INT64,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    MAP,
-    LIST
+    VAR_VOID = 0,
+    VAR_BOOL,
+    VAR_UINT8,
+    VAR_UINT16,
+    VAR_UINT32,
+    VAR_UINT64,
+    VAR_INT8,
+    VAR_INT16,
+    VAR_INT32,
+    VAR_INT64,
+    VAR_FLOAT,
+    VAR_DOUBLE,
+    VAR_STRING,
+    VAR_MAP,
+    VAR_LIST
 };
 
 class VariantImpl;

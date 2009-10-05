@@ -20,28 +20,82 @@
  * under the License.
  */
 
-#include <qmf/Query.h>
+#include "qmf/Query.h"
+#include "qmf/Schema.h"
 #include <string>
 #include <boost/shared_ptr.hpp>
 
+namespace qpid {
+    namespace framing {
+        class Buffer;
+    }
+}
+
 namespace qmf {
 
+    struct QueryElementImpl {
+        QueryElementImpl(const std::string& a, const Value* v, ValueOper o) :
+            envelope(new QueryElement(this)), attrName(a), value(v), oper(o) {}
+        ~QueryElementImpl() {}
+        bool evaluate(const Object* object) const;
+
+        QueryElement* envelope;
+        std::string attrName;
+        const Value* value;
+        ValueOper oper;
+    };
+
+    struct QueryExpressionImpl {
+        QueryExpressionImpl(ExprOper o, const QueryOperand* operand1, const QueryOperand* operand2) :
+            envelope(new QueryExpression(this)), oper(o), left(operand1), right(operand2) {}
+        ~QueryExpressionImpl() {}
+        bool evaluate(const Object* object) const;
+
+        QueryExpression* envelope;
+        ExprOper oper;
+        const QueryOperand* left;
+        const QueryOperand* right;
+    };
+
     struct QueryImpl {
+        QueryImpl(Query* e) : envelope(e), select(0) {}
+        QueryImpl(const std::string& c, const std::string& p) :
+            envelope(new Query(this)), packageName(p), className(c) {}
+        QueryImpl(const SchemaClassKey* key) :
+            envelope(new Query(this)), packageName(key->getPackageName()), className(key->getClassName()) {}
+        QueryImpl(const ObjectId* oid) :
+            envelope(new Query(this)), oid(new ObjectId(*oid)) {}
+        QueryImpl(qpid::framing::Buffer& buffer);
+        ~QueryImpl() {};
+
+        void setSelect(const QueryOperand* criterion) { select = criterion; }
+        void setLimit(uint32_t maxResults) { resultLimit = maxResults; }
+        void setOrderBy(const std::string& attrName, bool decreasing) {
+            orderBy = attrName; orderDecreasing = decreasing;
+        }
+
+        const std::string& getPackage() const { return packageName; }
+        const std::string&  getClass() const { return className; }
+        const ObjectId* getObjectId() const { return oid.get(); }
+
+        bool haveSelect() const { return select != 0; }
+        bool haveLimit() const { return resultLimit > 0; }
+        bool haveOrderBy() const { return !orderBy.empty(); }
+        const QueryOperand* getSelect() const { return select; }
+        uint32_t getLimit() const { return resultLimit; }
+        const std::string& getOrderBy() const { return orderBy; }
+        bool getDecreasing() const { return orderDecreasing; }
+
+        void encode(qpid::framing::Buffer& buffer) const;
+
         Query* envelope;
         std::string packageName;
         std::string className;
         boost::shared_ptr<ObjectId> oid;
-
-        QueryImpl(Query* e) : envelope(e) {}
-
-        const char* getPackage() const { return packageName.empty() ? 0 : packageName.c_str(); }
-        const char* getClass() const { return className.empty() ? 0 : className.c_str(); }
-        const ObjectId* getObjectId() const { return oid.get(); }
-
-        int whereCount() const { return 0;}
-        Query::Oper whereOper() const { return Query::OPER_AND; }
-        const char* whereKey() const { return 0; }
-        const Value* whereValue() const { return 0; }
+        const QueryOperand* select;
+        uint32_t resultLimit;
+        std::string orderBy;
+        bool orderDecreasing;
     };
 }
 

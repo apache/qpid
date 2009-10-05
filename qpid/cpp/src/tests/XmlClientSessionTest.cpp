@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,6 +38,9 @@
 #include <boost/lexical_cast.hpp>
 
 #include <vector>
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(XmlClientSessionTest)
 
@@ -118,10 +121,10 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
     FieldTable binding;
     binding.setString("xquery", "declare variable $color external;"
                       "(./message/id mod 2 = 1) and ($color = 'blue')");
-    f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding); 
+    f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding);
 
     Message message;
-    message.getDeliveryProperties().setRoutingKey("query_name"); 
+    message.getDeliveryProperties().setRoutingKey("query_name");
 
     message.getHeaders().setString("color", "blue");
     string m = "<message><id>1</id></message>";
@@ -130,7 +133,7 @@ QPID_AUTO_TEST_CASE(testXmlBinding) {
     f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
 
     Message m2 = localQueue.get();
-    BOOST_CHECK_EQUAL(m, m2.getData());  
+    BOOST_CHECK_EQUAL(m, m2.getData());
 }
 
 /**
@@ -146,10 +149,10 @@ QPID_AUTO_TEST_CASE(testXMLBindMultipleQueues) {
 
     FieldTable blue;
     blue.setString("xquery", "./colour = 'blue'");
-    f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-colour", arg::arguments=blue); 
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="blue", arg::bindingKey="by-colour", arg::arguments=blue);
     FieldTable red;
     red.setString("xquery", "./colour = 'red'");
-    f.session.exchangeBind(arg::exchange="xml", arg::queue="red", arg::bindingKey="by-colour", arg::arguments=red); 
+    f.session.exchangeBind(arg::exchange="xml", arg::queue="red", arg::bindingKey="by-colour", arg::arguments=red);
 
     Message sent1("<colour>blue</colour>", "by-colour");
     f.session.messageTransfer(arg::content=sent1,  arg::destination="xml");
@@ -223,3 +226,4 @@ olour", arg::arguments=blue);
 
 QPID_AUTO_TEST_SUITE_END()
 
+}} // namespace qpid::tests

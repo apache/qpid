@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,25 +27,28 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(RateFlowcontrolTestSuite)
 
 QPID_AUTO_TEST_CASE(RateFlowcontrolTest)
 {
     // BOOST_CHECK(predicate);
     // BOOST_CHECK_EQUAL(a, b);
-    
+
    RateFlowcontrol fc(100);
    AbsTime n=AbsTime::now();
-   
+
    BOOST_CHECK_EQUAL( fc.receivedMessage(n, 0), 0U );
-   
+
    fc.sentCredit(n, 0);
-   
+
    BOOST_CHECK_EQUAL( fc.receivedMessage(n, 0), 0U );
    fc.sentCredit(n, 50);
 
    Duration d=250*TIME_MSEC;
-   
+
    n = AbsTime(n,d);
    BOOST_CHECK_EQUAL( fc.receivedMessage(n, 25), 0U );
    BOOST_CHECK_EQUAL( fc.availableCredit(n), 25U );
@@ -64,3 +67,5 @@ QPID_AUTO_TEST_CASE(RateFlowcontrolTest)
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

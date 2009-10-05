@@ -67,6 +67,11 @@ ValueImpl::ValueImpl(Typecode t, Buffer& buf) : envelope(new Value(this)), typec
     }
 }
 
+ValueImpl::ValueImpl(Value* e, Typecode t, Typecode at) :
+    envelope(e), typecode(t), valid(false), arrayTypecode(at)
+{
+}
+
 ValueImpl::ValueImpl(Typecode t) : envelope(new Value(this)), typecode(t)
 {
     ::memset(&value, 0, sizeof(value));
@@ -186,293 +191,64 @@ void ValueImpl::deleteArrayItem(uint32_t)
 // Wrappers
 //==================================================================
 
-Value::Value(Typecode t, Typecode at)
-{
-    impl = new ValueImpl(this, t, at);
-}
+Value::Value(const Value& from) : impl(new ValueImpl(*(from.impl))) {}
+Value::Value(Typecode t, Typecode at) : impl(new ValueImpl(this, t, at)) {}
+Value::Value(ValueImpl* i) : impl(i) {}
+Value::~Value() { delete impl; }
 
-Value::Value(ValueImpl* i)
-{
-    impl = i;
-}
-
-Value::~Value()
-{
-    delete impl;
-}
-
-Typecode Value::getType() const
-{
-    return impl->getType();
-}
-
-bool Value::isNull() const
-{
-    return impl->isNull();
-}
-
-void Value::setNull()
-{
-    impl->setNull();
-}
-
-bool Value::isObjectId() const
-{
-    return impl->isObjectId();
-}
-
-const ObjectId& Value::asObjectId() const
-{
-    return impl->asObjectId();
-}
-
-void Value::setObjectId(const ObjectId& oid)
-{
-    impl->setObjectId(oid);
-}
-
-bool Value::isUint() const
-{
-    return impl->isUint();
-}
-
-uint32_t Value::asUint() const
-{
-    return impl->asUint();
-}
-
-void Value::setUint(uint32_t val)
-{
-    impl->setUint(val);
-}
-
-bool Value::isInt() const
-{
-    return impl->isInt();
-}
-
-int32_t Value::asInt() const
-{
-    return impl->asInt();
-}
-
-void Value::setInt(int32_t val)
-{
-    impl->setInt(val);
-}
-
-bool Value::isUint64() const
-{
-    return impl->isUint64();
-}
-
-uint64_t Value::asUint64() const
-{
-    return impl->asUint64();
-}
-
-void Value::setUint64(uint64_t val)
-{
-    impl->setUint64(val);
-}
-
-bool Value::isInt64() const
-{
-    return impl->isInt64();
-}
-
-int64_t Value::asInt64() const
-{
-    return impl->asInt64();
-}
-
-void Value::setInt64(int64_t val)
-{
-    impl->setInt64(val);
-}
-
-bool Value::isString() const
-{
-    return impl->isString();
-}
-
-const char* Value::asString() const
-{
-    return impl->asString();
-}
-
-void Value::setString(const char* val)
-{
-    impl->setString(val);
-}
-
-bool Value::isBool() const
-{
-    return impl->isBool();
-}
-
-bool Value::asBool() const
-{
-    return impl->asBool();
-}
-
-void Value::setBool(bool val)
-{
-    impl->setBool(val);
-}
-
-bool Value::isFloat() const
-{
-    return impl->isFloat();
-}
-
-float Value::asFloat() const
-{
-    return impl->asFloat();
-}
-
-void Value::setFloat(float val)
-{
-    impl->setFloat(val);
-}
-
-bool Value::isDouble() const
-{
-    return impl->isDouble();
-}
-
-double Value::asDouble() const
-{
-    return impl->asDouble();
-}
-
-void Value::setDouble(double val)
-{
-    impl->setDouble(val);
-}
-
-bool Value::isUuid() const
-{
-    return impl->isUuid();
-}
-
-const uint8_t* Value::asUuid() const
-{
-    return impl->asUuid();
-}
-
-void Value::setUuid(const uint8_t* val)
-{
-    impl->setUuid(val);
-}
-
-bool Value::isObject() const
-{
-    return impl->isObject();
-}
-
-Object* Value::asObject() const
-{
-    return impl->asObject();
-}
-
-void Value::setObject(Object* val)
-{
-    impl->setObject(val);
-}
-
-bool Value::isMap() const
-{
-    return impl->isMap();
-}
-
-bool Value::keyInMap(const char* key) const
-{
-    return impl->keyInMap(key);
-}
-
-Value* Value::byKey(const char* key)
-{
-    return impl->byKey(key);
-}
-
-const Value* Value::byKey(const char* key) const
-{
-    return impl->byKey(key);
-}
-
-void Value::deleteKey(const char* key)
-{
-    impl->deleteKey(key);
-}
-
-void Value::insert(const char* key, Value* val)
-{
-    impl->insert(key, val);
-}
-
-uint32_t Value::keyCount() const
-{
-    return impl->keyCount();
-}
-
-const char* Value::key(uint32_t idx) const
-{
-    return impl->key(idx);
-}
-
-bool Value::isList() const
-{
-    return impl->isList();
-}
-
-uint32_t Value::listItemCount() const
-{
-    return impl->listItemCount();
-}
-
-Value* Value::listItem(uint32_t idx)
-{
-    return impl->listItem(idx);
-}
-
-void Value::appendToList(Value* val)
-{
-    impl->appendToList(val);
-}
-
-void Value::deleteListItem(uint32_t idx)
-{
-    impl->deleteListItem(idx);
-}
-
-bool Value::isArray() const
-{
-    return impl->isArray();
-}
-
-Typecode Value::arrayType() const
-{
-    return impl->arrayType();
-}
-
-uint32_t Value::arrayItemCount() const
-{
-    return impl->arrayItemCount();
-}
-
-Value* Value::arrayItem(uint32_t idx)
-{
-    return impl->arrayItem(idx);
-}
-
-void Value::appendToArray(Value* val)
-{
-    impl->appendToArray(val);
-}
-
-void Value::deleteArrayItem(uint32_t idx)
-{
-    impl->deleteArrayItem(idx);
-}
+Typecode Value::getType() const { return impl->getType(); }
+bool Value::isNull() const { return impl->isNull(); }
+void Value::setNull() { impl->setNull(); }
+bool Value::isObjectId() const { return impl->isObjectId(); }
+const ObjectId& Value::asObjectId() const { return impl->asObjectId(); }
+void Value::setObjectId(const ObjectId& oid) { impl->setObjectId(oid); }
+bool Value::isUint() const { return impl->isUint(); }
+uint32_t Value::asUint() const { return impl->asUint(); }
+void Value::setUint(uint32_t val) { impl->setUint(val); }
+bool Value::isInt() const { return impl->isInt(); }
+int32_t Value::asInt() const { return impl->asInt(); }
+void Value::setInt(int32_t val) { impl->setInt(val); }
+bool Value::isUint64() const { return impl->isUint64(); }
+uint64_t Value::asUint64() const { return impl->asUint64(); }
+void Value::setUint64(uint64_t val) { impl->setUint64(val); }
+bool Value::isInt64() const { return impl->isInt64(); }
+int64_t Value::asInt64() const { return impl->asInt64(); }
+void Value::setInt64(int64_t val) { impl->setInt64(val); }
+bool Value::isString() const { return impl->isString(); }
+const char* Value::asString() const { return impl->asString(); }
+void Value::setString(const char* val) { impl->setString(val); }
+bool Value::isBool() const { return impl->isBool(); }
+bool Value::asBool() const { return impl->asBool(); }
+void Value::setBool(bool val) { impl->setBool(val); }
+bool Value::isFloat() const { return impl->isFloat(); }
+float Value::asFloat() const { return impl->asFloat(); }
+void Value::setFloat(float val) { impl->setFloat(val); }
+bool Value::isDouble() const { return impl->isDouble(); }
+double Value::asDouble() const { return impl->asDouble(); }
+void Value::setDouble(double val) { impl->setDouble(val); }
+bool Value::isUuid() const { return impl->isUuid(); }
+const uint8_t* Value::asUuid() const { return impl->asUuid(); }
+void Value::setUuid(const uint8_t* val) { impl->setUuid(val); }
+bool Value::isObject() const { return impl->isObject(); }
+Object* Value::asObject() const { return impl->asObject(); }
+void Value::setObject(Object* val) { impl->setObject(val); }
+bool Value::isMap() const { return impl->isMap(); }
+bool Value::keyInMap(const char* key) const { return impl->keyInMap(key); }
+Value* Value::byKey(const char* key) { return impl->byKey(key); }
+const Value* Value::byKey(const char* key) const { return impl->byKey(key); }
+void Value::deleteKey(const char* key) { impl->deleteKey(key); }
+void Value::insert(const char* key, Value* val) { impl->insert(key, val); }
+uint32_t Value::keyCount() const { return impl->keyCount(); }
+const char* Value::key(uint32_t idx) const { return impl->key(idx); }
+bool Value::isList() const { return impl->isList(); }
+uint32_t Value::listItemCount() const { return impl->listItemCount(); }
+Value* Value::listItem(uint32_t idx) { return impl->listItem(idx); }
+void Value::appendToList(Value* val) { impl->appendToList(val); }
+void Value::deleteListItem(uint32_t idx) { impl->deleteListItem(idx); }
+bool Value::isArray() const { return impl->isArray(); }
+Typecode Value::arrayType() const { return impl->arrayType(); }
+uint32_t Value::arrayItemCount() const { return impl->arrayItemCount(); }
+Value* Value::arrayItem(uint32_t idx) { return impl->arrayItem(idx); }
+void Value::appendToArray(Value* val) { impl->appendToArray(val); }
+void Value::deleteArrayItem(uint32_t idx) { impl->deleteArrayItem(idx); }
 

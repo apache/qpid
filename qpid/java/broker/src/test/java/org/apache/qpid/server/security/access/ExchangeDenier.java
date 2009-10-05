@@ -47,17 +47,4 @@ public class ExchangeDenier extends AllowAll
     {
         return AuthzResult.DENIED;
     }
-
-    @Override
-    public String getPluginName()
-    {
-        return getClass().getSimpleName();
-    }
-
-    @Override
-    public boolean supportsTag(String name)
-    {
-        return name.equals("exchangeDenier");
-    }
-
 }

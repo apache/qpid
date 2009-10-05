@@ -109,10 +109,4 @@ public abstract class BasicACLPlugin implements ACLPlugin
         // no-op
     }
 
-    public boolean supportsTag(String name)
-    {
-        // This plugin doesn't support any tags
-        return false;
-    }
-
 }

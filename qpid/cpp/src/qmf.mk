@@ -35,8 +35,12 @@ nobase_include_HEADERS +=			\
   ../include/qmf/AgentObject.h
 
 libqmfcommon_la_SOURCES =			\
+  qmf/BrokerProxyImpl.cpp			\
+  qmf/BrokerProxyImpl.h				\
   qmf/ConnectionSettingsImpl.cpp		\
   qmf/ConnectionSettingsImpl.h			\
+  qmf/ConsoleEngineImpl.cpp			\
+  qmf/ConsoleEngineImpl.h			\
   qmf/ConsoleEngine.h				\
   qmf/Event.h					\
   qmf/Message.h					\
@@ -48,11 +52,15 @@ libqmfcommon_la_SOURCES =			\
   qmf/ObjectIdImpl.h				\
   qmf/ObjectImpl.cpp				\
   qmf/ObjectImpl.h				\
+  qmf/Protocol.cpp				\
+  qmf/Protocol.h				\
   qmf/Query.h					\
   qmf/QueryImpl.cpp				\
   qmf/QueryImpl.h				\
   qmf/ResilientConnection.cpp			\
   qmf/ResilientConnection.h			\
+  qmf/SequenceManager.cpp			\
+  qmf/SequenceManager.h				\
   qmf/Schema.h					\
   qmf/SchemaImpl.cpp				\
   qmf/SchemaImpl.h				\

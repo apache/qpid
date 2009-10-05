@@ -33,9 +33,9 @@ namespace client {
 
 namespace messaging {
 
-class Address;
+struct Address;
 class Codec;
-class MessageImpl;
+struct MessageImpl;
 
 /**
  * Representation of a message.
@@ -79,11 +79,9 @@ class Message
     QPID_CLIENT_EXTERN void encode(Codec&);
     QPID_CLIENT_EXTERN void decode(Codec&);
 
-    //TODO: move this out of the public API
-    QPID_CLIENT_EXTERN void setInternalId(void*);
-    QPID_CLIENT_EXTERN void* getInternalId();
   private:
     MessageImpl* impl;
+    friend struct MessageImplAccess;
 };
 }} // namespace qpid::messaging
 

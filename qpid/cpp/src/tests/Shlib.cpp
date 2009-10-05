@@ -24,6 +24,9 @@
 
 #include "unit_test.h"
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(ShlibTestSuite)
 
 using namespace qpid::sys;
@@ -51,7 +54,7 @@ QPID_AUTO_TEST_CASE(testShlib) {
     }
     catch (const qpid::Exception&) {}
 }
-    
+
 QPID_AUTO_TEST_CASE(testAutoShlib) {
     int unloaded = 0;
     {
@@ -66,6 +69,8 @@ QPID_AUTO_TEST_CASE(testAutoShlib) {
     }
     BOOST_CHECK_EQUAL(42, unloaded);
 }
-    
+
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

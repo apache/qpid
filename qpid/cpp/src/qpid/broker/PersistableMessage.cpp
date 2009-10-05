@@ -62,7 +62,7 @@ void PersistableMessage::flush()
 void PersistableMessage::setContentReleased() {contentReleased = true; }
 
 bool PersistableMessage::isContentReleased()const { return contentReleased; }
-	
+       
 bool PersistableMessage::isEnqueueComplete() {
     sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
     return asyncEnqueueCounter == 0;

@@ -30,7 +30,8 @@ namespace qmf {
 
     class Value {
     public:
-        Value();
+        //        Value();
+        Value(const Value& from);
         Value(Typecode t, Typecode arrayType = TYPE_UINT8);
         Value(ValueImpl* impl);
         ~Value();

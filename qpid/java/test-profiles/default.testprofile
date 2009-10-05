@@ -18,9 +18,10 @@ log4j.debug=false
 
 test.port=15672
 test.mport=18999
+#Note : Management will start open second port on: mport + 100 : 19099 
 test.port.ssl=15671
-test.port.alt=15772
-test.port.alt.ssl=15771
+test.port.alt=25672
+test.port.alt.ssl=25671
 
 test.exclude=true
 profile.excludes=08TransientExcludes

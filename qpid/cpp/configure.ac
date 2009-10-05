@@ -515,6 +515,7 @@ AC_CONFIG_FILES([
   examples/messaging/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile
+  bindings/qmf/python/Makefile
   bindings/qmf/tests/Makefile
   managementgen/Makefile
   etc/Makefile

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,7 +22,7 @@
 
 /**@file
  * Plug-in message store for tests.
- * 
+ *
  * Add functionality as required, build up a comprehensive set of
  * features to support persistent behavior tests.
  *
@@ -46,6 +46,9 @@ using namespace std;
 using namespace boost;
 using namespace qpid::sys;
 
+namespace qpid {
+namespace tests {
+
 struct TestStoreOptions : public Options {
 
     string name;
@@ -66,7 +69,7 @@ struct Completer : public Runnable {
         delete this;
     }
 };
-    
+
 class TestStore : public NullMessageStore {
   public:
     TestStore(const string& name_, Broker& broker_) : name(name_), broker(broker_) {}
@@ -83,7 +86,7 @@ class TestStore : public NullMessageStore {
 
         // Check the message for special instructions.
         size_t i = string::npos;
-        size_t j = string::npos; 
+        size_t j = string::npos;
         if (strncmp(data.c_str(), TEST_STORE_DO.c_str(), strlen(TEST_STORE_DO.c_str())) == 0
             && (i = data.find(name+"[")) != string::npos
             && (j = data.find("]", i)) != string::npos)
@@ -144,3 +147,5 @@ struct TestStorePlugin : public Plugin {
 };
 
 static TestStorePlugin pluginInstance;
+
+}} // namespace qpid::tests

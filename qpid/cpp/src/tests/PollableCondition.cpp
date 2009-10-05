@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,6 +28,8 @@
 #include "qpid/sys/Thread.h"
 #include <boost/bind.hpp>
 
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(PollableConditionTest)
 
@@ -37,7 +39,7 @@ const Duration SHORT = TIME_SEC/100;
 const Duration LONG = TIME_SEC/10;
 
 class  Callback {
-  public:    
+  public:
     enum Action { NONE, CLEAR };
 
     Callback() : count(), action(NONE) {}
@@ -46,7 +48,7 @@ class  Callback {
         Mutex::ScopedLock l(lock);
         ++count;
         switch(action) {
-          case NONE: break; 
+          case NONE: break;
           case CLEAR: pc.clear(); break;
         }
         action = NONE;
@@ -62,9 +64,9 @@ class  Callback {
         action = a;
         return wait(LONG);
     }
-    
+
   private:
-    bool wait(Duration timeout) {        
+    bool wait(Duration timeout) {
         int n = count;
         AbsTime deadline(now(), timeout);
         while (n == count && lock.wait(deadline))
@@ -83,7 +85,7 @@ QPID_AUTO_TEST_CASE(testPollableCondition) {
     PollableCondition pc(boost::bind(&Callback::call, &callback, _1), poller);
 
     Thread runner = Thread(*poller);
-    
+
     BOOST_CHECK(callback.isNotCalling()); // condition is not set.
 
     pc.set();
@@ -104,4 +106,4 @@ QPID_AUTO_TEST_CASE(testPollableCondition) {
 
 QPID_AUTO_TEST_SUITE_END()
 
-
+}} //namespace qpid::tests

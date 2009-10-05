@@ -410,12 +410,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return (AMQConnection) _minaProtocolSession.getAttribute(AMQ_CONNECTION);
     }
 
-    public void closeProtocolSession() throws AMQException
+    public void closeProtocolSession()
     {
         closeProtocolSession(true);
     }
 
-    public void closeProtocolSession(boolean waitLast) throws AMQException
+    public void closeProtocolSession(boolean waitLast)
     {
         _logger.debug("Waiting for last write to join.");
         if (waitLast && (_lastWriteFuture != null))

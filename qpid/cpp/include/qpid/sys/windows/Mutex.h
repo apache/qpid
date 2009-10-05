@@ -31,7 +31,6 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/thread/tss.hpp>
-#undef STATUS_INVALID_PARAMETER // Hack for windows.h namespace pollution
 
 namespace qpid {
 namespace sys {

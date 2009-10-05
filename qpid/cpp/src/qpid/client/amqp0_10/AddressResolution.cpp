@@ -22,6 +22,7 @@
 #include "qpid/client/amqp0_10/Codecs.h"
 #include "qpid/client/amqp0_10/MessageSource.h"
 #include "qpid/client/amqp0_10/MessageSink.h"
+#include "qpid/client/amqp0_10/OutgoingMessage.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Filter.h"
 #include "qpid/messaging/Message.h"
@@ -122,7 +123,7 @@ class Exchange : public MessageSink
              bool passive = true, const std::string& type = EMPTY_STRING, bool durable = false, 
              const FieldTable& options = EMPTY_FIELD_TABLE);
     void declare(qpid::client::AsyncSession& session, const std::string& name);
-    void send(qpid::client::AsyncSession& session, const std::string& name, qpid::messaging::Message& message);
+    void send(qpid::client::AsyncSession& session, const std::string& name, OutgoingMessage& message);
     void cancel(qpid::client::AsyncSession& session, const std::string& name);
   private:
     const std::string name;
@@ -139,7 +140,7 @@ class QueueSink : public MessageSink
     QueueSink(const std::string& name, bool passive=true, bool exclusive=false, 
               bool autoDelete=false, bool durable=false, const FieldTable& options = EMPTY_FIELD_TABLE);
     void declare(qpid::client::AsyncSession& session, const std::string& name);
-    void send(qpid::client::AsyncSession& session, const std::string& name, qpid::messaging::Message& message);
+    void send(qpid::client::AsyncSession& session, const std::string& name, OutgoingMessage& message);
     void cancel(qpid::client::AsyncSession& session, const std::string& name);
   private:
     const std::string name;
@@ -328,14 +329,12 @@ void Exchange::declare(qpid::client::AsyncSession& session, const std::string&)
     }
 }
 
-void Exchange::send(qpid::client::AsyncSession& session, const std::string&, qpid::messaging::Message& m)
+void Exchange::send(qpid::client::AsyncSession& session, const std::string&, OutgoingMessage& m)
 {
-    qpid::client::Message message;
-    convert(m, message);
-    if (message.getDeliveryProperties().getRoutingKey().empty() && !defaultSubject.empty()) {
-        message.getDeliveryProperties().setRoutingKey(defaultSubject);
+    if (m.message.getDeliveryProperties().getRoutingKey().empty() && !defaultSubject.empty()) {
+        m.message.getDeliveryProperties().setRoutingKey(defaultSubject);
     }
-    session.messageTransfer(arg::destination=name, arg::content=message);
+    m.status = session.messageTransfer(arg::destination=name, arg::content=m.message);
 }
 
 void Exchange::cancel(qpid::client::AsyncSession&, const std::string&) {}
@@ -355,12 +354,10 @@ void QueueSink::declare(qpid::client::AsyncSession& session, const std::string&)
                                    arg::autoDelete=autoDelete, arg::arguments=options);
     }
 }
-void QueueSink::send(qpid::client::AsyncSession& session, const std::string&, qpid::messaging::Message& m)
+void QueueSink::send(qpid::client::AsyncSession& session, const std::string&, OutgoingMessage& m)
 {
-    qpid::client::Message message;
-    convert(m, message);
-    message.getDeliveryProperties().setRoutingKey(name);
-    session.messageTransfer(arg::content=message);
+    m.message.getDeliveryProperties().setRoutingKey(name);
+    m.status = session.messageTransfer(arg::content=m.message);
 }
 
 void QueueSink::cancel(qpid::client::AsyncSession&, const std::string&) {}

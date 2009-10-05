@@ -133,6 +133,14 @@ void ShutdownHandler::run() {
     }
 }
 
+// Console control handler to properly handle ctl-c.
+BOOL CtrlHandler(DWORD ctl)
+{
+    ShutdownEvent shutter;     // no pid specified == shut me down
+    shutter.signal();
+    return ((ctl == CTRL_C_EVENT || ctl == CTRL_CLOSE_EVENT) ? TRUE : FALSE);
+}
+
 }
 
 struct ProcessControlOptions : public qpid::Options {
@@ -245,6 +253,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
 
     ShutdownHandler waitShut(brokerPtr);
     qpid::sys::Thread waitThr(waitShut);   // Wait for shutdown event
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
     brokerPtr->run();
     waitShut.signal();   // In case we shut down some other way
     waitThr.join();

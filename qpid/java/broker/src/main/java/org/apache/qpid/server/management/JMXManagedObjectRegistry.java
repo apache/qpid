@@ -379,6 +379,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             try
             {
                 _cs.stop();
+                CurrentActor.get().message(ManagementConsoleMessages.MNG_1003("RMI Registry", _cs.getAddress().getPort() - PORT_EXPORT_OFFSET));
+                CurrentActor.get().message(ManagementConsoleMessages.MNG_1003("RMI ConnectorServer", _cs.getAddress().getPort()));
             }
             catch (IOException e)
             {

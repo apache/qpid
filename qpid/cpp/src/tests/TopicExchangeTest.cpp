@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,11 +22,15 @@
 
 using namespace qpid::broker;
 using namespace std;
+
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(TopicExchangeTestSuite)
 
 #define CHECK_NORMALIZED(expect, pattern) BOOST_CHECK_EQUAL(expect, TopicExchange::normalize(pattern));
 
-QPID_AUTO_TEST_CASE(testNormalize) 
+QPID_AUTO_TEST_CASE(testNormalize)
 {
     CHECK_NORMALIZED("", "");
     CHECK_NORMALIZED("a.b.c", "a.b.c");
@@ -38,8 +42,8 @@ QPID_AUTO_TEST_CASE(testNormalize)
     CHECK_NORMALIZED("a.*.*.*.#", "a.*.#.*.#.*");
     CHECK_NORMALIZED("*.*.*.#", "*.#.#.*.*.#");
 }
-    
-QPID_AUTO_TEST_CASE(testPlain) 
+
+QPID_AUTO_TEST_CASE(testPlain)
 {
     string pattern("ab.cd.e");
     BOOST_CHECK(TopicExchange::match(pattern, "ab.cd.e"));
@@ -57,7 +61,7 @@ QPID_AUTO_TEST_CASE(testPlain)
 }
 
 
-QPID_AUTO_TEST_CASE(testStar) 
+QPID_AUTO_TEST_CASE(testStar)
 {
     string pattern("a.*.b");
     BOOST_CHECK(TopicExchange::match(pattern, "a.xx.b"));
@@ -75,7 +79,7 @@ QPID_AUTO_TEST_CASE(testStar)
     BOOST_CHECK(!TopicExchange::match(pattern, "q.x.y"));
 }
 
-QPID_AUTO_TEST_CASE(testHash) 
+QPID_AUTO_TEST_CASE(testHash)
 {
     string pattern("a.#.b");
     BOOST_CHECK(TopicExchange::match(pattern, "a.b"));
@@ -99,7 +103,7 @@ QPID_AUTO_TEST_CASE(testHash)
     BOOST_CHECK(TopicExchange::match(pattern, "a.x.x.b.y.y.c"));
 }
 
-QPID_AUTO_TEST_CASE(testMixed) 
+QPID_AUTO_TEST_CASE(testMixed)
 {
     string pattern("*.x.#.y");
     BOOST_CHECK(TopicExchange::match(pattern, "a.x.y"));
@@ -119,3 +123,5 @@ QPID_AUTO_TEST_CASE(testMixed)
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

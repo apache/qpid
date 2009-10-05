@@ -39,4 +39,11 @@ public class StartupRootMessageLogger extends RootMessageLoggerImpl
         return true;
     }
 
+    @Override
+    public boolean isMessageEnabled(LogActor actor)
+    {
+        return true;
+    }
+
+
 }

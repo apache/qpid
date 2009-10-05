@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,9 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/framing/reply_exceptions.h"
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(exception_test)
 
@@ -49,12 +52,12 @@ struct Catcher : public Runnable {
     function<void ()> f;
     bool caught;
     Thread thread;
-    
+
     Catcher(function<void ()> f_) : f(f_), caught(false), thread(this) {}
     ~Catcher() { join(); }
-    
+
     void run() {
-        try { 
+        try {
             ScopedSuppressLogging sl; // Suppress messages for expected errors.
             f();
         }
@@ -110,7 +113,7 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
     Catcher<TransportFailure> runner(bind(&SubscriptionManager::run, boost::ref(fix.subs)));
     fix.connection.proxy.close();
     runner.join();
-    BOOST_CHECK_THROW(fix.session.close(), TransportFailure);    
+    BOOST_CHECK_THROW(fix.session.close(), TransportFailure);
 }
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
@@ -120,3 +123,5 @@ QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

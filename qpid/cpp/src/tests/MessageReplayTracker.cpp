@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,9 @@
 #include "BrokerFixture.h"
 #include "qpid/client/MessageReplayTracker.h"
 #include "qpid/sys/Time.h"
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(MessageReplayTrackerTests)
 
@@ -53,8 +56,8 @@ QPID_AUTO_TEST_CASE(testReplay)
 
     MessageReplayTracker tracker(10);
     tracker.init(fix.session);
-    for (uint i = 0; i < 5; i++) {        
-        Message message((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+    for (uint i = 0; i < 5; i++) {
+        Message message((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
         tracker.send(message);
     }
     ReplayBufferChecker checker(1, 10);
@@ -62,7 +65,7 @@ QPID_AUTO_TEST_CASE(testReplay)
 
     tracker.replay(fix.session);
     for (uint j = 0; j < 2; j++) {//each message should have been sent twice
-        for (uint i = 0; i < 5; i++) {        
+        for (uint i = 0; i < 5; i++) {
             Message m;
             BOOST_CHECK(fix.subs.get(m, "my-queue", TIME_SEC));
             BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i+1)).str(), m.getData());
@@ -79,15 +82,15 @@ QPID_AUTO_TEST_CASE(testCheckCompletion)
 
     MessageReplayTracker tracker(10);
     tracker.init(fix.session);
-    for (uint i = 0; i < 5; i++) {        
-        Message message((boost::format("Message_%1%") % (i+1)).str(), "my-queue");        
+    for (uint i = 0; i < 5; i++) {
+        Message message((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
         tracker.send(message);
     }
     fix.session.sync();//ensures all messages are complete
     tracker.checkCompletion();
     tracker.replay(fix.session);
     Message received;
-    for (uint i = 0; i < 5; i++) {        
+    for (uint i = 0; i < 5; i++) {
         BOOST_CHECK(fix.subs.get(received, "my-queue"));
         BOOST_CHECK_EQUAL((boost::format("Message_%1%") % (i+1)).str(), received.getData());
     }
@@ -96,4 +99,4 @@ QPID_AUTO_TEST_CASE(testCheckCompletion)
 
 QPID_AUTO_TEST_SUITE_END()
 
-
+}} // namespace qpid::tests

@@ -46,6 +46,12 @@ $(BUILD)/%.py: %.py
 
 build: $(TARGETS)
 
+.PHONY: doc
+
+doc:
+	@mkdir -p $(BUILD)
+	epydoc qpid.messaging -o $(BUILD)/doc --no-private --no-sourcecode --include-log
+
 install: build
 	install -d $(PYTHON_LIB)
 

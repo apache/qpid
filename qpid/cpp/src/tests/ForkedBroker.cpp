@@ -30,6 +30,16 @@
 using namespace std;
 using qpid::ErrnoException;
 
+namespace std {
+static ostream& operator<<(ostream& o, const qpid::tests::ForkedBroker::Args& a) {
+copy(a.begin(), a.end(), ostream_iterator<string>(o, " "));
+return o;
+}
+}
+
+namespace qpid {
+namespace tests {
+
 ForkedBroker::ForkedBroker(const Args& constArgs) {
     Args args(constArgs);
     Args::iterator i = find(args.begin(), args.end(), string("TMP_DATA_DIR"));
@@ -71,20 +81,12 @@ void ForkedBroker::kill(int sig) {
         throw qpid::Exception(QPID_MSG("Forked broker exited with: " << WEXITSTATUS(status)));
 }
 
-namespace std {
-static ostream& operator<<(ostream& o, const ForkedBroker::Args& a) {
-    copy(a.begin(), a.end(), ostream_iterator<string>(o, " "));
-    return o;
-}
-
 bool isLogOption(const std::string& s) {
     const char * log_enable = "--log-enable",
                * trace      = "--trace";
     return( (! strncmp(s.c_str(), log_enable, strlen(log_enable))) ||
             (! strncmp(s.c_str(), trace,      strlen(trace)))
           );
-}
-
 }
 
 void ForkedBroker::init(const Args& userArgs) {
@@ -125,3 +127,5 @@ void ForkedBroker::init(const Args& userArgs) {
         ::exit(1);
     }
 }
+
+}} // namespace qpid::tests

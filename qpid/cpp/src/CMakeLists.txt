@@ -528,6 +528,8 @@ set (libqpidclient_SOURCES
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/Filter.cpp
      qpid/messaging/Message.cpp
+     qpid/messaging/MessageImpl.h
+     qpid/messaging/MessageImpl.cpp
      qpid/messaging/Receiver.cpp
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/Session.cpp
@@ -535,17 +537,20 @@ set (libqpidclient_SOURCES
      qpid/messaging/Sender.cpp
      qpid/messaging/SenderImpl.h
      qpid/messaging/Variant.cpp
+     qpid/client/amqp0_10/AcceptTracker.h
+     qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h
      qpid/client/amqp0_10/AddressResolution.cpp
      qpid/client/amqp0_10/Codecs.cpp
-     qpid/client/amqp0_10/CompletionTracker.h
-     qpid/client/amqp0_10/CompletionTracker.cpp
+     qpid/client/amqp0_10/CodecsInternal.h
      qpid/client/amqp0_10/ConnectionImpl.h
      qpid/client/amqp0_10/ConnectionImpl.cpp
      qpid/client/amqp0_10/IncomingMessages.h
      qpid/client/amqp0_10/IncomingMessages.cpp
      qpid/client/amqp0_10/MessageSink.h
      qpid/client/amqp0_10/MessageSource.h
+     qpid/client/amqp0_10/OutgoingMessage.h
+     qpid/client/amqp0_10/OutgoingMessage.cpp
      qpid/client/amqp0_10/ReceiverImpl.h
      qpid/client/amqp0_10/ReceiverImpl.cpp
      qpid/client/amqp0_10/SessionImpl.h

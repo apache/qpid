@@ -21,67 +21,57 @@
 
 package org.apache.qpid.server.security.acl;
 
-import junit.framework.TestCase;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.*;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.AMQConnectionFailureException;
+import org.apache.qpid.client.AMQAuthenticationException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.NamingException;
 import java.io.File;
 
 public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 {
-    private String BROKER = "vm://:"+ApplicationRegistry.DEFAULT_INSTANCE;//"tcp://localhost:5672";
-
     public void setUp() throws Exception
     {
-        //Shutdown the QTC broker
-        stopBroker();
+        final String QPID_HOME = System.getProperty("QPID_HOME");
 
-        // Initialise ACLs.
-        final String QpidExampleHome = System.getProperty("QPID_EXAMPLE_HOME");
-        final File defaultaclConfigFile = new File(QpidExampleHome, "etc/acl.config.xml");
-
-        if (!defaultaclConfigFile.exists())
-        {
-            System.err.println("Configuration file not found:" + defaultaclConfigFile);
-            fail("Configuration file not found:" + defaultaclConfigFile);
-        }
-
-        if (System.getProperty("QPID_HOME") == null)                                                                                            
+        if (QPID_HOME == null)
         {
             fail("QPID_HOME not set");
         }
 
-        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(defaultaclConfigFile);
-        ApplicationRegistry.initialise(config, ApplicationRegistry.DEFAULT_INSTANCE);
-        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        // Initialise ACLs.
+        _configFile = new File(QPID_HOME, "etc/config-systests-acl.xml");
+
+        super.setUp();
     }
 
-    public void tearDown()
-    {
-        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-        ApplicationRegistry.remove(ApplicationRegistry.DEFAULT_INSTANCE);
-    }
-
-    public String createConnectionString(String username, String password, String broker)
+    public String createConnectionString(String username, String password)
     {
 
-        return "amqp://" + username + ":" + password + "@clientid/test?brokerlist='" + broker + "?retries='0''";
+        return "amqp://" + username + ":" + password + "@clientid/test?brokerlist='" + getBroker() + "?retries='0''";
     }
 
     public void testAccessAuthorized() throws AMQException, URLSyntaxException
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -94,28 +84,32 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
         catch (Exception e)
         {
-            fail("Connection was not created due to:" + e.getMessage());
+            fail("Connection was not created due to:" + e);
         }
     }
 
-    public void testAccessNoRights() throws URLSyntaxException, JMSException
+    public void testAccessNoRights() throws Exception
     {
         try
         {
-            Connection conn = createConnection("guest", "guest");
+            Connection conn = getConnection("guest", "guest");
 
             //Attempt to do do things to test connection.
             Session sesh = conn.createSession(true, Session.SESSION_TRANSACTED);
             conn.start();
             sesh.rollback();
 
-            conn.close();
             fail("Connection was created.");
         }
-        catch (AMQException amqe)
+        catch (JMSException jmse)
         {
-            Throwable cause = amqe.getCause();
-            assertEquals("Exception was wrong type", AMQAuthenticationException.class, cause.getClass());
+            Throwable linkedException = jmse.getLinkedException();
+            assertNotNull("Cause was null", linkedException);
+
+            assertEquals("Linked Exception was wrong type", AMQConnectionFailureException.class, linkedException.getClass());
+
+            Throwable cause = linkedException.getCause();
+            assertEquals("Cause was wrong type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
         }
     }
@@ -124,7 +118,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -140,11 +134,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testClientConsumeFromNamedQueueInvalid() throws AMQException, URLSyntaxException
+    public void testClientConsumeFromNamedQueueInvalid() throws NamingException
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             //Prevent Failover
             ((AMQConnection) conn).setConnectionListener(this);
@@ -171,7 +165,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -189,11 +183,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testClientCreateNamedQueue() throws JMSException, URLSyntaxException, AMQException
+    public void testClientCreateNamedQueue() throws NamingException, JMSException, AMQException
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -207,6 +201,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
         catch (AMQAuthenticationException amqe)
         {
+            amqe.printStackTrace();
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) amqe).getErrorCode().getCode());
         }
     }
@@ -215,7 +210,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -242,7 +237,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -268,11 +263,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testClientPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testClientPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException, NamingException
     {
         try
         {
-            Connection conn = createConnection("client", "guest");
+            Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -317,7 +312,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
         try
         {
-            Connection conn = createConnection("server", "guest");
+            Connection conn = getConnection("server", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -333,11 +328,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testServerConsumeFromNamedQueueInvalid() throws AMQException, URLSyntaxException
+    public void testServerConsumeFromNamedQueueInvalid() throws AMQException, URLSyntaxException, NamingException
     {
         try
-        {                                                      
-            Connection conn = createConnection("client", "guest");
+        {
+            Connection conn = getConnection("client", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -358,11 +353,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testServerConsumeFromTemporaryQueue() throws AMQException, URLSyntaxException
+    public void testServerConsumeFromTemporaryQueue() throws AMQException, URLSyntaxException, NamingException
     {
         try
         {
-            Connection conn = createConnection("server","guest");
+            Connection conn = getConnection("server", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -382,30 +377,22 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    private Connection createConnection(String username, String password) throws AMQException
+    @Override
+    public Connection getConnection(String username, String password) throws NamingException, JMSException
     {
-        AMQConnection connection = null;
-        try
-        {
-            connection = new AMQConnection(createConnectionString(username, password, BROKER));
-        }
-        catch (URLSyntaxException e)
-        {
-            // This should never happen as we generate the URLs.
-            fail(e.getMessage());
-        }
+        AMQConnection connection = (AMQConnection) super.getConnection(username, password);
 
         //Prevent Failover
         connection.setConnectionListener(this);
 
-        return (Connection)connection;
+        return (Connection) connection;
     }
 
     public void testServerCreateNamedQueueValid() throws JMSException, URLSyntaxException
     {
         try
         {
-            Connection conn = createConnection("server", "guest");
+            Connection conn = getConnection("server", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -422,11 +409,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testServerCreateNamedQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateNamedQueueInvalid() throws JMSException, URLSyntaxException, AMQException, NamingException
     {
         try
         {
-            Connection conn = createConnection("server", "guest");
+            Connection conn = getConnection("server", "guest");
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -444,18 +431,18 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testServerCreateTemporaryQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateTemporaryQueueInvalid() throws NamingException
     {
         try
         {
-            Connection conn = createConnection("server", "guest");
+            Connection conn = getConnection("server", "guest");
 
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
 
             session.createTemporaryQueue();
-                    
+
             fail("Test failed as creation succeded.");
             //conn will be automatically closed
         }
@@ -469,19 +456,19 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testServerCreateAutoDeleteQueueInvalid() throws JMSException, URLSyntaxException, AMQException
+    public void testServerCreateAutoDeleteQueueInvalid() throws NamingException, JMSException, AMQException
     {
         Connection connection = null;
         try
         {
-            connection = createConnection("server", "guest");
+            connection = getConnection("server", "guest");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             connection.start();
 
             ((AMQSession) session).createQueue(new AMQShortString("again_ensure_auto_delete_queue_for_temporary"),
-                                            true, false, false);
+                                               true, false, false);
 
             fail("Test failed as creation succeded.");
             //connection will be automatically closed
@@ -489,7 +476,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         catch (AMQAuthenticationException amqe)
         {
             assertEquals("Incorrect error code thrown", 403, amqe.getErrorCode().getCode());
-        }       
+        }
     }
 
     /**
@@ -500,10 +487,10 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
      * @throws URLSyntaxException
      * @throws JMSException
      */
-    public void testServerPublishUsingTransactionSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testServerPublishUsingTransactionSuccess() throws AMQException, URLSyntaxException, JMSException, NamingException
     {
         //Set up the Server
-        Connection serverConnection = createConnection("server", "guest");
+        Connection serverConnection = getConnection("server", "guest");
 
         ((AMQConnection) serverConnection).setConnectionListener(this);
 
@@ -516,7 +503,7 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         serverConnection.start();
 
         //Set up the consumer
-        Connection clientConnection = createConnection("client", "guest");
+        Connection clientConnection = getConnection("client", "guest");
 
         //Send a test mesage
         Session clientSession = clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -557,8 +544,6 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             //Send the message using a transaction as this will allow us to retrieve any errors that occur on the broker.
             serverSession.commit();
 
-
-
             //Ensure Response is received.
             Message clientResponseMsg = clientResponse.receive(2000);
             assertNotNull("Client did not receive response message,", clientResponseMsg);
@@ -582,11 +567,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testServerPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException
+    public void testServerPublishInvalidQueueSuccess() throws AMQException, URLSyntaxException, JMSException, NamingException
     {
         try
         {
-            Connection conn = createConnection("server", "guest");
+            Connection conn = getConnection("server", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
 

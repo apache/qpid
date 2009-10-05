@@ -20,364 +20,565 @@
 require 'qmfengine'
 require 'thread'
 require 'socket'
+require 'monitor'
 
 module Qmf
 
-    # Pull all the TYPE_* constants into Qmf namespace.  Maybe there's an easier way?
-    Qmfengine.constants.each do |c|
-        if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0
-            const_set(c, Qmfengine.const_get(c))
-        end
+  # Pull all the TYPE_* constants into Qmf namespace.  Maybe there's an easier way?
+  Qmfengine.constants.each do |c|
+    if c.index('TYPE_') == 0 or c.index('ACCESS_') == 0 or c.index('DIR_') == 0 or c.index('CLASS_') == 0
+      const_set(c, Qmfengine.const_get(c))
     end
+  end
 
-    class ConnectionSettings
-      attr_reader :impl
+  ##==============================================================================
+  ## CONNECTION
+  ##==============================================================================
 
-      def initialize(url = nil)
-        if url
-          @impl = Qmfengine::ConnectionSettings.new(url)
-        else
-          @impl = Qmfengine::ConnectionSettings.new()
-        end
-      end
+  class ConnectionSettings
+    attr_reader :impl
 
-      def set_attr(key, val)
-        if val.class == String
-          v = Qmfengine::Value.new(TYPE_LSTR)
-          v.setString(val)
-        elsif val.class == TrueClass or val.class == FalseClass
-          v = Qmfengine::Value.new(TYPE_BOOL)
-          v.setBool(val)
-        elsif val.class == Fixnum
-          v = Qmfengine::Value.new(TYPE_UINT32)
-          v.setUint(val)
-        else
-          raise ArgumentError, "Value for attribute '#{key}' has unsupported type: #{val.class}"
-        end
-
-        @impl.setAttr(key, v)
+    def initialize(url = nil)
+      if url
+        @impl = Qmfengine::ConnectionSettings.new(url)
+      else
+        @impl = Qmfengine::ConnectionSettings.new()
       end
     end
 
-    class ConnectionHandler
-        def conn_event_connected(); end
-        def conn_event_disconnected(error); end
-        def sess_event_session_closed(context, error); end
-        def sess_event_recv(context, message); end
+    def set_attr(key, val)
+      if val.class == String
+        v = Qmfengine::Value.new(TYPE_LSTR)
+        v.setString(val)
+      elsif val.class == TrueClass or val.class == FalseClass
+        v = Qmfengine::Value.new(TYPE_BOOL)
+        v.setBool(val)
+      elsif val.class == Fixnum
+        v = Qmfengine::Value.new(TYPE_UINT32)
+        v.setUint(val)
+      else
+        raise ArgumentError, "Value for attribute '#{key}' has unsupported type: #{val.class}"
+      end
+
+      @impl.setAttr(key, v)
     end
+  end
 
-    class Query
-      attr_reader :impl
-      def initialize(i)
-        @impl = i
-      end
+  class ConnectionHandler
+    def conn_event_connected(); end
+    def conn_event_disconnected(error); end
+    def conn_event_visit(); end
+    def sess_event_session_closed(context, error); end
+    def sess_event_recv(context, message); end
+  end
 
-      def package_name
-        @impl.getPackage
-      end
+  class Connection
+    include MonitorMixin
 
-      def class_name
-        @impl.getClass
-      end
+    attr_reader :impl
 
-      def object_id
-        objid = @impl.getObjectId
-        if objid.class == NilClass
-          return nil
-        end
-        return ObjectId.new(objid)
-      end
-    end
+    def initialize(settings)
+      super()
+      @impl = Qmfengine::ResilientConnection.new(settings.impl)
+      @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
+      @impl.setNotifyFd(@sockEngine.fileno)
+      @new_conn_handlers = []
+      @conn_handlers_to_delete = []
+      @conn_handlers = []
 
-    class Connection
-      attr_reader :impl
-
-      def initialize(settings)
-        @impl = Qmfengine::ResilientConnection.new(settings.impl)
-        @sockEngine, @sock = Socket::socketpair(Socket::PF_UNIX, Socket::SOCK_STREAM, 0)
-        @impl.setNotifyFd(@sockEngine.fileno)
-        @new_conn_handlers = Array.new
-        @conn_handlers = Array.new
-        @sess_handlers = Array.new
-
-        @thread = Thread.new do
-          run
-        end
-      end
-
-      def add_conn_handler(handler)
-        @new_conn_handlers.push(handler)
-        @sockEngine.write("x")
-      end
-
-      def add_sess_handler(handler)
-        @sess_handlers.push(handler)
-      end
-
-      def run()
-        event = Qmfengine::ResilientConnectionEvent.new
-        connected = nil
-        while :true
-          @sock.read(1)
-
-          @new_conn_handlers.each do |nh|
-            @conn_handlers.push(nh)
-            nh.conn_event_connected() if connected
-          end
-          @new_conn_handlers = Array.new
-
-          valid = @impl.getEvent(event)
-          while valid
-            begin
-              case event.kind
-              when Qmfengine::ResilientConnectionEvent::CONNECTED
-                connected = :true
-                @conn_handlers.each { |h| h.conn_event_connected() }
-              when Qmfengine::ResilientConnectionEvent::DISCONNECTED
-                connected = nil
-                @conn_handlers.each { |h| h.conn_event_disconnected(event.errorText) }
-              when Qmfengine::ResilientConnectionEvent::SESSION_CLOSED
-                event.sessionContext.handler.sess_event_session_closed(event.sessionContext, event.errorText)
-              when Qmfengine::ResilientConnectionEvent::RECV
-                event.sessionContext.handler.sess_event_recv(event.sessionContext, event.message)
-              end
-            rescue Exception => ex
-              puts "Event Exception: #{ex}"
-              puts ex.backtrace
-            end
-            @impl.popEvent
-            valid = @impl.getEvent(event)
-          end
-        end
+      @thread = Thread.new do
+        run
       end
     end
 
-    class Session
-      attr_reader :handle, :handler
-
-      def initialize(conn, label, handler)
-        @conn = conn
-        @label = label
-        @handler = handler
-        @handle = Qmfengine::SessionHandle.new
-        @conn.add_sess_handler(@handler)
-        result = @conn.impl.createSession(label, self, @handle)
-      end
+    def kick
+      @sockEngine.write(".")
+      @sockEngine.flush
     end
 
-    class ObjectId
-      attr_reader :impl
-      def initialize(impl=nil)
-        if impl
-          @impl = impl
-        else
-          @impl = Qmfengine::ObjectId.new
-        end
+    def add_conn_handler(handler)
+      synchronize do
+        @new_conn_handlers << handler
       end
-
-      def object_num_high
-        return @impl.getObjectNumHi
-      end
-
-      def object_num_low
-        return @impl.getObjectNumLo
-      end
-
-      def ==(other)
-        return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
-           (@impl.getObjectNumLo == other.impl.getObjectNumLo)
-      end
+      kick
     end
 
-    class Arguments
-      attr_reader :map
-      def initialize(map)
-        @map = map
-        @by_hash = {}
-        key_count = @map.keyCount
-        a = 0
-        while a < key_count
-          @by_hash[@map.key(a)] = by_key(@map.key(a))
-          a += 1
-        end
+    def del_conn_handler(handler)
+      synchronize do
+        @conn_handlers_to_delete << handler
       end
-
-      def [] (key)
-        return @by_hash[key]
-      end
-
-      def []= (key, value)
-        @by_hash[key] = value
-        set(key, value)
-      end
-
-      def each
-        @by_hash.each { |k, v| yield(k, v) }
-      end
-
-      def by_key(key)
-        val = @map.byKey(key)
-        case val.getType
-        when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
-        when TYPE_UINT64                          then val.asUint64
-        when TYPE_SSTR, TYPE_LSTR                 then val.asString
-        when TYPE_ABSTIME                         then val.asInt64
-        when TYPE_DELTATIME                       then val.asUint64
-        when TYPE_REF                             then val.asObjectId
-        when TYPE_BOOL                            then val.asBool
-        when TYPE_FLOAT                           then val.asFloat
-        when TYPE_DOUBLE                          then val.asDouble
-        when TYPE_UUID                            then val.asUuid
-        when TYPE_INT8, TYPE_INT16, TYPE_INT32    then val.asInt
-        when TYPE_INT64                           then val.asInt64
-        when TYPE_MAP
-        when TYPE_OBJECT
-        when TYPE_LIST
-        when TYPE_ARRAY
-        end
-      end
-
-      def set(key, value)
-        val = @map.byKey(key)
-        case val.getType
-        when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(value)
-        when TYPE_UINT64 then val.setUint64(value)
-        when TYPE_SSTR, TYPE_LSTR then value ? val.setString(value) : val.setString('')
-        when TYPE_ABSTIME then val.setInt64(value)
-        when TYPE_DELTATIME then val.setUint64(value)
-        when TYPE_REF then val.setObjectId(value.impl)
-        when TYPE_BOOL then value ? val.setBool(value) : val.setBool(0)
-        when TYPE_FLOAT then val.setFloat(value)
-        when TYPE_DOUBLE then val.setDouble(value)
-        when TYPE_UUID then val.setUuid(value)
-        when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(value)
-        when TYPE_INT64 then val.setInt64(value)
-        when TYPE_MAP
-        when TYPE_OBJECT
-        when TYPE_LIST
-        when TYPE_ARRAY
-        end
-      end
+      kick
     end
 
-    class AgentHandler
-      def get_query(context, query, userId); end
-      def method_call(context, name, object_id, args, userId); end
-    end
+    def run()
+      eventImpl = Qmfengine::ResilientConnectionEvent.new
+      connected = nil
+      new_handlers = nil
+      del_handlers = nil
+      bt_count = 0
 
-    class Agent < ConnectionHandler
-      def initialize(handler, label="")
-        if label == ""
-          @agentLabel = "rb-%s.%d" % [Socket.gethostname, Process::pid]
-        else
-          @agentLabel = label
+      while :true
+        @sock.read(1)
+
+        synchronize do
+          new_handlers = @new_conn_handlers
+          del_handlers = @conn_handlers_to_delete
+          @new_conn_handlers = []
+          @conn_handlers_to_delete = []
         end
-        @conn = nil
-        @handler = handler
-        @impl = Qmfengine::AgentEngine.new(@agentLabel)
-        @event = Qmfengine::AgentEvent.new
-        @xmtMessage = Qmfengine::Message.new
-      end
 
-      def set_connection(conn)
-        @conn = conn
-        @conn.add_conn_handler(self)
-      end
+        new_handlers.each do |nh|
+          @conn_handlers << nh
+          nh.conn_event_connected() if connected
+        end
+        new_handlers = nil
 
-      def register_class(cls)
-        @impl.registerClass(cls.impl)
-      end
+        del_handlers.each do |dh|
+          d = @conn_handlers.delete(dh)
+        end
+        del_handlers = nil
 
-      def alloc_object_id(low = 0, high = 0)
-        ObjectId.new(@impl.allocObjectId(low, high))
-      end
-
-      def query_response(context, object)
-        @impl.queryResponse(context, object.impl)
-      end
-
-      def query_complete(context)
-        @impl.queryComplete(context)
-      end
-
-      def method_response(context, status, text, arguments)
-        @impl.methodResponse(context, status, text, arguments.map)
-      end
-
-      def do_agent_events()
-        count = 0
-        valid = @impl.getEvent(@event)
+        valid = @impl.getEvent(eventImpl)
         while valid
-          count += 1
-          case @event.kind
-          when Qmfengine::AgentEvent::GET_QUERY
-            @handler.get_query(@event.sequence, Query.new(@event.query), @event.authUserId)
-          when Qmfengine::AgentEvent::START_SYNC
-          when Qmfengine::AgentEvent::END_SYNC
-          when Qmfengine::AgentEvent::METHOD_CALL
-            args = Arguments.new(@event.arguments)
-            @handler.method_call(@event.sequence, @event.name, ObjectId.new(@event.objectId),
-                                 args, @event.authUserId)
-          when Qmfengine::AgentEvent::DECLARE_QUEUE
-            @conn.impl.declareQueue(@session.handle, @event.name)
-          when Qmfengine::AgentEvent::DELETE_QUEUE
-            @conn.impl.deleteQueue(@session.handle, @event.name)
-          when Qmfengine::AgentEvent::BIND
-            @conn.impl.bind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
-          when Qmfengine::AgentEvent::UNBIND
-            @conn.impl.unbind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
-          when Qmfengine::AgentEvent::SETUP_COMPLETE
-            @impl.startProtocol()
+          begin
+            case eventImpl.kind
+            when Qmfengine::ResilientConnectionEvent::CONNECTED
+              connected = :true
+              @conn_handlers.each { |h| h.conn_event_connected() }
+            when Qmfengine::ResilientConnectionEvent::DISCONNECTED
+              connected = nil
+              @conn_handlers.each { |h| h.conn_event_disconnected(eventImpl.errorText) }
+            when Qmfengine::ResilientConnectionEvent::SESSION_CLOSED
+              eventImpl.sessionContext.handler.sess_event_session_closed(eventImpl.sessionContext, eventImpl.errorText)
+            when Qmfengine::ResilientConnectionEvent::RECV
+              eventImpl.sessionContext.handler.sess_event_recv(eventImpl.sessionContext, eventImpl.message)
+            end
+          rescue Exception => ex
+            puts "Event Exception: #{ex}"
+            if bt_count < 2
+              puts ex.backtrace
+              bt_count += 1
+            end
           end
           @impl.popEvent
-          valid = @impl.getEvent(@event)
+          valid = @impl.getEvent(eventImpl)
         end
-        return count
+        @conn_handlers.each { |h| h.conn_event_visit }
       end
+    end
+  end
 
-      def do_agent_messages()
-        count = 0
-        valid = @impl.getXmtMessage(@xmtMessage)
-        while valid
-          count += 1
-          @conn.impl.sendMessage(@session.handle, @xmtMessage)
-          @impl.popXmt
-          valid = @impl.getXmtMessage(@xmtMessage)
-        end
-        return count
-      end
+  class Session
+    attr_reader :handle, :handler
 
-      def do_events()
-        begin
-          ecnt = do_agent_events
-          mcnt = do_agent_messages
-        end until ecnt == 0 and mcnt == 0
-      end
+    def initialize(conn, label, handler)
+      @conn = conn
+      @label = label
+      @handler = handler
+      @handle = Qmfengine::SessionHandle.new
+      result = @conn.impl.createSession(label, self, @handle)
+    end
 
-      def conn_event_connected()
-        puts "Agent Connection Established..."
-        @session = Session.new(@conn, "qmfa-%s.%d" % [Socket.gethostname, Process::pid], self)
-        @impl.newSession
-        do_events
-      end
+    def destroy()
+      @conn.impl.destroySession(@handle)
+    end
+  end
 
-      def conn_event_disconnected(error)
-        puts "Agent Connection Lost"
-      end
+  ##==============================================================================
+  ## OBJECTS
+  ##==============================================================================
 
-      def sess_event_session_closed(context, error)
-        puts "Agent Session Lost"
-      end
+  class QmfObject
+    include MonitorMixin
+    attr_reader :impl, :object_class
+    def initialize(cls, kwargs={})
+      super()
+      @cv = new_cond
+      @sync_count = 0
+      @sync_result = nil
+      @allow_sets = :false
+      @broker = kwargs[:broker] if kwargs.include?(:broker)
 
-      def sess_event_recv(context, message)
-        @impl.handleRcvMessage(message)
-        do_events
+      if cls:
+        @object_class = cls
+        @impl = Qmfengine::Object.new(@object_class.impl)
+      elsif kwargs.include?(:impl)
+        @impl = Qmfengine::Object.new(kwargs[:impl])
+        @object_class = SchemaObjectClass.new(nil, nil, :impl => @impl.getClass)
       end
     end
 
-    class SchemaArgument
-      attr_reader :impl
-      def initialize(name, typecode, kwargs={})
+    def object_id
+      return ObjectId.new(@impl.getObjectId)
+    end
+
+    def get_attr(name)
+      val = value(name)
+      case val.getType
+      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
+      when TYPE_UINT64 then val.asUint64
+      when TYPE_SSTR, TYPE_LSTR then val.asString
+      when TYPE_ABSTIME then val.asInt64
+      when TYPE_DELTATIME then val.asUint64
+      when TYPE_REF then val.asObjectId
+      when TYPE_BOOL then val.asBool
+      when TYPE_FLOAT then val.asFloat
+      when TYPE_DOUBLE then val.asDouble
+      when TYPE_UUID then val.asUuid
+      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.asInt
+      when TYPE_INT64 then val.asInt64
+      when TYPE_MAP
+      when TYPE_OBJECT
+      when TYPE_LIST
+      when TYPE_ARRAY
+      end
+    end
+
+    def set_attr(name, v)
+      val = value(name)
+      case val.getType
+      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(v)
+      when TYPE_UINT64 then val.setUint64(v)
+      when TYPE_SSTR, TYPE_LSTR then v ? val.setString(v) : val.setString('')
+      when TYPE_ABSTIME then val.setInt64(v)
+      when TYPE_DELTATIME then val.setUint64(v)
+      when TYPE_REF then val.setObjectId(v.impl)
+      when TYPE_BOOL then v ? val.setBool(v) : val.setBool(0)
+      when TYPE_FLOAT then val.setFloat(v)
+      when TYPE_DOUBLE then val.setDouble(v)
+      when TYPE_UUID then val.setUuid(v)
+      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(v)
+      when TYPE_INT64 then val.setInt64(v)
+      when TYPE_MAP
+      when TYPE_OBJECT
+      when TYPE_LIST
+      when TYPE_ARRAY
+      end
+    end
+
+    def [](name)
+      get_attr(name)
+    end
+
+    def []=(name, value)
+      set_attr(name, value)
+    end
+
+    def inc_attr(name, by=1)
+      set_attr(name, get_attr(name) + by)
+    end
+
+    def dec_attr(name, by=1)
+      set_attr(name, get_attr(name) - by)
+    end
+
+    def method_missing(name_in, *args)
+      #
+      # Convert the name to a string and determine if it represents an
+      # attribute assignment (i.e. "attr=")
+      #
+      name = name_in.to_s
+      attr_set = (name[name.length - 1] == 61)
+      name = name[0..name.length - 2] if attr_set
+      raise "Sets not permitted on this object" if attr_set && !@allow_sets
+
+      #
+      # If the name matches a property name, set or return the value of the property.
+      #
+      @object_class.properties.each do |prop|
+        if prop.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # Do the same for statistics
+      #
+      @object_class.statistics.each do |stat|
+        if stat.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # If we still haven't found a match for the name, check to see if
+      # it matches a method name.  If so, marshall the arguments and invoke
+      # the method.
+      #
+      @object_class.methods.each do |method|
+        if method.name == name
+          raise "Sets not permitted on methods" if attr_set
+          timeout = 30
+          synchronize do
+            @sync_count = 1
+            @impl.invokeMethod(name, _marshall(method, args), self)
+            @broker.conn.kick if @broker
+            unless @cv.wait(timeout) { @sync_count == 0 }
+              raise "Timed out waiting for response"
+            end
+          end
+
+          return @sync_result
+        end
+      end
+
+      #
+      # This name means nothing to us, pass it up the line to the parent
+      # class's handler.
+      #
+      super.method_missing(name_in, args)
+    end
+
+    def _method_result(result)
+      synchronize do
+        @sync_result = result
+        @sync_count -= 1
+        @cv.signal
+      end
+    end
+
+    #
+    # Convert a Ruby array of arguments (positional) into a Value object of type "map".
+    #
+    private
+    def _marshall(schema, args)
+      map = Qmfengine::Value.new(TYPE_MAP)
+      schema.arguments.each do |arg|
+        if arg.direction == DIR_IN || arg.direction == DIR_IN_OUT
+          map.insert(arg.name, Qmfengine::Value.new(arg.typecode))
+        end
+      end
+
+      marshalled = Arguments.new(map)
+      idx = 0
+      schema.arguments.each do |arg|
+        if arg.direction == DIR_IN || arg.direction == DIR_IN_OUT
+          marshalled[arg.name] = args[idx] unless args[idx] == nil
+          idx += 1
+        end
+      end
+
+      return marshalled.map
+    end
+
+    private
+    def value(name)
+      val = @impl.getValue(name.to_s)
+      if val.nil?
+        raise ArgumentError, "Attribute '#{name}' not defined for class #{@object_class.impl.getClassKey.getPackageName}:#{@object_class.impl.getClassKey.getClassName}"
+      end
+      return val
+    end
+  end
+
+  class AgentObject < QmfObject
+    def initialize(cls, kwargs={})
+      super(cls, kwargs)
+      @allow_sets = :true
+    end
+
+    def destroy
+      @impl.destroy
+    end
+
+    def set_object_id(oid)
+      @impl.setObjectId(oid.impl)
+    end
+  end
+
+  class ConsoleObject < QmfObject
+    attr_reader :current_time, :create_time, :delete_time
+
+    def initialize(cls, kwargs={})
+      super(cls, kwargs)
+    end
+
+    def update()
+    end
+
+    def mergeUpdate(newObject)
+    end
+
+    def deleted?()
+      @delete_time > 0
+    end
+
+    def index()
+    end
+  end
+
+  class ObjectId
+    attr_reader :impl
+    def initialize(impl=nil)
+      if impl
+        @impl = impl
+      else
+        @impl = Qmfengine::ObjectId.new
+      end
+    end
+
+    def object_num_high
+      return @impl.getObjectNumHi
+    end
+
+    def object_num_low
+      return @impl.getObjectNumLo
+    end
+
+    def ==(other)
+      return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
+        (@impl.getObjectNumLo == other.impl.getObjectNumLo)
+    end
+  end
+
+  class Arguments
+    attr_reader :map
+    def initialize(map)
+      @map = map
+      @by_hash = {}
+      key_count = @map.keyCount
+      a = 0
+      while a < key_count
+        @by_hash[@map.key(a)] = by_key(@map.key(a))
+        a += 1
+      end
+    end
+
+    def [] (key)
+      return @by_hash[key]
+    end
+
+    def []= (key, value)
+      @by_hash[key] = value
+      set(key, value)
+    end
+
+    def each
+      @by_hash.each { |k, v| yield(k, v) }
+    end
+
+    def by_key(key)
+      val = @map.byKey(key)
+      case val.getType
+      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
+      when TYPE_UINT64                          then val.asUint64
+      when TYPE_SSTR, TYPE_LSTR                 then val.asString
+      when TYPE_ABSTIME                         then val.asInt64
+      when TYPE_DELTATIME                       then val.asUint64
+      when TYPE_REF                             then val.asObjectId
+      when TYPE_BOOL                            then val.asBool
+      when TYPE_FLOAT                           then val.asFloat
+      when TYPE_DOUBLE                          then val.asDouble
+      when TYPE_UUID                            then val.asUuid
+      when TYPE_INT8, TYPE_INT16, TYPE_INT32    then val.asInt
+      when TYPE_INT64                           then val.asInt64
+      when TYPE_MAP
+      when TYPE_OBJECT
+      when TYPE_LIST
+      when TYPE_ARRAY
+      end
+    end
+
+    def set(key, value)
+      val = @map.byKey(key)
+      case val.getType
+      when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(value)
+      when TYPE_UINT64 then val.setUint64(value)
+      when TYPE_SSTR, TYPE_LSTR then value ? val.setString(value) : val.setString('')
+      when TYPE_ABSTIME then val.setInt64(value)
+      when TYPE_DELTATIME then val.setUint64(value)
+      when TYPE_REF then val.setObjectId(value.impl)
+      when TYPE_BOOL then value ? val.setBool(value) : val.setBool(0)
+      when TYPE_FLOAT then val.setFloat(value)
+      when TYPE_DOUBLE then val.setDouble(value)
+      when TYPE_UUID then val.setUuid(value)
+      when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(value)
+      when TYPE_INT64 then val.setInt64(value)
+      when TYPE_MAP
+      when TYPE_OBJECT
+      when TYPE_LIST
+      when TYPE_ARRAY
+      end
+    end
+  end
+
+  class MethodResponse
+    def initialize(impl)
+      puts "start copying..."
+      @impl = Qmfengine::MethodResponse.new(impl)
+      puts "done copying..."
+    end
+
+    def status
+      @impl.getStatus
+    end
+
+    def exception
+      @impl.getException
+    end
+  end
+
+  ##==============================================================================
+  ## QUERY
+  ##==============================================================================
+
+  class Query
+    attr_reader :impl
+    def initialize(kwargs = {})
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
+        package = ''
+        if kwargs.include?(:key)
+          @impl = Qmfengine::Query.new(kwargs[:key])
+        elsif kwargs.include?(:object_id)
+          @impl = Qmfengine::Query.new(kwargs[:object_id])
+        else
+          package = kwargs[:package] if kwargs.include?(:package)
+          if kwargs.include?(:class)
+            @impl = Qmfengine::Query.new(kwargs[:class], package)
+          else
+            raise ArgumentError, "Invalid arguments, use :key or :class[,:package]"
+          end
+        end
+      end
+    end
+
+    def package_name
+      @impl.getPackage
+    end
+
+    def class_name
+      @impl.getClass
+    end
+
+    def object_id
+      objid = @impl.getObjectId
+      if objid.class == NilClass
+        return nil
+      end
+      return ObjectId.new(objid)
+    end
+  end
+
+  ##==============================================================================
+  ## SCHEMA
+  ##==============================================================================
+
+  class SchemaArgument
+    attr_reader :impl
+    def initialize(name, typecode, kwargs={})
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
         @impl = Qmfengine::SchemaArgument.new(name, typecode)
         @impl.setDirection(kwargs[:dir]) if kwargs.include?(:dir)
         @impl.setUnit(kwargs[:unit])     if kwargs.include?(:unit)
@@ -385,23 +586,51 @@ module Qmf
       end
     end
 
-    class SchemaMethod
-      attr_reader :impl
-      def initialize(name, kwargs={})
+    def name
+      @impl.getName
+    end
+
+    def direction
+      @impl.getDirection
+    end
+
+    def typecode
+      @impl.getType
+    end
+  end
+
+  class SchemaMethod
+    attr_reader :impl, :arguments
+    def initialize(name, kwargs={})
+      @arguments = []
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+        arg_count = @impl.getArgumentCount
+        for i in 0...arg_count
+          @arguments << SchemaArgument.new(nil, nil, :impl => @impl.getArgument(i))
+        end
+      else
         @impl = Qmfengine::SchemaMethod.new(name)
         @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
-        @arguments = []
-      end
-
-      def add_argument(arg)
-        @arguments << arg
-        @impl.addArgument(arg.impl)
       end
     end
 
-    class SchemaProperty
-      attr_reader :impl
-      def initialize(name, typecode, kwargs={})
+    def add_argument(arg)
+      @arguments << arg
+      @impl.addArgument(arg.impl)
+    end
+
+    def name
+      @impl.getName
+    end
+  end
+
+  class SchemaProperty
+    attr_reader :impl
+    def initialize(name, typecode, kwargs={})
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
         @impl = Qmfengine::SchemaProperty.new(name, typecode)
         @impl.setAccess(kwargs[:access])     if kwargs.include?(:access)
         @impl.setIndex(kwargs[:index])       if kwargs.include?(:index)
@@ -409,161 +638,547 @@ module Qmf
         @impl.setUnit(kwargs[:unit])         if kwargs.include?(:unit)
         @impl.setDesc(kwargs[:desc])         if kwargs.include?(:desc)
       end
-
-      def name
-        @impl.getName
-      end
     end
 
-    class SchemaStatistic
-      attr_reader :impl
-      def initialize(name, typecode, kwargs={})
+    def name
+      @impl.getName
+    end
+  end
+
+  class SchemaStatistic
+    attr_reader :impl
+    def initialize(name, typecode, kwargs={})
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+      else
         @impl = Qmfengine::SchemaStatistic.new(name, typecode)
         @impl.setUnit(kwargs[:unit]) if kwargs.include?(:unit)
         @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
       end
     end
 
-    class SchemaObjectClass
-      attr_reader :impl
-      def initialize(package, name, kwargs={})
-        @impl = Qmfengine::SchemaObjectClass.new(package, name)
-        @properties = []
-        @statistics = []
-        @methods = []
-      end
+    def name
+      @impl.getName
+    end
+  end
 
-      def add_property(prop)
-        @properties << prop
-        @impl.addProperty(prop.impl)
-      end
+  class SchemaClassKey
+    attr_reader :impl
+    def initialize(i)
+      @impl = i
+    end
 
-      def add_statistic(stat)
-        @statistics << stat
-        @impl.addStatistic(stat.impl)
-      end
+    def get_package()
+      @impl.getPackageName()
+    end
 
-      def add_method(meth)
-        @methods << meth
-        @impl.addMethod(meth.impl)
-      end
+    def get_class()
+      @impl.getClassName()
+    end
+  end
 
-      def name
-        @impl.getName
-      end
+  class SchemaObjectClass
+    attr_reader :impl, :properties, :statistics, :methods
+    def initialize(package, name, kwargs={})
+      @properties = []
+      @statistics = []
+      @methods = []
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
 
-      def properties
-        unless @properties
-          @properties = []
-          @impl.getPropertyCount.times do |i|
-            @properties << @impl.getProperty(i)
-          end
+        @impl.getPropertyCount.times do |i|
+          @properties << SchemaProperty.new(nil, nil, :impl => @impl.getProperty(i))
         end
-        return @properties
+
+        @impl.getStatisticCount.times do |i|
+          @statistics << SchemaStatistic.new(nil, nil, :impl => @impl.getStatistic(i))
+        end
+          
+        @impl.getMethodCount.times do |i|
+          @methods << SchemaMethod.new(nil, :impl => @impl.getMethod(i))
+        end
+      else
+        @impl = Qmfengine::SchemaObjectClass.new(package, name)
       end
     end
 
-    class SchemaEventClass
-      attr_reader :impl
-      def initialize(package, name, kwargs={})
+    def add_property(prop)
+      @properties << prop
+      @impl.addProperty(prop.impl)
+    end
+
+    def add_statistic(stat)
+      @statistics << stat
+      @impl.addStatistic(stat.impl)
+    end
+
+    def add_method(meth)
+      @methods << meth
+      @impl.addMethod(meth.impl)
+    end
+
+    def name
+      @impl.getClassKey.getClassName
+    end
+  end
+
+  class SchemaEventClass
+    attr_reader :impl, :arguments
+    def initialize(package, name, kwargs={})
+      @arguments = []
+      if kwargs.include?(:impl)
+        @impl = kwargs[:impl]
+        @impl.getArgumentCount.times do |i|
+          @arguments << SchemaArgument.new(nil, nil, :impl => @impl.getArgument(i))
+        end
+      else
         @impl = Qmfengine::SchemaEventClass.new(package, name)
         @impl.setDesc(kwargs[:desc]) if kwargs.include?(:desc)
-        @arguments = []
-      end
-
-      def add_argument(arg)
-        @arguments << arg
-        @impl.addArgument(arg.impl)
       end
     end
 
-    class QmfObject
-      attr_reader :impl, :object_class
-      def initialize(cls)
-        @object_class = cls
-        @impl = Qmfengine::Object.new(@object_class.impl)
-      end
+    def add_argument(arg)
+      @arguments << arg
+      @impl.addArgument(arg.impl)
+    end
 
-      def destroy
-        @impl.destroy
-      end
+    def name
+      @impl.getClassKey.getClassName
+    end
+  end
 
-      def object_id
-        return ObjectId.new(@impl.getObjectId)
-      end
+  ##==============================================================================
+  ## CONSOLE
+  ##==============================================================================
 
-      def set_object_id(oid)
-        @impl.setObjectId(oid.impl)
-      end
+  class ConsoleHandler
+    def agent_added(agent); end
+    def agent_deleted(agent); end
+    def new_package(package); end
+    def new_class(class_key); end
+    def object_update(object, hasProps, hasStats); end
+    def event_received(event); end
+    def agent_heartbeat(agent, timestamp); end
+    def method_response(resp); end
+    def broker_info(broker); end
+  end
 
-      def get_attr(name)
-        val = value(name)
-        case val.getType
-        when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.asUint
-        when TYPE_UINT64 then val.asUint64
-        when TYPE_SSTR, TYPE_LSTR then val.asString
-        when TYPE_ABSTIME then val.asInt64
-        when TYPE_DELTATIME then val.asUint64
-        when TYPE_REF then val.asObjectId
-        when TYPE_BOOL then val.asBool
-        when TYPE_FLOAT then val.asFloat
-        when TYPE_DOUBLE then val.asDouble
-        when TYPE_UUID then val.asUuid
-        when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.asInt
-        when TYPE_INT64 then val.asInt64
-        when TYPE_MAP
-        when TYPE_OBJECT
-        when TYPE_LIST
-        when TYPE_ARRAY
-        end
-      end
+  class Console
+    include MonitorMixin
+    attr_reader :impl
 
-      def set_attr(name, v)
-        val = value(name)
-        case val.getType
-        when TYPE_UINT8, TYPE_UINT16, TYPE_UINT32 then val.setUint(v)
-        when TYPE_UINT64 then val.setUint64(v)
-        when TYPE_SSTR, TYPE_LSTR then v ? val.setString(v) : val.setString('')
-        when TYPE_ABSTIME then val.setInt64(v)
-        when TYPE_DELTATIME then val.setUint64(v)
-        when TYPE_REF then val.setObjectId(v.impl)
-        when TYPE_BOOL then v ? val.setBool(v) : val.setBool(0)
-        when TYPE_FLOAT then val.setFloat(v)
-        when TYPE_DOUBLE then val.setDouble(v)
-        when TYPE_UUID then val.setUuid(v)
-        when TYPE_INT8, TYPE_INT16, TYPE_INT32 then val.setInt(v)
-        when TYPE_INT64 then val.setInt64(v)
-        when TYPE_MAP
-        when TYPE_OBJECT
-        when TYPE_LIST
-        when TYPE_ARRAY
-        end
-      end
+    def initialize(handler = nil, kwargs={})
+      super()
+      @handler = handler
+      @impl = Qmfengine::ConsoleEngine.new
+      @event = Qmfengine::ConsoleEvent.new
+      @broker_list = []
+      @cv = new_cond
+      @sync_count = nil
+      @sync_result = nil
+    end
 
-      def [](name)
-          get_attr(name)
-      end
+    def add_connection(conn)
+      broker = Broker.new(self, conn)
+      @broker_list << broker
+      return broker
+    end
 
-      def []=(name, value)
-          set_attr(name, value)
-      end
+    def del_connection(broker)
+      broker.shutdown
+      @broker_list.delete(broker)
+    end
 
-      def inc_attr(name, by=1)
-        set_attr(name, get_attr(name) + by)
+    def get_packages()
+      plist = []
+      count = @impl.packageCount
+      for i in 0...count
+        plist << @impl.getPackageName(i)
       end
+      return plist
+    end
 
-      def dec_attr(name, by=1)
-        set_attr(name, get_attr(name) - by)
-      end
-
-      private
-      def value(name)
-          val = @impl.getValue(name.to_s)
-          if val.nil?
-              raise ArgumentError, "Attribute '#{name}' not defined for class #{@object_class.impl.getName}"
+    def get_classes(package, kind=CLASS_OBJECT)
+      clist = []
+      count = @impl.classCount(package)
+      for i in 0...count
+        key = @impl.getClass(package, i)
+        class_kind = @impl.getClassKind(key)
+        if class_kind == kind
+          if kind == CLASS_OBJECT
+            clist << SchemaObjectClass.new(nil, nil, :impl => @impl.getObjectClass(key))
+          elsif kind == CLASS_EVENT
+            clist << SchemaEventClass.new(nil, nil, :impl => @impl.getEventClass(key))
           end
-          return val
+        end
+      end
+
+      return clist
+    end
+
+    def bind_package(package)
+      @impl.bindPackage(package)
+    end
+
+    def bind_class(kwargs = {})
+      if kwargs.include?(:key)
+        @impl.bindClass(kwargs[:key])
+      elsif kwargs.include?(:package)
+        package = kwargs[:package]
+        if kwargs.include?(:class)
+          @impl.bindClass(package, kwargs[:class])
+        else
+          @impl.bindClass(package)
+        end
+      else
+        raise ArgumentError, "Invalid arguments, use :key or :package[,:class]"
       end
     end
+
+    def get_agents(broker = nil)
+      blist = []
+      if broker
+        blist << broker
+      else
+        blist = @broker_list
+      end
+
+      agents = []
+      blist.each do |b|
+        count = b.impl.agentCount
+        for idx in 0...count
+          agents << AgentProxy.new(b.impl.getAgent(idx), b)
+        end
+      end
+
+      return agents
+    end
+
+    def get_objects(query, kwargs = {})
+      timeout = 30
+      if kwargs.include?(:timeout)
+        timeout = kwargs[:timeout]
+      end
+      synchronize do
+        @sync_count = 1
+        @sync_result = []
+        broker = @broker_list[0]
+        broker.send_query(query.impl, nil)
+        unless @cv.wait(timeout) { @sync_count == 0 }
+          raise "Timed out waiting for response"
+        end
+
+        return @sync_result
+      end
+    end
+
+    def _get_result(list, context)
+      synchronize do
+        list.each do |item|
+          @sync_result << item
+        end
+        @sync_count -= 1
+        @cv.signal
+      end
+    end
+
+    def start_sync(query)
+    end
+
+    def touch_sync(sync)
+    end
+
+    def end_sync(sync)
+    end
+
+    def do_console_events()
+      count = 0
+      valid = @impl.getEvent(@event)
+      while valid
+        count += 1
+        puts "Console Event: #{@event.kind}"
+        case @event.kind
+        when Qmfengine::ConsoleEvent::AGENT_ADDED
+        when Qmfengine::ConsoleEvent::AGENT_DELETED
+        when Qmfengine::ConsoleEvent::NEW_PACKAGE
+        when Qmfengine::ConsoleEvent::NEW_CLASS
+        when Qmfengine::ConsoleEvent::OBJECT_UPDATE
+        when Qmfengine::ConsoleEvent::EVENT_RECEIVED
+        when Qmfengine::ConsoleEvent::AGENT_HEARTBEAT
+        when Qmfengine::ConsoleEvent::METHOD_RESPONSE
+        end
+        @impl.popEvent
+        valid = @impl.getEvent(@event)
+      end
+      return count
+    end
+  end
+
+  class AgentProxy
+    attr_reader :broker
+
+    def initialize(impl, broker)
+      @impl = impl
+      @broker = broker
+    end
+
+    def label
+      @impl.getLabel
+    end
+  end
+
+  class Broker < ConnectionHandler
+    include MonitorMixin
+    attr_reader :impl, :conn
+
+    def initialize(console, conn)
+      super()
+      @console = console
+      @conn = conn
+      @session = nil
+      @cv = new_cond
+      @stable = nil
+      @event = Qmfengine::BrokerEvent.new
+      @xmtMessage = Qmfengine::Message.new
+      @impl = Qmfengine::BrokerProxy.new(@console.impl)
+      @console.impl.addConnection(@impl, self)
+      @conn.add_conn_handler(self)
+      @operational = :true
+    end
+
+    def shutdown()
+      @console.impl.delConnection(@impl)
+      @conn.del_conn_handler(self)
+      @operational = :false
+    end
+
+    def waitForStable(timeout = nil)
+      synchronize do
+        return if @stable
+        if timeout
+          unless @cv.wait(timeout) { @stable }
+            raise "Timed out waiting for broker connection to become stable"
+          end
+        else
+          while not @stable
+            @cv.wait
+          end
+        end
+      end
+    end
+
+    def send_query(query, ctx)
+      @impl.sendQuery(query, ctx)
+      @conn.kick
+    end
+
+    def do_broker_events()
+      count = 0
+      valid = @impl.getEvent(@event)
+      while valid
+        count += 1
+        puts "Broker Event: #{@event.kind}"
+        case @event.kind
+        when Qmfengine::BrokerEvent::BROKER_INFO
+        when Qmfengine::BrokerEvent::DECLARE_QUEUE
+          @conn.impl.declareQueue(@session.handle, @event.name)
+        when Qmfengine::BrokerEvent::DELETE_QUEUE
+          @conn.impl.deleteQueue(@session.handle, @event.name)
+        when Qmfengine::BrokerEvent::BIND
+          @conn.impl.bind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
+        when Qmfengine::BrokerEvent::UNBIND
+          @conn.impl.unbind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
+        when Qmfengine::BrokerEvent::SETUP_COMPLETE
+          @impl.startProtocol
+        when Qmfengine::BrokerEvent::STABLE
+          synchronize do
+            @stable = :true
+            @cv.signal
+          end
+        when Qmfengine::BrokerEvent::QUERY_COMPLETE
+          result = []
+          for idx in 0...@event.queryResponse.getObjectCount
+            result << ConsoleObject.new(nil, :impl => @event.queryResponse.getObject(idx), :broker => self)
+          end
+          @console._get_result(result, @event.context)
+        when Qmfengine::BrokerEvent::METHOD_RESPONSE
+          obj = @event.context
+          obj._method_result(MethodResponse.new(@event.methodResponse))
+        end
+        @impl.popEvent
+        valid = @impl.getEvent(@event)
+      end
+      return count
+    end
+
+    def do_broker_messages()
+      count = 0
+      valid = @impl.getXmtMessage(@xmtMessage)
+      while valid
+        count += 1
+        @conn.impl.sendMessage(@session.handle, @xmtMessage)
+        @impl.popXmt
+        valid = @impl.getXmtMessage(@xmtMessage)
+      end
+      return count
+    end
+
+    def do_events()
+      begin
+        ccnt = @console.do_console_events
+        bcnt = do_broker_events
+        mcnt = do_broker_messages
+      end until ccnt == 0 and bcnt == 0 and mcnt == 0
+    end
+
+    def conn_event_connected()
+      puts "Console Connection Established..."
+      @session = Session.new(@conn, "qmfc-%s.%d" % [Socket.gethostname, Process::pid], self)
+      @impl.sessionOpened(@session.handle)
+      do_events
+    end
+
+    def conn_event_disconnected(error)
+      puts "Console Connection Lost"
+    end
+
+    def conn_event_visit
+      do_events
+    end
+
+    def sess_event_session_closed(context, error)
+      puts "Console Session Lost"
+      @impl.sessionClosed()
+    end
+
+    def sess_event_recv(context, message)
+      puts "Unexpected RECV Event" if not @operational
+      @impl.handleRcvMessage(message)
+      do_events
+    end
+  end
+
+  ##==============================================================================
+  ## AGENT
+  ##==============================================================================
+
+  class AgentHandler
+    def get_query(context, query, userId); end
+    def method_call(context, name, object_id, args, userId); end
+  end
+
+  class Agent < ConnectionHandler
+    def initialize(handler, label="")
+      if label == ""
+        @agentLabel = "rb-%s.%d" % [Socket.gethostname, Process::pid]
+      else
+        @agentLabel = label
+      end
+      @conn = nil
+      @handler = handler
+      @impl = Qmfengine::AgentEngine.new(@agentLabel)
+      @event = Qmfengine::AgentEvent.new
+      @xmtMessage = Qmfengine::Message.new
+    end
+
+    def set_connection(conn)
+      @conn = conn
+      @conn.add_conn_handler(self)
+    end
+
+    def register_class(cls)
+      @impl.registerClass(cls.impl)
+    end
+
+    def alloc_object_id(low = 0, high = 0)
+      ObjectId.new(@impl.allocObjectId(low, high))
+    end
+
+    def query_response(context, object)
+      @impl.queryResponse(context, object.impl)
+    end
+
+    def query_complete(context)
+      @impl.queryComplete(context)
+    end
+
+    def method_response(context, status, text, arguments)
+      @impl.methodResponse(context, status, text, arguments.map)
+    end
+
+    def do_agent_events()
+      count = 0
+      valid = @impl.getEvent(@event)
+      while valid
+        count += 1
+        case @event.kind
+        when Qmfengine::AgentEvent::GET_QUERY
+          @handler.get_query(@event.sequence, Query.new(:impl => @event.query), @event.authUserId)
+        when Qmfengine::AgentEvent::START_SYNC
+        when Qmfengine::AgentEvent::END_SYNC
+        when Qmfengine::AgentEvent::METHOD_CALL
+          args = Arguments.new(@event.arguments)
+          @handler.method_call(@event.sequence, @event.name, ObjectId.new(@event.objectId),
+                               args, @event.authUserId)
+        when Qmfengine::AgentEvent::DECLARE_QUEUE
+          @conn.impl.declareQueue(@session.handle, @event.name)
+        when Qmfengine::AgentEvent::DELETE_QUEUE
+          @conn.impl.deleteQueue(@session.handle, @event.name)
+        when Qmfengine::AgentEvent::BIND
+          @conn.impl.bind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
+        when Qmfengine::AgentEvent::UNBIND
+          @conn.impl.unbind(@session.handle, @event.exchange, @event.name, @event.bindingKey)
+        when Qmfengine::AgentEvent::SETUP_COMPLETE
+          @impl.startProtocol()
+        end
+        @impl.popEvent
+        valid = @impl.getEvent(@event)
+      end
+      return count
+    end
+
+    def do_agent_messages()
+      count = 0
+      valid = @impl.getXmtMessage(@xmtMessage)
+      while valid
+        count += 1
+        @conn.impl.sendMessage(@session.handle, @xmtMessage)
+        @impl.popXmt
+        valid = @impl.getXmtMessage(@xmtMessage)
+      end
+      return count
+    end
+
+    def do_events()
+      begin
+        ecnt = do_agent_events
+        mcnt = do_agent_messages
+      end until ecnt == 0 and mcnt == 0
+    end
+
+    def conn_event_connected()
+      puts "Agent Connection Established..."
+      @session = Session.new(@conn, "qmfa-%s.%d" % [Socket.gethostname, Process::pid], self)
+      @impl.newSession
+      do_events
+    end
+
+    def conn_event_disconnected(error)
+      puts "Agent Connection Lost"
+    end
+
+    def conn_event_visit
+      do_events
+    end
+
+    def sess_event_session_closed(context, error)
+      puts "Agent Session Lost"
+    end
+
+    def sess_event_recv(context, message)
+      @impl.handleRcvMessage(message)
+      do_events
+    end
+  end
 
 end

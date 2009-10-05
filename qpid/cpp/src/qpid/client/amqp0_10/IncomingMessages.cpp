@@ -21,11 +21,13 @@
 #include "qpid/client/amqp0_10/IncomingMessages.h"
 #include "qpid/client/amqp0_10/AddressResolution.h"
 #include "qpid/client/amqp0_10/Codecs.h"
+#include "qpid/client/amqp0_10/CodecsInternal.h"
 #include "qpid/client/SessionImpl.h"
 #include "qpid/client/SessionBase_0_10Access.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
+#include "qpid/messaging/MessageImpl.h"
 #include "qpid/messaging/Variant.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/FrameSet.h"
@@ -41,6 +43,7 @@ using namespace qpid::framing;
 using namespace qpid::framing::message;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
+using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Variant;
 
 namespace {
@@ -78,11 +81,32 @@ struct MatchAndTrack
         }
     }
 };
+
+struct Match
+{
+    const std::string destination;
+    uint32_t matched;
+
+    Match(const std::string& d) : destination(d), matched(0) {}
+
+    bool operator()(boost::shared_ptr<qpid::framing::FrameSet> command)
+    {
+        if (command->as<MessageTransferBody>()->getDestination() == destination) {
+            ++matched;
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
 }
 
-IncomingMessages::IncomingMessages(qpid::client::AsyncSession s) : 
-    session(s), 
-    incoming(SessionBase_0_10Access(session).get()->getDemux().getDefault()) {}
+void IncomingMessages::setSession(qpid::client::AsyncSession s)
+{
+    session = s;
+    incoming = SessionBase_0_10Access(session).get()->getDemux().getDefault();
+    acceptTracker.reset();
+}
 
 bool IncomingMessages::get(Handler& handler, Duration timeout)
 {
@@ -101,8 +125,7 @@ bool IncomingMessages::get(Handler& handler, Duration timeout)
 
 void IncomingMessages::accept()
 {
-    session.messageAccept(unaccepted);
-    unaccepted.clear();
+    acceptTracker.accept(session);
 }
 
 void IncomingMessages::releaseAll()
@@ -116,8 +139,7 @@ void IncomingMessages::releaseAll()
     GetAny handler;
     while (process(&handler, 0)) ;
     //now release all messages
-    session.messageRelease(unaccepted);
-    unaccepted.clear();
+    acceptTracker.release(session);
 }
 
 void IncomingMessages::releasePending(const std::string& destination)
@@ -161,6 +183,32 @@ bool IncomingMessages::process(Handler* handler, qpid::sys::Duration duration)
     return false;
 }
 
+uint32_t IncomingMessages::pendingAccept()
+{
+    return acceptTracker.acceptsPending();
+}
+uint32_t IncomingMessages::pendingAccept(const std::string& destination)
+{
+    return acceptTracker.acceptsPending(destination);
+}
+
+uint32_t IncomingMessages::available()
+{
+    //first pump all available messages from incoming to received...
+    while (process(0, 0)) {}
+    //return the count of received messages
+    return received.size();
+}
+
+uint32_t IncomingMessages::available(const std::string& destination)
+{
+    //first pump all available messages from incoming to received...
+    while (process(0, 0)) {}
+
+    //count all messages for this destination from received list
+    return std::for_each(received.begin(), received.end(), Match(destination)).matched;
+}
+
 void populate(qpid::messaging::Message& message, FrameSet& command);
 
 /**
@@ -175,7 +223,7 @@ void IncomingMessages::retrieve(FrameSetPtr command, qpid::messaging::Message* m
     }
     const MessageTransferBody* transfer = command->as<MessageTransferBody>(); 
     if (transfer->getAcquireMode() == ACQUIRE_MODE_PRE_ACQUIRED && transfer->getAcceptMode() == ACCEPT_MODE_EXPLICIT) {
-        unaccepted.add(command->getId());
+        acceptTracker.delivered(transfer->getDestination(), command->getId());
     }
     session.markCompleted(command->getId(), false, false);
 }
@@ -191,8 +239,6 @@ void IncomingMessages::MessageTransfer::retrieve(qpid::messaging::Message* messa
     parent.retrieve(content, message);
 }
 
-void translate(const FieldTable& from, Variant::Map& to);//implemented in Codecs.cpp
-
 void populateHeaders(qpid::messaging::Message& message, 
                      const DeliveryProperties* deliveryProperties, 
                      const MessageProperties* messageProperties)
@@ -206,6 +252,7 @@ void populateHeaders(qpid::messaging::Message& message,
         if (messageProperties->hasReplyTo()) {
             message.setReplyTo(AddressResolution::convert(messageProperties->getReplyTo()));
         }
+        message.getHeaders().clear();
         translate(messageProperties->getApplicationHeaders(), message.getHeaders());
         //TODO: convert other message properties
     }
@@ -219,9 +266,8 @@ void populateHeaders(qpid::messaging::Message& message, const AMQHeaderBody* hea
 void populate(qpid::messaging::Message& message, FrameSet& command)
 {
     //need to be able to link the message back to the transfer it was delivered by
-    //e.g. for rejecting. TODO: hide this from API
-    uint32_t commandId = command.getId();
-    message.setInternalId(reinterpret_cast<void*>(commandId));
+    //e.g. for rejecting.
+    MessageImplAccess::get(message).setInternalId(command.getId());
         
     command.getContent(message.getBytes());
 

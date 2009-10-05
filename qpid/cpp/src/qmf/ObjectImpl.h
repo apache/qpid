@@ -21,19 +21,25 @@
  */
 
 #include <qmf/Object.h>
+#include <qmf/ObjectIdImpl.h>
 #include <map>
 #include <set>
 #include <string>
 #include <qpid/framing/Buffer.h>
 #include <boost/shared_ptr.hpp>
+#include <qpid/sys/Mutex.h>
 
 namespace qmf {
 
+    class BrokerProxyImpl;
+
     struct ObjectImpl {
+        typedef boost::shared_ptr<ObjectImpl> Ptr;
         typedef boost::shared_ptr<Value> ValuePtr;
         Object* envelope;
         const SchemaObjectClass* objectClass;
-        boost::shared_ptr<ObjectId> objectId;
+        BrokerProxyImpl* broker;
+        boost::shared_ptr<ObjectIdImpl> objectId;
         uint64_t createTime;
         uint64_t destroyTime;
         uint64_t lastUpdatedTime;
@@ -41,14 +47,16 @@ namespace qmf {
         mutable std::map<std::string, ValuePtr> statistics;
 
         ObjectImpl(Object* e, const SchemaObjectClass* type);
-        ObjectImpl(const SchemaObjectClass* type, qpid::framing::Buffer& buffer);
+        ObjectImpl(const SchemaObjectClass* type, BrokerProxyImpl* b, qpid::framing::Buffer& buffer,
+                   bool prop, bool stat, bool managed);
         ~ObjectImpl();
 
         void destroy();
-        const ObjectId* getObjectId() const { return objectId.get(); }
-        void setObjectId(ObjectId* oid) { objectId.reset(oid); }
+        const ObjectId* getObjectId() const { return objectId.get() ? objectId->envelope : 0; }
+        void setObjectId(ObjectId* oid) { objectId.reset(oid->impl); }
         const SchemaObjectClass* getClass() const { return objectClass; }
-        Value* getValue(const std::string& key);
+        Value* getValue(const std::string& key) const;
+        void invokeMethod(const std::string& methodName, const Value* inArgs, void* context) const;
 
         void parsePresenceMasks(qpid::framing::Buffer& buffer, std::set<std::string>& excludeList);
         void encodeSchemaKey(qpid::framing::Buffer& buffer) const;

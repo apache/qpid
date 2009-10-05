@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,6 +36,9 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using namespace std;
 
+namespace qpid {
+namespace tests {
+
 typedef vector<string> StringSet;
 
 struct Args : public qpid::TestOptions {
@@ -61,12 +64,12 @@ struct Args : public qpid::TestOptions {
 
 Args opts;
 
-struct Client 
+struct Client
 {
     Connection connection;
     AsyncSession session;
 
-    Client() 
+    Client()
     {
         opts.open(connection);
         session = connection.newSession();
@@ -75,7 +78,7 @@ struct Client
     // Cheap hex calculation, avoid expensive ostrstream and string
     // creation to generate correlation ids in message loop.
     char hex(char i) { return i<10 ? '0'+i : 'A'+i-10; }
-    void hex(char i, string& s) { 
+    void hex(char i, string& s) {
         s[0]=hex(i>>24); s[1]=hex(i>>16); s[2]=hex(i>>8); s[3]=i;
     }
 
@@ -86,7 +89,7 @@ struct Client
         string correlationId = "0000";
         if (opts.durable)
             msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
-        
+
         for (uint i = 0; i < opts.count; i++) {
             if (opts.id) {
                 hex(i+1, correlationId);
@@ -103,7 +106,7 @@ struct Client
         else cout << "Time: " << secs << "s Rate: " << opts.count/secs << endl;
     }
 
-    ~Client() 
+    ~Client()
     {
         try{
             session.close();
@@ -113,6 +116,10 @@ struct Client
         }
     }
 };
+
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 int main(int argc, char** argv)
 {

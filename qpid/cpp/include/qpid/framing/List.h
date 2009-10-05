@@ -44,6 +44,7 @@ class List
     typedef Values::const_iterator const_iterator;
     typedef Values::iterator iterator;
     typedef Values::const_reference const_reference;
+    typedef Values::reference reference;
 
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;

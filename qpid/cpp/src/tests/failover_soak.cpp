@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -52,7 +52,8 @@ using namespace qpid::framing;
 using namespace qpid::client;
 
 
-
+namespace qpid {
+namespace tests {
 
 typedef vector<ForkedBroker *> brokerVector;
 
@@ -91,9 +92,9 @@ ostream& operator<< ( ostream& os, const childType& ct ) {
 
 struct child
 {
-    child ( string & name, pid_t pid, childType type ) 
+    child ( string & name, pid_t pid, childType type )
         : name(name), pid(pid), retval(-999), status(RUNNING), type(type)
-    { 
+    {
         gettimeofday ( & startTime, 0 );
     }
 
@@ -108,7 +109,7 @@ struct child
 
 
     void
-    setType ( childType t ) 
+    setType ( childType t )
     {
         type = t;
     }
@@ -127,7 +128,7 @@ struct child
 
 
 struct children : public vector<child *>
-{ 
+{
 
     void
     add ( string & name, pid_t pid, childType type )
@@ -136,7 +137,7 @@ struct children : public vector<child *>
     }
 
 
-    child * 
+    child *
     get ( pid_t pid )
     {
         vector<child *>::iterator i;
@@ -156,7 +157,7 @@ struct children : public vector<child *>
         {
             if ( verbosity > 1 )
             {
-                cerr << "children::exited warning: Can't find child with pid " 
+                cerr << "children::exited warning: Can't find child with pid "
                      << pid
                      << endl;
             }
@@ -193,7 +194,7 @@ struct children : public vector<child *>
                    << endl;
               return (*i)->retval;
             }
-      
+
         return 0;
     }
 
@@ -227,11 +228,11 @@ struct children : public vector<child *>
 children allMyChildren;
 
 
-void 
-childExit ( int ) 
+void
+childExit ( int )
 {
-    int  childReturnCode; 
-    pid_t pid = waitpid ( 0, & childReturnCode, WNOHANG);  
+    int  childReturnCode;
+    pid_t pid = waitpid ( 0, & childReturnCode, WNOHANG);
 
     if ( pid > 0 )
         allMyChildren.exited ( pid, childReturnCode );
@@ -271,10 +272,10 @@ printBrokers ( brokerVector & brokers )
 {
     cout << "Broker List ------------ size: " << brokers.size() << "\n";
     for ( brokerVector::iterator i = brokers.begin(); i != brokers.end(); ++ i) {
-        cout << "pid: " 
-             << (*i)->getPID() 
-             << "   port: " 
-             << (*i)->getPort() 
+        cout << "pid: "
+             << (*i)->getPID()
+             << "   port: "
+             << (*i)->getPort()
              << endl;
     }
     cout << "end Broker List ------------\n";
@@ -294,7 +295,7 @@ wait_for_newbie ( )
   if ( ! newbie )
     return true;
 
-  try 
+  try
   {
     Connection connection;
     connection.open ( "127.0.0.1", newbie_port );
@@ -304,8 +305,8 @@ wait_for_newbie ( )
   }
   catch ( const std::exception& error )
   {
-    std::cerr << "wait_for_newbie error: " 
-              << error.what() 
+    std::cerr << "wait_for_newbie error: "
+              << error.what()
               << endl;
     return false;
   }
@@ -321,7 +322,7 @@ startNewBroker ( brokerVector & brokers,
                  char const * moduleOrDir,
                  string const clusterName,
                  int verbosity,
-                 int durable ) 
+                 int durable )
 {
     static int brokerId = 0;
     stringstream path, prefix;
@@ -354,8 +355,8 @@ startNewBroker ( brokerVector & brokers,
     ForkedBroker * broker = newbie;
 
     if ( verbosity > 0 )
-      std::cerr << "new broker created: pid == " 
-                << broker->getPID() 
+      std::cerr << "new broker created: pid == "
+                << broker->getPID()
                 << " log-prefix == "
                 << "soak-" << brokerId
                 << endl;
@@ -382,8 +383,8 @@ killFrontBroker ( brokerVector & brokers, int verbosity )
     catch ( const exception& error ) {
         if ( verbosity > 0 )
         {
-            cout << "error killing broker: " 
-                 << error.what() 
+            cout << "error killing broker: "
+                 << error.what()
                  << endl;
         }
 
@@ -399,14 +400,14 @@ killFrontBroker ( brokerVector & brokers, int verbosity )
 
 
 /*
- *  The optional delay is to avoid killing newbie brokers that have just 
+ *  The optional delay is to avoid killing newbie brokers that have just
  *  been added and are still in the process of updating.  This causes
  *  spurious, test-generated errors that scare everybody.
  */
 void
 killAllBrokers ( brokerVector & brokers, int delay )
 {
-    if ( delay > 0 ) 
+    if ( delay > 0 )
     {
         std::cerr << "Killing all brokers after delay of " << delay << endl;
         sleep ( delay );
@@ -414,8 +415,8 @@ killAllBrokers ( brokerVector & brokers, int delay )
 
     for ( uint i = 0; i < brokers.size(); ++ i )
         try { brokers[i]->kill(9); }
-        catch ( const exception& error ) 
-        { 
+        catch ( const exception& error )
+        {
           std::cerr << "killAllBrokers Warning: exception during kill on broker "
                     << i
                     << " "
@@ -429,21 +430,21 @@ killAllBrokers ( brokerVector & brokers, int delay )
 
 
 pid_t
-runDeclareQueuesClient ( brokerVector brokers, 
+runDeclareQueuesClient ( brokerVector brokers,
                             char const *  host,
                             char const *  path,
                             int verbosity,
                             int durable
-                          ) 
+                          )
 {
     string name("declareQueues");
     int port = brokers[0]->getPort ( );
 
     if ( verbosity > 1 )
-        cout << "startDeclareQueuesClient: host:  " 
-             << host 
-             << "  port: " 
-             << port 
+        cout << "startDeclareQueuesClient: host:  "
+             << host
+             << "  port: "
+             << port
              << endl;
     stringstream portSs;
     portSs << port;
@@ -474,12 +475,12 @@ runDeclareQueuesClient ( brokerVector brokers,
 
 
 pid_t
-startReceivingClient ( brokerVector brokers, 
+startReceivingClient ( brokerVector brokers,
                          char const *  host,
                          char const *  receiverPath,
                          char const *  reportFrequency,
                          int verbosity
-                       ) 
+                       )
 {
     string name("receiver");
     int port = brokers[0]->getPort ( );
@@ -521,14 +522,14 @@ startReceivingClient ( brokerVector brokers,
 
 
 pid_t
-startSendingClient ( brokerVector brokers, 
+startSendingClient ( brokerVector brokers,
                        char const *  host,
                        char const *  senderPath,
                        char const *  nMessages,
                        char const *  reportFrequency,
                        int verbosity,
                        int durability
-                     ) 
+                     )
 {
     string name("sender");
     int port = brokers[0]->getPort ( );
@@ -581,13 +582,14 @@ startSendingClient ( brokerVector brokers,
 #define HANGING               7
 #define ERROR_KILLING_BROKER  8
 
+}} // namespace qpid::tests
+
+using namespace qpid::tests;
 
 // If you want durability, use the "dir" option of "moduleOrDir" .
-
-
 int
-main ( int argc, char const ** argv ) 
-{    
+main ( int argc, char const ** argv )
+{
     if ( argc != 9 ) {
         cerr << "Usage: "
              << argv[0]
@@ -627,10 +629,10 @@ main ( int argc, char const ** argv )
     int nBrokers = 3;
     for ( int i = 0; i < nBrokers; ++ i ) {
         startNewBroker ( brokers,
-                         moduleOrDir, 
+                         moduleOrDir,
                          clusterName,
                          verbosity,
-                         durable ); 
+                         durable );
     }
 
 
@@ -639,7 +641,7 @@ main ( int argc, char const ** argv )
 
      // Run the declareQueues child.
      int childStatus;
-     pid_t dqClientPid = 
+     pid_t dqClientPid =
      runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity, durable );
      if ( -1 == dqClientPid ) {
          cerr << "END_OF_TEST ERROR_START_DECLARE_1\n";
@@ -658,8 +660,8 @@ main ( int argc, char const ** argv )
 
      // Start the receiving client.
      pid_t receivingClientPid =
-     startReceivingClient ( brokers, 
-                              host, 
+     startReceivingClient ( brokers,
+                              host,
                               receiverPath,
                               reportFrequency,
                               verbosity );
@@ -670,10 +672,10 @@ main ( int argc, char const ** argv )
 
 
      // Start the sending client.
-     pid_t sendingClientPid = 
-     startSendingClient ( brokers, 
-                            host, 
-                            senderPath, 
+     pid_t sendingClientPid =
+     startSendingClient ( brokers,
+                            host,
+                            senderPath,
                             nMessages,
                             reportFrequency,
                             verbosity,
@@ -688,10 +690,10 @@ main ( int argc, char const ** argv )
          maxSleep = 4;
 
 
-     for ( int totalBrokers = 3; 
-           totalBrokers < maxBrokers; 
-           ++ totalBrokers 
-         ) 
+     for ( int totalBrokers = 3;
+           totalBrokers < maxBrokers;
+           ++ totalBrokers
+         )
      {
          if ( verbosity > 0 )
              cout << totalBrokers << " brokers have been added to the cluster.\n\n\n";
@@ -722,14 +724,14 @@ main ( int argc, char const ** argv )
              cout << "Starting new broker.\n\n";
 
          startNewBroker ( brokers,
-                          moduleOrDir, 
+                          moduleOrDir,
                           clusterName,
                           verbosity,
-                          durable ); 
-       
+                          durable );
+
          if ( verbosity > 1 )
              printBrokers ( brokers );
-       
+
          // If all children have exited, quit.
          int unfinished = allMyChildren.unfinished();
          if ( ! unfinished ) {

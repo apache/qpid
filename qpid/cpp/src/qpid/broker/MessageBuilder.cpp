@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,14 +30,14 @@ using boost::intrusive_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-namespace 
+namespace
 {
     std::string type_str(uint8_t type);
+    const std::string QPID_MANAGEMENT("qpid.management");
 }
-MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThreshold) : 
-    state(DORMANT), store(_store), stagingThreshold(_stagingThreshold), staging(false) {}
 
-static const std::string QPID_MANAGEMENT("qpid.management");
+MessageBuilder::MessageBuilder(MessageStore* const _store, uint64_t _stagingThreshold) :
+    state(DORMANT), store(_store), stagingThreshold(_stagingThreshold), staging(false) {}
 
 void MessageBuilder::handle(AMQFrame& frame)
 {
@@ -54,10 +54,10 @@ void MessageBuilder::handle(AMQFrame& frame)
             AMQFrame header((AMQHeaderBody()));
             header.setBof(false);
             header.setEof(false);
-            message->getFrames().append(header);            
+            message->getFrames().append(header);
         } else if (type != HEADER_BODY) {
             throw CommandInvalidException(
-                QPID_MSG("Invalid frame sequence for message, expected header or content got " 
+                QPID_MSG("Invalid frame sequence for message, expected header or content got "
                          << type_str(type) << ")"));
         }
         state = CONTENT;
@@ -74,13 +74,13 @@ void MessageBuilder::handle(AMQFrame& frame)
     } else {
         message->getFrames().append(frame);
         //have we reached the staging limit? if so stage message and release content
-        if (state == CONTENT 
-            && stagingThreshold 
+        if (state == CONTENT
+            && stagingThreshold
             && message->getFrames().getContentSize() >= stagingThreshold
             && !NullMessageStore::isNullStore(store)
-            && message->getExchangeName() != QPID_MANAGEMENT /* don't stage mgnt messages */)   
+            && message->getExchangeName() != QPID_MANAGEMENT /* don't stage mgnt messages */)
         {
-            message->releaseContent(store); 
+            message->releaseContent(store);
             staging = true;
         }
     }
@@ -108,7 +108,7 @@ const std::string CONTENT_BODY_S = "CONTENT";
 const std::string HEARTBEAT_BODY_S = "HEARTBEAT";
 const std::string UNKNOWN = "unknown";
 
-std::string type_str(uint8_t type) 
+std::string type_str(uint8_t type)
 {
     switch(type) {
     case METHOD_BODY: return METHOD_BODY_S;
@@ -124,7 +124,7 @@ std::string type_str(uint8_t type)
 void MessageBuilder::checkType(uint8_t expected, uint8_t actual)
 {
     if (expected != actual) {
-        throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (expected " 
+        throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (expected "
                                                << type_str(expected) << " got " << type_str(actual) << ")"));
     }
 }

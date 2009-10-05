@@ -25,26 +25,76 @@
 
 namespace qmf {
 
+    struct Object;
+    struct QueryElementImpl;
     struct QueryImpl;
+    struct QueryExpressionImpl;
+    struct SchemaClassKey;
+
+    enum ValueOper {
+        O_EQ = 1,
+        O_NE = 2,
+        O_LT = 3,
+        O_LE = 4,
+        O_GT = 5,
+        O_GE = 6,
+        O_RE_MATCH = 7,
+        O_RE_NOMATCH = 8
+    };
+
+    struct QueryOperand {
+        virtual ~QueryOperand() {}
+        virtual bool evaluate(const Object* object) const = 0;
+    };
+
+    struct QueryElement : public QueryOperand {
+        QueryElement(const char* attrName, const Value* value, ValueOper oper);
+        QueryElement(QueryElementImpl* impl);
+        virtual ~QueryElement();
+        bool evaluate(const Object* object) const;
+
+        QueryElementImpl* impl;
+    };
+
+    enum ExprOper {
+        E_NOT = 1,
+        E_AND = 2,
+        E_OR  = 3,
+        E_XOR = 4
+    };
+
+    struct QueryExpression : public QueryOperand {
+        QueryExpression(ExprOper oper, const QueryOperand* operand1, const QueryOperand* operand2);
+        QueryExpression(QueryExpressionImpl* impl);
+        virtual ~QueryExpression();
+        bool evaluate(const Object* object) const;
+        
+        QueryExpressionImpl* impl;
+    };
+
     class Query {
     public:
-        Query();
+        Query(const char* className, const char* packageName);
+        Query(const SchemaClassKey* key);
+        Query(const ObjectId* oid);
         Query(QueryImpl* impl);
         ~Query();
+
+        void setSelect(const QueryOperand* criterion);
+        void setLimit(uint32_t maxResults);
+        void setOrderBy(const char* attrName, bool decreasing);
 
         const char* getPackage() const;
         const char* getClass() const;
         const ObjectId* getObjectId() const;
 
-        enum Oper {
-            OPER_AND = 1,
-            OPER_OR  = 2
-        };
-
-        int whereCount() const;
-        Oper whereOper() const;
-        const char* whereKey() const;
-        const Value* whereValue() const;
+        bool haveSelect() const;
+        bool haveLimit() const;
+        bool haveOrderBy() const;
+        const QueryOperand* getSelect() const;
+        uint32_t getLimit() const;
+        const char* getOrderBy() const;
+        bool getDecreasing() const;
 
         QueryImpl* impl;
     };

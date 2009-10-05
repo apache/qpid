@@ -37,6 +37,9 @@
 #include <time.h>
 
 
+namespace qpid {
+namespace tests {
+
 QPID_AUTO_TEST_SUITE(loggingTestSuite)
 
 using namespace std;
@@ -106,7 +109,7 @@ struct TestOutput : public Logger::Output {
     TestOutput(Logger& l) {
         l.output(std::auto_ptr<Logger::Output>(this));
     }
-                 
+
     void log(const Statement& s, const string& m) {
         msg.push_back(m);
         stmt.push_back(s);
@@ -117,7 +120,7 @@ struct TestOutput : public Logger::Output {
 using boost::assign::list_of;
 
 QPID_AUTO_TEST_CASE(testLoggerOutput) {
-    Logger l; 
+    Logger l;
     l.clear();
     l.select(Selector(debug));
     Statement s=QPID_LOG_STATEMENT_INIT(debug);
@@ -174,7 +177,7 @@ QPID_AUTO_TEST_CASE(testLoggerFormat) {
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
     BOOST_CHECK_EQUAL(string(BOOST_CURRENT_FUNCTION) + ": foo\n", out->last());
-    
+
     l.format(Logger::LEVEL);
     QPID_LOG(critical, "foo");
     BOOST_CHECK_EQUAL("critical foo\n", out->last());
@@ -228,12 +231,12 @@ clock_t timeLoop(int times, int (*fp)()) {
 
 // Overhead test disabled because it consumes a ton of CPU and takes
 // forever under valgrind. Not friendly for regular test runs.
-// 
+//
 #if 0
 QPID_AUTO_TEST_CASE(testOverhead) {
     // Ensure that the ratio of CPU time for an incrementing loop
     // with and without disabled log statements is in  acceptable limits.
-    // 
+    //
     int times=100000000;
     clock_t noLog=timeLoop(times, count);
     clock_t withLog=timeLoop(times, loggedCount);
@@ -242,9 +245,9 @@ QPID_AUTO_TEST_CASE(testOverhead) {
     // NB: in initial tests the ratio was consistently below 1.5,
     // 2.5 is reasonable and should avoid spurios failures
     // due to machine load.
-    // 
-    BOOST_CHECK_SMALL(ratio, 2.5); 
-}    
+    //
+    BOOST_CHECK_SMALL(ratio, 2.5);
+}
 #endif // 0
 
 Statement statement(
@@ -290,7 +293,7 @@ QPID_AUTO_TEST_CASE(testOptionsParse) {
 }
 
 QPID_AUTO_TEST_CASE(testOptionsDefault) {
-    Options opts("");
+    qpid::log::Options opts("");
 #ifdef _WIN32
     qpid::log::windows::SinkOptions sinks("test");
 #else
@@ -328,10 +331,10 @@ QPID_AUTO_TEST_CASE(testSelectorFromOptions) {
 QPID_AUTO_TEST_CASE(testLoggerStateure) {
     Logger& l=Logger::instance();
     ScopedSuppressLogging ls(l);
-    Options opts("test");
+    qpid::log::Options opts("test");
     const char* argv[]={
         0,
-        "--log-time", "no", 
+        "--log-time", "no",
         "--log-source", "yes",
         "--log-to-stderr", "no",
         "--log-to-file", "logging.tmp",
@@ -352,7 +355,7 @@ QPID_AUTO_TEST_CASE(testLoggerStateure) {
 QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
     Logger& l=Logger::instance();
     ScopedSuppressLogging ls(l);
-    Options opts("test");
+    qpid::log::Options opts("test");
     opts.time=false;
 #ifdef _WIN32
     qpid::log::windows::SinkOptions *sinks =
@@ -367,7 +370,7 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
 
     char s[] = "null\0tab\tspace newline\nret\r\x80\x99\xff";
     string str(s, sizeof(s));
-    QPID_LOG(critical, str); 
+    QPID_LOG(critical, str);
     ifstream log("logging.tmp");
     string line;
     getline(log, line, '\0');
@@ -378,3 +381,5 @@ QPID_AUTO_TEST_CASE(testQuoteNonPrintable) {
 }
 
 QPID_AUTO_TEST_SUITE_END()
+
+}} // namespace qpid::tests

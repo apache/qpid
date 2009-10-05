@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,6 +32,9 @@
 
 using namespace qpid::broker;
 using namespace qpid::framing;
+
+namespace qpid {
+namespace tests {
 
 QPID_AUTO_TEST_SUITE(MessageTestSuite)
 
@@ -56,7 +59,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     msg->getFrames().append(content2);
 
     MessageProperties* mProps = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-    mProps->setContentLength(data1.size() + data2.size());        
+    mProps->setContentLength(data1.size() + data2.size());
     mProps->setMessageId(messageId);
     FieldTable applicationHeaders;
     applicationHeaders.setString("abc", "xyz");
@@ -69,7 +72,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     char* buff = static_cast<char*>(::alloca(msg->encodedSize()));
     Buffer wbuffer(buff, msg->encodedSize());
     msg->encode(wbuffer);
-        
+
     Buffer rbuffer(buff, msg->encodedSize());
     msg = new Message();
     msg->decodeHeader(rbuffer);
@@ -86,3 +89,4 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
 
 QPID_AUTO_TEST_SUITE_END()
 
+}} // namespace qpid::tests

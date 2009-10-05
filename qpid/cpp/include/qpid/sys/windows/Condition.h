@@ -30,7 +30,6 @@
 #include <boost/thread/condition.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <windows.h>
-#undef STATUS_INVALID_PARAMETER // Hack for windows.h namespace pollution
 
 namespace qpid {
 namespace sys {

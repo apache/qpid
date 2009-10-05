@@ -53,42 +53,65 @@ bool AclData::matchProp(const std::string & src, const std::string& src1)
 	}
 }
  
-AclResult AclData::lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& name, std::map<Property, std::string>* params)
-{
-     AclResult aclresult = decisionMode;
-	
-	 if (actionList[action] && actionList[action][objType]){
-	      AclData::actObjItr itrRule = actionList[action][objType]->find(id);
-		  if (itrRule == actionList[action][objType]->end())
-		       itrRule = actionList[action][objType]->find("*");
-		  if (itrRule != actionList[action][objType]->end() ) {
-			   
-			   //loop the vector
-    		   for (ruleSetItr i=itrRule->second.begin(); i<itrRule->second.end(); i++) {
-                    
-					// loop the names looking for match
-					bool match =true;
-					for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++)
-					{
-                        //match name is exists first
-						if (pMItr->first == acl::PROP_NAME){
-						     if (!matchProp(pMItr->second, name)){  
-							     match= false;
-							 }
-						}else if (params){ //match pMItr against params
-							propertyMapItr paramItr = params->find (pMItr->first);
-							if (paramItr == params->end()){
-						    	match = false;
-							}else if (!matchProp(paramItr->second, pMItr->second)){  
-							    	match = false;
-							}
+AclResult AclData::lookup(const std::string& id, const Action& action, const ObjectType& objType,
+		const std::string& name, std::map<Property, std::string>* params) {
+
+	QPID_LOG(debug, "ACL: Lookup for id:" << id << " action:" << AclHelper::getActionStr((Action) action)
+			<< " objectType:" << AclHelper::getObjectTypeStr((ObjectType) objType) << " name:" << name
+			<< " with params " << AclHelper::propertyMapToString(params));
+
+	AclResult aclresult = decisionMode;
+	if (actionList[action] && actionList[action][objType]) {
+		AclData::actObjItr itrRule = actionList[action][objType]->find(id);
+		if (itrRule == actionList[action][objType]->end())
+			itrRule = actionList[action][objType]->find("*");
+		if (itrRule != actionList[action][objType]->end()) {
+
+			QPID_LOG(debug, "ACL: checking the following rules for : " << itrRule->first );
+
+			//loop the vector
+			for (ruleSetItr i = itrRule->second.begin(); i < itrRule->second.end(); i++) {
+				QPID_LOG(debug, "ACL: checking rule " <<  i->toString());
+				// loop the names looking for match
+				bool match = true;
+				for (propertyMapItr pMItr = i->props.begin(); (pMItr != i->props.end()) && match; pMItr++) {
+					//match name is exists first
+					if (pMItr->first == acl::PROP_NAME) {
+						if (matchProp(pMItr->second, name)){
+							QPID_LOG(debug, "ACL: name '" << name << "' matched with name '"
+																        << pMItr->second << "' given in the rule");
+					    }else{
+							match = false;
+							QPID_LOG(debug, "ACL: name '" << name << "' didn't match with name '"
+									        << pMItr->second << "' given in the rule");
+						}
+					} else if (params) { //match pMItr against params
+						propertyMapItr paramItr = params->find(pMItr->first);
+						if (paramItr == params->end()) {
+							match = false;
+							QPID_LOG(debug, "ACL: the given parameter map in lookup doesn't contain the property '"
+									        << AclHelper::getPropertyStr(pMItr->first) << "'");
+						} else if (!matchProp(pMItr->second, paramItr->second)) {
+							QPID_LOG(debug, "ACL: the pair("
+									        << AclHelper::getPropertyStr(paramItr->first) << "," << paramItr->second
+									        << ") given in lookup doesn't match the pair("
+									        << AclHelper::getPropertyStr(pMItr->first) << "," << pMItr->second << ") given in the rule");
+							match = false;
 						}
 					}
-					if (match) return getACLResult(i->logOnly, i->log);
-    		   }
-		  }
-	 }
-     return aclresult;
+				}
+				if (match)
+				{
+					aclresult = getACLResult(i->logOnly, i->log);
+					QPID_LOG(debug,"Successful match, the decision is:" << AclHelper::getAclResultStr(aclresult));
+					return aclresult;
+				}
+			}
+		}
+	}
+
+	QPID_LOG(debug,"No successful match, defaulting to the decision mode " << AclHelper::getAclResultStr(aclresult));
+	return aclresult;
 }
 
 AclResult AclData::lookup(const std::string& id, const Action& action, const ObjectType& objType, const std::string& /*Exchange*/ name, const std::string& RoutingKey)

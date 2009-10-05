@@ -317,8 +317,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            _messageStore.removeQueue(queue);
-
+            if (queue.isDurable())
+            {
+                _messageStore.removeQueue(queue);
+            }
         }
         catch (AMQException ex)
         {
