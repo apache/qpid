@@ -28,8 +28,22 @@
 
 #include <crtdbg.h>
 #include <windows.h>
+#include <iostream>
 
 namespace {
+
+// Instead of popping up a window for exceptions, just print something out
+LONG _stdcall UnhandledExceptionFilter (PEXCEPTION_POINTERS pExceptionInfo)
+{
+    DWORD dwExceptionCode = pExceptionInfo->ExceptionRecord->ExceptionCode;
+
+    if (dwExceptionCode == EXCEPTION_ACCESS_VIOLATION)
+        std::cerr << "\nERROR: ACCESS VIOLATION\n" << std::endl;
+    else
+        std::cerr << "\nERROR: UNHANDLED EXCEPTION\n" << std::endl;
+
+    return EXCEPTION_EXECUTE_HANDLER;
+}
 
 struct redirect_errors_to_stderr {
     redirect_errors_to_stderr ();
@@ -50,6 +64,9 @@ redirect_errors_to_stderr::redirect_errors_to_stderr()
     // and can't-open-file message boxes.
     SetErrorMode(SEM_FAILCRITICALERRORS);
     SetErrorMode(SEM_NOOPENFILEERRORBOX);
+
+    // And this will catch all unhandled exceptions.
+    SetUnhandledExceptionFilter (&UnhandledExceptionFilter);
 }
 
 }  // namespace
