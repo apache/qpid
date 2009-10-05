@@ -21,6 +21,8 @@
 package org.apache.qpid.test.utils;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.naming.NamingException;
 
 public class FailoverBaseCase extends QpidTestCase
 {
@@ -62,7 +64,7 @@ public class FailoverBaseCase extends QpidTestCase
      * @return a connection 
      * @throws Exception
      */
-    public Connection getConnection() throws Exception
+    public Connection getConnection() throws JMSException, NamingException
     {
         Connection conn =
         	(Boolean.getBoolean("profile.use_ssl"))?

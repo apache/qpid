@@ -18,20 +18,26 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.connection;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQException;
+package org.apache.qpid.thread;
 
-public interface IConnectionRegistry
+import org.apache.qpid.thread.Threading;
+
+import edu.emory.mathcs.backport.java.util.concurrent.Executor;
+
+public class QpidThreadExecutor implements Executor
 {
-
-    public void initialise();
-
-    public void close() throws AMQException;
-
-    public void registerConnection(AMQProtocolSession connnection);
-
-    public void deregisterConnection(AMQProtocolSession connnection);
+    @Override
+    public void execute(Runnable command)
+    {
+        try
+        {
+            Threading.getThreadFactory().createThread(command).start();
+        }
+        catch(Exception e)
+        {
+            throw new RuntimeException("Error creating a thread using Qpid thread factory",e);
+        }
+    }
 
 }

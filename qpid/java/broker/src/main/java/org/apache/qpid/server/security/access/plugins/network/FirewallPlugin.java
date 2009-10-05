@@ -23,7 +23,6 @@ package org.apache.qpid.server.security.access.plugins.network;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -32,7 +31,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
@@ -179,15 +178,22 @@ public class FirewallPlugin extends AbstractACLPlugin
     private FirewallRule[] _rules;
 
     @Override
-    public AuthzResult authoriseConnect(PrincipalHolder session, VirtualHost virtualHost)
+    public AuthzResult authoriseConnect(PrincipalHolder principalHolder, VirtualHost virtualHost)
     {
-        if (!(session instanceof AMQMinaProtocolSession))
+        if(!(principalHolder instanceof ProtocolEngine))
         {
-            return AuthzResult.ABSTAIN; // We only deal with tcp sessions, which
-                                        // mean MINA right now
+            return AuthzResult.ABSTAIN; // We only deal with tcp sessions
+        } 
+
+        ProtocolEngine session = (ProtocolEngine) principalHolder;
+
+        SocketAddress sockAddr = session.getRemoteAddress();
+        if (!(sockAddr instanceof InetSocketAddress))
+        {
+            return AuthzResult.ABSTAIN; // We only deal with tcp sessions
         }
 
-        InetAddress addr = getInetAdressFromMinaSession((AMQMinaProtocolSession) session);
+        InetAddress addr = ((InetSocketAddress) sockAddr).getAddress();
 
         if (addr == null)
         {
@@ -212,19 +218,6 @@ public class FirewallPlugin extends AbstractACLPlugin
         }
         return _default;
 
-    }
-
-    private InetAddress getInetAdressFromMinaSession(AMQMinaProtocolSession session)
-    {
-        SocketAddress remote = session.getIOSession().getRemoteAddress();
-        if (remote instanceof InetSocketAddress)
-        {
-            return ((InetSocketAddress) remote).getAddress();
-        }
-        else
-        {
-            return null;
-        }
     }
 
     public void setConfiguration(Configuration config) throws ConfigurationException

@@ -44,7 +44,7 @@ public class AMQProtocolSessionMBeanTest extends TestCase
     private static final Logger log = Logger.getLogger(AMQProtocolSessionMBeanTest.class);
 
     private MessageStore _messageStore = new SkeletonMessageStore();
-    private AMQMinaProtocolSession _protocolSession;
+    private AMQProtocolEngine _protocolSession;
     private AMQChannel _channel;
     private AMQProtocolSessionMBean _mbean;
 

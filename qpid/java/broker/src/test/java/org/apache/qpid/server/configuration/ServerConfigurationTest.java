@@ -20,19 +20,6 @@
  */
 package org.apache.qpid.server.configuration;
 
-import junit.framework.TestCase;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.TestIoSession;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,6 +27,19 @@ import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+
+import junit.framework.TestCase;
+
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.protocol.AMQProtocolEngine;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.TestNetworkDriver;
 
 public class ServerConfigurationTest extends TestCase
 {
@@ -589,12 +589,12 @@ public class ServerConfigurationTest extends TestCase
     {
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        assertEquals(true, serverConfig.getSSLOnly());
+        assertEquals(false, serverConfig.getSSLOnly());
 
         // Check value we set
-        _config.setProperty("connector.ssl.sslOnly", false);
+        _config.setProperty("connector.ssl.sslOnly", true);
         serverConfig = new ServerConfiguration(_config);
-        assertEquals(false, serverConfig.getSSLOnly());
+        assertEquals(true, serverConfig.getSSLOnly());
     }
 
     public void testGetSSLPort() throws ConfigurationException
@@ -791,16 +791,15 @@ public class ServerConfigurationTest extends TestCase
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        AMQCodecFactory codecFactory = new AMQCodecFactory(true);
 
-        TestIoSession iosession = new TestIoSession();
-        iosession.setAddress("127.0.0.1");
-
-        AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
+        TestNetworkDriver testDriver = new TestNetworkDriver();
+        testDriver.setRemoteAddress("127.0.0.1");
+        
+        AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
-        iosession.setAddress("127.1.2.3");
-        session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
+        testDriver.setRemoteAddress("127.1.2.3");
+        session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
         assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
 
@@ -866,12 +865,12 @@ public class ServerConfigurationTest extends TestCase
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        AMQCodecFactory codecFactory = new AMQCodecFactory(true);
 
-        TestIoSession iosession = new TestIoSession();
-        iosession.setAddress("127.0.0.1");
+        TestNetworkDriver testDriver = new TestNetworkDriver();
+        testDriver.setRemoteAddress("127.0.0.1");
 
-        AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
+        AMQProtocolEngine session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+        session.setNetworkDriver(testDriver);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
 
@@ -935,12 +934,11 @@ public class ServerConfigurationTest extends TestCase
         ApplicationRegistry.initialise(reg, 1);
 
         // Test config
-        TestIoSession iosession = new TestIoSession();
-        iosession.setAddress("127.0.0.1");
+        TestNetworkDriver testDriver = new TestNetworkDriver();
+        testDriver.setRemoteAddress("127.0.0.1");
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        AMQCodecFactory codecFactory = new AMQCodecFactory(true);
-        AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
+        AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
         RandomAccessFile fileBRandom = new RandomAccessFile(fileB, "rw");

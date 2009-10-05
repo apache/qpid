@@ -23,5 +23,4 @@ package org.apache.qpid.pool;
 public interface ReadWriteRunnable extends Runnable
 {
     boolean isRead();
-    boolean isWrite();
 }

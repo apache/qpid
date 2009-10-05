@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.server;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Properties;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -30,19 +37,12 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.FixedSizeByteBufferAllocator;
-import org.apache.mina.common.IoAcceptor;
-import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
-import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-import org.apache.mina.util.NewThreadExecutor;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.network.io.IoTransport;
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.information.management.ServerInformationMBean;
@@ -51,22 +51,16 @@ import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
-import org.apache.qpid.server.protocol.AMQPProtocolProvider;
+import org.apache.qpid.server.protocol.AMQProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.server.transport.QpidAcceptor;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.Properties;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.network.mina.MINANetworkDriver;
 
 /**
  * Main entry point for AMQPD.
@@ -307,20 +301,6 @@ public class Main
             _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
 
-            ByteBuffer.setUseDirectBuffers(serverConfig.getEnableDirectBuffers());
-
-            // the MINA default is currently to use the pooled allocator although this may change in future
-            // once more testing of the performance of the simple allocator has been done
-            if (!serverConfig.getEnablePooledAllocator())
-            {
-                ByteBuffer.setAllocator(new FixedSizeByteBufferAllocator());
-            }
-
-            if (serverConfig.getUseBiasedWrites())
-            {
-                System.setProperty("org.apache.qpid.use_write_biased_pool", "true");
-            }
-
             int port = serverConfig.getPort();
 
             String portStr = commandLine.getOptionValue("p");
@@ -336,7 +316,54 @@ public class Main
                 }
             }
 
-            bind(port, serverConfig);
+            String bindAddr = commandLine.getOptionValue("b");
+            if (bindAddr == null)
+            {
+                bindAddr = serverConfig.getBind();
+            }
+            InetAddress bindAddress = null;
+            if (bindAddr.equals("wildcard"))
+            {
+                bindAddress = new InetSocketAddress(port).getAddress();
+            }
+            else
+            {
+                bindAddress = InetAddress.getByAddress(parseIP(bindAddr));
+            }
+
+            String keystorePath = serverConfig.getKeystorePath();
+            String keystorePassword = serverConfig.getKeystorePassword();
+            String certType = serverConfig.getCertType();
+            SSLContextFactory sslFactory = null;
+            boolean isSsl = false;
+            
+            if (!serverConfig.getSSLOnly())
+            {
+                NetworkDriver driver = new MINANetworkDriver();
+                driver.bind(port, new InetAddress[]{bindAddress}, new AMQProtocolEngineFactory(), 
+                            serverConfig.getNetworkConfiguration(), null);
+                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port), 
+                                                              new QpidAcceptor(driver,"TCP"));
+                CurrentActor.get().message(BrokerMessages.BRK_1002("TCP", port));
+            }
+            
+            if (serverConfig.getEnableSSL())
+            {
+                sslFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                NetworkDriver driver = new MINANetworkDriver();
+                driver.bind(serverConfig.getSSLPort(), new InetAddress[]{bindAddress}, 
+                            new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
+                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port), 
+                        new QpidAcceptor(driver,"TCP"));
+                CurrentActor.get().message(BrokerMessages.BRK_1002("TCP/SSL", serverConfig.getSSLPort()));
+            }
+            
+            //fixme  qpid.AMQP should be using qpidproperties to get value
+            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
+                    + " build: " + QpidProperties.getBuildVersion());
+
+            CurrentActor.get().message(BrokerMessages.BRK_1004());
+
 
             // TODO - Fix to use a proper binding
             int port_0_10 = port + 1;
@@ -389,114 +416,6 @@ public class Main
                 _logger.warn("Invalid management port: " + managementPort + " will use:" + configuration.getJMXManagementPort(), e);
             }
         }
-    }
-
-    protected void bind(int port, ServerConfiguration config) throws BindException
-    {
-        String bindAddr = commandLine.getOptionValue("b");
-        if (bindAddr == null)
-        {
-            bindAddr = config.getBind();
-        }
-
-        try
-        {
-            IoAcceptor acceptor;
-            
-            if (ApplicationRegistry.getInstance().getConfiguration().getQpidNIO())
-            {
-                _logger.warn("Using Qpid Multithreaded IO Processing");
-                acceptor = new org.apache.mina.transport.socket.nio.MultiThreadSocketAcceptor(config.getProcessors(), new NewThreadExecutor());
-            }
-            else
-            {
-                _logger.warn("Using Mina IO Processing");
-                acceptor = new org.apache.mina.transport.socket.nio.SocketAcceptor(config.getProcessors(), new NewThreadExecutor());
-            }
-            
-            SocketAcceptorConfig sconfig = (SocketAcceptorConfig) acceptor.getDefaultConfig();
-            SocketSessionConfig sc = (SocketSessionConfig) sconfig.getSessionConfig();
-
-            sc.setReceiveBufferSize(config.getReceiveBufferSize());
-            sc.setSendBufferSize(config.getWriteBufferSize());
-            sc.setTcpNoDelay(config.getTcpNoDelay());
-
-            // if we do not use the executor pool threading model we get the default leader follower
-            // implementation provided by MINA
-            if (config.getEnableExecutorPool())
-            {
-                sconfig.setThreadModel(ReadWriteThreadModel.getInstance());
-            }
-
-            if (!config.getEnableSSL() || !config.getSSLOnly())
-            {
-                AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
-                InetSocketAddress bindAddress;
-                if (bindAddr.equals("wildcard"))
-                {
-                    bindAddress = new InetSocketAddress(port);
-                }
-                else
-                {
-                    bindAddress = new InetSocketAddress(InetAddress.getByAddress(parseIP(bindAddr)), port);
-                }
-
-                bind(new QpidAcceptor(acceptor,"TCP"), bindAddress, handler, sconfig);
-
-                //fixme  qpid.AMQP should be using qpidproperties to get value
-                _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
-            }
-
-            if (config.getEnableSSL())
-            {
-                AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
-                try
-                {
-
-                    bind(new QpidAcceptor(acceptor, "TCP/SSL"), new InetSocketAddress(config.getSSLPort()), handler, sconfig);
-
-                    //fixme  qpid.AMQP should be using qpidproperties to get value
-                    _brokerLogger.info("Qpid.AMQP listening on SSL port " + config.getSSLPort());
-
-                }
-                catch (IOException e)
-                {
-                    _brokerLogger.error("Unable to listen on SSL port: " + e, e);
-                }
-            }
-
-            //fixme  qpid.AMQP should be using qpidproperties to get value
-            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
-                               + " build: " + QpidProperties.getBuildVersion());
-
-            CurrentActor.get().message(BrokerMessages.BRK_1004());
-
-        }
-        catch (Exception e)
-        {
-            _logger.error("Unable to bind service to registry: " + e, e);
-            //fixme this need tidying up
-            throw new BindException(e.getMessage());
-        }
-    }
-
-    /**
-     * Ensure that any bound Acceptors are recorded in the registry so they can be closed later.
-     *
-     * @param acceptor
-     * @param bindAddress
-     * @param handler
-     * @param sconfig
-     *
-     * @throws IOException from the acceptor.bind command
-     */
-    private void bind(QpidAcceptor acceptor, InetSocketAddress bindAddress, AMQPFastProtocolHandler handler, SocketAcceptorConfig sconfig) throws IOException
-    {
-        acceptor.getIoAcceptor().bind(bindAddress, handler, sconfig);
-
-        CurrentActor.get().message(BrokerMessages.BRK_1002(acceptor.toString(), bindAddress.getPort()));
-
-        ApplicationRegistry.getInstance().addAcceptor(bindAddress, acceptor);
     }
 
     public static void main(String[] args)

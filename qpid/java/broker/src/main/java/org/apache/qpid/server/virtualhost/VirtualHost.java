@@ -279,6 +279,14 @@ public class VirtualHost implements Accessable
             _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
                                                    period / 2,
                                                    period);
+            
+            class ForceChannelClosuresTask extends TimerTask
+            {
+                public void run()
+                {
+                    _connectionRegistry.expireClosedChannels();
+                }
+            }
         }
     }
     

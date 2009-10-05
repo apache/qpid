@@ -79,7 +79,7 @@ import org.apache.qpid.server.management.ManagedObject;
 @MBeanDescription("Management Bean for an AMQ Broker Connection")
 public class AMQProtocolSessionMBean extends AMQManagedObject implements ManagedConnection
 {
-    private AMQMinaProtocolSession _session = null;
+    private AMQProtocolSession _protocolSession = null;
     private String _name = null;
 
     // openmbean data types for representing the channel attributes
@@ -92,10 +92,10 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         new AMQShortString("Broker Management Console has closed the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
-    public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
+    public AMQProtocolSessionMBean(AMQProtocolSession amqProtocolSession) throws NotCompliantMBeanException, OpenDataException
     {
         super(ManagedConnection.class, ManagedConnection.TYPE, ManagedConnection.VERSION);
-        _session = session;
+        _protocolSession = amqProtocolSession;
         String remote = getRemoteAddress();
         remote = "anonymous".equals(remote) ? (remote + hashCode()) : remote;
         _name = jmxEncode(new StringBuffer(remote), 0).toString();
@@ -128,52 +128,52 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
     public String getClientId()
     {
-        return (_session.getContextKey() == null) ? null : _session.getContextKey().toString();
+        return (_protocolSession.getContextKey() == null) ? null : _protocolSession.getContextKey().toString();
     }
 
     public String getAuthorizedId()
     {
-        return (_session.getPrincipal() != null ) ? _session.getPrincipal().getName() : null;
+        return (_protocolSession.getPrincipal() != null ) ? _protocolSession.getPrincipal().getName() : null;
     }
 
     public String getVersion()
     {
-        return (_session.getClientVersion() == null) ? null : _session.getClientVersion().toString();
+        return (_protocolSession.getClientVersion() == null) ? null : _protocolSession.getClientVersion().toString();
     }
 
     public Date getLastIoTime()
     {
-        return new Date(_session.getIOSession().getLastIoTime());
+        return new Date(_protocolSession.getLastIoTime());
     }
 
     public String getRemoteAddress()
     {
-        return _session.getIOSession().getRemoteAddress().toString();
+        return _protocolSession.getRemoteAddress().toString();
     }
 
     public ManagedObject getParentObject()
     {
-        return _session.getVirtualHost().getManagedObject();
+        return _protocolSession.getVirtualHost().getManagedObject();
     }
 
     public Long getWrittenBytes()
     {
-        return _session.getIOSession().getWrittenBytes();
+        return _protocolSession.getWrittenBytes();
     }
 
     public Long getReadBytes()
     {
-        return _session.getIOSession().getReadBytes();
+        return _protocolSession.getWrittenBytes();
     }
 
     public Long getMaximumNumberOfChannels()
     {
-        return _session.getMaximumNumberOfChannels();
+        return _protocolSession.getMaximumNumberOfChannels();
     }
 
     public void setMaximumNumberOfChannels(Long value)
     {
-        _session.setMaximumNumberOfChannels(value);
+        _protocolSession.setMaximumNumberOfChannels(value);
     }
 
     public String getObjectInstanceName()
@@ -192,13 +192,13 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
-            AMQChannel channel = _session.getChannel(channelId);
+            AMQChannel channel = _protocolSession.getChannel(channelId);
             if (channel == null)
             {
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
 
-            _session.commitTransactions(channel);
+            _protocolSession.commitTransactions(channel);
         }
         catch (AMQException ex)
         {
@@ -221,13 +221,13 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
         try
         {
-            AMQChannel channel = _session.getChannel(channelId);
+            AMQChannel channel = _protocolSession.getChannel(channelId);
             if (channel == null)
             {
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
 
-            _session.rollbackTransactions(channel);
+            _protocolSession.commitTransactions(channel);
         }
         catch (AMQException ex)
         {
@@ -248,7 +248,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public TabularData channels() throws OpenDataException
     {
         TabularDataSupport channelsList = new TabularDataSupport(_channelsType);
-        List<AMQChannel> list = _session.getChannels();
+        List<AMQChannel> list = _protocolSession.getChannels();
 
         for (AMQChannel channel : list)
         {
@@ -274,7 +274,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public void closeConnection() throws JMException
     {
 
-        MethodRegistry methodRegistry = _session.getMethodRegistry();
+        MethodRegistry methodRegistry = _protocolSession.getMethodRegistry();
         ConnectionCloseBody responseBody =
                 methodRegistry.createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),
                                                          // replyCode
@@ -301,12 +301,12 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
         try
         {
-            _session.writeFrame(responseBody.generateFrame(0));
+            _protocolSession.writeFrame(responseBody.generateFrame(0));
 
             try
             {
 
-                _session.closeSession();
+                _protocolSession.closeSession();
             }
             catch (AMQException ex)
             {

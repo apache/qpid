@@ -21,6 +21,7 @@
 <project name="AMQ Broker" default="build">
 
     <property name="module.depends" value="management/common common"/>
+    <property name="module.test.depends" value="common/test" />
     <property name="module.main" value="org.apache.qpid.server.Main"/>
 
     <import file="../module.xml"/>

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client.failover;
 
-import org.apache.mina.common.IoSession;
-
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
@@ -81,9 +79,6 @@ public class FailoverHandler implements Runnable
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(FailoverHandler.class);
 
-    /** Holds the MINA session for the connection that has failed, not the connection that is being failed onto. */
-    private final IoSession _session;
-
     /** Holds the protocol handler for the failed connection, upon which the new connection is to be set up. */
     private AMQProtocolHandler _amqProtocolHandler;
 
@@ -99,10 +94,9 @@ public class FailoverHandler implements Runnable
      * @param amqProtocolHandler The protocol handler that spans the failover.
      * @param session            The MINA session, for the failing connection.
      */
-    public FailoverHandler(AMQProtocolHandler amqProtocolHandler, IoSession session)
+    public FailoverHandler(AMQProtocolHandler amqProtocolHandler)
     {
         _amqProtocolHandler = amqProtocolHandler;
-        _session = session;
     }
 
     /**
@@ -221,7 +215,7 @@ public class FailoverHandler implements Runnable
                     _amqProtocolHandler.setFailoverState(FailoverState.FAILED);
                     /*try
                     {*/
-                    _amqProtocolHandler.exceptionCaught(_session, e);
+                    _amqProtocolHandler.exception(e);
                     /*}
                     catch (Exception ex)
                     {
