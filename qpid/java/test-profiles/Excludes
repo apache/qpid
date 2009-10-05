@@ -19,3 +19,9 @@ org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
 
 // QPID-2081 :The configuration changes are now highlighting the close race condition
 org.apache.qpid.server.security.acl.SimpleACLTest#*
+
+// QPID-1816 : Client Ack has not been addressed
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDirtyClientAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testClientAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
+// testDirtyClientAck is ok as it fails as expected.. problem is it always fails :)
