@@ -63,7 +63,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class DeepQueueConsumeWithSelector extends QpidTestCase implements MessageListener
 {
-    private static final String INDEX = "index";
 
     private static final int MESSAGE_COUNT = 10000;
     private static final int BATCH_SIZE = MESSAGE_COUNT / 10;
@@ -129,9 +128,7 @@ public class DeepQueueConsumeWithSelector extends QpidTestCase implements Messag
     @Override
     public Message createNextMessage(Session session, int msgCount) throws JMSException
     {
-        Message message = session.createTextMessage("Message :" + msgCount);
-
-        message.setIntProperty(INDEX, msgCount);
+        Message message = super.createNextMessage(session,msgCount);
 
         if ((msgCount % BATCH_SIZE) == 0 )
         {

@@ -497,7 +497,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
             if (msgCount == failPoint)
             {
-                failBroker();
+                failBroker(getFailingPort());
             }
         }
 
@@ -529,7 +529,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             sendMessages("connection2", messages);
         }
 
-        failBroker();
+        failBroker(getFailingPort());
 
         checkQueueDepth(messages);
 
