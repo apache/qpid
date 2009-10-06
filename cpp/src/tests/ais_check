@@ -28,7 +28,7 @@ ps -u root | grep 'aisexec\|corosync' >/dev/null || {
 
 # Execute command with the ais group set if user is a member.
 with_ais_group() {
-    if id -nG | grep '\<ais\>' >/dev/null; then sg -c "$*"
+    if id -nG | grep '\<ais\>' >/dev/null; then sg ais -c "$*"
     else "$@"
     fi
 }
