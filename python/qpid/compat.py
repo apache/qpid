@@ -17,6 +17,8 @@
 # under the License.
 #
 
+import sys
+
 try:
   set = set
 except NameError:
@@ -30,6 +32,13 @@ except ImportError:
 try:
   from traceback import format_exc
 except ImportError:
-  import sys, traceback
+  import traceback
   def format_exc():
     return "".join(traceback.format_exception(*sys.exc_info()))
+
+if tuple(sys.version_info[0:2]) < (2, 4):
+  from select import select as old_select
+  def select(rlist, wlist, xlist, timeout=None):
+    return old_select(list(rlist), list(wlist), list(xlist), timeout)
+else:
+  from select import select

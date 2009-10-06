@@ -17,7 +17,7 @@
 # under the License.
 #
 import atexit, os, time
-from select import select
+from compat import select, set
 from threading import Thread, Lock
 
 class Acceptor:
@@ -84,10 +84,7 @@ class Selector:
     self.thread = None
 
   def wakeup(self):
-    while True:
-      select([], [self.wakeup_fd], [])
-      if os.write(self.wakeup_fd, "\0") > 0:
-        break
+    os.write(self.wakeup_fd, "\0")
 
   def register(self, selectable):
     self.selectables.add(selectable)
