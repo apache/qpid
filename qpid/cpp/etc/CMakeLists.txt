@@ -16,11 +16,5 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-project(qpidc-qmfgen)
-cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 
-install(PROGRAMS qmf-gen DESTINATION managementgen
-        COMPONENT ${QPID_COMPONENT_QMF})
-install(DIRECTORY qmfgen DESTINATION managementgen
-        COMPONENT ${QPID_COMPONENT_QMF}
-        PATTERN ".svn" EXCLUDE PATTERN "*.pyc" EXCLUDE)
+install(FILES qpidd.conf qpidc.conf DESTINATION ${QPID_INSTALL_CONFDIR})
