@@ -127,6 +127,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
     private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
+    private final AtomicBoolean _overfull = new AtomicBoolean(false);
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -1187,6 +1188,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             if(_atomicQueueSize.get() > _capacity)
             {
+                _overfull.set(true);
                 //Overfull log message
                 _logActor.message(_logSubject, QueueMessages.QUE_1003(_atomicQueueSize.get(), _capacity));
 
@@ -1217,10 +1219,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         if(_capacity != 0L)
         {
-            if(_atomicQueueSize.get() <= _flowResumeCapacity)
+            if(_overfull.get() && _atomicQueueSize.get() <= _flowResumeCapacity)
             {
-                //Underfull log message
-                _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+                if(_overfull.compareAndSet(true,false))
+                {//Underfull log message
+                    _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+                }
 
 
                 for(AMQChannel c : _blockedChannels.keySet())
