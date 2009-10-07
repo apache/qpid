@@ -129,7 +129,7 @@ public:
     QPID_BROKER_EXTERN void decodeHeader(framing::Buffer& buffer);
     QPID_BROKER_EXTERN void decodeContent(framing::Buffer& buffer);
             
-    void tryReleaseContent();
+    void QPID_BROKER_EXTERN tryReleaseContent();
     void releaseContent();
     void releaseContent(MessageStore* s);//deprecated, use 'setStore(store); releaseContent();' instead
     void destroy();
