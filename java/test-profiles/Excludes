@@ -31,6 +31,3 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testAutoAck
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDupsOk
 
-
-//temp do not commit
-org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*

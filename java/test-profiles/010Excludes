@@ -99,3 +99,5 @@ org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 //QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
 
+//QPID-1950 : Commit to test this failure. This is a MINA only failure so it cannot be tested when using 010.
+org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
