@@ -194,8 +194,11 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     {
         ManagementAgentImpl& agent;
         void run();
+        bool shutdown;
     public:
-        PublishThread(ManagementAgentImpl& _agent) : agent(_agent) {}
+        PublishThread(ManagementAgentImpl& _agent) :
+            agent(_agent), shutdown(false) {}
+        void close() { shutdown = true; }
     };
 
     ConnectionThread connThreadBody;
