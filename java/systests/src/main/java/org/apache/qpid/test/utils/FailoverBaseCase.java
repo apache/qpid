@@ -55,7 +55,7 @@ public class FailoverBaseCase extends QpidTestCase
         super.setUp();
         // Set QPID_WORK to $QPID_WORK/<getFailingPort()>
         // or /tmp/<getFailingPort()> if QPID_WORK not set.
-        setSystemProperty("QPID_WORK", System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir")) + "/" + getFailingPort());
+        setSystemProperty("QPID_WORK", System.getProperty("QPID_WORK") + "/" + getFailingPort());
         startBroker(getFailingPort());
     }
 
@@ -95,7 +95,7 @@ public class FailoverBaseCase extends QpidTestCase
             // Ensure we shutdown any secondary brokers, even if we are unable
             // to cleanly tearDown the QTC.
             stopBroker(getFailingPort());
-            FileUtils.deleteDirectory(System.getProperty("QPID_WORK", System.getProperty("java.io.tmpdir")) + "/" + getFailingPort());
+            FileUtils.deleteDirectory(System.getProperty("QPID_WORK") + "/" + getFailingPort());
         }
     }
 

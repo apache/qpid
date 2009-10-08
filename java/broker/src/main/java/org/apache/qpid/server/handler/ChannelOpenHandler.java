@@ -54,6 +54,13 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
 
+        
+        // Protect the broker against out of order frame request.
+        if (virtualHost == null)
+        {
+            throw new AMQException(AMQConstant.COMMAND_INVALID, "Virtualhost has not yet been set. ConnectionOpen has not been called.", null);
+        }
+
         final AMQChannel channel = new AMQChannel(session,channelId,
                                                   virtualHost.getMessageStore());
 
