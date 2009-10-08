@@ -93,7 +93,7 @@ QPID_AUTO_TEST_CASE(testCoincidentErrors) {
 
     c0.session.queueDeclare("q", durable=true);
     {
-        //        ScopedSuppressLogging allQuiet;
+        ScopedSuppressLogging allQuiet;
         async(c0.session).messageTransfer(content=pMessage("TEST_STORE_DO: s0[exception]", "q"));
         async(c1.session).messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception]", "q"));
 
@@ -118,7 +118,7 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
     Client c2(cluster[2], "c2");
 
     {
-        //        ScopedSuppressLogging allQuiet;
+        ScopedSuppressLogging allQuiet;
         queueAndSub(c0);
         c0.session.messageTransfer(content=Message("x", "c0"));
         BOOST_CHECK_EQUAL(c0.lq.get(TIMEOUT).getData(), "x");
@@ -147,7 +147,7 @@ QPID_AUTO_TEST_CASE(testErrorAfterJoin) {
     ClusterFixture cluster(1, updateArgs, -1);
     Client c0(cluster[0]);
     {
-        //        ScopedSuppressLogging allQuiet;
+        ScopedSuppressLogging allQuiet;
 
         c0.session.queueDeclare("q", durable=true);
         c0.session.messageTransfer(content=pMessage("a", "q"));
