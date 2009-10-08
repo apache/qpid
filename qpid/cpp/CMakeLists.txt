@@ -38,8 +38,6 @@ include (CTest)
 #
 # This section also has all the setup for various packaging-specific options.
 if (WIN32)
-
-  set (CPACK_PACKAGE_INSTALL_DIRECTORY "Qpid ${qpidc_version}")
   set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
   set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/packaging/NSIS\\\\qpid-icon.ico")
   set (CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/packaging/NSIS\\\\qpid-icon.ico")
@@ -162,13 +160,13 @@ add_subdirectory(src)
 # add_subdirectory(docs/man)
 add_subdirectory(examples)
 
-set(CPACK_PACKAGE_NAME "Qpid")
+set(CPACK_PACKAGE_NAME "qpid-cpp")
 set(CPACK_PACKAGE_VENDOR "Apache Software Foundation")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Apache Qpid C++")
-set(CPACK_PACKAGE_VERSION "0.6.0")
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "6")
+set(CPACK_PACKAGE_VERSION "${qpidc_version}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${QPID_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${QPID_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "qpidc-0.6")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "qpidc-${qpidc_version}")
 
 include (CPack)
