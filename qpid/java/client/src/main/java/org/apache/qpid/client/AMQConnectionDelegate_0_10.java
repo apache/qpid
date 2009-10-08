@@ -100,6 +100,18 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     }
 
     /**
+     * Create an XASession with default prefetch values of:
+     * High = MaxPrefetch
+     * Low  = MaxPrefetch / 2
+     * @return XASession
+     * @throws JMSException
+     */
+    public XASession createXASession() throws JMSException
+    {
+        return createXASession((int) _conn.getMaxPrefetch(), (int) _conn.getMaxPrefetch() / 2);
+    }
+
+    /**
      * create an XA Session and start it if required.
      */
     public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException
