@@ -89,11 +89,12 @@ ManagementAgentImpl::ManagementAgentImpl() :
 
 ManagementAgentImpl::~ManagementAgentImpl()
 {
-    // shutdown the connection thread
+    // shutdown & cleanup all threads
     connThreadBody.close();
-    connThread.join();
+    pubThreadBody.close();
 
-    // @todo need to shutdown pubThread?
+    connThread.join();
+    pubThread.join();
 
     // Release the memory associated with stored management objects.
     {
@@ -907,8 +908,13 @@ bool ManagementAgentImpl::ConnectionThread::isSleeping() const
 
 void ManagementAgentImpl::PublishThread::run()
 {
-    while (true) {
+    uint16_t    totalSleep;
+
+    while (!shutdown) {
         agent.periodicProcessing();
-        ::sleep(agent.getInterval());
+        totalSleep = 0;
+        while (totalSleep++ < agent.getInterval() && !shutdown) {
+            ::sleep(1);
+        }
     }
 }
