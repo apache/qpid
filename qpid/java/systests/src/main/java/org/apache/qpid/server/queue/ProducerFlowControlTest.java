@@ -162,9 +162,8 @@ public class ProducerFlowControlTest extends AbstractTestLogging
     public void testClientLogMessages()
             throws JMSException, NamingException, AMQException, InterruptedException, IOException
     {
-        long origTimeoutValue = Long.getLong("qpid.flow_control_wait_failure",AMQSession.DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
-        System.setProperty("qpid.flow_control_wait_failure","3000");
-        System.setProperty("qpid.flow_control_wait_notify_period","1000");
+        setTestClientSystemProperty("qpid.flow_control_wait_failure","3000");
+        setTestClientSystemProperty("qpid.flow_control_wait_notify_period","1000");
 
         Session session = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -189,8 +188,6 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         results = _monitor.findMatches("Message send failed due to timeout waiting on broker enforced flow control");
         assertEquals("Incorrect number of send failure messages logged by client",1,results.size());
 
-        System.setProperty("qpid.flow_control_wait_failure",String.valueOf(origTimeoutValue));
-        System.setProperty("qpid.flow_control_wait_notify_period","5000");
 
 
     }
@@ -289,8 +286,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
     public void testSendTimeout()
             throws JMSException, NamingException, AMQException, InterruptedException
     {
-        long origTimeoutValue = Long.getLong("qpid.flow_control_wait_failure",AMQSession.DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
-        System.setProperty("qpid.flow_control_wait_failure","3000");
+        setTestClientSystemProperty("qpid.flow_control_wait_failure","3000");
         Session session = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
 
@@ -313,10 +309,6 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         Exception e = sender.getException();
 
         assertNotNull("No timeout exception on sending", e);
-
-        System.setProperty("qpid.flow_control_wait_failure",String.valueOf(origTimeoutValue));
-        
-
 
     }
 
