@@ -291,7 +291,7 @@ if (BUILD_ACL)
                            PREFIX ""
                            LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
-  install (TARGETS acl RUNTIME
+  install (TARGETS acl
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
 endif (BUILD_ACL)
@@ -738,7 +738,7 @@ set_target_properties (qpidbroker PROPERTIES VERSION ${qpidc_version})
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
-install (TARGETS qpidbroker RUNTIME
+install (TARGETS qpidbroker LIBRARY
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
 
@@ -772,7 +772,7 @@ add_library (qmf SHARED ${qmf_SOURCES})
 target_link_libraries (qmf qmfengine)
 set_target_properties (qmf PROPERTIES
                        VERSION ${qmf_version})
-install (TARGETS qmf RUNTIME
+install (TARGETS qmf LIBRARY
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
 
