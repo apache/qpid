@@ -99,6 +99,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionState.h"
+#include "qpid/broker/SignalHandler.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/framing/AllInvoker.h"
@@ -311,7 +312,7 @@ void Cluster::leave(Lock&) {
         // Finalize connections now now to avoid problems later in destructor.
         LEAVE_TRY(localConnections.clear());
         LEAVE_TRY(connections.clear());
-        LEAVE_TRY(broker.shutdown());
+        LEAVE_TRY(broker::SignalHandler::shutdown());
     }
 }
 
