@@ -917,6 +917,7 @@ QPID_AUTO_TEST_CASE(testExclusiveQueueUpdate) {
         BOOST_CHECK(!result.getDurable());
         BOOST_CHECK_EQUAL(result.getAlternateExchange(), std::string("amq.fanout"));
         BOOST_CHECK_THROW(c2.session.queueDeclare(arg::queue="q", arg::exclusive=true, arg::passive=true), framing::ResourceLockedException);
+        c1.session.close();
         c1.connection.close();
         c2.session = c2.connection.newSession();
         BOOST_CHECK_THROW(c2.session.queueDeclare(arg::queue="q", arg::passive=true), framing::NotFoundException);
