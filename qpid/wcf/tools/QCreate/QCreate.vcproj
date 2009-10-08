@@ -61,7 +61,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(BOOST_ROOT)\include\$(BOOST_VERSION)&quot;;&quot;$(BOOST_ROOT)\.&quot;;..\..\..\cpp\include;..\..\..\cpp\build\include"
+				AdditionalIncludeDirectories="&quot;$(BOOST_ROOT)\include\$(BOOST_VERSION)&quot;;&quot;$(BOOST_ROOT)\.&quot;;..\..\..\cpp\include;&quot;$(QPID_BUILD_ROOT)\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -81,9 +81,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qpidcommon.lib qpidclient.lib"
+				AdditionalDependencies="qpidcommond.lib qpidclientd.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories=".;&quot;$(BOOST_ROOT)\lib&quot;;..\..\..\cpp\build\src\Debug"
+				AdditionalLibraryDirectories=".;&quot;$(BOOST_ROOT)\lib&quot;;&quot;$(QPID_BUILD_ROOT)\src\Debug&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
