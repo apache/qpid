@@ -71,7 +71,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
         {
             _logger.warn("Dropping reject request as message is null for tag:" + deliveryTag);
 //            throw evt.getMethod().getChannelException(AMQConstant.NOT_FOUND, "Delivery Tag(" + deliveryTag + ")not known");
-        }
+        }                 
         else
         {
             if (message.isQueueDeleted())

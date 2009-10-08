@@ -61,7 +61,7 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest implements Con
      * @param transacted create a transacted session for this test
      * @param mode if not transacted what ack mode to use for this test
      * @throws Exception if a problem occured during test setup.
-     */
+     */                                                                                                               
     @Override
     protected void init(boolean transacted, int mode) throws Exception
     {

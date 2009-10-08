@@ -140,6 +140,17 @@ public class FailoverHandler implements Runnable
             // a slightly more complex state model therefore I felt it was worthwhile doing this.
             AMQStateManager existingStateManager = _amqProtocolHandler.getStateManager();
 
+
+            // We are failing over so lets ensure any existing ProtocolSessions
+            // are closed. Closing them will update the stateManager which we
+            // probably don't want to record the change to the closed state.
+            // So lets make a new one.
+            _amqProtocolHandler.setStateManager(new AMQStateManager());
+
+            // Close the session, false says don't wait for it to close, just close it.
+            _amqProtocolHandler.getProtocolSession().closeProtocolSession(false);
+
+            // Use a fresh new StateManager for the reconnection attempts
             _amqProtocolHandler.setStateManager(new AMQStateManager());
 
 
