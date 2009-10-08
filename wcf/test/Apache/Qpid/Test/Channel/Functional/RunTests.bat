@@ -19,15 +19,15 @@ REM under the License.
 
 
 set nunit_exe=%programfiles%\NUnit 2.5.1\bin\net-2.0\nunit-console.exe
-set qpid_dll_location=..\..\..\..\..\..\..\cpp\build\src\Debug
+set qpid_dll_location=%QPID_BUILD_ROOT%\src\Debug
 set configuration_name=bin\Debug
 set qcreate_location=..\..\..\..\..\..\tools\QCreate\Debug
 
-copy %qpid_dll_location%\qpidclient.dll %configuration_name%
-copy %qpid_dll_location%\qpidcommon.dll %configuration_name%
+copy %qpid_dll_location%\qpidclientd.dll %configuration_name%
+copy %qpid_dll_location%\qpidcommond.dll %configuration_name%
 
-copy %qpid_dll_location%\qpidclient.dll %qcreate_location%
-copy %qpid_dll_location%\qpidcommon.dll %qcreate_location%
+copy %qpid_dll_location%\qpidclientd.dll %qcreate_location%
+copy %qpid_dll_location%\qpidcommond.dll %qcreate_location%
 
 %qcreate_location%\QCreate.exe amq.direct routing_key message_queue
 
