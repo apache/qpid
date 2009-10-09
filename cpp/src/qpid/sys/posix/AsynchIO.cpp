@@ -21,6 +21,7 @@
 
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/Time.h"
@@ -37,6 +38,7 @@
 #include <string.h>
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace qpid::sys;
 
@@ -193,8 +195,9 @@ AsynchConnector::AsynchConnector(const Socket& s,
     socket(s)
 {
     socket.setNonblocking();
+    SocketAddress sa(hostname, boost::lexical_cast<std::string>(port));
     try {
-        socket.connect(hostname, port);
+        socket.connect(sa);
     } catch(std::exception& e) {
         // Defer reporting failure
         startWatch(poller);

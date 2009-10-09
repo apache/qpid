@@ -21,6 +21,7 @@
 
 #include "qpid/sys/Socket.h"
 
+#include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/posix/check.h"
 #include "qpid/sys/posix/PrivatePosix.h"
 
@@ -36,6 +37,7 @@
 #include <iostream>
 
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace qpid {
 namespace sys {
@@ -126,42 +128,23 @@ void Socket::setNonblocking() const {
     QPID_POSIX_CHECK(::fcntl(impl->fd, F_SETFL, O_NONBLOCK));
 }
 
-namespace {
-const char* h_errstr(int e) {
-    switch (e) {
-      case HOST_NOT_FOUND: return "Host not found";
-      case NO_ADDRESS: return "Name does not have an IP address";
-      case TRY_AGAIN: return "A temporary error occurred on an authoritative name server.";
-      case NO_RECOVERY: return "Non-recoverable name server error";
-      default: return "Unknown error";
-    }
-}
+void Socket::connect(const std::string& host, uint16_t port) const
+{
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    connect(sa);
 }
 
-void Socket::connect(const std::string& host, uint16_t p) const
+void Socket::connect(const SocketAddress& addr) const
 {
-    std::stringstream portstream;
-    portstream << p;
-    std::string port = portstream.str();
-    connectname = host + ":" + port;
+    connectname = addr.asString();
 
     const int& socket = impl->fd;
 
-    ::addrinfo *res;
-    ::addrinfo hints;
-    ::memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
-    hints.ai_socktype = SOCK_STREAM;
-    int n = ::getaddrinfo(host.c_str(), port.c_str(), &hints, &res);
-    if (n != 0)
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
     // TODO the correct thing to do here is loop on failure until you've used all the returned addresses
-    if ((::connect(socket, res->ai_addr, res->ai_addrlen) < 0) &&
+    if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) < 0) &&
         (errno != EINPROGRESS)) {
-        ::freeaddrinfo(res);
-        throw qpid::Exception(QPID_MSG(strError(errno) << ": " << host << ":" << port));
+        throw Exception(QPID_MSG(strError(errno) << ": " << connectname));
     }
-    ::freeaddrinfo(res);
 }
 
 void
@@ -226,9 +209,10 @@ std::string Socket::getPeername() const
 
 std::string Socket::getPeerAddress() const
 {
-    if (!connectname.empty())
-        return std::string (connectname);
-    return getName(impl->fd, false, true);
+    if (connectname.empty()) {
+        connectname = getName(impl->fd, false, true);
+    }
+    return connectname;
 }
 
 std::string Socket::getLocalAddress() const
