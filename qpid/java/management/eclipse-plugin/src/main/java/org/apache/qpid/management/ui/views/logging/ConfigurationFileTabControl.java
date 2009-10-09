@@ -349,7 +349,7 @@ public class ConfigurationFileTabControl extends TabControl
         _logWatchIntervalLabel.setFont(ApplicationRegistry.getFont(FONT_BOLD));
         _logWatchIntervalLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true));
         
-        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        if(_ApiVersion.greaterThanOrEqualTo(1, 4))
         {
             Group reloadConfigFileGroup = new Group(attributesComposite, SWT.SHADOW_NONE);
             reloadConfigFileGroup.setBackground(attributesComposite.getBackground());
