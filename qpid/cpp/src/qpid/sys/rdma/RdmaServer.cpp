@@ -35,6 +35,7 @@ using std::string;
 using std::cout;
 using std::cerr;
 
+using qpid::sys::SocketAddress;
 using qpid::sys::Poller;
 using qpid::sys::Dispatcher;
 
@@ -144,20 +145,15 @@ using namespace qpid::tests;
 int main(int argc, char* argv[]) {
     vector<string> args(&argv[0], &argv[argc]);
 
-    ::sockaddr_in sin;
-
-    int port = (args.size() < 2) ? 20079 : atoi(args[1].c_str());
+    std::string port = (args.size() < 2) ? "20079" : args[1];
     cout << "Listening on port: " << port << "\n";
-
-    sin.sin_family      = AF_INET;
-    sin.sin_port        = htons(port);
-    sin.sin_addr.s_addr = INADDR_ANY;
 
     try {
         boost::shared_ptr<Poller> p(new Poller());
         Dispatcher d(p);
 
-        Rdma::Listener a((const sockaddr&)(sin),
+        SocketAddress sa("", port);
+        Rdma::Listener a(sa,
             Rdma::ConnectionParams(16384, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(connected, p, _1),
             connectionError,

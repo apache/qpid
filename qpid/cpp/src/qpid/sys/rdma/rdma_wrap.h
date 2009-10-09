@@ -350,9 +350,9 @@ namespace Rdma {
             return ConnectionEvent(e);
         }
 
-        void bind(sockaddr& src_addr) const {
+        void bind(qpid::sys::SocketAddress& src_addr) const {
             assert(id.get());
-            CHECK(::rdma_bind_addr(id.get(), &src_addr));
+            CHECK(::rdma_bind_addr(id.get(), getAddrInfo(src_addr).ai_addr));
         }
 
         void listen(int backlog = DEFAULT_BACKLOG) const {
@@ -361,12 +361,11 @@ namespace Rdma {
         }
 
         void resolve_addr(
-            sockaddr& dst_addr,
-            sockaddr* src_addr = 0,
+            qpid::sys::SocketAddress& dst_addr,
             int timeout_ms = DEFAULT_TIMEOUT) const
         {
             assert(id.get());
-            CHECK(::rdma_resolve_addr(id.get(), src_addr, &dst_addr, timeout_ms));
+            CHECK(::rdma_resolve_addr(id.get(), 0, getAddrInfo(dst_addr).ai_addr, timeout_ms));
         }
 
         void resolve_route(int timeout_ms = DEFAULT_TIMEOUT) const {
