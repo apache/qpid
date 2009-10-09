@@ -27,6 +27,7 @@
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/SocketAddress.h"
 
 #include <netinet/in.h>
 
@@ -173,14 +174,14 @@ namespace Rdma {
 
     class Listener : public ConnectionManager
     {
-        sockaddr src_addr;
+        qpid::sys::SocketAddress src_addr;
         ConnectionParams checkConnectionParams;
         ConnectionRequestCallback connectionRequestCallback;
         EstablishedCallback establishedCallback;
 
     public:
         Listener(
-            const sockaddr& src,
+            const qpid::sys::SocketAddress& src,
             const ConnectionParams& cp,
             EstablishedCallback ec,
             ErrorCallback errc,
@@ -198,14 +199,14 @@ namespace Rdma {
 
     class Connector : public ConnectionManager
     {
-        sockaddr dst_addr;
+        qpid::sys::SocketAddress dst_addr;
         ConnectionParams connectionParams;
         RejectedCallback rejectedCallback;
         ConnectedCallback connectedCallback;
 
     public:
         Connector(
-            const sockaddr& dst,
+            const qpid::sys::SocketAddress& dst,
             const ConnectionParams& cp,
             ConnectedCallback cc,
             ErrorCallback errc,

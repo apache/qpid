@@ -167,20 +167,9 @@ void RdmaConnector::connect(const std::string& host, int port){
     assert(joined);
     poller = Poller::shared_ptr(new Poller);
 
-    // This stuff needs to abstracted out of here to a platform specific file
-    ::addrinfo *res;
-    ::addrinfo hints;
-    hints.ai_flags = 0;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = 0;
-    int n = ::getaddrinfo(host.c_str(), boost::lexical_cast<std::string>(port).c_str(), &hints, &res);
-    if (n<0) {
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
-    }
-
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
     Rdma::Connector* c = new Rdma::Connector(
-        *res->ai_addr,
+        sa,
         Rdma::ConnectionParams(maxFrameSize, Rdma::DEFAULT_WR_ENTRIES),
         boost::bind(&RdmaConnector::connected, this, poller, _1, _2),
         boost::bind(&RdmaConnector::connectionError, this, poller, _1, _2),

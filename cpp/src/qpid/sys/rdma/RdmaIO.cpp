@@ -26,6 +26,7 @@
 #include <iostream>
 #include <boost/bind.hpp>
 
+using qpid::sys::SocketAddress;
 using qpid::sys::DispatchHandle;
 using qpid::sys::Poller;
 
@@ -461,7 +462,7 @@ namespace Rdma {
     }
 
     Listener::Listener(
-        const sockaddr& src,
+        const SocketAddress& src,
         const ConnectionParams& cp,
         EstablishedCallback ec,
         ErrorCallback errc,
@@ -541,7 +542,7 @@ namespace Rdma {
     }
 
     Connector::Connector(
-        const sockaddr& dst,
+        const SocketAddress& dst,
         const ConnectionParams& cp,
         ConnectedCallback cc,
         ErrorCallback errc,
