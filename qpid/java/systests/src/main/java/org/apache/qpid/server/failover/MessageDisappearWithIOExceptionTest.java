@@ -267,7 +267,7 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
 
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _queue = _session.createQueue(getName());
+        _queue = _session.createQueue(getTestQueueName());
 
         // Create Consumer
         _consumer = _session.createConsumer(_queue);
@@ -292,7 +292,7 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
         {
             Message next = session.createMessage();
 
-            next.setIntProperty("count", count);
+            next.setIntProperty("count", i);
 
             producer.send(next);
 
