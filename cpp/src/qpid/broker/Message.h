@@ -184,8 +184,11 @@ public:
 
     mutable Replacement replacement;
     mutable boost::intrusive_ptr<Message> empty;
+
+    sys::Mutex callbackLock;
     MessageCallback* enqueueCallback;
     MessageCallback* dequeueCallback;
+
     uint32_t requiredCredit;
     static std::string updateDestination;
 };
