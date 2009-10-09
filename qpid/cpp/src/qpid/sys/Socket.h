@@ -31,6 +31,7 @@ namespace qpid {
 namespace sys {
 
 class Duration;
+class SocketAddress;
 
 class Socket : public IOHandle
 {
@@ -48,6 +49,7 @@ public:
     void setNonblocking() const;
 
     QPID_COMMON_EXTERN void connect(const std::string& host, uint16_t port) const;
+    QPID_COMMON_EXTERN void connect(const SocketAddress&) const;
 
     QPID_COMMON_EXTERN void close() const;
 

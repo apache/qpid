@@ -144,6 +144,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/log/posix/SinkOptions.cpp		\
   qpid/sys/posix/IOHandle.cpp			\
   qpid/sys/posix/Socket.cpp			\
+  qpid/sys/posix/SocketAddress.cpp		\
   qpid/sys/posix/AsynchIO.cpp			\
   qpid/sys/posix/FileSysDir.cpp			\
   qpid/sys/posix/LockFile.cpp			\
@@ -456,6 +457,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Shlib.h				\
   qpid/sys/ShutdownHandler.h			\
   qpid/sys/Socket.h				\
+  qpid/sys/SocketAddress.h			\
   qpid/sys/StateMonitor.h			\
   qpid/sys/TimeoutHandler.h			\
   qpid/sys/Timer.cpp				\
