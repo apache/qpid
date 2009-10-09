@@ -494,6 +494,12 @@ public class PrincipalPermissions
                 {
                     AMQQueue queue = ((AMQQueue) parameters[0]);
                     Map queuePermissions = (Map) _permissions.get(permission);
+                    
+                    if (queuePermissions == null)
+                    {
+                    	//if the outer map is null, the user has no CONSUME rights at all
+                    	return AuthzResult.DENIED;
+                    }
 
                     List queues = (List) queuePermissions.get(CONSUME_QUEUES_KEY);
 
