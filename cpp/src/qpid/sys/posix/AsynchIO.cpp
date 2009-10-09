@@ -166,6 +166,7 @@ private:
 private:
     ConnectedCallback connCallback;
     FailedCallback failCallback;
+    std::string errMsg;
     const Socket& socket;
 
 public:
@@ -194,10 +195,14 @@ AsynchConnector::AsynchConnector(const Socket& s,
     socket.setNonblocking();
     try {
         socket.connect(hostname, port);
-        startWatch(poller);
     } catch(std::exception& e) {
-        failure(-1, e.what());
+        // Defer reporting failure
+        startWatch(poller);
+        errMsg = e.what();
+        DispatchHandle::call(boost::bind(&AsynchConnector::failure, this, -1, errMsg));
+        return;
     }
+    startWatch(poller);
 }
 
 void AsynchConnector::connComplete(DispatchHandle& h)
