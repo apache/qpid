@@ -389,28 +389,36 @@ void Message::setReplacementMessage(boost::intrusive_ptr<Message> msg, const Que
 }
 
 void Message::allEnqueuesComplete() {
-    MessageCallback* cb = 0;
-    {
-        sys::Mutex::ScopedLock l(lock);
-        std::swap(cb, enqueueCallback);
-    }
+    sys::Mutex::ScopedLock l(callbackLock);
+    MessageCallback* cb = enqueueCallback;
     if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
 }
 
 void Message::allDequeuesComplete() {
-    MessageCallback* cb = 0;
-    {
-        sys::Mutex::ScopedLock l(lock);
-        std::swap(cb, dequeueCallback);
-    }
+    sys::Mutex::ScopedLock l(callbackLock);
+    MessageCallback* cb = dequeueCallback;
     if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
 }
 
-void Message::setEnqueueCompleteCallback(MessageCallback& cb) { enqueueCallback = &cb; }
-void Message::resetEnqueueCompleteCallback() { enqueueCallback = 0; }
+void Message::setEnqueueCompleteCallback(MessageCallback& cb) {
+    sys::Mutex::ScopedLock l(callbackLock);
+    enqueueCallback = &cb;
+}
 
-void Message::setDequeueCompleteCallback(MessageCallback& cb) { dequeueCallback = &cb; }
-void Message::resetDequeueCompleteCallback() { dequeueCallback = 0; }
+void Message::resetEnqueueCompleteCallback() {
+    sys::Mutex::ScopedLock l(callbackLock);
+    enqueueCallback = 0;
+}
+
+void Message::setDequeueCompleteCallback(MessageCallback& cb) {
+    sys::Mutex::ScopedLock l(callbackLock);
+    dequeueCallback = &cb;
+}
+
+void Message::resetDequeueCompleteCallback() {
+    sys::Mutex::ScopedLock l(callbackLock);
+    dequeueCallback = 0;
+}
 
 framing::FieldTable& Message::getOrInsertHeaders()
 {
