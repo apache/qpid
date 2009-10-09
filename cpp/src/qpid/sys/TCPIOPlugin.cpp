@@ -46,7 +46,7 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, int16_t port,
                  ConnectionCodec::Factory*,
-                 boost::function2<void, int, std::string> failed);
+                 ConnectFailedCallback);
 
     uint16_t getPort() const;
     std::string getHost() const;
@@ -54,6 +54,7 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
   private:
     void established(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*,
                      bool isClient);
+    void connectFailed(const Socket&, int, const std::string&, ConnectFailedCallback);
 };
 
 // Static instance to initialise plugin
@@ -118,6 +119,15 @@ void AsynchIOProtocolFactory::accept(Poller::shared_ptr poller,
     acceptor->start(poller);
 }
 
+void AsynchIOProtocolFactory::connectFailed(
+    const Socket& s, int ec, const std::string& emsg,
+    ConnectFailedCallback failedCb)
+{
+    failedCb(ec, emsg);
+    s.close();
+    delete &s;
+}
+
 void AsynchIOProtocolFactory::connect(
     Poller::shared_ptr poller,
     const std::string& host, int16_t port,
@@ -131,13 +141,14 @@ void AsynchIOProtocolFactory::connect(
     // is no longer needed.
 
     Socket* socket = new Socket();
-    AsynchConnector::create (*socket,
-                             poller,
-                             host,
-                             port,
-                             boost::bind(&AsynchIOProtocolFactory::established,
-                                         this, poller, _1, fact, true),
-                             failed);
+    AsynchConnector::create(*socket,
+                            poller,
+                            host,
+                            port,
+                            boost::bind(&AsynchIOProtocolFactory::established,
+                                        this, poller, _1, fact, true),
+                            boost::bind(&AsynchIOProtocolFactory::connectFailed,
+                                        this, _1, _2, _3, failed));
 }
 
 }} // namespace qpid::sys
