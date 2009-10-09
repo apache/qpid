@@ -161,7 +161,7 @@ class AsynchConnector : public qpid::sys::AsynchConnector,
 
 private:
     void connComplete(DispatchHandle& handle);
-    void failure(int, std::string);
+    void failure(int, const std::string&);
 
 private:
     ConnectedCallback connCallback;
@@ -174,7 +174,7 @@ public:
                     std::string hostname,
                     uint16_t port,
                     ConnectedCallback connCb,
-                    FailedCallback failCb = 0);
+                    FailedCallback failCb);
 };
 
 AsynchConnector::AsynchConnector(const Socket& s,
@@ -196,7 +196,7 @@ AsynchConnector::AsynchConnector(const Socket& s,
         socket.connect(hostname, port);
         startWatch(poller);
     } catch(std::exception& e) {
-        failure(-1, std::string(e.what()));
+        failure(-1, e.what());
     }
 }
 
@@ -209,17 +209,13 @@ void AsynchConnector::connComplete(DispatchHandle& h)
         connCallback(socket);
         DispatchHandle::doDelete();
     } else {
-        failure(errCode, std::string(strError(errCode)));
+        failure(errCode, strError(errCode));
     }
 }
 
-void AsynchConnector::failure(int errCode, std::string message)
+void AsynchConnector::failure(int errCode, const std::string& message)
 {
-    if (failCallback)
-        failCallback(errCode, message);
-
-    socket.close();
-    delete &socket;
+    failCallback(socket, errCode, message);
 
     DispatchHandle::doDelete();
 }

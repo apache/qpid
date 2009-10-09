@@ -57,7 +57,7 @@ public:
 class AsynchConnector {
 public:
     typedef boost::function1<void, const Socket&> ConnectedCallback;
-    typedef boost::function2<void, int, std::string> FailedCallback;
+    typedef boost::function3<void, const Socket&, int, const std::string&> FailedCallback;
 
     // Call create() to allocate a new AsynchConnector object with the
     // specified poller, addressing, and callbacks.
@@ -70,7 +70,7 @@ public:
                                    std::string hostname,
                                    uint16_t port,
                                    ConnectedCallback connCb,
-                                   FailedCallback failCb = 0);
+                                   FailedCallback failCb);
 
 protected:
     AsynchConnector() {}
