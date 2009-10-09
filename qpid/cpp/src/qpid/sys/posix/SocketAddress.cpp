@@ -39,7 +39,16 @@ SocketAddress::SocketAddress(const std::string& host0, const std::string& port0)
     ::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
     hints.ai_socktype = SOCK_STREAM;
-    int n = ::getaddrinfo(host.c_str(), port.c_str(), &hints, &addrInfo);
+
+    const char* node = 0;
+    if (host.empty()) {
+        hints.ai_flags |= AI_PASSIVE;
+    } else {
+        node = host.c_str();
+    }
+    const char* service = port.empty() ? "0" : port.c_str();
+
+    int n = ::getaddrinfo(node, service, &hints, &addrInfo);
     if (n != 0)
         throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
 }
