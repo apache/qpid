@@ -80,7 +80,7 @@ class Compound(object):
     return "%s(%s)" % (self.__class__.__name__,
                        ", ".join(["%s=%r" % (f.name, getattr(self, f.name))
                                   for f in self.ARGS
-                                  if getattr(self, f.name) is not f.default]))
+                                  if getattr(self, f.name) != f.default]))
 
 class Command(Compound):
   UNENCODED=[Field("channel", "uint16", 0),
