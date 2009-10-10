@@ -35,7 +35,8 @@ LBRACE = Type("LBRACE", r"\{")
 RBRACE = Type("RBRACE", r"\}")
 COLON = Type("COLON", r":")
 COMMA = Type("COMMA", r",")
-ID = Type("ID", r'[a-zA-Z_][a-zA-Z0-9_]*')
+SLASH = Type("SLASH", r"/")
+ID = Type("ID", r'[a-zA-Z_][a-zA-Z0-9_.-]*')
 NUMBER = Type("NUMBER", r'[+-]?[0-9]*\.?[0-9]+')
 STRING = Type("STRING", r""""(?:[^\\"]|\\.)*"|'(?:[^\\']|\\.)*'""")
 WSPACE = Type("WSPACE", r"[ \n\r\t]+")
@@ -53,12 +54,36 @@ class Token:
 joined = "|".join(["(%s)" % t.pattern for t in TYPES])
 LEXER = re.compile(joined)
 
+class LexError(Exception):
+  pass
+
+def line_info(st, pos):
+  idx = 0
+  lineno = 1
+  column = 0
+  line_pos = 0
+  while idx < pos:
+    if st[idx] == "\n":
+      lineno += 1
+      column = 0
+      line_pos = idx
+    column += 1
+    idx += 1
+
+  end = st.find("\n", line_pos)
+  if end < 0:
+    end = len(st)
+  line = st[line_pos:end]
+
+  return line, lineno, column
+
 def lex(st):
   pos = 0
   while pos < len(st):
     m = LEXER.match(st, pos)
     if m is None:
-      raise ValueError(repr(st[pos:]))
+      line, ln, col = line_info(st, pos)
+      raise LexError("unrecognized character in <string>:%s,%s: %s" % (ln, col, line))
     else:
       idx = m.lastindex
       t = Token(TYPES[idx - 1], m.group(idx))
@@ -67,8 +92,6 @@ def lex(st):
   yield Token(EOF, None)
 
 class ParseError(Exception): pass
-
-class EOF(Exception): pass
 
 class Parser:
 
@@ -97,11 +120,17 @@ class Parser:
 
   def address(self):
     name = self.eat(ID).value
-    if self.matches(LBRACE):
+    subject = None
+    options = None
+    if self.matches(SLASH):
+      self.eat(SLASH)
+      if self.matches(ID):
+        subject = self.eat(ID).value
+      else:
+        subject = ""
+    elif self.matches(LBRACE):
       options = self.map()
-    else:
-      options = None
-    return name, options
+    return name, subject, options
 
   def map(self):
     self.eat(LBRACE)
@@ -129,6 +158,8 @@ class Parser:
   def value(self):
     if self.matches(NUMBER, STRING):
       return eval(self.eat().value)
+    elif self.matches(ID):
+      return self.eat().value
     elif self.matches(LBRACE):
       return self.map()
     else:
