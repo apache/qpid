@@ -63,11 +63,12 @@ AmqpSession::AmqpSession(AmqpConnection^ conn, qpid::client::Connection* qpidCon
 	sessionp = new qpid::client::AsyncSession;
 	*sessionp = qpidConnectionp->newSession();
 	subs_mgrp = new SubscriptionManager (*sessionp);
-	success = true;
 	waiters = gcnew Collections::Generic::List<CompletionWaiter^>();
+	success = true;
     } finally {
         if (!success) {
  	    Cleanup();
+	    // TODO: include inner exception information
 	    throw gcnew QpidException ("session creation failure");
 	}
     }
@@ -76,12 +77,6 @@ AmqpSession::AmqpSession(AmqpConnection^ conn, qpid::client::Connection* qpidCon
 
 void AmqpSession::Cleanup()
 {
-    if (subscriptionp != NULL) {
-        subscriptionp->cancel();
-	delete subscriptionp;
-	subscriptionp=NULL;
-    }
-
     if (subs_mgrp != NULL) {
 	subs_mgrp->stop();
 	delete subs_mgrp;
@@ -112,6 +107,7 @@ void AmqpSession::Cleanup()
 
 void AmqpSession::ConnectionClosed()
 {
+    lock l(waiters);
     Cleanup();
 }
 
@@ -281,6 +277,28 @@ void AmqpSession::asyncHelper(Object ^unused)
 	waiter->Run();
 	l.acquire();
     }
+}
+
+bool AmqpSession::MessageStop(Completion &comp, std::string &name)
+{
+    lock l(waiters);
+
+    if (sessionp == NULL)
+	return false;
+
+    comp = sessionp->messageStop(name, true);
+    return true;
+}
+
+void AmqpSession::AcceptAndComplete(SequenceSet& transfers)
+{
+    lock l(waiters);
+
+    if (sessionp == NULL)
+	throw gcnew ObjectDisposedException("Accept");
+
+    sessionp->markCompleted(transfers, false);
+    sessionp->messageAccept(transfers, false);
 }
 
 

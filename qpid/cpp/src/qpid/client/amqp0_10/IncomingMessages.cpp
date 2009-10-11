@@ -269,18 +269,9 @@ void populate(qpid::messaging::Message& message, FrameSet& command)
     //e.g. for rejecting.
     MessageImplAccess::get(message).setInternalId(command.getId());
         
-    command.getContent(message.getBytes());
+    command.getContent(message.getContent());
 
     populateHeaders(message, command.getHeaders());
-        
-    //decode content if necessary
-    if (message.getContentType() == ListCodec::contentType) {
-        ListCodec codec;
-        message.decode(codec);
-    } else if (message.getContentType() == MapCodec::contentType) {
-        MapCodec codec;
-        message.decode(codec);
-    }
 }
 
 

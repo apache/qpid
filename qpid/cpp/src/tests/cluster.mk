@@ -30,7 +30,8 @@ if HAVE_LIBCPG
 
 # ais_check checks pre-requisites for cluster tests and runs them if ok.
 TESTS +=					\
-	ais_check				\
+	run_cluster_test			\
+	cluster_read_credit			\
 	test_watchdog				\
 	run_cluster_tests			\
 	federated_cluster_test			\
@@ -38,6 +39,8 @@ TESTS +=					\
 
 EXTRA_DIST +=					\
 	ais_check				\
+	run_cluster_test			\
+	cluster_read_credit			\
 	test_watchdog				\
 	start_cluster				\
 	stop_cluster				\

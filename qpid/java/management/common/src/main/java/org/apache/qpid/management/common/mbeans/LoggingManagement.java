@@ -110,7 +110,7 @@ public interface LoggingManagement
      * Reloads the log4j configuration file, applying any changes made. 
      * 
      * @throws IOException
-     * @since Qpid JMX API 1.3
+     * @since Qpid JMX API 1.4
      */
     @MBeanOperation(name = "reloadConfigFile", description = "Reload the log4j xml configuration file", impact = MBeanOperationInfo.ACTION)
     void reloadConfigFile() throws IOException;

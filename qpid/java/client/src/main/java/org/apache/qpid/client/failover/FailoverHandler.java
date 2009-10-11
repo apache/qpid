@@ -21,6 +21,7 @@
 package org.apache.qpid.client.failover;
 
 import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
 
@@ -134,6 +135,7 @@ public class FailoverHandler implements Runnable
             // a slightly more complex state model therefore I felt it was worthwhile doing this.
             AMQStateManager existingStateManager = _amqProtocolHandler.getStateManager();
 
+            // Use a fresh new StateManager for the reconnection attempts
             _amqProtocolHandler.setStateManager(new AMQStateManager());
 
 

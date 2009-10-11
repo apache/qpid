@@ -160,7 +160,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
             // Set the broker.ready string to check for the _log4j default that
             // is still present on standard out. 
-            System.setProperty(BROKER_READY, "Qpid Broker Ready");
+            setTestClientSystemProperty(BROKER_READY, "Qpid Broker Ready");
 
             startBroker();
 

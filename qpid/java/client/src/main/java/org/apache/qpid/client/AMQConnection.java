@@ -313,7 +313,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected AMQConnectionDelegate _delegate;
 
     // this connection maximum number of prefetched messages
-    protected int _maxPrefetch;
+    private int _maxPrefetch;
 
     //Indicates whether persistent messages are synchronized
     private boolean _syncPersistence;
@@ -450,7 +450,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            // use the defaul value set for all connections
+            // use the default value set for all connections
             _syncPublish = System.getProperty((ClientProperties.SYNC_ACK_PROP_NAME),_syncPublish);
         }
         
@@ -512,7 +512,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         boolean retryAllowed = true;
         Exception connectionException = null;
-        while (!_connected && retryAllowed)
+        while (!_connected && retryAllowed && brokerDetails != null)
         {
             ProtocolVersion pe = null;
             try
@@ -691,12 +691,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public boolean attemptReconnection()
     {
-        while (_failoverPolicy.failoverAllowed())
+        BrokerDetails broker = null;
+        while (_failoverPolicy.failoverAllowed() && (broker = _failoverPolicy.getNextBrokerDetails()) != null)
         {
             try
             {
-                makeBrokerConnection(_failoverPolicy.getNextBrokerDetails());
-
+                makeBrokerConnection(broker);
                 return true;
             }
             catch (Exception e)

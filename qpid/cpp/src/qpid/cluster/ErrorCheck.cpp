@@ -45,7 +45,8 @@ ostream& operator<<(ostream& o, const ErrorCheck::MemberSet& ms) {
 }
 
 void ErrorCheck::error(
-    Connection& c, ErrorType t, framing::SequenceNumber seq, const MemberSet& ms, const std::string& msg)
+    Connection& c, ErrorType t, framing::SequenceNumber seq, const MemberSet& ms,
+    const std::string& msg)
 {
     // Detected a local error, inform cluster and set error state.
     assert(t != ERROR_TYPE_NONE); // Must be an error.
@@ -54,10 +55,11 @@ void ErrorCheck::error(
     unresolved = ms;
     frameSeq = seq;
     connection = &c;
-    QPID_LOG(error, cluster
-             << (type == ERROR_TYPE_SESSION ? " channel" : " connection")
-             << " error " << frameSeq << " on " << c << ": " << msg
-             << " must be resolved with: " << unresolved);
+    message = msg;
+    QPID_LOG(debug, cluster<< (type == ERROR_TYPE_SESSION ? " channel" : " connection")
+             << " error " << frameSeq << " on " << c
+             << " must be resolved with: " << unresolved
+             << ": " << message);
     mcast.mcastControl(
         ClusterErrorCheckBody(ProtocolVersion(), type, frameSeq), cluster.getId());
     // If there are already frames queued up by a previous error, review
@@ -84,13 +86,15 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
         if (errorCheck->getFrameSeq() == frameSeq) { // Addresses current error
             next = frames.erase(i);    // Drop matching error check controls
             if (errorCheck->getType() < type) { // my error is worse than his
-                QPID_LOG(critical, cluster << " error " << frameSeq
-                         << " did not occur on " << i->getMemberId());
-                throw Exception(QPID_MSG("Error " << frameSeq
-                                         << " did not occur on all members"));
+                QPID_LOG(critical, cluster
+                         << " local error " << frameSeq << " did not occur on member "
+                         << i->getMemberId()
+                         << ": " << message);
+                throw Exception(
+                    QPID_MSG("local error did not occur on all cluster members " << ": " << message));
             }
             else {              // his error is worse/same as mine.
-                QPID_LOG(info, cluster << " error " << frameSeq
+                QPID_LOG(debug, cluster << " error " << frameSeq
                          << " resolved with " << i->getMemberId());
                 unresolved.erase(i->getMemberId());
                 checkResolved();
@@ -128,10 +132,10 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
 void ErrorCheck::checkResolved() {
     if (unresolved.empty()) {   // No more potentially conflicted members, we're clear.
         type = ERROR_TYPE_NONE;
-        QPID_LOG(info, cluster << " error " << frameSeq << " resolved.");
+        QPID_LOG(debug, cluster << " error " << frameSeq << " resolved.");
     }
     else 
-        QPID_LOG(info, cluster << " error " << frameSeq
+        QPID_LOG(debug, cluster << " error " << frameSeq
                  << " must be resolved with " << unresolved);
 }
 
@@ -146,7 +150,7 @@ void ErrorCheck::respondNone(const MemberId& from, uint8_t type, framing::Sequen
     // Don't respond to non-errors or to my own errors.
     if (type == ERROR_TYPE_NONE || from == cluster.getId())
         return;
-    QPID_LOG(info, cluster << " error " << frameSeq << " did not occur locally.");
+    QPID_LOG(debug, cluster << " error " << frameSeq << " did not occur locally.");
     mcast.mcastControl(
         ClusterErrorCheckBody(ProtocolVersion(), ERROR_TYPE_NONE, frameSeq),
         cluster.getId()

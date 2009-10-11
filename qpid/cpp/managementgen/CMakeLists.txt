@@ -20,18 +20,7 @@ project(qpidc-qmfgen)
 cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
 
 install(PROGRAMS qmf-gen DESTINATION managementgen
-        COMPONENT all-source)
-install(FILES    qmfgen/__init__.py
-                 qmfgen/generate.py
-                 qmfgen/schema.py
-                 qmfgen/templates/Args.h
-                 qmfgen/templates/Class.cpp
-                 qmfgen/templates/Class.h
-                 qmfgen/templates/Event.cpp
-                 qmfgen/templates/Event.h
-                 qmfgen/templates/Makefile.mk
-                 qmfgen/templates/Package.cpp
-                 qmfgen/templates/Package.h
-                 qmfgen/management-types.xml
-        DESTINATION managementgen
-        COMPONENT all-source)
+        COMPONENT ${QPID_COMPONENT_QMF})
+install(DIRECTORY qmfgen DESTINATION managementgen
+        COMPONENT ${QPID_COMPONENT_QMF}
+        PATTERN ".svn" EXCLUDE PATTERN "*.pyc" EXCLUDE)

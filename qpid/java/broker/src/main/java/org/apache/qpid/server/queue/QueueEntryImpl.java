@@ -42,8 +42,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private final SimpleQueueEntryList _queueEntryList;
 
-    private AMQMessage _message;
-
+    private final AMQMessage _message;
 
     private Set<Subscription> _rejectedBy = null;
 
@@ -177,13 +176,21 @@ public class QueueEntryImpl implements QueueEntry
 
     public String debugIdentity()
     {
-        return getMessage().debugIdentity();
+        AMQMessage message = getMessage();
+        if (message == null)
+        {
+            return "null";
+        }
+        else
+        {
+            return message.debugIdentity();
+        }
     }
 
 
     public boolean immediateAndNotDelivered() 
     {
-        return _message.immediateAndNotDelivered();
+        return getMessage().immediateAndNotDelivered();
     }
 
     public void setRedelivered(boolean b)
@@ -385,4 +392,5 @@ public class QueueEntryImpl implements QueueEntry
     {
         return _queueEntryList;
     }
+
 }

@@ -566,7 +566,7 @@ class Console:
     #   attr_reader :impl
     def initialize(handler=None, kwargs={}):
        self._handler = handler
-       self.impl = qmfengine.ConsoleEngine()
+       self.impl = qmfengine.Console()
        self._event = qmfengine.ConsoleEvent()
        self._broker_list = []
     
@@ -741,7 +741,7 @@ class Agent(ConnectionHandler):
             self._agentLabel = label
         self._conn = None
         self._handler = handler
-        self.impl = qmfengine.AgentEngine(self._agentLabel)
+        self.impl = qmfengine.Agent(self._agentLabel)
         self._event = qmfengine.AgentEvent()
         self._xmtMessage = qmfengine.Message()
     

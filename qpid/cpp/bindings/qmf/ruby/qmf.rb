@@ -60,7 +60,19 @@ module Qmf
         raise ArgumentError, "Value for attribute '#{key}' has unsupported type: #{val.class}"
       end
 
-      @impl.setAttr(key, v)
+      good = @impl.setAttr(key, v)
+      raise "Invalid attribute '#{key}'" unless good
+    end
+
+    def method_missing(name_in, *args)
+      name = name_in.to_s
+      if name[name.length - 1] == 61
+        attr = name[0..name.length - 2]
+        set_attr(attr, args[0])
+        return
+      end
+
+      super.method_missing(name_in, args)
     end
   end
 
@@ -85,10 +97,15 @@ module Qmf
       @new_conn_handlers = []
       @conn_handlers_to_delete = []
       @conn_handlers = []
+      @connected = nil
 
       @thread = Thread.new do
         run
       end
+    end
+
+    def connected?
+      @connected
     end
 
     def kick
@@ -112,7 +129,6 @@ module Qmf
 
     def run()
       eventImpl = Qmfengine::ResilientConnectionEvent.new
-      connected = nil
       new_handlers = nil
       del_handlers = nil
       bt_count = 0
@@ -129,7 +145,7 @@ module Qmf
 
         new_handlers.each do |nh|
           @conn_handlers << nh
-          nh.conn_event_connected() if connected
+          nh.conn_event_connected() if @connected
         end
         new_handlers = nil
 
@@ -143,10 +159,10 @@ module Qmf
           begin
             case eventImpl.kind
             when Qmfengine::ResilientConnectionEvent::CONNECTED
-              connected = :true
+              @connected = :true
               @conn_handlers.each { |h| h.conn_event_connected() }
             when Qmfengine::ResilientConnectionEvent::DISCONNECTED
-              connected = nil
+              @connected = nil
               @conn_handlers.each { |h| h.conn_event_disconnected(eventImpl.errorText) }
             when Qmfengine::ResilientConnectionEvent::SESSION_CLOSED
               eventImpl.sessionContext.handler.sess_event_session_closed(eventImpl.sessionContext, eventImpl.errorText)
@@ -189,8 +205,16 @@ module Qmf
   ##==============================================================================
 
   class QmfObject
+    include MonitorMixin
     attr_reader :impl, :object_class
     def initialize(cls, kwargs={})
+      super()
+      @cv = new_cond
+      @sync_count = 0
+      @sync_result = nil
+      @allow_sets = :false
+      @broker = kwargs[:broker] if kwargs.include?(:broker)
+
       if cls:
         @object_class = cls
         @impl = Qmfengine::Object.new(@object_class.impl)
@@ -204,6 +228,22 @@ module Qmf
       return ObjectId.new(@impl.getObjectId)
     end
 
+    def properties
+      list = []
+      @object_class.properties.each do |prop|
+        list << [prop, get_attr(prop.name)]
+      end
+      return list
+    end
+
+    def statistics
+      list = []
+      @object_class.statistics.each do |stat|
+        list << [stat, get_attr(stat.name)]
+      end
+      return list
+    end
+
     def get_attr(name)
       val = value(name)
       case val.getType
@@ -212,7 +252,7 @@ module Qmf
       when TYPE_SSTR, TYPE_LSTR then val.asString
       when TYPE_ABSTIME then val.asInt64
       when TYPE_DELTATIME then val.asUint64
-      when TYPE_REF then val.asObjectId
+      when TYPE_REF then ObjectId.new(val.asObjectId)
       when TYPE_BOOL then val.asBool
       when TYPE_FLOAT then val.asFloat
       when TYPE_DOUBLE then val.asDouble
@@ -264,6 +304,103 @@ module Qmf
       set_attr(name, get_attr(name) - by)
     end
 
+    def method_missing(name_in, *args)
+      #
+      # Convert the name to a string and determine if it represents an
+      # attribute assignment (i.e. "attr=")
+      #
+      name = name_in.to_s
+      attr_set = (name[name.length - 1] == 61)
+      name = name[0..name.length - 2] if attr_set
+      raise "Sets not permitted on this object" if attr_set && !@allow_sets
+
+      #
+      # If the name matches a property name, set or return the value of the property.
+      #
+      @object_class.properties.each do |prop|
+        if prop.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # Do the same for statistics
+      #
+      @object_class.statistics.each do |stat|
+        if stat.name == name
+          if attr_set
+            return set_attr(name, args[0])
+          else
+            return get_attr(name)
+          end
+        end
+      end
+
+      #
+      # If we still haven't found a match for the name, check to see if
+      # it matches a method name.  If so, marshall the arguments and invoke
+      # the method.
+      #
+      @object_class.methods.each do |method|
+        if method.name == name
+          raise "Sets not permitted on methods" if attr_set
+          timeout = 30
+          synchronize do
+            @sync_count = 1
+            @impl.invokeMethod(name, _marshall(method, args), self)
+            @broker.conn.kick if @broker
+            unless @cv.wait(timeout) { @sync_count == 0 }
+              raise "Timed out waiting for response"
+            end
+          end
+
+          return @sync_result
+        end
+      end
+
+      #
+      # This name means nothing to us, pass it up the line to the parent
+      # class's handler.
+      #
+      super.method_missing(name_in, args)
+    end
+
+    def _method_result(result)
+      synchronize do
+        @sync_result = result
+        @sync_count -= 1
+        @cv.signal
+      end
+    end
+
+    #
+    # Convert a Ruby array of arguments (positional) into a Value object of type "map".
+    #
+    private
+    def _marshall(schema, args)
+      map = Qmfengine::Value.new(TYPE_MAP)
+      schema.arguments.each do |arg|
+        if arg.direction == DIR_IN || arg.direction == DIR_IN_OUT
+          map.insert(arg.name, Qmfengine::Value.new(arg.typecode))
+        end
+      end
+
+      marshalled = Arguments.new(map)
+      idx = 0
+      schema.arguments.each do |arg|
+        if arg.direction == DIR_IN || arg.direction == DIR_IN_OUT
+          marshalled[arg.name] = args[idx] unless args[idx] == nil
+          idx += 1
+        end
+      end
+
+      return marshalled.map
+    end
+
     private
     def value(name)
       val = @impl.getValue(name.to_s)
@@ -277,6 +414,7 @@ module Qmf
   class AgentObject < QmfObject
     def initialize(cls, kwargs={})
       super(cls, kwargs)
+      @allow_sets = :true
     end
 
     def destroy
@@ -296,19 +434,21 @@ module Qmf
     end
 
     def update()
+      raise "No linkage to broker" unless @broker
+      newer = @broker.console.objects(Query.new(:object_id => object_id))
+      raise "Expected exactly one update for this object" unless newer.size == 1
+      merge_update(newer[0])
     end
 
-    def mergeUpdate(newObject)
+    def merge_update(new_object)
+      @impl.merge(new_object.impl)
     end
 
     def deleted?()
-      @delete_time > 0
+      @impl.isDeleted
     end
 
     def index()
-    end
-
-    def method_missing(name, *args)
     end
   end
 
@@ -323,16 +463,28 @@ module Qmf
     end
 
     def object_num_high
-      return @impl.getObjectNumHi
+      @impl.getObjectNumHi
     end
 
     def object_num_low
-      return @impl.getObjectNumLo
+      @impl.getObjectNumLo
+    end
+
+    def broker_bank
+      @impl.getBrokerBank
+    end
+
+    def agent_bank
+      @impl.getAgentBank
     end
 
     def ==(other)
       return (@impl.getObjectNumHi == other.impl.getObjectNumHi) &&
         (@impl.getObjectNumLo == other.impl.getObjectNumLo)
+    end
+
+    def to_s
+      @impl.str
     end
   end
 
@@ -362,6 +514,14 @@ module Qmf
       @by_hash.each { |k, v| yield(k, v) }
     end
 
+    def method_missing(name, *args)
+      if @by_hash.include?(name.to_s)
+        return @by_hash[name.to_s]
+      end
+
+      super.method_missing(name, args)
+    end
+
     def by_key(key)
       val = @map.byKey(key)
       case val.getType
@@ -370,7 +530,7 @@ module Qmf
       when TYPE_SSTR, TYPE_LSTR                 then val.asString
       when TYPE_ABSTIME                         then val.asInt64
       when TYPE_DELTATIME                       then val.asUint64
-      when TYPE_REF                             then val.asObjectId
+      when TYPE_REF                             then ObjectId.new(val.asObjectId)
       when TYPE_BOOL                            then val.asBool
       when TYPE_FLOAT                           then val.asFloat
       when TYPE_DOUBLE                          then val.asDouble
@@ -407,6 +567,32 @@ module Qmf
     end
   end
 
+  class MethodResponse
+    def initialize(impl)
+      @impl = Qmfengine::MethodResponse.new(impl)
+    end
+
+    def status
+      @impl.getStatus
+    end
+
+    def exception
+      @impl.getException
+    end
+
+    def text
+      exception.asString
+    end
+
+    def args
+      Arguments.new(@impl.getArgs)
+    end
+
+    def method_missing(name, *extra_args)
+      args.__send__(name, extra_args)
+    end
+  end
+
   ##==============================================================================
   ## QUERY
   ##==============================================================================
@@ -421,13 +607,13 @@ module Qmf
         if kwargs.include?(:key)
           @impl = Qmfengine::Query.new(kwargs[:key])
         elsif kwargs.include?(:object_id)
-          @impl = Qmfengine::Query.new(kwargs[:object_id])
+          @impl = Qmfengine::Query.new(kwargs[:object_id].impl)
         else
           package = kwargs[:package] if kwargs.include?(:package)
           if kwargs.include?(:class)
             @impl = Qmfengine::Query.new(kwargs[:class], package)
           else
-            raise ArgumentError, "Invalid arguments, use :key or :class[,:package]"
+            raise ArgumentError, "Invalid arguments, use :key, :object_id or :class[,:package]"
           end
         end
       end
@@ -470,6 +656,18 @@ module Qmf
     def name
       @impl.getName
     end
+
+    def direction
+      @impl.getDirection
+    end
+
+    def typecode
+      @impl.getType
+    end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaMethod
@@ -496,6 +694,10 @@ module Qmf
     def name
       @impl.getName
     end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaProperty
@@ -516,6 +718,10 @@ module Qmf
     def name
       @impl.getName
     end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaStatistic
@@ -533,6 +739,10 @@ module Qmf
     def name
       @impl.getName
     end
+
+    def to_s
+      name
+    end
   end
 
   class SchemaClassKey
@@ -541,12 +751,16 @@ module Qmf
       @impl = i
     end
 
-    def get_package()
-      @impl.getPackageName()
+    def package_name
+      @impl.getPackageName
     end
 
-    def get_class()
-      @impl.getClassName()
+    def class_name
+      @impl.getClassName
+    end
+
+    def to_s
+      @impl.asString
     end
   end
 
@@ -590,7 +804,15 @@ module Qmf
       @impl.addMethod(meth.impl)
     end
 
-    def name
+    def class_key
+      SchemaClassKey.new(@impl.getClassKey)
+    end
+
+    def package_name
+      @impl.getClassKey.getPackageName
+    end
+
+    def class_name
       @impl.getClassKey.getClassName
     end
   end
@@ -643,7 +865,7 @@ module Qmf
     def initialize(handler = nil, kwargs={})
       super()
       @handler = handler
-      @impl = Qmfengine::ConsoleEngine.new
+      @impl = Qmfengine::Console.new
       @event = Qmfengine::ConsoleEvent.new
       @broker_list = []
       @cv = new_cond
@@ -662,7 +884,7 @@ module Qmf
       @broker_list.delete(broker)
     end
 
-    def get_packages()
+    def packages()
       plist = []
       count = @impl.packageCount
       for i in 0...count
@@ -671,7 +893,7 @@ module Qmf
       return plist
     end
 
-    def get_classes(package, kind=CLASS_OBJECT)
+    def classes(package, kind=CLASS_OBJECT)
       clist = []
       count = @impl.classCount(package)
       for i in 0...count
@@ -708,7 +930,7 @@ module Qmf
       end
     end
 
-    def get_agents(broker = nil)
+    def agents(broker = nil)
       blist = []
       if broker
         blist << broker
@@ -727,11 +949,17 @@ module Qmf
       return agents
     end
 
-    def get_objects(query, kwargs = {})
+    def objects(query, kwargs = {})
       timeout = 30
+      kwargs.merge!(query) if query.class == Hash
+
       if kwargs.include?(:timeout)
         timeout = kwargs[:timeout]
+        kwargs.delete(:timeout)
       end
+
+      query = Query.new(kwargs) if query.class == Hash
+
       synchronize do
         @sync_count = 1
         @sync_result = []
@@ -743,6 +971,18 @@ module Qmf
 
         return @sync_result
       end
+    end
+
+    # Return one and only one object or nil.
+    def object(query, kwargs = {})
+      objs = objects(query, kwargs)
+      return objs.length == 1 ? objs[0] : nil
+    end
+
+    # Return the first of potentially many objects.
+    def first_object(query, kwargs = {})
+      objs = objects(query, kwargs)
+      return objs.length > 0 ? objs[0] : nil
     end
 
     def _get_result(list, context)
@@ -769,15 +1009,20 @@ module Qmf
       valid = @impl.getEvent(@event)
       while valid
         count += 1
-        puts "Console Event: #{@event.kind}"
         case @event.kind
         when Qmfengine::ConsoleEvent::AGENT_ADDED
+          @handler.agent_added(AgentProxy.new(@event.agent, nil)) if @handler
         when Qmfengine::ConsoleEvent::AGENT_DELETED
+          @handler.agent_deleted(AgentProxy.new(@event.agent, nil)) if @handler
         when Qmfengine::ConsoleEvent::NEW_PACKAGE
+          @handler.new_package(@event.name) if @handler
         when Qmfengine::ConsoleEvent::NEW_CLASS
+          @handler.new_class(SchemaClassKey.new(@event.classKey)) if @handler
         when Qmfengine::ConsoleEvent::OBJECT_UPDATE
+          @handler.object_update(ConsoleObject.new(nil, :impl => @event.object), @event.hasProps, @event.hasStats) if @handler
         when Qmfengine::ConsoleEvent::EVENT_RECEIVED
         when Qmfengine::ConsoleEvent::AGENT_HEARTBEAT
+          @handler.agent_heartbeat(AgentProxy.new(@event.agent, nil), @event.timestamp) if @handler
         when Qmfengine::ConsoleEvent::METHOD_RESPONSE
         end
         @impl.popEvent
@@ -798,14 +1043,23 @@ module Qmf
     def label
       @impl.getLabel
     end
+
+    def broker_bank
+      @impl.getBrokerBank
+    end
+
+    def agent_bank
+      @impl.getAgentBank
+    end
   end
 
   class Broker < ConnectionHandler
     include MonitorMixin
-    attr_reader :impl
+    attr_reader :impl, :conn, :console, :broker_bank
 
     def initialize(console, conn)
       super()
+      @broker_bank = 1
       @console = console
       @conn = conn
       @session = nil
@@ -825,7 +1079,7 @@ module Qmf
       @operational = :false
     end
 
-    def waitForStable(timeout = nil)
+    def wait_for_stable(timeout = nil)
       synchronize do
         return if @stable
         if timeout
@@ -850,7 +1104,6 @@ module Qmf
       valid = @impl.getEvent(@event)
       while valid
         count += 1
-        puts "Broker Event: #{@event.kind}"
         case @event.kind
         when Qmfengine::BrokerEvent::BROKER_INFO
         when Qmfengine::BrokerEvent::DECLARE_QUEUE
@@ -871,9 +1124,12 @@ module Qmf
         when Qmfengine::BrokerEvent::QUERY_COMPLETE
           result = []
           for idx in 0...@event.queryResponse.getObjectCount
-            result << ConsoleObject.new(nil, :impl => @event.queryResponse.getObject(idx))
+            result << ConsoleObject.new(nil, :impl => @event.queryResponse.getObject(idx), :broker => self)
           end
           @console._get_result(result, @event.context)
+        when Qmfengine::BrokerEvent::METHOD_RESPONSE
+          obj = @event.context
+          obj._method_result(MethodResponse.new(@event.methodResponse))
         end
         @impl.popEvent
         valid = @impl.getEvent(@event)
@@ -946,7 +1202,7 @@ module Qmf
       end
       @conn = nil
       @handler = handler
-      @impl = Qmfengine::AgentEngine.new(@agentLabel)
+      @impl = Qmfengine::Agent.new(@agentLabel)
       @event = Qmfengine::AgentEvent.new
       @xmtMessage = Qmfengine::Message.new
     end
@@ -1050,5 +1306,4 @@ module Qmf
       do_events
     end
   end
-
 end

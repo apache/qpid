@@ -44,7 +44,6 @@ private:
     AsyncSession* sessionp;
     SessionImpl* sessionImplp;
     SubscriptionManager* subs_mgrp;
-    Subscription* subscriptionp;
     LocalQueue* localQueuep;
     Collections::Generic::List<CompletionWaiter^>^ waiters;
     bool helperRunning;
@@ -69,6 +68,8 @@ internal:
     void ConnectionClosed();
     void internalWaitForCompletion(IntPtr Future);
     void removeWaiter(CompletionWaiter^ waiter);
+    bool MessageStop(Completion &comp, std::string &name);
+    void AcceptAndComplete(SequenceSet& transfers);
 
     property AmqpConnection^ Connection {
 	AmqpConnection^ get () { return connection; }

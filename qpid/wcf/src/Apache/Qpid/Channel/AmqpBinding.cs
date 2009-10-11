@@ -64,6 +64,12 @@ namespace Apache.Qpid.Channel
             set { transport.BrokerPort = value; }
         }
 
+        public int PrefetchLimit
+        {
+            get { return transport.PrefetchLimit; }
+            set { transport.PrefetchLimit = value; }
+        }
+
         public bool Shared
         {
             get { return transport.Shared; }

@@ -239,7 +239,8 @@ namespace qpid {
             QPID_BROKER_EXTERN void setLastNodeFailure();
             QPID_BROKER_EXTERN void clearLastNodeFailure();
 
-            bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg);
+            bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message> msg, bool suppressPolicyCheck = false);
+            void enqueueAborted(boost::intrusive_ptr<Message> msg);
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
@@ -315,8 +316,6 @@ namespace qpid {
                 bindings.eachBinding(f);
             }
 
-            bool releaseMessageContent(const QueuedMessage&);
-
             void popMsg(QueuedMessage& qmsg);
 
             /** Set the position sequence number  for the next message on the queue.
@@ -334,18 +333,6 @@ namespace qpid {
              * Notify queue that recovery has completed.
              */
             void recoveryComplete();
-
-            /**
-             * This is a hack to avoid deadlocks in durable ring
-             * queues. It is used for dequeueing messages in response
-             * to an enqueue while avoid holding lock over call to
-             * store.
-             * 
-             * Assumes messageLock is held - true for curent use case
-             * (QueuePolicy::tryEnqueue()) but rather nasty as this is a public
-             * method
-             **/
-            void addPendingDequeue(const QueuedMessage &msg);
 
             // For cluster update
             QueueListeners& getListeners();

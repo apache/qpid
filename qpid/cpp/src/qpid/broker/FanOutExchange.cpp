@@ -106,36 +106,12 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, cons
     return true;
 }
 
-void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/){
+void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/)
+{
     PreRoute pr(msg, this);
-    uint32_t count(0);
-
-    BindingsArray::ConstPtr p = bindings.snapshot();
-    if (p.get()){
-        for(std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i, count++){
-            msg.deliverTo((*i)->queue);
-            if ((*i)->mgmtBinding != 0)
-                (*i)->mgmtBinding->inc_msgMatched ();
-        }
-    }
-    
-    if (mgmtExchange != 0)
-    {
-        mgmtExchange->inc_msgReceives  ();
-        mgmtExchange->inc_byteReceives (msg.contentSize ());
-        if (count == 0)
-        {
-            mgmtExchange->inc_msgDrops  ();
-            mgmtExchange->inc_byteDrops (msg.contentSize ());
-        }
-        else
-        {
-            mgmtExchange->inc_msgRoutes  (count);
-            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
-        }
-    }
+    doRoute(msg, bindings.snapshot());
 }
-
+    
 bool FanOutExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const)
 {
     BindingsArray::ConstPtr ptr = bindings.snapshot();

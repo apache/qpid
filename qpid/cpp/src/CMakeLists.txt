@@ -118,19 +118,6 @@ if (ENABLE_VALGRIND AND NOT VALGRIND)
   message(STATUS "Can't locate the valgrind command; no run-time error detection")
 endif (ENABLE_VALGRIND AND NOT VALGRIND)
 
-set(QPIDC_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib CACHE STRING
-    "Directory to install library files")
-set(QPIDC_INSTALL_CONFDIR ${CMAKE_INSTALL_PREFIX}/etc CACHE STRING
-    "Directory to install configuration files")
-set(QPIDC_MODULE_DIR ${QPIDC_INSTALL_LIBDIR}/qpid/client CACHE STRING
-    "Directory to load client plug-in modules from")
-set(QPIDD_MODULE_DIR ${QPIDC_INSTALL_LIBDIR}/qpid/daemon CACHE STRING
-    "Directory to load broker plug-in modules from")
-set(QPIDC_CONF_FILE ${QPIDC_INSTALL_CONFDIR}/qpid/qpidc.conf CACHE STRING
-    "Name of the Qpid client configuration file")
-set(QPIDD_CONF_FILE ${QPIDC_INSTALL_CONFDIR}/qpid/qpidd.conf CACHE STRING
-    "Name of the Qpid broker configuration file")
-
 option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
 if (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
    # Warnings: Enable as many as possible, keep the code clean. Please
@@ -272,6 +259,9 @@ if (BUILD_XML)
                            PREFIX ""
                            LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
+  install (TARGETS xml RUNTIME
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
 
   set(xml_tests XmlClientSessionTest)
 
@@ -301,6 +291,9 @@ if (BUILD_ACL)
                            PREFIX ""
                            LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
+  install (TARGETS acl
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
 endif (BUILD_ACL)
 
 # Check for optional cluster support requirements
@@ -329,7 +322,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     )
   endif (MSVC)
 
-  set (libqpidcommon_platform_SOURCES
+  set (qpidcommon_platform_SOURCES
     qpid/log/windows/SinkOptions.cpp
     qpid/sys/windows/AsynchIO.cpp
     qpid/sys/windows/FileSysDir.cpp
@@ -346,15 +339,22 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/Time.cpp
     qpid/sys/windows/uuid.cpp
   )
-  set (libqpidcommon_platform_LIBS
+  set (qpidcommon_platform_LIBS
     rpcrt4 ws2_32
   )
-  set (libqpidbroker_platform_SOURCES
+  set (qpidcommon_platform_INSTALL_HEADERS
+     ../include/qpid/sys/windows/Condition.h
+     ../include/qpid/sys/windows/IntegerTypes.h
+     ../include/qpid/sys/windows/Mutex.h
+     ../include/qpid/sys/windows/Time.h
+     ../include/qpid/sys/windows/check.h
+  )
+  set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
   )
 
-  set (libqpidclient_platform_SOURCES
+  set (qpidclient_platform_SOURCES
     qpid/client/windows/SaslFactory.cpp
   )
 
@@ -375,7 +375,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     set (qpid_poller_module qpid/sys/solaris/ECFPoller.cpp)
   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
 
-  set (libqpidcommon_platform_SOURCES
+  set (qpidcommon_platform_SOURCES
     qpid/sys/posix/AsynchIO.cpp
     qpid/sys/posix/Fork.cpp
     qpid/sys/posix/FileSysDir.cpp
@@ -394,14 +394,22 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
     ${qpid_poller_module}
   )
-  set (libqpidcommon_platform_LIBS
+  set (qpidcommon_platform_LIBS
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     uuid
     ${CMAKE_DL_LIBS}
   )
+  set (qpidcommon_platform_INSTALL_HEADERS
+     ../include/qpid/sys/posix/Condition.h
+     ../include/qpid/sys/posix/IntegerTypes.h
+     ../include/qpid/sys/posix/Mutex.h
+     ../include/qpid/sys/posix/PrivatePosix.h
+     ../include/qpid/sys/posix/Time.h
+     ../include/qpid/sys/posix/check.h
+  )
 
-  set (libqpidbroker_platform_SOURCES
+  set (qpidbroker_platform_SOURCES
      qpid/broker/Daemon.cpp
      qpid/broker/SaslAuthenticator.cpp
      qpid/broker/SignalHandler.h
@@ -409,7 +417,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
      qpid/broker/posix/BrokerDefaults.cpp
   )
 
-  set (libqpidclient_platform_SOURCES
+  set (qpidclient_platform_SOURCES
      qpid/client/SaslFactory.cpp
   )
 
@@ -418,9 +426,9 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-set (libqpidcommon_SOURCES
+set (qpidcommon_SOURCES
      ${rgen_framing_srcs}
-     ${libqpidcommon_platform_SOURCES}
+     ${qpidcommon_platform_SOURCES}
      ${qpidcommon_sasl_source}
      qpid/assert.cpp
      qpid/Address.cpp
@@ -476,19 +484,23 @@ set (libqpidcommon_SOURCES
      qpid/sys/Shlib.cpp
      qpid/sys/Timer.cpp
 )
-add_library (qpidcommon SHARED ${libqpidcommon_SOURCES})
+
+add_library (qpidcommon SHARED ${qpidcommon_SOURCES})
 if (CLOCK_GETTIME_IN_RT)
-  set (libqpidcommon_platform_LIBS ${libqpidcommon_platform_LIBS} rt)
+  set (qpidcommon_platform_LIBS ${qpidcommon_platform_LIBS} rt)
 endif (CLOCK_GETTIME_IN_RT)
 target_link_libraries (qpidcommon
-                       ${libqpidcommon_platform_LIBS}
+                       ${qpidcommon_platform_LIBS}
                        ${qpidcommon_sasl_lib})
 set_target_properties (qpidcommon PROPERTIES
                        VERSION ${qpidc_version})
+install (TARGETS qpidcommon
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_COMMON})
 
-set (libqpidclient_SOURCES
+set (qpidclient_SOURCES
      ${rgen_client_srcs}
-     ${libqpidclient_platform_SOURCES}
+     ${qpidclient_platform_SOURCES}
      qpid/client/Bounds.cpp
      qpid/client/Completion.cpp
      qpid/client/Connection.cpp
@@ -527,6 +539,10 @@ set (libqpidclient_SOURCES
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
      qpid/messaging/Filter.cpp
+     qpid/messaging/ListContent.cpp
+     qpid/messaging/ListView.cpp
+     qpid/messaging/MapContent.cpp
+     qpid/messaging/MapView.cpp
      qpid/messaging/Message.cpp
      qpid/messaging/MessageImpl.h
      qpid/messaging/MessageImpl.cpp
@@ -558,13 +574,100 @@ set (libqpidclient_SOURCES
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
 )
-add_library (qpidclient SHARED ${libqpidclient_SOURCES})
+set (qpidclient_INSTALL_HEADERS
+     ../include/qpid/Address.h
+     ../include/qpid/CommonImportExport.h
+     ../include/qpid/Exception.h
+     ../include/qpid/InlineAllocator.h
+     ../include/qpid/InlineVector.h
+     ../include/qpid/Msg.h
+     ../include/qpid/Options.h
+     ../include/qpid/RangeSet.h
+     ../include/qpid/SessionId.h
+     ../include/qpid/Url.h
+     ../include/qpid/client/AsyncSession.h
+     ../include/qpid/client/ClientImportExport.h
+     ../include/qpid/client/Completion.h
+     ../include/qpid/client/Connection.h
+     ../include/qpid/client/ConnectionSettings.h
+     ../include/qpid/client/FailoverManager.h
+     ../include/qpid/client/FlowControl.h
+     ../include/qpid/client/Future.h
+     ../include/qpid/client/FutureCompletion.h
+     ../include/qpid/client/FutureResult.h
+     ../include/qpid/client/Handle.h
+     ../include/qpid/client/LocalQueue.h
+     ../include/qpid/client/Message.h
+     ../include/qpid/client/MessageListener.h
+     ../include/qpid/client/MessageReplayTracker.h
+     ../include/qpid/client/QueueOptions.h
+     ../include/qpid/client/Session.h
+     ../include/qpid/client/SessionBase_0_10.h
+     ../include/qpid/client/Subscription.h
+     ../include/qpid/client/SubscriptionManager.h
+     ../include/qpid/client/SubscriptionSettings.h
+     ../include/qpid/client/TypedResult.h
+     ../include/qpid/framing/Array.h
+     ../include/qpid/framing/Buffer.h
+     ../include/qpid/framing/FieldTable.h
+     ../include/qpid/framing/FieldValue.h
+     ../include/qpid/framing/List.h
+     ../include/qpid/framing/ProtocolVersion.h
+     ../include/qpid/framing/SequenceNumber.h
+     ../include/qpid/framing/SequenceSet.h
+     ../include/qpid/framing/StructHelper.h
+     ../include/qpid/framing/Uuid.h
+     ../include/qpid/framing/amqp_types.h
+     ../include/qpid/framing/amqp_types_full.h
+     ../include/qpid/log/Logger.h
+     ../include/qpid/log/Options.h
+     ../include/qpid/log/Selector.h
+     ../include/qpid/log/SinkOptions.h
+     ../include/qpid/log/Statement.h
+     ../include/qpid/management/Args.h
+     ../include/qpid/management/Manageable.h
+     ../include/qpid/management/ManagementEvent.h
+     ../include/qpid/management/ManagementObject.h
+     ../include/qpid/sys/Condition.h
+     ../include/qpid/sys/IOHandle.h
+     ../include/qpid/sys/IntegerTypes.h
+     ../include/qpid/sys/Monitor.h
+     ../include/qpid/sys/Mutex.h
+     ../include/qpid/sys/Runnable.h
+     ../include/qpid/sys/StrError.h
+     ../include/qpid/sys/SystemInfo.h
+     ../include/qpid/sys/Thread.h
+     ../include/qpid/sys/Time.h
+     ../include/qpid/messaging/Address.h
+     ../include/qpid/messaging/Connection.h
+     ../include/qpid/messaging/Codec.h
+     ../include/qpid/messaging/Filter.h
+     ../include/qpid/messaging/ListContent.h
+     ../include/qpid/messaging/ListView.h
+     ../include/qpid/messaging/MapContent.h
+     ../include/qpid/messaging/MapView.h
+     ../include/qpid/messaging/Message.h
+     ../include/qpid/messaging/MessageListener.h
+     ../include/qpid/messaging/Sender.h
+     ../include/qpid/messaging/Receiver.h
+     ../include/qpid/messaging/Session.h
+     ../include/qpid/messaging/Variant.h
+     ../include/qpid/client/amqp0_10/Codecs.h
+)
+
+add_library (qpidclient SHARED ${qpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon)
 set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
+install (TARGETS qpidclient
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_CLIENT})
+install (DIRECTORY ../include/qpid DESTINATION ${QPID_INSTALL_INCLUDEDIR}
+         COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
+         PATTERN ".svn" EXCLUDE)
 
-set (libqpidbroker_SOURCES
+set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
-     ${libqpidbroker_platform_SOURCES}
+     ${qpidbroker_platform_SOURCES}
      qpid/amqp_0_10/Connection.h
      qpid/amqp_0_10/Connection.cpp
      qpid/broker/Broker.cpp
@@ -629,12 +732,15 @@ set (libqpidbroker_SOURCES
      qpid/management/ManagementExchange.cpp
      qpid/sys/TCPIOPlugin.cpp
 )
-add_library (qpidbroker SHARED ${libqpidbroker_SOURCES})
+add_library (qpidbroker SHARED ${qpidbroker_SOURCES})
 target_link_libraries (qpidbroker qpidcommon)
 set_target_properties (qpidbroker PROPERTIES VERSION ${qpidc_version})
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
+install (TARGETS qpidbroker LIBRARY
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_BROKER})
 
 set (qpidd_SOURCES
      ${qpidd_platform_SOURCES}
@@ -644,53 +750,65 @@ set (qpidd_SOURCES
 add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY}
                           ${Boost_FILESYSTEM_LIBRARY})
+install (TARGETS qpidd RUNTIME
+         DESTINATION ${QPID_INSTALL_BINDIR}
+         COMPONENT ${QPID_COMPONENT_BROKER})
 
-# QMF agent library
-#module_hdr += \
-#  qpid/agent/ManagementAgent.h \
-#  qpid/agent/ManagementAgentImpl.h
-set (qmfagent_SOURCES
-    qmf/AgentEngine.cpp
-    qmf/AgentEngine.h
+# QMF library
+# Library Version Information (CURRENT.REVISION.AGE):
+#
+#  CURRENT  => API/ABI version.  Bump this if the interface changes
+#  REVISION => Version of underlying implementation.
+#              Bump if implementation changes but API/ABI doesn't
+#  AGE      => Number of API/ABI versions this is backward compatible with
+set (qmf_version 1.0.0)
+set (qmfengine_version 1.0.0)
+
+set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.cpp
     qpid/agent/ManagementAgentImpl.h
     )
-add_library (qmfagent SHARED ${qmfagent_SOURCES})
-target_link_libraries (qmfagent qmfcommon)
-set_target_properties (qmfagent PROPERTIES
-                       VERSION ${qpidc_version})
+add_library (qmf SHARED ${qmf_SOURCES})
+target_link_libraries (qmf qmfengine)
+set_target_properties (qmf PROPERTIES
+                       VERSION ${qmf_version})
+install (TARGETS qmf LIBRARY
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_QMF})
 
-set (qmfcommon_SOURCES
-    qmf/ConnectionSettingsImpl.cpp
-    qmf/ConnectionSettingsImpl.h
-    qmf/ConsoleEngine.h
-    qmf/Event.h
-    qmf/Message.h
-    qmf/MessageImpl.cpp
-    qmf/MessageImpl.h
-    qmf/Object.h
-    qmf/ObjectId.h
-    qmf/ObjectIdImpl.cpp
-    qmf/ObjectIdImpl.h
-    qmf/ObjectImpl.cpp
-    qmf/ObjectImpl.h
-    qmf/Query.h
-    qmf/QueryImpl.cpp
-    qmf/QueryImpl.h
-    qmf/ResilientConnection.cpp
-    qmf/ResilientConnection.h
-    qmf/Schema.h
-    qmf/SchemaImpl.cpp
-    qmf/SchemaImpl.h
-    qmf/Typecode.h
-    qmf/Value.h
-    qmf/ValueImpl.cpp
-    qmf/ValueImpl.h
+set (qmfengine_SOURCES
+     qmf/engine/Agent.cpp
+     qmf/engine/BrokerProxyImpl.cpp
+     qmf/engine/BrokerProxyImpl.h
+     qmf/engine/ConnectionSettingsImpl.cpp
+     qmf/engine/ConnectionSettingsImpl.h
+     qmf/engine/ConsoleImpl.cpp
+     qmf/engine/ConsoleImpl.h
+     qmf/engine/MessageImpl.cpp
+     qmf/engine/MessageImpl.h
+     qmf/engine/ObjectIdImpl.cpp
+     qmf/engine/ObjectIdImpl.h
+     qmf/engine/ObjectImpl.cpp
+     qmf/engine/ObjectImpl.h
+     qmf/engine/Protocol.cpp
+     qmf/engine/Protocol.h
+     qmf/engine/QueryImpl.cpp
+     qmf/engine/QueryImpl.h
+     qmf/engine/ResilientConnection.cpp
+     qmf/engine/SequenceManager.cpp
+     qmf/engine/SequenceManager.h
+     qmf/engine/SchemaImpl.cpp
+     qmf/engine/SchemaImpl.h
+     qmf/engine/ValueImpl.cpp
+     qmf/engine/ValueImpl.h
     )
-add_library (qmfcommon SHARED ${qmfcommon_SOURCES})
-target_link_libraries (qmfcommon qpidclient)
-set_target_properties (qmfcommon PROPERTIES
-                       VERSION ${qpidc_version})
+add_library (qmfengine SHARED ${qmfengine_SOURCES})
+target_link_libraries (qmfengine qpidclient)
+set_target_properties (qmfengine PROPERTIES
+                       VERSION ${qmfengine_version})
+install (TARGETS qmfengine
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_QMF})
 
 # QMF console library
 #module_hdr += \
@@ -737,6 +855,9 @@ add_library (qmfconsole SHARED ${qmfconsole_SOURCES})
 target_link_libraries (qmfconsole qpidclient)
 set_target_properties (qmfconsole PROPERTIES
                        VERSION ${qpidc_version})
+install (TARGETS qmfconsole
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_QMF})
 
 # A queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
@@ -752,6 +873,9 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_listener PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)
 endif (CMAKE_COMPILER_IS_GNUCXX)
+install (TARGETS replicating_listener
+         DESTINATION ${QPIDD_MODULE_DIR}
+         COMPONENT ${QPID_COMPONENT_BROKER})
 
 # A custom exchange plugin that allows an exchange to be created that
 # can process the messages from a replication queue (populated on the
@@ -769,6 +893,9 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_exchange PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)
 endif (CMAKE_COMPILER_IS_GNUCXX)
+install (TARGETS replicating_exchange
+         DESTINATION ${QPIDD_MODULE_DIR}
+         COMPONENT ${QPID_COMPONENT_BROKER})
 
 # This is only really needed until all the trunk builds (Linux, UNIX, Windows)
 # are all on cmake only. This is because cmake builds always have a config.h

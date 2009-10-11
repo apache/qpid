@@ -140,7 +140,8 @@ struct TestStorePlugin : public Plugin {
     {
         Broker* broker = dynamic_cast<Broker*>(&target);
         if (!broker) return;
-        broker->setStore (new TestStore(options.name, *broker));
+        boost::shared_ptr<MessageStore> p(new TestStore(options.name, *broker));
+        broker->setStore (p);
     }
 
     void initialize(qpid::Plugin::Target&) {}

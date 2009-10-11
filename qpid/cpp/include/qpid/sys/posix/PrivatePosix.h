@@ -27,6 +27,7 @@
 
 struct timespec;
 struct timeval;
+struct addrinfo;
 
 namespace qpid {
 namespace sys {
@@ -35,6 +36,10 @@ namespace sys {
 struct timespec& toTimespec(struct timespec& ts, const Duration& t);
 struct timeval& toTimeval(struct timeval& tv, const Duration& t);
 Duration toTime(const struct timespec& ts);
+
+// Private SocketAddress details
+class SocketAddress;
+const struct addrinfo& getAddrInfo(const SocketAddress&);
 
 // Private fd related implementation details
 class IOHandlePrivate {

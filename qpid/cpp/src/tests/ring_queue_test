@@ -48,7 +48,7 @@ receive() {
 
 cleanup() {
     rm -f sender_${QUEUE_NAME}_* receiver_${QUEUE_NAME}_*
-    qpid-config $BROKER_URL add queue $QUEUE_NAME
+    qpid-config $BROKER_URL del queue $QUEUE_NAME --force
 }
 
 log() {
@@ -64,10 +64,11 @@ validate() {
     if [[ $RECEIVERS -eq 0 ]]; then 
         #queue should have $LIMIT messages on it, but need to send an eos also
         sender --routing-key $QUEUE_NAME --send-eos 1 < /dev/null
-        if [[ $(receiver --queue $QUEUE_NAME --browse | wc -l) -eq $(( $LIMIT - 1)) ]]; then
+        received=$(receiver --queue $QUEUE_NAME --browse | wc -l)
+        if [[ received -eq $(( $LIMIT - 1)) ]]; then
             log "queue contains $LIMIT messages as expected"
         else
-            fail "queue does not contain the expected $LIMIT messages"
+            fail "queue does not contain the expected $LIMIT messages (received $received)"
         fi        
     elif [[ $CONCURRENT -eq 0 ]]; then
         #sum of length of all output files should be equal to $LIMIT - $RECEIVERS (1 eos message each)

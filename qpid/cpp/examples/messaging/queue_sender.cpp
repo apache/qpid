@@ -26,13 +26,9 @@
 
 #include <cstdlib>
 #include <iostream>
-
 #include <sstream>
 
 using namespace qpid::messaging;
-
-using std::stringstream;
-using std::string;
 
 int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
@@ -45,14 +41,13 @@ int main(int argc, char** argv) {
 
 	// Now send some messages ...
 	for (int i=0; i<count; i++) {
-            Message message;
-            message.getContent() << "Message " << i;
-            sender.send(message);
+            std::stringstream content;
+            content << "Message " << i;
+            sender.send(Message(content.str()));
 	}
 	
-	// And send a final message to indicate termination.
-    	Message message("That's all, folks!");
-        sender.send(message);
+	// And send a final message to indicate termination.    	
+        sender.send(Message("That's all, folks!"));
         session.sync();
         connection.close();
         return 0;

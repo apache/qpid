@@ -20,14 +20,10 @@
 #
 
 # Run the python tests.
+. `dirname $0`/python_env.sh
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
-QPID_PYTHON_DIR=${QPID_PYTHON_DIR:-`dirname $0`/../../../python}
 FAILING=${FAILING:-/dev/null}
 
-if test -d $QPID_PYTHON_DIR; then
-    cd $QPID_PYTHON_DIR
-    ./qpid-python-test -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || { echo "FAIL python tests"; exit 1; }
-else
-    echo "WARNING: No python tests. $QPID_PYTHON_DIR not found."
-fi
+cd $PYTHON_DIR
+python commands/qpid-python-test -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || exit 1

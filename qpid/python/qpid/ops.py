@@ -80,7 +80,7 @@ class Compound(object):
     return "%s(%s)" % (self.__class__.__name__,
                        ", ".join(["%s=%r" % (f.name, getattr(self, f.name))
                                   for f in self.ARGS
-                                  if getattr(self, f.name) is not f.default]))
+                                  if getattr(self, f.name) != f.default]))
 
 class Command(Compound):
   UNENCODED=[Field("channel", "uint16", 0),
@@ -209,8 +209,8 @@ def make(nd):
 from qpid_config import amqp_spec as file
 pclfile = "%s.ops.pcl" % file
 
-if False and (os.path.exists(pclfile) and
-              os.path.getmtime(pclfile) > os.path.getmtime(file)):
+if os.path.exists(pclfile) and \
+      os.path.getmtime(pclfile) > os.path.getmtime(file):
   f = open(pclfile, "read")
   types = pickle.load(f)
   f.close()

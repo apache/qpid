@@ -30,11 +30,26 @@ trap { break }
 $encodedScript = [convert]::ToBase64String(
     [Text.Encoding]::Unicode.GetBytes([string] $script))
 
-$p = new-object System.Diagnostics.Process
+#$p = new-object System.Diagnostics.Process
 $si = new-object System.Diagnostics.ProcessStartInfo
 $si.WorkingDirectory = $pwd
-$si.UseShellExecute = $true
 $si.FileName = (get-command powershell.exe).Definition
 $si.Arguments = "-encodedCommand $encodedScript"
 
-[diagnostics.process]::Start($si)
+###### debugging setup
+#$si.CreateNoWindow = $true
+# UseShellExecute false required for RedirectStandard(Error, Output)
+#$si.UseShellExecute = $false
+#$si.RedirectStandardError = $true
+#$si.RedirectStandardOutput = $true
+######
+$si.UseShellExecute = $true
+
+##### Debugging, instead of the plain Start() above.
+#$output = [io.File]::AppendText("start.out")
+#$error = [io.File]::AppendText("start.err")
+$p = [System.Diagnostics.Process]::Start($si)
+#$output.WriteLine($p.StandardOutput.ReadToEnd())
+#$error.WriteLine($p.StandardError.ReadToEnd())
+#$p.WaitForExit()
+#$output.Close()

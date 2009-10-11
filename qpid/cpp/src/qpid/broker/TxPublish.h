@@ -47,13 +47,6 @@ namespace qpid {
          * dispatch or to be added to the in-memory queue.
          */
         class TxPublish : public TxOp, public Deliverable{
-            class Prepare{
-                TransactionContext* ctxt;
-                boost::intrusive_ptr<Message>& msg;
-            public:
-                Prepare(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg);
-                void operator()(const boost::shared_ptr<Queue>& queue);            
-            };
 
             class Commit{
                 boost::intrusive_ptr<Message>& msg;
@@ -61,9 +54,18 @@ namespace qpid {
                 Commit(boost::intrusive_ptr<Message>& msg);
                 void operator()(const boost::shared_ptr<Queue>& queue);            
             };
+            class Rollback{
+                boost::intrusive_ptr<Message>& msg;
+            public:
+                Rollback(boost::intrusive_ptr<Message>& msg);
+                void operator()(const boost::shared_ptr<Queue>& queue);            
+            };
 
             boost::intrusive_ptr<Message> msg;
             std::list<Queue::shared_ptr> queues;
+            std::list<Queue::shared_ptr> prepared;
+
+            void prepare(TransactionContext* ctxt, boost::shared_ptr<Queue>);
 
         public:
             QPID_BROKER_EXTERN TxPublish(boost::intrusive_ptr<Message> msg);

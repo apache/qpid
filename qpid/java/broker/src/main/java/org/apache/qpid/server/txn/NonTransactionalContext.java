@@ -91,6 +91,8 @@ public class NonTransactionalContext implements TransactionalContext
     public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
     {
         QueueEntry entry = queue.enqueue(_storeContext, message);
+        queue.checkCapacity(_channel);
+
         
         //following check implements the functionality
         //required by the 'immediate' flag:

@@ -49,9 +49,9 @@ NOTE: In the following instructions %QPID_ROOT% refers to the root of
 qpid source code location e.g. C:\trunk\qpid
 
 5. Build Qpid cpp
-Run CMake and choose "%QPID_ROOT%\cpp\build" as the location for "Where to
-build the binaries".  Build at least the "qpidd", "qpidclient" and
-"qpidcommon" projects.
+Build at least the "qpidd", "qpidclient" and "qpidcommon" projects.
+Create an environment variable called QPID_BUILD_ROOT and store the 
+path to the Qpid build directory in it.
 
 
 4. Building the solution file
@@ -81,7 +81,7 @@ System Development Edition, or Team System Team Suite SKU)
    %QPID_ROOT%\wcf\test\Apache\Qpid\Test\Channel\Functional\RunTests.bat has the correct
    values for the nunit_exe, qpid_dll_location and configuration_name variables as per
    your installation.
-2. Start the qpid broker from the qpid build folder e.g. %QPID_ROOT%\cpp\build\src\Debug.
+2. Start the qpid broker from the qpid build folder e.g. %QPID_BUILD_ROOT%\src\Debug.
 3. Execute RunTests.bat from its location e.g. %QPID_ROOT%\wcf\test\Apache\Qpid\Test\Channel\Functional.
 
 

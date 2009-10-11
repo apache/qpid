@@ -24,7 +24,6 @@
 
 #include <string>
 #include "qpid/messaging/Variant.h"
-#include "qpid/messaging/MessageContent.h"
 #include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
@@ -62,22 +61,11 @@ class Message
     QPID_CLIENT_EXTERN const VariantMap& getHeaders() const;
     QPID_CLIENT_EXTERN VariantMap& getHeaders();
 
-    QPID_CLIENT_EXTERN const std::string& getBytes() const;
-    QPID_CLIENT_EXTERN std::string& getBytes();
-    QPID_CLIENT_EXTERN void setBytes(const std::string&);
-    QPID_CLIENT_EXTERN void setBytes(const char* chars, size_t count);
-    QPID_CLIENT_EXTERN const char* getRawContent() const;
-    QPID_CLIENT_EXTERN size_t getContentSize() const;
-
-    
-    QPID_CLIENT_EXTERN MessageContent& getContent();
-    QPID_CLIENT_EXTERN const MessageContent& getContent() const;
-    QPID_CLIENT_EXTERN void setContent(const std::string& s);
-    QPID_CLIENT_EXTERN void setContent(const Variant::Map&);
-    QPID_CLIENT_EXTERN void setContent(const Variant::List&);
-    
-    QPID_CLIENT_EXTERN void encode(Codec&);
-    QPID_CLIENT_EXTERN void decode(Codec&);
+    QPID_CLIENT_EXTERN const std::string& getContent() const;
+    QPID_CLIENT_EXTERN std::string& getContent();
+    QPID_CLIENT_EXTERN void setContent(const std::string&);
+    QPID_CLIENT_EXTERN void setContent(const char* chars, size_t count);
+    QPID_CLIENT_EXTERN void getContent(std::pair<const char*, size_t>& content) const;
 
   private:
     MessageImpl* impl;

@@ -381,9 +381,10 @@ EOS
       else
         inheritance = ": public AMQMethodBody"
       end
+    else
+      public_api("qpid/framing/#{classname}.h") # Non-method structs are public
     end
 
-    public_api("qpid/framing/#{classname}.h")
     h_file("qpid/framing/#{classname}.h") {       
       if (s.kind_of? AmqpMethod)
         gen <<EOS

@@ -47,8 +47,8 @@ int main(int argc, char** argv) {
         Receiver receiver = session.createReceiver(Address("news_service", "topic"), filter);
         while (true) {
             Message message = receiver.fetch();
-            std::cout << "Message: " << message.getContent().asString() << std::endl;
-            if (message.getContent().asString() == "That's all, folks!") {
+            std::cout << "Message: " << message.getContent() << std::endl;
+            if (message.getContent() == "That's all, folks!") {
                 std::cout << "Cancelling receiver" << std::endl;
                 receiver.cancel();
                 break;

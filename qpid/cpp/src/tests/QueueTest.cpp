@@ -18,10 +18,13 @@
  * under the License.
  *
  */
+#include "MessageUtils.h"
 #include "unit_test.h"
 #include "test_tools.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/ExchangeRegistry.h"
@@ -30,12 +33,16 @@
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/client/QueueOptions.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <iostream>
 #include "boost/format.hpp"
 
 using boost::intrusive_ptr;
 using namespace qpid;
 using namespace qpid::broker;
+using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
@@ -61,13 +68,14 @@ public:
 
 class FailOnDeliver : public Deliverable
 {
-    Message msg;
+    boost::intrusive_ptr<Message> msg;
 public:
+    FailOnDeliver() : msg(MessageUtils::createMessage()) {}
     void deliverTo(const boost::shared_ptr<Queue>& queue)
     {
         throw Exception(QPID_MSG("Invalid delivery to " << queue->getName()));
     }
-    Message& getMessage() { return msg; }
+    Message& getMessage() { return *(msg.get()); }
 };
 
 intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey) {
@@ -210,8 +218,7 @@ QPID_AUTO_TEST_CASE(testDequeue){
 
 }
 
-QPID_AUTO_TEST_CASE(testBound)
-{
+QPID_AUTO_TEST_CASE(testBound){
     //test the recording of bindings, and use of those to allow a queue to be unbound
     string key("my-key");
     FieldTable args;
@@ -245,7 +252,6 @@ QPID_AUTO_TEST_CASE(testBound)
 }
 
 QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
-
     client::QueueOptions args;
 	args.setPersistLastNode();
 
@@ -273,13 +279,34 @@ QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 
 }
 
-class TestMessageStoreOC : public NullMessageStore
+const std::string nullxid = "";
+
+class SimpleDummyCtxt : public TransactionContext {};
+
+class DummyCtxt : public TPCTransactionContext
 {
+    const std::string xid;
+  public:
+    DummyCtxt(const std::string& _xid) : xid(_xid) {}
+    static std::string getXid(TransactionContext& ctxt)
+    {
+        DummyCtxt* c(dynamic_cast<DummyCtxt*>(&ctxt));
+        return c ? c->xid : nullxid;
+    }
+};
+
+class TestMessageStoreOC : public MessageStore
+{
+    std::set<std::string> prepared;
+    uint64_t nextPersistenceId;
   public:
 
     uint enqCnt;
     uint deqCnt;
     bool error;
+
+    TestMessageStoreOC() : MessageStore(),nextPersistenceId(1),enqCnt(0),deqCnt(0),error(false) {}
+    ~TestMessageStoreOC(){}
 
     virtual void dequeue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
@@ -290,11 +317,12 @@ class TestMessageStoreOC : public NullMessageStore
     }
 
     virtual void enqueue(TransactionContext*,
-                 const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
+                 const boost::intrusive_ptr<PersistableMessage>& msg,
                  const PersistableQueue& /* queue */)
     {
         if (error) throw Exception("Enqueue error test");
         enqCnt++;
+        msg->enqueueComplete();
     }
 
     void createError()
@@ -302,8 +330,32 @@ class TestMessageStoreOC : public NullMessageStore
         error=true;
     }
 
-    TestMessageStoreOC() : NullMessageStore(),enqCnt(0),deqCnt(0),error(false) {}
-    ~TestMessageStoreOC(){}
+    bool init(const Options*) { return true; }
+    void truncateInit(const bool) {}
+    void create(PersistableQueue& queue, const framing::FieldTable&) { queue.setPersistenceId(nextPersistenceId++); }
+    void destroy(PersistableQueue&) {}
+    void create(const PersistableExchange& exchange, const framing::FieldTable&) { exchange.setPersistenceId(nextPersistenceId++); }
+    void destroy(const PersistableExchange&) {}
+    void bind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&) {}
+    void unbind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&) {}
+    void create(const PersistableConfig& config) { config.setPersistenceId(nextPersistenceId++); }
+    void destroy(const PersistableConfig&) {}
+    void stage(const boost::intrusive_ptr<PersistableMessage>&) {}
+    void destroy(PersistableMessage&) {}
+    void appendContent(const boost::intrusive_ptr<const PersistableMessage>&, const std::string&) {}
+    void loadContent(const qpid::broker::PersistableQueue&, const boost::intrusive_ptr<const PersistableMessage>&,
+                    std::string&, uint64_t, uint32_t) { throw qpid::framing::InternalErrorException("Can't load content; persistence not enabled"); }
+    void flush(const qpid::broker::PersistableQueue&) {}
+    uint32_t outstandingQueueAIO(const PersistableQueue&) { return 0; }
+
+    std::auto_ptr<TransactionContext> begin() { return std::auto_ptr<TransactionContext>(new SimpleDummyCtxt()); }
+    std::auto_ptr<TPCTransactionContext> begin(const std::string& xid) { return std::auto_ptr<TPCTransactionContext>(new DummyCtxt(xid)); }
+    void prepare(TPCTransactionContext& ctxt) { prepared.insert(DummyCtxt::getXid(ctxt)); }
+    void commit(TransactionContext& ctxt) { prepared.erase(DummyCtxt::getXid(ctxt)); }
+    void abort(TransactionContext& ctxt) { prepared.erase(DummyCtxt::getXid(ctxt)); }
+    void collectPreparedXids(std::set<std::string>& out) { out.insert(prepared.begin(), prepared.end()); }
+
+    void recover(RecoveryManager&) {}
 };
 
 
@@ -703,7 +755,7 @@ not requeued to the store.
 
 QPID_AUTO_TEST_CASE(testLastNodeJournalError){
 /*
-simulate store excption going into last node standing
+simulate store exception going into last node standing
 
 */
     TestMessageStoreOC  testStore;
@@ -727,15 +779,270 @@ simulate store excption going into last node standing
 
 }
 
-intrusive_ptr<Message> mkMsg(std::string exchange, std::string routingKey) {
-    intrusive_ptr<Message> msg(new Message());
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
-    AMQFrame header((AMQHeaderBody()));
-    msg->getFrames().append(method);
-    msg->getFrames().append(header);
-    msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
+intrusive_ptr<Message> mkMsg(MessageStore& store, std::string content = "", bool durable = false)
+{
+    intrusive_ptr<Message> msg = MessageUtils::createMessage("", "", durable);
+    if (content.size()) MessageUtils::addContent(msg, content);
+    msg->setStore(&store);
     return msg;
 }
+
+QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
+
+    TestMessageStoreOC  testStore;
+    client::QueueOptions args0; // No size policy
+    client::QueueOptions args1;
+    args1.setSizePolicy(FLOW_TO_DISK, 0, 1);
+    client::QueueOptions args2;
+    args2.setSizePolicy(FLOW_TO_DISK, 0, 2);
+
+    // --- Fanout exchange bound to single transient queue -------------------------------------------------------------
+
+    FanOutExchange sbtFanout1("sbtFanout1", false, args0); // single binding to transient queue
+    Queue::shared_ptr tq1(new Queue("tq1", true)); // transient w/ limit
+    tq1->configure(args1);
+    sbtFanout1.bind(tq1, "", 0);
+
+    intrusive_ptr<Message> msg01 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg01(msg01);
+    sbtFanout1.route(dmsg01, "", 0); // Brings queue 1 to capacity limit
+    msg01->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg01->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
+
+    intrusive_ptr<Message> msg02 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg02(msg02);
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg02, "", 0), ResourceLimitExceededException);
+    msg02->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg02->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
+
+    intrusive_ptr<Message> msg03 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
+    DeliverableMessage dmsg03(msg03);
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
+    msg03->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg03->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
+
+    intrusive_ptr<Message> msg04 = mkMsg(testStore); // transient no content
+    DeliverableMessage dmsg04(msg04);
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg04, "", 0), ResourceLimitExceededException);
+    msg04->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg04->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
+
+    intrusive_ptr<Message> msg05 = mkMsg(testStore, "", true); // durable no content
+    DeliverableMessage dmsg05(msg05);
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg05, "", 0), ResourceLimitExceededException);
+    msg05->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg05->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
+
+    // --- Fanout exchange bound to single durable queue ---------------------------------------------------------------
+
+    FanOutExchange sbdFanout2("sbdFanout2", false, args0); // single binding to durable queue
+    Queue::shared_ptr dq2(new Queue("dq2", true, &testStore)); // durable w/ limit
+    dq2->configure(args1);
+    sbdFanout2.bind(dq2, "", 0);
+
+    intrusive_ptr<Message> msg06 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg06(msg06);
+    sbdFanout2.route(dmsg06, "", 0); // Brings queue 2 to capacity limit
+    msg06->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg06->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, dq2->getMessageCount());
+
+    intrusive_ptr<Message> msg07 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg07(msg07);
+    sbdFanout2.route(dmsg07, "", 0);
+    msg07->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg07->isContentReleased(), true);
+    BOOST_CHECK_EQUAL(2u, dq2->getMessageCount());
+
+    intrusive_ptr<Message> msg08 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
+    DeliverableMessage dmsg08(msg08);
+    sbdFanout2.route(dmsg08, "", 0);
+    msg08->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg08->isContentReleased(), true);
+    BOOST_CHECK_EQUAL(3u, dq2->getMessageCount());
+
+    intrusive_ptr<Message> msg09 = mkMsg(testStore);  // transient no content
+    DeliverableMessage dmsg09(msg09);
+    sbdFanout2.route(dmsg09, "", 0);
+    msg09->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg09->isContentReleased(), true);
+    BOOST_CHECK_EQUAL(4u, dq2->getMessageCount());
+
+    intrusive_ptr<Message> msg10 = mkMsg(testStore, "", true);  // durable no content
+    DeliverableMessage dmsg10(msg10);
+    sbdFanout2.route(dmsg10, "", 0);
+    msg10->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg10->isContentReleased(), true);
+    BOOST_CHECK_EQUAL(5u, dq2->getMessageCount());
+
+    // --- Fanout exchange bound to multiple durable queues ------------------------------------------------------------
+
+    FanOutExchange mbdFanout3("mbdFanout3", false, args0); // multiple bindings to durable queues
+    Queue::shared_ptr dq3(new Queue("dq3", true, &testStore)); // durable w/ limit 2
+    dq3->configure(args2);
+    mbdFanout3.bind(dq3, "", 0);
+    Queue::shared_ptr dq4(new Queue("dq4", true, &testStore)); // durable w/ limit 1
+    dq4->configure(args1);
+    mbdFanout3.bind(dq4, "", 0);
+    Queue::shared_ptr dq5(new Queue("dq5", true, &testStore)); // durable no limit
+    dq5->configure(args0);
+    mbdFanout3.bind(dq5, "", 0);
+
+    intrusive_ptr<Message> msg11 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg11(msg11);
+    mbdFanout3.route(dmsg11, "", 0); // Brings queues 3 and 4 to capacity limit
+    msg11->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg11->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(1u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(1u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg12 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg12(msg12);
+    mbdFanout3.route(dmsg12, "", 0);
+    msg12->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg12->isContentReleased(), false); // XXXX - consequence of transient msg multi-queue ftd policy-handling limitations, fix in broker at some point!
+    BOOST_CHECK_EQUAL(2u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(2u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(2u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg13 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
+    DeliverableMessage dmsg13(msg13);
+    mbdFanout3.route(dmsg13, "", 0);
+    msg13->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg13->isContentReleased(), true);
+    BOOST_CHECK_EQUAL(3u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(3u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(3u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg14 = mkMsg(testStore);  // transient no content
+    DeliverableMessage dmsg14(msg14);
+    mbdFanout3.route(dmsg14, "", 0);
+    msg14->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg14->isContentReleased(), false); // XXXX - consequence of transient msg multi-queue ftd policy-handling limitations, fix in broker at some point!
+    BOOST_CHECK_EQUAL(4u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(4u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(4u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg15 = mkMsg(testStore, "", true);  // durable no content
+    DeliverableMessage dmsg15(msg15);
+    mbdFanout3.route(dmsg15, "", 0);
+    msg15->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg15->isContentReleased(), true);
+    BOOST_CHECK_EQUAL(5u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(5u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(5u, dq5->getMessageCount());
+
+    // Bind a transient queue, this should block the release of any further messages.
+    // Note: this will result in a violation of the count policy of dq3 and dq4 - but this
+    // is expected until a better overall multi-queue design is implemented. Similarly
+    // for the other tests in this section.
+
+    Queue::shared_ptr tq6(new Queue("tq6", true)); // transient no limit
+    tq6->configure(args0);
+    mbdFanout3.bind(tq6, "", 0);
+
+    intrusive_ptr<Message> msg16 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg16(msg16);
+    mbdFanout3.route(dmsg16, "", 0);
+    msg16->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg16->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(6u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(6u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(6u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg17 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
+    DeliverableMessage dmsg17(msg17);
+    mbdFanout3.route(dmsg17, "", 0);
+    msg17->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg17->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(7u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(7u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(7u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg18 = mkMsg(testStore);  // transient no content
+    DeliverableMessage dmsg18(msg18);
+    mbdFanout3.route(dmsg18, "", 0);
+    msg18->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg18->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(8u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(8u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(8u, dq5->getMessageCount());
+
+    intrusive_ptr<Message> msg19 = mkMsg(testStore, "", true);  // durable no content
+    DeliverableMessage dmsg19(msg19);
+    mbdFanout3.route(dmsg19, "", 0);
+    msg19->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg19->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(9u, dq3->getMessageCount());
+    BOOST_CHECK_EQUAL(9u, dq4->getMessageCount());
+    BOOST_CHECK_EQUAL(9u, dq5->getMessageCount());
+
+
+    // --- Fanout exchange bound to multiple durable and transient queues ----------------------------------------------
+
+    FanOutExchange mbmFanout4("mbmFanout4", false, args0); // multiple bindings to durable/transient queues
+    Queue::shared_ptr dq7(new Queue("dq7", true, &testStore)); // durable no limit
+    dq7->configure(args0);
+    mbmFanout4.bind(dq7, "", 0);
+    Queue::shared_ptr dq8(new Queue("dq8", true, &testStore)); // durable w/ limit
+    dq8->configure(args1);
+    mbmFanout4.bind(dq8, "", 0);
+    Queue::shared_ptr tq9(new Queue("tq9", true)); // transient no limit
+    tq9->configure(args0);
+    mbmFanout4.bind(tq9, "", 0);
+
+    intrusive_ptr<Message> msg20 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg20(msg20);
+    mbmFanout4.route(dmsg20, "", 0); // Brings queue 7 to capacity limit
+    msg20->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg20->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(1u, dq7->getMessageCount());
+    BOOST_CHECK_EQUAL(1u, dq8->getMessageCount());
+    BOOST_CHECK_EQUAL(1u, tq9->getMessageCount());
+
+    intrusive_ptr<Message> msg21 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
+    DeliverableMessage dmsg21(msg21);
+    mbmFanout4.route(dmsg21, "", 0);
+    msg21->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg21->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(2u, dq7->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(2u, dq8->getMessageCount());
+    BOOST_CHECK_EQUAL(2u, tq9->getMessageCount());
+
+    intrusive_ptr<Message> msg22 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
+    DeliverableMessage dmsg22(msg22);
+    mbmFanout4.route(dmsg22, "", 0);
+    msg22->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg22->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(3u, dq7->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(3u, dq8->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(3u, tq9->getMessageCount());
+
+    intrusive_ptr<Message> msg23 = mkMsg(testStore);  // transient no content
+    DeliverableMessage dmsg23(msg23);
+    mbmFanout4.route(dmsg23, "", 0);
+    msg23->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg23->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(4u, dq7->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(4u, dq8->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(4u, tq9->getMessageCount());
+
+    intrusive_ptr<Message> msg24 = mkMsg(testStore, "", true);  // durable no content
+    DeliverableMessage dmsg24(msg24);
+    mbmFanout4.route(dmsg24, "", 0);
+    msg24->tryReleaseContent();
+    BOOST_CHECK_EQUAL(msg24->isContentReleased(), false);
+    BOOST_CHECK_EQUAL(5u, dq7->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(5u, dq8->getMessageCount()); // over limit
+    BOOST_CHECK_EQUAL(5u, tq9->getMessageCount());
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 

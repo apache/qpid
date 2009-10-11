@@ -74,7 +74,7 @@ public:
     bool isImmediate() const;
     QPID_BROKER_EXTERN const framing::FieldTable* getApplicationHeaders() const;
     framing::FieldTable& getOrInsertHeaders();
-    QPID_BROKER_EXTERN bool isPersistent();
+    QPID_BROKER_EXTERN bool isPersistent() const;
     bool requiresAccept();
 
     QPID_BROKER_EXTERN void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
@@ -108,7 +108,7 @@ public:
         return frames.isA<T>();
     }
 
-    uint32_t getRequiredCredit() const;
+    uint32_t getRequiredCredit();
 
     void encode(framing::Buffer& buffer) const;
     void encodeContent(framing::Buffer& buffer) const;
@@ -129,12 +129,9 @@ public:
     QPID_BROKER_EXTERN void decodeHeader(framing::Buffer& buffer);
     QPID_BROKER_EXTERN void decodeContent(framing::Buffer& buffer);
             
-    /**
-     * Releases the in-memory content data held by this
-     * message. Must pass in a store from which the data can
-     * be reloaded.
-     */
-    void releaseContent(MessageStore* store);
+    void QPID_BROKER_EXTERN tryReleaseContent();
+    void releaseContent();
+    void releaseContent(MessageStore* s);//deprecated, use 'setStore(store); releaseContent();' instead
     void destroy();
 
     bool getContentFrame(const Queue& queue, framing::AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const;
@@ -187,8 +184,12 @@ public:
 
     mutable Replacement replacement;
     mutable boost::intrusive_ptr<Message> empty;
+
+    sys::Mutex callbackLock;
     MessageCallback* enqueueCallback;
     MessageCallback* dequeueCallback;
+
+    uint32_t requiredCredit;
     static std::string updateDestination;
 };
 

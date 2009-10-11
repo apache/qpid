@@ -64,7 +64,8 @@ SessionImpl::SessionImpl(const std::string& name, boost::shared_ptr<ConnectionIm
       proxy(ioHandler),
       nextIn(0),
       nextOut(0),
-      sendMsgCredit(0)
+      sendMsgCredit(0),
+      doClearDeliveryPropertiesExchange(true)
 {
     channel.next = connectionShared.get();
 }
@@ -396,11 +397,16 @@ void SessionImpl::sendContent(const MethodContent& content)
 {
     AMQFrame header(content.getHeader());
 
-    // Client is not allowed to set the delivery-properties.exchange.
-    AMQHeaderBody* headerp = static_cast<AMQHeaderBody*>(header.getBody());
-    if (headerp && headerp->get<DeliveryProperties>())
-        headerp->get<DeliveryProperties>(true)->clearExchangeFlag();
-
+    // doClearDeliveryPropertiesExchange is set by cluster update client so
+    // it can send messages with delivery-properties.exchange set.
+    //
+    if (doClearDeliveryPropertiesExchange) {
+        // Normal client is not allowed to set the delivery-properties.exchange
+        // so clear it here.
+        AMQHeaderBody* headerp = static_cast<AMQHeaderBody*>(header.getBody());
+        if (headerp && headerp->get<DeliveryProperties>())
+            headerp->get<DeliveryProperties>(true)->clearExchangeFlag();
+    }
     header.setFirstSegment(false);
     uint64_t data_length = content.getData().length();
     if(data_length > 0){

@@ -99,6 +99,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionState.h"
+#include "qpid/broker/SignalHandler.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/framing/AllInvoker.h"
@@ -120,7 +121,6 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
-#include "qpid/sys/LatencyTracker.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
@@ -144,12 +144,16 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 namespace _qmf = ::qmf::org::apache::qpid::cluster;
 
-/** NOTE: increment this number whenever any incompatible changes in
+/**
+ * NOTE: must increment this number whenever any incompatible changes in
  * cluster protocol/behavior are made. It allows early detection and
  * sensible reporting of an attempt to mix different versions in a
  * cluster.
+ *
+ * Currently use SVN revision to avoid clashes with versions from
+ * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 2;
+const uint32_t Cluster::CLUSTER_VERSION = 820783;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -308,7 +312,7 @@ void Cluster::leave(Lock&) {
         // Finalize connections now now to avoid problems later in destructor.
         LEAVE_TRY(localConnections.clear());
         LEAVE_TRY(connections.clear());
-        LEAVE_TRY(broker.shutdown());
+        LEAVE_TRY(broker::SignalHandler::shutdown());
     }
 }
 
@@ -324,20 +328,14 @@ void Cluster::deliver(
     MemberId from(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     Event e(Event::decodeCopy(from, buf));
-    LATENCY_TRACK(if (e.getConnectionId().getMember() == self) mcast.cpgLatency.finish());
     deliverEvent(e);
 }
 
-LATENCY_TRACK(sys::LatencyTracker<const char*> eventQueueLatencyTracker("EventQueue");)
-    LATENCY_TRACK(sys::LatencyTracker<const AMQBody*> frameQueueLatencyTracker("FrameQueue");)
-
-    void Cluster::deliverEvent(const Event& e) {
-    LATENCY_TRACK(eventQueueLatencyTracker.start(e.getData());)
-        deliverEventQueue.push(e);
+void Cluster::deliverEvent(const Event& e) {
+    deliverEventQueue.push(e);
 }
 
 void Cluster::deliverFrame(const EventFrame& e) {
-    LATENCY_TRACK(frameQueueLatencyTracker.start(e.frame.getBody()));
     deliverFrameQueue.push(e);
 }
 
@@ -350,7 +348,6 @@ const ClusterUpdateOfferBody* castUpdateOffer(const framing::AMQBody* body) {
 // Handler for deliverEventQueue.
 // This thread decodes frames from events.
 void Cluster::deliveredEvent(const Event& e) {
-    LATENCY_TRACK(eventQueueLatencyTracker.finish(e.getData()));
     if (e.isCluster()) {
         QPID_LOG(trace, *this << " DLVR: " << e);
         EventFrame ef(e, e.getFrame());
@@ -396,13 +393,9 @@ void Cluster::flagError(
         error.error(connection, type, map.getFrameSeq(), map.getMembers(), msg);
 }
 
-LATENCY_TRACK(sys::LatencyTracker<const AMQBody*> doOutputTracker("DoOutput");)
-
 // Handler for deliverFrameQueue.
 // This thread executes the main logic.
-    void Cluster::deliveredFrame(const EventFrame& efConst) {
-    LATENCY_TRACK(frameQueueLatencyTracker.finish(e.frame.getBody()));
-    LATENCY_TRACK(if (e.frame.getBody()->type() == CONTENT_BODY) doOutputTracker.start(e.frame.getBody()));
+void Cluster::deliveredFrame(const EventFrame& efConst) {
     Mutex::ScopedLock l(lock);
     if (state == LEFT) return;
     EventFrame e(efConst);
@@ -434,7 +427,6 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
             throw Exception(QPID_MSG("Invalid cluster control"));
     }
     else if (state >= CATCHUP) {
-        LATENCY_TRACK(LatencyScope ls(processLatency));
         map.incrementFrameSeq();
         ConnectionPtr connection = getConnection(e, l);
         if (connection) {

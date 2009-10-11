@@ -32,6 +32,7 @@ namespace Apache.Qpid.Channel
         AmqpTransportBindingElement bindingElement;
         AmqpChannelProperties channelProperties;
         bool shared;
+        int prefetchLimit;
         long maxBufferPoolSize;
         Uri uri;
         AmqpTransportChannel amqpTransportChannel;
@@ -45,6 +46,7 @@ namespace Apache.Qpid.Channel
             this.bindingElement = bindingElement;
             this.channelProperties = bindingElement.ChannelProperties.Clone();
             this.shared = bindingElement.Shared;
+            this.prefetchLimit = bindingElement.PrefetchLimit;
 
             this.maxBufferPoolSize = bindingElement.MaxBufferPoolSize;
 
@@ -132,7 +134,7 @@ namespace Apache.Qpid.Channel
             {
                 amqpTransportChannel = new AmqpTransportChannel(this, this.channelProperties,
                         new EndpointAddress(uri), messageEncoderFactory.Encoder,
-                        maxBufferPoolSize, this.shared);
+                        maxBufferPoolSize, this.shared, this.prefetchLimit);
                 return (IInputChannel)(object) amqpTransportChannel;
             }
 

@@ -22,18 +22,13 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 srcdir=`dirname $0`
-PYTHON_DIR=$srcdir/../../../python
-export PYTHONPATH=$PYTHON_DIR
+. $srcdir/python_env.sh
 
 trap stop_brokers INT EXIT
 
 fail() {
     echo $1
     exit 1
-}
-with_ais_group() {
-    id -nG | grep '\<ais\>' >/dev/null || { echo "You are not a member of the ais group." 1>&2; exit 1; }
-    echo $* | newgrp ais
 }
 
 stop_brokers() {
@@ -55,26 +50,8 @@ stop_brokers() {
     fi
 }
 
-if test -d ${PYTHON_DIR}; then
-    id -nG | grep '\<ais\>' >/dev/null || \
-        NOGROUP="You are not a member of the ais group."
-    ps -u root | grep 'aisexec\|corosync' >/dev/null || \
-        NOAISEXEC="The aisexec or corosync daemon is not running as root"
-
-    if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
-        cat <<EOF
-
-    =========== WARNING: NOT RUNNING AIS TESTS ==============
-
-    Not running cluster replication test because:
-    $NOGROUP
-    $NOAISEXEC
-
-    ==========================================================
-
-EOF
-        exit 0;
-    fi
+if test -d $PYTHON_DIR; then
+    . $srcdir/ais_check
 
     #todo: these cluster names need to be unique to prevent clashes
     PRIMARY_CLUSTER=PRIMARY_$(hostname)_$(pwd)
@@ -89,8 +66,8 @@ EOF
     #start first node of primary cluster and set up test queue
     echo Starting primary cluster
     PRIMARY1=$(with_ais_group ../qpidd $GENERAL_OPTS $PRIMARY_OPTS --log-to-file repl.primary.1.tmp) || fail "Could not start node"
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$PRIMARY1" add queue test-queue --generate-queue-events 2
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$PRIMARY1" add queue control-queue --generate-queue-events 1
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$PRIMARY1" add queue test-queue --generate-queue-events 2
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$PRIMARY1" add queue control-queue --generate-queue-events 1
 
     #send 10 messages, consume 5 of them
     for i in `seq 1 10`; do echo Message$i; done | ./sender --port $PRIMARY1
@@ -105,10 +82,10 @@ EOF
     DR1=$(with_ais_group ../qpidd $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.1.tmp)
     DR2=$(with_ais_group ../qpidd $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.2.tmp)
 
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$DR1" add queue test-queue
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$DR1" add queue control-queue
-    $PYTHON_DIR/commands/qpid-config -a "localhost:$DR1" add exchange replication REPLICATION_EXCHANGE
-    $PYTHON_DIR/commands/qpid-route queue add localhost:$DR2 localhost:$PRIMARY2 REPLICATION_EXCHANGE REPLICATION_QUEUE
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add queue test-queue
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add queue control-queue
+    $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add exchange replication REPLICATION_EXCHANGE
+    $PYTHON_COMMANDS/qpid-route queue add localhost:$DR2 localhost:$PRIMARY2 REPLICATION_EXCHANGE REPLICATION_QUEUE
 
     #send more messages to primary
     for i in `seq 11 20`; do echo Message$i; done | ./sender --port $PRIMARY1 --send-eos 1

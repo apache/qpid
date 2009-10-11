@@ -36,7 +36,6 @@ PersistableMessage::~PersistableMessage() {}
 PersistableMessage::PersistableMessage() :
     asyncEnqueueCounter(0), 
     asyncDequeueCounter(0),
-    contentReleased(false),
     store(0)
 {}
 
@@ -59,9 +58,15 @@ void PersistableMessage::flush()
     } 
 }
 
-void PersistableMessage::setContentReleased() {contentReleased = true; }
+void PersistableMessage::setContentReleased()
+{
+    contentReleaseState.released = true;
+}
 
-bool PersistableMessage::isContentReleased()const { return contentReleased; }
+bool PersistableMessage::isContentReleased() const
+{ 
+    return contentReleaseState.released;
+}
        
 bool PersistableMessage::isEnqueueComplete() {
     sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
@@ -151,6 +156,26 @@ void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, Messag
 void PersistableMessage::dequeueAsync() { 
     sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
     asyncDequeueCounter++; 
+}
+
+PersistableMessage::ContentReleaseState::ContentReleaseState() : blocked(false), requested(false), released(false) {}
+
+void PersistableMessage::setStore(MessageStore* s)
+{
+    store = s;
+}
+
+void PersistableMessage::requestContentRelease()
+{
+    contentReleaseState.requested = true;
+}
+void PersistableMessage::blockContentRelease()
+{ 
+    contentReleaseState.blocked = true;
+}
+bool PersistableMessage::checkContentReleasable()
+{ 
+    return contentReleaseState.requested && !contentReleaseState.blocked;
 }
 
 }}

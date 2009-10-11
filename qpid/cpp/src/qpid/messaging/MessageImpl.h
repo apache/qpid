@@ -22,15 +22,13 @@
  *
  */
 #include "qpid/messaging/Address.h"
-#include "qpid/messaging/Codec.h"
-#include "qpid/messaging/MessageContent.h"
 #include "qpid/messaging/Variant.h"
 #include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
 namespace messaging {
 
-struct MessageImpl : MessageContent
+struct MessageImpl
 {
     Address replyTo;
     std::string subject;
@@ -38,8 +36,6 @@ struct MessageImpl : MessageContent
     Variant::Map headers;
 
     std::string bytes;
-    Variant content;//used only for LIST and MAP
-    VariantType type;//if LIST, MAP content holds the value; if VOID bytes holds the value
 
     qpid::framing::SequenceNumber internalId;
 
@@ -66,54 +62,6 @@ struct MessageImpl : MessageContent
     void setInternalId(qpid::framing::SequenceNumber id);
     qpid::framing::SequenceNumber getInternalId();
 
-    bool isVoid() const;
-
-    const std::string& asString() const;
-    std::string& asString();
-
-    const char* asChars() const;
-    size_t size() const;
-
-    const Variant::Map& asMap() const;
-    Variant::Map& asMap();
-    bool isMap() const;
-
-    const Variant::List& asList() const;
-    Variant::List& asList();
-    bool isList() const;
-
-    void clear();
-
-    void getEncodedContent(Codec& codec, std::string&) const;
-    void encode(Codec& codec);
-    void decode(Codec& codec);
-
-    Variant& operator[](const std::string&);
-
-    std::ostream& print(std::ostream& out) const;
-
-    //operator<< for variety of types...
-    MessageContent& operator<<(const std::string&);
-    MessageContent& operator<<(const char*);
-    MessageContent& operator<<(bool);
-    MessageContent& operator<<(int8_t);
-    MessageContent& operator<<(int16_t);
-    MessageContent& operator<<(int32_t);
-    MessageContent& operator<<(int64_t);
-    MessageContent& operator<<(uint8_t);
-    MessageContent& operator<<(uint16_t);
-    MessageContent& operator<<(uint32_t);
-    MessageContent& operator<<(uint64_t);
-    MessageContent& operator<<(double);
-    MessageContent& operator<<(float);
-
-    //assignment from string, map and list
-    MessageContent& operator=(const std::string&);
-    MessageContent& operator=(const char*);
-    MessageContent& operator=(const Variant::Map&);
-    MessageContent& operator=(const Variant::List&);
-
-    template <class T> MessageContent& append(T& t);
 };
 
 class Message;

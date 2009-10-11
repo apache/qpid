@@ -78,7 +78,7 @@ ManagementAgent* ManagementAgent::Singleton::getInstance()
 const string ManagementAgentImpl::storeMagicNumber("MA02");
 
 ManagementAgentImpl::ManagementAgentImpl() :
-    interval(10), extThread(false),
+    interval(10), extThread(false), pipeHandle(0),
     initialized(false), connected(false), lastFailure("never connected"),
     clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
@@ -89,13 +89,12 @@ ManagementAgentImpl::ManagementAgentImpl() :
 
 ManagementAgentImpl::~ManagementAgentImpl()
 {
+    // shutdown & cleanup all threads
     connThreadBody.close();
+    pubThreadBody.close();
 
-    // If the thread is doing work on the connection, we must wait for it to
-    // complete before shutting down.
-    if (!connThreadBody.isSleeping()) {
-        connThread.join();
-    }
+    connThread.join();
+    pubThread.join();
 
     // Release the memory associated with stored management objects.
     {
@@ -777,6 +776,7 @@ void ManagementAgentImpl::ConnectionThread::run()
     static const int delayFactor(2);
     int delay(delayMin);
     string dest("qmfagent");
+    ConnectionThread::shared_ptr tmp;
 
     sessionId.generate();
     queueName << "qmfagent-" << sessionId;
@@ -787,7 +787,7 @@ void ManagementAgentImpl::ConnectionThread::run()
                 QPID_LOG(debug, "QMF Agent attempting to connect to the broker...");
                 connection.open(agent.connectionSettings);
                 session = connection.newSession(queueName.str());
-                subscriptions = new client::SubscriptionManager(session);
+                subscriptions.reset(new client::SubscriptionManager(session));
 
                 session.queueDeclare(arg::queue=queueName.str(), arg::autoDelete=true,
                                      arg::exclusive=true);
@@ -811,11 +811,12 @@ void ManagementAgentImpl::ConnectionThread::run()
 
                     operational = false;
                     agent.connected = false;
+                    tmp = subscriptions;
+                    subscriptions.reset();
                 }
+                tmp.reset();    // frees the subscription outside the lock
                 delay = delayMin;
                 connection.close();
-                delete subscriptions;
-                subscriptions = 0;
             }
         } catch (exception &e) {
             if (delay < delayMax)
@@ -824,14 +825,19 @@ void ManagementAgentImpl::ConnectionThread::run()
         }
 
         {
+            // sleep for "delay" seconds, but peridically check if the
+            // agent is shutting down so we don't hang for up to delayMax 
+            // seconds during agent shutdown
              Mutex::ScopedLock _lock(connLock);
              if (shutdown)
                  return;
              sleeping = true;
-             {
-                  Mutex::ScopedUnlock _unlock(connLock);
-                  ::sleep(delay);
-             }
+             int totalSleep = 0;
+             do {
+                 Mutex::ScopedUnlock _unlock(connLock);
+                 ::sleep(delayMin);
+                 totalSleep += delayMin;
+             } while (totalSleep < delay && !shutdown);
              sleeping = false;
              if (shutdown)
                  return;
@@ -848,10 +854,12 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
                                                        const string& exchange,
                                                        const string& routingKey)
 {
+    ConnectionThread::shared_ptr s;
     {
         Mutex::ScopedLock _lock(connLock);
         if (!operational)
             return;
+        s = subscriptions;
     }
 
     Message msg;
@@ -866,8 +874,8 @@ void ManagementAgentImpl::ConnectionThread::sendBuffer(Buffer&  buf,
     } catch(exception& e) {
         QPID_LOG(error, "Exception caught in sendBuffer: " << e.what());
         // Bounce the connection
-        if (subscriptions)
-            subscriptions->stop();
+        if (s)
+            s->stop();
     }
 }
 
@@ -881,12 +889,14 @@ void ManagementAgentImpl::ConnectionThread::bindToBank(uint32_t brokerBank, uint
 
 void ManagementAgentImpl::ConnectionThread::close()
 {
+    ConnectionThread::shared_ptr s;
     {
         Mutex::ScopedLock _lock(connLock);
         shutdown = true;
+        s = subscriptions;
     }
-    if (subscriptions)
-        subscriptions->stop();
+    if (s)
+        s->stop();
 }
 
 bool ManagementAgentImpl::ConnectionThread::isSleeping() const
@@ -898,8 +908,13 @@ bool ManagementAgentImpl::ConnectionThread::isSleeping() const
 
 void ManagementAgentImpl::PublishThread::run()
 {
-    while (true) {
+    uint16_t    totalSleep;
+
+    while (!shutdown) {
         agent.periodicProcessing();
-        ::sleep(agent.getInterval());
+        totalSleep = 0;
+        while (totalSleep++ < agent.getInterval() && !shutdown) {
+            ::sleep(1);
+        }
     }
 }

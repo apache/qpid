@@ -43,8 +43,9 @@ public interface IApplicationRegistry
      * Initialise the application registry. All initialisation must be done in this method so that any components
      * that need access to the application registry itself for initialisation are able to use it. Attempting to
      * initialise in the constructor will lead to failures since the registry reference will not have been set.
+     * @param instanceID the instanceID that we can use to identify this AR.
      */
-    void initialise() throws Exception;
+    void initialise(int instanceID) throws Exception;
 
     /**
      * Shutdown this Registry

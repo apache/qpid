@@ -32,11 +32,11 @@ using qpid::framing::FieldTable;
 namespace qpid {
 namespace broker {
 
-MessageStoreModule::MessageStoreModule(MessageStore* _store) : store(_store) {}
+MessageStoreModule::MessageStoreModule(boost::shared_ptr<MessageStore>& _store)
+  : store(_store) {}
 
 MessageStoreModule::~MessageStoreModule()
 {
-    delete store;
 }
 
 bool MessageStoreModule::init(const Options*) { return true; }
@@ -173,7 +173,7 @@ void MessageStoreModule::collectPreparedXids(std::set<std::string>& xids)
 
 bool MessageStoreModule::isNull() const
 {
-    return NullMessageStore::isNullStore(store);
+    return NullMessageStore::isNullStore(store.get());
 }
 
 }} // namespace qpid::broker

@@ -22,8 +22,10 @@ import junit.framework.TestResult;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -32,6 +34,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,12 +73,17 @@ public class QpidTestCase extends TestCase
     protected final String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
-    private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
-    private Map<String, String> _setProperties = new HashMap<String, String>();
+    private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
+    private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
+    private Map<org.apache.log4j.Logger, Level> _loggerLevelSetForTest = new HashMap<org.apache.log4j.Logger, Level>();
+
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
+
+    protected static final String INDEX = "index";
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -147,6 +155,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER_LANGUAGE = "broker.language";
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
+    private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_VERSION = "broker.version";
     protected static final String BROKER_READY = "broker.ready";
     private static final String BROKER_STOPPED = "broker.stopped";
@@ -169,6 +178,7 @@ public class QpidTestCase extends TestCase
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
+    private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
 
@@ -177,7 +187,7 @@ public class QpidTestCase extends TestCase
     private Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
     private InitialContext _initialContext;
-    private AMQConnectionFactory _connectionFactory;
+    protected AMQConnectionFactory _connectionFactory;
 
     private String _testName;
 
@@ -235,6 +245,19 @@ public class QpidTestCase extends TestCase
             {
                 _logger.error("exception stopping broker", e);
             }
+            
+            if(_brokerCleanBetweenTests)
+            {
+            	try
+            	{
+            		cleanBroker();
+            	}
+            	catch (Exception e)
+            	{
+            		_logger.error("exception cleaning up broker", e);
+            	}
+            }
+            
             _logger.info("==========  stop " + _testName + " ==========");
 
             if (redirected)
@@ -451,6 +474,15 @@ public class QpidTestCase extends TestCase
             env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
             env.put("QPID_WORK", System.getProperty("QPID_WORK"));
 
+
+            // Use the environment variable to set amqj.logging.level for the broker
+            // The value used is a 'server' value in the test configuration to
+            // allow a differentiation between the client and broker logging levels.            
+            if (System.getProperty("amqj.server.logging.level") != null)
+            {
+                setBrokerEnvironment("AMQJ_LOGGING_LEVEL", System.getProperty("amqj.server.logging.level"));
+            }
+            
             // Add all the environment settings the test requested
             if (!_env.isEmpty())
             {
@@ -460,13 +492,27 @@ public class QpidTestCase extends TestCase
                 }
             }
 
+
+            // Add default test logging levels that are used by the log4j-test
+            // Use the convenience methods to push the current logging setting
+            // in to the external broker's QPID_OPTS string.
+            if (System.getProperty("amqj.protocol.logging.level") != null)
+            {
+                setSystemProperty("amqj.protocol.logging.level");
+            }
+            if (System.getProperty("root.logging.level") != null)
+            {
+                setSystemProperty("root.logging.level");
+            }
+
+
             String QPID_OPTS = " ";
             // Add all the specified system properties to QPID_OPTS
-            if (!_setProperties.isEmpty())
+            if (!_propertiesSetForBroker.isEmpty())
             {
-                for (String key : _setProperties.keySet())
+                for (String key : _propertiesSetForBroker.keySet())
                 {
-                    QPID_OPTS += "-D" + key + "=" + System.getProperty(key) + " ";
+                    QPID_OPTS += "-D" + key + "=" + _propertiesSetForBroker.get(key) + " ";
                 }
 
                 if (env.containsKey("QPID_OPTS"))
@@ -489,7 +535,7 @@ public class QpidTestCase extends TestCase
 
             if (!p.await(30, TimeUnit.SECONDS))
             {
-                _logger.info("broker failed to become ready:" + p.getStopLine());
+                _logger.info("broker failed to become ready (" + p.ready + "):" + p.getStopLine());
                 //Ensure broker has stopped
                 process.destroy();
                 cleanBroker();
@@ -667,28 +713,87 @@ public class QpidTestCase extends TestCase
     }
 
     /**
+     * Set a System property that is to be applied only to the external test
+     * broker.
+     *
+     * This is a convenience method to enable the setting of a -Dproperty=value
+     * entry in QPID_OPTS
+     *
+     * This is only useful for the External Java Broker tests.
+     *
+     * @param property the property name
+     * @param value the value to set the property to
+     */
+    protected void setBrokerOnlySystemProperty(String property, String value)
+    {
+        if (!_propertiesSetForBroker.containsKey(property))
+        {
+            _propertiesSetForBroker.put(property, value);
+        }
+
+    }    
+
+    /**
+     * Set a System (-D) property for this test run.
+     *
+     * This convenience method copies the current VMs System Property
+     * for the external VM Broker.
+     *
+     * @param property the System property to set
+     */
+    protected void setSystemProperty(String property)
+    {
+        setSystemProperty(property, System.getProperty(property));
+    }
+
+    /**
      * Set a System property for the duration of this test.
      *
      * When the test run is complete the value will be reverted.
+     *
+     * The values set using this method will also be propogated to the external
+     * Java Broker via a -D value defined in QPID_OPTS.
+     *
+     * If the value should not be set on the broker then use
+     * setTestClientSystemProperty(). 
      *
      * @param property the property to set
      * @param value    the new value to use
      */
     protected void setSystemProperty(String property, String value)
     {
-        if (!_setProperties.containsKey(property))
+        // Record the value for the external broker
+        _propertiesSetForBroker.put(property, value);
+
+        //Set the value for the test client vm aswell.        
+        setTestClientSystemProperty(property, value);
+    }
+
+    /**
+     * Set a System (-D) property for the external Broker of this test.
+     *
+     * @param property The property to set
+     * @param value the value to set it to.
+     */
+    protected void setTestClientSystemProperty(String property, String value)
+    {
+        if (!_propertiesSetForTestOnly.containsKey(property))
         {
-            _setProperties.put(property, System.getProperty(property));
-        }
+            // Record the current value so we can revert it later.
+            _propertiesSetForTestOnly.put(property, System.getProperty(property));
+        }                                                                     
 
         System.setProperty(property, value);
     }
 
+    /**
+     * Restore the System property values that were set before this test run.
+     */
     protected void revertSystemProperties()
     {
-        for (String key : _setProperties.keySet())
+        for (String key : _propertiesSetForTestOnly.keySet())
         {
-            String value = _setProperties.get(key);
+            String value = _propertiesSetForTestOnly.get(key);
             if (value != null)
             {
                 System.setProperty(key, value);
@@ -698,6 +803,12 @@ public class QpidTestCase extends TestCase
                 System.clearProperty(key);
             }
         }
+
+        _propertiesSetForTestOnly.clear();
+
+        // We don't change the current VMs settings for Broker only properties
+        // so we can just clear this map
+        _propertiesSetForBroker.clear();
     }
 
     /**
@@ -709,6 +820,40 @@ public class QpidTestCase extends TestCase
     protected void setBrokerEnvironment(String property, String value)
     {
         _env.put(property, value);
+    }
+
+    /**
+     * Adjust the VMs Log4j Settings just for this test run
+     *
+     * @param logger the logger to change
+     * @param level the level to set
+     */
+    protected void setLoggerLevel(org.apache.log4j.Logger logger, Level level)
+    {
+        assertNotNull("Cannot set level of null logger", logger);
+        assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
+
+        if (!_loggerLevelSetForTest.containsKey(logger))
+        {
+            // Record the current value so we can revert it later.
+            _loggerLevelSetForTest.put(logger, logger.getLevel());
+        }
+
+        logger.setLevel(level);
+    }
+
+    /**
+     * Restore the logging levels defined by this test.
+     */
+    protected void revertLoggingLevels()
+    {
+        for (org.apache.log4j.Logger logger : _loggerLevelSetForTest.keySet())
+        {
+            logger.setLevel(_loggerLevelSetForTest.get(logger));
+        }
+
+        _loggerLevelSetForTest.clear();
+
     }
 
     /**
@@ -786,7 +931,7 @@ public class QpidTestCase extends TestCase
         {
             if (Boolean.getBoolean("profile.use_ssl"))
             {
-                _connectionFactory = getConnectionFactory("ssl");
+                _connectionFactory = getConnectionFactory("default.ssl");
             }
             else
             {
@@ -876,15 +1021,32 @@ public class QpidTestCase extends TestCase
         return getClass().getSimpleName() + "-" + getName();
     }
 
+    /**
+     * Return a Queue specific for this test.
+     * Uses getTestQueueName() as the name of the queue
+     * @return
+     */
+    public Queue getTestQueue()
+    {
+        return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, getTestQueueName());
+    }
+
+
     protected void tearDown() throws java.lang.Exception
     {
-        // close all the connections used by this test.
-        for (Connection c : _connections)
+        try
         {
-            c.close();
+            // close all the connections used by this test.
+            for (Connection c : _connections)
+            {
+                c.close();
+            }
         }
-
-        revertSystemProperties();
+        finally{
+            // Ensure any problems with close does not interfer with property resets
+            revertSystemProperties();
+            revertLoggingLevels();
+        }
     }
 
     /**
@@ -921,17 +1083,23 @@ public class QpidTestCase extends TestCase
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count) throws Exception
     {
-        return sendMessage(session, destination, count, 0);
+        return sendMessage(session, destination, count, 0, 0);
     }
 
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count, int batchSize) throws Exception
     {
+        return sendMessage(session, destination, count, 0, batchSize);
+    }    
+
+    public List<Message> sendMessage(Session session, Destination destination,
+                                     int count, int offset, int batchSize) throws Exception
+    {
         List<Message> messages = new ArrayList<Message>(count);
 
         MessageProducer producer = session.createProducer(destination);
 
-        for (int i = 0; i < count; i++)
+        for (int i = offset; i < (count + offset); i++)
         {
             Message next = createNextMessage(session, i);
 
@@ -950,8 +1118,11 @@ public class QpidTestCase extends TestCase
         }
 
         // Ensure we commit the last messages
-        if (session.getTransacted() && (batchSize > 0) &&
-            (count / batchSize != 0))
+        // Commit the session if we are transacted and
+        // we have no batchSize or
+        // our count is not divible by batchSize. 
+        if (session.getTransacted() &&
+            ( batchSize == 0 || count % batchSize != 0))
         {
             session.commit();
         }
@@ -961,7 +1132,11 @@ public class QpidTestCase extends TestCase
 
     public Message createNextMessage(Session session, int msgCount) throws JMSException
     {
-        return session.createMessage();
+        Message message = session.createMessage();
+        message.setIntProperty(INDEX, msgCount);
+
+        return message;
+
     }
 
     public ConnectionURL getConnectionURL() throws NamingException

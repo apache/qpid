@@ -47,6 +47,14 @@ private:
     bool finalizing;
     QpidFrameSetPtr* dequeuedFrameSetpp;
     ManualResetEvent^ asyncHelperWaitHandle;
+    // number of messages to buffer locally for future consumption
+    int prefetchLimit;
+    // the number of messages requested and not yet processed
+    int workingCredit;
+    // stopping and restarting the message flow
+    bool creditSyncPending;
+    // working credit low water mark
+    int minWorkingCredit;
 
     void Cleanup();
     void ReleaseNative();
@@ -54,6 +62,8 @@ private:
     void addWaiter(MessageWaiter^ waiter);
     void asyncHelper();
     AmqpMessage^ createAmqpMessage(IntPtr msgp);
+    void AdjustCredit();
+    void SyncCredit(Object ^);
 
 internal:
     InputLink(AmqpSession^ session, System::String^ sourceQueue, qpid::client::AsyncSession *qpidSessionp,
@@ -79,6 +89,11 @@ public:
     bool WaitForMessage(TimeSpan timeout);
     IAsyncResult^ BeginWaitForMessage(TimeSpan timeout, AsyncCallback^ callback, Object^ state);
     bool EndWaitForMessage(IAsyncResult^ result);
+
+    property int PrefetchLimit {
+	int get () { return prefetchLimit; }
+	void set (int value);
+    }
 
 };
 

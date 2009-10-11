@@ -293,44 +293,23 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string& pattern)
     return q != qv.end();
 }
 
-void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
+void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
+{
     Binding::vector mb;
+    BindingList b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
     PreRoute pr(msg, this);
-    uint32_t count(0);
-
     {
-    RWlock::ScopedRlock l(lock);
-    for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-        if (match(i->first, routingKey)) {
-            Binding::vector& qv(i->second.bindingVector);
-            for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++, count++){
-                mb.push_back(*j);
+        RWlock::ScopedRlock l(lock);
+        for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
+            if (match(i->first, routingKey)) {
+                Binding::vector& qv(i->second.bindingVector);
+                for(Binding::vector::iterator j = qv.begin(); j != qv.end(); j++){
+                    b->push_back(*j);
+                }
             }
         }
     }
-    }
-    
-    for (Binding::vector::iterator j = mb.begin(); j != mb.end(); ++j) {
-        msg.deliverTo((*j)->queue);
-        if ((*j)->mgmtBinding != 0)
-            (*j)->mgmtBinding->inc_msgMatched ();
-    }
-
-    if (mgmtExchange != 0)
-    {
-        mgmtExchange->inc_msgReceives  ();
-        mgmtExchange->inc_byteReceives (msg.contentSize ());
-        if (count == 0)
-        {
-            mgmtExchange->inc_msgDrops  ();
-            mgmtExchange->inc_byteDrops (msg.contentSize ());
-        }
-        else
-        {
-            mgmtExchange->inc_msgRoutes  (count);
-            mgmtExchange->inc_byteRoutes (count * msg.contentSize ());
-        }
-    }
+    doRoute(msg, b);
 }
 
 bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routingKey, const FieldTable* const)

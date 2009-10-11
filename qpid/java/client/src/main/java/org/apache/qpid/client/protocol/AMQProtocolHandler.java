@@ -308,7 +308,6 @@ public class AMQProtocolHandler implements ProtocolEngine
      */
     public void exception(Throwable cause)
     {
-        _logger.info("AS: HELLO");
         if (_failoverState == FailoverState.NOT_STARTED)
         {
             // if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))

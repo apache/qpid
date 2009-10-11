@@ -37,7 +37,6 @@ import javax.naming.NamingException;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
@@ -58,13 +57,12 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
     private Session consumerSession;
     private MessageConsumer consumer;
 
-    private static int usedBrokers = 0;
     private CountDownLatch failoverComplete;
-    private static final long DEFAULT_FAILOVER_TIME = 10000L;
     private boolean CLUSTERED = Boolean.getBoolean("profile.clustered");
     private int seed;
     private Random rand;
-    
+    private int _currentPort = getFailingPort();
+
     @Override
     protected void setUp() throws Exception
     {
@@ -227,7 +225,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         
         _logger.info("Failing over");
 
-        causeFailure(DEFAULT_FAILOVER_TIME);
+        causeFailure(_currentPort, DEFAULT_FAILOVER_TIME);
 
         // Check that you produce and consume the rest of messages.
         _logger.debug("==================");
@@ -242,10 +240,10 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         _logger.debug("==================");
     }
 
-    private void causeFailure(long delay)
+    private void causeFailure(int port, long delay)
     {
 
-        failBroker();
+        failBroker(port);
 
         _logger.info("Awaiting Failover completion");
         try
@@ -268,7 +266,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         Message msg = consumer.receive();
         assertNotNull("Expected msgs not received", msg);
 
-        causeFailure(DEFAULT_FAILOVER_TIME);
+        causeFailure(getFailingPort(), DEFAULT_FAILOVER_TIME);
 
         Exception failure = null;
         try
@@ -314,7 +312,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         long failTime = System.nanoTime() + FAILOVER_DELAY * 1000000;
 
         //Fail the first broker
-        causeFailure(FAILOVER_DELAY + DEFAULT_FAILOVER_TIME);
+        causeFailure(getFailingPort(), FAILOVER_DELAY + DEFAULT_FAILOVER_TIME);
 
         //Reconnection should occur
         assertTrue("Failover did not take long enough", System.nanoTime() > failTime);
@@ -344,15 +342,15 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
             _logger.debug("===================================================================");
             
             runP2PFailover(numMessages, false,false, false);
-            startBroker(getFailingPort());
+            startBroker(_currentPort);
             if (useAltPort)
             {
-            	setFailingPort(altPort);
+                _currentPort = altPort;
                 useAltPort = false;
             }
             else
             {
-            	setFailingPort(stdPort);
+            	_currentPort = stdPort;
             	useAltPort = true;
             }
             

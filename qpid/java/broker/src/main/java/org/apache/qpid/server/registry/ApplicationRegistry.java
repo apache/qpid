@@ -102,7 +102,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             try
             {
-                instance.initialise();
+                instance.initialise(instanceID);
             }
             catch (Exception e)
             {

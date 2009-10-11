@@ -38,6 +38,8 @@ void SignalHandler::setBroker(const boost::intrusive_ptr<Broker>& b) {
     signal(SIGCHLD,SIG_IGN); 
 }
 
+void SignalHandler::shutdown() { shutdownHandler(0); }
+
 void SignalHandler::shutdownHandler(int) {
     if (broker.get()) {
         broker->shutdown();

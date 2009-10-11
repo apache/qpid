@@ -22,45 +22,21 @@
 # Check that top_builddir and srcdir are set
 # If not, assume local run from test dir
 if [ -z ${top_builddir} -o -z ${srcdir} ]; then
-	srcdir=`pwd`
+	srcdir=`dirname $0`
 	top_builddir=${srcdir}/../../
 fi
 TEST_DIR=${top_builddir}/src/tests
-PYTHON_DIR=${srcdir}/../../../python
+. $srcdir/python_env.sh
 
 if test -z $1; then
-	CLUSTER_TEST="${PYTHON_DIR}/qpid-python-test -m cluster_tests cluster_tests.ShortTests.\*"
+	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.ShortTests.\*"
 else
-	CLUSTER_TEST="${PYTHON_DIR}/qpid-python-test -m cluster_tests cluster_tests.LongTests.\*"
+	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.LongTests.\*"
 	echo "Running $1..."
 fi
 
-
 # Check AIS requirements
-id -nG | grep '\<ais\>' > /dev/null || NOGROUP="You are not a member of the ais group."
-ps -u root | grep 'aisexec\|corosync' > /dev/null || NOAISEXEC="The aisexec or corosync daemon is not running as root."
-if ! test -d ${PYTHON_DIR}; then
-	NO_PYTHON_DIR="PYTHON_DIR=\"${PYTHON_DIR}\" not found or does not exist."
-fi
-
-if test -n "${NOGROUP}" -o -n "${NOAISEXEC}" -o -n "${NO_PYTHON_DIR}"; then
-    cat <<EOF
-
-    ======== WARNING: PYTHON CLUSTER TESTS DISABLED ===========
-
-    Tests that depend on the openais library (used for clustering)
-    and python will not be run because:
-
-    ${NOGROUP}
-    ${NOAISEXEC}
-    ${NO_PYTHON_DIR}
-
-    ===========================================================
-
-EOF
-	exit 0
-fi
-
+. $srcdir/ais_check
 
 # Check XML exchange requirements
 XML_LIB=$srcdir/../.libs/xml.so
@@ -103,7 +79,7 @@ export TMP_DATA_DIR
 
 
 # Run the test
-sg ais -c "${CLUSTER_TEST}"
+with_ais_group ${CLUSTER_TEST}
 RETCODE=$?
 
 if test x${RETCODE} != x0; then 

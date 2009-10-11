@@ -261,6 +261,7 @@
       <jvmarg value="${jvm.args}"/>
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
+      <sysproperty key="amqj.server.logging.level" value="${amqj.server.logging.level}"/>
       <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
       <sysproperty key="log4j.debug" value="${log4j.debug}"/>
       <sysproperty key="root.logging.level" value="${root.logging.level}"/>
@@ -269,6 +270,7 @@
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
       <sysproperty key="broker" value="${broker}"/>
       <sysproperty key="broker.clean" value="${broker.clean}"/>
+      <sysproperty key="broker.clean.between.tests" value="${broker.clean.between.tests}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="broker.stopped" value="${broker.stopped}" />

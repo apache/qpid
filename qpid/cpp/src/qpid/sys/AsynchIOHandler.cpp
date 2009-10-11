@@ -103,10 +103,31 @@ void AsynchIOHandler::giveReadCredit(int32_t credit) {
         aio->startReading();
 }
 
-bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
+void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     if (readError) {
-        return false;
+        return;
     }
+
+    // Check here for read credit
+    if (readCredit.get() != InfiniteCredit) {
+        if (readCredit.get() == 0) {
+            // FIXME aconway 2009-10-01:  Workaround to avoid "false wakeups".
+            // readbuff is sometimes called with no credit.
+            // This should be fixed somewhere else to avoid such calls.
+            aio->unread(buff);
+            return;
+        }
+        // TODO In theory should be able to use an atomic operation before taking the lock
+        // but in practice there seems to be an unexplained race in that case
+        ScopedLock<Mutex> l(creditLock);
+        if (--readCredit == 0) {
+            assert(readCredit.get() >= 0);
+            if (readCredit.get() == 0) {
+                aio->stopReading();
+            }
+        }
+    }
+
     size_t decoded = 0;
     if (codec) {                // Already initiated
         try {
@@ -149,20 +170,6 @@ bool AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         // Give whole buffer back to aio subsystem
         aio->queueReadBuffer(buff);
     }
-    // Check here for read credit
-    if (readCredit.get() != InfiniteCredit) {
-        // TODO In theory should be able to use an atomic operation before taking the lock
-        // but in practice there seems to be an unexplained race in that case
-        ScopedLock<Mutex> l(creditLock);
-        if (--readCredit == 0) {
-            assert(readCredit.get() >= 0);
-            if (readCredit.get() == 0) {
-                aio->stopReading();
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 void AsynchIOHandler::eof(AsynchIO&) {

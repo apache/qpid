@@ -145,39 +145,12 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
 void DirectExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
 {
     PreRoute pr(msg, this);
-    Queues::ConstPtr p;
+    ConstBindingList b;
     {
         Mutex::ScopedLock l(lock);
-        p = bindings[routingKey].queues.snapshot();
+        b = bindings[routingKey].queues.snapshot();
     }
-    int count(0);
-
-    if (p) {
-        for(std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); i++, count++) {
-            msg.deliverTo((*i)->queue);
-            if ((*i)->mgmtBinding != 0)
-                (*i)->mgmtBinding->inc_msgMatched();
-        }
-    }
-
-    if(!count){
-        QPID_LOG(info, "DirectExchange " << getName() << " could not route message with key " << routingKey
-                 << "; no matching binding found");
-        if (mgmtExchange != 0) {
-            mgmtExchange->inc_msgDrops();
-            mgmtExchange->inc_byteDrops(msg.contentSize());
-        }
-    } else {
-        if (mgmtExchange != 0) {
-            mgmtExchange->inc_msgRoutes(count);
-            mgmtExchange->inc_byteRoutes(count * msg.contentSize());
-        }
-    }
-
-    if (mgmtExchange != 0) {
-        mgmtExchange->inc_msgReceives();
-        mgmtExchange->inc_byteReceives(msg.contentSize());
-    }
+    doRoute(msg, b);
 }
 
 

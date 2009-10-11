@@ -20,7 +20,7 @@
 #
 
 # Run the acl tests. $srcdir is set by the Makefile.
-PYTHON_DIR=$srcdir/../../../python
+. `dirname $0`/python_env.sh
 DATA_DIR=`pwd`/data_dir
 
 trap stop_brokers INT TERM QUIT
@@ -55,7 +55,7 @@ if test -d ${PYTHON_DIR} ;  then
     echo "Running acl tests using brokers on ports $LOCAL_PORT"
     PYTHONPATH=$PYTHON_DIR:$srcdir
     export PYTHONPATH
-    $PYTHON_DIR/qpid-python-test -b localhost:$LOCAL_PORT -m acl || EXITCODE=1
+    $PYTHON_COMMANDS/qpid-python-test -b localhost:$LOCAL_PORT -m acl || EXITCODE=1
     stop_brokers || EXITCODE=1
     test_loading_acl_from_absolute_path || EXITCODE=1
     rm -rf $DATA_DIR

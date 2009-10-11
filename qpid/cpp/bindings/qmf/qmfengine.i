@@ -19,34 +19,35 @@
 
 %{
 
-#include "qmf/AgentEngine.h"
-#include "qmf/ConsoleEngine.h"
-#include "qmf/ResilientConnection.h"
+#include "qmf/engine/Agent.h"
+#include "qmf/engine/Console.h"
+#include "qmf/engine/ResilientConnection.h"
 
 %}
 
-%include <qmf/QmfImportExport.h>
-%include <qmf/Query.h>
-%include <qmf/Message.h>
-%include <qmf/AgentEngine.h>
-%include <qmf/ConsoleEngine.h>
-%include <qmf/ConnectionSettings.h>
-%include <qmf/ResilientConnection.h>
-%include <qmf/Typecode.h>
-%include <qmf/Schema.h>
-%include <qmf/Value.h>
-%include <qmf/ObjectId.h>
-%include <qmf/Object.h>
+%include <qmf/engine/QmfEngineImportExport.h>
+%include <qmf/engine/Query.h>
+%include <qmf/engine/Message.h>
+%include <qmf/engine/Agent.h>
+%include <qmf/engine/Console.h>
+%include <qmf/engine/ConnectionSettings.h>
+%include <qmf/engine/ResilientConnection.h>
+%include <qmf/engine/Typecode.h>
+%include <qmf/engine/Schema.h>
+%include <qmf/engine/Value.h>
+%include <qmf/engine/ObjectId.h>
+%include <qmf/engine/Object.h>
 
 
 %inline {
 
 using namespace std;
-using namespace qmf;
+using namespace qmf::engine;
 
 namespace qmf {
+namespace engine {
 
-
+}
 }
 }
 

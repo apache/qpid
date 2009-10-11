@@ -104,7 +104,8 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
 }
 
 
-void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
+void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args)
+{
     if (!args) {
         //can't match if there were no headers passed in
         if (mgmtExchange != 0) {
@@ -118,31 +119,17 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
 
     PreRoute pr(msg, this);
 
-    uint32_t count(0);
-
-    Bindings::ConstPtr p = bindings.snapshot();
-    if (p.get()){
+    ConstBindingList p = bindings.snapshot();
+    BindingList b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
+    if (p.get())
+    {
         for (std::vector<Binding::shared_ptr>::const_iterator i = p->begin(); i != p->end(); ++i) {
             if (match((*i)->args, *args)) {
-                msg.deliverTo((*i)->queue);
-                count++;
-                if ((*i)->mgmtBinding != 0)
-                    (*i)->mgmtBinding->inc_msgMatched();
+                b->push_back(*i);
             }
         }
     }
-
-    if (mgmtExchange != 0) {
-        mgmtExchange->inc_msgReceives();
-        mgmtExchange->inc_byteReceives(msg.contentSize());
-        if (count == 0) {
-            mgmtExchange->inc_msgDrops();
-            mgmtExchange->inc_byteDrops(msg.contentSize());
-        } else {
-            mgmtExchange->inc_msgRoutes(count);
-            mgmtExchange->inc_byteRoutes(count * msg.contentSize());
-        }
-    }
+    doRoute(msg, b);
 }
 
 

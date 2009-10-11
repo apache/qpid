@@ -47,8 +47,8 @@ bool Listener::isFinished() { return finished; }
 
 void Listener::received(Message& message) 
 {
-    std::cout << "Message: " << message.getContent().asString() << std::endl;
-    if (message.getContent().asString() == "That's all, folks!") {
+    std::cout << "Message: " << message.getContent() << std::endl;
+    if (message.getContent() == "That's all, folks!") {
         std::cout << "Shutting down listener" << std::endl;
         receiver.cancel();
         finished = true;

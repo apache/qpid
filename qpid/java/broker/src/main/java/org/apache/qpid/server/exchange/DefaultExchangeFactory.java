@@ -73,7 +73,6 @@ public class DefaultExchangeFactory implements ExchangeFactory
         return e;
     }
 
-    @Override
     public void initialise(VirtualHostConfiguration hostConfig)
     {
 

@@ -61,7 +61,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         setupSession();
 
-        _queue = _clientSession.createQueue(getName()+System.currentTimeMillis());
+        _queue = _clientSession.createQueue(getTestQueueName());
         _clientSession.createConsumer(_queue).close();
         
         //Ensure there are no messages on the queue to start with.
@@ -497,7 +497,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
             if (msgCount == failPoint)
             {
-                failBroker();
+                failBroker(getFailingPort());
             }
         }
 
@@ -529,7 +529,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             sendMessages("connection2", messages);
         }
 
-        failBroker();
+        failBroker(getFailingPort());
 
         checkQueueDepth(messages);
 

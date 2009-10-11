@@ -63,6 +63,13 @@ namespace Apache.Qpid.Channel
             set { brokerPort = value; }
         }
 
+        [ConfigurationProperty(AmqpConfigurationStrings.PrefetchLimit, DefaultValue = false)]
+        public int PrefetchLimit
+        {
+            get { return (int)base[AmqpConfigurationStrings.PrefetchLimit]; }
+            set { base[AmqpConfigurationStrings.PrefetchLimit] = value; }
+        }
+
         [ConfigurationProperty(AmqpConfigurationStrings.Shared, DefaultValue = false)]
         public bool Shared
         {
@@ -95,6 +102,8 @@ namespace Apache.Qpid.Channel
             get
             {
                 ConfigurationPropertyCollection properties = base.Properties;
+                properties.Add(new ConfigurationProperty(AmqpConfigurationStrings.PrefetchLimit,
+                    typeof(int), 0, null, null, ConfigurationPropertyOptions.None));
                 properties.Add(new ConfigurationProperty(AmqpConfigurationStrings.Shared,
                     typeof(bool), false, null, null, ConfigurationPropertyOptions.None));
                 properties.Add(new ConfigurationProperty(AmqpConfigurationStrings.TransferMode,
@@ -112,6 +121,7 @@ namespace Apache.Qpid.Channel
             this.BrokerPort = amqpBinding.BrokerPort;
             this.TransferMode = amqpBinding.TransferMode;
             this.Shared = amqpBinding.Shared;
+            this.PrefetchLimit = amqpBinding.PrefetchLimit;
 
             AmqpProperties props = amqpBinding.DefaultMessageProperties;
         }
@@ -133,6 +143,7 @@ namespace Apache.Qpid.Channel
             amqpBinding.BrokerPort = this.BrokerPort;
             amqpBinding.TransferMode = this.TransferMode;
             amqpBinding.Shared = this.Shared;
+            amqpBinding.PrefetchLimit = this.PrefetchLimit;
         }
 
         protected override void PostDeserialize()

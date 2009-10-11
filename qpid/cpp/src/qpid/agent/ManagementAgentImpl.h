@@ -163,12 +163,14 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     friend class ConnectionThread;
     class ConnectionThread : public sys::Runnable
     {
+        typedef boost::shared_ptr<client::SubscriptionManager> shared_ptr;
+
         bool operational;
         ManagementAgentImpl& agent;
         framing::Uuid        sessionId;
         client::Connection   connection;
         client::Session      session;
-        client::SubscriptionManager* subscriptions;
+        ConnectionThread::shared_ptr subscriptions;
         std::stringstream queueName;
         mutable sys::Mutex   connLock;
         bool              shutdown;
@@ -176,7 +178,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
         void run();
     public:
         ConnectionThread(ManagementAgentImpl& _agent) :
-            operational(false), agent(_agent), subscriptions(0),
+            operational(false), agent(_agent),
             shutdown(false), sleeping(false) {}
         ~ConnectionThread();
         void sendBuffer(qpid::framing::Buffer& buf,
@@ -192,8 +194,11 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     {
         ManagementAgentImpl& agent;
         void run();
+        bool shutdown;
     public:
-        PublishThread(ManagementAgentImpl& _agent) : agent(_agent) {}
+        PublishThread(ManagementAgentImpl& _agent) :
+            agent(_agent), shutdown(false) {}
+        void close() { shutdown = true; }
     };
 
     ConnectionThread connThreadBody;

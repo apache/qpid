@@ -20,7 +20,7 @@
 
 # TODO: summarize, test harness preconditions (e.g. broker is alive)
 
-import fcntl, logging, optparse, os, struct, sys, termios, traceback, types
+import logging, optparse, os, struct, sys, traceback, types
 from fnmatch import fnmatchcase as match
 from getopt import GetoptError
 from logging import getLogger, StreamHandler, Formatter, Filter, \
@@ -126,27 +126,33 @@ def is_included(path):
 def is_smart():
   return sys.stdout.isatty() and os.environ.get("TERM", "dumb") != "dumb"
 
-def width():
-  if is_smart():
-    s = struct.pack("HHHH", 0, 0, 0, 0)
-    fd_stdout = sys.stdout.fileno()
-    x = fcntl.ioctl(fd_stdout, termios.TIOCGWINSZ, s)
-    rows, cols, xpx, ypx = struct.unpack("HHHH", x)
-    return cols
-  else:
-    try:
-      return int(os.environ.get("COLUMNS", "80"))
-    except ValueError:
-      return 80
+try:
+  import fcntl, termios
 
-WIDTH = width()
+  def width():
+    if is_smart():
+      s = struct.pack("HHHH", 0, 0, 0, 0)
+      fd_stdout = sys.stdout.fileno()
+      x = fcntl.ioctl(fd_stdout, termios.TIOCGWINSZ, s)
+      rows, cols, xpx, ypx = struct.unpack("HHHH", x)
+      return cols
+    else:
+      try:
+        return int(os.environ.get("COLUMNS", "80"))
+      except ValueError:
+        return 80
 
-def resize(sig, frm):
-  global WIDTH
   WIDTH = width()
 
-import signal
-signal.signal(signal.SIGWINCH, resize)
+  def resize(sig, frm):
+    global WIDTH
+    WIDTH = width()
+
+  import signal
+  signal.signal(signal.SIGWINCH, resize)
+
+except ImportError:
+  WIDTH = 80
 
 def vt100_attrs(*attrs):
   return "\x1B[%sm" % ";".join(map(str, attrs))

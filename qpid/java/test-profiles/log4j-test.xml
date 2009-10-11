@@ -29,10 +29,10 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
   <appender name="console" class="org.apache.log4j.ConsoleAppender">
     <param name="Target" value="System.out"/>
+    <param name="ImmediateFlush" value="true"/>
     <layout class="org.apache.log4j.PatternLayout">
       <param name="ConversionPattern" value="%t %d %p [%c{4}] %m%n"/>
     </layout>
-    <param name="ImmediateFlush" value="true"/>
   </appender>
 
   <logger name="org.apache.qpid">
@@ -45,6 +45,10 @@
 
   <logger name="org.apache.qpid.test.utils.QpidTestCase">
     <level value="ALL"/>
+  </logger>
+  
+  <logger name="org.apache.commons">
+    <level value="WARN"/>
   </logger>
 
   <root>

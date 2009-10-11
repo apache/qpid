@@ -22,7 +22,6 @@ package org.apache.qpid.server.registry;
 
 import junit.framework.TestCase;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.AMQException;
 
 import java.security.Security;
 import java.security.Provider;
@@ -69,7 +68,7 @@ public class ApplicationRegistryShutdownTest extends TestCase
         // Register new providers
         try
         {
-            _registry.initialise();
+            _registry.initialise(ApplicationRegistry.DEFAULT_INSTANCE);
         }
         catch (Exception e)
         {

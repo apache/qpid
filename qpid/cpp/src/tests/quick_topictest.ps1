@@ -18,12 +18,13 @@
 #
 
 # Quick and quiet topic test for make check.
-$srcdir = Split-Path $myInvocation.ScriptName
-$PsHome\powershell $srcdir\topictest.ps1 -subscribers 2 -messages 2 -batches 1 > topictest.log 2>&1
-if ($LastExitCode != 0) {
-    echo $0 FAILED:
+[string]$me = $myInvocation.InvocationName
+$srcdir = Split-Path $me
+powershell "$srcdir\topictest.ps1" -subscribers 2 -messages 2 -batches 1 > topictest.log 2>&1
+if (!$?) {
+    "$me FAILED:"
     cat topictest.log
     exit $LastExitCode
 }
-rm topictest.log
+Remove-Item topictest.log
 exit 0

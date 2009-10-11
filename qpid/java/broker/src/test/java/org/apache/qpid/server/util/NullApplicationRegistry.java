@@ -27,6 +27,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.rawloggers.Log4jMessageLogger;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -50,7 +51,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         super(new ServerConfiguration(new PropertiesConfiguration()));
     }
 
-    public void initialise() throws Exception
+    public void initialise(int instanceID) throws Exception
     {
         _logger.info("Initialising NullApplicationRegistry");
 
@@ -92,6 +93,8 @@ public class NullApplicationRegistry extends ApplicationRegistry
     @Override
     public void close() throws Exception
     {
+        CurrentActor.set(new BrokerActor(_rootMessageLogger));
+
         try
         {
             super.close();                                                  

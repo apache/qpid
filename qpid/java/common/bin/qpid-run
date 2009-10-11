@@ -111,6 +111,7 @@ if [ -n "$QPID_LOG_SUFFIX" ]; then
 fi
 
 log $INFO System Properties set to $SYSTEM_PROPS
+log $INFO QPID_OPTS set to $QPID_OPTS
 
 program=$(basename $0)
 sourced=${BASH_SOURCE[0]}

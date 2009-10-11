@@ -40,6 +40,7 @@ using std::rand;
 
 using qpid::sys::Poller;
 using qpid::sys::Dispatcher;
+using qpid::sys::SocketAddress;
 using qpid::sys::AbsTime;
 using qpid::sys::Duration;
 using qpid::sys::TIME_SEC;
@@ -154,18 +155,8 @@ using namespace qpid::tests;
 int main(int argc, char* argv[]) {
     vector<string> args(&argv[0], &argv[argc]);
 
-    ::addrinfo *res;
-    ::addrinfo hints = {};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    string host = args[1];
     string port = (args.size() < 3) ? "20079" : args[2];
-    int n = ::getaddrinfo(args[1].c_str(), port.c_str(), &hints, &res);
-    if (n<0) {
-        cerr << "Can't find information for: " << args[1] << "\n";
-        return 1;
-    } else {
-        cout << "Connecting to: " << args[1] << ":" << port <<"\n";
-    }
 
     if (args.size() > 3)
         msgsize = atoi(args[3].c_str());
@@ -181,8 +172,10 @@ int main(int argc, char* argv[]) {
         boost::shared_ptr<Poller> p(new Poller());
         Dispatcher d(p);
 
+        SocketAddress sa(host, port);
+        cout << "Connecting to: " << sa.asString() <<"\n";
         Rdma::Connector c(
-            *res->ai_addr,
+            sa,
             Rdma::ConnectionParams(msgsize, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(&connected, p, _1, _2),
             boost::bind(&connectionError, p, _1, _2),

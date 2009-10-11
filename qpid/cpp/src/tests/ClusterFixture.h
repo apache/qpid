@@ -75,10 +75,10 @@ class ClusterFixture : public vector<uint16_t>  {
     /** @param localIndex can be -1 meaning don't automatically start a local broker.
      * A local broker can be started with addLocal().
      */
-    ClusterFixture(size_t n, const Args& args, int localIndex=0);
+    ClusterFixture(size_t n, const Args& args, int localIndex=-1);
 
     /**@param updateArgs function is passed the index of the cluster member and can update the arguments. */
-    ClusterFixture(size_t n, boost::function<void (Args&, size_t)> updateArgs, int localIndex);
+    ClusterFixture(size_t n, boost::function<void (Args&, size_t)> updateArgs, int localIndex=-1);
 
     void add(size_t n) { for (size_t i=0; i < n; ++i) add(); }
     void add();                 // Add a broker.

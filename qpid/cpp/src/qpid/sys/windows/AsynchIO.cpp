@@ -634,7 +634,7 @@ void AsynchIO::readComplete(AsynchReadResult *result) {
     if (status == 0 && bytes > 0) {
         bool restartRead = true;     // May not if receiver doesn't want more
         if (readCallback)
-            restartRead = readCallback(*this, result->getBuff());
+            readCallback(*this, result->getBuff());
         if (restartRead)
             startReading();
     }

@@ -88,7 +88,13 @@ bool TxAccept::prepare(TransactionContext* ctxt) throw()
 
 void TxAccept::commit() throw() 
 {
-    ops.commit();
+    try {
+        ops.commit();
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Failed to commit: " << e.what());
+    } catch(...) {
+        QPID_LOG(error, "Failed to commit (unknown error)");
+    }
 }
 
 void TxAccept::rollback() throw() {}

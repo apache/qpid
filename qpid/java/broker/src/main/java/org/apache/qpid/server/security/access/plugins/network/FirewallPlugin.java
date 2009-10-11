@@ -211,7 +211,6 @@ public class FirewallPlugin extends AbstractACLPlugin
 
     }
 
-    @Override
     public void setConfiguration(Configuration config) throws ConfigurationException
     {
         // Get default action

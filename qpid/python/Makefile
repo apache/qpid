@@ -36,7 +36,7 @@ SRCS=$(shell find $(DIRS) -name "*.py") qpid_config.py
 BUILD=build
 TARGETS=$(SRCS:%.py=$(BUILD)/%.py)
 
-PYCC=python -c "import compileall, sys; compileall.compile_dir(sys.argv[1])"
+PYCC=python -O -c "import compileall; compileall.main()"
 
 all: build
 

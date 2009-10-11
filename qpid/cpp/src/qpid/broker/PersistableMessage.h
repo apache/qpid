@@ -68,8 +68,16 @@ class PersistableMessage : public Persistable
     void enqueueAsync();
     void dequeueAsync();
 
-    bool contentReleased;
     syncList synclist;
+    struct ContentReleaseState
+    {
+        bool blocked;
+        bool requested;
+        bool released;
+        
+        ContentReleaseState();
+    };
+    ContentReleaseState contentReleaseState;
 
   protected:
     /** Called when all enqueues are complete for this message. */
@@ -96,8 +104,15 @@ class PersistableMessage : public Persistable
 
     void flush();
     
-    bool isContentReleased() const;
-       
+    bool QPID_BROKER_EXTERN isContentReleased() const;
+
+    void QPID_BROKER_EXTERN setStore(MessageStore*);
+    void requestContentRelease();
+    void blockContentRelease();
+    bool checkContentReleasable();
+
+    virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
+
     QPID_BROKER_EXTERN bool isEnqueueComplete();
 
     QPID_BROKER_EXTERN void enqueueComplete();

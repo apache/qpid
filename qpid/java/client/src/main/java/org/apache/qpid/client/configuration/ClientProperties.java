@@ -39,7 +39,7 @@ public class ClientProperties
      * type: long
      */
     public static final String MAX_PREFETCH_PROP_NAME = "max_prefetch";
-    public static final String MAX_PREFETCH_DEFAULT = "5000";
+    public static final String MAX_PREFETCH_DEFAULT = "500";
 
     /**
      * When true a sync command is sent after every persistent messages.

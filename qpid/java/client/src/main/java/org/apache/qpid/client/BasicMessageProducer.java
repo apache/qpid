@@ -60,7 +60,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     /**
      * Priority of messages created by this producer.
      */
-    private int _messagePriority;
+    private int _messagePriority = Message.DEFAULT_PRIORITY;
 
     /**
      * Time to live of messages. Specified in milliseconds but AMQ has 1 second resolution.

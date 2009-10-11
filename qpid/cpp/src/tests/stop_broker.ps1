@@ -21,8 +21,23 @@
 Get-Content -path qpidd.port -totalCount 1 | Set-Variable -name qpid_port
 Remove-Item qpidd.port
 
+# Test runs from the tests directory but the broker executable is one level
+# up, and most likely in a subdirectory from there based on what build type.
+# Look around for it before trying to start it.
+$subs = "Debug","Release","MinSizeRel","RelWithDebInfo"
+foreach ($sub in $subs) {
+  $prog = "..\$sub\qpidd.exe"
+  if (Test-Path $prog) {
+     break
+  }
+}
+if (!(Test-Path $prog)) {
+    "Cannot locate qpidd.exe"
+    exit 1
+}
+
 # Piping the output makes the script wait for qpidd to finish.
-..\Debug\qpidd --quit --port $qpid_port | Write-Output
+Invoke-Expression "$prog --quit --port $qpid_port" | Write-Output
 $stopped = $?
 
 # Check qpidd.log.

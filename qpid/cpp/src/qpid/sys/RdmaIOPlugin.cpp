@@ -29,6 +29,7 @@
 #include "qpid/sys/OutputControl.h"
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <memory>
 
 #include <netdb.h>
@@ -304,8 +305,9 @@ void RdmaIOProtocolFactory::accept(Poller::shared_ptr poller, ConnectionCodec::F
     sin.sin_port = htons(listeningPort);
     sin.sin_addr.s_addr = INADDR_ANY;
 
+    SocketAddress sa("",boost::lexical_cast<std::string>(listeningPort));
     listener.reset(
-        new Rdma::Listener((const sockaddr&)(sin),
+        new Rdma::Listener(sa,
             Rdma::ConnectionParams(65536, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(&RdmaIOProtocolFactory::established, this, poller, _1),
             boost::bind(&RdmaIOProtocolFactory::connectionError, this, _1, _2),
@@ -331,24 +333,14 @@ void RdmaIOProtocolFactory::connected(Poller::shared_ptr poller, Rdma::Connectio
 
 void RdmaIOProtocolFactory::connect(
     Poller::shared_ptr poller,
-    const std::string& host, int16_t p,
+    const std::string& host, int16_t port,
     ConnectionCodec::Factory* f,
     ConnectFailedCallback failed)
 {
-    ::addrinfo *res;
-    ::addrinfo hints = {};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    stringstream ss; ss << p;
-    string port = ss.str();
-    int n = ::getaddrinfo(host.c_str(), port.c_str(), &hints, &res);
-    if (n<0) {
-        throw Exception(QPID_MSG("Rdma: Cannot resolve " << host << ": " << ::gai_strerror(n)));
-    }
-
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
     Rdma::Connector* c =
         new Rdma::Connector(
-            *res->ai_addr,
+            sa,
             Rdma::ConnectionParams(8000, Rdma::DEFAULT_WR_ENTRIES),
             boost::bind(&RdmaIOProtocolFactory::connected, this, poller, _1, _2, f),
             boost::bind(&RdmaIOProtocolFactory::connectionError, this, _1, _2),
