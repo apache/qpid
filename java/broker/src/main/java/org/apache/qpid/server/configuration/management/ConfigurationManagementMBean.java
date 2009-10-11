@@ -35,13 +35,11 @@ public class ConfigurationManagementMBean extends AMQManagedObject implements Co
         super(ConfigurationManagement.class, ConfigurationManagement.TYPE, ConfigurationManagement.VERSION);
     }
 
-    @Override
     public String getObjectInstanceName()
     {
         return ConfigurationManagement.TYPE;
     }
 
-    @Override
     public void reloadSecurityConfiguration() throws Exception
     {
         ApplicationRegistry.getInstance().getConfiguration().reparseConfigFile();

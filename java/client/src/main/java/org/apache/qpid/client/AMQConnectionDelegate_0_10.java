@@ -297,7 +297,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         _qpidConnection.setIdleTimeout(l);
     }
 
-    @Override
     public int getMaxChannelID()
     {
        return Integer.MAX_VALUE;
