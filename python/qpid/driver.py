@@ -190,10 +190,10 @@ class Driver:
         log.debug("READ: %r", data)
       else:
         log.debug("ABORTED: %s", self._socket.getpeername())
-        error = ("connection aborted",)
+        error = "connection aborted"
         recoverable = True
     except socket.error, e:
-      error = (e,)
+      error = e
       recoverable = True
 
     if not error:
@@ -214,20 +214,13 @@ class Driver:
           log.debug("RCVD: %r", op)
           op.dispatch(self)
       except VersionError, e:
-        error = (e,)
+        error = e
       except:
         msg = compat.format_exc()
-        error = (msg,)
+        error = msg
 
     if error:
-      self._socket.close()
-      self.reset()
-      if recoverable and self.connection.reconnect:
-        self._timeout = time.time() + 3
-        log.warn("recoverable error: %s" % error)
-        log.warn("sleeping 3 seconds")
-      else:
-        self.connection.error = error
+      self._error(error, recoverable)
     else:
       self.dispatch()
 
@@ -241,15 +234,30 @@ class Driver:
 
   @synchronized
   def writeable(self):
-    n = self._socket.send(self._buf)
-    log.debug("SENT: %r", self._buf[:n])
-    self._buf = self._buf[n:]
+    try:
+      n = self._socket.send(self._buf)
+      log.debug("SENT: %r", self._buf[:n])
+      self._buf = self._buf[n:]
+    except socket.error, e:
+      self._error(e, True)
+      self.connection._waiter.notifyAll()
 
   @synchronized
   def timeout(self):
     log.warn("retrying ...")
     self.dispatch()
     self.connection._waiter.notifyAll()
+
+  def _error(self, err, recoverable):
+    if self._socket is not None:
+      self._socket.close()
+    self.reset()
+    if recoverable and self.connection.reconnect:
+      self._timeout = time.time() + 3
+      log.warn("recoverable error: %s" % err)
+      log.warn("sleeping 3 seconds")
+    else:
+      self.connection.error = (err,)
 
   def write_op(self, op):
     log.debug("SENT: %r", op)
@@ -372,10 +380,7 @@ class Driver:
       self._timeout = None
     except socket.error, e:
       if self.connection.reconnect:
-        self.reset()
-        self._timeout = time.time() + 3
-        log.warn("recoverable error: %s", e)
-        log.warn("sleeping 3 seconds")
+        self._error(e, True)
         return
       else:
         raise e
