@@ -439,14 +439,19 @@ class Driver:
     if _snd is None and not snd.closing and not snd.closed:
       _snd = Attachment(snd)
 
+      if snd.target is None:
+        snd.error = ("target is None",)
+        snd.closed = True
+        return
+
       try:
         _snd.name, _snd.subject, _snd.options = address.parse(snd.target)
       except address.LexError, e:
-        snd.error = e
+        snd.error = (e,)
         snd.closed = True
         return
       except address.ParseError, e:
-        snd.error = e
+        snd.error = (e,)
         snd.closed = True
         return
 
@@ -502,14 +507,19 @@ class Driver:
       _rcv.canceled = False
       _rcv.draining = False
 
+      if rcv.source is None:
+        rcv.error = ("source is None",)
+        rcv.closed = True
+        return
+
       try:
         _rcv.name, _rcv.subject, _rcv.options = address.parse(rcv.source)
       except address.LexError, e:
-        rcv.error = e
+        rcv.error = (e,)
         rcv.closed = True
         return
       except address.ParseError, e:
-        rcv.error = e
+        rcv.error = (e,)
         rcv.closed = True
         return
 
