@@ -381,8 +381,8 @@ class Session:
 
   @synchronized
   def _get(self, predicate, timeout=None):
-    if self._wait(lambda: ((self._peek(predicate) is not None) or self.closing),
-                  timeout):
+    if self._ewait(lambda: ((self._peek(predicate) is not None) or self.closing),
+                   timeout):
       msg = self._pop(predicate)
       if msg is not None:
         msg._receiver.returned += 1
@@ -816,6 +816,8 @@ def get_type(content):
 def get_codec(content_type):
   return TYPE_CODEC[content_type]
 
+UNSPECIFIED = object()
+
 class Message:
 
   """
@@ -840,7 +842,9 @@ class Message:
   @ivar content: the message content
   """
 
-  def __init__(self, content=None):
+  def __init__(self, content=None, content_type=UNSPECIFIED, id=None,
+               subject=None, to=None, user_id=None, reply_to=None,
+               correlation_id=None, durable=None, properties=None):
     """
     Construct a new message with the supplied content. The
     content-type of the message will be automatically inferred from
@@ -848,20 +852,44 @@ class Message:
 
     @type content: str, unicode, buffer, dict, list
     @param content: the message content
+
+    @type content_type: str
+    @param content_type: the content-type of the message
     """
-    self.id = None
-    self.subject = None
-    self.user_id = None
-    self.to = None
-    self.reply_to = None
-    self.correlation_id = None
-    self.durable = None
-    self.properties = {}
-    self.content_type = get_type(content)
+    self.id = id
+    self.subject = subject
+    self.to = to
+    self.user_id = user_id
+    self.reply_to = reply_to
+    self.correlation_id = correlation_id
+    self.durable = durable
+    if properties is None:
+      self.properties = {}
+    else:
+      self.properties = properties
+    if content_type is UNSPECIFIED:
+      self.content_type = get_type(content)
+    else:
+      self.content_type = content_type
     self.content = content
 
   def __repr__(self):
-    return "Message(%r)" % self.content
+    args = []
+    for name in ["id", "subject", "to", "user_id", "reply_to",
+                 "correlation_id"]:
+      value = self.__dict__[name]
+      if value is not None: args.append("%s=%r" % (name, value))
+    for name in ["durable", "properties"]:
+      value = self.__dict__[name]
+      if value: args.append("%s=%r" % (name, value))
+    if self.content_type != get_type(self.content):
+      args.append("content_type=%r" % self.content_type)
+    if self.content is not None:
+      if args:
+        args.append("content=%r" % self.content)
+      else:
+        args.append(repr(self.content))
+    return "Message(%s)" % ", ".join(args)
 
 __all__ = ["Connection", "Session", "Sender", "Receiver", "Pattern", "Message",
            "ConnectionError", "ConnectError", "SessionError", "Disconnected",
