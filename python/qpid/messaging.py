@@ -78,7 +78,7 @@ class Connection:
 
   @static
   def open(host, port=None, username="guest", password="guest",
-           mechanism="PLAIN", heartbeat=None):
+           mechanism="PLAIN", heartbeat=None, **options):
     """
     Creates an AMQP connection and connects it to the given host and port.
 
@@ -89,12 +89,12 @@ class Connection:
     @rtype: Connection
     @return: a connected Connection
     """
-    conn = Connection(host, port, username, password, mechanism, heartbeat)
+    conn = Connection(host, port, username, password, mechanism, heartbeat, **options)
     conn.connect()
     return conn
 
   def __init__(self, host, port=None, username="guest", password="guest",
-               mechanism="PLAIN", heartbeat=None):
+               mechanism="PLAIN", heartbeat=None, **options):
     """
     Creates a connection. A newly created connection must be connected
     with the Connection.connect() method before it can be started.
@@ -117,7 +117,7 @@ class Connection:
     self.id = str(uuid4())
     self.session_counter = 0
     self.sessions = {}
-    self.reconnect = False
+    self.reconnect = options.get("reconnect", False)
     self._connected = False
     self._lock = RLock()
     self._condition = Condition(self._lock)
@@ -524,6 +524,7 @@ class Sender:
     self.target = target
     self.options = options
     self.capacity = options.get("capacity", UNLIMITED)
+    self.durable = options.get("durable")
     self.queued = Serial(0)
     self.acked = Serial(0)
     self.error = None
@@ -585,6 +586,9 @@ class Sender:
       message = object
     else:
       message = Message(object)
+
+    if message.durable is None:
+      message.durable = self.durable
 
     if self.capacity is not UNLIMITED:
       if self.capacity <= 0:
@@ -851,7 +855,7 @@ class Message:
     self.to = None
     self.reply_to = None
     self.correlation_id = None
-    self.durable = False
+    self.durable = None
     self.properties = {}
     self.content_type = get_type(content)
     self.content = content
