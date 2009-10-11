@@ -151,8 +151,11 @@ class Driver:
     for ssn in self.connection.sessions.values():
       for m in ssn.acked + ssn.unacked + ssn.incoming:
         m._transfer_id = None
+      for snd in ssn.senders:
+        snd.linked = False
       for rcv in ssn.receivers:
         rcv.impending = rcv.received
+        rcv.linked = False
 
   @synchronized
   def wakeup(self):
@@ -663,16 +666,22 @@ class Driver:
       sst.write_cmd(MessageFlow(rcv.destination, credit_unit.byte, UNLIMITED.value))
       sst.write_cmd(MessageFlow(rcv.destination, credit_unit.message, delta))
       rcv.impending += delta
-    elif delta < 0:
+    elif delta < 0 and not rcv.draining:
       _rcv.draining = True
-      def flush_stop_cmplt():
+      def do_stop():
         rcv.impending = rcv.received
         _rcv.draining = False
         self.grant(rcv)
-      if rcv.drain:
-        sst.write_cmd(MessageFlush(rcv.destination, sync=True), flush_stop_cmplt)
-      else:
-        sst.write_cmd(MessageStop(rcv.destination, sync=True), flush_stop_cmplt)
+      sst.write_cmd(MessageStop(rcv.destination, sync=True), do_stop)
+
+    if rcv.draining:
+      def do_flush():
+        rcv.impending = rcv.received
+        rcv.granted = rcv.impending
+        _rcv.draining = False
+        rcv.draining = False
+      sst.write_cmd(MessageFlush(rcv.destination, sync=True), do_flush)
+
 
   def process_receiver(self, rcv):
     if rcv.closed: return

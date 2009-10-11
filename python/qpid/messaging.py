@@ -646,7 +646,7 @@ class Receiver:
     self.started = started
     self.capacity = options.get("capacity", UNLIMITED)
     self.granted = Serial(0)
-    self.drain = False
+    self.draining = False
     self.impending = Serial(0)
     self.received = Serial(0)
     self.returned = Serial(0)
@@ -722,11 +722,9 @@ class Receiver:
     self._ewait(lambda: self.impending >= self.granted)
     msg = self.session._get(self._pred, timeout=timeout)
     if msg is None:
-      self.drain = True
-      self.granted = self.received
+      self.draining = True
       self._wakeup()
-      self._ewait(lambda: self.impending == self.received)
-      self.drain = False
+      self._ewait(lambda: not self.draining)
       self._grant()
       self._wakeup()
       msg = self.session._get(self._pred, timeout=0)
