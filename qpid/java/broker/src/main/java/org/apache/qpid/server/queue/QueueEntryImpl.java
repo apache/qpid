@@ -21,10 +21,10 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
@@ -161,6 +161,24 @@ public class QueueEntryImpl implements QueueEntry
     private boolean acquire(final EntryState state)
     {
         boolean acquired = _stateUpdater.compareAndSet(this,AVAILABLE_STATE, state);
+
+        // deal with the case where the node has been assigned to a given subscription already
+        // including the case that the node is assigned to a closed subscription
+        if(!acquired)
+        {
+            if(state != NON_SUBSCRIPTION_ACQUIRED_STATE)
+            {
+                EntryState currentState = _state;
+                if(currentState.getState() == State.AVAILABLE
+                   && ((currentState == AVAILABLE_STATE)
+                       || (((SubscriptionAcquiredState)state).getSubscription() ==
+                           ((SubscriptionAssignedState)currentState).getSubscription())
+                       || ((SubscriptionAssignedState)currentState).getSubscription().isClosed() ))
+                {
+                    acquired = _stateUpdater.compareAndSet(this,currentState, state);
+                }
+            }
+        }
         if(acquired && _stateChangeListeners != null)
         {
             notifyStateChange(State.AVAILABLE, State.ACQUIRED);
@@ -171,7 +189,12 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean acquire(Subscription sub)
     {
-        return acquire(sub.getOwningState());
+        final boolean acquired = acquire(sub.getOwningState());
+        if(acquired && !_deliveredToConsumer)
+        {
+            _deliveredToConsumer = true;
+        }
+        return acquired;
     }
 
     public boolean acquiredBySubscription()
@@ -187,24 +210,68 @@ public class QueueEntryImpl implements QueueEntry
                && ((SubscriptionAcquiredState)state).getSubscription() == subscription;
     }
 
-    public void setDeliveredToSubscription()
-    {
-        _deliveredToConsumer = true;
-    }
-
     public void release()
     {
         _stateUpdater.set(this,AVAILABLE_STATE);
+        getQueue().requeue(this);
+        if(_stateChangeListeners != null)
+        {
+            notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+        }
+
+    }
+
+    public boolean releaseButRetain()
+    {
+        EntryState state = _state;
+
+        boolean stateUpdated = false;
+
+        if(state instanceof SubscriptionAcquiredState)
+        {
+            Subscription sub = ((SubscriptionAcquiredState) state).getSubscription();
+            if(_stateUpdater.compareAndSet(this, state, sub.getAssignedState()))
+            {
+                System.err.println("Message released (and retained)" + getMessage().getMessageNumber());
+                getQueue().requeue(this);
+                if(_stateChangeListeners != null)
+                {
+                    notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+                }
+                stateUpdated = true;
+            }
+        }
+
+        return stateUpdated;
+
     }
 
     public boolean immediateAndNotDelivered() 
     {
-        return getMessage().isImmediate() && !_deliveredToConsumer;
+        return !_deliveredToConsumer && isImmediate();
+    }
+
+    private boolean isImmediate()
+    {
+        final ServerMessage message = getMessage();
+        return message != null && message.isImmediate();
     }
 
     public void setRedelivered(boolean b)
     {
         _redelivered = b;
+    }
+
+    public AMQMessageHeader getMessageHeader()
+    {
+        final ServerMessage message = getMessage();
+        return message == null ? null : message.getMessageHeader();
+    }
+
+    public boolean isPersistent()
+    {
+        final ServerMessage message = getMessage();
+        return message != null && message.isPersistent();
     }
 
     public boolean isRedelivered()
@@ -261,16 +328,6 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-
-    public void requeue(final StoreContext storeContext) throws AMQException
-    {
-        getQueue().requeue(storeContext, this);
-        if(_stateChangeListeners != null)
-        {
-            notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
-        }
-    }
-
     public void requeue(Subscription subscription)
     {
         getQueue().requeue(this, subscription);
@@ -280,7 +337,7 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void dequeue(final StoreContext storeContext) throws FailedDequeueException
+    public void dequeue()
     {
         EntryState state = _state;
 
@@ -292,7 +349,7 @@ public class QueueEntryImpl implements QueueEntry
                 s.onDequeue(this);
             }
 
-            getQueue().dequeue(storeContext, this);
+            getQueue().dequeue(this);
             if(_stateChangeListeners != null)
             {
                 notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
@@ -310,25 +367,23 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void dispose(final StoreContext storeContext) throws MessageCleanupException
+    public void dispose()
     {
         if(delete())
         {
-            StoreContext sc = StoreContext.setCurrentContext(storeContext);
             _message.release();
-            StoreContext.setCurrentContext(sc);
         }
     }
 
-    public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
+    public void discard()
     {
         //if the queue is null then the message is waiting to be acked, but has been removed.
         if (getQueue() != null)
         {
-            dequeue(storeContext);
+            dequeue();
         }
 
-        dispose(storeContext);
+        dispose();
     }
 
     public boolean isQueueDeleted()

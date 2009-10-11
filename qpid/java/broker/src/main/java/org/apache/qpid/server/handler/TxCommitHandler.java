@@ -26,7 +26,6 @@ import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -62,22 +61,16 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
             {
                 throw body.getChannelNotFoundException(channelId);
             }
-            StoreContext.setCurrentContext(channel.getStoreContext());
             channel.commit();
 
             MethodRegistry methodRegistry = session.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createTxCommitOkBody();
             session.writeFrame(responseBody.generateFrame(channelId));
-            
-            channel.processReturns();
+                        
         }
         catch (AMQException e)
         {
             throw body.getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage());
-        }
-        finally
-        {
-            StoreContext.clearCurrentContext();
         }
     }
 }

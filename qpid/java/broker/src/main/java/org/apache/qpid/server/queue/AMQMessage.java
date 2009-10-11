@@ -31,18 +31,18 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.message.*;
 
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A deliverable message.
  */
-public class AMQMessage implements Filterable, ServerMessage
+public class AMQMessage implements ServerMessage
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -50,9 +50,6 @@ public class AMQMessage implements Filterable, ServerMessage
     private final AtomicInteger _referenceCount = new AtomicInteger(0);
 
     private final AMQMessageHandle _messageHandle;
-
-    /** Holds the transactional context in which this message is being processed. */
-    private StoreContext _storeContext;
 
     /** Flag to indicate that this message requires 'immediate' delivery. */
 
@@ -71,7 +68,7 @@ public class AMQMessage implements Filterable, ServerMessage
 
     private final long _size;
 
-    private AMQProtocolSession.ProtocolSessionIdentifier _sessionIdentifier;
+    private Object _sessionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
     private final AMQMessageHeader _messageHeader;
 
@@ -97,7 +94,7 @@ public class AMQMessage implements Filterable, ServerMessage
         {
             try
             {
-                return _index < (_messageHandle.getBodyCount(getStoreContext()) - 1);
+                return _index < (_messageHandle.getBodyCount() - 1);
             }
             catch (AMQException e)
             {
@@ -113,8 +110,8 @@ public class AMQMessage implements Filterable, ServerMessage
             {
 
                 AMQBody cb =
-                        getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
-                                                                                                         ++_index));
+                        getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(
+                                ++_index));
 
                 return new AMQFrame(_channel, cb);
             }
@@ -137,15 +134,6 @@ public class AMQMessage implements Filterable, ServerMessage
         }
     }
 
-    public void clearStoreContext()
-    {
-        _storeContext = new StoreContext();
-    }
-
-    public StoreContext getStoreContext()
-    {
-        return _storeContext;
-    }
 
     private class BodyContentIterator implements Iterator<ContentChunk>
     {
@@ -156,7 +144,7 @@ public class AMQMessage implements Filterable, ServerMessage
         {
             try
             {
-                return _index < (_messageHandle.getBodyCount(getStoreContext()) - 1);
+                return _index < (_messageHandle.getBodyCount() - 1);
             }
             catch (AMQException e)
             {
@@ -170,7 +158,7 @@ public class AMQMessage implements Filterable, ServerMessage
         {
             try
             {
-                return _messageHandle.getContentChunk(getStoreContext(), ++_index);
+                return _messageHandle.getContentChunk(++_index);
             }
             catch (AMQException e)
             {
@@ -197,13 +185,12 @@ public class AMQMessage implements Filterable, ServerMessage
      *
      * @throws AMQException
      */
-    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext)
+    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory)
             throws AMQException
     {
         _messageHandle = factory.createMessageHandle(messageId, store, true);
-        _storeContext = txnConext.getStoreContext();
-        _size = _messageHandle.getBodySize(txnConext.getStoreContext());
-        _messageHeader = new ContentHeaderBodyAdapter(_messageHandle.getContentHeaderBody(txnConext.getStoreContext()));
+        _size = _messageHandle.getBodySize();
+        _messageHeader = new ContentHeaderBodyAdapter(_messageHandle.getContentHeaderBody());
     }
 
         /**
@@ -217,19 +204,29 @@ public class AMQMessage implements Filterable, ServerMessage
      */
     public AMQMessage(
                 AMQMessageHandle messageHandle,
-                StoreContext storeConext,
                 MessagePublishInfo info)
             throws AMQException
     {
+        this(messageHandle, messageHandle.getContentHeaderBody(), messageHandle.getBodySize(), info);
+    }
+
+    public AMQMessage(
+                    AMQMessageHandle messageHandle,
+                    ContentHeaderBody chb,
+                    long size,
+                    MessagePublishInfo info)
+                throws AMQException
+
+    {
         _messageHandle = messageHandle;
-        _storeContext = storeConext;
-        _messageHeader = new ContentHeaderBodyAdapter(_messageHandle.getContentHeaderBody(storeConext));
+
+        _messageHeader = new ContentHeaderBodyAdapter(chb);
 
         if(info.isImmediate())
         {
             _flags |= IMMEDIATE;
         }
-        _size = messageHandle.getBodySize(storeConext);
+        _size = size;
 
     }
 
@@ -238,7 +235,6 @@ public class AMQMessage implements Filterable, ServerMessage
     {
         _messageHandle = msg._messageHandle;
         _messageHeader = msg._messageHeader;
-        _storeContext = msg._storeContext;
         _flags = msg._flags;
         _size = msg._size;
 
@@ -274,7 +270,7 @@ public class AMQMessage implements Filterable, ServerMessage
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
-        return _messageHandle.getContentHeaderBody(getStoreContext());
+        return _messageHandle.getContentHeaderBody();
     }
 
 
@@ -303,7 +299,8 @@ public class AMQMessage implements Filterable, ServerMessage
     /* Threadsafe. Increment the reference count on the message. */
     public boolean incrementReference(int count)
     {
-        if(_referenceCount.addAndGet(count) <= 1)
+
+        if(_referenceCount.addAndGet(count) <= 0)
         {
             _referenceCount.addAndGet(-count);
             return false;
@@ -325,7 +322,6 @@ public class AMQMessage implements Filterable, ServerMessage
      */
     public void decrementReference() throws MessageCleanupException
     {
-
         int count = _referenceCount.decrementAndGet();
 
         // note that the operation of decrementing the reference count and then removing the message does not
@@ -343,9 +339,10 @@ public class AMQMessage implements Filterable, ServerMessage
             {
                 // must check if the handle is null since there may be cases where we decide to throw away a message
                 // and the handle has not yet been constructed
-                if (_messageHandle != null)
+                if (_messageHandle != null && isPersistent())
                 {
-                    _messageHandle.removeMessage(StoreContext.getCurrentContext());
+                    _messageHandle.removeMessage();
+
                 }
             }
             catch (AMQException e)
@@ -397,7 +394,7 @@ public class AMQMessage implements Filterable, ServerMessage
      * @returns  true if the message is marked for immediate delivery but has not been marked as delivered
      *                              to a consumer
      */
-    public boolean immediateAndNotDelivered() 
+    public boolean immediateAndNotDelivered()
     {
 
         return (_flags & IMMEDIATE_AND_DELIVERED) == IMMEDIATE;
@@ -406,17 +403,7 @@ public class AMQMessage implements Filterable, ServerMessage
 
     public MessagePublishInfo getMessagePublishInfo() throws AMQException
     {
-        return _messageHandle.getMessagePublishInfo(getStoreContext());
-    }
-
-    public boolean isRedelivered()
-    {
-        return _messageHandle.isRedelivered();
-    }
-
-    public void setRedelivered(boolean redelivered)
-    {
-        _messageHandle.setRedelivered(redelivered);
+        return _messageHandle.getMessagePublishInfo();
     }
 
     public long getArrivalTime()
@@ -488,37 +475,18 @@ public class AMQMessage implements Filterable, ServerMessage
         return getMessageId();
     }
 
-    public Object getPublisherClientInstance()
-    {
-        //todo store sessionIdentifier/client id with message in store
-        //Currently the _sessionIdentifier will be null if the message has been
-        // restored from a message Store
-        if (_sessionIdentifier == null)
-        {
-            return null;
-        }
-        else
-        {
-            return _sessionIdentifier.getSessionInstance();
-        }
-    }
-                                                                                          
+
     public Object getPublisherIdentifier()
     {
         //todo store sessionIdentifier/client id with message in store
         //Currently the _sessionIdentifier will be null if the message has been
         // restored from a message Store
-        if (_sessionIdentifier == null)
-        {
-            return null;
-        }
-        else
-        {
-            return _sessionIdentifier.getSessionIdentifier();
-        }
+
+        return _sessionIdentifier;
+
     }
 
-    public void setClientIdentifier(final AMQProtocolSession.ProtocolSessionIdentifier sessionIdentifier)
+    public void setClientIdentifier(final Object sessionIdentifier)
     {
         _sessionIdentifier = sessionIdentifier;
     }

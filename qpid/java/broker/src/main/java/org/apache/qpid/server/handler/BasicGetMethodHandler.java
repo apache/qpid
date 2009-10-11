@@ -133,7 +133,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 singleMessageCredit.useCreditForMessage(entry.getMessage());
                 if(entry.getMessage() instanceof AMQMessage)
                 {
-                    session.getProtocolOutputConverter().writeGetOk((AMQMessage)(entry.getMessage()), channel.getChannelId(),
+                    session.getProtocolOutputConverter().writeGetOk(entry, channel.getChannelId(),
                                                                             deliveryTag, queue.getMessageCount());
                 }
                 else

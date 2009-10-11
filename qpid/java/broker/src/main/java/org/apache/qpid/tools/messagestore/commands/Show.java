@@ -171,7 +171,7 @@ public class Show extends AbstractCommand
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getEncoding();
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getExpiration();
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getHeaders();
-//        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getMessageId();
+//        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getMessageNumber();
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getPriority();
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getPropertyFlags();
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getReplyTo();
@@ -182,14 +182,14 @@ public class Show extends AbstractCommand
 //        //Print out all the property names
 //        ((BasicContentHeaderProperties)msg.getContentHeaderBody().properties).getHeaders().getPropertyNames();
 //
-//        msg.getMessageId();
+//        msg.getMessageNumber();
 //        msg.getSize();
 //        msg.getArrivalTime();
 
 //        msg.getDeliveredSubscription();
 //        msg.getDeliveredToConsumer();
 //        msg.getMessageHandle();
-//        msg.getMessageId();
+//        msg.getMessageNumber();
 //        msg.getMessagePublishInfo();
 //        msg.getPublisher();
 
@@ -352,7 +352,7 @@ public class Show extends AbstractCommand
             ispersitent.add(msg.isPersistent() ? "true" : "false");
 
 
-            isredelivered.add(msg.isRedelivered() ? "true" : "false");
+            isredelivered.add(entry.isRedelivered() ? "true" : "false");
 
             isdelivered.add(entry.getDeliveredToConsumer() ? "true" : "false");
 

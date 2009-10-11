@@ -21,17 +21,17 @@
 package org.apache.qpid.server.protocol;
 
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TestNetworkDriver;
@@ -68,7 +68,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     public byte getProtocolMajorVersion()
     {
         return (byte) 8;
-    }
+    }    
 
     public byte getProtocolMinorVersion()
     {
@@ -99,6 +99,15 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
+    public void writeReturn(MessagePublishInfo messagePublishInfo,
+                            ContentHeaderBody header,
+                            Iterator<AMQDataBlock> bodyFrameIterator,
+                            int channelId,
+                            int replyCode,
+                            AMQShortString replyText) throws AMQException
+    {
+
+    }
     // *** ProtocolOutputConverter Implementation
     public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
@@ -108,7 +117,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     {
     }
 
-    public void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
+    public void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag) throws AMQException
     {
         _deliveryCount.incrementAndGet();
 
@@ -130,11 +139,11 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
                 consumers.put(consumerTag, consumerDelivers);
             }
 
-            consumerDelivers.add(new DeliveryPair(deliveryTag, message));
+            consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));
         }
     }
 
-    public void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(QueueEntry message, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
     }
 

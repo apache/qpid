@@ -200,8 +200,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         return _actor;
     }
-
-    @Override
+    
     public void received(final ByteBuffer msg)
     {
         _lastIoTime = System.currentTimeMillis();
@@ -210,7 +209,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
             Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Runnable()
             {
-                @Override
                 public void run()
                 {
                     // Decode buffer
@@ -457,7 +455,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _writtenBytes += buf.remaining();
         Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Runnable()
         {
-            @Override
             public void run()
             {
                 _networkDriver.send(buf);
@@ -925,7 +922,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return _dispatcher;
     }
 
-    @Override
     public void closed()
     {
         try
@@ -938,25 +934,21 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         }
     }
 
-    @Override
     public void readerIdle()
     {
         // Nothing
     }
 
-    @Override
     public void setNetworkDriver(NetworkDriver driver)
     {
         _networkDriver = driver;        
     }
 
-    @Override
     public void writerIdle()
     {
         _networkDriver.send(HeartbeatBody.FRAME.toNioByteBuffer());
     }
 
-    @Override
     public void exception(Throwable throwable)
     {
         if (throwable instanceof AMQProtocolHeaderException)
@@ -985,19 +977,16 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         }
     }
 
-    @Override
     public void init()
     {
         // Do nothing
     }
 
-    @Override
     public void setSender(Sender<ByteBuffer> sender)
     {
         // Do nothing
     }
     
-    @Override
     public long getReadBytes()
     {
         return _readBytes;
@@ -1023,7 +1012,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return (_clientVersion == null) ? null : _clientVersion.toString();
     }
 
-    @Override
     public void closeIfLingeringClosedChannels()
     {
         for (Entry<Integer, Long>id : _closingChannelsList.entrySet())

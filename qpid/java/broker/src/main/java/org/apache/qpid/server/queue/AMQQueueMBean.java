@@ -39,7 +39,6 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.message.ServerMessage;
 
 import javax.management.JMException;
-import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
 import javax.management.OperationsException;
@@ -72,12 +71,6 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private static final Logger _logger = Logger.getLogger(AMQQueueMBean.class);
 
     private static final SimpleDateFormat _dateFormat = new SimpleDateFormat("MM-dd-yy HH:mm:ss.SSS z");
-
-    /**
-     * Since the MBean is not associated with a real channel we can safely create our own store context
-     * for use in the few methods that require one.
-     */
-    private StoreContext _storeContext = new StoreContext();
 
     private AMQQueue _queue = null;
     private String _queueName = null;
@@ -301,14 +294,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
      */
     public void deleteMessageFromTop() throws JMException
     {
-        try
-        {
-            _queue.deleteMessageFromTop(_storeContext);
-        }
-        catch (AMQException ex)
-        {
-            throw new MBeanException(ex, ex.toString());
-        }
+        _queue.deleteMessageFromTop();
     }
 
     /**
@@ -319,14 +305,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
      */
     public Long clearQueue() throws JMException
     {
-        try
-        {
-            return _queue.clearQueue(_storeContext);
-        }
-        catch (AMQException ex)
-        {
-            throw new MBeanException(ex, ex.toString());
-        }
+        return _queue.clearQueue();
     }
 
     /**
@@ -438,14 +417,15 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             for (int i = 0; i < size ; i++)
             {
                 long position = startPosition + i;
-                ServerMessage serverMsg = list.get(i).getMessage();
+                final QueueEntry queueEntry = list.get(i);
+                ServerMessage serverMsg = queueEntry.getMessage();
                 if(serverMsg instanceof AMQMessage)
                 {
                     AMQMessage msg = (AMQMessage) serverMsg;
                     ContentHeaderBody headerBody = msg.getContentHeaderBody();
                     // Create header attributes list
                     String[] headerAttributes = getMessageHeaderProperties(headerBody);
-                    Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered(), position};
+                    Object[] itemValues = { msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position};
                     CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
                     _messageList.put(messageData);
                 }
@@ -509,7 +489,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, _storeContext);
+        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, new StoreContext());
     }
 
     /**
@@ -525,7 +505,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        _queue.removeMessagesFromQueue(fromMessageId, toMessageId, _storeContext);
+        _queue.removeMessagesFromQueue(fromMessageId, toMessageId);
     }
     
     /**
@@ -542,7 +522,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, _storeContext);
+        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, new StoreContext());
     }
     
     /**

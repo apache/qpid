@@ -421,7 +421,7 @@ public class ServerConfigurationTest extends TestCase
     {
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        assertEquals(0, serverConfig.getMaximumMessageCount());
+        assertEquals(0, serverConfig.getMaximumMessageCount());                                       
 
         // Check value we set
         _config.setProperty("maximumMessageCount", 10L);

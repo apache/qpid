@@ -21,8 +21,8 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.message.AMQMessageHeader;
 
 public class MockQueueEntry implements QueueEntry
 {
@@ -59,17 +59,17 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public void dequeue(StoreContext storeContext) throws FailedDequeueException
+    public void dequeue()
     {
 
     }
 
-    public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
+    public void discard()
     {
 
     }
 
-    public void dispose(StoreContext storeContext) throws MessageCleanupException
+    public void dispose()
     {
 
     }
@@ -154,7 +154,12 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
-    
+    public boolean releaseButRetain()
+    {
+        return false;
+    }
+
+
     public boolean removeStateChangeListener(StateChangeListener listener)
     {
 
@@ -162,7 +167,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
     
-    public void requeue(StoreContext storeContext) throws AMQException
+    public void requeue()
     {
 
 
@@ -185,6 +190,16 @@ public class MockQueueEntry implements QueueEntry
     {
 
 
+    }
+
+    public AMQMessageHeader getMessageHeader()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean isPersistent()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean isRedelivered()

@@ -25,19 +25,13 @@ import junit.framework.Assert;
 import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-
-import java.util.LinkedList;
 
 public class DestWildExchangeTest extends TestCase
 {
@@ -46,7 +40,6 @@ public class DestWildExchangeTest extends TestCase
 
     VirtualHost _vhost;
     MessageStore _store;
-    StoreContext _context;
 
     InternalTestProtocolSession _protocolSession;
 
@@ -56,7 +49,6 @@ public class DestWildExchangeTest extends TestCase
         _exchange = new TopicExchange();
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
         _store = new MemoryMessageStore();
-        _context = new StoreContext();
         _protocolSession = new InternalTestProtocolSession(_vhost);
     }
 
@@ -74,7 +66,7 @@ public class DestWildExchangeTest extends TestCase
 
         MessagePublishInfo info = new PublishInfo(new AMQShortString("a.b"));
 
-        IncomingMessage message = new IncomingMessage(0L, info, null, _protocolSession);
+        IncomingMessage message = new IncomingMessage(0L, info, _protocolSession);
 
         message.enqueue(_exchange.route(message));
 
@@ -89,33 +81,20 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.b");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has  route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a.c");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has no route and should fail to be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -129,52 +108,33 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.b");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has  route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a.c");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has route and should be routed");
-        }
+        int queueCount = routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has no route and should fail to be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+
+        queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -187,89 +147,56 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.b.c");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has route and should be routed");
-        }
+        int queueCount = routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a.b");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has route and should be routed");
-        }
+        queueCount = routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a.c");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has route and should be routed");
-        }
+        queueCount = routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
         message = createMessage("a");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has route and should be routed");
-        }
+        queueCount = routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("b");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has no route and should fail to be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+
+        queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -283,38 +210,24 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.c.d.b");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has no route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
         message = createMessage("a.c.b");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has no route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -327,66 +240,39 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.c.b.b");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a.a.b.c");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has no route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
         message = createMessage("a.b.c.b");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has  route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
         message = createMessage("a.b.c.b.c");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has no route and should be routed");
-
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -400,34 +286,21 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.c.b.b.c");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
 
         message = createMessage("a.a.b.c.d");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has no route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -440,33 +313,20 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.c.b.b.c");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
         message = createMessage("a.a.b.c.d");
 
-        try
-        {
-            routeMessage(message);
-        }
-        catch (AMQException nre)
-        {
-            fail("Message has no route and should be routed");
-        }
+        routeMessage(message);
 
         Assert.assertEquals(1, queue.getMessageCount());
 
-        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageId(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
+        Assert.assertEquals("Wrong message recevied", (Object) message.getMessageNumber(), queue.getMessagesOnTheQueue().get(0).getMessage().getMessageNumber());
 
-        queue.deleteMessageFromTop(_context);
+        queue.deleteMessageFromTop();
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
@@ -479,25 +339,24 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.b.c");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
     }
 
-    private void routeMessage(final IncomingMessage message)
+    private int routeMessage(final IncomingMessage message)
             throws AMQException
     {
         message.enqueue(_exchange.route(message));
         message.routingComplete(_store, new MessageHandleFactory());
-        message.deliverToQueues();
+        AMQMessage msg = new AMQMessage(message.getMessageHandle(), message.getContentHeader(), message.getSize(), message.getMessagePublishInfo());
+        for(AMQQueue q : message.getDestinationQueues())
+        {
+            q.enqueue(msg);
+        }
+        return message.getDestinationQueues().size();
     }
 
     public void testMoreRouting() throws AMQException
@@ -508,14 +367,8 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a.b.c");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -529,14 +382,8 @@ public class DestWildExchangeTest extends TestCase
 
         IncomingMessage message = createMessage("a");
 
-        try
-        {
-            routeMessage(message);
-            fail("Message has route and should not be routed");
-        }
-        catch (AMQException nre)
-        {
-        }
+        int queueCount = routeMessage(message);
+        Assert.assertEquals("Message should not route to any queues", 0, queueCount);
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -546,11 +393,7 @@ public class DestWildExchangeTest extends TestCase
     {
         MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
 
-        TransactionalContext trancontext = new NonTransactionalContext(_store, _context, null,
-                                                                       new LinkedList<RequiredDeliveryException>()
-        );
-
-        IncomingMessage message = new IncomingMessage(0L, info, trancontext,_protocolSession);
+        IncomingMessage message = new IncomingMessage(0L, info, _protocolSession);
         message.setContentHeaderBody( new ContentHeaderBody());
 
 

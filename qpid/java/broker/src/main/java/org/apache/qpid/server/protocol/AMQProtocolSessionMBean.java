@@ -227,7 +227,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
 
-            _protocolSession.commitTransactions(channel);
+            _protocolSession.rollbackTransactions(channel);
         }
         catch (AMQException ex)
         {

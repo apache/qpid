@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -30,7 +28,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -52,11 +49,11 @@ import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
-import org.apache.qpid.server.security.access.plugins.SimpleXML;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 
 import javax.management.NotCompliantMBeanException;
 import java.util.Collections;
@@ -228,17 +225,17 @@ public class VirtualHost implements Accessable
         // file and write them in to the new routing Table.
         for (StartupRoutingTable.CreateQueueTuple cqt : configFileRT.queue)
         {
-            _messageStore.createQueue(cqt.queue, cqt.arguments);
+            getDurableConfigurationStore().createQueue(cqt.queue, cqt.arguments);
         }
 
         for (Exchange exchange : configFileRT.exchange)
         {
-            _messageStore.createExchange(exchange);
+            getDurableConfigurationStore().createExchange(exchange);
         }
 
         for (StartupRoutingTable.CreateBindingTuple cbt : configFileRT.bindings)
         {
-            _messageStore.bindQueue(cbt.exchange, cbt.routingKey, cbt.queue, cbt.arguments);
+            getDurableConfigurationStore().bindQueue(cbt.exchange, cbt.routingKey, cbt.queue, cbt.arguments);
         }
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(_name, hostConfig);
@@ -352,7 +349,7 @@ public class VirtualHost implements Accessable
 
     	if (queue.isDurable())
     	{
-    		_messageStore.createQueue(queue);
+    		getDurableConfigurationStore().createQueue(queue);
     	}
 
     	String exchangeName = queueConfiguration.getExchange();
@@ -412,6 +409,11 @@ public class VirtualHost implements Accessable
     }
 
     public MessageStore getMessageStore()
+    {
+        return _messageStore;
+    }
+
+    public DurableConfigurationStore getDurableConfigurationStore()
     {
         return _messageStore;
     }
@@ -487,7 +489,7 @@ public class VirtualHost implements Accessable
         {
         }
 
-        public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
+        public void removeMessage(Long messageId) throws AMQException
         {
             //To change body of implemented methods use File | Settings | File Templates.
         }
@@ -553,6 +555,24 @@ public class VirtualHost implements Accessable
             //To change body of implemented methods use File | Settings | File Templates.
         }
 
+        public StoreFuture commitTranAsync(StoreContext context) throws AMQException
+        {
+            commitTran(context);
+            return new StoreFuture() 
+                        {
+                            public boolean isComplete()
+                            {
+                                return true;
+                            }
+
+                            public void waitForCompletion()
+                            {
+
+                            }
+                        };
+
+        }
+
         public void abortTran(StoreContext context) throws AMQException
         {
             //To change body of implemented methods use File | Settings | File Templates.
@@ -568,22 +588,26 @@ public class VirtualHost implements Accessable
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
+        public void storeContentBodyChunk(
+                Long messageId,
+                int index,
+                ContentChunk contentBody,
+                boolean lastContentBody) throws AMQException
         {
             //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException
+        public void storeMessageMetaData(Long messageId, MessageMetaData messageMetaData) throws AMQException
         {
             //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
+        public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
+        public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
         {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }

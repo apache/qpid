@@ -199,7 +199,7 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
     

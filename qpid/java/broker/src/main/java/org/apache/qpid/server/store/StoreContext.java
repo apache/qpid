@@ -32,8 +32,6 @@ public class StoreContext
 {
     private static final Logger _logger = Logger.getLogger(StoreContext.class);
 
-    private static final ThreadLocal<StoreContext> _threadLocalContext = new ThreadLocal<StoreContext>();
-
     private String _name;
     private Object _payload;
 
@@ -71,24 +69,5 @@ public class StoreContext
     {
         return "<_name = " + _name + ", _payload = " + _payload + ">";
     }
-
-
-    public static StoreContext setCurrentContext(StoreContext context)
-    {
-        StoreContext sc = getCurrentContext();
-        _threadLocalContext.set(context);
-        return sc;
-    }
-
-    public static StoreContext getCurrentContext()
-    {
-        return _threadLocalContext.get();
-    }
-
-    public static void clearCurrentContext()
-    {
-        _threadLocalContext.set(null);
-    }
-
 
 }

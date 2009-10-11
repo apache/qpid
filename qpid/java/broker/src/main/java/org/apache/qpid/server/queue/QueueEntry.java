@@ -1,9 +1,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.message.ServerMessage;
 
 /*
@@ -26,10 +24,8 @@ import org.apache.qpid.server.message.ServerMessage;
 * under the License.
 *
 */
-public interface QueueEntry extends Comparable<QueueEntry>
+public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 {
-
-
 
     public static enum State
     {
@@ -37,7 +33,9 @@ public interface QueueEntry extends Comparable<QueueEntry>
         ACQUIRED,
         EXPIRED,
         DEQUEUED,
-        DELETED
+        DELETED;
+
+
     }
 
     public static interface StateChangeListener
@@ -123,6 +121,27 @@ public interface QueueEntry extends Comparable<QueueEntry>
         }
     }
 
+    public final class SubscriptionAssignedState extends EntryState
+    {
+        private final Subscription _subscription;
+
+        public SubscriptionAssignedState(Subscription subscription)
+        {
+            _subscription = subscription;
+        }
+
+
+        public State getState()
+        {
+            return State.AVAILABLE;
+        }
+
+        public Subscription getSubscription()
+        {
+            return _subscription;
+        }
+    }
+
 
     final static EntryState AVAILABLE_STATE = new AvailableState();
     final static EntryState DELETED_STATE = new DeletedState();
@@ -154,9 +173,9 @@ public interface QueueEntry extends Comparable<QueueEntry>
     boolean acquiredBySubscription();
     boolean isAcquiredBy(Subscription subscription);
 
-    void setDeliveredToSubscription();
-
     void release();
+    boolean releaseButRetain();
+
 
     boolean immediateAndNotDelivered();
 
@@ -172,15 +191,13 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     boolean isRejectedBy(Subscription subscription);
 
-    void requeue(StoreContext storeContext) throws AMQException;
-
     void requeue(Subscription subscription);
 
-    void dequeue(final StoreContext storeContext) throws FailedDequeueException;
+    void dequeue();
 
-    void dispose(final StoreContext storeContext) throws MessageCleanupException;
+    void dispose();
 
-    void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException;
+    void discard();
 
     boolean isQueueDeleted();
 

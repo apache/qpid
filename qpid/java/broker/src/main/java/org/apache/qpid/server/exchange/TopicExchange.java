@@ -535,7 +535,7 @@ public class TopicExchange extends AbstractExchange
         return normalizedString;
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
         final AMQShortString routingKey = payload.getRoutingKey() == null

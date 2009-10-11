@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
@@ -30,8 +29,7 @@ public class MockAMQMessage extends AMQMessage
             throws AMQException
     {
        super(new MockAMQMessageHandle(messageId) ,
-                (StoreContext)null,
-                (MessagePublishInfo)new MockMessagePublishInfo());
+             (MessagePublishInfo)new MockMessagePublishInfo());
     }
 
     protected MockAMQMessage(AMQMessage msg)

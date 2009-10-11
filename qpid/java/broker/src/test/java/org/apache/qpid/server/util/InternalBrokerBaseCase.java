@@ -41,12 +41,10 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.MockChannel;
 
-import java.security.Principal;
 
 public class InternalBrokerBaseCase extends TestCase
 {
@@ -55,7 +53,6 @@ public class InternalBrokerBaseCase extends TestCase
     protected MockChannel _channel;
     protected InternalTestProtocolSession _session;
     protected VirtualHost _virtualHost;
-    protected StoreContext _storeContext = new StoreContext();
     protected AMQQueue _queue;
     protected AMQShortString QUEUE_NAME;
 

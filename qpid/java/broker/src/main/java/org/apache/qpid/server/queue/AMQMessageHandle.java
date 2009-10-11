@@ -22,7 +22,6 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
@@ -32,7 +31,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
  */
 public interface AMQMessageHandle
 {
-    ContentHeaderBody getContentHeaderBody(StoreContext context) throws AMQException;
+    ContentHeaderBody getContentHeaderBody() throws AMQException;
 
     /**
      *
@@ -44,12 +43,12 @@ public interface AMQMessageHandle
     /**
      * @return the number of body frames associated with this message
      */
-    int getBodyCount(StoreContext context) throws AMQException;
+    int getBodyCount() throws AMQException;
 
     /**
      * @return the size of the body
      */
-    long getBodySize(StoreContext context) throws AMQException;
+    long getBodySize() throws AMQException;
 
     /**
      * Get a particular content body
@@ -57,23 +56,18 @@ public interface AMQMessageHandle
      * @return a content body
      * @throws IllegalArgumentException if the index is invalid
      */
-    ContentChunk getContentChunk(StoreContext context, int index) throws IllegalArgumentException, AMQException;
+    ContentChunk getContentChunk(int index) throws IllegalArgumentException, AMQException;
 
-    void addContentBodyFrame(StoreContext storeContext, ContentChunk contentBody, boolean isLastContentBody) throws AMQException;
+    void addContentBodyFrame(ContentChunk contentBody, boolean isLastContentBody) throws AMQException;
 
-    MessagePublishInfo getMessagePublishInfo(StoreContext context) throws AMQException;
-
-    boolean isRedelivered();
-
-    void setRedelivered(boolean redelivered);
+    MessagePublishInfo getMessagePublishInfo() throws AMQException;
 
     boolean isPersistent();
 
-    void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo,
-                                        ContentHeaderBody contentHeaderBody)
-            throws AMQException;
+    MessageMetaData setPublishAndContentHeaderBody(MessagePublishInfo messagePublishInfo,
+                                                   ContentHeaderBody contentHeaderBody);
 
-    void removeMessage(StoreContext storeContext) throws AMQException;    
+    void removeMessage() throws AMQException;
 
     long getArrivalTime();
 }

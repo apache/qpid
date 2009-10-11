@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.server.store.StoreContext;
 
 /**
  */
@@ -42,8 +40,6 @@ public class InMemoryMessageHandle implements AMQMessageHandle
 
     private List<ContentChunk> _contentBodies;
 
-    private boolean _redelivered;
-
     private long _arrivalTime;
 
     private final Long _messageId;
@@ -53,7 +49,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         _messageId = messageId;
     }
 
-    public ContentHeaderBody getContentHeaderBody(StoreContext context) throws AMQException
+    public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
         return _contentHeaderBody;
     }
@@ -63,17 +59,17 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _messageId;
     }
 
-    public int getBodyCount(StoreContext context)
+    public int getBodyCount()
     {
         return _contentBodies.size();
     }
 
-    public long getBodySize(StoreContext context) throws AMQException
+    public long getBodySize() throws AMQException
     {
-        return getContentHeaderBody(context).bodySize;
+        return getContentHeaderBody().bodySize;
     }
 
-    public ContentChunk getContentChunk(StoreContext context, int index) throws AMQException, IllegalArgumentException
+    public ContentChunk getContentChunk(int index) throws AMQException, IllegalArgumentException
     {
         if (index > _contentBodies.size() - 1)
         {
@@ -83,7 +79,7 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         return _contentBodies.get(index);
     }
 
-    public void addContentBodyFrame(StoreContext storeContext, ContentChunk contentBody, boolean isLastContentBody)
+    public void addContentBodyFrame(ContentChunk contentBody, boolean isLastContentBody)
             throws AMQException
     {
         if(_contentBodies == null)
@@ -104,20 +100,9 @@ public class InMemoryMessageHandle implements AMQMessageHandle
         }
     }
 
-    public MessagePublishInfo getMessagePublishInfo(StoreContext context) throws AMQException
+    public MessagePublishInfo getMessagePublishInfo() throws AMQException
     {
         return _messagePublishInfo;
-    }
-
-    public boolean isRedelivered()
-    {
-        return _redelivered;
-    }
-
-
-    public void setRedelivered(boolean redelivered)
-    {
-        _redelivered = redelivered;
     }
 
     public boolean isPersistent()
@@ -131,9 +116,8 @@ public class InMemoryMessageHandle implements AMQMessageHandle
      * @param contentHeaderBody
      * @throws AMQException
      */
-    public void setPublishAndContentHeaderBody(StoreContext storeContext, MessagePublishInfo messagePublishInfo,
-                                               ContentHeaderBody contentHeaderBody)
-            throws AMQException
+    public MessageMetaData setPublishAndContentHeaderBody(MessagePublishInfo messagePublishInfo,
+                                                          ContentHeaderBody contentHeaderBody)
     {
         _messagePublishInfo = messagePublishInfo;
         _contentHeaderBody = contentHeaderBody;
@@ -142,9 +126,11 @@ public class InMemoryMessageHandle implements AMQMessageHandle
             _contentBodies = Collections.EMPTY_LIST;
         }
         _arrivalTime = System.currentTimeMillis();
+        MessageMetaData mmd = new MessageMetaData(messagePublishInfo, contentHeaderBody, _contentBodies == null ? 0 : _contentBodies.size(), _arrivalTime);
+        return mmd;
     }
 
-    public void removeMessage(StoreContext storeContext) throws AMQException
+    public void removeMessage() throws AMQException
     {
         // NO OP
     }

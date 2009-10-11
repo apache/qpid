@@ -43,12 +43,10 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.StoreContext;
 
 /**
  * Encapsulation of a supscription to a queue. <p/> Ties together the protocol session of a subscriber, the consumer tag
@@ -73,7 +71,9 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final ClientDeliveryMethod _deliveryMethod;
     private final RecordDeliveryMethod _recordMethod;
 
-    private QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
+
     private final Lock _stateChangeLock;
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
@@ -81,6 +81,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final long _subscriptionID = idGenerator.getAndIncrement();
     private LogSubject _logSubject;
     private LogActor _logActor;
+
 
     static final class BrowserSubscription extends SubscriptionImpl
     {
@@ -157,38 +158,28 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         @Override
         public void send(QueueEntry entry) throws AMQException
         {
+            // if we do not need to wait for client acknowledgements
+            // we can decrement the reference count immediately.
 
-            StoreContext storeContext = getChannel().getStoreContext();
-            try
-            { // if we do not need to wait for client acknowledgements
-                // we can decrement the reference count immediately.
+            // By doing this _before_ the send we ensure that it
+            // doesn't get sent if it can't be dequeued, preventing
+            // duplicate delivery on recovery.
 
-                // By doing this _before_ the send we ensure that it
-                // doesn't get sent if it can't be dequeued, preventing
-                // duplicate delivery on recovery.
-
-                // The send may of course still fail, in which case, as
-                // the message is unacked, it will be lost.
-                entry.dequeue(storeContext);
+            // The send may of course still fail, in which case, as
+            // the message is unacked, it will be lost.
+            entry.dequeue();
 
 
-                synchronized (getChannel())
-                {
-                    long deliveryTag = getChannel().getNextDeliveryTag();
-
-                    sendToClient(entry, deliveryTag);
-
-                }
-                entry.dispose(storeContext);
-            }
-            finally
+            synchronized (getChannel())
             {
-                //Only set delivered if it actually was writen successfully..
-                // using a try->finally would set it even if an error occured.
-                // Is this what we want?
+                long deliveryTag = getChannel().getNextDeliveryTag();
 
-                entry.setDeliveredToSubscription();
+                sendToClient(entry, deliveryTag);
+
             }
+            entry.dispose();
+
+
         }
 
         @Override
@@ -229,37 +220,28 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         public void send(QueueEntry entry) throws AMQException
         {
 
-            try
-            { // if we do not need to wait for client acknowledgements
-                // we can decrement the reference count immediately.
+            // if we do not need to wait for client acknowledgements
+            // we can decrement the reference count immediately.
 
-                // By doing this _before_ the send we ensure that it
-                // doesn't get sent if it can't be dequeued, preventing
-                // duplicate delivery on recovery.
+            // By doing this _before_ the send we ensure that it
+            // doesn't get sent if it can't be dequeued, preventing
+            // duplicate delivery on recovery.
 
-                // The send may of course still fail, in which case, as
-                // the message is unacked, it will be lost.
+            // The send may of course still fail, in which case, as
+            // the message is unacked, it will be lost.
 
-                synchronized (getChannel())
-                {
-                    long deliveryTag = getChannel().getNextDeliveryTag();
-
-
-                    recordMessageDelivery(entry, deliveryTag);
-                    sendToClient(entry, deliveryTag);
-
-
-                }
-            }
-            finally
+            synchronized (getChannel())
             {
-                //Only set delivered if it actually was writen successfully..
-                // using a try->finally would set it even if an error occured.
-                // Is this what we want?
+                long deliveryTag = getChannel().getNextDeliveryTag();
 
-                entry.setDeliveredToSubscription();
+
+                recordMessageDelivery(entry, deliveryTag);
+                sendToClient(entry, deliveryTag);
+
+
             }
         }
+
 
 
     }
@@ -452,29 +434,14 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             //todo - client id should be recorded so we don't have to handle
             // the case where this is null.
-            final Object publisherId = message.getPublisherClientInstance();
+            final Object publisher = message.getPublisherIdentifier();
 
             // We don't want local messages so check to see if message is one we sent
-            Object localInstance;
+            Object localInstance = getProtocolSession();
 
-            if (publisherId != null && (getProtocolSession().getClientProperties() != null) &&
-                (localInstance = getProtocolSession().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+            if(publisher.equals(localInstance))
             {
-                if(publisherId.equals(localInstance))
-                {
-                    return false;
-                }
-            }
-            else
-            {
-
-                localInstance = getProtocolSession().getClientIdentifier();
-
-                //todo - client id should be recorded so we don't have to do the null check
-                if (localInstance != null && localInstance.equals(message.getPublisherIdentifier()))
-                {
-                    return false;
-                }
+                return false;
             }
 
 
@@ -498,7 +465,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private boolean checkFilters(QueueEntry msg)
     {
-        return (_filters == null) || _filters.allAllow(msg.getMessage());
+        return (_filters == null) || _filters.allAllow(msg);
     }
 
     public boolean isAutoClose()
@@ -677,6 +644,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return _owningState;
     }
+
+    public QueueEntry.SubscriptionAssignedState getAssignedState()
+    {
+        return _assignedState;
+    }
+
 
     public void confirmAutoClose()
     {

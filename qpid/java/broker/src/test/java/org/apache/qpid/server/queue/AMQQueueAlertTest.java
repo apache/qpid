@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-
-import javax.management.Notification;
-
 import junit.framework.TestCase;
-
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -34,7 +28,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
@@ -42,12 +35,12 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
-import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.Notification;
+import java.util.ArrayList;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
@@ -61,11 +54,6 @@ public class AMQQueueAlertTest extends TestCase
     private VirtualHost _virtualHost;
     private AMQProtocolEngine _protocolSession;
     private MessageStore _messageStore = new MemoryMessageStore();
-    private StoreContext _storeContext = new StoreContext();
-    private TransactionalContext _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
-                                                                                     null,
-                                                                                     new LinkedList<RequiredDeliveryException>()
-    );
     private static final SubscriptionFactoryImpl SUBSCRIPTION_FACTORY = SubscriptionFactoryImpl.INSTANCE;
 
     /**
@@ -75,6 +63,10 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testMessageCountAlert() throws Exception
     {
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
+        _protocolSession.addChannel(channel);
+
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue1"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost,
                               null);
@@ -82,7 +74,7 @@ public class AMQQueueAlertTest extends TestCase
 
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
 
-        sendMessages(MAX_MESSAGE_COUNT, 256l);
+        sendMessages(channel, MAX_MESSAGE_COUNT, 256l);
         assertTrue(_queueMBean.getMessageCount() == MAX_MESSAGE_COUNT);
 
         Notification lastNotification = _queueMBean.getLastNotification();
@@ -99,6 +91,10 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testMessageSizeAlert() throws Exception
     {
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
+        _protocolSession.addChannel(channel);
+
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue2"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost,
                               null);
@@ -106,7 +102,7 @@ public class AMQQueueAlertTest extends TestCase
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageSize(MAX_MESSAGE_SIZE);
 
-        sendMessages(1, MAX_MESSAGE_SIZE * 2);
+        sendMessages(channel, 1, MAX_MESSAGE_SIZE * 2);
         assertTrue(_queueMBean.getMessageCount() == 1);
 
         Notification lastNotification = _queueMBean.getLastNotification();
@@ -125,6 +121,10 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testQueueDepthAlertNoSubscriber() throws Exception
     {
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
+        _protocolSession.addChannel(channel);
+
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue3"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost,
                               null);
@@ -134,7 +134,7 @@ public class AMQQueueAlertTest extends TestCase
 
         while (_queue.getQueueDepth() < MAX_QUEUE_DEPTH)
         {
-            sendMessages(1, MAX_MESSAGE_SIZE);
+            sendMessages(channel, 1, MAX_MESSAGE_SIZE);
         }
 
         Notification lastNotification = _queueMBean.getLastNotification();
@@ -154,6 +154,10 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testMessageAgeAlert() throws Exception
     {
+        _protocolSession = new InternalTestProtocolSession(_virtualHost);
+        AMQChannel channel = new AMQChannel(_protocolSession, 2, _messageStore);
+        _protocolSession.addChannel(channel);
+
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue4"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost,
                               null);
@@ -161,7 +165,7 @@ public class AMQQueueAlertTest extends TestCase
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
         _queueMBean.setMaximumMessageAge(MAX_MESSAGE_AGE);
 
-        sendMessages(1, MAX_MESSAGE_SIZE);
+        sendMessages(channel, 1, MAX_MESSAGE_SIZE);
 
         // Ensure message sits on queue long enough to age.
         Thread.sleep(MAX_MESSAGE_AGE * 2);
@@ -201,7 +205,7 @@ public class AMQQueueAlertTest extends TestCase
         // Send messages(no of message to be little more than what can cause a Queue_Depth alert)
         int messageCount = Math.round(MAX_QUEUE_DEPTH / MAX_MESSAGE_SIZE) + 10;
         long totalSize = (messageCount * MAX_MESSAGE_SIZE);
-        sendMessages(messageCount, MAX_MESSAGE_SIZE);
+        sendMessages(channel, messageCount, MAX_MESSAGE_SIZE);
 
         // Check queueDepth. There should be no messages on the queue and as the subscriber is listening
         // so there should be no Queue_Deoth alert raised
@@ -281,7 +285,7 @@ public class AMQQueueAlertTest extends TestCase
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = size;   // in bytes
-        IncomingMessage message = new IncomingMessage(_messageStore.getNewMessageId(), publish, _transactionalContext, _protocolSession);
+        IncomingMessage message = new IncomingMessage(_messageStore.getNewMessageId(), publish, _protocolSession);
         message.setContentHeaderBody(contentHeaderBody);
 
         return message;
@@ -305,7 +309,7 @@ public class AMQQueueAlertTest extends TestCase
     }
 
 
-    private void sendMessages(long messageCount, final long size) throws AMQException
+    private void sendMessages(AMQChannel channel, long messageCount, final long size) throws AMQException
     {
         IncomingMessage[] messages = new IncomingMessage[(int) messageCount];
         for (int i = 0; i < messages.length; i++)
@@ -339,7 +343,11 @@ public class AMQQueueAlertTest extends TestCase
                     
                 }
             });
-            messages[i].deliverToQueues();
+            _queue.enqueue(new AMQMessage(messages[i].getMessageHandle(),
+                                          messages[i].getContentHeader(),
+                                          messages[i].getSize(),
+                                          messages[i].getMessagePublishInfo()));
+
         }
     }
 

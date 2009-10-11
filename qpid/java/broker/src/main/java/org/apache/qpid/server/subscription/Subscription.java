@@ -46,6 +46,8 @@ public interface Subscription
     AMQQueue getQueue();
 
     QueueEntry.SubscriptionAcquiredState getOwningState();
+    QueueEntry.SubscriptionAssignedState getAssignedState();
+
 
     void setQueue(AMQQueue queue, boolean exclusive);
 

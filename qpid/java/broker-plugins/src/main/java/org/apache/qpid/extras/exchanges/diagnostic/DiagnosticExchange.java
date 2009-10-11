@@ -197,7 +197,7 @@ public class DiagnosticExchange extends AbstractExchange
         return false;
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
         
         Long value = new Long(SizeOf.getUsedMemory());

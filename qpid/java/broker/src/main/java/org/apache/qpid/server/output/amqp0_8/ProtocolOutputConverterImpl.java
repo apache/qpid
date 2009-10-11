@@ -29,7 +29,7 @@ package org.apache.qpid.server.output.amqp0_8;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQMessageHandle;
-import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.ContentChunk;
@@ -41,6 +41,7 @@ import java.util.Iterator;
 public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 {
 
+    private final MethodRegistry _methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
 
     public static Factory getInstanceFactory()
     {
@@ -67,18 +68,17 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return _protocolSession;
     }
 
-    public void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
+    public void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
-        AMQDataBlock deliver = createEncodedDeliverFrame(message, channelId, deliveryTag, consumerTag);
+        AMQMessage message = (AMQMessage) entry.getMessage();
+        AMQDataBlock deliver = createEncodedDeliverFrame(entry, channelId, deliveryTag, consumerTag);
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());
 
         final AMQMessageHandle messageHandle = message.getMessageHandle();
-        final StoreContext storeContext = message.getStoreContext();
 
-
-        final int bodyCount = messageHandle.getBodyCount(storeContext);
+        final int bodyCount = messageHandle.getBodyCount();
 
         if(bodyCount == 0)
         {
@@ -95,7 +95,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
+            ContentChunk cb = messageHandle.getContentChunk(0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -107,7 +107,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext, i);
+                cb = messageHandle.getContentChunk(i);
                 writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
@@ -118,19 +118,19 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
 
-    public void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException
+    public void writeGetOk(QueueEntry entry, int channelId, long deliveryTag, int queueSize) throws AMQException
     {
 
+        final AMQMessage message = (AMQMessage) entry.getMessage();
         final AMQMessageHandle messageHandle = message.getMessageHandle();
-        final StoreContext storeContext = message.getStoreContext();
 
-        AMQDataBlock deliver = createEncodedGetOkFrame(message, channelId, deliveryTag, queueSize);
+        AMQDataBlock deliver = createEncodedGetOkFrame(entry, channelId, deliveryTag, queueSize);
 
 
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
                                                                       message.getContentHeaderBody());
 
-        final int bodyCount = messageHandle.getBodyCount(storeContext);
+        final int bodyCount = messageHandle.getBodyCount();
         if(bodyCount == 0)
         {
             SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
@@ -145,7 +145,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             // Optimise the case where we have a single content body. In that case we create a composite block
             // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
             //
-            ContentChunk cb = messageHandle.getContentChunk(storeContext, 0);
+            ContentChunk cb = messageHandle.getContentChunk(0);
 
             AMQDataBlock firstContentBody = new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
             AMQDataBlock[] blocks = new AMQDataBlock[]{deliver, contentHeader, firstContentBody};
@@ -157,7 +157,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             //
             for(int i = 1; i < bodyCount; i++)
             {
-                cb = messageHandle.getContentChunk(storeContext, i);
+                cb = messageHandle.getContentChunk(i);
                 writeFrame(new AMQFrame(channelId, getProtocolSession().getMethodRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
             }
 
@@ -168,17 +168,17 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     }
 
 
-    private AMQDataBlock createEncodedDeliverFrame(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
+    private AMQDataBlock createEncodedDeliverFrame(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
+        final AMQMessage message = (AMQMessage) entry.getMessage();
         final MessagePublishInfo pb = message.getMessagePublishInfo();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
 
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
+
         BasicDeliverBody deliverBody =
-                methodRegistry.createBasicDeliverBody(consumerTag,
+                _methodRegistry.createBasicDeliverBody(consumerTag,
                                                       deliveryTag,
-                                                      messageHandle.isRedelivered(),
+                                                      entry.isRedelivered(),
                                                       pb.getExchange(),
                                                       pb.getRoutingKey());
         AMQFrame deliverFrame = deliverBody.generateFrame(channelId);
@@ -187,16 +187,15 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return deliverFrame;
     }
 
-    private AMQDataBlock createEncodedGetOkFrame(AMQMessage message, int channelId, long deliveryTag, int queueSize)
+    private AMQDataBlock createEncodedGetOkFrame(QueueEntry entry, int channelId, long deliveryTag, int queueSize)
             throws AMQException
     {
+        final AMQMessage message = (AMQMessage) entry.getMessage();
         final MessagePublishInfo pb = message.getMessagePublishInfo();
-        final AMQMessageHandle messageHandle = message.getMessageHandle();
 
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
         BasicGetOkBody getOkBody =
-                methodRegistry.createBasicGetOkBody(deliveryTag,
-                                                    messageHandle.isRedelivered(),
+                _methodRegistry.createBasicGetOkBody(deliveryTag,
+                                                    entry.isRedelivered(),
                                                     pb.getExchange(),
                                                     pb.getRoutingKey(),
                                                     queueSize);
@@ -215,28 +214,33 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return getProtocolSession().getProtocolMajorVersion();
     }
 
-    private AMQDataBlock createEncodedReturnFrame(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
+    private AMQDataBlock createEncodedReturnFrame(MessagePublishInfo messagePublishInfo, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
         BasicReturnBody basicReturnBody =
-                methodRegistry.createBasicReturnBody(replyCode,
+                _methodRegistry.createBasicReturnBody(replyCode,
                                                      replyText,
-                                                     message.getMessagePublishInfo().getExchange(),
-                                                     message.getMessagePublishInfo().getRoutingKey());
+                                                     messagePublishInfo.getExchange(),
+                                                     messagePublishInfo.getRoutingKey());
         AMQFrame returnFrame = basicReturnBody.generateFrame(channelId);
 
         return returnFrame;
     }
 
-    public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText)
+    public void writeReturn(MessagePublishInfo messagePublishInfo,
+                            ContentHeaderBody header,
+                            Iterator<AMQDataBlock> bodyFrameIterator,
+                            int channelId,
+                            int replyCode,
+                            AMQShortString replyText)
             throws AMQException
     {
-        AMQDataBlock returnFrame = createEncodedReturnFrame(message, channelId, replyCode, replyText);
+
+        AMQDataBlock returnFrame = createEncodedReturnFrame(messagePublishInfo, channelId, replyCode, replyText);
 
         AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
-                                                                      message.getContentHeaderBody());
+                                                                      header);
 
-        Iterator<AMQDataBlock> bodyFrameIterator = message.getBodyFrameIterator(getProtocolSession(), channelId);
+
         //
         // Optimise the case where we have a single content body. In that case we create a composite block
         // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
@@ -274,8 +278,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     public void confirmConsumerAutoClose(int channelId, AMQShortString consumerTag)
     {
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
-        BasicCancelOkBody basicCancelOkBody = methodRegistry.createBasicCancelOkBody(consumerTag);
+        BasicCancelOkBody basicCancelOkBody = _methodRegistry.createBasicCancelOkBody(consumerTag);
         writeFrame(basicCancelOkBody.generateFrame(channelId));
 
     }

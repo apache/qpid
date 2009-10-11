@@ -82,6 +82,6 @@ public abstract class RequiredDeliveryException extends AMQException
 
     public void release()
     {
-        _amqMessage.release();
+        //_amqMessage.release();
     }
 }

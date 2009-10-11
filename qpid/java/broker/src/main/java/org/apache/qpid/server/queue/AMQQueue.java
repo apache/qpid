@@ -26,11 +26,11 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
@@ -57,6 +57,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     AMQShortString getOwner();
     PrincipalHolder getPrincipalHolder();
     void setPrincipalHolder(PrincipalHolder principalHolder);
+
+    void setExclusiveOwner(Object owner);
+    Object getExclusiveOwner();
 
     VirtualHost getVirtualHost();
 
@@ -100,11 +103,11 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     QueueEntry enqueue(ServerMessage message) throws AMQException;
 
-    void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
+    void requeue(QueueEntry entry);
 
     void requeue(QueueEntryImpl storeContext, Subscription subscription);
 
-    void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
+    void dequeue(QueueEntry entry);
 
 
 
@@ -142,7 +145,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext);
 
-    void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext);
+    void removeMessagesFromQueue(long fromMessageId, long toMessageId);
 
 
 
@@ -182,9 +185,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
 
 
-    void deleteMessageFromTop(StoreContext storeContext) throws AMQException;
+    void deleteMessageFromTop();
 
-    long clearQueue(StoreContext storeContext) throws AMQException;
+    long clearQueue();
 
     /**
      * Checks the status of messages on the queue, purging expired ones, firing age related alerts etc.

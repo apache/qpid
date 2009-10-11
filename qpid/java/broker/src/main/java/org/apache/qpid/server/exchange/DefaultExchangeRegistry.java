@@ -25,7 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Collection;
@@ -61,9 +61,9 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return getExchange(new AMQShortString(exchangeName));
     }
 
-    public MessageStore getMessageStore()
+    public DurableConfigurationStore getDurableConfigurationStore()
     {
-        return _host.getMessageStore();
+        return _host.getDurableConfigurationStore();
     }
 
     public void registerExchange(Exchange exchange) throws AMQException
@@ -71,7 +71,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _exchangeMap.put(exchange.getName(), exchange);
         if (exchange.isDurable())
         {
-            getMessageStore().createExchange(exchange);
+            getDurableConfigurationStore().createExchange(exchange);
         }
     }
 
@@ -98,7 +98,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             if (e.isDurable())
             {
-                getMessageStore().removeExchange(e);
+                getDurableConfigurationStore().removeExchange(e);
             }
             e.close();
         }

@@ -23,25 +23,19 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
-import org.apache.commons.configuration.Configuration;
 
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedList;
 
 public class MockAMQQueue implements AMQQueue
 {
@@ -50,6 +44,8 @@ public class MockAMQQueue implements AMQQueue
     private VirtualHost _virtualhost;
 
     private PrincipalHolder _principalHolder;
+
+    private Object _exclusiveOwner;
 
     public MockAMQQueue(String name)
     {
@@ -171,7 +167,7 @@ public class MockAMQQueue implements AMQQueue
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException
+    public void requeue(QueueEntry entry)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -181,7 +177,7 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException
+    public void dequeue(QueueEntry entry)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -236,7 +232,7 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext)
+    public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -295,12 +291,12 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void deleteMessageFromTop(StoreContext storeContext) throws AMQException
+    public void deleteMessageFromTop()
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public long clearQueue(StoreContext storeContext) throws AMQException
+    public long clearQueue()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -398,5 +394,16 @@ public class MockAMQQueue implements AMQQueue
     {
         _principalHolder = principalHolder;
     }
+
+    public Object getExclusiveOwner()
+    {
+        return _exclusiveOwner;
+    }
+
+    public void setExclusiveOwner(Object exclusiveOwner)
+    {
+        _exclusiveOwner = exclusiveOwner;
+    }
+
 
 }

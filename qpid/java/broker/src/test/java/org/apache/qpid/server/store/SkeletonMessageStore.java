@@ -55,7 +55,7 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
 
-    public void removeMessage(StoreContext s, Long messageId)
+    public void removeMessage(Long messageId)
     {
     }
 
@@ -100,6 +100,23 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
 
+    public StoreFuture commitTranAsync(StoreContext context) throws AMQException
+    {
+        commitTran(context);
+        return new StoreFuture() 
+                    {
+                        public boolean isComplete()
+                        {
+                            return true;
+                        }
+
+                        public void waitForCompletion()
+                        {
+
+                        }
+                    };
+    }
+
     public void abortTran(StoreContext storeContext) throws AMQException
     {
     }
@@ -114,22 +131,26 @@ public class SkeletonMessageStore implements MessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext sc, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
+    public void storeContentBodyChunk(
+            Long messageId,
+            int index,
+            ContentChunk contentBody,
+            boolean lastContentBody) throws AMQException
     {
 
     }
 
-    public void storeMessageMetaData(StoreContext sc, Long messageId, MessageMetaData messageMetaData) throws AMQException
+    public void storeMessageMetaData(Long messageId, MessageMetaData messageMetaData) throws AMQException
     {
 
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext s,Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
     {
         return null;
     }
 
-    public ContentChunk getContentBodyChunk(StoreContext s,Long messageId, int index) throws AMQException
+    public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
     {
         return null;
     }

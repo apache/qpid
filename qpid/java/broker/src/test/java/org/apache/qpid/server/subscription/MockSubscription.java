@@ -47,6 +47,10 @@ public class MockSubscription implements Subscription
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();
 
+    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
+
+
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
     private final long _subscriptionID = idGenerator.getAndIncrement();
@@ -88,7 +92,12 @@ public class MockSubscription implements Subscription
 
     public SubscriptionAcquiredState getOwningState()
     {
-        return new QueueEntry.SubscriptionAcquiredState(this);
+        return _owningState;
+    }
+
+    public QueueEntry.SubscriptionAssignedState getAssignedState()
+    {
+        return _assignedState;
     }
 
     public LogActor getLogActor()

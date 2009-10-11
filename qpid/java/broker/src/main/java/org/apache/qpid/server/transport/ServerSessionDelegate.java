@@ -31,17 +31,11 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.flow.*;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
-import org.apache.qpid.AMQInvalidRoutingKeyException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.*;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Collection;
 
 public class ServerSessionDelegate extends SessionDelegate
@@ -218,25 +212,16 @@ public class ServerSessionDelegate extends SessionDelegate
             delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
         }
 
-        try
+        ArrayList<AMQQueue> queues = exchange.route(message);
+
+
+
+        if(queues != null)
         {
-            ArrayList<AMQQueue> queues = exchange.route(message);
-
-
-
-            if(queues != null)
-            {
-                ((ServerSession) ssn).enqueue(message, queues);
-            }
-
-            ssn.processed(xfr);
+            ((ServerSession) ssn).enqueue(message, queues);
         }
-        catch (AMQException e)
-        {
-            // TODO
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            throw new RuntimeException(e);
-        }
+
+        ssn.processed(xfr);
 
 
         super.messageTransfer(ssn, xfr);    //To change body of overridden methods use File | Settings | File Templates.
@@ -1007,15 +992,7 @@ public class ServerSessionDelegate extends SessionDelegate
             else
             {
                 //TODO
-                try
-                {
-                    queue.clearQueue(new StoreContext());
-                }
-                catch (AMQException e)
-                {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    throw new RuntimeException(e);
-                }
+                queue.clearQueue();
             }
         }
 

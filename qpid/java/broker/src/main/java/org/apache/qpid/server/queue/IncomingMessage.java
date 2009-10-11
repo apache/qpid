@@ -25,22 +25,20 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.ContentHeaderBodyAdapter;
-import org.apache.qpid.server.message.AMQMessageReference;
+import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 
-public class IncomingMessage implements Filterable, InboundMessage
+public class IncomingMessage implements Filterable, InboundMessage, EnqueableMessage
 {
 
     /** Used for debugging purposes. */
@@ -51,12 +49,9 @@ public class IncomingMessage implements Filterable, InboundMessage
 
     private final MessagePublishInfo _messagePublishInfo;
     private ContentHeaderBody _contentHeaderBody;
+
     private AMQMessageHandle _messageHandle;
     private final Long _messageId;
-    private final TransactionalContext _txnContext;
-
-    private static final boolean MSG_AUTH = 
-        ApplicationRegistry.getInstance().getConfiguration().getMsgAuth();
 
 
     /**
@@ -71,24 +66,21 @@ public class IncomingMessage implements Filterable, InboundMessage
      */
     private ArrayList<AMQQueue> _destinationQueues;
 
-    private AMQProtocolSession _publisher;
-    private MessageStore _messageStore;
     private long _expiration;
-    
+
     private Exchange _exchange;
     private AMQMessageHeader _messageHeader;
 
 
+    private int _receivedChunkCount = 0;
+
+
     public IncomingMessage(final Long messageId,
                            final MessagePublishInfo info,
-                           final TransactionalContext txnContext,
                            final AMQProtocolSession publisher)
     {
         _messageId = messageId;
         _messagePublishInfo = info;
-        _txnContext = txnContext;
-        _publisher = publisher;
-
     }
 
     public void setContentHeaderBody(final ContentHeaderBody contentHeaderBody) throws AMQException
@@ -128,132 +120,33 @@ public class IncomingMessage implements Filterable, InboundMessage
 
     }
 
-    public void routingComplete(final MessageStore store,
+    public MessageMetaData routingComplete(final MessageStore store,
                                 final MessageHandleFactory factory) throws AMQException
     {
-
-        final boolean persistent = isPersistent();
-        _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
-        if (persistent)
-        {
-            _txnContext.beginTranIfNecessary();
-             // enqueuing the messages ensure that if required the destinations are recorded to a
-            // persistent store
-
-            if(_destinationQueues != null)
-            {
-                for (int i = 0; i < _destinationQueues.size(); i++)
-                {
-                    store.enqueueMessage(_txnContext.getStoreContext(),
-                            _destinationQueues.get(i), _messageId);
-                }
-            }
-        }
+        _messageHandle = factory.createMessageHandle(_messageId, store, isPersistent());
+        return _messageHandle.setPublishAndContentHeaderBody(_messagePublishInfo, _contentHeaderBody);
     }
 
-    public AMQMessage deliverToQueues()
-            throws AMQException
+
+    public ArrayList<AMQQueue> getDestinationQueues()
     {
-
-        // we get a reference to the destination queues now so that we can clear the
-        // transient message data as quickly as possible
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Delivering message " + _messageId + " to " + _destinationQueues);
-        }
-
-        AMQMessage message = null;
-        AMQMessageReference ref = null;
-
-        try
-        {
-            // first we allow the handle to know that the message has been fully received. This is useful if it is
-            // maintaining any calculated values based on content chunks
-            _messageHandle.setPublishAndContentHeaderBody(_txnContext.getStoreContext(),
-                                                          _messagePublishInfo, getContentHeader());
-
-            
-            
-            message = new AMQMessage(_messageHandle,_txnContext.getStoreContext(), _messagePublishInfo);
-            ref = (AMQMessageReference) message.newReference();
-
-            message.setExpiration(_expiration);
-            message.setClientIdentifier(_publisher.getSessionIdentifier());
-
-            // we then allow the transactional context to do something with the message content
-            // now that it has all been received, before we attempt delivery
-            _txnContext.messageFullyReceived(isPersistent());
-            
-            AMQShortString userID = getContentHeader().properties instanceof BasicContentHeaderProperties ?
-                     ((BasicContentHeaderProperties) getContentHeader().properties).getUserId() : null;
-            
-            if (MSG_AUTH && !_publisher.getPrincipal().getName().equals(userID == null? "" : userID.toString()))
-            {
-                throw new UnauthorizedAccessException("Acccess Refused",message);
-            }
-            
-            if ((_destinationQueues == null) || _destinationQueues.size() == 0)
-            {
-
-                if (isMandatory() || isImmediate())
-                {
-                    throw new NoRouteException("No Route for message", message);
-
-                }
-                else
-                {
-                    _logger.warn("MESSAGE DISCARDED: No routes for message - " + message);
-                }
-            }
-            else
-            {
-                int offset;
-                final int queueCount = _destinationQueues.size();
-
-                if(queueCount == 1)
-                {
-                    offset = 0;
-                }
-                else
-                {
-                    offset = ((int)(message.getMessageId().longValue())) % queueCount;
-                    if(offset < 0)
-                    {
-                        offset = -offset;
-                    }
-                }
-                for (int i = offset; i < queueCount; i++)
-                {
-                    // normal deliver so add this message at the end.
-                    _txnContext.deliver(_destinationQueues.get(i), message);
-                }
-                for (int i = 0; i < offset; i++)
-                {
-                    // normal deliver so add this message at the end.
-                    _txnContext.deliver(_destinationQueues.get(i), message);
-                }
-            }
-
-            message.clearStoreContext();
-            return message;
-        }
-        finally
-        {
-            // Remove refence for routing process . Reference count should now == delivered queue count
-
-            if(ref != null) ref.release();
-        }
-
+        return _destinationQueues;
     }
 
-    public void addContentBodyFrame(final ContentChunk contentChunk)
+
+    public AMQMessageHandle getMessageHandle()
+    {
+        return _messageHandle;
+    }
+
+
+    public int addContentBodyFrame(final ContentChunk contentChunk)
             throws AMQException
     {
 
         _bodyLengthReceived += contentChunk.getSize();
-
-        _messageHandle.addContentBodyFrame(_txnContext.getStoreContext(), contentChunk, allContentReceived());
-
+        _messageHandle.addContentBodyFrame(contentChunk, allContentReceived());
+        return _receivedChunkCount++;
     }
 
     public boolean allContentReceived()
@@ -305,7 +198,7 @@ public class IncomingMessage implements Filterable, InboundMessage
              ((BasicContentHeaderProperties) getContentHeader().properties).getDeliveryMode() ==
                                                              BasicContentHeaderProperties.PERSISTENT;
     }
-    
+
     public boolean isRedelivered()
     {
         return false;
@@ -316,12 +209,7 @@ public class IncomingMessage implements Filterable, InboundMessage
         return getContentHeader().bodySize;
     }
 
-    public void setMessageStore(final MessageStore messageStore)
-    {
-        _messageStore = messageStore;
-    }
-
-    public Long getMessageId()
+    public Long getMessageNumber()
     {
         return _messageId;
     }
@@ -331,7 +219,7 @@ public class IncomingMessage implements Filterable, InboundMessage
         _exchange = e;
     }
 
-    public void route() throws AMQException
+    public void route()
     {
         enqueue(_exchange.route(this));
 
@@ -341,4 +229,21 @@ public class IncomingMessage implements Filterable, InboundMessage
     {
         _destinationQueues = queues;
     }
+
+    public MessagePublishInfo getMessagePublishInfo()
+    {
+        return _messagePublishInfo;
+    }
+
+    public long getExpiration()
+    {
+        return _expiration;
+    }
+
+    public int getReceivedChunkCount()
+    {
+        return _receivedChunkCount;
+    }
+
+
 }

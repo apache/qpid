@@ -23,23 +23,37 @@ package org.apache.qpid.server.message;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.MessageCleanupException;
 
+import javax.swing.*;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public class AMQMessageReference extends MessageReference<AMQMessage>
 {
+
+
     public AMQMessageReference(AMQMessage message)
     {
         super(message);
     }
 
-    protected void onReference()
+    protected void onReference(AMQMessage message)
     {
-        getMessage().incrementReference();
+        message.incrementReference();
     }
 
-    protected void onRelease()
+    protected void onRelease(AMQMessage message)
     {
         try
         {
-            getMessage().decrementReference();
+            if(message !=null)
+            {
+                message.decrementReference();
+            }
+            else
+            {
+                //TODO
+                System.err.println("Shouldn't happen!!!!");
+            }
         }
         catch (MessageCleanupException e)
         {

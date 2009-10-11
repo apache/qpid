@@ -113,7 +113,7 @@ public class TestExchange implements Exchange
     {
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage message) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage message)
     {
         return new ArrayList<AMQQueue>();
     }

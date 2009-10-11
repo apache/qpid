@@ -33,12 +33,12 @@ public abstract class MessageReference<M extends ServerMessage>
     public MessageReference(M message)
     {
         _message = message;
-        onReference();
+        onReference(message);
     }
 
-    abstract protected void onReference();
+    abstract protected void onReference(M message);
 
-    abstract protected void onRelease();
+    abstract protected void onRelease(M message);
 
     public M getMessage()
     {
@@ -47,21 +47,11 @@ public abstract class MessageReference<M extends ServerMessage>
 
     public void release()
     {
-        ServerMessage message = _messageUpdater.getAndSet(this,null);
+        M message = (M) _messageUpdater.getAndSet(this,null);
         if(message != null)
         {
-            onRelease();
+            onRelease(message);
         }
     }
 
-    @Override
-    protected void finalize() throws Throwable
-    {
-        if(_message != null)
-        {
-            onRelease();
-            _message = null;
-        }
-        super.finalize();    //To change body of overridden methods use File | Settings | File Templates.
-    }
 }

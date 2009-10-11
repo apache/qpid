@@ -20,17 +20,13 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.queue.Filterable;
-
-public interface ServerMessage extends Filterable
+public interface ServerMessage extends EnqueableMessage
 {
     String getRoutingKey();
 
     AMQMessageHeader getMessageHeader();
 
     boolean isPersistent();
-
-    boolean isRedelivered();
 
     long getSize();
 

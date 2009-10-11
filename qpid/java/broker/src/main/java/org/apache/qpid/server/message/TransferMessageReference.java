@@ -27,12 +27,12 @@ public class TransferMessageReference extends MessageReference<MessageTransferMe
         super(message);
     }
 
-    protected void onReference()
+    protected void onReference(MessageTransferMessage message)
     {
 
     }
 
-    protected void onRelease()
+    protected void onRelease(MessageTransferMessage message)
     {
 
     }

@@ -63,7 +63,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueueMBean;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
@@ -78,7 +78,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final QueueRegistry _queueRegistry;
     private final ExchangeRegistry _exchangeRegistry;
     private final ExchangeFactory _exchangeFactory;
-    private final MessageStore _messageStore;
+    private final DurableConfigurationStore _durableConfig;
 
     private final VirtualHost.VirtualHostMBean _virtualHostMBean;
 
@@ -92,7 +92,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         _queueRegistry = virtualHost.getQueueRegistry();
         _exchangeRegistry = virtualHost.getExchangeRegistry();
-        _messageStore = virtualHost.getMessageStore();
+        _durableConfig = virtualHost.getDurableConfigurationStore();
         _exchangeFactory = virtualHost.getExchangeFactory();
     }
 
@@ -277,7 +277,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                                                        null);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _messageStore.createQueue(queue);
+                _durableConfig.createQueue(queue);
             }
 
             _queueRegistry.registerQueue(queue);
@@ -319,7 +319,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             queue.delete();
             if (queue.isDurable())
             {
-                _messageStore.removeQueue(queue);
+                _durableConfig.removeQueue(queue);
             }
         }
         catch (AMQException ex)

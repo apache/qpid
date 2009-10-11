@@ -29,15 +29,9 @@ import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.queue.IncomingMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQPriorityQueue;
-import org.apache.qpid.server.queue.SimpleAMQQueue;
-import org.apache.qpid.server.queue.ExchangeBinding;
-import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.framing.AMQShortString;
@@ -344,22 +338,21 @@ public class MessageStoreTest extends TestCase
 
         MessagePublishInfo messageInfo = new TestMessagePublishInfo(directExchange, false, false, routingKey);
 
-        IncomingMessage currentMessage = null;
+        final IncomingMessage currentMessage;
 
         try
         {
             currentMessage = new IncomingMessage(_virtualHost.getMessageStore().getNewMessageId(),
                                                  messageInfo,
-                                                 new NonTransactionalContext(_virtualHost.getMessageStore(),
-                                                                             new StoreContext(), null, null),
                                                  new InternalTestProtocolSession(_virtualHost));
         }
         catch (AMQException e)
         {
             fail(e.getMessage());
+            //help compiler - next line never reached
+            throw new RuntimeException();
         }
 
-        currentMessage.setMessageStore(_virtualHost.getMessageStore());
         currentMessage.setExchange(directExchange);
 
         ContentHeaderBody headerBody = new ContentHeaderBody();
@@ -379,14 +372,9 @@ public class MessageStoreTest extends TestCase
 
         currentMessage.setExpiration();
 
-        try
-        {
-            currentMessage.route();
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+
+        currentMessage.route();
+
 
         try
         {
@@ -400,14 +388,32 @@ public class MessageStoreTest extends TestCase
         // check and deliver if header says body length is zero
         if (currentMessage.allContentReceived())
         {
-            try
-            {
-                currentMessage.deliverToQueues();
-            }
-            catch (AMQException e)
-            {
-                fail(e.getMessage());
-            }
+            // TODO Deliver to queues
+            Transaction trans = new AutoCommitTransaction(_virtualHost.getMessageStore());
+            final List<AMQQueue> destinationQueues = currentMessage.getDestinationQueues();
+            trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new Transaction.Action() {
+                public void postCommit()
+                {
+                    try
+                    {
+                        AMQMessage message = new AMQMessage(currentMessage.getMessageHandle(), currentMessage.getContentHeader(), currentMessage.getSize() ,currentMessage.getMessagePublishInfo());
+
+                        for(AMQQueue queue : destinationQueues)
+                        {
+                            QueueEntry entry = queue.enqueue(message);
+                        }
+                    }
+                    catch (AMQException e)
+                    {
+                        e.printStackTrace();  
+                    }
+                }
+
+                public void onRollback()
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+            });
         }
     }
 

@@ -222,6 +222,8 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
 
     void commitTransactions(AMQChannel channel) throws AMQException;
 
+    void rollbackTransactions(AMQChannel channel) throws AMQException;
+
     List<AMQChannel> getChannels();
 
     void closeIfLingeringClosedChannels();

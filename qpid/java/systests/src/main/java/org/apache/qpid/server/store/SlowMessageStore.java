@@ -155,10 +155,10 @@ public class SlowMessageStore implements MessageStore
         doPostDelay("close");
     }
 
-    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
+    public void removeMessage(Long messageId) throws AMQException
     {
         doPreDelay("removeMessage");
-        _realStore.removeMessage(storeContext, messageId);
+        _realStore.removeMessage(messageId);
         doPostDelay("removeMessage");
     }
 
@@ -237,6 +237,24 @@ public class SlowMessageStore implements MessageStore
         doPostDelay("commitTran");
     }
 
+    public StoreFuture commitTranAsync(StoreContext context) throws AMQException
+    {
+        commitTran(context);
+        return new StoreFuture() 
+                    {
+                        public boolean isComplete()
+                        {
+                            return true;
+                        }
+
+                        public void waitForCompletion()
+                        {
+
+                        }
+                    };
+
+    }
+
     public void abortTran(StoreContext context) throws AMQException
     {
         doPreDelay("abortTran");
@@ -260,32 +278,36 @@ public class SlowMessageStore implements MessageStore
         return l;
     }
 
-    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
+    public void storeContentBodyChunk(
+            Long messageId,
+            int index,
+            ContentChunk contentBody,
+            boolean lastContentBody) throws AMQException
     {
         doPreDelay("storeContentBodyChunk");
-        _realStore.storeContentBodyChunk(context, messageId, index, contentBody, lastContentBody);
+        _realStore.storeContentBodyChunk(messageId, index, contentBody, lastContentBody);
         doPostDelay("storeContentBodyChunk");
     }
 
-    public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException
+    public void storeMessageMetaData(Long messageId, MessageMetaData messageMetaData) throws AMQException
     {
         doPreDelay("storeMessageMetaData");
-        _realStore.storeMessageMetaData(context, messageId, messageMetaData);
+        _realStore.storeMessageMetaData(messageId, messageMetaData);
         doPostDelay("storeMessageMetaData");
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
     {
         doPreDelay("getMessageMetaData");
-        MessageMetaData mmd = _realStore.getMessageMetaData(context, messageId);
+        MessageMetaData mmd = _realStore.getMessageMetaData(messageId);
         doPostDelay("getMessageMetaData");
         return mmd;
     }
 
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
+    public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
     {
         doPreDelay("getContentBodyChunk");
-        ContentChunk c = _realStore.getContentBodyChunk(context, messageId, index);
+        ContentChunk c = _realStore.getContentBodyChunk(messageId, index);
         doPostDelay("getContentBodyChunk");
         return c;
     }

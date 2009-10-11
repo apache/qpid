@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -31,10 +30,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,7 +84,7 @@ public class MemoryMessageStore extends AbstractMessageStore
         super.close();
     }
 
-    public void removeMessage(StoreContext context, Long messageId) throws AMQException
+    public void removeMessage(Long messageId) throws AMQException
     {
         checkNotClosed();
         if (_log.isDebugEnabled())
@@ -155,6 +151,24 @@ public class MemoryMessageStore extends AbstractMessageStore
         // Not required to do anything
     }
 
+    public StoreFuture commitTranAsync(StoreContext context) throws AMQException
+    {
+        commitTran(context);
+        return new StoreFuture()
+                    {
+                        public boolean isComplete()
+                        {
+                            return true;
+                        }
+
+                        public void waitForCompletion()
+                        {
+
+                        }
+                    };
+
+    }
+
     public void abortTran(StoreContext context) throws AMQException
     {
         // Not required to do anything
@@ -175,7 +189,11 @@ public class MemoryMessageStore extends AbstractMessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody)
+    public void storeContentBodyChunk(
+            Long messageId,
+            int index,
+            ContentChunk contentBody,
+            boolean lastContentBody)
             throws AMQException
     {
         checkNotClosed();
@@ -197,20 +215,20 @@ public class MemoryMessageStore extends AbstractMessageStore
         }
     }
 
-    public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData)
+    public void storeMessageMetaData(Long messageId, MessageMetaData messageMetaData)
             throws AMQException
     {
         checkNotClosed();
         _metaDataMap.put(messageId, messageMetaData);
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
     {
         checkNotClosed();
         return _metaDataMap.get(messageId);
     }
 
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
+    public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
     {
         checkNotClosed();
         List<ContentChunk> bodyList = _contentBodyMap.get(messageId);

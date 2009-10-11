@@ -30,19 +30,17 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.server.txn.TransactionalContext;
+
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -379,9 +377,9 @@ public class DerbyMessageStore extends AbstractMessageStore
                                                        null);
                 _virtualHost.getQueueRegistry().registerQueue(q);
             }
-            
+
             queueMap.put(queueNameShortString,q);
-            
+
             CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1004(String.valueOf(q.getName()), true));
 
             //Record that we have a queue for recovery
@@ -504,12 +502,13 @@ public class DerbyMessageStore extends AbstractMessageStore
     public void close() throws Exception
     {
         _closed.getAndSet(true);
-        
-        super.close();        
+
+        super.close();
     }
 
-    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
+    public void removeMessage(Long messageId) throws AMQException
     {
+        StoreContext storeContext = new StoreContext();
 
         boolean localTx = getOrCreateTransaction(storeContext);
 
@@ -523,7 +522,7 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
 
         // first we need to look up the header to get the chunk count
-        MessageMetaData mmd = getMessageMetaData(storeContext, messageId);
+        MessageMetaData mmd = getMessageMetaData(messageId);
         try
         {
             PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_MESSAGE_META_DATA);
@@ -802,7 +801,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                 {
                     stmt = conn.prepareStatement(INSERT_INTO_QUEUE);
 
-                    String owner = queue.getPrincipalHolder() == null 
+                    String owner = queue.getPrincipalHolder() == null
                                    ? null
                                    : queue.getPrincipalHolder().getPrincipal() == null
                                      ? null
@@ -995,6 +994,7 @@ public class DerbyMessageStore extends AbstractMessageStore
 
     public void beginTran(StoreContext context) throws AMQException
     {
+
         if (context.getPayload() != null)
         {
             throw new AMQException("Fatal internal error: transactional context is not empty at beginTran: "
@@ -1050,6 +1050,24 @@ public class DerbyMessageStore extends AbstractMessageStore
         }
     }
 
+    public StoreFuture commitTranAsync(StoreContext context) throws AMQException
+    {
+        commitTran(context);
+        return new StoreFuture()
+                    {
+                        public boolean isComplete()
+                        {
+                            return true;
+                        }
+
+                        public void waitForCompletion()
+                        {
+
+                        }
+                    };
+
+    }
+
     public void abortTran(StoreContext context) throws AMQException
     {
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
@@ -1094,12 +1112,13 @@ public class DerbyMessageStore extends AbstractMessageStore
         return _messageId.getAndIncrement();
     }
 
-    public void storeContentBodyChunk(StoreContext context,
-                                      Long messageId,
-                                      int index,
-                                      ContentChunk contentBody,
-                                      boolean lastContentBody) throws AMQException
+    public void storeContentBodyChunk(
+            Long messageId,
+            int index,
+            ContentChunk contentBody,
+            boolean lastContentBody) throws AMQException
     {
+        StoreContext context = new StoreContext();
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
@@ -1138,10 +1157,10 @@ public class DerbyMessageStore extends AbstractMessageStore
 
     }
 
-    public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData mmd)
+    public void storeMessageMetaData(Long messageId, MessageMetaData mmd)
             throws AMQException
     {
-
+        StoreContext context = new StoreContext();
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
         ConnectionWrapper connWrapper = (ConnectionWrapper) context.getPayload();
@@ -1192,8 +1211,9 @@ public class DerbyMessageStore extends AbstractMessageStore
 
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
     {
+        StoreContext context = new StoreContext();
         boolean localTx = getOrCreateTransaction(context);
         Connection conn = getConnection(context);
 
@@ -1277,8 +1297,9 @@ public class DerbyMessageStore extends AbstractMessageStore
 
     }
 
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
+    public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
     {
+        StoreContext context = new StoreContext();
         boolean localTx = getOrCreateTransaction(context);
                 Connection conn = getConnection(context);
 
@@ -1378,10 +1399,7 @@ public class DerbyMessageStore extends AbstractMessageStore
 
         public void process() throws AMQException
         {
-            StoreContext.setCurrentContext(_context);
             _queue.enqueue(_message);
-            StoreContext.clearCurrentContext();
-
         }
 
     }
@@ -1409,8 +1427,6 @@ public class DerbyMessageStore extends AbstractMessageStore
 
             MessageHandleFactory messageHandleFactory = new MessageHandleFactory();
             long maxId = 1;
-
-            TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null);
 
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
@@ -1441,7 +1457,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                 }
                 else
                 {
-                    message = new AMQMessage(messageId, this, messageHandleFactory, txnContext);
+                    message = new AMQMessage(messageId, this, messageHandleFactory);
                     msgMap.put(messageId,message);
                 }
 

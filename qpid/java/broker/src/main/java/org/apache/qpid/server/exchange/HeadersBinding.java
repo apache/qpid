@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -88,7 +88,7 @@ class HeadersBinding
      * Creates a binding for a set of mappings. Those mappings whose value is
      * null or the empty string are assumed only to be required headers, with
      * no constraint on the value. Those with a non-null value are assumed to
-     * define a required match of value. 
+     * define a required match of value.
      * @param mappings the defined mappings this binding should use
      */
 
@@ -174,14 +174,21 @@ class HeadersBinding
 
     private boolean or(final AMQMessageHeader headers)
     {
-        if(required.isEmpty() || passesRequiredOr(headers))
+        if(required.isEmpty())
         {
-            return ((!matches.isEmpty()) && passesMatchesOr(headers))
-                    || (required.isEmpty() && matches.isEmpty());
+            return  matches.isEmpty() || passesMatchesOr(headers);
         }
         else
         {
-            return true;
+            if(!passesRequiredOr(headers))
+            {
+                return !matches.isEmpty() && passesMatchesOr(headers);
+            }
+            else
+            {
+                return true;
+            }
+
         }
     }
 
@@ -190,7 +197,7 @@ class HeadersBinding
         for(Map.Entry<String,Object> entry : matches.entrySet())
         {
             if(headers.containsHeader(entry.getKey())
-               || ((entry.getValue() == null && headers.getHeader(entry.getKey()) == null)
+               && ((entry.getValue() == null && headers.getHeader(entry.getKey()) == null)
                    || (entry.getValue().equals(headers.getHeader(entry.getKey())))))
             {
                 return true;

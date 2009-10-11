@@ -29,8 +29,7 @@ import org.apache.qpid.server.txn.Transaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.PrincipalHolder;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.AMQException;
 
 import java.util.*;
@@ -46,6 +45,7 @@ import com.sun.security.auth.UserPrincipal;
 public class ServerSession extends Session implements PrincipalHolder
 {
     private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
+
 
     public static interface MessageDispositionChangeListener
     {
@@ -83,7 +83,8 @@ public class ServerSession extends Session implements PrincipalHolder
     ServerSession(Connection connection, Binary name, long expiry)
     {
         super(connection, name, expiry);
-        _transaction = new AutoCommitTransaction();
+
+        _transaction = new AutoCommitTransaction(this.getMessageStore());
         _principal = new UserPrincipal(connection.getAuthorizationID());
         _reference = new WeakReference(this);
     }
@@ -91,29 +92,32 @@ public class ServerSession extends Session implements PrincipalHolder
     ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         super(connection, delegate, name, expiry);
-        _transaction = new AutoCommitTransaction();
+        _transaction = new AutoCommitTransaction(this.getMessageStore());
         _principal = new UserPrincipal(connection.getAuthorizationID());
         _reference = new WeakReference(this);
     }
 
-    public void enqueue(final ServerMessage message, ArrayList<AMQQueue> queues)
+    public void enqueue(final ServerMessage message, final ArrayList<AMQQueue> queues)
     {
 
-        for(final AMQQueue q : queues)
-        {
-            _transaction.enqueue(q,message, new Transaction.Action()
+            _transaction.enqueue(queues,message, new Transaction.Action()
             {
+
+                AMQQueue[] _queues = queues.toArray(new AMQQueue[queues.size()]);
 
                 public void postCommit()
                 {
-                    try
+                    for(int i = 0; i < _queues.length; i++)
                     {
-                        q.enqueue(message);
-                    }
-                    catch (AMQException e)
-                    {
-                        // TODO
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        try
+                        {
+                            _queues[i].enqueue(message);
+                        }
+                        catch (AMQException e)
+                        {
+                            // TODO
+                            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        }
                     }
                 }
 
@@ -122,7 +126,7 @@ public class ServerSession extends Session implements PrincipalHolder
                     // NO-OP
                 }
             });
-        }
+
 
     }
 
@@ -301,18 +305,6 @@ public class ServerSession extends Session implements PrincipalHolder
                                  public void onRollback()
                                  {
                                      entry.release();
-
-                                     try
-                                     {
-                                         entry.requeue(new StoreContext());
-                                     }
-                                     catch (AMQException e)
-                                     {
-                                         //TODO
-                                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                                         throw new RuntimeException(e);
-                                     }
-
                                  }
                              });
 
@@ -359,7 +351,7 @@ public class ServerSession extends Session implements PrincipalHolder
 
     public void selectTx()
     {
-        _transaction = new LocalTransaction();
+        _transaction = new LocalTransaction(this.getMessageStore());
     }
 
     public void commit()
@@ -391,6 +383,11 @@ public class ServerSession extends Session implements PrincipalHolder
      {
          return _reference;
      }
+
+    public MessageStore getMessageStore()
+    {
+        return ((ServerConnection)getConnection()).getVirtualHost().getMessageStore();
+    }
 
 
 }

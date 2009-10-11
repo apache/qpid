@@ -22,8 +22,6 @@ package org.apache.qpid.server.subscription;
 
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.FailedDequeueException;
-import org.apache.qpid.server.queue.MessageCleanupException;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.CreditCreditManager;
 import org.apache.qpid.server.flow.WindowCreditManager;
@@ -38,7 +36,6 @@ import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.transport.ServerSession;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.*;
@@ -59,6 +56,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final long _subscriptionID = idGenerator.getAndIncrement();
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
+
     private final Lock _stateChangeLock = new ReentrantLock();
 
     private final AtomicReference<State> _state = new AtomicReference<State>(State.ACTIVE);
@@ -124,6 +123,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _owningState;
     }
 
+    public QueueEntry.SubscriptionAssignedState getAssignedState()
+    {
+        return _assignedState;
+    }
+
     public void setQueue(AMQQueue queue, boolean exclusive)
     {
         if(getQueue() != null)
@@ -176,7 +180,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private boolean checkFilters(QueueEntry entry)
     {
-        return (_filters == null) || _filters.allAllow(entry.getMessage());
+        return (_filters == null) || _filters.allAllow(entry);
     }
 
     public boolean isAutoClose()
@@ -390,6 +394,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                                             public boolean acquire()
                                             {
                                                 boolean acquired = entry.acquire(Subscription_0_10.this);
+                                                //TODO - why acknowledge here??? seems bizarre...
                                                 _session.acknowledge(Subscription_0_10.this,entry);
                                                 return acquired;
 
@@ -412,14 +417,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         entry.setRedelivered(true);
         entry.release();
-        try
-        {
-            entry.requeue(new StoreContext());
-        }
-        catch (AMQException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
     }
 
     public void queueDeleted(AMQQueue queue)
@@ -568,18 +565,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         // TODO Fix Store Context / cleanup
 
-        try
-        {
-            entry.discard(new StoreContext());
-        }
-        catch (FailedDequeueException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        catch (MessageCleanupException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+        entry.discard();
     }
 
     public void flush() throws AMQException

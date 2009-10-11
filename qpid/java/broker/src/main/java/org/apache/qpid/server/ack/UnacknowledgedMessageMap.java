@@ -21,14 +21,12 @@
 package org.apache.qpid.server.ack;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.Map;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.StoreContext;
+
 
 public interface UnacknowledgedMessageMap
 {
@@ -50,17 +48,11 @@ public interface UnacknowledgedMessageMap
 
     void collect(long deliveryTag, boolean multiple, Map<Long, QueueEntry> msgs);
 
-    boolean contains(long deliveryTag) throws AMQException;
-
     void remove(Map<Long,QueueEntry> msgs);
 
     QueueEntry remove(long deliveryTag);
 
-    public void drainTo(long deliveryTag, StoreContext storeContext) throws AMQException;
-    
     Collection<QueueEntry> cancelAllMessages();
-
-    void acknowledgeMessage(long deliveryTag, boolean multiple, TransactionalContext txnContext) throws AMQException;
 
     int size();
 
@@ -75,7 +67,6 @@ public interface UnacknowledgedMessageMap
      */
     Set<Long> getDeliveryTags();
 
-    public long getUnacknowledgeBytes();
 }
 
 

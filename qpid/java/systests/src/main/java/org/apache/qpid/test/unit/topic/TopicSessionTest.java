@@ -311,10 +311,12 @@ public class TopicSessionTest extends QpidTestCase
 
         AMQTopic topic = new AMQTopic(con, "testNoLocal");
 
-        TopicSession session1 = con.createTopicSession(true, AMQSession.NO_ACKNOWLEDGE);
+        TopicSession session1 = con.createTopicSession(true, AMQSession.AUTO_ACKNOWLEDGE);
         TopicSubscriber noLocal = session1.createSubscriber(topic,  "", true);
+
         TopicSubscriber select = session1.createSubscriber(topic,  "Selector = 'select'", false);
         TopicSubscriber normal = session1.createSubscriber(topic);
+
 
         TopicPublisher publisher = session1.createPublisher(topic);
 
@@ -329,12 +331,12 @@ public class TopicSessionTest extends QpidTestCase
         m = (TextMessage) normal.receive(1000);
         assertNotNull(m);
         session1.commit();
-        
+
         //test selector subscriber doesn't message
         m = (TextMessage) select.receive(1000);
         assertNull(m);
         session1.commit();
-        
+
         //test nolocal subscriber doesn't message
         m = (TextMessage) noLocal.receive(1000);
         if (m != null)
@@ -349,12 +351,12 @@ public class TopicSessionTest extends QpidTestCase
 
         publisher.publish(message);
         session1.commit();
-        
+
         //test normal subscriber gets message
         m = (TextMessage) normal.receive(1000);
         assertNotNull(m);
         session1.commit();
-        
+
         //test selector subscriber does get message
         m = (TextMessage) select.receive(1000);
         assertNotNull(m);
@@ -365,7 +367,7 @@ public class TopicSessionTest extends QpidTestCase
         assertNull(m);
 
         AMQConnection con2 = (AMQConnection) getConnection("guest", "guest", "foo");
-        TopicSession session2 = con2.createTopicSession(true, AMQSession.NO_ACKNOWLEDGE);
+        TopicSession session2 = con2.createTopicSession(true, AMQSession.AUTO_ACKNOWLEDGE);
         TopicPublisher publisher2 = session2.createPublisher(topic);
 
 
@@ -386,18 +388,18 @@ public class TopicSessionTest extends QpidTestCase
         session1.commit();
 
         //test nolocal subscriber does message
-        m = (TextMessage) noLocal.receive(100);
+        m = (TextMessage) noLocal.receive(1000);
         assertNotNull(m);
 
 
         con.close();
         con2.close();
     }
-    
+
     /**
      * This tests QPID-1191, where messages which are sent to a topic but are not consumed by a subscriber
      * due to a selector can be leaked.
-     * @throws Exception 
+     * @throws Exception
      */
     public void testNonMatchingMessagesDoNotFillQueue() throws Exception
     {
@@ -420,27 +422,27 @@ public class TopicSessionTest extends QpidTestCase
         message = session.createTextMessage("non-matching 1");
         publisher.publish(message);
         session.commit();
-        
+
         // Send and consume matching message
         message = session.createTextMessage("hello");
         message.setStringProperty("Selector", "select");
 
         publisher.publish(message);
         session.commit();
-        
+
         m = (TextMessage) selector.receive(1000);
         assertNotNull("should have received message", m);
         assertEquals("Message contents were wrong", "hello", m.getText());
-        
+
         // Send non-matching message
         message = session.createTextMessage("non-matching 2");
         publisher.publish(message);
         session.commit();
-        
+
         // Assert queue count is 0
         long depth = ((AMQTopicSessionAdaptor) session).getSession().getQueueDepth(topic);
         assertEquals("Queue depth was wrong", 0, depth);
-        
+
     }
 
     public static junit.framework.Test suite()

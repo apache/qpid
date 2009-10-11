@@ -21,12 +21,11 @@
 package org.apache.qpid.server;
 
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
-import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
@@ -36,23 +35,23 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 {
     private static final Logger _log = Logger.getLogger(ExtractResendAndRequeue.class);
 
-    private Map<Long, QueueEntry> _msgToRequeue;
-    private Map<Long, QueueEntry> _msgToResend;
-    private boolean _requeueIfUnabletoResend;
-    private StoreContext _storeContext;
-    private UnacknowledgedMessageMap _unacknowledgedMessageMap;
+    private final Map<Long, QueueEntry> _msgToRequeue;
+    private final Map<Long, QueueEntry> _msgToResend;
+    private final boolean _requeueIfUnabletoResend;
+    private final UnacknowledgedMessageMap _unacknowledgedMessageMap;
+    private final TransactionLog _transactionLog;
 
-    public ExtractResendAndRequeue(UnacknowledgedMessageMap unacknowledgedMessageMap, 
+    public ExtractResendAndRequeue(UnacknowledgedMessageMap unacknowledgedMessageMap,
                                    Map<Long, QueueEntry> msgToRequeue,
                                    Map<Long, QueueEntry> msgToResend,
                                    boolean requeueIfUnabletoResend,
-                                   StoreContext storeContext)
+                                   TransactionLog txnLog)
     {
         _unacknowledgedMessageMap = unacknowledgedMessageMap;
         _msgToRequeue = msgToRequeue;
         _msgToResend = msgToResend;
         _requeueIfUnabletoResend = requeueIfUnabletoResend;
-        _storeContext = storeContext;
+        _transactionLog = txnLog;
     }
 
     public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
@@ -85,19 +84,45 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
                 }
                 else
                 {
-                    message.discard(_storeContext);
+
+                    dequeueEntry(message);
                     _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
                 }
             }
             else
             {
-                message.discard(_storeContext);
+                dequeueEntry(message);
                 _log.warn("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
             }
         }
 
         // false means continue processing
         return false;
+    }
+
+
+    private void dequeueEntry(final QueueEntry node)
+    {
+        Transaction txn = new AutoCommitTransaction(_transactionLog);
+        dequeueEntry(node, txn);
+    }
+
+    private void dequeueEntry(final QueueEntry node, Transaction txn)
+    {
+        txn.dequeue(node.getQueue(), node.getMessage(),
+                    new Transaction.Action()
+                    {
+
+                        public void postCommit()
+                        {
+                            node.discard();
+                        }
+
+                        public void onRollback()
+                        {
+
+                        }
+                    });
     }
 
     public void visitComplete()

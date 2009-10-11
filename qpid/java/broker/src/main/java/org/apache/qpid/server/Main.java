@@ -335,8 +335,7 @@ public class Main
             String keystorePassword = serverConfig.getKeystorePassword();
             String certType = serverConfig.getCertType();
             SSLContextFactory sslFactory = null;
-            boolean isSsl = false;
-            
+
             if (!serverConfig.getSSLOnly())
             {
                 NetworkDriver driver = new MINANetworkDriver();

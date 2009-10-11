@@ -209,7 +209,7 @@ public class DirectExchange extends AbstractExchange
         }
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
         final AMQShortString routingKey = payload.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : new AMQShortString(payload.getRoutingKey());

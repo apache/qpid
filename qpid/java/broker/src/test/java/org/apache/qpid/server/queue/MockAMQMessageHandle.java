@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.StoreContext;
-
 public class MockAMQMessageHandle extends InMemoryMessageHandle
 {
     public MockAMQMessageHandle(final Long messageId)
@@ -30,7 +28,7 @@ public class MockAMQMessageHandle extends InMemoryMessageHandle
     }
 
     @Override
-    public long getBodySize(StoreContext store)
+    public long getBodySize()
     {
       return 0l;
     }

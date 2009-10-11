@@ -253,7 +253,7 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public ArrayList<AMQQueue> route(InboundMessage payload) throws AMQException
+    public ArrayList<AMQQueue> route(InboundMessage payload)
     {
         AMQMessageHeader header = payload.getMessageHeader();
         if (_logger.isDebugEnabled())
