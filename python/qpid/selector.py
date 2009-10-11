@@ -136,10 +136,12 @@ class Selector:
       rd, wr, ex = select(self.reading, self.writing, (), timeout)
 
       for sel in wr:
-        sel.writeable()
+        if sel.writing():
+          sel.writeable()
 
       for sel in rd:
-        sel.readable()
+        if sel.reading():
+          sel.readable()
 
       now = time.time()
       for sel in self.selectables.copy():
