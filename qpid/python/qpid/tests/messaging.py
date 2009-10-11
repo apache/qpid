@@ -50,6 +50,8 @@ class Base(Test):
       raise Skipped(e)
     self.ssn = self.setup_session()
     self.snd = self.setup_sender()
+    if self.snd is not None:
+      self.snd.durable = self.durable()
     self.rcv = self.setup_receiver()
 
   def teardown(self):
@@ -65,7 +67,7 @@ class Base(Test):
   def ping(self, ssn):
     PING_Q = 'ping-queue {create: always}'
     # send a message
-    sender = ssn.sender(PING_Q)
+    sender = ssn.sender(PING_Q, durable=self.durable())
     content = self.content("ping")
     sender.send(content)
     receiver = ssn.receiver(PING_Q)
@@ -98,16 +100,27 @@ class Base(Test):
   def delay(self):
     return float(self.config.defines.get("delay", "2"))
 
+  def get_bool(self, name):
+    return self.config.defines.get(name, "false").lower() in ("true", "yes", "1")
+
+  def durable(self):
+    return self.get_bool("durable")
+
+  def reconnect(self):
+    return self.get_bool("reconnect")
+
 class SetupTests(Base):
 
   def testOpen(self):
     # XXX: need to flesh out URL support/syntax
-    self.conn = Connection.open(self.broker.host, self.broker.port)
+    self.conn = Connection.open(self.broker.host, self.broker.port,
+                                reconnect=self.reconnect())
     self.ping(self.conn.session())
 
   def testConnect(self):
     # XXX: need to flesh out URL support/syntax
-    self.conn = Connection(self.broker.host, self.broker.port)
+    self.conn = Connection(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
     self.conn.connect()
     self.ping(self.conn.session())
 
@@ -122,7 +135,8 @@ class SetupTests(Base):
 class ConnectionTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port)
+    return Connection.open(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
 
   def testSessionAnon(self):
     ssn1 = self.conn.session()
@@ -180,14 +194,16 @@ ACK_Q = 'test-ack-queue {create: always}'
 class SessionTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port)
+    return Connection.open(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
 
   def setup_session(self):
     return self.conn.session()
 
   def testSender(self):
-    snd = self.ssn.sender('test-snd-queue {create: always}')
-    snd2 = self.ssn.sender(snd.target)
+    snd = self.ssn.sender('test-snd-queue {create: always}',
+                          durable=self.durable())
+    snd2 = self.ssn.sender(snd.target, durable=self.durable())
     assert snd is not snd2
     snd2.close()
 
@@ -205,7 +221,7 @@ class SessionTests(Base):
     rcv2.close()
 
     content = self.content("testReceiver")
-    snd = self.ssn.sender(rcv.source)
+    snd = self.ssn.sender(rcv.source, durable=self.durable())
     snd.send(content)
     msg = rcv.fetch(0)
     assert msg.content == content
@@ -234,7 +250,7 @@ class SessionTests(Base):
   # empty on setup, and possibly also to drain queues on teardown
   def ackTest(self, acker, ack_capacity=None):
     # send a bunch of messages
-    snd = self.ssn.sender(ACK_Q)
+    snd = self.ssn.sender(ACK_Q, durable=self.durable())
     contents = [self.content("ackTest", i) for i in range(15)]
     for c in contents:
       snd.send(c)
@@ -289,7 +305,7 @@ class SessionTests(Base):
     self.ackTest(lambda ssn: ssn.acknowledge(sync=False), UNLIMITED)
 
   def send(self, ssn, queue, base, count=1):
-    snd = ssn.sender(queue)
+    snd = ssn.sender(queue, durable=self.durable())
     contents = []
     for i in range(count):
       c = self.content(base, i)
@@ -304,7 +320,7 @@ class SessionTests(Base):
     txssn = self.conn.session(transactional=True)
     contents = self.send(self.ssn, TX_Q, "txTest", 3)
     txrcv = txssn.receiver(TX_Q)
-    txsnd = txssn.sender(TX_Q_COPY)
+    txsnd = txssn.sender(TX_Q_COPY, durable=self.durable())
     rcv = self.ssn.receiver(txrcv.source)
     copy_rcv = self.ssn.receiver(txsnd.target)
     self.assertEmpty(copy_rcv)
@@ -403,7 +419,8 @@ RECEIVER_Q = 'test-receiver-queue {create: always}'
 class ReceiverTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port)
+    return Connection.open(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
 
   def setup_session(self):
     return self.conn.session()
@@ -527,7 +544,7 @@ class ReceiverTests(Base):
     self.assertPending(self.rcv, 5)
 
     drained = self.drain(self.rcv)
-    assert len(drained) == 10
+    assert len(drained) == 10, "%s, %s" % (len(drained), drained)
     self.assertPending(self.rcv, 0)
 
     self.ssn.acknowledge()
@@ -556,13 +573,14 @@ UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"
 class AddressErrorTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port)
+    return Connection.open(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
 
   def setup_session(self):
     return self.conn.session()
 
   def sendErrorTest(self, addr, exc, check=lambda e: True):
-    snd = self.ssn.sender(addr)
+    snd = self.ssn.sender(addr, durable=self.durable())
     try:
       snd.send("hello")
       assert False, "send succeeded"
@@ -612,7 +630,8 @@ SENDER_Q = 'test-sender-q {create: always}'
 class SenderTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port)
+    return Connection.open(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
 
   def setup_session(self):
     return self.conn.session()
@@ -720,7 +739,8 @@ ECHO_Q = 'test-message-echo-queue {create: always}'
 class MessageEchoTests(Base):
 
   def setup_connection(self):
-    return Connection.open(self.broker.host, self.broker.port)
+    return Connection.open(self.broker.host, self.broker.port,
+                           reconnect=self.reconnect())
 
   def setup_session(self):
     return self.conn.session()
