@@ -42,7 +42,6 @@ public class PropertiesPrincipalDatabaseManager implements PrincipalDatabaseMana
         return _databases;
     }
 
-    @Override
     public void initialiseManagement(ServerConfiguration _configuration) throws ConfigurationException
     {
         //todo

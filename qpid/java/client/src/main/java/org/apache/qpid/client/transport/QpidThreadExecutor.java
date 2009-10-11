@@ -6,7 +6,6 @@ import edu.emory.mathcs.backport.java.util.concurrent.Executor;
 
 public class QpidThreadExecutor implements Executor
 {
-    @Override
     public void execute(Runnable command)
     {
         try

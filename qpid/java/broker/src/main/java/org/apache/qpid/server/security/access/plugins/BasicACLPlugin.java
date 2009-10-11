@@ -35,28 +35,24 @@ public abstract class BasicACLPlugin implements ACLPlugin
     // Returns true or false if the plugin should authorise or deny the request    
     protected abstract AuthzResult getResult();
     
-    @Override
     public AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch,
             AMQQueue queue, AMQShortString routingKey)
     {
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseConnect(AMQProtocolSession session,
             VirtualHost virtualHost)
     {
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck,
             AMQQueue queue)
     {
         return getResult();    
     }
 
-    @Override
     public AuthzResult authoriseConsume(AMQProtocolSession session,
             boolean exclusive, boolean noAck, boolean noLocal, boolean nowait,
             AMQQueue queue)
@@ -64,7 +60,6 @@ public abstract class BasicACLPlugin implements ACLPlugin
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseCreateExchange(AMQProtocolSession session,
             boolean autoDelete, boolean durable, AMQShortString exchangeName,
             boolean internal, boolean nowait, boolean passive,
@@ -73,7 +68,6 @@ public abstract class BasicACLPlugin implements ACLPlugin
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseCreateQueue(AMQProtocolSession session,
             boolean autoDelete, boolean durable, boolean exclusive,
             boolean nowait, boolean passive, AMQShortString queue)
@@ -81,19 +75,16 @@ public abstract class BasicACLPlugin implements ACLPlugin
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
     {
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
     {
         return getResult();
     }
 
-    @Override
     public AuthzResult authorisePublish(AMQProtocolSession session,
             boolean immediate, boolean mandatory, AMQShortString routingKey,
             Exchange e)
@@ -101,20 +92,17 @@ public abstract class BasicACLPlugin implements ACLPlugin
         return getResult();
     }
 
-    @Override
     public AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue)
     {
         return getResult();
     }
 
-    @Override
     public AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch,
             AMQShortString routingKey, AMQQueue queue)
     {
         return getResult();
     }
 
-    @Override
     public void setConfiguration(Configuration config)
     {
         // no-op
