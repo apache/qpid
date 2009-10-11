@@ -546,11 +546,18 @@ class Driver:
         else:
           _rcv._queue = "%s.%s" % (rcv.session.name, rcv.destination)
           sst.write_cmd(QueueDeclare(queue=_rcv._queue, durable=DURABLE_DEFAULT, exclusive=True, auto_delete=True))
-          # XXX
-          if _rcv.options.get("filter") is None:
+          filter = _rcv.options.get("filter")
+          if _rcv.subject is None and filter is None:
             f = FILTER_DEFAULTS[result.type]
+          elif _rcv.subject and filter:
+            # XXX
+            raise Exception("can't supply both subject and filter")
+          elif _rcv.subject:
+            # XXX
+            from messaging import Pattern
+            f = Pattern(_rcv.subject)
           else:
-            f = rcv.filter
+            f = filter
           f._bind(sst, _rcv.name, _rcv._queue)
         do_link()
       sst.write_query(ExchangeQuery(name=_rcv.name), do_exchange_q)
