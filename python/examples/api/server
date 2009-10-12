@@ -22,13 +22,20 @@ import optparse, sys, traceback
 from qpid.messaging import *
 from qpid.util import URL
 from subprocess import Popen, STDOUT, PIPE
+from qpid.log import enable, DEBUG, WARN
 
 parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS ...",
                                description="handle requests from the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
+parser.add_option("-v", dest="verbose", action="store_true", help="enable logging")
 
 opts, args = parser.parse_args()
+
+if opts.verbose:
+  enable("qpid", DEBUG)
+else:
+  enable("qpid", WARN)
 
 url = URL(opts.broker)
 if args:
