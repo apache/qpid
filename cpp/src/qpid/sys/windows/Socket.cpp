@@ -20,19 +20,18 @@
  */
 
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/windows/IoHandlePrivate.h"
 #include "qpid/sys/windows/check.h"
 #include "qpid/sys/Time.h"
 
 #include <cstdlib>
 #include <string.h>
-#include <iostream>
-#include <memory.h>
 
 #include <winsock2.h>
-#include <ws2tcpip.h>
 
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 // Need to initialize WinSock. Ideally, this would be a singleton or embedded
 // in some one-time initialization function. I tried boost singleton and could
@@ -149,6 +148,27 @@ Socket::Socket(IOHandlePrivate* h) :
 	IOHandle(h)
 {}
 
+void
+Socket::createSocket(const SocketAddress& sa) const
+{
+    SOCKET& socket = impl->fd;
+    if (socket != INVALID_SOCKET) Socket::close();
+
+    SOCKET s = ::socket (getAddrInfo(sa).ai_family,
+                         getAddrInfo(sa).ai_socktype,
+                         0);
+    if (s == INVALID_SOCKET) throw QPID_WINDOWS_ERROR(WSAGetLastError());
+    socket = s;
+
+    try {
+        if (nonblocking) setNonblocking();
+    } catch (std::exception&) {
+        closesocket(s);
+        socket = INVALID_SOCKET;
+        throw;
+    }
+}
+
 void Socket::setTimeout(const Duration& interval) const
 {
     const SOCKET& socket = impl->fd;
@@ -170,41 +190,26 @@ void Socket::setNonblocking() const {
 
 void Socket::connect(const std::string& host, uint16_t port) const
 {
-    std::stringstream portstream;
-    portstream << port << std::ends;
-    std::string portstr = portstream.str();
-    std::stringstream namestream;
-    namestream << host << ":" << port;
-    connectname = namestream.str();
+    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    connect(sa);
+}
 
+void
+Socket::connect(const SocketAddress& addr) const
+{
     const SOCKET& socket = impl->fd;
-    // TODO: Be good to make this work for IPv6 as well as IPv4. Would require
-    // other changes, such as waiting to create the socket until after we
-    // have the address family. Maybe unbundle the translation of names here;
-    // use TcpAddress to resolve things and make this class take a TcpAddress
-    // and grab its address family to create the socket.
-    struct addrinfo hints;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;   // We always creating AF_INET-only sockets.
-    hints.ai_socktype = SOCK_STREAM; // We always do TCP
-    addrinfo *addrs;
-    int status = getaddrinfo(host.c_str(), portstr.c_str(), &hints, &addrs);
-    if (status != 0)
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " <<
-                                 gai_strerror(status)));
-    addrinfo *addr = addrs;
+    const addrinfo *addrs = &(getAddrInfo(addr));
     int error = 0;
     WSASetLastError(0);
-    while (addr != 0) {
-        if ((::connect(socket, addr->ai_addr, addr->ai_addrlen) == 0) ||
+    while (addrs != 0) {
+        if ((::connect(socket, addrs->ai_addr, addrs->ai_addrlen) == 0) ||
             (WSAGetLastError() == WSAEWOULDBLOCK))
             break;
         // Error... save this error code and see if there are other address
         // to try before throwing the exception.
         error = WSAGetLastError();
-        addr = addr->ai_next;
+        addrs = addrs->ai_next;
     }
-    freeaddrinfo(addrs);
     if (error)
         throw qpid::Exception(QPID_MSG(strError(error) << ": " << connectname));
 }

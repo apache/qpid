@@ -333,6 +333,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/PollableCondition.cpp
     qpid/sys/windows/Shlib.cpp
     qpid/sys/windows/Socket.cpp
+    qpid/sys/windows/SocketAddress.cpp
     qpid/sys/windows/StrError.cpp
     qpid/sys/windows/SystemInfo.cpp
     qpid/sys/windows/Thread.cpp
@@ -739,7 +740,7 @@ set_target_properties (qpidbroker PROPERTIES VERSION ${qpidc_version})
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)
 endif (MSVC)
-install (TARGETS qpidbroker LIBRARY
+install (TARGETS qpidbroker
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
 
@@ -773,7 +774,7 @@ add_library (qmf SHARED ${qmf_SOURCES})
 target_link_libraries (qmf qmfengine)
 set_target_properties (qmf PROPERTIES
                        VERSION ${qmf_version})
-install (TARGETS qmf LIBRARY
+install (TARGETS qmf OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
 
@@ -807,7 +808,7 @@ add_library (qmfengine SHARED ${qmfengine_SOURCES})
 target_link_libraries (qmfengine qpidclient)
 set_target_properties (qmfengine PROPERTIES
                        VERSION ${qmfengine_version})
-install (TARGETS qmfengine
+install (TARGETS qmfengine OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
 
