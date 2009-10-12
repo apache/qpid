@@ -60,17 +60,21 @@ class PollerHandlePrivate {
         DELETED
     };
 
-    int fd;
     ::__uint32_t events;
+    const IOHandlePrivate* ioHandle;
     PollerHandle* pollerHandle;
     FDStat stat;
     Mutex lock;
 
-    PollerHandlePrivate(int f, PollerHandle* p) :
-      fd(f),
+    PollerHandlePrivate(const IOHandlePrivate* h, PollerHandle* p) :
       events(0),
+      ioHandle(h),
       pollerHandle(p),
       stat(ABSENT) {
+    }
+
+    int fd() const {
+        return toFd(ioHandle);
     }
 
     bool isActive() const {
@@ -131,7 +135,7 @@ class PollerHandlePrivate {
 };
 
 PollerHandle::PollerHandle(const IOHandle& h) :
-    impl(new PollerHandlePrivate(toFd(h.impl), this))
+    impl(new PollerHandlePrivate(h.impl, this))
 {}
 
 PollerHandle::~PollerHandle() {
@@ -303,7 +307,7 @@ void Poller::registerHandle(PollerHandle& handle) {
     epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
 
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_ADD, eh.fd, &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_ADD, eh.fd(), &epe));
 
     eh.setActive();
 }
@@ -313,7 +317,7 @@ void Poller::unregisterHandle(PollerHandle& handle) {
     ScopedLock<Mutex> l(eh.lock);
     assert(!eh.isIdle());
 
-    int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, eh.fd, 0);
+    int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, eh.fd(), 0);
     // Ignore EBADF since deleting a nonexistent fd has the overall required result!
     // And allows the case where a sloppy program closes the fd and then does the delFd()
     if (rc == -1 && errno != EBADF) {
@@ -344,7 +348,7 @@ void PollerPrivate::resetMode(PollerHandlePrivate& eh) {
         epe.data.u64 = 0; // Keep valgrind happy
         epe.data.ptr = &eh;
 
-        QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
+        QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, eh.fd(), &epe));
 
         eh.setActive();
         return;
@@ -382,7 +386,7 @@ void Poller::monitorHandle(PollerHandle& handle, Direction dir) {
     epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
 
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd(), &epe));
 }
 
 void Poller::unmonitorHandle(PollerHandle& handle, Direction dir) {
@@ -408,7 +412,7 @@ void Poller::unmonitorHandle(PollerHandle& handle, Direction dir) {
     epe.data.u64 = 0; // Keep valgrind happy
     epe.data.ptr = &eh;
 
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd(), &epe));
 }
 
 void Poller::shutdown() {
@@ -443,7 +447,7 @@ bool Poller::interrupt(PollerHandle& handle) {
         epe.events = 0;
         epe.data.u64 = 0; // Keep valgrind happy
         epe.data.ptr = &eh;
-        QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd, &epe));
+        QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, eh.fd(), &epe));
 
         if (eh.isInactive()) {
             eh.setInterrupted();
