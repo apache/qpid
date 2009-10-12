@@ -91,6 +91,7 @@
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
+				KeyFile="$(SolutionDir)\src\wcfnet.snk"
 			/>
 			<Tool
 				Name="VCALinkTool"
