@@ -31,6 +31,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.nio.ByteBuffer;
 
 /** A simple message store that stores the messages in a threadsafe structure in memory. */
 public class MemoryMessageStore extends AbstractMessageStore
@@ -238,6 +240,21 @@ public class MemoryMessageStore extends AbstractMessageStore
     public boolean isPersistent()
     {
         return false;
+    }
+
+    public void storeMessageHeader(Long messageNumber, ServerMessage message)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void storeContent(Long messageNumber, long offset, ByteBuffer body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ServerMessage getMessage(Long messageNumber)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     private void checkNotClosed() throws MessageStoreClosedException

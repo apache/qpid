@@ -30,9 +30,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.nio.ByteBuffer;
 
 /**
  * A message store that does nothing. Designed to be used in tests that do not want to use any message store
@@ -158,6 +160,21 @@ public class SkeletonMessageStore implements MessageStore
     public boolean isPersistent()
     {
         return false;
+    }
+
+    public void storeMessageHeader(Long messageNumber, ServerMessage message)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void storeContent(Long messageNumber, long offset, ByteBuffer body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ServerMessage getMessage(Long messageNumber)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void removeQueue(final AMQQueue queue) throws AMQException

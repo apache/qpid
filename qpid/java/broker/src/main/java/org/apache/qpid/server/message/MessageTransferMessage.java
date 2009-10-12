@@ -41,8 +41,14 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
 
     public MessageTransferMessage(MessageTransfer xfr, WeakReference<Session> sessionRef)
     {
+        this(_numberSource.getAndIncrement(), xfr, sessionRef);
+    }
+
+    public MessageTransferMessage(long messageNumber, MessageTransfer xfr, WeakReference<Session> sessionRef)
+    {
+
         _xfr = xfr;
-        _messageNumber = _numberSource.getAndIncrement();
+        _messageNumber = messageNumber;
         Header header = _xfr.getHeader();
         if(header != null)
         {

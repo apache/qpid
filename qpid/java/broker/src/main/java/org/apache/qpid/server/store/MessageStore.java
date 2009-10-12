@@ -25,6 +25,10 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.message.ServerMessage;
+
+import java.nio.ByteBuffer;
 
 /**
  * MessageStore defines the interface to a storage area, which can be used to preserve the state of messages, queues
@@ -134,9 +138,14 @@ public interface MessageStore extends DurableConfigurationStore, TransactionLog
 
     /**
      * Is this store capable of persisting the data
-     * 
+     *
      * @return true if this store is capable of persisting data
      */
     boolean isPersistent();
 
+    void storeMessageHeader(Long messageNumber, ServerMessage message);
+
+    void storeContent(Long messageNumber, long offset, ByteBuffer body);
+
+    ServerMessage getMessage(Long messageNumber);
 }

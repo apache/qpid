@@ -30,6 +30,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.ExchangeReferrer;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -39,7 +40,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 
-public interface AMQQueue extends Managable, Comparable<AMQQueue>
+public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer
 {
 
 
@@ -206,6 +207,10 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void stop();
 
     boolean isExclusive();
+
+    Exchange getAlternateExchange();
+
+    void setAlternateExchange(Exchange exchange);
 
     Map<String, Object> getArguments();
 

@@ -27,11 +27,12 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.ExchangeReferrer;
 
 import java.util.ArrayList;
 import java.util.Map;
 
-public interface Exchange
+public interface Exchange extends ExchangeReferrer
 {
     AMQShortString getName();
 
@@ -100,4 +101,13 @@ public interface Exchange
 
     boolean isBound(String bindingKey);
 
+    Exchange getAlternateExchange();
+
+    void setAlternateExchange(Exchange exchange);
+
+    void removeReference(ExchangeReferrer exchange);
+
+    void addReference(ExchangeReferrer exchange);
+
+    boolean hasReferrers();
 }

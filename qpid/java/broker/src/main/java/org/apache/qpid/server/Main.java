@@ -245,7 +245,7 @@ public class Main
 
         String logConfig = commandLine.getOptionValue("l");
         String logWatchConfig = commandLine.getOptionValue("w", "0");
-        
+
         int logWatchTime = 0;
         try
         {
@@ -256,7 +256,7 @@ public class Main
             System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
                                + "a non-negative integer. Using default of zero (no watching configured");
         }
-        
+
         File logConfigFile;
         if (logConfig != null)
         {
@@ -282,8 +282,10 @@ public class Main
         BrokerMessages.reload();
 
         // AR.initialise() sets its own actor so we now need to set the actor
-        // for the remainder of the startup        
+        // for the remainder of the startup
         CurrentActor.set(new BrokerActor(config.getRootMessageLogger()));
+        CurrentActor.setDefault(new BrokerActor(config.getRootMessageLogger()));
+
         try
         {
             configureLoggingManagementMBean(logConfigFile, logWatchTime);
@@ -339,40 +341,53 @@ public class Main
             if (!serverConfig.getSSLOnly())
             {
                 NetworkDriver driver = new MINANetworkDriver();
-                driver.bind(port, new InetAddress[]{bindAddress}, new AMQProtocolEngineFactory(), 
+                driver.bind(port, new InetAddress[]{bindAddress}, new AMQProtocolEngineFactory(),
                             serverConfig.getNetworkConfiguration(), null);
-                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port), 
+                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
                                                               new QpidAcceptor(driver,"TCP"));
                 CurrentActor.get().message(BrokerMessages.BRK_1002("TCP", port));
             }
-            
+
             if (serverConfig.getEnableSSL())
             {
                 sslFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 NetworkDriver driver = new MINANetworkDriver();
-                driver.bind(serverConfig.getSSLPort(), new InetAddress[]{bindAddress}, 
+                driver.bind(serverConfig.getSSLPort(), new InetAddress[]{bindAddress},
                             new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
-                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port), 
+                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
                         new QpidAcceptor(driver,"TCP"));
                 CurrentActor.get().message(BrokerMessages.BRK_1002("TCP/SSL", serverConfig.getSSLPort()));
             }
-            
+
             //fixme  qpid.AMQP should be using qpidproperties to get value
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                     + " build: " + QpidProperties.getBuildVersion());
 
             CurrentActor.get().message(BrokerMessages.BRK_1004());
 
-
-            // TODO - Fix to use a proper binding
             int port_0_10 = port + 1;
 
             IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
-    
             final ConnectionDelegate delegate =
-                    new org.apache.qpid.server.transport.ServerConnectionDelegate(appRegistry, "localhost");
-    
-    
+                    new org.apache.qpid.server.transport.ServerConnectionDelegate(appRegistry, bindAddress.getCanonicalHostName());
+
+/*
+            NetworkDriver driver = new MINANetworkDriver();
+            driver.bind(port, new InetAddress[]{bindAddress}, new ProtocolEngineFactory_0_10(delegate),
+                        serverConfig.getNetworkConfiguration(), null);
+            ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
+                                                          new QpidAcceptor(driver,"TCP"));
+            CurrentActor.get().message(BrokerMessages.BRK_1002("TCP", port));
+*/
+
+
+            // TODO - Fix to use a proper binding
+
+
+
+
+
+
             ConnectionBinding cb = new ConnectionBinding()
             {
                 public Connection connection()
@@ -382,7 +397,7 @@ public class Main
                     return conn;
                 }
             };
-    
+
             org.apache.qpid.transport.network.io.IoAcceptor ioa = new org.apache.qpid.transport.network.io.IoAcceptor
                 ("0.0.0.0", port_0_10, cb);
             ioa.start();
@@ -426,11 +441,11 @@ public class Main
         {
             System.setProperty("log4j.defaultInitOverride", "true");
         }
-        
+
         //now that the override status is know, we can instantiate the Loggers
         _logger = Logger.getLogger(Main.class);
         _brokerLogger = Logger.getLogger("Qpid.Broker");
-        
+
         new Main(args);
     }
 
@@ -466,7 +481,7 @@ public class Main
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            CurrentActor.get().message(BrokerMessages.BRK_1007(logConfigFile.getAbsolutePath()));            
+            CurrentActor.get().message(BrokerMessages.BRK_1007(logConfigFile.getAbsolutePath()));
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {
@@ -498,7 +513,7 @@ public class Main
         {
             System.err.println("Logging configuration error: unable to read file " + logConfigFile.getAbsolutePath());
             System.err.println("Using the fallback internal log4j.properties configuration");
-            
+
             InputStream propsFile = this.getClass().getResourceAsStream("/log4j.properties");
             if(propsFile == null)
             {
@@ -516,7 +531,7 @@ public class Main
     private void configureLoggingManagementMBean(File logConfigFile, int logWatchTime) throws Exception
     {
         LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
-        
+
         try
         {
             blm.register();

@@ -336,6 +336,16 @@ public class MockAMQQueue implements AMQQueue
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public Exchange getAlternateExchange()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setAlternateExchange(Exchange exchange)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public Map<String, Object> getArguments()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.

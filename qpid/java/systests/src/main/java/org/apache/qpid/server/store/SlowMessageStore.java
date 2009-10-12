@@ -31,9 +31,11 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.nio.ByteBuffer;
 
 public class SlowMessageStore implements MessageStore
 {
@@ -315,6 +317,21 @@ public class SlowMessageStore implements MessageStore
     public boolean isPersistent()
     {
         return _realStore.isPersistent();
+    }
+
+    public void storeMessageHeader(Long messageNumber, ServerMessage message)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void storeContent(Long messageNumber, long offset, ByteBuffer body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ServerMessage getMessage(Long messageNumber)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
 }

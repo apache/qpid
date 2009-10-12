@@ -74,6 +74,16 @@ public class TestExchange implements Exchange
         return false;
     }
 
+    public Exchange getAlternateExchange()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setAlternateExchange(Exchange exchange)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void initialise(VirtualHost host, AMQShortString name, boolean durable, boolean autoDelete)
             throws AMQException
     {

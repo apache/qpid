@@ -22,22 +22,17 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.message.*;
 
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A deliverable message.
@@ -71,107 +66,6 @@ public class AMQMessage implements ServerMessage
     private Object _sessionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
     private final AMQMessageHeader _messageHeader;
-
-
-    /**
-     * Used to iterate through all the body frames associated with this message. Will not keep all the data in memory
-     * therefore is memory-efficient.
-     */
-    private class BodyFrameIterator implements Iterator<AMQDataBlock>
-    {
-        private int _channel;
-
-        private int _index = -1;
-        private AMQProtocolSession _protocolSession;
-
-        private BodyFrameIterator(AMQProtocolSession protocolSession, int channel)
-        {
-            _channel = channel;
-            _protocolSession = protocolSession;
-        }
-
-        public boolean hasNext()
-        {
-            try
-            {
-                return _index < (_messageHandle.getBodyCount() - 1);
-            }
-            catch (AMQException e)
-            {
-                _log.error("Unable to get body count: " + e, e);
-
-                return false;
-            }
-        }
-
-        public AMQDataBlock next()
-        {
-            try
-            {
-
-                AMQBody cb =
-                        getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(
-                                ++_index));
-
-                return new AMQFrame(_channel, cb);
-            }
-            catch (AMQException e)
-            {
-                // have no choice but to throw a runtime exception
-                throw new RuntimeException("Error getting content body: " + e, e);
-            }
-
-        }
-
-        private ProtocolVersionMethodConverter getProtocolVersionMethodConverter()
-        {
-            return _protocolSession.getMethodRegistry().getProtocolVersionMethodConverter();
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-
-    private class BodyContentIterator implements Iterator<ContentChunk>
-    {
-
-        private int _index = -1;
-
-        public boolean hasNext()
-        {
-            try
-            {
-                return _index < (_messageHandle.getBodyCount() - 1);
-            }
-            catch (AMQException e)
-            {
-                _log.error("Error getting body count: " + e, e);
-
-                return false;
-            }
-        }
-
-        public ContentChunk next()
-        {
-            try
-            {
-                return _messageHandle.getContentChunk(++_index);
-            }
-            catch (AMQException e)
-            {
-                throw new RuntimeException("Error getting content body: " + e, e);
-            }
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
-    }
-
 
 
     /**
@@ -260,12 +154,12 @@ public class AMQMessage implements ServerMessage
 
     public Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel)
     {
-        return new BodyFrameIterator(protocolSession, channel);
+        return new BodyFrameIterator(protocolSession, channel, _messageHandle);
     }
 
     public Iterator<ContentChunk> getContentBodyIterator()
     {
-        return new BodyContentIterator();
+        return new BodyContentIterator(_messageHandle);
     }
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException

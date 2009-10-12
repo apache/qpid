@@ -37,8 +37,9 @@ import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class IncomingMessage implements Filterable, InboundMessage, EnqueableMessage
+public class IncomingMessage implements Filterable, InboundMessage, EnqueableMessage, BodyContentHolder
 {
 
     /** Used for debugging purposes. */
@@ -73,6 +74,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
 
     private int _receivedChunkCount = 0;
+    private List<ContentChunk> _contentChunks = new ArrayList<ContentChunk>();
 
 
     public IncomingMessage(final Long messageId,
@@ -145,6 +147,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     {
 
         _bodyLengthReceived += contentChunk.getSize();
+        _contentChunks.add(contentChunk);
         _messageHandle.addContentBodyFrame(contentChunk, allContentReceived());
         return _receivedChunkCount++;
     }
@@ -246,4 +249,13 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     }
 
 
+    public int getBodyCount() throws AMQException
+    {
+        return _contentChunks.size();
+    }
+
+    public ContentChunk getContentChunk(int index) throws IllegalArgumentException, AMQException
+    {
+        return _contentChunks.get(index);
+    }
 }

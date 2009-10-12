@@ -46,14 +46,16 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ExchangeLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.ExchangeReferrer;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractExchange implements Exchange, Managable
 {
     private AMQShortString _name;
 
-
+    private Exchange _alternateExchange;
 
     protected boolean _durable;
     protected String _exchangeType;
@@ -70,6 +72,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     //The logSubject for ths exchange
     private LogSubject _logSubject;
+    private Map<ExchangeReferrer,Object> _referrers = new ConcurrentHashMap<ExchangeReferrer,Object>();
 
     /**
      * Abstract MBean class. This has some of the methods implemented from
@@ -197,6 +200,10 @@ public abstract class AbstractExchange implements Exchange, Managable
         {
             _exchangeMbean.unregister();
         }
+        if(_alternateExchange != null)
+        {
+            _alternateExchange.removeReference(this);
+        }
 
         CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_1002());
     }    
@@ -237,4 +244,37 @@ public abstract class AbstractExchange implements Exchange, Managable
         return isBound(new AMQShortString(bindingKey));
     }
 
+    public Exchange getAlternateExchange()
+    {
+        return _alternateExchange;
+    }
+
+    public void setAlternateExchange(Exchange exchange)
+    {
+        if(_alternateExchange != null)
+        {
+            _alternateExchange.removeReference(this);
+        }
+        if(exchange != null)
+        {
+            exchange.addReference(this);
+        }
+        _alternateExchange = exchange;
+
+    }
+
+    public void removeReference(ExchangeReferrer exchange)
+    {
+        _referrers.remove(exchange);
+    }
+
+    public void addReference(ExchangeReferrer exchange)
+    {
+        _referrers.put(exchange, Boolean.TRUE);
+    }
+
+    public boolean hasReferrers()
+    {
+        return !_referrers.isEmpty();
+    }
 }

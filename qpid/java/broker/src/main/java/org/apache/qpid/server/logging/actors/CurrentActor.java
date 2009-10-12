@@ -21,6 +21,9 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.RootMessageLogger;
 
 import java.util.EmptyStackException;
 import java.util.Stack;
@@ -66,6 +69,8 @@ public class CurrentActor
         }
     };
 
+    private static LogActor _defaultActor;
+
     /**
      * Set a new LogActor to be the Current Actor
      * <p/>
@@ -105,7 +110,12 @@ public class CurrentActor
         }
         catch (EmptyStackException ese)
         {
-            return null;
+            return _defaultActor;
         }
+    }
+
+    public static void setDefault(LogActor defaultActor)
+    {
+        _defaultActor = defaultActor;
     }
 }

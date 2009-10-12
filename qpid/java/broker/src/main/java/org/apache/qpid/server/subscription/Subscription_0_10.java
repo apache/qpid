@@ -108,8 +108,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _creditManager.addStateListener(this);
         _state.set(_creditManager.hasCredit() ? State.ACTIVE : State.SUSPENDED);
 
-        _logSubject = new SubscriptionLogSubject(this);
-        _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
 
     }
 
@@ -135,6 +133,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
+        _logSubject = new SubscriptionLogSubject(this);
+        _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
+        
     }
 
     public AMQShortString getConsumerTag()
@@ -335,7 +336,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                                         {
                                             public void onComplete(Method method)
                                             {
-                                                restoreCredit(entry);                                                          
+                                                restoreCredit(entry);
                                             }
                                         });
         }
@@ -409,7 +410,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private void reject(QueueEntry entry)
     {
         entry.setRedelivered(true);
-        entry.reject(this);
+        entry.routeToAlternate();
 
     }
 

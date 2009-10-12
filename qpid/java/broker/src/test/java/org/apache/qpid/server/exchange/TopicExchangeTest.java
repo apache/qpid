@@ -33,7 +33,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
-public class DestWildExchangeTest extends TestCase
+public class TopicExchangeTest extends TestCase
 {
 
     TopicExchange _exchange;

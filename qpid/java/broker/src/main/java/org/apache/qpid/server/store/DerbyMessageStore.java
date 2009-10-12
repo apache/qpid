@@ -40,6 +40,7 @@ import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.queue.QueueRegistry;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.ServerMessage;
 
 
 import java.io.ByteArrayInputStream;
@@ -1373,6 +1374,21 @@ public class DerbyMessageStore extends AbstractMessageStore
     public boolean isPersistent()
     {
         return true;
+    }
+
+    public void storeMessageHeader(Long messageNumber, ServerMessage message)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void storeContent(Long messageNumber, long offset, java.nio.ByteBuffer body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ServerMessage getMessage(Long messageNumber)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     private void checkNotClosed() throws MessageStoreClosedException

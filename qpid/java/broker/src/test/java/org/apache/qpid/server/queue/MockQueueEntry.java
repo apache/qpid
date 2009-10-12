@@ -69,6 +69,11 @@ public class MockQueueEntry implements QueueEntry
 
     }
 
+    public void routeToAlternate()
+    {
+        
+    }
+
     public void dispose()
     {
 

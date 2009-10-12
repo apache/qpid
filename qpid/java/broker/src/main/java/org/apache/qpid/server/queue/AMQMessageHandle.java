@@ -29,7 +29,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
  * A pluggable way of getting message data. Implementations can provide intelligent caching for example or
  * even no caching at all to minimise the broker memory footprint.
  */
-public interface AMQMessageHandle
+public interface AMQMessageHandle extends BodyContentHolder
 {
     ContentHeaderBody getContentHeaderBody() throws AMQException;
 
@@ -41,22 +41,9 @@ public interface AMQMessageHandle
 
 
     /**
-     * @return the number of body frames associated with this message
-     */
-    int getBodyCount() throws AMQException;
-
-    /**
      * @return the size of the body
      */
     long getBodySize() throws AMQException;
-
-    /**
-     * Get a particular content body
-     * @param index the index of the body to retrieve, must be between 0 and getBodyCount() - 1
-     * @return a content body
-     * @throws IllegalArgumentException if the index is invalid
-     */
-    ContentChunk getContentChunk(int index) throws IllegalArgumentException, AMQException;
 
     void addContentBodyFrame(ContentChunk contentBody, boolean isLastContentBody) throws AMQException;
 

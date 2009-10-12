@@ -232,7 +232,7 @@ public class AMQChannel
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
                 {
-                    _transaction.addPostCommitAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", createAMQMessage(_currentMessage)));
+                    _transaction.addPostCommitAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", _currentMessage));
                 }
                 else
                 {
@@ -240,7 +240,7 @@ public class AMQChannel
                     {
                         if (_currentMessage.isMandatory() || _currentMessage.isImmediate())
                         {
-                            _transaction.addPostCommitAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message", createAMQMessage(_currentMessage)));
+                            _transaction.addPostCommitAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message", _currentMessage));
                         }
                         else
                         {
@@ -898,37 +898,6 @@ public class AMQChannel
         return _defaultQueue;
     }
 
-    public void processReturns() throws AMQException
-    {
-        if (!_returnMessages.isEmpty())
-        {
-
-            for (RequiredDeliveryException bouncedMessage : _returnMessages)
-            {
-                ServerMessage serverMessage = bouncedMessage.getAMQMessage();
-                if(serverMessage instanceof AMQMessage)
-                {
-                    AMQMessage message = (AMQMessage) serverMessage;
-                    _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
-                                                                      message.getContentHeaderBody(),
-                                                                      message.getBodyFrameIterator(_session,_channelId),
-                                                                      _channelId,
-                                                                      bouncedMessage.getReplyCode().getCode(),
-                                                                     new AMQShortString(bouncedMessage.getMessage()));
-
-                }
-                else
-                {
-                    // TODO AMQP 0-10 Message
-                    throw new RuntimeException("not yet implemented conversion of 0-10 messages");
-                }
-                bouncedMessage.release();
-            }
-
-
-            _returnMessages.clear();
-        }
-    }
 
     public boolean isClosing()
     {
@@ -1154,12 +1123,12 @@ public class AMQChannel
     private class WriteReturnAction implements Transaction.Action
     {
         private final AMQConstant _errorCode;
-        private final AMQMessage _message;
+        private final IncomingMessage _message;
         private final String _description;
 
         public WriteReturnAction(AMQConstant errorCode,
                                  String description,
-                                 AMQMessage message)
+                                 IncomingMessage message)
         {
             _errorCode = errorCode;
             _message = message;
@@ -1171,8 +1140,8 @@ public class AMQChannel
             try
             {
                 _session.getProtocolOutputConverter().writeReturn(_message.getMessagePublishInfo(),
-                                                              _message.getContentHeaderBody(),
-                                                              _message.getBodyFrameIterator(_session,_channelId),
+                                                              _message.getContentHeader(),
+                                                              new BodyFrameIterator(_session,_channelId,_message),
                                                               _channelId,
                                                               _errorCode.getCode(),
                                                              new AMQShortString(_description));

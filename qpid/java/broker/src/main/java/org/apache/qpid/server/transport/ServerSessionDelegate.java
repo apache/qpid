@@ -31,6 +31,7 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.flow.*;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.*;
@@ -87,7 +88,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
         session.executionResult((int) method.getId(), result);
 
-        
+
     }
 
     @Override
@@ -154,7 +155,7 @@ public class ServerSessionDelegate extends SessionDelegate
 
                     // TODO filters
 
-                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session, 
+                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                                   destination,
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
@@ -177,7 +178,6 @@ public class ServerSessionDelegate extends SessionDelegate
                     catch (AMQException e)
                     {
                         // TODO
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                         throw new RuntimeException(e);
                     }
                 }
@@ -204,7 +204,14 @@ public class ServerSessionDelegate extends SessionDelegate
             exchange = exchangeRegistry.getDefaultExchange();
         }
 
+
+
+
         MessageTransferMessage message = new MessageTransferMessage(xfr, ((ServerSession)ssn).getReference());
+        final MessageStore store = getVirtualHost(ssn).getMessageStore();
+
+        store.storeMessageHeader(message.getMessageNumber(),message);
+        store.storeContent(message.getMessageNumber(), 0, xfr.getBody());
 
         DeliveryProperties delvProps = null;
         if(message.getHeader() != null && (delvProps = message.getHeader().get(DeliveryProperties.class)) != null && delvProps.hasTtl() && !delvProps.hasExpiration())
@@ -216,9 +223,46 @@ public class ServerSessionDelegate extends SessionDelegate
 
 
 
-        if(queues != null)
+        if(queues != null && queues.size() != 0)
         {
             ((ServerSession) ssn).enqueue(message, queues);
+        }
+        else
+        {
+            if(delvProps == null || !delvProps.hasDiscardUnroutable() || !delvProps.getDiscardUnroutable())
+            {
+                if(xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                {
+                    RangeSet rejects = new RangeSet();
+                    rejects.add(xfr.getId());
+                    MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
+                    ssn.invoke(reject);
+                }
+                else
+                {
+                    Exchange alternate = exchange.getAlternateExchange();
+                    if(alternate != null)
+                    {
+                        queues = alternate.route(message);
+                        if(queues != null && queues.size() != 0)
+                        {
+                            ((ServerSession) ssn).enqueue(message, queues);
+                        }
+                        else
+                        {
+                            //TODO - log the message discard
+                        }
+                    }
+                    else
+                    {
+                        //TODO - log the message discard
+                    }
+
+
+                }
+            }
+
+
         }
 
         ssn.processed(xfr);
@@ -346,6 +390,14 @@ public class ServerSessionDelegate extends SessionDelegate
                                                               method.getDurable(),
                                                               method.getAutoDelete());
 
+                    String alternateExchangeName = method.getAlternateExchange();
+                    if(alternateExchangeName != null && alternateExchangeName.length() != 0)
+                    {
+                        Exchange alternate = getExchange(session, alternateExchangeName);
+                        exchange.setAlternateExchange(alternate);
+                    }
+
+
                     exchangeRegistry.registerExchange(exchange);
                 }
                 catch(AMQUnknownExchangeType e)
@@ -426,7 +478,16 @@ public class ServerSessionDelegate extends SessionDelegate
 
             try
             {
-                exchangeRegistry.unregisterExchange(method.getExchange(), method.getIfUnused());
+                Exchange exchange = getExchange(session, method.getExchange());
+
+                if(exchange != null && exchange.hasReferrers())
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Exchange in use as an alternate exchange");
+                }
+                else
+                {
+                    exchangeRegistry.unregisterExchange(method.getExchange(), method.getIfUnused());
+                }
             }
             catch (ExchangeInUseException e)
             {
@@ -491,7 +552,7 @@ public class ServerSessionDelegate extends SessionDelegate
             //TODO - here because of non-compiant python tests
             if (!method.hasBindingKey())
             {
-                method.setBindingKey(method.getQueue());    
+                method.setBindingKey(method.getQueue());
             }
             AMQQueue queue = queueRegistry.getQueue(method.getQueue());
             Exchange exchange = exchangeRegistry.getExchange(method.getExchange());
@@ -512,7 +573,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else if(exchange.getType().equals(HeadersExchange.TYPE.getName()) && (!method.hasArguments() || method.getArguments() == null || !method.getArguments().containsKey("x-match")))
             {
-                exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getName() + " require an x-match header");    
+                exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Bindings to an exchange of type " + HeadersExchange.TYPE.getName() + " require an x-match header");
             }
             else
             {
@@ -622,7 +683,7 @@ public class ServerSessionDelegate extends SessionDelegate
             {
                 result.setQueueNotFound(true);
             }
-        
+
 
             if(exchange != null && queue != null)
             {
@@ -651,7 +712,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 else if (method.hasArguments())
                 {
                     // TODO
-                    
+
                 }
 
                 result.setQueueNotMatched(!exchange.isBound(queue));
@@ -748,6 +809,13 @@ public class ServerSessionDelegate extends SessionDelegate
                         if(method.getExclusive())
                         {
                             queue.setPrincipalHolder((ServerSession)session);
+                            queue.setExclusiveOwner(session);
+                        }
+                        final String alternateExchangeName = method.getAlternateExchange();
+                        if(alternateExchangeName != null && alternateExchangeName.length() != 0)
+                        {
+                            Exchange alternate = getExchange(session, alternateExchangeName);
+                            queue.setAlternateExchange(alternate);
                         }
 
 

@@ -54,6 +54,7 @@ import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticat
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.TransactionLog;
 
 import javax.management.NotCompliantMBeanException;
 import java.util.Collections;
@@ -88,6 +89,7 @@ public class VirtualHost implements Accessable
 
     private final Timer _houseKeepingTimer;
     private VirtualHostConfiguration _configuration;
+    private DurableConfigurationStore _durableConfigurationStore;
 
     public void setAccessableName(String name)
     {
@@ -181,7 +183,7 @@ public class VirtualHost implements Accessable
 
         StartupRoutingTable configFileRT = new StartupRoutingTable();
 
-        _messageStore = configFileRT;
+        _durableConfigurationStore = configFileRT;
 
         // This needs to be after the RT has been defined as it creates the default durable exchanges.
         _exchangeRegistry.initialise();
@@ -211,6 +213,7 @@ public class VirtualHost implements Accessable
         if (store != null)
         {
             _messageStore = store;
+            _durableConfigurationStore = store;
         }
         else
         {
@@ -302,6 +305,7 @@ public class VirtualHost implements Accessable
         MessageStore messageStore = (MessageStore) o;
         messageStore.configure(this, "store", hostConfig);
         _messageStore = messageStore;
+        _durableConfigurationStore = messageStore;
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
@@ -413,9 +417,14 @@ public class VirtualHost implements Accessable
         return _messageStore;
     }
 
-    public DurableConfigurationStore getDurableConfigurationStore()
+    public TransactionLog getTransactionLog()
     {
         return _messageStore;
+    }
+
+    public DurableConfigurationStore getDurableConfigurationStore()
+    {
+        return _durableConfigurationStore;
     }
 
     public AuthenticationManager getAuthenticationManager()
@@ -475,7 +484,7 @@ public class VirtualHost implements Accessable
      * This is so we can replay the creation of queues/exchanges in to the real _RT after it has been loaded.
      * This should be removed after the _RT has been fully split from the the TL
      */
-    private class StartupRoutingTable implements MessageStore
+    private class StartupRoutingTable implements DurableConfigurationStore
     {
         public List<Exchange> exchange = new LinkedList<Exchange>();
         public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
@@ -535,87 +544,6 @@ public class VirtualHost implements Accessable
         {
         }
 
-        public void enqueueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void dequeueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void beginTran(StoreContext context) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void commitTran(StoreContext context) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public StoreFuture commitTranAsync(StoreContext context) throws AMQException
-        {
-            commitTran(context);
-            return new StoreFuture() 
-                        {
-                            public boolean isComplete()
-                            {
-                                return true;
-                            }
-
-                            public void waitForCompletion()
-                            {
-
-                            }
-                        };
-
-        }
-
-        public void abortTran(StoreContext context) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public boolean inTran(StoreContext context)
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Long getNewMessageId()
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void storeContentBodyChunk(
-                Long messageId,
-                int index,
-                ContentChunk contentBody,
-                boolean lastContentBody) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void storeMessageMetaData(Long messageId, MessageMetaData messageMetaData) throws AMQException
-        {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public boolean isPersistent()
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
 
         private class CreateQueueTuple
         {

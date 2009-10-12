@@ -27,6 +27,7 @@ import org.apache.qpid.server.message.ServerMessage;
 public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 {
 
+
     public static enum State
     {
         AVAILABLE,
@@ -198,6 +199,8 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
     void dispose();
 
     void discard();
+
+    void routeToAlternate();
 
     boolean isQueueDeleted();
 
