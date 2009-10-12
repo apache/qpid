@@ -33,7 +33,7 @@ def nameval(st):
   return name, value
 
 parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS [ CONTENT ... ]",
-                               description="Drain messages from the supplied address.")
+                               description="Send messages to the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
 parser.add_option("-c", "--count", type=int, default=1,
