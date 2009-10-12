@@ -387,6 +387,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/Shlib.cpp
     qpid/log/posix/SinkOptions.cpp
     qpid/sys/posix/Socket.cpp
+    qpid/sys/posix/SocketAddress.cpp
     qpid/sys/posix/StrError.cpp
     qpid/sys/posix/SystemInfo.cpp
     qpid/sys/posix/Thread.cpp
