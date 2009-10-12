@@ -138,21 +138,16 @@ std::string getService(SOCKET fd, bool local)
 Socket::Socket() :
 	IOHandle(new IOHandlePrivate)
 {
-	createTcp();
-}
-
-Socket::Socket(IOHandlePrivate* h) :
-	IOHandle(h)
-{}
-
-void Socket::createTcp() const
-{
     SOCKET& socket = impl->fd;
     if (socket != INVALID_SOCKET) Socket::close();
     SOCKET s = ::socket (PF_INET, SOCK_STREAM, 0);
     if (s == INVALID_SOCKET) throw QPID_WINDOWS_ERROR(WSAGetLastError());
     socket = s;
 }
+
+Socket::Socket(IOHandlePrivate* h) :
+	IOHandle(h)
+{}
 
 void Socket::setTimeout(const Duration& interval) const
 {
