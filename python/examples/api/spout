@@ -51,9 +51,9 @@ opts, args = parser.parse_args()
 
 url = URL(opts.broker)
 if opts.id is None:
-  ping_id = str(uuid4())
+  spout_id = str(uuid4())
 else:
-  ping_id = opts.id
+  spout_id = opts.id
 if args:
   addr = args.pop(0)
 else:
@@ -87,7 +87,7 @@ start = time.time()
 while (opts.count == 0 or count < opts.count) and \
       (opts.timeout is None or time.time() - start < opts.timeout):
   msg = Message(content, reply_to=opts.reply_to)
-  msg.properties["ping-id"] = "%s:%s" % (ping_id, count)
+  msg.properties["spout-id"] = "%s:%s" % (spout_id, count)
   for p in opts.properties:
     name, val = nameval(p)
     msg.properties[name] = val
