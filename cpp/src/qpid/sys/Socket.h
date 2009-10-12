@@ -56,6 +56,7 @@ public:
      *@return The bound port.
      */
     QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
+    QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
 
     /** Returns the "socket name" ie the address bound to 
      * the near end of the socket

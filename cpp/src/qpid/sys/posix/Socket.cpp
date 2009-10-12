@@ -172,15 +172,19 @@ int Socket::listen(uint16_t port, int backlog) const
     SocketAddress sa("", boost::lexical_cast<std::string>(port));
 
     createSocket(sa);
+    return listen(sa, backlog);
+}
 
+int Socket::listen(const SocketAddress& sa, int backlog) const
+{
     const int& socket = impl->fd;
     int yes=1;
     QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
 
     if (::bind(socket, getAddrInfo(sa).ai_addr, getAddrInfo(sa).ai_addrlen) < 0)
-        throw Exception(QPID_MSG("Can't bind to port " << port << ": " << strError(errno)));
+        throw Exception(QPID_MSG("Can't bind to port " << sa.asString() << ": " << strError(errno)));
     if (::listen(socket, backlog) < 0)
-        throw Exception(QPID_MSG("Can't listen on port " << port << ": " << strError(errno)));
+        throw Exception(QPID_MSG("Can't listen on port " << sa.asString() << ": " << strError(errno)));
 
     struct sockaddr_in name;
     socklen_t namelen = sizeof(name);
