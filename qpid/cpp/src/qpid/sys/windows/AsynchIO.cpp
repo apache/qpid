@@ -216,7 +216,7 @@ AsynchConnector::AsynchConnector(const Socket& sock,
         connCallback(socket);
     } catch(std::exception& e) {
         if (failCallback)
-            failCallback(-1, std::string(e.what()));
+            failCallback(socket, -1, std::string(e.what()));
         socket.close();
         delete &socket;
     }

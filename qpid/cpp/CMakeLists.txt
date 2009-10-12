@@ -101,6 +101,27 @@ if (WIN32)
        "Directory to load client plug-in modules from")
   set (QPIDD_MODULE_DIR plugins/broker CACHE STRING
        "Directory to load broker plug-in modules from")
+
+  # The WCF/C++ client is built separately (it doesn't have a CMakeLists.txt)
+  # but installed with the C++ components on Windows.
+  # Don't freak out if it's not there (but it may be good to freak out if
+  # building the real one...)
+  install (PROGRAMS
+           ../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Channel.dll
+           ../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Interop.dll
+           DESTINATION ${QPID_INSTALL_LIBDIR}
+           COMPONENT ${QPID_COMPONENT_CLIENT}
+           OPTIONAL)
+# Not sure about this syntax yet... or how to only do it if Client is installed.
+#  set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+#       gacutil -I '$INSTDIR\\${QPID_INSTALL_LIBDIR}\\Apache.Qpid.Channel.dll'
+#       gacutil -I '$INSTDIR\\${QPID_INSTALL_LIBDIR}\\Apache.Qpid.Interop.dll'
+#      ")
+#  set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+#       gacutil /u 'Apache.Qpid.Channel'
+#       gacutil /u 'Apache.Qpid.Interop'
+#      ")
+
 endif (WIN32)
 if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   # Set up install locations. Since the Linux install puts some files in
