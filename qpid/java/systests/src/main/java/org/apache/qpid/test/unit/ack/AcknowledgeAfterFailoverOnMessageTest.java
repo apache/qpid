@@ -155,7 +155,7 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
         public void onMessage(Message message)
         {
             // Stop processing if we have an error and had to stop running.
-            if (_receviedAll.getCount() == 0)
+            if (_receivedAll.getCount() == 0)
             {
                 _logger.debug("Dumping msgs due to error(" + _causeOfFailure.get().getMessage() + "):" + message);
                 return;
@@ -191,7 +191,7 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
                     // Acknowledge the first message if we are now on the cleaned pass
                     if (cleaned)
                     {
-                        _receviedAll.countDown();
+                        _receivedAll.countDown();
                     }
 
                     return;
@@ -234,7 +234,7 @@ public class AcknowledgeAfterFailoverOnMessageTest extends AcknowledgeOnMessageT
                 // this will then trigger test teardown.
                 if (cleaned)
                 {
-                    _receviedAll.countDown();
+                    _receivedAll.countDown();
                 }
 
                 //Reset message count so we can try again.

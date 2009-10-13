@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AcknowledgeOnMessageTest extends AcknowledgeTest implements MessageListener
 {
-    protected CountDownLatch _receviedAll;
+    protected CountDownLatch _receivedAll;
     protected AtomicReference<Exception> _causeOfFailure = new AtomicReference<Exception>(null);
 
     @Override
@@ -46,7 +46,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
     @Override
     public void init(boolean transacted, int mode) throws Exception
     {
-        _receviedAll = new CountDownLatch(NUM_MESSAGES);
+        _receivedAll = new CountDownLatch(NUM_MESSAGES);
 
         super.init(transacted, mode);
         _consumer.setMessageListener(this);
@@ -64,26 +64,36 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
 
         _connection.start();
 
-        int lastCount = (int) _receviedAll.getCount();
+        // Set the lastCount to NUM_MESSAGES, this ensures that the compare
+        // against the receviedAll count is accurate.
+        int lastCount = NUM_MESSAGES;
 
-        boolean complete = _receviedAll.await(5000L, TimeUnit.MILLISECONDS);
+        // Wait for messages to arrive
+        boolean complete = _receivedAll.await(5000L, TimeUnit.MILLISECONDS);
 
+        // If the messasges haven't arrived
         while (!complete)
         {
-            int currentCount = (int) _receviedAll.getCount();
+            // Check how many we have received
+            int currentCount = (int) _receivedAll.getCount();
 
             // make sure we have received a message in the last cycle.
             if (lastCount == currentCount)
             {
+                // If we didn't receive any messages then stop.
+                // Something must have gone wrong.
+                System.err.println("Giving up waiting as we didn't receive anything.");
                 break;
             }
             // Remember the currentCount as the lastCount for the next cycle.
             // so we can exit if things get locked up.
             lastCount = currentCount;
 
-            complete = _receviedAll.await(5000L, TimeUnit.MILLISECONDS);
+            // Wait again for messages to arrive.
+            complete = _receivedAll.await(5000L, TimeUnit.MILLISECONDS);
         }
 
+        // If we failed to receive all the messages then fail the test.
         if (!complete)
         {
             // Check to see if we ended due to an exception in the onMessage handler
@@ -95,10 +105,11 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             }
             else
             {
-                fail("All messages not received missing:" + _receviedAll.getCount() + "/" + NUM_MESSAGES);
+                fail("All messages not received missing:" + _receivedAll.getCount() + "/" + NUM_MESSAGES);
             }
         }
 
+        // Even if we received all the messages.
         // Check to see if we ended due to an exception in the onMessage handler
         Exception cause = _causeOfFailure.get();
         if (cause != null)
@@ -131,7 +142,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
     {
         try
         {
-            int count = NUM_MESSAGES - (int) _receviedAll.getCount();
+            int count = NUM_MESSAGES - (int) _receivedAll.getCount();
 
             assertEquals("Incorrect message received", count, message.getIntProperty(INDEX));
 
@@ -144,7 +155,7 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
 
             doAcknowlegement(message);
 
-            _receviedAll.countDown();
+            _receivedAll.countDown();
         }
         catch (Exception e)
         {
@@ -162,9 +173,9 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
     {
         _causeOfFailure.set(e);
         // End the test.
-        while (_receviedAll.getCount() != 0)
+        while (_receivedAll.getCount() != 0)
         {
-            _receviedAll.countDown();
+            _receivedAll.countDown();
         }
     }
 }
