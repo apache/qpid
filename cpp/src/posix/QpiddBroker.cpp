@@ -144,8 +144,16 @@ int QpiddBroker::execute (QpiddOptions *options) {
             return 1;
         if (myOptions->daemon.check)
             cout << pid << endl;
-        if (myOptions->daemon.quit && kill(pid, SIGINT) < 0)
-          throw Exception("Failed to stop daemon: " + qpid::sys::strError(errno));
+        if (myOptions->daemon.quit) {
+            if (kill(pid, SIGINT) < 0) 
+                throw Exception("Failed to stop daemon: " + qpid::sys::strError(errno));
+            // Wait for the process to die before returning
+            int retry=10000;    // Try up to 10 seconds
+            while (kill(pid,0) == 0 && --retry)
+                sys::usleep(1000);
+            if (retry == 0)
+                throw Exception("Gave up waiting for daemon process to exit");
+        }
         return 0;
     }
 
