@@ -147,8 +147,16 @@ public class FailoverHandler implements Runnable
             // So lets make a new one.
             _amqProtocolHandler.setStateManager(new AMQStateManager());
 
-            // Close the session, false says don't wait for it to close, just close it.
-            _amqProtocolHandler.getProtocolSession().closeProtocolSession(false);
+            // Close the session, we need to wait for it to close as there may have
+            // been data in transit such as an ack that is still valid to send.
+            //
+            // While we are allowing data to continue to be written to the
+            // socket assuming the connection is still valid, we do not consider
+            // the possibility that the problem that triggered failover was
+            // entirely client side. In that situation the socket will still be
+            // open and the we should really send a ConnectionClose to be AMQP
+            // compliant.
+            _amqProtocolHandler.getProtocolSession().closeProtocolSession();
 
             // Use a fresh new StateManager for the reconnection attempts
             _amqProtocolHandler.setStateManager(new AMQStateManager());
