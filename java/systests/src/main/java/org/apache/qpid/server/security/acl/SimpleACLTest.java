@@ -34,6 +34,7 @@ import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -45,6 +46,8 @@ import javax.jms.TextMessage;
 import javax.naming.NamingException;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 {
@@ -136,10 +139,23 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         
         setUpACLTest();
         
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+        final CountDownLatch exceptionReceived = new CountDownLatch(1);
+        
         try
         {
             Connection conn = getConnection("guest", "guest");
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -155,6 +171,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -184,6 +205,10 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+    	//QPID-2081: use a latch to sync on exception causing connection close, to work 
+    	//around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("client", "guest");
@@ -191,6 +216,14 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             //Prevent Failover
             ((AMQConnection) conn).setConnectionListener(this);
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -206,6 +239,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -237,6 +275,10 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("client", "guest");
@@ -245,6 +287,14 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
 
             conn.start();
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             //Create a Named Queue
             ((AMQSession) sesh).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
 
@@ -255,6 +305,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         {
             amqe.printStackTrace();
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) amqe).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -323,11 +378,23 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("client", "guest");
 
             ((AMQConnection) conn).setConnectionListener(this);
+            
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
 
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -363,6 +430,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             }
             assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+            
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -392,10 +464,22 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("client", "guest");
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -412,6 +496,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+ 
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -419,10 +508,22 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("server", "guest");
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -438,6 +539,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -479,10 +585,22 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("server", "guest");
 
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -496,6 +614,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         catch (AMQAuthenticationException amqe)
         {
             assertEquals("Incorrect error code thrown", 403, amqe.getErrorCode().getCode());
+            
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -503,9 +626,21 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+
         try
         {
             Connection conn = getConnection("server", "guest");
+
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
 
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -523,6 +658,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             assertNotNull("There was no liked exception", cause);
             assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
             assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
+
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -530,11 +670,23 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         Connection connection = null;
         try
         {
             connection = getConnection("server", "guest");
 
+            connection.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
+            
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             connection.start();
@@ -548,6 +700,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         catch (AMQAuthenticationException amqe)
         {
             assertEquals("Incorrect error code thrown", 403, amqe.getErrorCode().getCode());
+        
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
@@ -645,9 +802,21 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     {
     	setUpACLTest();
     	
+        //QPID-2081: use a latch to sync on exception causing connection close, to work 
+        //around the connection close race during tearDown() causing sporadic failures
+    	final CountDownLatch exceptionReceived = new CountDownLatch(1);
+    	
         try
         {
             Connection conn = getConnection("server", "guest");
+            
+            conn.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException e)
+                {
+                    exceptionReceived.countDown();
+                }
+            });
 
             ((AMQConnection) conn).setConnectionListener(this);
 
@@ -691,6 +860,11 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
                 assertEquals("Incorrect exception", AMQAuthenticationException.class, cause.getClass());
                 assertEquals("Incorrect error code thrown", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
             }
+            
+            //use the latch to ensure the control thread waits long enough for the exception thread 
+            //to have done enough to mark the connection closed before teardown commences
+            assertTrue("Timed out waiting for conneciton to report close",
+            		exceptionReceived.await(2, TimeUnit.SECONDS));
         }
     }
 
