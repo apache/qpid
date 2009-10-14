@@ -51,6 +51,9 @@
   <property name="tasks.classes"         location="${tasks}/classes"/>
   <property name="tasks.src"             location="${tasks}/src"/>
 
+  <property name="qpid.home"             location="${project.root}/build"/>
+  <property name="qpid.work"             location="${qpid.home}/work"/>
+
   <property name="javac.compiler.args"   value=""/>
 
   <property name="cobertura.dir" value="${project.root}/lib/cobertura" />
