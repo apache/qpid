@@ -22,35 +22,59 @@ import optparse, time
 from qpid.messaging import *
 from qpid.util import URL
 
+def nameval(st):
+  idx = st.find("=")
+  if idx >= 0:
+    name = st[0:idx]
+    value = st[idx+1:]
+  else:
+    name = st
+    value = None
+  return name, value
+
 parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS [ CONTENT ... ]",
-                               description="Drain messages from the supplied address.")
+                               description="Send messages to the supplied address.")
 parser.add_option("-b", "--broker", default="localhost",
                   help="connect to specified BROKER (default %default)")
 parser.add_option("-c", "--count", type=int, default=1,
                   help="stop after count messages have been sent, zero disables (default %default)")
 parser.add_option("-t", "--timeout", type=float, default=None,
                   help="exit after the specified time")
-parser.add_option("-m", "--map", action="store_true",
-                  help="interpret content as map")
 parser.add_option("-i", "--id", help="use the supplied id instead of generating one")
+parser.add_option("-r", "--reply-to", help="specify reply-to address")
+parser.add_option("-P", "--property", dest="properties", action="append", default=[],
+                  help="specify message property")
+parser.add_option("-M", "--map", dest="entries", action="append", default=[],
+                  help="specify map entry for message body")
 
 opts, args = parser.parse_args()
 
 url = URL(opts.broker)
 if opts.id is None:
-  ping_id = str(uuid4())
+  spout_id = str(uuid4())
 else:
-  ping_id = opts.id
+  spout_id = opts.id
 if args:
   addr = args.pop(0)
 else:
   parser.error("address is required")
+
+content = None
+
 if args:
-  content = " ".join(args)
-  if opts.map:
-    content = eval(content)
+  text = " ".join(args)
 else:
-  content = None
+  text = None
+
+if opts.entries:
+  content = {}
+  if text:
+    content["text"] = text
+  for e in opts.entries:
+    name, val = nameval(e)
+    content[name] = val
+else:
+  content = text
 
 # XXX: should make URL default the port for us
 conn = Connection.open(url.host, url.port or AMQP_PORT,
@@ -62,8 +86,11 @@ count = 0
 start = time.time()
 while (opts.count == 0 or count < opts.count) and \
       (opts.timeout is None or time.time() - start < opts.timeout):
-  msg = Message(content)
-  msg.properties["ping-id"] = "%s:%s" % (ping_id, count)
+  msg = Message(content, reply_to=opts.reply_to)
+  msg.properties["spout-id"] = "%s:%s" % (spout_id, count)
+  for p in opts.properties:
+    name, val = nameval(p)
+    msg.properties[name] = val
 
   try:
     snd.send(msg)

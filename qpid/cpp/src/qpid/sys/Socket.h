@@ -39,12 +39,9 @@ public:
     /** Create a socket wrapper for descriptor. */
     QPID_COMMON_EXTERN Socket();
 
-    /** Create an initialized TCP socket */
-    void createTcp() const;
-    
     /** Set timeout for read and write */
     void setTimeout(const Duration& interval) const;
-    
+
     /** Set socket non blocking */
     void setNonblocking() const;
 
@@ -59,7 +56,8 @@ public:
      *@return The bound port.
      */
     QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
-    
+    QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
+
     /** Returns the "socket name" ie the address bound to 
      * the near end of the socket
      */
@@ -102,8 +100,12 @@ public:
     QPID_COMMON_EXTERN void setTcpNoDelay(bool nodelay) const;
 
 private:
+    /** Create socket */
+    void createSocket(const SocketAddress&) const;
+
     Socket(IOHandlePrivate*);
     mutable std::string connectname;
+    mutable bool nonblocking;
 };
 
 }}

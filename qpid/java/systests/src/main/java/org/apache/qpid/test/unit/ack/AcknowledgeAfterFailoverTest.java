@@ -299,7 +299,7 @@ public class AcknowledgeAfterFailoverTest extends AcknowledgeTest implements Con
         }
         catch (InterruptedException e)
         {
-            fail("Failover was interuppted");
+            fail("Failover was interrupted");
         }
     }
 

@@ -97,22 +97,30 @@ std::string getService(int fd, bool local)
 }
 
 Socket::Socket() :
-	IOHandle(new IOHandlePrivate)
-{
-	createTcp();
-}
-
-Socket::Socket(IOHandlePrivate* h) :
-	IOHandle(h)
+    IOHandle(new IOHandlePrivate),
+    nonblocking(false)
 {}
 
-void Socket::createTcp() const
+Socket::Socket(IOHandlePrivate* h) :
+    IOHandle(h),
+    nonblocking(false)
+{}
+
+void Socket::createSocket(const SocketAddress& sa) const
 {
     int& socket = impl->fd;
     if (socket != -1) Socket::close();
-    int s = ::socket (AF_INET, SOCK_STREAM, 0);
+    int s = ::socket(getAddrInfo(sa).ai_family, getAddrInfo(sa).ai_socktype, 0);
     if (s < 0) throw QPID_POSIX_ERROR(errno);
     socket = s;
+
+    try {
+        if (nonblocking) setNonblocking();
+    } catch (std::exception&) {
+        ::close(s);
+        socket = -1;
+        throw;
+    }
 }
 
 void Socket::setTimeout(const Duration& interval) const
@@ -125,7 +133,9 @@ void Socket::setTimeout(const Duration& interval) const
 }
 
 void Socket::setNonblocking() const {
-    QPID_POSIX_CHECK(::fcntl(impl->fd, F_SETFL, O_NONBLOCK));
+    int& socket = impl->fd;
+    if (socket != -1) QPID_POSIX_CHECK(::fcntl(socket, F_SETFL, O_NONBLOCK));
+    nonblocking = true;
 }
 
 void Socket::connect(const std::string& host, uint16_t port) const
@@ -138,8 +148,9 @@ void Socket::connect(const SocketAddress& addr) const
 {
     connectname = addr.asString();
 
-    const int& socket = impl->fd;
+    createSocket(addr);
 
+    const int& socket = impl->fd;
     // TODO the correct thing to do here is loop on failure until you've used all the returned addresses
     if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) < 0) &&
         (errno != EINPROGRESS)) {
@@ -158,15 +169,22 @@ Socket::close() const
 
 int Socket::listen(uint16_t port, int backlog) const
 {
+    SocketAddress sa("", boost::lexical_cast<std::string>(port));
+
+    createSocket(sa);
+    return listen(sa, backlog);
+}
+
+int Socket::listen(const SocketAddress& sa, int backlog) const
+{
     const int& socket = impl->fd;
     int yes=1;
     QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
 
-    SocketAddress sa("", boost::lexical_cast<std::string>(port));
     if (::bind(socket, getAddrInfo(sa).ai_addr, getAddrInfo(sa).ai_addrlen) < 0)
-        throw Exception(QPID_MSG("Can't bind to port " << port << ": " << strError(errno)));
+        throw Exception(QPID_MSG("Can't bind to port " << sa.asString() << ": " << strError(errno)));
     if (::listen(socket, backlog) < 0)
-        throw Exception(QPID_MSG("Can't listen on port " << port << ": " << strError(errno)));
+        throw Exception(QPID_MSG("Can't listen on port " << sa.asString() << ": " << strError(errno)));
 
     struct sockaddr_in name;
     socklen_t namelen = sizeof(name);

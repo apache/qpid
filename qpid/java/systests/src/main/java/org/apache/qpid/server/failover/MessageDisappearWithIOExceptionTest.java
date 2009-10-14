@@ -179,9 +179,16 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
                      messages.remove(0).getIntProperty("count"),
                      received.getIntProperty("count"));
 
-        // Allow ack to be sent to broker, by performing a synchronous command
-        // along the session.
-//        _session.createConsumer(_session.createTemporaryQueue()).close();
+        // When the Exception is received by the underlying IO layer it will
+        // initiate failover. The first step of which is to ensure that the
+        // existing conection is closed. So in this situation the connection
+        // will be flushed casuing the above ACK to be sent to the broker.
+        //
+        // That said:
+        // when the socket close is detected on the server it will rise up the
+        // Mina filter chain and interrupt processing.
+        // this has been raised as QPID-2138
+        _session.createConsumer(_session.createTemporaryQueue()).close();
 
         //Retain IO Layer
         AMQProtocolSession protocolSession = _connection.getProtocolHandler().getProtocolSession();
@@ -260,8 +267,14 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
     private void initialiseConnection()
             throws Exception
     {
-        //Create Connection
-        _connection = (AMQConnection) getConnection();
+        //Create Connection using the default connection URL. i.e. not the Failover URL that would be used by default
+        _connection = (AMQConnection) getConnection(getConnectionFactory("default").getConnectionURL());
+        // The default connection does not have any retries configured so
+        // Allow this connection to retry so that we can block on the failover.
+        // The alternative would be to use the getConnection() default. However,
+        // this would add additional complexity in the logging as a second
+        // broker is defined in that url. We do not need it for this test.
+        _connection.getFailoverPolicy().getCurrentMethod().setRetries(1);
         _connection.setConnectionListener(this);
 
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

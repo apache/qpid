@@ -597,6 +597,14 @@ class AddressErrorTests(Base):
       assert check(e), "unexpected error: %s" % e
       rcv.close()
 
+  def testNoneTarget(self):
+    # XXX: should have specific exception for this
+    self.sendErrorTest(None, SendError)
+
+  def testNoneSource(self):
+    # XXX: should have specific exception for this
+    self.fetchErrorTest(None, ReceiveError)
+
   def testNoTarget(self):
     # XXX: should have specific exception for this
     self.sendErrorTest(NOSUCH_Q, SendError, lambda e: NOSUCH_Q in str(e))
