@@ -59,13 +59,18 @@ FILTER_DEFAULTS = {
   }
 
 # XXX
+ppid = 0
+try:
+  ppid = os.getppid()
+except:
+  pass
 
 CLIENT_PROPERTIES = {"product": "qpid python client",
                      "version": "development",
                      "platform": os.name,
                      "qpid.client_process": os.path.basename(sys.argv[0]),
                      "qpid.client_pid": os.getpid(),
-                     "qpid.client_ppid": os.getppid()}
+                     "qpid.client_ppid": ppid}
 
 def noop(): pass
 
