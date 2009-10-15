@@ -139,7 +139,7 @@ namespace engine {
         uint32_t agentCount() const;
         const AgentProxy* getAgent(uint32_t idx) const;
         void sendQuery(const Query& query, void* context, const AgentProxy* agent);
-        void sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent);
+        bool sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent);
         std::string encodeMethodArguments(const SchemaMethod* schema, const Value* args, qpid::framing::Buffer& buffer);
         void sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls, const std::string& method, const Value* args, void* context);
 

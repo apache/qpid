@@ -186,6 +186,21 @@ class ConsoleTest < ConsoleTestBase
     assert_equal(result.args.userid, "anonymous")
   end
 
+  def test_D_get_by_object_id
+    parent = @qmfc.object(:class => "parent")
+    assert(parent, "Number of parent objects")
+
+    list = @qmfc.objects(:object_id => parent.object_id)
+    assert_equal(list.size, 1)
+
+    bad_oid = Qmf::ObjectId.new
+    list = @qmfc.objects(:object_id => bad_oid)
+    assert_equal(list.size, 0)
+
+    # TODO: test a bad_oid that has an agent-bank that is not associated with an attached agent.
+    
+  end
+
 end
 
 app = ConsoleTest.new
