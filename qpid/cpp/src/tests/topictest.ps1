@@ -18,6 +18,7 @@
 #
 
 # Run the C++ topic test
+$srcdir = Split-Path $myInvocation.InvocationName
 
 # Parameters with default values: s (subscribers) m (messages) b (batches)
 #                                 h (host) t (false; use transactions)
@@ -36,21 +37,23 @@ if ($t) {
     $transactional = "--transactional --durable"
 }
 
+# Find which subdir the exes are in
+. $srcdir\find_prog.ps1 .\topic_listener.exe
+
 function subscribe {
     param ([int]$num)
     "Start subscriber $num"
     $LOG = "subscriber_$num.log"
-    $cmdline = "$env:OUTDIR\topic_listener $transactional > $LOG 2>&1
+    $cmdline = ".\$sub\topic_listener $transactional > $LOG 2>&1
                 if (`$LastExitCode -ne 0) { Remove-Item $LOG }"
     $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
     . $srcdir\background.ps1 $cmdblock
 }
 
 function publish {
-    Invoke-Expression "$env:OUTDIR\topic_publisher --messages $messages --batches $batches --subscribers $subscribers $host $transactional" 2>&1
+    Invoke-Expression ".\$sub\topic_publisher --messages $messages --batches $batches --subscribers $subscribers $host $transactional" 2>&1
 }
 
-$srcdir = Split-Path $MyInvocation.MyCommand.Path
 if ($broker.length) {
   $broker = "-h$broker"
 }
