@@ -20,11 +20,25 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.management.JMException;
+import javax.security.sasl.SaslServer;
+
 import org.apache.log4j.Logger;
-import org.apache.mina.common.CloseFuture;
-import org.apache.mina.common.IdleStatus;
-import org.apache.mina.common.IoServiceConfig;
-import org.apache.mina.common.IoSession;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
@@ -36,8 +50,10 @@ import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQProtocolHeaderException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
@@ -46,18 +62,20 @@ import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.pool.ReadWriteThreadModel;
+import org.apache.qpid.pool.Job;
+import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.handler.ServerMethodDispatcherImpl;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPConnectionActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
+import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -67,24 +85,12 @@ import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
 
-import javax.management.JMException;
-import javax.security.sasl.SaslServer;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicLong;
-
-public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
+public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession
 {
-    private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+    private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
     private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
 
@@ -93,8 +99,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
     private static final int CHANNEL_CACHE_SIZE = 0xff;
-
-    private final IoSession _minaProtocolSession;
 
     private AMQShortString _contextKey;
 
@@ -130,52 +134,48 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     private FieldTable _clientProperties;
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
 
-    private List<Integer> _closingChannelsList = new CopyOnWriteArrayList<Integer>();
+    private Map<Integer, Long> _closingChannelsList = new ConcurrentHashMap<Integer, Long>();
     private ProtocolOutputConverter _protocolOutputConverter;
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
     private ProtocolSessionIdentifier _sessionIdentifier;
-
-    private static final long LAST_WRITE_FUTURE_JOIN_TIMEOUT = 60000L;
-    private org.apache.mina.common.WriteFuture _lastWriteFuture;
-
+    
     // Create a simple ID that increments for ever new Session
     private final long _sessionID = idGenerator.getAndIncrement();
 
     private AMQPConnectionActor _actor;
     private LogSubject _logSubject;
 
+    private NetworkDriver _networkDriver;
+
+    private long _lastIoTime;
+
+    private long _writtenBytes;
+    private long _readBytes;
+    
+    private Job _readJob;
+    private Job _writeJob;
+
+    private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
+
     public ManagedObject getManagedObject()
     {
         return _managedObject;
     }
 
-    public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory)
-            throws AMQException
+    public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkDriver driver)
     {
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
-        _minaProtocolSession = session;
-        session.setAttachment(this);
-
-        _codecFactory = codecFactory;
+        _networkDriver = driver;
+        
+        _codecFactory = new AMQCodecFactory(true, this);
+        _poolReference.acquireExecutorService();
+        _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
+        _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
-
         _actor.message(ConnectionMessages.CON_1001(null, null, false, false));
 
-        try
-        {
-            IoServiceConfig config = session.getServiceConfig();
-            ReadWriteThreadModel threadModel = (ReadWriteThreadModel) config.getThreadModel();
-            threadModel.getAsynchronousReadFilter().createNewJobForSession(session);
-            threadModel.getAsynchronousWriteFilter().createNewJobForSession(session);
-        }
-        catch (RuntimeException e)
-        {
-            e.printStackTrace();
-            throw e;
-
-        }
     }
 
     private AMQProtocolSessionMBean createMBean() throws AMQException
@@ -191,16 +191,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    public IoSession getIOSession()
-    {
-        return _minaProtocolSession;
-    }
-
-    public static AMQProtocolSession getAMQProtocolSession(IoSession minaProtocolSession)
-    {
-        return (AMQProtocolSession) minaProtocolSession.getAttachment();
-    }
-
     public long getSessionID()
     {
         return _sessionID;
@@ -209,6 +199,42 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public LogActor getLogActor()
     {
         return _actor;
+    }
+
+    @Override
+    public void received(final ByteBuffer msg)
+    {
+        _lastIoTime = System.currentTimeMillis();
+        try
+        {
+            final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
+            Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // Decode buffer
+
+                    for (AMQDataBlock dataBlock : dataBlocks)
+                    {
+                        try
+                        {
+                            dataBlockReceived(dataBlock);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.error("Unexpected exception when processing datablock", e);
+                            closeProtocolSession();
+                        }
+                    }
+                }
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.error("Unexpected exception when processing datablock", e);
+            closeProtocolSession();
+        }
     }
 
     public void dataBlockReceived(AMQDataBlock message) throws Exception
@@ -265,12 +291,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                 }
                 else
                 {
-                    if (_logger.isInfoEnabled())
-                    {
-                        _logger.info("Channel[" + channelId + "] awaiting closure. Should close socket as client did not close-ok :" + frame);
-                    }
-
-                    closeProtocolSession();
+                    // The channel has been told to close, we don't process any more frames until
+                    // it's closed. 
                     return;
                 }
             }
@@ -314,21 +336,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                                                                                        null,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
-            _minaProtocolSession.write(responseBody.generateFrame(0));
+            _networkDriver.send(responseBody.generateFrame(0).toNioByteBuffer());
 
         }
         catch (AMQException e)
         {
             _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
-            _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
-
-            // TODO: Close connection (but how to wait until message is sent?)
-            // ritchiem 2006-12-04 will this not do?
-            // WriteFuture future = _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOLgetProtocolMajorVersion()], pv[i][PROTOCOLgetProtocolMinorVersion()]));
-            // future.join();
-            // close connection
-
+            _networkDriver.send(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).toNioByteBuffer());
         }
     }
 
@@ -437,8 +452,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public void writeFrame(AMQDataBlock frame)
     {
         _lastSent = frame;
-
-        _lastWriteFuture = _minaProtocolSession.write(frame);
+        final ByteBuffer buf = frame.toNioByteBuffer();
+        _lastIoTime = System.currentTimeMillis();
+        _writtenBytes += buf.remaining();
+        Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                _networkDriver.send(buf);
+            }
+        });
     }
 
     public AMQShortString getContextKey()
@@ -483,7 +507,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public boolean channelAwaitingClosure(int channelId)
     {
-        return !_closingChannelsList.isEmpty() && _closingChannelsList.contains(channelId);
+        return !_closingChannelsList.isEmpty() && _closingChannelsList.containsKey(channelId);
     }
 
     public void addChannel(AMQChannel channel) throws AMQException
@@ -495,7 +519,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
         final int channelId = channel.getChannelId();
 
-        if (_closingChannelsList.contains(channelId))
+        if (_closingChannelsList.containsKey(channelId))
         {
             throw new AMQException("Session is marked awaiting channel close");
         }
@@ -539,7 +563,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         _maxNoOfChannels = value;
     }
-
+    
     public void commitTransactions(AMQChannel channel) throws AMQException
     {
         if ((channel != null) && channel.isTransactional())
@@ -555,7 +579,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             channel.rollback();
         }
     }
-
+    
     /**
      * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue
      * subscriptions (this may in turn remove queues if they are auto delete</li> </ul>
@@ -602,7 +626,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private void markChannelAwaitingCloseOk(int channelId)
     {
-        _closingChannelsList.add(channelId);
+        _closingChannelsList.put(channelId, System.currentTimeMillis());
     }
 
     /**
@@ -628,8 +652,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         if (delay > 0)
         {
-            _minaProtocolSession.setIdleTime(IdleStatus.WRITER_IDLE, delay);
-            _minaProtocolSession.setIdleTime(IdleStatus.READER_IDLE, (int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
+            _networkDriver.setMaxWriteIdle(delay);
+            _networkDriver.setMaxReadIdle((int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
         }
     }
 
@@ -655,6 +679,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession() throws AMQException
     {
+        if (CurrentActor.get() == null)
+        {
+            CurrentActor.set(_actor);
+        }
         if (!_closed)
         {
             if (_virtualHost != null)
@@ -672,9 +700,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             {
                 task.doTask(this);
             }
-
+            
             _closed = true;
-
+            _poolReference.releaseExecutorService();
             CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
         }
     }
@@ -699,21 +727,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public void closeProtocolSession()
     {
-        closeProtocolSession(true);
-    }
-
-    public void closeProtocolSession(boolean waitLast)
-    {
-        if (waitLast && (_lastWriteFuture != null))
-        {
-            _logger.debug("Waiting for last write to join.");
-            _lastWriteFuture.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
-        }
-
-        _logger.debug("REALLY Closing protocol session:" + _minaProtocolSession);
-        final CloseFuture future = _minaProtocolSession.close();
-        future.join(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
-
+        _networkDriver.close();
         try
         {
             _stateManager.changeState(AMQState.CONNECTION_CLOSED);
@@ -726,7 +740,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public String toString()
     {
-        return _minaProtocolSession.getRemoteAddress() + "(" + (getAuthorizedID() == null ? "?" : getAuthorizedID().getName() + ")");
+        return getRemoteAddress() + "(" + (getAuthorizedID() == null ? "?" : getAuthorizedID().getName() + ")");
     }
 
     public String dump()
@@ -737,7 +751,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     /** @return an object that can be used to identity */
     public Object getKey()
     {
-        return _minaProtocolSession.getRemoteAddress();
+        return getRemoteAddress();
     }
 
     /**
@@ -748,7 +762,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
      */
     public String getLocalFQDN()
     {
-        SocketAddress address = _minaProtocolSession.getLocalAddress();
+        SocketAddress address = _networkDriver.getLocalAddress();
         // we use the vmpipe address in some tests hence the need for this rather ugly test. The host
         // information is used by SASL primary.
         if (address instanceof InetSocketAddress)
@@ -764,7 +778,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             throw new IllegalArgumentException("Unsupported socket address class: " + address);
         }
     }
-
+    
     public SaslServer getSaslServer()
     {
         return _saslServer;
@@ -837,7 +851,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public Object getClientIdentifier()
     {
-        return (_minaProtocolSession != null) ? _minaProtocolSession.getRemoteAddress() : null;
+        return (_networkDriver != null) ? _networkDriver.getRemoteAddress() : null;
     }
 
     public VirtualHost getVirtualHost()
@@ -867,7 +881,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     {
         _taskList.remove(task);
     }
-
+    
     public ProtocolOutputConverter getProtocolOutputConverter()
     {
         return _protocolOutputConverter;
@@ -888,7 +902,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     public SocketAddress getRemoteAddress()
     {
-        return _minaProtocolSession.getRemoteAddress();
+        return _networkDriver.getRemoteAddress();
+    }    
+
+    public SocketAddress getLocalAddress()
+    {
+        return _networkDriver.getLocalAddress();
     }
 
     public MethodRegistry getMethodRegistry()
@@ -901,23 +920,116 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         return _dispatcher;
     }
 
+    @Override
+    public void closed()
+    {
+        try
+        {
+            closeSession();
+        }
+        catch (AMQException e)
+        {
+           _logger.error("Could not close protocol engine", e);
+        }
+    }
+
+    @Override
+    public void readerIdle()
+    {
+        // Nothing
+    }
+
+    @Override
+    public void setNetworkDriver(NetworkDriver driver)
+    {
+        _networkDriver = driver;        
+    }
+
+    @Override
+    public void writerIdle()
+    {
+        _networkDriver.send(HeartbeatBody.FRAME.toNioByteBuffer());
+    }
+
+    @Override
+    public void exception(Throwable throwable)
+    {
+        if (throwable instanceof AMQProtocolHeaderException)
+        {
+
+            writeFrame(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
+            _networkDriver.close();
+
+            _logger.error("Error in protocol initiation " + this + ":" + getRemoteAddress() + " :" + throwable.getMessage(), throwable);
+        }
+        else if (throwable instanceof IOException)
+        {
+            _logger.error("IOException caught in" + this + ", session closed implictly: " + throwable);
+        }
+        else
+        {
+            _logger.error("Exception caught in" + this + ", closing session explictly: " + throwable, throwable);
+
+
+            MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(getProtocolVersion());
+            ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200,new AMQShortString(throwable.getMessage()),0,0);
+                        
+            writeFrame(closeBody.generateFrame(0));
+
+            _networkDriver.close();
+        }
+    }
+
+    @Override
+    public void init()
+    {
+        // Do nothing
+    }
+
+    @Override
+    public void setSender(Sender<ByteBuffer> sender)
+    {
+        // Do nothing
+    }
+    
+    @Override
+    public long getReadBytes()
+    {
+        return _readBytes;
+    }
+
+    public long getWrittenBytes()
+    {
+        return _writtenBytes;
+    }
+
+    public long getLastIoTime()
+    {
+        return _lastIoTime;
+    }
+
     public ProtocolSessionIdentifier getSessionIdentifier()
     {
         return _sessionIdentifier;
     }
-
+    
     public String getClientVersion()
     {
         return (_clientVersion == null) ? null : _clientVersion.toString();
     }
 
-    public void setSender(Sender<java.nio.ByteBuffer> sender)
+    @Override
+    public void closeIfLingeringClosedChannels()
     {
-       // No-op, interface munging between this and AMQProtocolSession
+        for (Entry<Integer, Long>id : _closingChannelsList.entrySet())
+        {
+            if (id.getValue() + 30000 > System.currentTimeMillis())
+            {
+                // We have a channel that we closed 30 seconds ago. Client's dead, kill the connection
+                _logger.error("Closing connection as channel was closed more than 30 seconds ago and no ChannelCloseOk has been processed");
+                closeProtocolSession();
+            }
+        }
     }
-
-    public void init()
-    {
-       // No-op, interface munging between this and AMQProtocolSession
-    }
+    
 }

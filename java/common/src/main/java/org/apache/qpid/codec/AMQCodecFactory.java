@@ -23,6 +23,7 @@ package org.apache.qpid.codec;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.ProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolEncoder;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
  * AMQCodecFactory is a Mina codec factory. It supplies the encoders and decoders need to read and write the bytes to
@@ -50,9 +51,9 @@ public class AMQCodecFactory implements ProtocolCodecFactory
      * @param expectProtocolInitiation <tt>true</tt> if the first frame received is going to be a protocol initiation
      *                                 frame, <tt>false</tt> if it is going to be a standard AMQ data block.
      */
-    public AMQCodecFactory(boolean expectProtocolInitiation)
+    public AMQCodecFactory(boolean expectProtocolInitiation, AMQVersionAwareProtocolSession session)
     {
-        _frameDecoder = new AMQDecoder(expectProtocolInitiation);
+        _frameDecoder = new AMQDecoder(expectProtocolInitiation, session);
     }
 
     /**
@@ -70,7 +71,7 @@ public class AMQCodecFactory implements ProtocolCodecFactory
      *
      * @return The AMQP decoder.
      */
-    public ProtocolDecoder getDecoder()
+    public AMQDecoder getDecoder()
     {
         return _frameDecoder;
     }

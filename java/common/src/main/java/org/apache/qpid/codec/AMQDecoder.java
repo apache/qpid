@@ -20,14 +20,21 @@
  */
 package org.apache.qpid.codec;
 
+import java.util.ArrayList;
+
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 
+import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQDataBlockDecoder;
+import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQMethodBodyFactory;
+import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
  * AMQDecoder delegates the decoding of AMQP either to a data block decoder, or in the case of new connections, to a
@@ -62,14 +69,19 @@ public class AMQDecoder extends CumulativeProtocolDecoder
     private boolean _expectProtocolInitiation;
     private boolean firstDecode = true;
 
+    private AMQMethodBodyFactory _bodyFactory;
+
+    private ByteBuffer _remainingBuf;
+    
     /**
      * Creates a new AMQP decoder.
      *
      * @param expectProtocolInitiation <tt>true</tt> if this decoder needs to handle protocol initiation.
      */
-    public AMQDecoder(boolean expectProtocolInitiation)
+    public AMQDecoder(boolean expectProtocolInitiation, AMQVersionAwareProtocolSession session)
     {
         _expectProtocolInitiation = expectProtocolInitiation;
+        _bodyFactory = new AMQMethodBodyFactory(session);
     }
 
     /**
@@ -120,7 +132,7 @@ public class AMQDecoder extends CumulativeProtocolDecoder
     protected boolean doDecodeDataBlock(IoSession session, ByteBuffer in, ProtocolDecoderOutput out) throws Exception
     {
         int pos = in.position();
-        boolean enoughData = _dataBlockDecoder.decodable(session, in);
+        boolean enoughData = _dataBlockDecoder.decodable(in.buf());
         in.position(pos);
         if (!enoughData)
         {
@@ -149,7 +161,7 @@ public class AMQDecoder extends CumulativeProtocolDecoder
      */
     private boolean doDecodePI(IoSession session, ByteBuffer in, ProtocolDecoderOutput out) throws Exception
     {
-        boolean enoughData = _piDecoder.decodable(session, in);
+        boolean enoughData = _piDecoder.decodable(in.buf());
         if (!enoughData)
         {
             // returning false means it will leave the contents in the buffer and
@@ -158,7 +170,8 @@ public class AMQDecoder extends CumulativeProtocolDecoder
         }
         else
         {
-            _piDecoder.decode(session, in, out);
+            ProtocolInitiation pi = new ProtocolInitiation(in.buf());
+            out.write(pi);
 
             return true;
         }
@@ -177,7 +190,7 @@ public class AMQDecoder extends CumulativeProtocolDecoder
     }
 
 
- /**
+    /**
      * Cumulates content of <tt>in</tt> into internal buffer and forwards
      * decoding request to {@link #doDecode(IoSession, ByteBuffer, ProtocolDecoderOutput)}.
      * <tt>doDecode()</tt> is invoked repeatedly until it returns <tt>false</tt>
@@ -268,4 +281,60 @@ public class AMQDecoder extends CumulativeProtocolDecoder
         session.setAttribute( BUFFER, remainingBuf );
     }
 
+    public ArrayList<AMQDataBlock> decodeBuffer(java.nio.ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException
+    {
+
+        // get prior remaining data from accumulator
+        ArrayList<AMQDataBlock> dataBlocks = new ArrayList<AMQDataBlock>();
+        ByteBuffer msg;
+        // if we have a session buffer, append data to that otherwise
+        // use the buffer read from the network directly
+        if( _remainingBuf != null )
+        {
+            _remainingBuf.put(buf);
+            _remainingBuf.flip();
+            msg = _remainingBuf;
+        }
+        else
+        {
+            msg = ByteBuffer.wrap(buf);
+        }
+        
+        if (_expectProtocolInitiation  
+            || (firstDecode
+                && (msg.remaining() > 0)
+                && (msg.get(msg.position()) == (byte)'A')))
+        {
+            if (_piDecoder.decodable(msg.buf()))
+            {
+                dataBlocks.add(new ProtocolInitiation(msg.buf()));
+            }
+        }
+        else
+        {
+            boolean enoughData = true;
+            while (enoughData)
+            {
+                int pos = msg.position();
+
+                enoughData = _dataBlockDecoder.decodable(msg);
+                msg.position(pos);
+                if (enoughData)
+                {
+                    dataBlocks.add(_dataBlockDecoder.createAndPopulateFrame(_bodyFactory, msg));
+                }
+                else
+                {
+                    _remainingBuf = SIMPLE_BYTE_BUFFER_ALLOCATOR.allocate(msg.remaining(), false);
+                    _remainingBuf.setAutoExpand(true);
+                    _remainingBuf.put(msg);
+                }
+            }
+        }
+        if(firstDecode && dataBlocks.size() > 0)
+        {
+            firstDecode = false;
+        }
+        return dataBlocks;
+    }
 }

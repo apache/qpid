@@ -18,20 +18,17 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.connection;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQException;
+package org.apache.qpid.transport;
 
-public interface IConnectionRegistry
+import java.io.IOException;
+
+public class OpenException extends IOException
 {
 
-    public void initialise();
-
-    public void close() throws AMQException;
-
-    public void registerConnection(AMQProtocolSession connnection);
-
-    public void deregisterConnection(AMQProtocolSession connnection);
+    public OpenException(String string, Throwable lastException)
+    {
+        super(string, lastException);
+    }
 
 }

@@ -195,17 +195,11 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
 
         // Send IO Exception - causing failover
         _connection.getProtocolHandler().
-                exceptionCaught(_connection.getProtocolHandler().getProtocolSession().getIoSession(),
-                                new WriteTimeoutException("WriteTimeoutException to cause failover."));
+                exception(new WriteTimeoutException("WriteTimeoutException to cause failover."));
 
         // Verify Failover occured through ConnectionListener
         assertTrue("Failover did not occur",
                    _failoverOccured.await(4000, TimeUnit.MILLISECONDS));
-
-        //Verify new protocolSession is not the same as the original
-        assertNotSame("Protocol Session has not changed",
-                      protocolSession,
-                      _connection.getProtocolHandler().getProtocolSession());
 
         /***********************************/
         // This verifies that the bug has been resolved

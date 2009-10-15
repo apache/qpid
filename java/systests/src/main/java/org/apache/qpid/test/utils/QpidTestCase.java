@@ -960,7 +960,7 @@ public class QpidTestCase extends TestCase
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
 
-    public Connection getConnection() throws Exception
+    public Connection getConnection() throws JMSException, NamingException
     {
         return getConnection("guest", "guest");
     }
