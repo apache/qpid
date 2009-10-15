@@ -37,7 +37,7 @@ import java.security.Principal;
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
 {
-	private AMQMinaProtocolSession _session;
+	private AMQProtocolEngine _session;
 
     public void testChannels() throws Exception
     {

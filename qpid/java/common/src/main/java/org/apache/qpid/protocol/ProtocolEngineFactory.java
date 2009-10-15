@@ -18,20 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.connection;
+package org.apache.qpid.protocol;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.transport.NetworkDriver;
 
-public interface IConnectionRegistry
-{
-
-    public void initialise();
-
-    public void close() throws AMQException;
-
-    public void registerConnection(AMQProtocolSession connnection);
-
-    public void deregisterConnection(AMQProtocolSession connnection);
-
-}
+public interface ProtocolEngineFactory  
+{ 
+ 
+  // Returns a new instance of a ProtocolEngine 
+  ProtocolEngine newProtocolEngine(NetworkDriver networkDriver); 
+   
+} 

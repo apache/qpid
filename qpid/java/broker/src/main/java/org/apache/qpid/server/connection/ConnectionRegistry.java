@@ -21,7 +21,6 @@
 package org.apache.qpid.server.connection;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionException;
@@ -44,6 +43,14 @@ public class ConnectionRegistry implements IConnectionRegistry
     public void initialise()
     {
 
+    }
+    
+    public void expireClosedChannels()
+    {
+        for (AMQProtocolSession connection : _registry)
+        {
+            connection.closeIfLingeringClosedChannels();
+        }
     }
 
     /** Close all of the currently open connections. */

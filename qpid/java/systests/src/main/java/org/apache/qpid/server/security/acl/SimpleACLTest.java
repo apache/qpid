@@ -630,9 +630,9 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         //around the connection close race during tearDown() causing sporadic failures
     	final CountDownLatch exceptionReceived = new CountDownLatch(1);
 
+        Connection conn = getConnection("server", "guest");
         try
         {
-            Connection conn = getConnection("server", "guest");
 
             conn.setExceptionListener(new ExceptionListener()
             {
@@ -649,7 +649,6 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             session.createTemporaryQueue();
 
             fail("Test failed as creation succeded.");
-            //conn will be automatically closed
         }
         catch (JMSException e)
         {
@@ -663,6 +662,17 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             //to have done enough to mark the connection closed before teardown commences
             assertTrue("Timed out waiting for conneciton to report close",
             		exceptionReceived.await(2, TimeUnit.SECONDS));
+        }
+        finally
+        {
+        	try
+        	{
+        		conn.close();
+        	}
+        	catch (Exception e)
+        	{
+        		// This normally fails because we are denied
+        	}
         }
     }
 

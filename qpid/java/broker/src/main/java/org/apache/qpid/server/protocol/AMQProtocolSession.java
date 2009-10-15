@@ -34,6 +34,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.security.Principal;
+import java.util.List;
 
 
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
@@ -210,5 +211,21 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
     public MethodDispatcher getMethodDispatcher();
 
     public ProtocolSessionIdentifier getSessionIdentifier();
+
+    String getClientVersion();
+
+    long getLastIoTime();
+
+    long getWrittenBytes();
+
+    Long getMaximumNumberOfChannels();
+
+    void setMaximumNumberOfChannels(Long value);
+
+    void commitTransactions(AMQChannel channel) throws AMQException;
+
+    List<AMQChannel> getChannels();
+
+    void closeIfLingeringClosedChannels();
     
 }

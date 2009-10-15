@@ -258,7 +258,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             for (InetSocketAddress bindAddress : _acceptors.keySet())
             {
                 QpidAcceptor acceptor = _acceptors.get(bindAddress);
-                acceptor.getIoAcceptor().unbind(bindAddress);
+                acceptor.getNetworkDriver().close();
                 CurrentActor.get().message(BrokerMessages.BRK_1003(acceptor.toString(), bindAddress.getPort()));
             }
         }

@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.client.failover;
 
-import org.apache.mina.common.IoSession;
-
 import org.apache.qpid.AMQDisconnectedException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
 
@@ -81,9 +80,6 @@ public class FailoverHandler implements Runnable
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(FailoverHandler.class);
 
-    /** Holds the MINA session for the connection that has failed, not the connection that is being failed onto. */
-    private final IoSession _session;
-
     /** Holds the protocol handler for the failed connection, upon which the new connection is to be set up. */
     private AMQProtocolHandler _amqProtocolHandler;
 
@@ -99,10 +95,9 @@ public class FailoverHandler implements Runnable
      * @param amqProtocolHandler The protocol handler that spans the failover.
      * @param session            The MINA session, for the failing connection.
      */
-    public FailoverHandler(AMQProtocolHandler amqProtocolHandler, IoSession session)
+    public FailoverHandler(AMQProtocolHandler amqProtocolHandler)
     {
         _amqProtocolHandler = amqProtocolHandler;
-        _session = session;
     }
 
     /**
@@ -139,28 +134,9 @@ public class FailoverHandler implements Runnable
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
             // a slightly more complex state model therefore I felt it was worthwhile doing this.
             AMQStateManager existingStateManager = _amqProtocolHandler.getStateManager();
-
-
-            // We are failing over so lets ensure any existing ProtocolSessions
-            // are closed. Closing them will update the stateManager which we
-            // probably don't want to record the change to the closed state.
-            // So lets make a new one.
-            _amqProtocolHandler.setStateManager(new AMQStateManager());
-
-            // Close the session, we need to wait for it to close as there may have
-            // been data in transit such as an ack that is still valid to send.
-            //
-            // While we are allowing data to continue to be written to the
-            // socket assuming the connection is still valid, we do not consider
-            // the possibility that the problem that triggered failover was
-            // entirely client side. In that situation the socket will still be
-            // open and the we should really send a ConnectionClose to be AMQP
-            // compliant.
-            _amqProtocolHandler.getProtocolSession().closeProtocolSession();
-
+            
             // Use a fresh new StateManager for the reconnection attempts
             _amqProtocolHandler.setStateManager(new AMQStateManager());
-
 
             if (!_amqProtocolHandler.getConnection().firePreFailover(_host != null))
             {
@@ -240,7 +216,7 @@ public class FailoverHandler implements Runnable
                     _amqProtocolHandler.setFailoverState(FailoverState.FAILED);
                     /*try
                     {*/
-                    _amqProtocolHandler.exceptionCaught(_session, e);
+                    _amqProtocolHandler.exception(e);
                     /*}
                     catch (Exception ex)
                     {

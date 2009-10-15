@@ -97,7 +97,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         {
             _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
         }
-        
+        _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
