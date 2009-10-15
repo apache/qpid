@@ -17,6 +17,8 @@
 # under the License.
 #
 
+$srcdir = Split-Path $myInvocation.InvocationName
+
 # Set up environment and run a test executable or script.
 $env:QPID_DATA_DIR = ""
 $env:BOOST_TEST_SHOW_PROGRESS = "yes"
@@ -33,18 +35,10 @@ if (Test-Path $prog) {
    $env:PATH += ";.."
 }
 else {
-   $dir = Split-Path $prog
-   $exe = Split-Path $prog -leaf
-   $subs = "Debug","Release","MinSizeRel","RelWithDebInfo"
-   foreach ($sub in $subs) {
-      $prog = "$dir\$sub\$exe"
-      if (Test-Path $prog) {
-         $args[0] = $prog
-         $env:QPID_LIB_DIR = "..\$sub"
-         $env:PATH += ";..\$sub"
-         break
-      }
-   }
+   . $srcdir\find_prog.ps1 $prog
+   $args[0] = $prog
+   $env:QPID_LIB_DIR = "..\$sub"
+   $env:PATH += "$dir\$sub;..\$sub"
 }
 
 # If qpidd.port exists and is not empty run test with QPID_PORT set.
@@ -54,18 +48,25 @@ if (Test-Path qpidd.port) {
 
 $si = new-object System.Diagnostics.ProcessStartInfo
 $si.WorkingDirectory = $pwd
-$si.UseShellExecute = $true
-
+$si.UseShellExecute = $false
+$si.CreateNoWindow = $true
+$si.RedirectStandardOutput = $true
 if ($is_script) {
    $si.FileName = (get-command powershell.exe).Definition
    $si.Arguments = $args
 }
 else {
    $si.FileName = $args[0]
-   if ($args.length > 1) {
-      $si.Arguments = $args[1..$args.length-1]
+   if ($args.length -gt 1) {
+      $si.Arguments = $args[1..($args.length-1)]
    }
 }
 $p = [System.Diagnostics.Process]::Start($si)
+$line = ""
+while (($line = $p.StandardOutput.ReadLine()) -ne $null) {
+   $line
+}
+# ReadToEnd() works, but doesn't show any output until the program exits.
+#$p.StandardOutput.ReadToEnd()
 $p.WaitForExit()
-exit $?
+exit $p.ExitCode
