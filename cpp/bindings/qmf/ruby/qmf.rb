@@ -871,17 +871,22 @@ module Qmf
       @cv = new_cond
       @sync_count = nil
       @sync_result = nil
+      @select = []
+      @cb_cond = new_cond
+      @cb_thread = Thread.new do
+        run_cb_thread
+      end
     end
 
     def add_connection(conn)
       broker = Broker.new(self, conn)
-      @broker_list << broker
+      synchronize { @broker_list << broker }
       return broker
     end
 
     def del_connection(broker)
       broker.shutdown
-      @broker_list.delete(broker)
+      synchronize { @broker_list.delete(broker) }
     end
 
     def packages()
@@ -935,7 +940,7 @@ module Qmf
       if broker
         blist << broker
       else
-        blist = @broker_list
+        synchronize { blist = @broker_list }
       end
 
       agents = []
@@ -960,10 +965,16 @@ module Qmf
 
       query = Query.new(kwargs) if query.class == Hash
 
+      @select = []
+      kwargs.each do |k,v|
+        @select << [k, v] if k.is_a?(String)
+      end
+
       synchronize do
         @sync_count = 1
         @sync_result = []
-        broker = @broker_list[0]
+        broker = nil
+        synchronize { broker = @broker_list[0] }
         broker.send_query(query.impl, nil)
         unless @cv.wait(timeout) { @sync_count == 0 }
           raise "Timed out waiting for response"
@@ -985,10 +996,22 @@ module Qmf
       return objs.length > 0 ? objs[0] : nil
     end
 
+    # Check the object against select to check for a match
+    def select_match(object)
+      @select.each do |key, value|
+        object.properties.each do |prop, propval|
+          if key == prop.name && value != propval
+            return nil
+          end
+        end
+      end
+      return :true
+    end
+
     def _get_result(list, context)
       synchronize do
         list.each do |item|
-          @sync_result << item
+          @sync_result << item if select_match(item)
         end
         @sync_count -= 1
         @cv.signal
@@ -1004,7 +1027,20 @@ module Qmf
     def end_sync(sync)
     end
 
-    def do_console_events()
+    def run_cb_thread
+      while :true
+        synchronize { @cb_cond.wait(1) }
+        begin
+          count = do_console_events
+        end until count == 0
+      end
+    end
+
+    def start_console_events
+      synchronize { @cb_cond.signal }
+    end
+
+    def do_console_events
       count = 0
       valid = @impl.getEvent(@event)
       while valid
@@ -1151,10 +1187,10 @@ module Qmf
 
     def do_events()
       begin
-        ccnt = @console.do_console_events
+        @console.start_console_events
         bcnt = do_broker_events
         mcnt = do_broker_messages
-      end until ccnt == 0 and bcnt == 0 and mcnt == 0
+      end until bcnt == 0 and mcnt == 0
     end
 
     def conn_event_connected()

@@ -143,6 +143,13 @@ class App < Qmf::ConsoleHandler
       end
       puts "----"
 
+      elist = @qmfc.objects(:package => "org.apache.qpid.broker", :class => "exchange", 'durable' => true)
+      puts "---- Durable Exchanges ----"
+      elist.each do |e|
+        puts "Exchange: #{e.name}"
+      end
+      puts "----"
+
       qlist = @qmfc.objects(Qmf::Query.new(:package => "org.apache.qpid.broker",
                                                :class => "queue"))
       puts "---- Queues ----"
