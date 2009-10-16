@@ -47,7 +47,7 @@ ConnectionSettings::~ConnectionSettings() {}
 void ConnectionSettings::configureSocket(qpid::sys::Socket& socket) const
 {
     if (tcpNoDelay) {
-        socket.setTcpNoDelay(tcpNoDelay);
+        socket.setTcpNoDelay();
         QPID_LOG(info, "Set TCP_NODELAY");
     }
 }

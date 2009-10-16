@@ -98,12 +98,14 @@ std::string getService(int fd, bool local)
 
 Socket::Socket() :
     IOHandle(new IOHandlePrivate),
-    nonblocking(false)
+    nonblocking(false),
+    nodelay(false)
 {}
 
 Socket::Socket(IOHandlePrivate* h) :
     IOHandle(h),
-    nonblocking(false)
+    nonblocking(false),
+    nodelay(false)
 {}
 
 void Socket::createSocket(const SocketAddress& sa) const
@@ -116,6 +118,7 @@ void Socket::createSocket(const SocketAddress& sa) const
 
     try {
         if (nonblocking) setNonblocking();
+        if (nodelay) setTcpNoDelay();
     } catch (std::exception&) {
         ::close(s);
         socket = -1;
@@ -134,8 +137,21 @@ void Socket::setTimeout(const Duration& interval) const
 
 void Socket::setNonblocking() const {
     int& socket = impl->fd;
-    if (socket != -1) QPID_POSIX_CHECK(::fcntl(socket, F_SETFL, O_NONBLOCK));
     nonblocking = true;
+    if (socket != -1) {
+        QPID_POSIX_CHECK(::fcntl(socket, F_SETFL, O_NONBLOCK));
+    }
+}
+
+void Socket::setTcpNoDelay() const
+{
+    int& socket = impl->fd;
+    nodelay = true;
+    if (socket != -1) {
+        int flag = 1;
+        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
+        QPID_POSIX_CHECK(result);
+    }
 }
 
 void Socket::connect(const std::string& host, uint16_t port) const
@@ -256,15 +272,6 @@ int Socket::getError() const
         throw QPID_POSIX_ERROR(errno);
 
     return result;
-}
-
-void Socket::setTcpNoDelay(bool nodelay) const
-{
-    if (nodelay) {
-        int flag = 1;
-        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
-        QPID_POSIX_CHECK(result);
-    }
 }
 
 }} // namespace qpid::sys
