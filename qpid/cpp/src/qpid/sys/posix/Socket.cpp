@@ -170,13 +170,13 @@ Socket::close() const
 int Socket::listen(uint16_t port, int backlog) const
 {
     SocketAddress sa("", boost::lexical_cast<std::string>(port));
-
-    createSocket(sa);
     return listen(sa, backlog);
 }
 
 int Socket::listen(const SocketAddress& sa, int backlog) const
 {
+    createSocket(sa);
+
     const int& socket = impl->fd;
     int yes=1;
     QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
