@@ -36,18 +36,13 @@ class Poller;
  * Asynchronous acceptor: accepts connections then does a callback with the
  * accepted fd
  */
-class AsynchAcceptorPrivate;
 class AsynchAcceptor {
 public:
     typedef boost::function1<void, const Socket&> Callback;
 
-private:
-    AsynchAcceptorPrivate* impl;
-
-public:
-    QPID_COMMON_EXTERN AsynchAcceptor(const Socket& s, Callback callback);
-    QPID_COMMON_EXTERN ~AsynchAcceptor();
-    QPID_COMMON_EXTERN void start(boost::shared_ptr<Poller> poller);
+    QPID_COMMON_EXTERN static AsynchAcceptor* create(const Socket& s, Callback callback);
+    virtual ~AsynchAcceptor() {};
+    virtual void start(boost::shared_ptr<Poller> poller) = 0;
 };
 
 /*

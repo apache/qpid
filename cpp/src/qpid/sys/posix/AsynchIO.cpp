@@ -73,11 +73,12 @@ __thread int64_t threadMaxReadTimeNs = 2 * 1000000; // start at 2ms
  */
 namespace qpid {
 namespace sys {
+namespace posix {
 
-class AsynchAcceptorPrivate {
+class AsynchAcceptor : public qpid::sys::AsynchAcceptor {
 public:
-    AsynchAcceptorPrivate(const Socket& s, AsynchAcceptor::Callback callback);
-    ~AsynchAcceptorPrivate();
+    AsynchAcceptor(const Socket& s, AsynchAcceptor::Callback callback);
+    ~AsynchAcceptor();
     void start(Poller::shared_ptr poller);
 
 private:
@@ -90,40 +91,27 @@ private:
 
 };
 
-}} // namespace qpid::sys
-
-AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback) :
-  impl(new AsynchAcceptorPrivate(s, callback))
-{}
-
-AsynchAcceptor::~AsynchAcceptor()
-{ delete impl;}
-
-void AsynchAcceptor::start(Poller::shared_ptr poller) {
-    impl->start(poller);
-}
-
-AsynchAcceptorPrivate::AsynchAcceptorPrivate(const Socket& s,
-                                             AsynchAcceptor::Callback callback) :
+AsynchAcceptor::AsynchAcceptor(const Socket& s,
+                               AsynchAcceptor::Callback callback) :
     acceptedCallback(callback),
-    handle(s, boost::bind(&AsynchAcceptorPrivate::readable, this, _1), 0, 0),
+    handle(s, boost::bind(&AsynchAcceptor::readable, this, _1), 0, 0),
     socket(s) {
 
     s.setNonblocking();
 }
 
-AsynchAcceptorPrivate::~AsynchAcceptorPrivate() {
+AsynchAcceptor::~AsynchAcceptor() {
     handle.stopWatch();
 }
 
-void AsynchAcceptorPrivate::start(Poller::shared_ptr poller) {
+void AsynchAcceptor::start(Poller::shared_ptr poller) {
     handle.startWatch(poller);
 }
 
 /*
  * We keep on accepting as long as there is something to accept
  */
-void AsynchAcceptorPrivate::readable(DispatchHandle& h) {
+void AsynchAcceptor::readable(DispatchHandle& h) {
     Socket* s;
     do {
         errno = 0;
@@ -144,13 +132,6 @@ void AsynchAcceptorPrivate::readable(DispatchHandle& h) {
 
     h.rewatch();
 }
-
-/*
- * Asynch Connector
- */
-namespace qpid {
-namespace sys {
-namespace posix {
 
 /*
  * POSIX version of AsynchIO TCP socket connector.
@@ -228,32 +209,12 @@ void AsynchConnector::failure(int errCode, const std::string& message)
     DispatchHandle::doDelete();
 }
 
-} // namespace posix
-
-
-AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
-                                                    Poller::shared_ptr poller,
-                                                    std::string hostname,
-                                                    uint16_t port,
-                                                    ConnectedCallback connCb,
-                                                    FailedCallback failCb)
-{
-    return new qpid::sys::posix::AsynchConnector(s,
-                                                 poller,
-                                                 hostname,
-                                                 port,
-                                                 connCb,
-                                                 failCb);
-}
-
 /*
  * POSIX version of AsynchIO reader/writer
  *
  * The class is implemented in terms of DispatchHandle to allow it to be
  * deleted by deleting the contained DispatchHandle.
  */
-namespace posix {
-
 class AsynchIO : public qpid::sys::AsynchIO, private DispatchHandle {
 
 public:
@@ -629,15 +590,31 @@ void AsynchIO::close(DispatchHandle& h) {
 
 } // namespace posix
 
-AsynchIO* qpid::sys::AsynchIO::create(const Socket& s,
-                                      AsynchIO::ReadCallback rCb,
-                                      AsynchIO::EofCallback eofCb,
-                                      AsynchIO::DisconnectCallback disCb,
-                                      AsynchIO::ClosedCallback cCb,
-                                      AsynchIO::BuffersEmptyCallback eCb,
-                                      AsynchIO::IdleCallback iCb)
+AsynchAcceptor* AsynchAcceptor::create(const Socket& s, 
+                                       Callback callback)
 {
-    return new qpid::sys::posix::AsynchIO(s, rCb, eofCb, disCb, cCb, eCb, iCb);
+    return new posix::AsynchAcceptor(s, callback);
+}
+
+AsynchConnector* AsynchConnector::create(const Socket& s,
+                                         Poller::shared_ptr poller,
+                                         std::string hostname,
+                                         uint16_t port,
+                                         ConnectedCallback connCb,
+                                         FailedCallback failCb)
+{
+    return new posix::AsynchConnector(s, poller, hostname, port, connCb, failCb);
+}
+
+AsynchIO* AsynchIO::create(const Socket& s,
+                           AsynchIO::ReadCallback rCb,
+                           AsynchIO::EofCallback eofCb,
+                           AsynchIO::DisconnectCallback disCb,
+                           AsynchIO::ClosedCallback cCb,
+                           AsynchIO::BuffersEmptyCallback eCb,
+                           AsynchIO::IdleCallback iCb)
+{
+    return new posix::AsynchIO(s, rCb, eofCb, disCb, cCb, eCb, iCb);
 }
 
 }} // namespace qpid::sys
