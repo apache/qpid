@@ -66,6 +66,7 @@ struct  BrokerFixture : private boost::noncopyable {
         // TODO aconway 2007-12-05: At one point BrokerFixture
         // tests could hang in Connection ctor if the following
         // line is removed. This may not be an issue anymore.
+        broker->accept();
         broker->getPort(qpid::broker::Broker::TCP_TRANSPORT);
         brokerThread = qpid::sys::Thread(*broker);
     };
