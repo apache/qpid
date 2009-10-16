@@ -378,7 +378,16 @@ public class PrincipalPermissions
             case PURGE:
             case UNBIND:
             default:
-                return AuthzResult.DENIED;
+                if(_fullVHostAccess)
+                {
+                    //user has been granted full access to the vhost
+                    return AuthzResult.ALLOWED;
+                }
+                else
+                {
+                    //SimpleXML ACL does not implement these permissions and should abstain
+                    return AuthzResult.ABSTAIN;
+                }
         }
 
     }
