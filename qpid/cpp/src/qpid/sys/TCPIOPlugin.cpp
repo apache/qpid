@@ -84,7 +84,7 @@ void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socke
     AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
 
     if (tcpNoDelay) {
-        s.setTcpNoDelay(tcpNoDelay);
+        s.setTcpNoDelay();
         QPID_LOG(info, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
     }
 

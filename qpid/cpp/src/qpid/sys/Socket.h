@@ -45,6 +45,8 @@ public:
     /** Set socket non blocking */
     void setNonblocking() const;
 
+    QPID_COMMON_EXTERN void setTcpNoDelay() const;
+
     QPID_COMMON_EXTERN void connect(const std::string& host, uint16_t port) const;
     QPID_COMMON_EXTERN void connect(const SocketAddress&) const;
 
@@ -97,8 +99,6 @@ public:
     QPID_COMMON_EXTERN int read(void *buf, size_t count) const;
     QPID_COMMON_EXTERN int write(const void *buf, size_t count) const;
 
-    QPID_COMMON_EXTERN void setTcpNoDelay(bool nodelay) const;
-
 private:
     /** Create socket */
     void createSocket(const SocketAddress&) const;
@@ -106,6 +106,7 @@ private:
     Socket(IOHandlePrivate*);
     mutable std::string connectname;
     mutable bool nonblocking;
+    mutable bool nodelay;
 };
 
 }}
