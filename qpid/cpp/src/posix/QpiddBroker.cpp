@@ -124,6 +124,7 @@ struct QpiddDaemon : public Daemon {
     void child() {
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->parent->broker));
         qpid::broker::SignalHandler::setBroker(brokerPtr);
+        brokerPtr->accept();
         uint16_t port=brokerPtr->getPort(options->daemon.transport);
         ready(port);            // Notify parent.
         brokerPtr->run();
@@ -169,6 +170,7 @@ int QpiddBroker::execute (QpiddOptions *options) {
     else {                  // Non-daemon broker.
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
         broker::SignalHandler::setBroker(brokerPtr);
+        brokerPtr->accept();
         if (options->broker.port == 0 || myOptions->daemon.transport != TCP)
             cout << uint16_t(brokerPtr->getPort(myOptions->daemon.transport)) << endl;
         brokerPtr->run();
