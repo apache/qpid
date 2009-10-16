@@ -91,6 +91,8 @@ if (WIN32)
        "Directory to install configuration files")
   set (QPID_INSTALL_DATADIR conf CACHE STRING
        "Directory to install read-only arch.-independent data root")
+  set (QPID_INSTALL_HTMLDIR html CACHE STRING
+       "Directory to install HTML documentation")
   set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
        "Directory to install programming header files")
   set (QPID_INSTALL_LIBDIR bin CACHE STRING
@@ -121,8 +123,8 @@ if (WIN32)
 #       gacutil /u 'Apache.Qpid.Channel'
 #       gacutil /u 'Apache.Qpid.Interop'
 #      ")
-
 endif (WIN32)
+
 if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   # Set up install locations. Since the Linux install puts some files in
   # /etc and most in the install location, we need to use a DESTDIR build
@@ -146,6 +148,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
        "Directory to install configuration files")
   set (QPID_INSTALL_DATADIR share/qpid CACHE STRING
        "Directory to install read-only arch.-independent data root")
+  set (QPID_INSTALL_HTMLDIR html CACHE STRING
+       "Directory to install HTML documentation")
   set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
        "Directory to install programming header files")
   set (QPID_INSTALL_LIBDIR lib CACHE STRING
@@ -177,7 +181,7 @@ endif (WIN32)
 add_subdirectory(managementgen)
 add_subdirectory(etc)
 add_subdirectory(src)
-# add_subdirectory(docs/api)
+add_subdirectory(docs/api)
 # add_subdirectory(docs/man)
 add_subdirectory(examples)
 
