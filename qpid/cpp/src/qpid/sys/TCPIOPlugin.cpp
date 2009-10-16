@@ -114,7 +114,7 @@ std::string AsynchIOProtocolFactory::getHost() const {
 void AsynchIOProtocolFactory::accept(Poller::shared_ptr poller,
                                      ConnectionCodec::Factory* fact) {
     acceptor.reset(
-        new AsynchAcceptor(listener,
+        AsynchAcceptor::create(listener,
                            boost::bind(&AsynchIOProtocolFactory::established, this, poller, _1, fact, false)));
     acceptor->start(poller);
 }
