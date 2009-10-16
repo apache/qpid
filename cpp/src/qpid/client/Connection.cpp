@@ -148,7 +148,8 @@ void Connection::resume(Session& session) {
 }
 
 void Connection::close() {
-    impl->close();
+    if ( impl )
+        impl->close();
 }
 
 std::vector<Url> Connection::getKnownBrokers() {
