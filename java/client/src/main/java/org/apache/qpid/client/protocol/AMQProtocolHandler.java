@@ -285,7 +285,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         failoverThread.start();
     }
 
-    @Override
     public void readerIdle()
     {
         _logger.debug("Protocol Session [" + this + "] idle: reader");
@@ -295,7 +294,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         _networkDriver.close();
     }
     
-    @Override
     public void writerIdle()
     {
         _logger.debug("Protocol Session [" + this + "] idle: reader");
@@ -421,7 +419,6 @@ public class AMQProtocolHandler implements ProtocolEngine
     private static int _messageReceivedCount;
 
 
-    @Override
     public void received(ByteBuffer msg)
     {
         try
@@ -431,7 +428,6 @@ public class AMQProtocolHandler implements ProtocolEngine
 
             Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Runnable()
             {
-                @Override
                 public void run()
                 {
                     // Decode buffer
@@ -566,7 +562,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         _writtenBytes += buf.remaining();
         Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Runnable()
         {
-            @Override
             public void run()
             {
                 _networkDriver.send(buf);
