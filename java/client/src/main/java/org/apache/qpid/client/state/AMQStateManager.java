@@ -213,4 +213,9 @@ public class AMQStateManager implements AMQMethodListener
     {
         return _lastException;
     }
+
+    public void clearLastException()
+    {
+        _lastException = null;
+    }
 }

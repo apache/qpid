@@ -24,6 +24,7 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.state.AMQState;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -191,6 +192,22 @@ public class FailoverHandler implements Runnable
             {
                 // Set the new Protocol Session in the StateManager.               
                 existingStateManager.setProtocolSession(_amqProtocolHandler.getProtocolSession());
+
+                // Now that the ProtocolHandler has been reconnected clean up
+                // the state of the old state manager. As if we simply reinstate
+                // it any old exception that had occured prior to failover may
+                // prohibit reconnection.
+                // e.g. During testing when the broker is shutdown gracefully.
+                // The broker 
+                // Clear any exceptions we gathered
+                if (existingStateManager.getCurrentState() != AMQState.CONNECTION_OPEN)
+                {
+                    // Clear the state of the previous state manager as it may
+                    // have received an exception
+                    existingStateManager.clearLastException();
+                    existingStateManager.changeState(AMQState.CONNECTION_OPEN);
+                }
+
 
                 //Restore Existing State Manager
                 _amqProtocolHandler.setStateManager(existingStateManager);
