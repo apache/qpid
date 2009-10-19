@@ -95,11 +95,10 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
     public boolean failoverAllowed()
     {
-        System.out.println("====================================");
-        System.out.println(toString());
-        System.out.println("====================================");
+        _logger.info("==== Checking failoverAllowed() ====");
+        _logger.info(toString());
+        _logger.info("====================================");
         return ((_currentCycleRetries < _cycleRetries) || (_currentServerRetry < _serverRetries));
-                //|| (_currentBrokerIndex <= (_connectionDetails.getBrokerCount() - 1)));
     }
 
     public void attainedConnection()
@@ -175,7 +174,11 @@ public class FailoverRoundRobinServers implements FailoverMethod
         }
         else
         {
-            _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
+            // Only display if option not set. Not if deDelay==false.
+            if (delayStr == null)
+            {
+                _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
+            }
         }
 
         return broker;
