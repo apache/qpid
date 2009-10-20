@@ -79,15 +79,11 @@
                         <!-- This section grants users the ability to consume from the broker -->
                         <consume>
                             <queues>
-
-                                <!-- Allow the clients to consume from their temporary queues-->
-                                <queue>
-                                    <temporary/>
+                                <temporary>
                                     <users>
                                         <user>client</user>
                                     </users>
-                                </queue>
-
+                                </temporary>
 
                                 <!-- Only allow the server to consume from the Request Queue-->
                                 <queue>
@@ -101,13 +97,18 @@
                             </queues>
                         </consume>
 
-                        <!-- This section grants clients the ability to create queues and exchanges -->
+                        <!-- This section grants users the ability to create queues and exchanges -->
                         <create>
                             <queues>
-                                <!-- Allow clients to create temporary queues-->
+                                <temporary>
+                                    <users>
+                                        <user>client</user>
+                                    </users>
+                                </temporary>
+
+                                <!-- Allow clients to create queue on this exchange-->
                                 <queue>
-                                    <temporary/>
-                                    <exchanges>
+                                    <exchanges>                                    
                                         <exchange>
                                             <name>amq.direct</name>
                                             <users>
