@@ -59,6 +59,17 @@ public class LoggingManagementMBeanTest extends TestCase
     {
         _testConfigFile = createTempTestLog4JConfig();
     }
+    
+    protected void tearDown() throws Exception
+    {
+        File oldTestConfigFile = new File(_testConfigFile.getAbsolutePath() + ".old");
+        if(oldTestConfigFile.exists())
+        {
+            oldTestConfigFile.delete();
+        }
+        
+        _testConfigFile.delete();
+    }
 
     private File createTempTestLog4JConfig()
     {
