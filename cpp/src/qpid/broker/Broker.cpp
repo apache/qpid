@@ -140,6 +140,7 @@ Broker::Broker(const Broker::Options& conf) :
     store(0),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
+    managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     queues(this),
     exchanges(this),
     links(this),
@@ -150,7 +151,6 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     queueCleaner(queues, timer),
     queueEvents(poller,!conf.asyncQueueEvents), 
     recovery(true),
@@ -161,12 +161,12 @@ Broker::Broker(const Broker::Options& conf) :
         QPID_LOG(info, "Management enabled");
         managementAgent->configure(dataDir.isEnabled() ? dataDir.getPath() : string(),
                                    conf.mgmtPubInterval, this, conf.workerThreads + 3);
-        _qmf::Package packageInitializer(managementAgent);
+        _qmf::Package packageInitializer(managementAgent.get());
 
         System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);
         systemObject = System::shared_ptr(system);
 
-        mgmtObject = new _qmf::Broker(managementAgent, this, system, conf.port);
+        mgmtObject = new _qmf::Broker(managementAgent.get(), this, system, conf.port);
         mgmtObject->set_workerThreads(conf.workerThreads);
         mgmtObject->set_maxConns(conf.maxConnections);
         mgmtObject->set_connBacklog(conf.connectionBacklog);
@@ -242,7 +242,7 @@ Broker::Broker(const Broker::Options& conf) :
         Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
         Exchange::shared_ptr dExchange = exchanges.get (amq_direct);
         managementAgent->setExchange(mExchange, dExchange);
-        boost::dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent(managementAgent);
+        boost::dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent(managementAgent.get());
     }
     else
         QPID_LOG(info, "Management not enabled");

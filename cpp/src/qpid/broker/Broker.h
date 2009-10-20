@@ -130,13 +130,13 @@ public:
     AclModule* acl;
     DataDir dataDir;
 
+    std::auto_ptr<management::ManagementAgent> managementAgent;
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     LinkRegistry links;
     boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
-    management::ManagementAgent* managementAgent;
     qmf::org::apache::qpid::broker::Broker* mgmtObject;
     Vhost::shared_ptr            vhostObject;
     System::shared_ptr           systemObject;
@@ -237,7 +237,7 @@ public:
     void setRecovery(bool set) { recovery = set; }
     bool getRecovery() const { return recovery; }
 
-    management::ManagementAgent* getManagementAgent() { return managementAgent; }
+    management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
 };
 
 }}
