@@ -388,8 +388,12 @@ class BrokerManager(Console):
             hostList = self._getHostList(memberList)
             self.qmf.delBroker(self.broker)
             self.broker = None
+            if _host.find("@") > 0:
+                authString = _host.split("@")[0] + "@"
+            else:
+                authString = ""
             for host in hostList:
-                b = self.qmf.addBroker(host, _connTimeout)
+                b = self.qmf.addBroker(authString + host, _connTimeout)
                 self.brokers.append(Broker(self.qmf, b))
         else:
             self.brokers.append(Broker(self.qmf, self.broker))
