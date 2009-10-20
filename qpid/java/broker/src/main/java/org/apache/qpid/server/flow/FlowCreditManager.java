@@ -1,6 +1,5 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.message.ServerMessage;
 
 /*

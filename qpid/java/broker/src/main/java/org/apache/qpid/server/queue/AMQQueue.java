@@ -22,16 +22,16 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.PrincipalHolder;
-import org.apache.qpid.server.ExchangeReferrer;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 
-public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer
+public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeReferrer, TransactionLogResource
 {
 
 
@@ -50,6 +50,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     }
 
     AMQShortString getName();
+
+    void setNoLocal(boolean b);
 
     boolean isDurable();
 
@@ -114,7 +116,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
 
-    
+
 
     void addQueueDeleteTask(final Task task);
 
@@ -128,11 +130,11 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     List<Long> getMessagesOnTheQueue(int num, int offest);
 
     QueueEntry getMessageOnTheQueue(long messageId);
-    
+
     /**
      * Returns a list of QueEntries from a given range of queue positions, eg messages 5 to 10 on the queue.
-     * 
-     * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1. 
+     *
+     * The 'queue position' index starts from 1. Using 0 in 'from' will be ignored and continue from 1.
      * Using 0 in the 'to' field will return an empty list regardless of the 'from' value.
      * @param fromPosition
      * @param toPosition
@@ -142,9 +144,9 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
 
     void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        StoreContext storeContext);
+                                                        ServerTransaction transaction);
 
-    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext);
+    void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction transaction);
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId);
 
@@ -265,6 +267,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     }
 
     void configure(QueueConfiguration config);
-    
+
     ManagedObject getManagedObject();
 }

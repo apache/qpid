@@ -21,21 +21,19 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.PrincipalHolder;
 
 public abstract class BasicACLPlugin implements ACLPlugin
 {
 
-    // Returns true or false if the plugin should authorise or deny the request    
+    // Returns true or false if the plugin should authorise or deny the request
     protected abstract AuthzResult getResult();
-    
+
     public AuthzResult authoriseBind(PrincipalHolder session, Exchange exch,
             AMQQueue queue, AMQShortString routingKey)
     {
@@ -51,7 +49,7 @@ public abstract class BasicACLPlugin implements ACLPlugin
     public AuthzResult authoriseConsume(PrincipalHolder session, boolean noAck,
             AMQQueue queue)
     {
-        return getResult();    
+        return getResult();
     }
 
     public AuthzResult authoriseConsume(PrincipalHolder session,

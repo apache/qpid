@@ -27,13 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.transport.TestNetworkDriver;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
@@ -68,7 +68,17 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     public byte getProtocolMajorVersion()
     {
         return (byte) 8;
-    }    
+    }
+
+    public void writeReturn(MessagePublishInfo messagePublishInfo,
+                            ContentHeaderBody header,
+                            MessageContentSource msgContent,
+                            int channelId,
+                            int replyCode,
+                            AMQShortString replyText) throws AMQException
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 
     public byte getProtocolMinorVersion()
     {
@@ -82,12 +92,12 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         synchronized (_channelDelivers)
         {
             List<DeliveryPair> all =_channelDelivers.get(channelId).get(consumerTag);
-            
+
             if (all == null)
             {
                 return new ArrayList<DeliveryPair>(0);
             }
-            
+
             List<DeliveryPair> msgs = all.subList(0, count);
 
             List<DeliveryPair> response = new ArrayList<DeliveryPair>(msgs);
@@ -99,15 +109,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
-    public void writeReturn(MessagePublishInfo messagePublishInfo,
-                            ContentHeaderBody header,
-                            Iterator<AMQDataBlock> bodyFrameIterator,
-                            int channelId,
-                            int replyCode,
-                            AMQShortString replyText) throws AMQException
-    {
-
-    }
     // *** ProtocolOutputConverter Implementation
     public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {

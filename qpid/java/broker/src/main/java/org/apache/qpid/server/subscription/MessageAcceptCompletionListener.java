@@ -43,11 +43,15 @@ public class MessageAcceptCompletionListener implements Method.CompletionListene
 
     public void onComplete(Method method)
     {
-        _session.acknowledge(_sub, _entry);
         if(_restoreCredit)
         {
             _sub.restoreCredit(_entry);
         }
-        _session.removeDispositionListener(method);        
+        if(_entry.isAcquiredBy(_sub))
+        {
+            _session.acknowledge(_sub, _entry);
+        }
+
+        _session.removeDispositionListener(method);
     }
 }

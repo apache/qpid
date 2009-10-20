@@ -32,12 +32,11 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.plugins.AbstractACLPlugin;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.PrincipalHolder;
 import org.apache.qpid.util.NetMatcher;
 
 public class FirewallPlugin extends AbstractACLPlugin
@@ -59,7 +58,7 @@ public class FirewallPlugin extends AbstractACLPlugin
             return plugin;
         }
     };
-    
+
     public class FirewallRule
     {
 
@@ -71,13 +70,13 @@ public class FirewallPlugin extends AbstractACLPlugin
         public FirewallRule(String access, List networks, List hostnames)
         {
             _access = (access.equals("allow")) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
-            
+
             if (networks != null && networks.size() > 0)
             {
                 String[] networkStrings = objListToStringArray(networks);
                 _network = new NetMatcher(networkStrings);
             }
-            
+
             if (hostnames != null && hostnames.size() > 0)
             {
                 int i = 0;
@@ -87,7 +86,7 @@ public class FirewallPlugin extends AbstractACLPlugin
                     _hostnamePatterns[i++] = Pattern.compile(hostname);
                 }
             }
-            
+
         }
 
         private String[] objListToStringArray(List objList)
@@ -149,7 +148,7 @@ public class FirewallPlugin extends AbstractACLPlugin
 
             thread.run();
             long endTime = System.currentTimeMillis() + DNS_TIMEOUT;
-            
+
             while (System.currentTimeMillis() < endTime && !done.get())
             {
                 try
@@ -183,7 +182,7 @@ public class FirewallPlugin extends AbstractACLPlugin
         if(!(principalHolder instanceof ProtocolEngine))
         {
             return AuthzResult.ABSTAIN; // We only deal with tcp sessions
-        } 
+        }
 
         ProtocolEngine session = (ProtocolEngine) principalHolder;
 
@@ -237,7 +236,7 @@ public class FirewallPlugin extends AbstractACLPlugin
             _default = AuthzResult.DENIED;
         }
         CompositeConfiguration finalConfig = new CompositeConfiguration(config);
-        
+
         List subFiles = config.getList("xml[@fileName]");
         for (Object subFile : subFiles)
         {
@@ -245,7 +244,7 @@ public class FirewallPlugin extends AbstractACLPlugin
         }
 
         // all rules must have an access attribute
-        int numRules = finalConfig.getList("rule[@access]").size(); 
+        int numRules = finalConfig.getList("rule[@access]").size();
         _rules = new FirewallRule[numRules];
         for (int i = 0; i < numRules; i++)
         {

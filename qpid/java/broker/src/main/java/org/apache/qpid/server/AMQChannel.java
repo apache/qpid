@@ -43,8 +43,11 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.txn.*;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -99,12 +102,7 @@ public class AMQChannel
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
-    private Transaction _transaction;
-
-
-    private final List<RequiredDeliveryException> _returnMessages = new LinkedList<RequiredDeliveryException>();
-
-    private MessageHandleFactory _messageHandleFactory = new MessageHandleFactory();
+    private ServerTransaction _transaction;
 
     // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
@@ -161,7 +159,7 @@ public class AMQChannel
     public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQException
     {
 
-        _currentMessage = new IncomingMessage(_messageStore.getNewMessageId(), info, _session);
+        _currentMessage = new IncomingMessage(info);
         _currentMessage.setExchange(e);
     }
 
@@ -183,17 +181,15 @@ public class AMQChannel
 
             _currentMessage.setExpiration();
 
+
+            MessageMetaData mmd = _currentMessage.headersReceived();
+            final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(mmd);
+            _currentMessage.setStoredMessage(handle);
+
             routeCurrentMessage();
 
-            MessageMetaData mmd = _currentMessage.routingComplete(_messageStore, _messageHandleFactory);
 
-            if(_currentMessage.isPersistent())
-            {
-                final Long messageNumber = _currentMessage.getMessageNumber();
-
-                _messageStore.storeMessageMetaData(messageNumber, mmd);
-
-                _transaction.addPostCommitAction(new Transaction.Action()
+                _transaction.addPostCommitAction(new ServerTransaction.Action()
                 {
 
                     public void postCommit()
@@ -202,17 +198,9 @@ public class AMQChannel
 
                     public void onRollback()
                     {
-                        try
-                        {
-                            _messageStore.removeMessage(messageNumber);
-                        }
-                        catch (AMQException e)
-                        {
-
-                        }
+                        handle.remove();
                     }
                 });
-            }
 
             deliverCurrentMessageIfComplete();
 
@@ -283,16 +271,7 @@ public class AMQChannel
             final ContentChunk contentChunk =
                     _session.getMethodRegistry().getProtocolVersionMethodConverter().convertToContentChunk(contentBody);
 
-            int chunkId = _currentMessage.addContentBodyFrame(contentChunk);
-
-            if(_currentMessage.isPersistent())
-            {
-                final Long messageNumber = _currentMessage.getMessageNumber();
-                _messageStore.storeContentBodyChunk(messageNumber, chunkId,
-                                                    contentChunk, _currentMessage.allContentReceived());
-
-
-            }
+            _currentMessage.addContentBodyFrame(contentChunk);
 
             deliverCurrentMessageIfComplete();
         }
@@ -320,6 +299,12 @@ public class AMQChannel
         return ++_consumerTag;
     }
 
+
+    public Subscription getSubscription(AMQShortString subscription)
+    {
+        return _tag2SubscriptionMap.get(subscription);
+    }
+
     /**
      * Subscribe to a queue. We register all subscriptions in the channel so that if the channel is closed we can clean
      * up all subscriptions, even if the client does not explicitly unsubscribe from all queues.
@@ -333,11 +318,10 @@ public class AMQChannel
      * @param exclusive Flag requesting exclusive access to the queue
      * @return the consumer tag. This is returned to the subscriber and used in subsequent unsubscribe requests
      *
-     * @throws ConsumerTagNotUniqueException if the tag is not unique
      * @throws AMQException                  if something goes wrong
      */
     public AMQShortString subscribeToQueue(AMQShortString tag, AMQQueue queue, boolean acks,
-                                           FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException, ConsumerTagNotUniqueException
+                                           FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException
     {
         if (tag == null)
         {
@@ -346,7 +330,7 @@ public class AMQChannel
 
         if (_tag2SubscriptionMap.containsKey(tag))
         {
-            throw new ConsumerTagNotUniqueException();
+            throw new AMQException("Consumer already exists with same tag: " + tag);
         }
 
          Subscription subscription =
@@ -532,7 +516,7 @@ public class AMQChannel
             if (!unacked.isQueueDeleted())
             {
                 // Mark message redelivered
-                unacked.setRedelivered(true);
+                unacked.setRedelivered();
 
                 // Ensure message is released for redelivery
                 unacked.release();
@@ -560,7 +544,7 @@ public class AMQChannel
         if (unacked != null)
         {
             // Mark message redelivered
-            unacked.setRedelivered(true);
+            unacked.setRedelivered();
 
             // Ensure message is released for redelivery
             if (!unacked.isQueueDeleted())
@@ -655,7 +639,7 @@ public class AMQChannel
 
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
-            message.setRedelivered(true);
+            message.setRedelivered();
 
             Subscription sub = message.getDeliveredSubscription();
 
@@ -696,7 +680,7 @@ public class AMQChannel
             long deliveryTag = entry.getKey();
             _unacknowledgedMessageMap.remove(deliveryTag);
 
-            message.setRedelivered(true);
+            message.setRedelivered();
             message.release();
 
         }
@@ -931,16 +915,8 @@ public class AMQChannel
             public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
                     throws AMQException
             {
-                ServerMessage msg = entry.getMessage();
-                if(msg instanceof AMQMessage)
-                {
-                    getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
-                                                                                   deliveryTag, sub.getConsumerTag());
-                }
-                else
-                {
-                    //TODO - Convert 0-10 Message into 0-8/9 message
-                }
+                getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
+                                                                               deliveryTag, sub.getConsumerTag());
             }
 
         };
@@ -969,15 +945,7 @@ public class AMQChannel
             throws AMQException
     {
 
-
-
-        final AMQMessageHandle messageHandle = incomingMessage.getMessageHandle();
-        final MessagePublishInfo messagePublishInfo = incomingMessage.getMessagePublishInfo();
-        final ContentHeaderBody header = incomingMessage.getContentHeader();
-
-
-
-        AMQMessage message = new AMQMessage(messageHandle, header, incomingMessage.getSize() ,messagePublishInfo);
+        AMQMessage message = new AMQMessage(incomingMessage.getStoredMessage());
 
         message.setExpiration(incomingMessage.getExpiration());
         message.setClientIdentifier(_session);
@@ -985,7 +953,6 @@ public class AMQChannel
     }
 
     private boolean checkMessageUserId(ContentHeaderBody header)
-            throws UnauthorizedAccessException
     {
         AMQShortString userID =
                 header.properties instanceof BasicContentHeaderProperties
@@ -996,7 +963,7 @@ public class AMQChannel
 
     }
 
-    private class MessageDeliveryAction implements Transaction.Action
+    private class MessageDeliveryAction implements ServerTransaction.Action
     {
         private IncomingMessage _incommingMessage;
         private ArrayList<AMQQueue> _destinationQueues;
@@ -1014,7 +981,7 @@ public class AMQChannel
             {
                 final boolean immediate = _incommingMessage.isImmediate();
 
-                Transaction txn = null;
+                ServerTransaction txn = null;
 
                 for(AMQQueue queue : _destinationQueues)
                 {
@@ -1036,7 +1003,7 @@ public class AMQChannel
                         AMQMessage message = (AMQMessage) entry.getMessage();
                                         _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
                                                               message.getContentHeaderBody(),
-                                                              message.getBodyFrameIterator(_session,_channelId),
+                                                              message,
                                                               _channelId,
                                                               AMQConstant.NO_CONSUMERS.getCode(),
                                                              new AMQShortString("Immediate delivery is not possible."));
@@ -1069,7 +1036,7 @@ public class AMQChannel
         }
     }
 
-    private class MessageAcknowledgeAction implements Transaction.Action
+    private class MessageAcknowledgeAction implements ServerTransaction.Action
     {
         private final Collection<QueueEntry> _ackedMessages;
 
@@ -1120,7 +1087,7 @@ public class AMQChannel
         }
     }
 
-    private class WriteReturnAction implements Transaction.Action
+    private class WriteReturnAction implements ServerTransaction.Action
     {
         private final AMQConstant _errorCode;
         private final IncomingMessage _message;
@@ -1141,7 +1108,7 @@ public class AMQChannel
             {
                 _session.getProtocolOutputConverter().writeReturn(_message.getMessagePublishInfo(),
                                                               _message.getContentHeader(),
-                                                              new BodyFrameIterator(_session,_channelId,_message),
+                                                              _message,
                                                               _channelId,
                                                               _errorCode.getCode(),
                                                              new AMQShortString(_description));

@@ -14,9 +14,9 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.exchange;
 
@@ -28,9 +28,12 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
 public class TopicExchangeTest extends TestCase
@@ -54,19 +57,19 @@ public class TopicExchangeTest extends TestCase
 
     public void tearDown()
     {
-        ApplicationRegistry.remove(); 
+        ApplicationRegistry.remove();
     }
 
 
     public void testNoRoute() throws AMQException
     {
-        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost, null);        
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("a*#b"), false, null, false, _vhost, null);
         _exchange.registerQueue(new AMQShortString("a.*.#.b"), queue, null);
 
 
         MessagePublishInfo info = new PublishInfo(new AMQShortString("a.b"));
 
-        IncomingMessage message = new IncomingMessage(0L, info, _protocolSession);
+        IncomingMessage message = new IncomingMessage(info);
 
         message.enqueue(_exchange.route(message));
 
@@ -349,9 +352,11 @@ public class TopicExchangeTest extends TestCase
     private int routeMessage(final IncomingMessage message)
             throws AMQException
     {
+        MessageMetaData mmd = message.headersReceived();
+        message.setStoredMessage(_store.addMessage(mmd));
+
         message.enqueue(_exchange.route(message));
-        message.routingComplete(_store, new MessageHandleFactory());
-        AMQMessage msg = new AMQMessage(message.getMessageHandle(), message.getContentHeader(), message.getSize(), message.getMessagePublishInfo());
+        AMQMessage msg = new AMQMessage(message.getStoredMessage());
         for(AMQQueue q : message.getDestinationQueues())
         {
             q.enqueue(msg);
@@ -393,8 +398,11 @@ public class TopicExchangeTest extends TestCase
     {
         MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
 
-        IncomingMessage message = new IncomingMessage(0L, info, _protocolSession);
-        message.setContentHeaderBody( new ContentHeaderBody());
+        IncomingMessage message = new IncomingMessage(info);
+        final ContentHeaderBody chb = new ContentHeaderBody();
+        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
+        chb.properties = props;
+        message.setContentHeaderBody(chb);
 
 
         return message;
@@ -417,7 +425,7 @@ public class TopicExchangeTest extends TestCase
 
         public void setExchange(AMQShortString exchange)
         {
-                        
+
         }
 
         public boolean isImmediate()

@@ -127,7 +127,17 @@ public class MockSubscription implements Subscription
 
     public void confirmAutoClose()
     {
-        
+
+    }
+
+    public void set(String key, Object value)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Object get(String key)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean isAutoClose()
@@ -195,6 +205,10 @@ public class MockSubscription implements Subscription
     public void setQueue(AMQQueue queue, boolean exclusive)
     {
         this.queue = queue;
+    }
+
+    public void setNoLocal(boolean noLocal)
+    {        
     }
 
     public void setStateListener(StateListener listener)

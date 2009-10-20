@@ -31,7 +31,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  */
 public final class DiagnosticExchangeType implements ExchangeType<DiagnosticExchange>
 {
-    
+
     public AMQShortString getName()
     {
         return DiagnosticExchange.DIAGNOSTIC_EXCHANGE_CLASS;

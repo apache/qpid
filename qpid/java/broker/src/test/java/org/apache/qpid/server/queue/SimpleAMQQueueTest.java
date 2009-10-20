@@ -36,13 +36,16 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 
 public class SimpleAMQQueueTest extends TestCase
 {
@@ -94,7 +97,7 @@ public class SimpleAMQQueueTest extends TestCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), env), _store);
+        _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), env), _store);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, _virtualHost, _arguments);
@@ -271,7 +274,7 @@ public class SimpleAMQQueueTest extends TestCase
         AMQMessage message = createMessage(id);
         _queue.enqueue(message);
         QueueEntry entry = _subscription.getQueueContext().getLastSeenEntry();
-        entry.setRedelivered(true);
+        entry.setRedelivered();
         _queue.resend(entry, _subscription);
 
     }
@@ -399,23 +402,25 @@ public class SimpleAMQQueueTest extends TestCase
     public void testEnqueueDequeueOfPersistentMessageToNonDurableQueue() throws AMQException
     {
         // Create IncomingMessage and nondurable queue
-        final IncomingMessage msg = new IncomingMessage(1L, info,  null);
+        final IncomingMessage msg = new IncomingMessage(info);
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.properties = new BasicContentHeaderProperties();
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) 2);
         msg.setContentHeaderBody(contentHeaderBody);
+
         final ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
 
         // Send persistent message
 
         qs.add(_queue);
-        msg.routingComplete(_store, new MessageHandleFactory());
-        _store.storeMessageMetaData(new Long(1L), new MessageMetaData(info, contentHeaderBody, 1));
+        MessageMetaData metaData = msg.headersReceived();
+        StoredMessage handle = _store.addMessage(metaData);
+        msg.setStoredMessage(handle);
 
 
-        Transaction txn = new AutoCommitTransaction(_store);
+        ServerTransaction txn = new AutoCommitTransaction(_store);
 
-        txn.enqueue(qs, msg, new Transaction.Action()
+        txn.enqueue(qs, msg, new ServerTransaction.Action()
                                     {
                                         public void postCommit()
                                         {
@@ -435,7 +440,7 @@ public class SimpleAMQQueueTest extends TestCase
 
         // Dequeue message
         MockQueueEntry entry = new MockQueueEntry();
-        AMQMessage amqmsg = new AMQMessage(1L, _store, new MessageHandleFactory());
+        AMQMessage amqmsg = new AMQMessage(handle);
 
         entry.setMessage(amqmsg);
         _queue.dequeue(entry);
@@ -446,23 +451,12 @@ public class SimpleAMQQueueTest extends TestCase
     }
 
 
-    // FIXME: move this to somewhere useful
-    private static AMQMessageHandle createMessageHandle(final long messageId, final MessagePublishInfo publishBody, ContentHeaderBody contentHeaderBody)
-    {
-        final AMQMessageHandle amqMessageHandle = (new MessageHandleFactory()).createMessageHandle(messageId,
-                                                                                                   null,
-                                                                                                   false);
-
-        amqMessageHandle.setPublishAndContentHeaderBody(publishBody, contentHeaderBody);
-        return amqMessageHandle;
-    }
-
     public class TestMessage extends AMQMessage
     {
         private final long _tag;
         private int _count;
 
-        TestMessage(long tag, long messageId, MessagePublishInfo publishBody, StoreContext storeContext)
+        TestMessage(long tag, long messageId, MessagePublishInfo publishBody)
                 throws AMQException
         {
             this(tag, messageId, publishBody, new ContentHeaderBody(1, 1, new BasicContentHeaderProperties(), 0));
@@ -471,7 +465,7 @@ public class SimpleAMQQueueTest extends TestCase
         TestMessage(long tag, long messageId, MessagePublishInfo publishBody, ContentHeaderBody chb)
                 throws AMQException
         {
-            super(createMessageHandle(messageId, publishBody, chb), chb, 0, publishBody);
+            super(new MockStoredMessage(messageId, publishBody, chb));
             _tag = tag;
         }
 
@@ -481,7 +475,7 @@ public class SimpleAMQQueueTest extends TestCase
             return true;
         }
 
-        public void decrementReference(StoreContext context)
+        public void decrementReference()
         {
             _count--;
         }
@@ -494,7 +488,7 @@ public class SimpleAMQQueueTest extends TestCase
 
     protected AMQMessage createMessage(Long id) throws AMQException
     {
-        AMQMessage messageA = new TestMessage(id, id, info, new StoreContext());
+        AMQMessage messageA = new TestMessage(id, id, info);
         return messageA;
     }
 }

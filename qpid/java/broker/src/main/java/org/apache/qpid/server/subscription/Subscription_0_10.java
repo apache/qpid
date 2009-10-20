@@ -29,14 +29,18 @@ import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.SubscriptionActor;
-import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderProperties;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.*;
 
@@ -47,6 +51,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.nio.ByteBuffer;
 
 public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener
 {
@@ -90,6 +97,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private LogSubject _logSubject;
     private LogActor _logActor;
+    private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
@@ -109,6 +117,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _state.set(_creditManager.hasCredit() ? State.ACTIVE : State.SUSPENDED);
 
 
+    }
+
+    public void setNoLocal(boolean noLocal)
+    {
+        _noLocal = noLocal;
     }
 
     public AMQQueue getQueue()
@@ -135,7 +148,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _queue = queue;
         _logSubject = new SubscriptionLogSubject(this);
         _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
-        
+
     }
 
     public AMQShortString getConsumerTag()
@@ -151,11 +164,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public boolean hasInterest(QueueEntry entry)
     {
 
-        //TODO 0-8/9 to 0-10 conversion
-        if(!(entry.getMessage() instanceof MessageTransferMessage))
-        {
-            return false;
-        }
+
 
         //check that the message hasn't been rejected
         if (entry.isRejectedBy(this))
@@ -261,70 +270,164 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     }
 
 
+    private class AddMessageDispositionListnerAction implements Runnable
+    {
+        public MessageTransfer _xfr;
+        public ServerSession.MessageDispositionChangeListener _action;
+
+        public void run()
+        {
+            _session.onMessageDispositionChange(_xfr, _action);
+        }
+    }
+
+    private final AddMessageDispositionListnerAction _postIdSettingAction = new AddMessageDispositionListnerAction();
+
     public void send(final QueueEntry entry) throws AMQException
     {
         ServerMessage serverMsg = entry.getMessage();
 
 
-        MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
+        MessageTransfer xfr;
+
+        if(serverMsg instanceof MessageTransferMessage)
+        {
+
+            MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
 
 
-        Struct[] headers;
-        if(msg.getHeader() == null)
-        {
-            headers = EMPTY_STRUCT_ARRAY;
-        }
-        else
-        {
-            headers = msg.getHeader().getStructs();
-        }
-
-        ArrayList<Struct> newHeaders = new ArrayList<Struct>(headers.length);
-        DeliveryProperties origDeliveryProps = null;
-        for(Struct header : headers)
-        {
-            if(header instanceof DeliveryProperties)
+            Struct[] headers;
+            if(msg.getHeader() == null)
             {
-                origDeliveryProps = (DeliveryProperties) header;
+                headers = EMPTY_STRUCT_ARRAY;
             }
             else
             {
-                newHeaders.add(header);
+                headers = msg.getHeader().getStructs();
             }
-        }
 
-        DeliveryProperties deliveryProps = new DeliveryProperties();
-        if(origDeliveryProps != null)
+            ArrayList<Struct> newHeaders = new ArrayList<Struct>(headers.length);
+            DeliveryProperties origDeliveryProps = null;
+            for(Struct header : headers)
+            {
+                if(header instanceof DeliveryProperties)
+                {
+                    origDeliveryProps = (DeliveryProperties) header;
+                }
+                else
+                {
+                    newHeaders.add(header);
+                }
+            }
+
+            DeliveryProperties deliveryProps = new DeliveryProperties();
+            if(origDeliveryProps != null)
+            {
+                if(origDeliveryProps.hasDeliveryMode())
+                {
+                    deliveryProps.setDeliveryMode(origDeliveryProps.getDeliveryMode());
+                }
+                if(origDeliveryProps.hasExchange())
+                {
+                    deliveryProps.setExchange(origDeliveryProps.getExchange());
+                }
+                if(origDeliveryProps.hasExpiration())
+                {
+                    deliveryProps.setExpiration(origDeliveryProps.getExpiration());
+                }
+                if(origDeliveryProps.hasPriority())
+                {
+                    deliveryProps.setPriority(origDeliveryProps.getPriority());
+                }
+                if(origDeliveryProps.hasRoutingKey())
+                {
+                    deliveryProps.setRoutingKey(origDeliveryProps.getRoutingKey());
+                }
+
+            }
+
+            deliveryProps.setRedelivered(entry.isRedelivered());
+
+            newHeaders.add(deliveryProps);
+            Header header = new Header(newHeaders);
+
+            xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
+        }
+        else
         {
-            if(origDeliveryProps.hasDeliveryMode())
+            AMQMessage message_0_8 = (AMQMessage) serverMsg;
+            DeliveryProperties deliveryProps = new DeliveryProperties();
+            MessageProperties messageProps = new MessageProperties();
+
+            int size = (int) message_0_8.getSize();
+            ByteBuffer body = ByteBuffer.allocate(size);
+            message_0_8.getContent(body, 0);
+            body.flip();
+
+            Struct[] headers = new Struct[] { deliveryProps, messageProps };
+
+            BasicContentHeaderProperties properties =
+                    (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().properties;
+            final AMQShortString exchange = message_0_8.getMessagePublishInfo().getExchange();
+            if(exchange != null)
             {
-                deliveryProps.setDeliveryMode(origDeliveryProps.getDeliveryMode());
+                deliveryProps.setExchange(exchange.toString());
             }
-            if(origDeliveryProps.hasExchange())
+            deliveryProps.setExpiration(message_0_8.getExpiration());
+            deliveryProps.setImmediate(message_0_8.isImmediate());
+            deliveryProps.setPriority(MessageDeliveryPriority.get(properties.getPriority()));
+            deliveryProps.setRedelivered(entry.isRedelivered());
+            deliveryProps.setRoutingKey(message_0_8.getRoutingKey());
+            deliveryProps.setTimestamp(properties.getTimestamp());
+
+            messageProps.setContentEncoding(properties.getEncodingAsString());
+            messageProps.setContentLength(size);
+            if(properties.getAppId() != null)
             {
-                deliveryProps.setExchange(origDeliveryProps.getExchange());
+                messageProps.setAppId(properties.getAppId().getBytes());
             }
-            if(origDeliveryProps.hasExpiration())
+            messageProps.setContentType(properties.getContentTypeAsString());
+            if(properties.getCorrelationId() != null)
             {
-                deliveryProps.setExpiration(origDeliveryProps.getExpiration());
-            }
-            if(origDeliveryProps.hasPriority())
-            {
-                deliveryProps.setPriority(origDeliveryProps.getPriority());
-            }
-            if(origDeliveryProps.hasRoutingKey())
-            {
-                deliveryProps.setRoutingKey(origDeliveryProps.getRoutingKey());
+                messageProps.setCorrelationId(properties.getCorrelationId().getBytes());
             }
 
+            // TODO - ReplyTo
+
+            if(properties.getUserId() != null)
+            {
+                messageProps.setUserId(properties.getUserId().getBytes());
+            }
+
+            final Map<String, Object> appHeaders = new HashMap<String, Object>();
+
+            properties.getHeaders().processOverElements(
+                    new FieldTable.FieldTableElementProcessor()
+                    {
+
+                        public boolean processElement(String propertyName, AMQTypedValue value)
+                        {
+                            Object val = value.getValue();
+                            if(val instanceof AMQShortString)
+                            {
+                                val = val.toString();
+                            }
+                            appHeaders.put(propertyName, val);
+                            return true;
+                        }
+
+                        public Object getResult()
+                        {
+                            return appHeaders;
+                        }
+                    });
+
+
+            messageProps.setApplicationHeaders(appHeaders);
+
+            Header header = new Header(headers);
+            xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
         }
-
-        deliveryProps.setRedelivered(entry.isRedelivered());
-
-        newHeaders.add(deliveryProps);
-        Header header = new Header(newHeaders);
-
-        MessageTransfer xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
 
         if(_acceptMode == MessageAcceptMode.NONE)
         {
@@ -342,81 +445,30 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
 
 
-
-        _session.sendMessage(xfr);
-
+        _postIdSettingAction._xfr = xfr;
         if(_acceptMode == MessageAcceptMode.EXPLICIT)
         {
-            // potential race condition if incomming commands on this session can be processed on a different thread
-            // to this one (i.e. the message is only put in the map *after* it has been sent, theoretically we could get
-            // acknowledgement back before reaching the next line)
-            _session.onMessageDispositionChange(xfr, new ServerSession.MessageDispositionChangeListener()
-                                        {
-                                            public void onAccept()
-                                            {
-                                                _session.acknowledge(Subscription_0_10.this,entry);
-                                            }
-
-                                            public void onRelease()
-                                            {
-                                                release(entry);
-                                            }
-
-                                            public void onReject()
-                                            {
-                                                reject(entry);
-                                            }
-
-                                            public boolean acquire()
-                                            {
-                                                return entry.acquire(Subscription_0_10.this);
-                                            }
-            });
+            _postIdSettingAction._action = new ExplicitAcceptDispositionChangeListener(entry, this);
         }
         else
         {
-            _session.onMessageDispositionChange(xfr, new ServerSession.MessageDispositionChangeListener()
-                                        {
-                                            public void onAccept()
-                                            {
-                                                // TODO : should log error of explicit accept on non-explicit sub
-                                            }
-
-                                            public void onRelease()
-                                            {
-                                                release(entry);
-                                            }
-
-                                            public void onReject()
-                                            {
-                                                reject(entry);
-                                            }
-
-                                            public boolean acquire()
-                                            {
-                                                boolean acquired = entry.acquire(Subscription_0_10.this);
-                                                //TODO - why acknowledge here??? seems bizarre...
-                                                _session.acknowledge(Subscription_0_10.this,entry);
-                                                return acquired;
-
-                                            }
-
-            });
+            _postIdSettingAction._action = new ImplicitAcceptDispositionChangeListener(entry, this);
         }
 
+        _session.sendMessage(xfr, _postIdSettingAction);
 
     }
 
-    private void reject(QueueEntry entry)
+    void reject(QueueEntry entry)
     {
-        entry.setRedelivered(true);
+        entry.setRedelivered();
         entry.routeToAlternate();
 
     }
 
-    private void release(QueueEntry entry)
+    void release(QueueEntry entry)
     {
-        entry.setRedelivered(true);
+        entry.setRedelivered();
         entry.release();
     }
 
@@ -478,6 +530,16 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public void confirmAutoClose()
     {
         //No such thing in 0-10
+    }
+
+    public void set(String key, Object value)
+    {
+        _properties.put(key, value);
+    }
+
+    public Object get(String key)
+    {
+        return _properties.get(key);
     }
 
 
@@ -565,8 +627,10 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public void acknowledge(QueueEntry entry)
     {
         // TODO Fix Store Context / cleanup
-
-        entry.discard();
+        if(entry.isAcquiredBy(this))
+        {
+            entry.discard();
+        }
     }
 
     public void flush() throws AMQException
@@ -583,6 +647,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     public LogActor getLogActor()
     {
         return _logActor;
+    }
+
+    ServerSession getSession()
+    {
+        return _session;
     }
 
 

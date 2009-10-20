@@ -18,29 +18,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.store.MessageStore;
+import java.nio.ByteBuffer;
 
-/**
- * Constructs a message handle based on the publish body, the content header and the queue to which the message
- * has been routed.
- *
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
- */
-public class MessageHandleFactory
+public interface StorableMessageMetaData
 {
+    MessageMetaDataType getType();
 
-    public AMQMessageHandle createMessageHandle(Long messageId, MessageStore store, boolean persistent)
-    {
-        // just hardcoded for now
-        if (persistent)
-        {
-            return new WeakReferenceMessageHandle(messageId, store);
-        }
-        else
-        {
-            return new InMemoryMessageHandle(messageId);
-        }
-    }
+    int getStorableSize();
+
+    int writeToBuffer(int offsetInMetaData, ByteBuffer dest);
+
+    int getContentSize();
+
+    boolean isPersistent();
 }

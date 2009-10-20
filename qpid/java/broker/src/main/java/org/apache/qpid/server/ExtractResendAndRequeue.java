@@ -24,7 +24,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.store.TransactionLog;
-import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
@@ -56,8 +56,8 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 
     public boolean callback(final long deliveryTag, QueueEntry message) throws AMQException
     {
-        
-        message.setRedelivered(true);
+
+        message.setRedelivered();
         final Subscription subscription = message.getDeliveredSubscription();
         if (subscription != null)
         {
@@ -103,14 +103,14 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 
     private void dequeueEntry(final QueueEntry node)
     {
-        Transaction txn = new AutoCommitTransaction(_transactionLog);
+        ServerTransaction txn = new AutoCommitTransaction(_transactionLog);
         dequeueEntry(node, txn);
     }
 
-    private void dequeueEntry(final QueueEntry node, Transaction txn)
+    private void dequeueEntry(final QueueEntry node, ServerTransaction txn)
     {
         txn.dequeue(node.getQueue(), node.getMessage(),
-                    new Transaction.Action()
+                    new ServerTransaction.Action()
                     {
 
                         public void postCommit()

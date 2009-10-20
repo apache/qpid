@@ -72,6 +72,11 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
 
     }
 
+    public AMQBody convertToBody(java.nio.ByteBuffer buf)
+    {
+        return new ContentBody(ByteBuffer.wrap(buf));
+    }
+
     public MessagePublishInfo convertToInfo(AMQMethodBody methodBody)
     {
         final BasicPublishBody publishBody = ((BasicPublishBody) methodBody);

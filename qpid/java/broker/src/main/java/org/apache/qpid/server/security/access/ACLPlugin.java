@@ -24,10 +24,9 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.security.PrincipalHolder;
 
 public interface ACLPlugin
 {
@@ -35,13 +34,13 @@ public interface ACLPlugin
     {
         ALLOWED,
         DENIED,
-        ABSTAIN        
+        ABSTAIN
     }
 
     void setConfiguration(Configuration config) throws ConfigurationException;
 
-    // These return true if the plugin thinks the action should be allowed, and false if not. 
-    
+    // These return true if the plugin thinks the action should be allowed, and false if not.
+
     AuthzResult authoriseBind(PrincipalHolder session, Exchange exch, AMQQueue queue, AMQShortString routingKey);
 
     AuthzResult authoriseCreateExchange(PrincipalHolder session, boolean autoDelete, boolean durable,

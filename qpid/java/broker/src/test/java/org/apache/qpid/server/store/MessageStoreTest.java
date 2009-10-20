@@ -29,11 +29,13 @@ import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.queue.*;
-import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -97,7 +99,7 @@ public class MessageStoreTest extends TestCase
 
         try
         {
-            _virtualHost = new VirtualHost(new VirtualHostConfiguration(getClass().getName(), configuration));
+            _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), configuration));
             ApplicationRegistry.getInstance().getVirtualHostRegistry().registerVirtualHost(_virtualHost);
         }
         catch (Exception e)
@@ -163,7 +165,7 @@ public class MessageStoreTest extends TestCase
         Exchange topicExchange = createExchange(TopicExchange.TYPE, topicExchangeName, true);
         bindAllTopicQueuesToExchange(topicExchange, topicRouting);
 
-        //Send Message To NonDurable direct Exchange = persistent        
+        //Send Message To NonDurable direct Exchange = persistent
         sendMessageOnExchange(nonDurableExchange, directRouting, true);
         // and non-persistent
         sendMessageOnExchange(nonDurableExchange, directRouting, false);
@@ -340,18 +342,8 @@ public class MessageStoreTest extends TestCase
 
         final IncomingMessage currentMessage;
 
-        try
-        {
-            currentMessage = new IncomingMessage(_virtualHost.getMessageStore().getNewMessageId(),
-                                                 messageInfo,
-                                                 new InternalTestProtocolSession(_virtualHost));
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-            //help compiler - next line never reached
-            throw new RuntimeException();
-        }
+
+        currentMessage = new IncomingMessage(messageInfo);
 
         currentMessage.setExchange(directExchange);
 
@@ -372,31 +364,25 @@ public class MessageStoreTest extends TestCase
 
         currentMessage.setExpiration();
 
+        MessageMetaData mmd = currentMessage.headersReceived();
+        currentMessage.setStoredMessage(_virtualHost.getMessageStore().addMessage(mmd));
 
         currentMessage.route();
 
 
-        try
-        {
-            currentMessage.routingComplete(_virtualHost.getMessageStore(), new MessageHandleFactory());
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
 
         // check and deliver if header says body length is zero
         if (currentMessage.allContentReceived())
         {
             // TODO Deliver to queues
-            Transaction trans = new AutoCommitTransaction(_virtualHost.getMessageStore());
+            ServerTransaction trans = new AutoCommitTransaction(_virtualHost.getMessageStore());
             final List<AMQQueue> destinationQueues = currentMessage.getDestinationQueues();
-            trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new Transaction.Action() {
+            trans.enqueue(currentMessage.getDestinationQueues(), currentMessage, new ServerTransaction.Action() {
                 public void postCommit()
                 {
                     try
                     {
-                        AMQMessage message = new AMQMessage(currentMessage.getMessageHandle(), currentMessage.getContentHeader(), currentMessage.getSize() ,currentMessage.getMessagePublishInfo());
+                        AMQMessage message = new AMQMessage(currentMessage.getStoredMessage());
 
                         for(AMQQueue queue : destinationQueues)
                         {
@@ -405,7 +391,7 @@ public class MessageStoreTest extends TestCase
                     }
                     catch (AMQException e)
                     {
-                        e.printStackTrace();  
+                        e.printStackTrace();
                     }
                 }
 
@@ -502,14 +488,7 @@ public class MessageStoreTest extends TestCase
             fail(e.getMessage());
         }
 
-        try
-        {
-            _virtualHost.getQueueRegistry().registerQueue(queue);
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        _virtualHost.getQueueRegistry().registerQueue(queue);
 
     }
 

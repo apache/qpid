@@ -57,6 +57,16 @@ class MessageTransferHeader implements AMQMessageHeader
         return _messageProps == null ? null : String.valueOf(_messageProps.getMessageId());
     }
 
+    public String getMimeType()
+    {
+        return _messageProps == null ? null : _messageProps.getContentType();
+    }
+
+    public String getEncoding()
+    {
+        return _messageProps == null ? null : _messageProps.getContentEncoding();
+    }
+
     public byte getPriority()
     {
         MessageDeliveryPriority priority = _deliveryProps == null

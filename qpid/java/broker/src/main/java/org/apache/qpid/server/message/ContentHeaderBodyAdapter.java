@@ -55,6 +55,16 @@ public class ContentHeaderBodyAdapter implements AMQMessageHeader
         return getProperties().getMessageIdAsString();
     }
 
+    public String getMimeType()
+    {
+        return getProperties().getContentTypeAsString();
+    }
+
+    public String getEncoding()
+    {
+        return getProperties().getEncodingAsString();
+    }
+
     public byte getPriority()
     {
         return getProperties().getPriority();

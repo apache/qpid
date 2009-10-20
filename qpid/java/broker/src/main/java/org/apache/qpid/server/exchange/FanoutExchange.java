@@ -62,7 +62,7 @@ public class FanoutExchange extends AbstractExchange
     private final class FanoutExchangeMBean extends ExchangeMBean
     {
         private static final String BINDING_KEY_SUBSTITUTE = "*";
-        
+
         @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
         public FanoutExchangeMBean() throws JMException
         {
@@ -75,7 +75,7 @@ public class FanoutExchange extends AbstractExchange
         {
 
             _bindingList = new TabularDataSupport(_bindinglistDataType);
-            
+
             if(_queues.isEmpty())
             {
                 return _bindingList;
@@ -88,7 +88,7 @@ public class FanoutExchange extends AbstractExchange
                 String queueName = queue.getName().toString();
                 queueNames.add(queueName);
             }
-            
+
             Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
             CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
             _bindingList.put(bindingData);
@@ -121,17 +121,14 @@ public class FanoutExchange extends AbstractExchange
 
     } // End of MBean class
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new FanoutExchange.FanoutExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the direct exchange mbean", ex);
-            throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
-        }
+        return new FanoutExchange.FanoutExchangeMBean();
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
     }
 
     public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
@@ -202,7 +199,7 @@ public class FanoutExchange extends AbstractExchange
     public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
-    
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Publishing message to queue " + _queues);

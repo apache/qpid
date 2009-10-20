@@ -27,10 +27,9 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.ExchangeReferrer;
 
+import javax.management.JMException;
 import java.util.ArrayList;
-import java.util.Map;
 
 public interface Exchange extends ExchangeReferrer
 {
@@ -38,7 +37,8 @@ public interface Exchange extends ExchangeReferrer
 
     AMQShortString getType();
 
-    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
+    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+            throws AMQException, JMException;
 
     boolean isDurable();
 

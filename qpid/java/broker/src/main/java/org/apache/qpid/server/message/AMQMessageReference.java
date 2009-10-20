@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.queue.MessageCleanupException;
-
-import javax.swing.*;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AMQMessageReference extends MessageReference<AMQMessage>
 {
@@ -43,22 +39,6 @@ public class AMQMessageReference extends MessageReference<AMQMessage>
 
     protected void onRelease(AMQMessage message)
     {
-        try
-        {
-            if(message !=null)
-            {
-                message.decrementReference();
-            }
-            else
-            {
-                //TODO
-                System.err.println("Shouldn't happen!!!!");
-            }
-        }
-        catch (MessageCleanupException e)
-        {
-            // TODO
-            throw new RuntimeException(e);
-        }
+        message.decrementReference();
     }
 }

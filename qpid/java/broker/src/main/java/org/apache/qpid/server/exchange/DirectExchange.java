@@ -149,17 +149,14 @@ public class DirectExchange extends AbstractExchange
     }// End of MBean class
 
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new DirectExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the direct exchange mbean", ex);
-            throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
-        }
+        return new DirectExchangeMBean();
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
     }
 
     public AMQShortString getType()
@@ -212,7 +209,8 @@ public class DirectExchange extends AbstractExchange
     public ArrayList<AMQQueue> route(InboundMessage payload)
     {
 
-        final AMQShortString routingKey = payload.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : new AMQShortString(payload.getRoutingKey());
+        final String routingKey = payload.getRoutingKey();
+
 
         final ArrayList<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
 

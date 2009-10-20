@@ -493,12 +493,27 @@ public class Session extends SessionInvoker
         }
     }
 
-    final private boolean isFull(int id)
+    protected boolean isFull(int id)
     {
-        return id - maxComplete >= commands.length || commandBytes >= byteLimit;
+        return isCommandsFull(id) || isBytesFull();
+    }
+
+    protected boolean isBytesFull()
+    {
+        return commandBytes >= byteLimit;
+    }
+
+    protected boolean isCommandsFull(int id)
+    {
+        return id - maxComplete >= commands.length;
     }
 
     public void invoke(Method m)
+    {
+        invoke(m,(Runnable)null);
+    }
+
+    public void invoke(Method m, Runnable postIdSettingAction)
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
@@ -563,6 +578,10 @@ public class Session extends SessionInvoker
                 int next;
                 next = commandsOut++;
                 m.setId(next);
+                if(postIdSettingAction != null)
+                {
+                    postIdSettingAction.run();
+                }
 
                 if (isFull(next))
                 {
@@ -625,6 +644,7 @@ public class Session extends SessionInvoker
                     m.setSync(true);
                 }
                 needSync = !m.isSync();
+                
                 try
                 {
                     send(m);
@@ -649,7 +669,7 @@ public class Session extends SessionInvoker
 
                 // flush every 64K commands to avoid ambiguity on
                 // wraparound
-                if ((next % 65536) == 0)
+                if (shouldIssueFlush(next))
                 {
                     try
                     {
@@ -675,6 +695,11 @@ public class Session extends SessionInvoker
         {
             send(m);
         }
+    }
+
+    protected boolean shouldIssueFlush(int next)
+    {
+        return (next % 65536) == 0;
     }
 
     public void sync()

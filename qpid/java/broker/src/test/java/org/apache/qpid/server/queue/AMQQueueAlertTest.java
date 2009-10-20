@@ -25,9 +25,12 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.protocol.AMQProtocolEngine;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
@@ -44,7 +47,7 @@ import java.util.ArrayList;
 
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
-{                                                         
+{
     private final static long MAX_MESSAGE_COUNT = 50;
     private final static long MAX_MESSAGE_AGE = 250;   // 0.25 sec
     private final static long MAX_MESSAGE_SIZE = 2000;  // 2 KB
@@ -232,7 +235,7 @@ public class AMQQueueAlertTest extends TestCase
 
         _queue.registerSubscription(
                 subscription2, false);
-        
+
         while (_queue.getUndeliveredMessageCount()!= 0)
         {
             Thread.sleep(100);
@@ -251,7 +254,7 @@ public class AMQQueueAlertTest extends TestCase
         _queueMBean.clearQueue();
         assertEquals(new Long(0), new Long(_queueMBean.getQueueDepth()));
     }
-    
+
     protected IncomingMessage message(final boolean immediate, long size) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()
@@ -284,8 +287,10 @@ public class AMQQueueAlertTest extends TestCase
         };
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
+        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
+        contentHeaderBody.properties = props;
         contentHeaderBody.bodySize = size;   // in bytes
-        IncomingMessage message = new IncomingMessage(_messageStore.getNewMessageId(), publish, _protocolSession);
+        IncomingMessage message = new IncomingMessage(publish);
         message.setContentHeaderBody(contentHeaderBody);
 
         return message;
@@ -312,13 +317,16 @@ public class AMQQueueAlertTest extends TestCase
     private void sendMessages(AMQChannel channel, long messageCount, final long size) throws AMQException
     {
         IncomingMessage[] messages = new IncomingMessage[(int) messageCount];
+        MessageMetaData[] metaData = new MessageMetaData[(int) messageCount];
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false, size);
             ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
             qs.add(_queue);
+            metaData[i] = messages[i].headersReceived();
+            messages[i].setStoredMessage(_messageStore.addMessage(metaData[i]));
+
             messages[i].enqueue(qs);
-            messages[i].routingComplete(_messageStore, new MessageHandleFactory());
 
         }
 
@@ -327,6 +335,10 @@ public class AMQQueueAlertTest extends TestCase
             messages[i].addContentBodyFrame(new ContentChunk(){
 
                 ByteBuffer _data = ByteBuffer.allocate((int)size);
+
+                {
+                    _data.limit((int)size);
+                }
 
                 public int getSize()
                 {
@@ -340,13 +352,11 @@ public class AMQQueueAlertTest extends TestCase
 
                 public void reduceToFit()
                 {
-                    
+
                 }
             });
-            _queue.enqueue(new AMQMessage(messages[i].getMessageHandle(),
-                                          messages[i].getContentHeader(),
-                                          messages[i].getSize(),
-                                          messages[i].getMessagePublishInfo()));
+
+            _queue.enqueue(new AMQMessage(messages[i].getStoredMessage()));
 
         }
     }

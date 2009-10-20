@@ -21,74 +21,67 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.AMQException;
+import org.apache.commons.configuration.Configuration;
 
 public interface TransactionLog
 {
-    /**
-     * Places a message onto a specified queue, in a given transactional context.
-     *
-     * @param context   The transactional context for the operation.
-     * @param queue     The queue to place the message on.
-     * @param messageId The message to enqueue.
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
-     */
-    void enqueueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException;
 
-    /**
-     * Extracts a message from a specified queue, in a given transactional context.
-     *
-     * @param context   The transactional context for the operation.
-     * @param queue     The queue to place the message on.
-     * @param messageId The message to dequeue.
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason, or if the specified message does not exist.
-     */
-    void dequeueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException;
+    public static interface Transaction
+    {
+        /**
+         * Places a message onto a specified queue, in a given transactional context.
+         *
+         * @param queue     The queue to place the message on.
+         * @param messageId The message to enqueue.
+         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         */
+        void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQException;
 
-    /**
-     * Begins a transactional context.
-     *
-     * @param context The transactional context to begin.
-     *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
-     */
-    void beginTran(StoreContext context) throws AMQException;
+        /**
+         * Extracts a message from a specified queue, in a given transactional context.
+         *
+         * @param queue     The queue to place the message on.
+         * @param messageId The message to dequeue.
+         * @throws org.apache.qpid.AMQException If the operation fails for any reason, or if the specified message does not exist.
+         */
+        void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQException;
 
-    /**
-     * Commits all operations performed within a given transactional context.
-     *
-     * @param context The transactional context to commit all operations for.
-     *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
-     */
-    void commitTran(StoreContext context) throws AMQException;
 
-    /**
-     * Commits all operations performed within a given transactional context.
-     *
-     * @param context The transactional context to commit all operations for.
-     *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
-     */
-    StoreFuture commitTranAsync(StoreContext context) throws AMQException;
+        /**
+         * Commits all operations performed within a given transactional context.
+         *
+         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         */
+        void commitTran() throws AMQException;
 
-    /**
-     * Abandons all operations performed within a given transactional context.
-     *
-     * @param context The transactional context to abandon.
-     *
-     * @throws org.apache.qpid.AMQException If the operation fails for any reason.
-     */
-    void abortTran(StoreContext context) throws AMQException;
+        /**
+         * Commits all operations performed within a given transactional context.
+         *
+         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         */
+        StoreFuture commitTranAsync() throws AMQException;
 
-    /**
-     * Tests a transactional context to see if it has been begun but not yet committed or aborted.
-     *
-     * @param context The transactional context to test.
-     *
-     * @return <tt>true</tt> if the transactional context is live, <tt>false</tt> otherwise.
-     */
-    boolean inTran(StoreContext context);
+        /**
+         * Abandons all operations performed within a given transactional context.
+         *
+         * @throws org.apache.qpid.AMQException If the operation fails for any reason.
+         */
+        void abortTran() throws AMQException;
+
+
+
+    }
+
+    public void configureTransactionLog(String name,
+                      TransactionLogRecoveryHandler recoveryHandler,
+                      Configuration storeConfiguration,
+                      LogSubject logSubject) throws Exception;
+
+    Transaction newTransaction();
+
+
 
     public static interface StoreFuture
     {

@@ -119,7 +119,7 @@ public class AMQPChannelActorTest extends TestCase
         // Verify that the message has the correct type
         assertTrue("Message contains the [con: prefix",
                    logs.get(0).toString().contains("[con:"));
-        
+
 
         // Verify that all the values were presented to the MessageFormatter
         // so we will not end up with '{n}' entries in the log.

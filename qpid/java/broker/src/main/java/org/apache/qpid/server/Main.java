@@ -318,6 +318,9 @@ public class Main
                 }
             }
 
+            //TODO - HACK
+            port += 10;
+
             String bindAddr = commandLine.getOptionValue("b");
             if (bindAddr == null)
             {
@@ -363,22 +366,27 @@ public class Main
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                     + " build: " + QpidProperties.getBuildVersion());
 
-            CurrentActor.get().message(BrokerMessages.BRK_1004());
 
-            int port_0_10 = port + 1;
+            int port_0_10 = port - 10;
 
             IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
             final ConnectionDelegate delegate =
                     new org.apache.qpid.server.transport.ServerConnectionDelegate(appRegistry, bindAddress.getCanonicalHostName());
 
+
+
+
 /*
             NetworkDriver driver = new MINANetworkDriver();
-            driver.bind(port, new InetAddress[]{bindAddress}, new ProtocolEngineFactory_0_10(delegate),
+            driver.bind(port_0_10, new InetAddress[]{bindAddress}, new ProtocolEngineFactory_0_10(delegate),
                         serverConfig.getNetworkConfiguration(), null);
             ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
                                                           new QpidAcceptor(driver,"TCP"));
             CurrentActor.get().message(BrokerMessages.BRK_1002("TCP", port));
 */
+
+
+
 
 
             // TODO - Fix to use a proper binding
@@ -401,6 +409,9 @@ public class Main
             org.apache.qpid.transport.network.io.IoAcceptor ioa = new org.apache.qpid.transport.network.io.IoAcceptor
                 ("0.0.0.0", port_0_10, cb);
             ioa.start();
+
+            CurrentActor.get().message(BrokerMessages.BRK_1004());
+            
         }
         finally
         {
@@ -532,13 +543,6 @@ public class Main
     {
         LoggingManagementMBean blm = new LoggingManagementMBean(logConfigFile.getPath(),logWatchTime);
 
-        try
-        {
-            blm.register();
-        }
-        catch (AMQException e)
-        {
-            throw new InitException("Unable to initialise the Logging Management MBean: ", e);
-        }
+        blm.register();
     }
 }

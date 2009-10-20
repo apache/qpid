@@ -18,21 +18,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.server;
+package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
-import org.apache.qpid.transport.network.Disassembler;
+import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.protocol.ProtocolEngine_0_10;
 
 public class ProtocolEngineFactory_0_10 implements ProtocolEngineFactory
 {
     private ConnectionDelegate _delegate;
-
-    public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
-
 
     public ProtocolEngineFactory_0_10(ConnectionDelegate delegate)
     {
@@ -41,10 +39,8 @@ public class ProtocolEngineFactory_0_10 implements ProtocolEngineFactory
 
     public ProtocolEngine newProtocolEngine(NetworkDriver networkDriver)
     {
-        Connection conn = new Connection();
+        Connection conn = new ServerConnection();
         conn.setConnectionDelegate(_delegate);
-        Disassembler dis = new Disassembler(networkDriver, MAX_FRAME_SIZE);
-        conn.setSender(dis);
-        return new ProtocolEngine_0_10(conn, networkDriver);  //To change body of implemented methods use File | Settings | File Templates.
+        return new ProtocolEngine_0_10(conn, networkDriver);
     }
 }

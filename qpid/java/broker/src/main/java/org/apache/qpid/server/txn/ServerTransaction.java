@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.Collection;
 
-public interface Transaction
+public interface ServerTransaction
 {
 
     void addPostCommitAction(Action postCommitAction);

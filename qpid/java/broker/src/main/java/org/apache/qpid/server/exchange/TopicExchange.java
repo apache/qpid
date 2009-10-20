@@ -228,7 +228,7 @@ public class TopicExchange extends AbstractExchange
                             _filteredQueues.remove(queue);
                         }
                     }
-                    else 
+                    else
                     {
                         filters.put(filter, instances - 1);
                     }
@@ -443,10 +443,10 @@ public class TopicExchange extends AbstractExchange
                 {
                     result.addUnfilteredQueue(queue);
                 }
-                _parser.addBinding(routingKey, result);    
+                _parser.addBinding(routingKey, result);
                 _topicExchangeResults.put(routingKey,result);
             }
-            else                        
+            else
             {
                 if(argumentsContainSelector(args))
                 {
@@ -490,7 +490,7 @@ public class TopicExchange extends AbstractExchange
         {
             routingKey = AMQShortString.EMPTY_STRING;
         }
-        
+
         AMQShortStringTokenizer routingTokens = routingKey.tokenize(TOPIC_SEPARATOR);
 
         List<AMQShortString> subscriptionList = new ArrayList<AMQShortString>();
@@ -574,7 +574,7 @@ public class TopicExchange extends AbstractExchange
             {
                 return false;
             }
-            
+
         }
     }
 
@@ -642,17 +642,14 @@ public class TopicExchange extends AbstractExchange
 
     }
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new TopicExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the topic exchenge mbean", ex);
-            throw new AMQException("Exception occured in creating the topic exchenge mbean", ex);
-        }
+        return new TopicExchangeMBean();
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
     }
 
     private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)

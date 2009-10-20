@@ -14,17 +14,17 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.tools.messagestore.commands;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 
 import java.util.LinkedList;
@@ -32,12 +32,6 @@ import java.util.List;
 
 public class Move extends AbstractCommand
 {
-
-    /**
-     * Since the Coopy command is not associated with a real channel we can safely create our own store context
-     * for use in the few methods that require one.
-     */
-    protected StoreContext _storeContext = new StoreContext();
 
     public Move(MessageStoreTool tool)
     {
@@ -201,6 +195,8 @@ public class Move extends AbstractCommand
 
     protected void doCommand(AMQQueue fromQueue, long start, long id, AMQQueue toQueue)
     {
-        fromQueue.moveMessagesToAnotherQueue(start, id, toQueue.getName().toString(), _storeContext);
+        ServerTransaction txn = new LocalTransaction(fromQueue.getVirtualHost().getTransactionLog());
+        fromQueue.moveMessagesToAnotherQueue(start, id, toQueue.getName().toString(), txn);
+        txn.commit();
     }
 }

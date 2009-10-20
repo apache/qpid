@@ -22,14 +22,13 @@ package org.apache.qpid.server.security.access.plugins;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.security.PrincipalHolder;
 
 /**
- * This ACLPlugin abstains from all votes. Useful if your plugin only cares about a few operations. 
+ * This ACLPlugin abstains from all votes. Useful if your plugin only cares about a few operations.
  */
 public abstract class AbstractACLPlugin implements ACLPlugin
 {

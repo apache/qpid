@@ -19,23 +19,8 @@
  *
  */
 
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-
-public interface BodyContentHolder
+public interface ExchangeReferrer
 {
-    /**
-     * @return the number of body frames associated with this message
-     */
-    int getBodyCount() throws AMQException;
-
-    /**
-     * Get a particular content body
-     * @param index the index of the body to retrieve, must be between 0 and getBodyCount() - 1
-     * @return a content body
-     * @throws IllegalArgumentException if the index is invalid
-     */
-    ContentChunk getContentChunk(int index) throws IllegalArgumentException, AMQException;
 }

@@ -27,7 +27,6 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Map;
-import java.util.HashMap;
 
 
 public class AMQQueueFactory
@@ -130,7 +129,6 @@ public class AMQQueueFactory
                                               AMQShortString owner,
                                               boolean autoDelete,
                                               VirtualHost virtualHost, final FieldTable arguments)
-            throws AMQException
     {
         final int priorities = arguments == null ? 1 : arguments.containsKey(X_QPID_PRIORITIES) ? arguments.getInteger(X_QPID_PRIORITIES) : 1;
 

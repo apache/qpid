@@ -24,7 +24,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.AMQException;
 
 public class AMQPriorityQueue extends SimpleAMQQueue
 {
@@ -34,7 +33,6 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                                final boolean autoDelete,
                                final VirtualHost virtualHost,
                                int priorities)
-            throws AMQException
     {
         super(name, durable, owner, autoDelete, virtualHost, new PriorityQueueList.Factory(priorities));
     }
@@ -43,7 +41,7 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                             boolean durable,
                             String owner,
                             boolean autoDelete,
-                            VirtualHost virtualHost, int priorities) throws AMQException
+                            VirtualHost virtualHost, int priorities)
     {
         this(new AMQShortString(queueName), durable, new AMQShortString(owner),autoDelete,virtualHost,priorities);
     }
@@ -70,7 +68,7 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                     QueueEntry released = context._releasedEntry;
                     while(subnode != null && entry.compareTo(subnode) < 0 && !entry.isAcquired() && (released == null || released.compareTo(entry) < 0))
                     {
-                        if(_releasedUpdater.compareAndSet(context,released,entry))
+                        if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))
                         {
                             break;
                         }

@@ -18,7 +18,6 @@
 package org.apache.qpid.server.filter;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
 //
@@ -43,16 +42,16 @@ public final class XQueryExpression implements BooleanExpression {
     public String toString() {
         return "XQUERY "+ConstantExpression.encodeString(xpath);
     }
-    
+
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
      * @throws AMQException
      */
-    public boolean matches(Filterable message) 
+    public boolean matches(Filterable message)
     {
         Object object = evaluate(message);
-        return object!=null && object==Boolean.TRUE;            
+        return object!=null && object==Boolean.TRUE;
     }
 
 }

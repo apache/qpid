@@ -65,6 +65,7 @@ import org.apache.qpid.server.queue.AMQQueueMBean;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 
@@ -80,10 +81,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final ExchangeFactory _exchangeFactory;
     private final DurableConfigurationStore _durableConfig;
 
-    private final VirtualHost.VirtualHostMBean _virtualHostMBean;
+    private final VirtualHostImpl.VirtualHostMBean _virtualHostMBean;
 
     @MBeanConstructor("Creates the Broker Manager MBean")
-    public AMQBrokerManagerMBean(VirtualHost.VirtualHostMBean virtualHostMBean) throws JMException
+    public AMQBrokerManagerMBean(VirtualHostImpl.VirtualHostMBean virtualHostMBean) throws JMException
     {
         super(ManagedBroker.class, ManagedBroker.TYPE, ManagedBroker.VERSION);
 
@@ -113,10 +114,10 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             exchangeTypes.add(ex.getName().toString());
         }
-        
+
         return exchangeTypes.toArray(new String[0]);
     }
-    
+
     /**
      * Returns a list containing the names of the attributes available for the Queue mbeans.
      * @since Qpid JMX API 1.3
@@ -129,12 +130,12 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             attributeList.add(attr);
         }
-        
+
         Collections.sort(attributeList);
 
         return attributeList;
     }
-    
+
     /**
      * Returns a List of Object Lists containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
      * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
@@ -147,22 +148,22 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             return new ArrayList<List<Object>>();
         }
-        
+
         List<List<Object>> queueAttributesList = new ArrayList<List<Object>>(_queueRegistry.getQueues().size());
-        
+
         int attributesLength = attributes.length;
-        
+
         for(AMQQueue queue : _queueRegistry.getQueues())
         {
             AMQQueueMBean mbean = (AMQQueueMBean) queue.getManagedObject();
-            
+
             if(mbean == null)
             {
                 continue;
             }
-            
+
             List<Object> attributeValues = new ArrayList<Object>(attributesLength);
-            
+
             for(int i=0; i < attributesLength; i++)
             {
                 try
@@ -174,13 +175,13 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                     attributeValues.add(new String("-"));
                 }
             }
-            
+
             queueAttributesList.add(attributeValues);
         }
-        
+
         return queueAttributesList;
     }
-    
+
     /**
      * Creates new exchange and registers it with the registry.
      *
@@ -330,7 +331,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         finally
         {
-            CurrentActor.remove();    
+            CurrentActor.remove();
         }
     }
 

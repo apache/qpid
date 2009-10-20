@@ -18,9 +18,12 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.security;
 
-package org.apache.qpid.server;
+import java.security.Principal;
 
-public interface ExchangeReferrer
+public interface PrincipalHolder
 {
+    /** @return a Principal that was used to authorized this session */
+    Principal getPrincipal();
 }

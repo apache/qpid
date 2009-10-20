@@ -18,12 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server;
 
-import java.security.Principal;
+package org.apache.qpid.server.message;
 
-public interface PrincipalHolder
+import java.nio.ByteBuffer;
+
+public interface MessageContentSource
 {
-    /** @return a Principal that was used to authorized this session */
-    Principal getPrincipal();
+    public int getContent(ByteBuffer buf, int offset);
+
+    long getSize();
 }

@@ -24,7 +24,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -96,7 +95,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
 
             session.writeFrame(responseBody.generateFrame(channelId));
 
-            
+
         }
     }
 }

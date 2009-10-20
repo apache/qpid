@@ -40,7 +40,7 @@ public class TestExchangeType implements ExchangeType
         return null;
     }
 
-    public Exchange newInstance(VirtualHost host, AMQShortString name, boolean durable, 
+    public Exchange newInstance(VirtualHost host, AMQShortString name, boolean durable,
                                 int token, boolean autoDelete)
             throws AMQException
     {

@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.message;
 
-public interface ServerMessage extends EnqueableMessage
+import java.nio.ByteBuffer;
+
+public interface ServerMessage extends EnqueableMessage, MessageContentSource
 {
     String getRoutingKey();
 
@@ -39,4 +41,7 @@ public interface ServerMessage extends EnqueableMessage
     Long getMessageNumber();
 
     long getArrivalTime();
+
+    public int getContent(ByteBuffer buf, int offset);
+
 }

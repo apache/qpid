@@ -27,12 +27,10 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
-import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -80,8 +78,11 @@ public class QueueEntryImpl implements QueueEntry
     private volatile long _entryId;
 
     volatile QueueEntryImpl _next;
-    private boolean _deliveredToConsumer;
-    private boolean _redelivered;
+
+    private static final int DELIVERED_TO_CONSUMER = 1;
+    private static final int REDELIVERED = 2;
+
+    private volatile int _deliveryState;
 
 
     QueueEntryImpl(SimpleQueueEntryList queueEntryList)
@@ -94,6 +95,7 @@ public class QueueEntryImpl implements QueueEntry
     public QueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message, final long entryId)
     {
         _queueEntryList = queueEntryList;
+
         _message = message == null ? null : message.newReference();
 
         _entryIdUpdater.set(this, entryId);
@@ -132,7 +134,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean getDeliveredToConsumer()
     {
-        return _deliveredToConsumer;
+        return (_deliveryState & DELIVERED_TO_CONSUMER) != 0;
     }
 
     public boolean expired() throws AMQException
@@ -194,9 +196,9 @@ public class QueueEntryImpl implements QueueEntry
     public boolean acquire(Subscription sub)
     {
         final boolean acquired = acquire(sub.getOwningState());
-        if(acquired && !_deliveredToConsumer)
+        if(acquired)
         {
-            _deliveredToConsumer = true;
+            _deliveryState |= DELIVERED_TO_CONSUMER;
         }
         return acquired;
     }
@@ -259,9 +261,9 @@ public class QueueEntryImpl implements QueueEntry
 
     }
 
-    public boolean immediateAndNotDelivered() 
+    public boolean immediateAndNotDelivered()
     {
-        return !_deliveredToConsumer && isImmediate();
+        return !getDeliveredToConsumer() && isImmediate();
     }
 
     private boolean isImmediate()
@@ -270,9 +272,9 @@ public class QueueEntryImpl implements QueueEntry
         return message != null && message.isImmediate();
     }
 
-    public void setRedelivered(boolean b)
+    public void setRedelivered()
     {
-        _redelivered = b;
+        _deliveryState |= REDELIVERED;
     }
 
     public AMQMessageHeader getMessageHeader()
@@ -289,7 +291,7 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean isRedelivered()
     {
-        return _redelivered;
+        return (_deliveryState & REDELIVERED) != 0;
     }
 
     public Subscription getDeliveredSubscription()
@@ -329,7 +331,7 @@ public class QueueEntryImpl implements QueueEntry
     }
 
     public boolean isRejectedBy(Subscription subscription)
-    {        
+    {
 
         if (_rejectedBy != null) // We have subscriptions that rejected this message
         {
@@ -410,9 +412,9 @@ public class QueueEntryImpl implements QueueEntry
                 final ServerMessage message = getMessage();
                 if(rerouteQueues != null && rerouteQueues.size() != 0)
                 {
-                    Transaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
+                    ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
 
-                    txn.enqueue(rerouteQueues, message, new Transaction.Action() {
+                    txn.enqueue(rerouteQueues, message, new ServerTransaction.Action() {
                         public void postCommit()
                         {
                             try
@@ -434,7 +436,7 @@ public class QueueEntryImpl implements QueueEntry
                         }
                     });
                     txn.dequeue(currentQueue,message,
-                                new Transaction.Action()
+                                new ServerTransaction.Action()
                                 {
                                     public void postCommit()
                                     {
@@ -523,7 +525,7 @@ public class QueueEntryImpl implements QueueEntry
 
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
-            _queueEntryList.advanceHead();            
+            _queueEntryList.advanceHead();
             return true;
         }
         else

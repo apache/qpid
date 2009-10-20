@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,8 +28,7 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.PrincipalHolder;
-import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -43,6 +42,10 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
     long getSessionID();
 
     LogActor getLogActor();
+
+    void setMaxFrameSize(long frameMax);
+
+    long getMaxFrameSize();
 
     public static final class ProtocolSessionIdentifier
     {
@@ -227,5 +230,5 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
     List<AMQChannel> getChannels();
 
     void closeIfLingeringClosedChannels();
-    
+
 }

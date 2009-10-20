@@ -21,7 +21,6 @@
 package org.apache.qpid.server.transport;
 
 import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -36,7 +35,7 @@ public class ServerConnection extends Connection
     @Override
     protected void setState(State state)
     {
-        super.setState(state);    
+        super.setState(state);
     }
 
     @Override

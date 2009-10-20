@@ -180,7 +180,7 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 
     boolean immediateAndNotDelivered();
 
-    void setRedelivered(boolean b);
+    void setRedelivered();
 
     boolean isRedelivered();
 

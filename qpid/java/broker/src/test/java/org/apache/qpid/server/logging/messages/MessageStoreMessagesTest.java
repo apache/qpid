@@ -59,7 +59,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MST-1003", expected);
     }
 
-    public void testMessage1004()
+  /*  public void testMessage1004()
     {
         _logMessage = MessageStoreMessages.MST_1004(null,false);
         List<Object> log = performLog();
@@ -91,7 +91,7 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 
         // Here we use MessageFormat to ensure the messasgeCount of 2000 is
         // reformated for display as '2,000'
-        String[] expected = {"Recovered ", 
+        String[] expected = {"Recovered ",
                              MessageFormat.format("{0,number}", messasgeCount),
                              "messages for queue", queueName};
 
@@ -119,5 +119,5 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
 
         validateLogMessage(log, "MST-1006", expected);
     }
-
+    */
 }

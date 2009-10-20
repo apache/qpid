@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -33,6 +35,7 @@ import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.SubscriptionActor;
@@ -42,7 +45,6 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -73,6 +75,8 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
+
+    private final Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
 
     private final Lock _stateChangeLock;
 
@@ -254,7 +258,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     private final AMQShortString _consumerTag;
 
 
-    private final boolean _noLocal;
+    private boolean _noLocal;
 
     private final FlowCreditManager _creditManager;
 
@@ -410,11 +414,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public boolean hasInterest(QueueEntry entry)
     {
 
-        // TODO 0-10 to 0-8 conversion
-        if(!(entry.getMessage() instanceof AMQMessage))
-        {
-            return false;
-        }
+        
 
 
         //check that the message hasn't been rejected
@@ -665,6 +665,22 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public boolean seesRequeues()
     {
         return !isBrowser();
+    }
+
+    public void set(String key, Object value)
+    {
+        _properties.put(key, value);
+    }
+
+    public Object get(String key)
+    {
+        return _properties.get(key);
+    }
+
+
+    public void setNoLocal(boolean noLocal)
+    {
+        _noLocal = noLocal;
     }
 
     abstract boolean isBrowser();

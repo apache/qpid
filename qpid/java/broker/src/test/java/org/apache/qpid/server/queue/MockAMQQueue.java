@@ -25,12 +25,12 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.AMQException;
 
 import java.util.List;
@@ -55,6 +55,11 @@ public class MockAMQQueue implements AMQQueue
     public AMQShortString getName()
     {
         return _name;
+    }
+
+    public void setNoLocal(boolean b)
+    {
+        
     }
 
     public boolean isDurable()
@@ -216,18 +221,18 @@ public class MockAMQQueue implements AMQQueue
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
-    
+
     public List<QueueEntry> getMessagesRangeOnTheQueue(long fromPosition, long toPosition)
     {
         return null;
     }
 
-    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext)
+    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext)
+    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -352,7 +357,7 @@ public class MockAMQQueue implements AMQQueue
     }
 
     public void checkCapacity(AMQChannel channel)
-    {               
+    {
     }
 
     public ManagedObject getManagedObject()
@@ -367,7 +372,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMinimumAlertRepeatGap(long value)
     {
-        
+
     }
 
     public long getCapacity()
@@ -392,7 +397,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void configure(QueueConfiguration config)
     {
-        
+
     }
 
     public PrincipalHolder getPrincipalHolder()
@@ -416,4 +421,8 @@ public class MockAMQQueue implements AMQQueue
     }
 
 
+    public String getResourceName()
+    {
+        return _name.toString();
+    }
 }

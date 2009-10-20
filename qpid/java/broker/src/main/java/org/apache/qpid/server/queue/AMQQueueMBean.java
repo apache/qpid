@@ -22,21 +22,19 @@ package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
 
-import org.apache.mina.common.ByteBuffer;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
 
 import javax.management.JMException;
 import javax.management.MBeanNotificationInfo;
@@ -125,7 +123,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgContentAttributeTypes[1] = SimpleType.STRING; // For MimeType
         _msgContentAttributeTypes[2] = SimpleType.STRING; // For Encoding
         _msgContentAttributeTypes[3] = new ArrayType(1, SimpleType.BYTE); // For message content
-        _msgContentType = new CompositeType("Message Content", "AMQ Message Content", 
+        _msgContentType = new CompositeType("Message Content", "AMQ Message Content",
                     VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS,
                     _msgContentAttributeTypes);
 
@@ -135,9 +133,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgAttributeTypes[3] = SimpleType.BOOLEAN; // For redelivered
         _msgAttributeTypes[4] = SimpleType.LONG; // For queue position
 
-        _messageDataType = new CompositeType("Message", "AMQ Message", VIEW_MSGS_COMPOSITE_ITEM_NAMES, 
+        _messageDataType = new CompositeType("Message", "AMQ Message", VIEW_MSGS_COMPOSITE_ITEM_NAMES,
                                 VIEW_MSGS_COMPOSITE_ITEM_DESCRIPTIONS, _msgAttributeTypes);
-        _messagelistDataType = new TabularType("Messages", "List of messages", _messageDataType, 
+        _messagelistDataType = new TabularType("Messages", "List of messages", _messageDataType,
                                                 VIEW_MSGS_TABULAR_UNIQUE_INDEX);
     }
 
@@ -299,7 +297,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     /**
      * Clears the queue of non-acquired messages
-     * 
+     *
      * @return the number of messages deleted
      * @see AMQQueue#clearQueue
      */
@@ -321,60 +319,40 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
 
         ServerMessage serverMsg = entry.getMessage();
+        final int bodySize = (int) serverMsg.getSize();
 
-        if(serverMsg instanceof AMQMessage)
+
+        List<Byte> msgContent = new ArrayList<Byte>();
+
+        java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocate(bodySize);
+        int position = 0;
+
+        while(position < bodySize)
         {
-            AMQMessage msg = (AMQMessage) serverMsg;
-            // get message content
-            Iterator<ContentChunk> cBodies = msg.getContentBodyIterator();
-            List<Byte> msgContent = new ArrayList<Byte>();
-            while (cBodies.hasNext())
+            position += serverMsg.getContent(buf, position);
+            buf.flip();
+            for(int i = 0; i < buf.limit(); i++)
             {
-                ContentChunk body = cBodies.next();
-                if (body.getSize() != 0)
-                {
-                    if (body.getSize() != 0)
-                    {
-                        ByteBuffer slice = body.getData().slice();
-                        for (int j = 0; j < slice.limit(); j++)
-                        {
-                            msgContent.add(slice.get());
-                        }
-                    }
-                }
+                msgContent.add(buf.get(i));
             }
-
-
-            try
-            {
-                // Create header attributes list
-                CommonContentHeaderProperties headerProperties =
-                    (CommonContentHeaderProperties) msg.getContentHeaderBody().properties;
-                String mimeType = null, encoding = null;
-                if (headerProperties != null)
-                {
-                    AMQShortString mimeTypeShortSting = headerProperties.getContentType();
-                    mimeType = (mimeTypeShortSting == null) ? null : mimeTypeShortSting.toString();
-                    encoding = (headerProperties.getEncoding() == null) ? "" : headerProperties.getEncoding().toString();
-                }
-
-                Object[] itemValues = { msgId, mimeType, encoding, msgContent.toArray(new Byte[0]) };
-
-                return new CompositeDataSupport(_msgContentType, VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, itemValues);
-            }
-            catch (AMQException e)
-            {
-                JMException jme = new JMException("Error creating header attributes list: " + e);
-                jme.initCause(e);
-                throw jme;
-            }
-
+            buf.clear();
         }
-        else
+
+        AMQMessageHeader header = serverMsg.getMessageHeader();
+
+        String mimeType = null, encoding = null;
+        if (header != null)
         {
-            // TODO 0-10 Messages for MBean
-            return null;
+            mimeType = header.getMimeType();
+
+            encoding = header.getEncoding();
         }
+
+
+        Object[] itemValues = { msgId, mimeType, encoding, msgContent.toArray(new Byte[0]) };
+
+        return new CompositeDataSupport(_msgContentType, VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, itemValues);
+
     }
 
     /**
@@ -386,8 +364,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     {
         return viewMessages((long)beginIndex,(long)endIndex);
     }
-    
-    
+
+
     /**
      * Returns the header contents of the messages stored in this queue in tabular form.
      * @param startPosition The queue position of the first message to be viewed
@@ -400,7 +378,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("From Index = " + startPosition + ", To Index = " + endPosition
                 + "\n\"From Index\" should be greater than 0 and less than \"To Index\"");
         }
-        
+
         if ((endPosition - startPosition) > Integer.MAX_VALUE)
         {
             throw new OperationsException("Specified MessageID interval is too large. Intervals must be less than 2^31 in size");
@@ -489,7 +467,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, new StoreContext());
+        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getTransactionLog());
+        _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
+        txn.commit();
     }
 
     /**
@@ -507,7 +487,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
         _queue.removeMessagesFromQueue(fromMessageId, toMessageId);
     }
-    
+
     /**
      * @see ManagedQueue#copyMessages
      * @param fromMessageId
@@ -522,9 +502,15 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, new StoreContext());
+        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getTransactionLog());
+
+        _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
+
+        txn.commit();
+
+
     }
-    
+
     /**
      * returns Notifications sent by this MBean.
      */

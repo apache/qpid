@@ -81,9 +81,14 @@ public class CancelTest extends QpidTestCase
 
         assertTrue(e.hasMoreElements());
 
+        int i = 0;
         while (e.hasMoreElements())
         {
             e.nextElement();
+            if(++i > 1)
+            {
+                fail("Two many elemnts to browse!");
+            }
         }
 
         browser.close();

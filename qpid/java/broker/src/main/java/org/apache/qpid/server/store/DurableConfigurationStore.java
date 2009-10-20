@@ -22,12 +22,29 @@ package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.commons.configuration.Configuration;
 
 public interface DurableConfigurationStore
 {
+
+    /**
+     * Called after instantiation in order to configure the message store. A particular implementation can define
+     * whatever parameters it wants.
+     *
+     * @param name             The name to be used by this storem
+     * @param recoveryHandler  Handler to be called as the store recovers on start up
+     * @param config           The apache commons configuration object.
+     *
+     * @throws Exception If any error occurs that means the store is unable to configure itself.
+     */
+    void configureConfigStore(String name,
+                              ConfigurationRecoveryHandler recoveryHandler,
+                              Configuration config,
+                              LogSubject logSubject) throws Exception;
     /**
      * Makes the specified exchange persistent.
      *

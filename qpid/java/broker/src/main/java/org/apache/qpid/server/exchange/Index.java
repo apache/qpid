@@ -39,6 +39,9 @@ class Index
 {
     private ConcurrentMap<AMQShortString, ArrayList<AMQQueue>> _index
             = new ConcurrentHashMap<AMQShortString, ArrayList<AMQQueue>>();
+    private ConcurrentMap<String, ArrayList<AMQQueue>> _stringIndex
+            = new ConcurrentHashMap<String, ArrayList<AMQQueue>>();
+
 
     synchronized boolean add(AMQShortString key, AMQQueue queue)
     {
@@ -51,8 +54,10 @@ class Index
         {
             queues = new ArrayList<AMQQueue>(queues);
         }
+
         //next call is atomic, so there is no race to create the list
         _index.put(key, queues);
+        _stringIndex.put(key.toString(), queues);
 
         if(queues.contains(queue))
         {
@@ -63,6 +68,8 @@ class Index
             return queues.add(queue);
         }
     }
+
+
 
     synchronized boolean remove(AMQShortString key, AMQQueue queue)
     {
@@ -76,10 +83,12 @@ class Index
                 if (queues.size() == 0)
                 {
                     _index.remove(key);
+                    _stringIndex.remove(key.toString());
                 }
                 else
                 {
                     _index.put(key, queues);
+                    _stringIndex.put(key.toString(), queues);
                 }
             }
             return removed;
@@ -91,6 +100,12 @@ class Index
     {
         return _index.get(key);
     }
+
+    ArrayList<AMQQueue> get(String key)
+    {
+        return _stringIndex.get(key);
+    }
+
 
     Map<AMQShortString, List<AMQQueue>> getBindingsMap()
     {

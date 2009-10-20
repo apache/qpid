@@ -1,6 +1,6 @@
 package org.apache.qpid.server.queue;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,21 +8,22 @@ package org.apache.qpid.server.queue;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 import java.util.ArrayList;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import junit.framework.AssertionFailedError;
@@ -45,21 +46,21 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         _queue.enqueue(createMessage(1L, (byte) 10));
         _queue.enqueue(createMessage(2L, (byte) 4));
         _queue.enqueue(createMessage(3L, (byte) 0));
-        
+
         // Enqueue messages in reverse order
         _queue.enqueue(createMessage(4L, (byte) 0));
         _queue.enqueue(createMessage(5L, (byte) 4));
         _queue.enqueue(createMessage(6L, (byte) 10));
-        
+
         // Enqueue messages out of order
         _queue.enqueue(createMessage(7L, (byte) 4));
         _queue.enqueue(createMessage(8L, (byte) 10));
         _queue.enqueue(createMessage(9L, (byte) 0));
-        
+
         // Register subscriber
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
-        
+
         ArrayList<QueueEntry> msgs = _subscription.getMessages();
         try
         {
@@ -98,10 +99,10 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         msg.getContentHeaderBody().properties = props;
         return msg;
     }
-    
+
     protected AMQMessage createMessage(Long id) throws AMQException
     {
         return createMessage(id, (byte) 0);
     }
-    
+
 }

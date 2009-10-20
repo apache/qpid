@@ -26,16 +26,14 @@
  */
 package org.apache.qpid.server.output;
 
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.AMQException;
-
-import java.util.Iterator;
 
 public interface ProtocolOutputConverter
 {
@@ -55,7 +53,7 @@ public interface ProtocolOutputConverter
 
     byte getProtocolMajorVersion();
 
-    void writeReturn(MessagePublishInfo messagePublishInfo, ContentHeaderBody header, Iterator<AMQDataBlock> bodyFrameIterator,  int channelId, int replyCode, AMQShortString replyText)
+    void writeReturn(MessagePublishInfo messagePublishInfo, ContentHeaderBody header, MessageContentSource msgContent,  int channelId, int replyCode, AMQShortString replyText)
                     throws AMQException;
 
     void writeFrame(AMQDataBlock block);

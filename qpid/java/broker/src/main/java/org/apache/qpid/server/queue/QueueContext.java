@@ -18,18 +18,32 @@
  * under the License.
  *
  */
+
 package org.apache.qpid.server.queue;
 
-public class MockAMQMessageHandle extends InMemoryMessageHandle
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+final class QueueContext implements AMQQueue.Context
 {
-    public MockAMQMessageHandle(final Long messageId)
+    volatile QueueEntry _lastSeenEntry;
+    volatile QueueEntry _releasedEntry;
+
+    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
+            _lastSeenUpdater =
+        AtomicReferenceFieldUpdater.newUpdater
+        (QueueContext.class, QueueEntry.class, "_lastSeenEntry");
+    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
+            _releasedUpdater =
+        AtomicReferenceFieldUpdater.newUpdater
+        (QueueContext.class, QueueEntry.class, "_releasedEntry");
+
+    public QueueContext(QueueEntry head)
     {
-        super(messageId);
+        _lastSeenEntry = head;
     }
 
-    @Override
-    public long getBodySize()
+    public QueueEntry getLastSeenEntry()
     {
-      return 0l;
+        return _lastSeenEntry;
     }
 }

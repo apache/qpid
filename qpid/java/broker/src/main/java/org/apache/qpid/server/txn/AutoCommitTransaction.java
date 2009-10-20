@@ -24,14 +24,13 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.AMQException;
 
 import java.util.List;
 import java.util.Collection;
 
-public class AutoCommitTransaction implements Transaction
+public class AutoCommitTransaction implements ServerTransaction
 {
 
     private final TransactionLog _transactionLog;
@@ -55,13 +54,11 @@ public class AutoCommitTransaction implements Transaction
             if(message.isPersistent() && queue.isDurable())
             {
 
-                StoreContext context = new StoreContext();
-
-                _transactionLog.beginTran(context);
-                _transactionLog.dequeueMessage(context, queue, message.getMessageNumber());
+                TransactionLog.Transaction txn = _transactionLog.newTransaction();
+                txn.dequeueMessage(queue, message.getMessageNumber());
                 // store.remove enqueue
                 // store.commit
-                _transactionLog.commitTran(context);
+                txn.commitTran();
             }
             postCommitAction.postCommit();
         }
@@ -77,7 +74,7 @@ public class AutoCommitTransaction implements Transaction
     {
         try
         {
-            StoreContext context = null;
+            TransactionLog.Transaction txn = null;
             for(QueueEntry entry : ackedMessages)
             {
                 ServerMessage message = entry.getMessage();
@@ -85,18 +82,17 @@ public class AutoCommitTransaction implements Transaction
 
                 if(message.isPersistent() && queue.isDurable())
                 {
-                    if(context == null)
+                    if(txn == null)
                     {
-                        context = new StoreContext();
-                        _transactionLog.beginTran(context);
+                        txn = _transactionLog.newTransaction();
                     }
-                    _transactionLog.dequeueMessage(context, queue, message.getMessageNumber());
+                    txn.dequeueMessage(queue, message.getMessageNumber());
                 }
 
             }
-            if(context != null)
+            if(txn != null)
             {
-                _transactionLog.commitTran(context);
+                txn.commitTran();
             }
             postCommitAction.postCommit();
         }
@@ -115,11 +111,10 @@ public class AutoCommitTransaction implements Transaction
         {
             if(message.isPersistent() && queue.isDurable())
             {
-                StoreContext context = new StoreContext();
 
-                _transactionLog.beginTran(context);
-                _transactionLog.enqueueMessage(context, queue, message.getMessageNumber());
-                _transactionLog.commitTran(context);
+                TransactionLog.Transaction txn = _transactionLog.newTransaction();
+                txn.enqueueMessage(queue, message.getMessageNumber());
+                txn.commitTran();
             }
             postCommitAction.postCommit();
         }
@@ -140,19 +135,16 @@ public class AutoCommitTransaction implements Transaction
 
             if(message.isPersistent())
             {
-                StoreContext context = new StoreContext();
-
-                _transactionLog.beginTran(context);
-
+                TransactionLog.Transaction txn = _transactionLog.newTransaction();
                 Long id = message.getMessageNumber();
                 for(AMQQueue q : queues)
                 {
                     if(q.isDurable())
                     {
-                        _transactionLog.enqueueMessage(context, q, id);
+                        txn.enqueueMessage(q, id);
                     }
                 }
-                _transactionLog.commitTran(context);
+                txn.commitTran();
 
             }
             postCommitAction.postCommit();

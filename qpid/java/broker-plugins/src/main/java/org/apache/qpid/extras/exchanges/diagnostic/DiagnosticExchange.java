@@ -38,21 +38,25 @@ import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.junit.extensions.util.SizeOf;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.log4j.Logger;
 
 /**
- * 
+ *
  * This is a special diagnostic exchange type which doesn't actually do anything
  * with messages. When it receives a message, it writes information about the
  * current memory usage to the "memory" property of the message and places it on the
- * diagnosticqueue for retrieval 
- * 
+ * diagnosticqueue for retrieval
+ *
  * @author Aidan Skinner
- * 
+ *
  */
 
 public class DiagnosticExchange extends AbstractExchange
 {
-   
+
+    private static final Logger _logger = Logger.getLogger(DiagnosticExchange.class);
+
+
     public static final AMQShortString DIAGNOSTIC_EXCHANGE_CLASS = new AMQShortString("x-diagnostic");
     public static final AMQShortString DIAGNOSTIC_EXCHANGE_NAME = new AMQShortString("diagnostic");
 
@@ -70,7 +74,7 @@ public class DiagnosticExchange extends AbstractExchange
 
         /**
          * Usual constructor.
-         * 
+         *
          * @throws JMException
          */
         @MBeanConstructor("Creates an MBean for AMQ Diagnostic exchange")
@@ -83,7 +87,7 @@ public class DiagnosticExchange extends AbstractExchange
 
         /**
          * Returns nothing, there can be no tabular data for this...
-         * 
+         *
          * @throws OpenDataException
          * @returns null
          * @todo ... or can there? Could this actually return all the
@@ -97,7 +101,7 @@ public class DiagnosticExchange extends AbstractExchange
         /**
          * This exchange type doesn't support queues, so this method does
          * nothing.
-         * 
+         *
          * @param queueName
          *            the queue you'll fail to create
          * @param binding
@@ -114,22 +118,20 @@ public class DiagnosticExchange extends AbstractExchange
 
     /**
      * Creates a new MBean instance
-     * 
+     *
      * @return the newly created MBean
      * @throws AMQException
      *             if something goes wrong
      */
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new DiagnosticExchange.DiagnosticExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-         //   _logger.error("Exception occured in creating the direct exchange mbean", ex);
-            throw new AMQException(null, "Exception occured in creating the direct exchange mbean", ex);
-        }
+        return new DiagnosticExchange.DiagnosticExchangeMBean();
+
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
     }
 
     public AMQShortString getType()
@@ -139,7 +141,7 @@ public class DiagnosticExchange extends AbstractExchange
 
     /**
      * Does nothing.
-     * 
+     *
      * @param routingKey
      *            pointless
      * @param queue
@@ -162,7 +164,7 @@ public class DiagnosticExchange extends AbstractExchange
 
     /**
      * Does nothing.
-     * 
+     *
      * @param routingKey
      *            pointless
      * @param queue
@@ -199,7 +201,7 @@ public class DiagnosticExchange extends AbstractExchange
 
     public ArrayList<AMQQueue> route(InboundMessage payload)
     {
-        
+
         Long value = new Long(SizeOf.getUsedMemory());
         AMQShortString key = new AMQShortString("memory");
 
@@ -212,10 +214,10 @@ public class DiagnosticExchange extends AbstractExchange
         ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();
         queues.add(q);
         return queues;
-        
+
     }
 
-	
+
 	public boolean isBound(AMQShortString routingKey, FieldTable arguments,
 			AMQQueue queue) {
 		// TODO Auto-generated method stub

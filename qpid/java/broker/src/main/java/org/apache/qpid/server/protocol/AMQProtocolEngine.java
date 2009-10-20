@@ -83,8 +83,8 @@ import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
 
@@ -139,7 +139,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private Principal _authorizedID;
     private MethodDispatcher _dispatcher;
     private ProtocolSessionIdentifier _sessionIdentifier;
-    
+
     // Create a simple ID that increments for ever new Session
     private final long _sessionID = idGenerator.getAndIncrement();
 
@@ -152,11 +152,12 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private long _writtenBytes;
     private long _readBytes;
-    
+
     private Job _readJob;
     private Job _writeJob;
 
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
+    private long _maxFrameSize;
 
     public ManagedObject getManagedObject()
     {
@@ -167,7 +168,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
         _networkDriver = driver;
-        
+
         _codecFactory = new AMQCodecFactory(true, this);
         _poolReference.acquireExecutorService();
         _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
@@ -178,17 +179,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     }
 
-    private AMQProtocolSessionMBean createMBean() throws AMQException
+    private AMQProtocolSessionMBean createMBean() throws JMException
     {
-        try
-        {
-            return new AMQProtocolSessionMBean(this);
-        }
-        catch (JMException ex)
-        {
-            _logger.error("AMQProtocolSession MBean creation has failed ", ex);
-            throw new AMQException("AMQProtocolSession MBean creation has failed ", ex);
-        }
+        return new AMQProtocolSessionMBean(this);
     }
 
     public long getSessionID()
@@ -200,7 +193,17 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         return _actor;
     }
-    
+
+    public void setMaxFrameSize(long frameMax)
+    {
+        _maxFrameSize = frameMax;
+    }
+
+    public long getMaxFrameSize()
+    {
+        return _maxFrameSize;
+    }
+
     public void received(final ByteBuffer msg)
     {
         _lastIoTime = System.currentTimeMillis();
@@ -290,7 +293,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                 else
                 {
                     // The channel has been told to close, we don't process any more frames until
-                    // it's closed. 
+                    // it's closed.
                     return;
                 }
             }
@@ -545,7 +548,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private void checkForNotification()
     {
         int channelsCount = _channelMap.size();
-        if (channelsCount >= _maxNoOfChannels)
+        if (_managedObject != null && channelsCount >= _maxNoOfChannels)
         {
             _managedObject.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
         }
@@ -560,7 +563,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         _maxNoOfChannels = value;
     }
-    
+
     public void commitTransactions(AMQChannel channel) throws AMQException
     {
         if ((channel != null) && channel.isTransactional())
@@ -576,7 +579,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             channel.rollback();
         }
     }
-    
+
     /**
      * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue
      * subscriptions (this may in turn remove queues if they are auto delete</li> </ul>
@@ -697,7 +700,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             {
                 task.doTask(this);
             }
-            
+
             _closed = true;
             _poolReference.releaseExecutorService();
             CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
@@ -775,7 +778,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             throw new IllegalArgumentException("Unsupported socket address class: " + address);
         }
     }
-    
+
     public SaslServer getSaslServer()
     {
         return _saslServer;
@@ -865,8 +868,15 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
-        _managedObject = createMBean();
-        _managedObject.register();
+        try
+        {
+            _managedObject = createMBean();
+            _managedObject.register();
+        }
+        catch (JMException e)
+        {
+            _logger.error(e);
+        }
     }
 
     public void addSessionCloseTask(Task task)
@@ -878,7 +888,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         _taskList.remove(task);
     }
-    
+
     public ProtocolOutputConverter getProtocolOutputConverter()
     {
         return _protocolOutputConverter;
@@ -905,7 +915,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public SocketAddress getRemoteAddress()
     {
         return _networkDriver.getRemoteAddress();
-    }    
+    }
 
     public SocketAddress getLocalAddress()
     {
@@ -941,7 +951,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void setNetworkDriver(NetworkDriver driver)
     {
-        _networkDriver = driver;        
+        _networkDriver = driver;
     }
 
     public void writerIdle()
@@ -970,7 +980,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
             MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(getProtocolVersion());
             ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200,new AMQShortString(throwable.getMessage()),0,0);
-                        
+
             writeFrame(closeBody.generateFrame(0));
 
             _networkDriver.close();
@@ -986,7 +996,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         // Do nothing
     }
-    
+
     public long getReadBytes()
     {
         return _readBytes;
@@ -1006,7 +1016,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         return _sessionIdentifier;
     }
-    
+
     public String getClientVersion()
     {
         return (_clientVersion == null) ? null : _clientVersion.toString();
@@ -1024,5 +1034,5 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             }
         }
     }
-    
+
 }

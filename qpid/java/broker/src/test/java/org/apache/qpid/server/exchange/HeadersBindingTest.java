@@ -53,6 +53,16 @@ public class HeadersBindingTest extends TestCase
             return null;
         }
 
+        public String getMimeType()
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public String getEncoding()
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
         public byte getPriority()
         {
             return 0;

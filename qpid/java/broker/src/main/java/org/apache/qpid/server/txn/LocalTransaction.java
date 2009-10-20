@@ -4,7 +4,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.AMQException;
 
@@ -12,11 +11,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class LocalTransaction implements Transaction
+public class LocalTransaction implements ServerTransaction
 {
     private final List<Action> _postCommitActions = new ArrayList<Action>();
 
-    private volatile StoreContext _storeContext;
+    private volatile TransactionLog.Transaction _transaction;
     private TransactionLog _transactionLog;
 
     public LocalTransaction(TransactionLog transactionLog)
@@ -37,7 +36,7 @@ public class LocalTransaction implements Transaction
             {
 
                 beginTranIfNecessary();
-                _transactionLog.dequeueMessage(_storeContext, queue, message.getMessageNumber());
+                _transaction.dequeueMessage(queue, message.getMessageNumber());
 
             }
             catch(AMQException e)
@@ -60,7 +59,7 @@ public class LocalTransaction implements Transaction
                 if(message.isPersistent() && queue.isDurable())
                 {
                     beginTranIfNecessary();
-                    _transactionLog.dequeueMessage(_storeContext, queue, message.getMessageNumber());
+                    _transaction.dequeueMessage(queue, message.getMessageNumber());
                 }
 
             }
@@ -70,10 +69,10 @@ public class LocalTransaction implements Transaction
             tidyUpOnError(e);
         }
         _postCommitActions.add(postCommitAction);
-            
+
     }
 
-    private void tidyUpOnError(AMQException e)
+    private void tidyUpOnError(Exception e)
     {
         try
         {
@@ -86,13 +85,13 @@ public class LocalTransaction implements Transaction
         {
             try
             {
-                _transactionLog.abortTran(_storeContext);
+                _transaction.abortTran();
             }
-            catch (AMQException e1)
+            catch (Exception e1)
             {
                 // TODO could try to chain the information to the original error
             }
-            _storeContext = null;
+            _transaction = null;
             _postCommitActions.clear();
         }
 
@@ -101,14 +100,13 @@ public class LocalTransaction implements Transaction
 
     private void beginTranIfNecessary()
     {
-        if(_storeContext == null)
+        if(_transaction == null)
         {
-            _storeContext = new StoreContext();
             try
             {
-                _transactionLog.beginTran(_storeContext);
+                _transaction = _transactionLog.newTransaction();
             }
-            catch (AMQException e)
+            catch (Exception e)
             {
                 tidyUpOnError(e);
             }
@@ -122,9 +120,9 @@ public class LocalTransaction implements Transaction
             beginTranIfNecessary();
             try
             {
-                _transactionLog.enqueueMessage(_storeContext, queue, message.getMessageNumber());
+                _transaction.enqueueMessage(queue, message.getMessageNumber());
             }
-            catch (AMQException e)
+            catch (Exception e)
             {
                 tidyUpOnError(e);
             }
@@ -137,10 +135,10 @@ public class LocalTransaction implements Transaction
     public void enqueue(List<AMQQueue> queues, EnqueableMessage message, Action postCommitAction)
     {
 
-        
+
         if(message.isPersistent())
         {
-            if(_storeContext == null)
+            if(_transaction == null)
             {
                 for(AMQQueue queue : queues)
                 {
@@ -161,12 +159,12 @@ public class LocalTransaction implements Transaction
                 {
                     if(queue.isDurable())
                     {
-                        _transactionLog.enqueueMessage(_storeContext, queue, message.getMessageNumber());
+                        _transaction.enqueueMessage(queue, message.getMessageNumber());
                     }
                 }
 
             }
-            catch (AMQException e)
+            catch (Exception e)
             {
                 tidyUpOnError(e);
             }
@@ -180,10 +178,10 @@ public class LocalTransaction implements Transaction
     {
         try
         {
-            if(_storeContext != null)
+            if(_transaction != null)
             {
 
-                _transactionLog.commitTran(_storeContext);
+                _transaction.commitTran();
             }
 
             for(Action action : _postCommitActions)
@@ -191,7 +189,7 @@ public class LocalTransaction implements Transaction
                 action.postCommit();
             }
         }
-        catch (AMQException e)
+        catch (Exception e)
         {
             for(Action action : _postCommitActions)
             {
@@ -202,7 +200,7 @@ public class LocalTransaction implements Transaction
         }
         finally
         {
-            _storeContext = null;
+            _transaction = null;
             _postCommitActions.clear();
         }
 
@@ -214,10 +212,10 @@ public class LocalTransaction implements Transaction
         try
         {
 
-            if(_storeContext != null)
+            if(_transaction != null)
             {
 
-                _transactionLog.abortTran(_storeContext);
+                _transaction.abortTran();
             }
         }
         catch (AMQException e)
@@ -237,7 +235,7 @@ public class LocalTransaction implements Transaction
             }
             finally
             {
-                _storeContext = null;
+                _transaction = null;
                 _postCommitActions.clear();
             }
         }

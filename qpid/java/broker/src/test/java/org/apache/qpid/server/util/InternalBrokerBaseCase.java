@@ -31,7 +31,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -94,7 +93,7 @@ public class InternalBrokerBaseCase extends TestCase
 
     protected void checkStoreContents(int messageCount)
     {
-        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageMetaDataMap().size());
+        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageCount());
 
         //The above publish message is sufficiently small not to fit in the header so no Body is required.
         //assertEquals("Message body count incorrect in the ContentBodyMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getContentBodyMap().size());
@@ -111,11 +110,7 @@ public class InternalBrokerBaseCase extends TestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
-        catch (ConsumerTagNotUniqueException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+
         //Keep the compiler happy
         return null;
     }
@@ -134,11 +129,7 @@ public class InternalBrokerBaseCase extends TestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
-        catch (ConsumerTagNotUniqueException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+
         //Keep the compiler happy
         return null;
     }

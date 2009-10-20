@@ -4,6 +4,7 @@ import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.atomic.AtomicLong;
 
 /*
 *
@@ -44,9 +45,7 @@ public class SimpleQueueEntryList implements QueueEntryList
                 _nextUpdater =
             AtomicReferenceFieldUpdater.newUpdater
             (QueueEntryImpl.class, QueueEntryImpl.class, "_next");
-
-
-
+    private AtomicLong _deletes = new AtomicLong(0L);
 
 
     public SimpleQueueEntryList(AMQQueue queue)
@@ -56,20 +55,76 @@ public class SimpleQueueEntryList implements QueueEntryList
         _tail = _head;
     }
 
+    
+
     void advanceHead()
     {
+        _deletes.incrementAndGet();
         QueueEntryImpl head = _head.nextNode();
+        boolean deleted = head.isDeleted();
         while(head._next != null && head.isDeleted())
         {
 
+            deleted = true;
             final QueueEntryImpl newhead = head.nextNode();
             if(newhead != null)
             {
-                _nextUpdater.compareAndSet(_head,head, newhead);
+                if(_nextUpdater.compareAndSet(_head,head, newhead))
+                {
+                    _deletes.decrementAndGet();
+                }
             }
             head = _head.nextNode();
         }
+
+        if(!deleted)
+        {
+            deleted = true;
+        }
+
+        if(_deletes.get() > 1000L)
+        {
+            _deletes.set(0L);
+            scavenge();
+        }
     }
+
+    void scavenge()
+    {
+        QueueEntryImpl root = _head;
+        QueueEntryImpl next = root.nextNode();
+
+        do
+        {
+
+
+            while(next._next != null && next.isDeleted())
+            {
+
+                final QueueEntryImpl newhead = next.nextNode();
+                if(newhead != null)
+                {
+                    _nextUpdater.compareAndSet(root,next, newhead);
+                }
+                next = root.nextNode();
+            }
+            if(next._next != null)
+            {
+                if(!next.isDeleted())
+                {
+                    root = next;
+                    next = root.nextNode();
+                }
+            }
+            else
+            {
+                break;
+            }
+
+        } while (next != null && next._next != null);
+
+    }
+
 
 
     public AMQQueue getQueue()

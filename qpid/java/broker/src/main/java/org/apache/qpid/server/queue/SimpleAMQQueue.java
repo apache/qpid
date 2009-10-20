@@ -19,13 +19,11 @@ import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.PrincipalHolder;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.QueueActor;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
@@ -33,7 +31,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.messages.QueueMessages;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 
@@ -61,62 +59,40 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 {
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
 
-    private int unused;
 
-    private PrincipalHolder _prinicpalHolder;
-
-
-    private Object _exclusiveOwner;
-
-    private Exchange _alternateExchange;
-
-
-    static final class QueueContext implements Context
-    {
-        volatile QueueEntry _lastSeenEntry;
-        volatile QueueEntry _releasedEntry;
-
-        public QueueContext(QueueEntry head)
-        {
-            _lastSeenEntry = head;
-        }
-
-        public QueueEntry getLastSeenEntry()
-        {
-            return _lastSeenEntry;
-        }
-    }
-
-
-    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
-            _lastSeenUpdater =
-        AtomicReferenceFieldUpdater.newUpdater
-        (QueueContext.class, QueueEntry.class, "_lastSeenEntry");
-
-    static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
-            _releasedUpdater =
-        AtomicReferenceFieldUpdater.newUpdater
-        (QueueContext.class, QueueEntry.class, "_releasedEntry");
-
+    private final VirtualHost _virtualHost;
 
     private final AMQShortString _name;
+    private final String _resourceName;
 
     /** null means shared */
     private final AMQShortString _owner;
+
+    private PrincipalHolder _prinicpalHolder;
+
+    private Object _exclusiveOwner;
+
 
     private final boolean _durable;
 
     /** If true, this queue is deleted when the last subscriber is removed */
     private final boolean _autoDelete;
 
-    private final VirtualHost _virtualHost;
+    private Exchange _alternateExchange;
 
     /** Used to track bindings to exchanges so that on deletion they can easily be cancelled. */
     private final ExchangeBindings _bindings = new ExchangeBindings(this);
 
-    private final AtomicBoolean _deleted = new AtomicBoolean(false);
 
-    private final List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
+    protected final QueueEntryList _entries;
+
+    protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
+
+    private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
+
+    private volatile Subscription _exclusiveSubscriber;
+
+
 
     private final AtomicInteger _atomicQueueCount = new AtomicInteger(0);
 
@@ -124,18 +100,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private final AtomicInteger _activeSubscriberCount = new AtomicInteger();
 
-    protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
-    private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
-
-    private volatile Subscription _exclusiveSubscriber;
-
-    protected final QueueEntryList _entries;
-
-    private final AMQQueueMBean _managedObject;
-    private final Executor _asyncDelivery;
     private final AtomicLong _totalMessagesReceived = new AtomicLong();
 
-    private final ConcurrentMap<AMQChannel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQChannel, Boolean>();
+
+
 
     /** max allowed size(KB) of a single message */
     public long _maximumMessageSize = ApplicationRegistry.getInstance().getConfiguration().getMaximumMessageSize();
@@ -152,23 +120,37 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     /** the minimum interval between sending out consecutive alerts of the same type */
     public long _minimumAlertRepeatGap = ApplicationRegistry.getInstance().getConfiguration().getMinimumAlertRepeatGap();
 
-    private static final int MAX_ASYNC_DELIVERIES = 10;
+    private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
+
+    private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
 
     private final Set<NotificationCheck> _notificationChecks = EnumSet.noneOf(NotificationCheck.class);
 
+
+    static final int MAX_ASYNC_DELIVERIES = 10;
+
+
     private final AtomicLong _stateChangeCount = new AtomicLong(Long.MIN_VALUE);
     private AtomicReference _asynchronousRunner = new AtomicReference(null);
+    private final Executor _asyncDelivery;
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
+
+    private final ConcurrentMap<AMQChannel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQChannel, Boolean>();
+
+    private final AtomicBoolean _deleted = new AtomicBoolean(false);
+    private final List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
+
+
     private LogSubject _logSubject;
     private LogActor _logActor;
 
+    private AMQQueueMBean _managedObject;
+    private static final String SUB_FLUSH_RUNNER = "SUB_FLUSH_RUNNER";
+    private boolean _nolocal;
 
-    private long _capacity = ApplicationRegistry.getInstance().getConfiguration().getCapacity();
-    private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
-            throws AMQException
     {
         this(name, durable, owner, autoDelete, virtualHost, new SimpleQueueEntryList.Factory());
     }
@@ -179,7 +161,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                              boolean autoDelete,
                              VirtualHost virtualHost,
                              QueueEntryListFactory entryListFactory)
-            throws AMQException
     {
 
         if (name == null)
@@ -193,6 +174,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
         _name = name;
+        _resourceName = String.valueOf(name);
         _durable = durable;
         _owner = owner;
         _autoDelete = autoDelete;
@@ -231,7 +213,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
         catch (JMException e)
         {
-            throw new AMQException("AMQQueue MBean creation has failed ", e);
+            _logger.error("AMQQueue MBean creation has failed ", e);
         }
 
         resetNotifications();
@@ -255,9 +237,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     // ------ Getters and Setters
 
+    public void execute(ReadWriteRunnable runnable)
+    {
+        _asyncDelivery.execute(runnable);
+    }
+
     public AMQShortString getName()
     {
         return _name;
+    }
+
+    public void setNoLocal(boolean nolocal)
+    {
+        _nolocal = nolocal;
     }
 
     public boolean isDurable()
@@ -401,6 +393,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         if (!isDeleted())
         {
             subscription.setQueue(this, exclusive);
+            subscription.setNoLocal(_nolocal);
             _subscriptionList.add(subscription);
             if (isDeleted())
             {
@@ -540,7 +533,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             deliverAsync();
         }
 
-        _managedObject.checkForNotification(entry.getMessage());
+        if(_managedObject != null)
+        {
+            _managedObject.checkForNotification(entry.getMessage());
+        }
 
         return entry;
     }
@@ -612,10 +608,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         QueueContext subContext = (QueueContext) sub.getQueueContext();
         QueueEntry releasedEntry = subContext._releasedEntry;
 
-        _lastSeenUpdater.set(subContext, entry);
+        QueueContext._lastSeenUpdater.set(subContext, entry);
         if(releasedEntry == entry)
         {
-           _releasedUpdater.compareAndSet(subContext, releasedEntry, null);
+           QueueContext._releasedUpdater.compareAndSet(subContext, releasedEntry, null);
         }
     }
 
@@ -629,7 +625,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             while((oldEntry  = subContext._releasedEntry) == null || oldEntry.compareTo(entry) > 0)
             {
-                if(_releasedUpdater.compareAndSet(subContext, oldEntry, entry))
+                if(QueueContext._releasedUpdater.compareAndSet(subContext, oldEntry, entry))
                 {
                     break;
                 }
@@ -939,11 +935,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void moveMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
                                            String queueName,
-                                           StoreContext storeContext)
+                                           ServerTransaction txn)
     {
 
-        AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        TransactionLog txnLog = getVirtualHost().getTransactionLog();
+        final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
+
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -962,62 +958,48 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
         });
 
-        try
-        {
-            txnLog.beginTran(storeContext);
 
-            // Move the messages in on the message store.
-            for (QueueEntry entry : entries)
-            {
-                ServerMessage message = entry.getMessage();
 
-                if (message.isPersistent() && toQueue.isDurable())
-                {
-                    txnLog.enqueueMessage(storeContext, toQueue, message.getMessageNumber());
-                }
-                // dequeue does not decrement the refence count
-                entry.dequeue();
-            }
+        // Move the messages in on the message store.
+        for (final QueueEntry entry : entries)
+        {
+            final ServerMessage message = entry.getMessage();
+            txn.enqueue(toQueue, message,
+                        new ServerTransaction.Action()
+                        {
 
-            // Commit and flush the move transcations.
-            try
-            {
-                txnLog.commitTran(storeContext);
-            }
-            catch (AMQException e)
-            {
-                throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
-            }
-        }
-        catch (AMQException e)
-        {
-            try
-            {
-                txnLog.abortTran(storeContext);
-            }
-            catch (AMQException rollbackEx)
-            {
-                _logger.error("Failed to rollback transaction when error occured moving messages", rollbackEx);
-            }
-            throw new RuntimeException(e);
-        }
+                            public void postCommit()
+                            {
+                                try
+                                {
+                                    toQueue.enqueue(message);
+                                }
+                                catch (AMQException e)
+                                {
+                                    throw new RuntimeException(e);
+                                }
+                            }
 
-        try
-        {
+                            public void onRollback()
+                            {
+                                entry.release();
+                            }
+                        });
+            txn.dequeue(this, message,
+                        new ServerTransaction.Action()
+                        {
 
-            for (QueueEntry entry : entries)
-            {
-                toQueue.enqueue(entry.getMessage());
-                entry.delete();
-            }
-        }
-        catch (MessageCleanupException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (AMQException e)
-        {
-            throw new RuntimeException(e);
+                            public void postCommit()
+                            {
+                                entry.discard();
+                            }
+
+                            public void onRollback()
+                            {
+
+                            }
+                        });
+
         }
 
     }
@@ -1025,10 +1007,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void copyMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
                                            String queueName,
-                                           final StoreContext storeContext)
+                                           final ServerTransaction txn)
     {
-        AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-        TransactionLog txnLog = getVirtualHost().getTransactionLog();
+        final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -1046,65 +1027,36 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
         });
 
-        try
+
+        // Move the messages in on the message store.
+        for (QueueEntry entry : entries)
         {
-            txnLog.beginTran(storeContext);
+            final ServerMessage message = entry.getMessage();
 
-            // Move the messages in on the message store.
-            for (QueueEntry entry : entries)
-            {
-                ServerMessage message = entry.getMessage();
-
-                if (message.isPersistent() && toQueue.isDurable())
-                {
-
-                    txnLog.enqueueMessage(storeContext, toQueue, message.getMessageNumber());
-
-                }
-            }
-
-            // Commit and flush the move transcations.
-            try
-            {
-                txnLog.commitTran(storeContext);
-            }
-            catch (AMQException e)
-            {
-                throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
-            }
-        }
-        catch (AMQException e)
-        {
-            try
-            {
-                txnLog.abortTran(storeContext);
-            }
-            catch (AMQException rollbackEx)
-            {
-                _logger.error("Failed to rollback transaction when error occured moving messages", rollbackEx);
-            }
-            throw new RuntimeException(e);
-        }
-
-        try
-        {
-            for (QueueEntry entry : entries)
+            if (message.isPersistent() && toQueue.isDurable())
             {
 
-                ServerMessage message = entry.getMessage();
-                if (message != null)
-                {
-                    toQueue.enqueue(entry.getMessage());
-                }
+                txn.enqueue(toQueue, message, new ServerTransaction.Action()
+                    {
+                        public void postCommit()
+                        {
+                            try
+                            {
+                                toQueue.enqueue(message);
+                            }
+                            catch (AMQException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        public void onRollback()
+                        {
+
+                        }
+                    });
+
             }
-        }
-        catch (MessageCleanupException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (AMQException e)
-        {
-            throw new RuntimeException(e);
         }
 
     }
@@ -1160,7 +1112,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         QueueEntryIterator queueListIterator = _entries.iterator();
         long count = 0;
 
-        Transaction txn = new LocalTransaction(getVirtualHost().getTransactionLog());
+        ServerTransaction txn = new LocalTransaction(getVirtualHost().getTransactionLog());
 
         while (queueListIterator.advance())
         {
@@ -1181,14 +1133,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     private void dequeueEntry(final QueueEntry node)
     {
-        Transaction txn = new AutoCommitTransaction(getVirtualHost().getTransactionLog());
+        ServerTransaction txn = new AutoCommitTransaction(getVirtualHost().getTransactionLog());
         dequeueEntry(node, txn);
     }
 
-    private void dequeueEntry(final QueueEntry node, Transaction txn)
+    private void dequeueEntry(final QueueEntry node, ServerTransaction txn)
     {
         txn.dequeue(this, node.getMessage(),
-                    new Transaction.Action()
+                    new ServerTransaction.Action()
                     {
 
                         public void postCommit()
@@ -1241,7 +1193,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 }
             });
 
-            Transaction txn = new LocalTransaction(getVirtualHost().getTransactionLog());
+            ServerTransaction txn = new LocalTransaction(getVirtualHost().getTransactionLog());
 
             if(_alternateExchange != null)
             {
@@ -1255,7 +1207,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     if(rerouteQueues != null & rerouteQueues.size() != 0)
                     {
                         txn.enqueue(rerouteQueues, entry.getMessage(),
-                                    new Transaction.Action()
+                                    new ServerTransaction.Action()
                                     {
 
                                         public void postCommit()
@@ -1280,7 +1232,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                                         }
                                     });
                         txn.dequeue(this, entry.getMessage(),
-                                    new Transaction.Action()
+                                    new ServerTransaction.Action()
                                     {
 
                                         public void postCommit()
@@ -1308,7 +1260,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     if(message != null)
                     {
                         txn.dequeue(this, message,
-                                    new Transaction.Action()
+                                    new ServerTransaction.Action()
                                     {
 
                                         public void postCommit()
@@ -1327,7 +1279,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             txn.commit();
 
 
-            _managedObject.unregister();
+            if(_managedObject!=null)
+            {
+                _managedObject.unregister();
+            }
 
             for (Task task : _deleteTaskList)
             {
@@ -1417,7 +1372,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void deliverAsync(Subscription sub)
     {
-        _asyncDelivery.execute(new SubFlushRunner(sub));
+        SubFlushRunner flusher = (SubFlushRunner) sub.get(SUB_FLUSH_RUNNER);
+        if(flusher == null)
+        {
+            flusher = new SubFlushRunner(sub);
+            sub.set(SUB_FLUSH_RUNNER, flusher);
+        }
+        _asyncDelivery.execute(flusher);
     }
 
 
@@ -1466,66 +1427,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    private class SubFlushRunner implements ReadWriteRunnable
-    {
-        private final Subscription _sub;
-
-        public SubFlushRunner(Subscription sub)
-        {
-            _sub = sub;
-        }
-
-        public void run()
-        {
-
-            String originalName = Thread.currentThread().getName();
-            try{
-                Thread.currentThread().setName("SubFlushRunner-"+_sub);
-
-                boolean complete = false;
-                try
-                {
-                    CurrentActor.set(_sub.getLogActor());
-                    complete = flushSubscription(_sub, new Long(MAX_ASYNC_DELIVERIES));
-
-                }
-                catch (AMQException e)
-                {
-                    _logger.error(e);
-                }
-                finally
-                {
-                    CurrentActor.remove();
-                }
-                if (!complete && !_sub.isSuspended())
-                {
-                    _asyncDelivery.execute(this);
-                }
-            }
-            finally
-            {
-                Thread.currentThread().setName(originalName);
-            }
-
-        }
-
-        public boolean isRead()
-        {
-            return false;
-        }
-
-        public boolean isWrite()
-        {
-            return true;
-        }
-    }
-
     public void flushSubscription(Subscription sub) throws AMQException
     {
         flushSubscription(sub, Long.MAX_VALUE);
     }
 
-    public boolean flushSubscription(Subscription sub, Long iterations) throws AMQException
+    public boolean flushSubscription(Subscription sub, long iterations) throws AMQException
     {
         boolean atTail = false;
 
@@ -1655,9 +1562,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     }
                 }
 
-                if(_lastSeenUpdater.compareAndSet(context, lastSeen, node))
+                if(QueueContext._lastSeenUpdater.compareAndSet(context, lastSeen, node))
                 {
-                    _releasedUpdater.compareAndSet(context, releasedNode, null);
+                    QueueContext._releasedUpdater.compareAndSet(context, releasedNode, null);
                 }
 
                 lastSeen = context._lastSeenEntry;
@@ -1774,7 +1681,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
             else
             {
-                _managedObject.checkForNotification(node.getMessage());
+                if(_managedObject!=null)
+                {
+                    _managedObject.checkForNotification(node.getMessage());
+                }
             }
         }
 
@@ -1968,5 +1878,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             _capacity = config.getCapacity();
             _flowResumeCapacity = config.getFlowResumeCapacity();
         }
+    }
+
+    public String getResourceName()
+    {
+        return _resourceName;
     }
 }

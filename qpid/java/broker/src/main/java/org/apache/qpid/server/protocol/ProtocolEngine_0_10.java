@@ -18,31 +18,38 @@
  * under the License.
  *
  */
-package org.apache.qpid.server;
+package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.Disassembler;
 
 import java.net.SocketAddress;
 
 public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
 {
+    public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
+
     private NetworkDriver _networkDriver;
     private long _readBytes;
     private long _writtenBytes;
+    private Connection _connection;
 
     public ProtocolEngine_0_10(Connection conn, NetworkDriver networkDriver)
     {
         super(new Assembler(conn));
+        _connection = conn;
         _networkDriver = networkDriver;
     }
 
     public void setNetworkDriver(NetworkDriver driver)
     {
         _networkDriver = driver;
+        Disassembler dis = new Disassembler(driver, MAX_FRAME_SIZE);
+        _connection.setSender(dis);
     }
 
     public SocketAddress getRemoteAddress()

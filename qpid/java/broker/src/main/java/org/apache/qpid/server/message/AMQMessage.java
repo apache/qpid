@@ -18,21 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.message;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.message.*;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 
 
-import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.nio.ByteBuffer;
 
 /**
  * A deliverable message.
@@ -43,8 +40,6 @@ public class AMQMessage implements ServerMessage
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
     private final AtomicInteger _referenceCount = new AtomicInteger(0);
-
-    private final AMQMessageHandle _messageHandle;
 
     /** Flag to indicate that this message requires 'immediate' delivery. */
 
@@ -65,73 +60,21 @@ public class AMQMessage implements ServerMessage
 
     private Object _sessionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
-    private final AMQMessageHeader _messageHeader;
+
+    private final StoredMessage<MessageMetaData> _handle;
 
 
-    /**
-     * Used when recovering, i.e. when the message store is creating references to messages. In that case, the normal
-     * enqueue/routingComplete is not done since the recovery process is responsible for routing the messages to
-     * queues.
-     *
-     * @param messageId
-     * @param store
-     * @param factory
-     *
-     * @throws AMQException
-     */
-    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory)
-            throws AMQException
+    public AMQMessage(StoredMessage<MessageMetaData> handle)
     {
-        _messageHandle = factory.createMessageHandle(messageId, store, true);
-        _size = _messageHandle.getBodySize();
-        _messageHeader = new ContentHeaderBodyAdapter(_messageHandle.getContentHeaderBody());
-    }
+        _handle = handle;
+        final MessageMetaData metaData = handle.getMetaData();
+        _size = metaData.getContentSize();
+        final MessagePublishInfo messagePublishInfo = metaData.getMessagePublishInfo();
 
-        /**
-     * Used when recovering, i.e. when the message store is creating references to messages. In that case, the normal
-     * enqueue/routingComplete is not done since the recovery process is responsible for routing the messages to
-     * queues.
-     *
-     * @param messageHandle
-     *
-     * @throws AMQException
-     */
-    public AMQMessage(
-                AMQMessageHandle messageHandle,
-                MessagePublishInfo info)
-            throws AMQException
-    {
-        this(messageHandle, messageHandle.getContentHeaderBody(), messageHandle.getBodySize(), info);
-    }
-
-    public AMQMessage(
-                    AMQMessageHandle messageHandle,
-                    ContentHeaderBody chb,
-                    long size,
-                    MessagePublishInfo info)
-                throws AMQException
-
-    {
-        _messageHandle = messageHandle;
-
-        _messageHeader = new ContentHeaderBodyAdapter(chb);
-
-        if(info.isImmediate())
+        if(messagePublishInfo.isImmediate())
         {
             _flags |= IMMEDIATE;
         }
-        _size = size;
-
-    }
-
-
-    protected AMQMessage(AMQMessage msg) throws AMQException
-    {
-        _messageHandle = msg._messageHandle;
-        _messageHeader = msg._messageHeader;
-        _flags = msg._flags;
-        _size = msg._size;
-
     }
 
 
@@ -152,26 +95,21 @@ public class AMQMessage implements ServerMessage
         return _referenceCount.get() > 0;
     }
 
-    public Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel)
+    public MessageMetaData getMessageMetaData()
     {
-        return new BodyFrameIterator(protocolSession, channel, _messageHandle);
-    }
-
-    public Iterator<ContentChunk> getContentBodyIterator()
-    {
-        return new BodyContentIterator(_messageHandle);
+        return _handle.getMetaData();
     }
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
-        return _messageHandle.getContentHeaderBody();
+        return getMessageMetaData().getContentHeaderBody();
     }
 
 
 
     public Long getMessageId()
     {
-        return _messageHandle.getMessageId();
+        return _handle.getMessageNumber();
     }
 
     /**
@@ -211,10 +149,10 @@ public class AMQMessage implements ServerMessage
      * message store.
      *
      *
-     * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
+     * @throws org.apache.qpid.server.queue.MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
      */
-    public void decrementReference() throws MessageCleanupException
+    public void decrementReference()
     {
         int count = _referenceCount.decrementAndGet();
 
@@ -229,27 +167,19 @@ public class AMQMessage implements ServerMessage
             // by copying from other queues at the same time as it is being removed.
             _referenceCount.set(Integer.MIN_VALUE/2);
 
-            try
+            // must check if the handle is null since there may be cases where we decide to throw away a message
+            // and the handle has not yet been constructed
+            if (_handle != null)
             {
-                // must check if the handle is null since there may be cases where we decide to throw away a message
-                // and the handle has not yet been constructed
-                if (_messageHandle != null && isPersistent())
-                {
-                    _messageHandle.removeMessage();
+                _handle.remove();
 
-                }
-            }
-            catch (AMQException e)
-            {
-
-                throw new MessageCleanupException(getMessageId(), e);
             }
         }
         else
         {
             if (count < 0)
             {
-                throw new MessageCleanupException("Reference count for message id " + debugIdentity()
+                throw new RuntimeException("Reference count for message id " + debugIdentity()
                                                   + " has gone below 0.");
             }
         }
@@ -274,12 +204,12 @@ public class AMQMessage implements ServerMessage
 
     public AMQMessageHeader getMessageHeader()
     {
-        return _messageHeader;
+        return getMessageMetaData().getMessageHeader();
     }
 
     public boolean isPersistent()
     {
-        return _messageHandle.isPersistent();
+        return getMessageMetaData().isPersistent();
     }
 
     /**
@@ -297,12 +227,12 @@ public class AMQMessage implements ServerMessage
 
     public MessagePublishInfo getMessagePublishInfo() throws AMQException
     {
-        return _messageHandle.getMessagePublishInfo();
+        return getMessageMetaData().getMessagePublishInfo();
     }
 
     public long getArrivalTime()
     {
-        return _messageHandle.getArrivalTime();
+        return getMessageMetaData().getArrivalTime();
     }
 
     /**
@@ -334,13 +264,6 @@ public class AMQMessage implements ServerMessage
     public void setDeliveredToConsumer()
     {
         _flags |= DELIVERED_TO_CONSUMER;
-    }
-
-
-
-    public AMQMessageHandle getMessageHandle()
-    {
-        return _messageHandle;
     }
 
     public long getSize()
@@ -394,4 +317,13 @@ public class AMQMessage implements ServerMessage
         return "Message[" + debugIdentity() + "]: " + getMessageId() + "; ref count: " + _referenceCount;
     }
 
+    public int getContent(ByteBuffer buf, int offset)
+    {
+        return _handle.getContent(offset, buf);
+    }
+
+    public StoredMessage<MessageMetaData> getStoredMessage()
+    {
+        return _handle;
+    }
 }

@@ -35,8 +35,8 @@ import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 import java.io.File;
 
@@ -51,15 +51,15 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     public void initialise(int instanceID) throws Exception
     {
-        _rootMessageLogger = new RootMessageLoggerImpl(_configuration, 
+        _rootMessageLogger = new RootMessageLoggerImpl(_configuration,
                                                        new Log4jMessageLogger());
-        
+
         _registryName = String.valueOf(instanceID);
 
         // Set the Actor for current log messages
         CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
 
-        CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));        
+        CurrentActor.get().message(BrokerMessages.BRK_1001(QpidProperties.getReleaseVersion(),QpidProperties.getBuildVersion()));
 
         initialiseManagedObjectRegistry();
 
@@ -68,7 +68,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         _pluginManager = new PluginManager(_configuration.getPluginDirectory());
 
         _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager);
-        
+
         _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
@@ -99,10 +99,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     }
 
     private void initialiseVirtualHosts() throws Exception
-    {        
+    {
         for (String name : _configuration.getVirtualHosts())
         {
-            _virtualHostRegistry.registerVirtualHost(new VirtualHost(_configuration.getVirtualHostConfig(name)));
+            _virtualHostRegistry.registerVirtualHost(new VirtualHostImpl(_configuration.getVirtualHostConfig(name)));
         }
         getVirtualHostRegistry().setDefaultVirtualHostName(_configuration.getDefaultVirtualHost());
     }

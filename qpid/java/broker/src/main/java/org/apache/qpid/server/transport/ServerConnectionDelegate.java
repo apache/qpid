@@ -22,8 +22,6 @@ package org.apache.qpid.server.transport;
 
 import org.apache.qpid.transport.*;
 
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 

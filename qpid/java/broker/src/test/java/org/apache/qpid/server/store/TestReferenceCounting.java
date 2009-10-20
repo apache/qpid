@@ -26,10 +26,8 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.AMQMessageHandle;
-import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 
 /**
  * Tests that reference counting works correctly with AMQMessage and the message store
@@ -83,15 +81,12 @@ public class TestReferenceCounting extends TestCase
         };
 
 
-        final long messageId = _store.getNewMessageId();
-        AMQMessageHandle messageHandle = (new MessageHandleFactory()).createMessageHandle(messageId, _store, true);
 
-        MessageMetaData mmd = messageHandle.setPublishAndContentHeaderBody(info, chb);
-        _store.storeMessageMetaData(messageId, mmd);
+        MessageMetaData mmd = new MessageMetaData(info, chb, 0);
+        StoredMessage storedMessage = _store.addMessage(mmd);
 
 
-        AMQMessage message = new AMQMessage(messageHandle,
-                                             chb, chb.bodySize,info);
+        AMQMessage message = new AMQMessage(storedMessage);
 
         message = message.takeReference();
 
@@ -99,9 +94,9 @@ public class TestReferenceCounting extends TestCase
  //       message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
 
-        assertEquals(1, _store.getMessageMetaDataMap().size());
+        assertEquals(1, _store.getMessageCount());
         message.decrementReference();
-        assertEquals(1, _store.getMessageMetaDataMap().size());
+        assertEquals(1, _store.getMessageCount());
     }
 
     private ContentHeaderBody createPersistentContentHeader()
@@ -145,28 +140,24 @@ public class TestReferenceCounting extends TestCase
             }
         };
 
-        final Long messageId = _store.getNewMessageId();
         final ContentHeaderBody chb = createPersistentContentHeader();
-        AMQMessageHandle messageHandle = (new MessageHandleFactory()).createMessageHandle(messageId, _store, true);
 
-        MessageMetaData mmd = messageHandle.setPublishAndContentHeaderBody(info, chb);
-        _store.storeMessageMetaData(messageId, mmd);
+        MessageMetaData mmd = new MessageMetaData(info, chb, 0);
+        StoredMessage storedMessage = _store.addMessage(mmd);
 
-        AMQMessage message = new AMQMessage(messageHandle,
-                                             chb, chb.bodySize,
-                                            info);
-        
-        
+        AMQMessage message = new AMQMessage(storedMessage);
+
+
         message = message.takeReference();
         // we call routing complete to set up the handle
      //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
 
 
-        assertEquals(1, _store.getMessageMetaDataMap().size());
+        assertEquals(1, _store.getMessageCount());
         message = message.takeReference();
         message.decrementReference();
-        assertEquals(1, _store.getMessageMetaDataMap().size());
+        assertEquals(1, _store.getMessageCount());
     }
 
     public static junit.framework.Test suite()

@@ -14,8 +14,8 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
- * 
+ *  under the License.
+ *
  */
 
 package org.apache.qpid.server.configuration;
@@ -124,7 +124,7 @@ public class ServerConfiguration implements SignalHandler
         }
         catch (IllegalArgumentException e)
         {
-            // We're on something that doesn't handle SIGHUP, how sad, Windows. 
+            // We're on something that doesn't handle SIGHUP, how sad, Windows.
         }
     }
 
@@ -221,7 +221,7 @@ public class ServerConfiguration implements SignalHandler
         String localeString = getConfig().getString(ADVANCED_LOCALE);
         // Expecting locale of format langauge_country_variant
 
-        // If the configuration does not have a defined locale use the JVM default 
+        // If the configuration does not have a defined locale use the JVM default
         if (localeString == null)
         {
             return Locale.getDefault();
@@ -625,48 +625,48 @@ public class ServerConfiguration implements SignalHandler
     {
         return new NetworkDriverConfiguration()
         {
-            
+
             public Integer getTrafficClass()
             {
                 return null;
             }
-            
+
             public Boolean getTcpNoDelay()
             {
                 // Can't call parent getTcpNoDelay since it just calls this one
                 return getConfig().getBoolean("connector.tcpNoDelay", true);
             }
-            
+
             public Integer getSoTimeout()
             {
                 return null;
             }
-            
+
             public Integer getSoLinger()
             {
                 return null;
             }
-            
+
             public Integer getSendBufferSize()
             {
                 return getBufferWriteLimit();
             }
-            
+
             public Boolean getReuseAddress()
             {
                 return null;
             }
-            
+
             public Integer getReceiveBufferSize()
             {
                 return getBufferReadLimit();
             }
-            
+
             public Boolean getOOBInline()
             {
                 return null;
             }
-            
+
             public Boolean getKeepAlive()
             {
                 return null;

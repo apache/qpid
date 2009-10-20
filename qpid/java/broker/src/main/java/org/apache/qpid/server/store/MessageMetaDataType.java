@@ -18,28 +18,24 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.store;
 
-package org.apache.qpid.server.queue;
+import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.MessageMetaData_0_10;
 
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.RequiredDeliveryException;
+import java.nio.ByteBuffer;
 
-/**
- * UnauthorizedAccessException is a {@link RequiredDeliveryException} that represents the failure case where a message
- * is published with a user id different from the one used when creating the connection . 
- * The AMQP status code, 403, is always used to report this condition.
- *  
- */
-
-public class UnauthorizedAccessException extends RequiredDeliveryException
+public enum MessageMetaDataType
 {
-    public UnauthorizedAccessException(String msg, AMQMessage amqMessage)
+    META_DATA_0_8  {   public Factory<MessageMetaData> getFactory() { return MessageMetaData.FACTORY; } },
+    META_DATA_0_10 {   public Factory<MessageMetaData_0_10> getFactory() { return MessageMetaData_0_10.FACTORY; } };
+
+
+    public static interface Factory<M extends StorableMessageMetaData>
     {
-        super(msg, amqMessage);
+        M createMetaData(ByteBuffer buf);
     }
 
-    public AMQConstant getReplyCode()
-    {
-        return AMQConstant.ACCESS_REFUSED;
-    }
+    abstract public Factory<? extends StorableMessageMetaData> getFactory();
+
 }

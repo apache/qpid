@@ -73,7 +73,7 @@ public class AMQPConnectionActorTest extends TestCase
         // Correctly Close the AR we created
         ApplicationRegistry.remove();
 
-        super.tearDown();        
+        super.tearDown();
     }
 
     private void setUpWithConfig(ServerConfiguration serverConfig) throws AMQException

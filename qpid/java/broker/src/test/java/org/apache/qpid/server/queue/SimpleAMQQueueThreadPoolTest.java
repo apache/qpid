@@ -27,8 +27,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.AMQException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SimpleAMQQueueThreadPoolTest extends TestCase
 {
@@ -47,7 +45,7 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
             assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 
             assertEquals("References not increased", initialCount + 1, ReferenceCountingExecutorService.getInstance().getReferenceCount());
-            
+
             queue.stop();
 
             assertEquals("References not decreased", initialCount , ReferenceCountingExecutorService.getInstance().getReferenceCount());
@@ -55,6 +53,6 @@ public class SimpleAMQQueueThreadPoolTest extends TestCase
         finally
         {
             ApplicationRegistry.remove();
-        }       
+        }
     }
 }

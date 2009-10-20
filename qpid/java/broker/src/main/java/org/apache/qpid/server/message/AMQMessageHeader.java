@@ -30,6 +30,10 @@ public interface AMQMessageHeader
 
     String getMessageId();
 
+    String getMimeType();
+
+    String getEncoding();
+
     byte getPriority();
 
     long getTimestamp();

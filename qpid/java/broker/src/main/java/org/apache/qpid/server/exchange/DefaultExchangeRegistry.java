@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,7 +23,7 @@ package org.apache.qpid.server.exchange;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.protocol.ExchangeInitialiser;
+import org.apache.qpid.server.exchange.ExchangeInitialiser;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -40,6 +40,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
      * Maps from exchange name to exchange instance
      */
     private ConcurrentMap<AMQShortString, Exchange> _exchangeMap = new ConcurrentHashMap<AMQShortString, Exchange>();
+    private ConcurrentMap<String, Exchange> _exchangeMapStr = new ConcurrentHashMap<String, Exchange>();
 
     private Exchange _defaultExchange;
     private VirtualHost _host;
@@ -56,10 +57,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         new ExchangeInitialiser().initialise(_host.getExchangeFactory(), this);
     }
 
-    public Exchange getExchange(String exchangeName)
-    {
-        return getExchange(new AMQShortString(exchangeName));
-    }
+
 
     public DurableConfigurationStore getDurableConfigurationStore()
     {
@@ -69,6 +67,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void registerExchange(Exchange exchange) throws AMQException
     {
         _exchangeMap.put(exchange.getName(), exchange);
+        _exchangeMapStr.put(exchange.getName().toString(), exchange);
         if (exchange.isDurable())
         {
             getDurableConfigurationStore().createExchange(exchange);
@@ -94,6 +93,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     {
         // TODO: check inUse argument
         Exchange e = _exchangeMap.remove(name);
+        _exchangeMapStr.remove(name.toString());
         if (e != null)
         {
             if (e.isDurable())
@@ -125,6 +125,19 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         }
 
     }
+
+    public Exchange getExchange(String name)
+    {
+        if ((name == null) || name.length() == 0)
+        {
+            return getDefaultExchange();
+        }
+        else
+        {
+            return _exchangeMapStr.get(name);
+        }
+    }
+
 
     /**
      * Routes content through exchanges, delivering it to 1 or more queues.

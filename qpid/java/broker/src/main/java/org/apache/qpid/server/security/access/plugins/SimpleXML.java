@@ -25,15 +25,14 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.framing.AMQShortString;
 
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.security.access.ACLPluginFactory;
 import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Permission;
 import org.apache.qpid.server.security.access.PrincipalPermissions;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.PrincipalHolder;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +56,7 @@ public class SimpleXML implements ACLPlugin
             return plugin;
         }
     };
-    
+
     private Map<String, PrincipalPermissions> _users;
     private final AccessResult GRANTED = new AccessResult(this, AccessResult.AccessStatus.GRANTED);
 
@@ -82,7 +81,7 @@ public class SimpleXML implements ACLPlugin
 
     /**
      * Publish format takes Exchange + Routing Key Pairs
-     * 
+     *
      * @param config
      *            XML Configuration
      */

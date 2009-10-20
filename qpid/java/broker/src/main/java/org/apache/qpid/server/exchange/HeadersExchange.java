@@ -83,6 +83,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class HeadersExchange extends AbstractExchange
 {
+
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
 
     public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
@@ -102,6 +103,7 @@ public class HeadersExchange extends AbstractExchange
                 boolean autoDelete) throws AMQException
         {
             HeadersExchange exch = new HeadersExchange();
+
             exch.initialise(host, name, durable, ticket, autoDelete);
             return exch;
         }
@@ -210,7 +212,7 @@ public class HeadersExchange extends AbstractExchange
                 {
                     throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
                 }
-                
+
                 if(keyAndValue.length ==1)
                 {
                     //no value was given, only a key. Use an empty value
@@ -249,7 +251,7 @@ public class HeadersExchange extends AbstractExchange
         if(!_bindings.remove(new Registration(args == null ? null : new HeadersBinding(args), queue, routingKey)))
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
-                                   + " with headers args " + args);    
+                                   + " with headers args " + args);
         }
     }
 
@@ -320,23 +322,21 @@ public class HeadersExchange extends AbstractExchange
         return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
     }
 
-    protected ExchangeMBean createMBean() throws AMQException
+    protected ExchangeMBean createMBean() throws JMException
     {
-        try
-        {
-            return new HeadersExchangeMBean();
-        }
-        catch (JMException ex)
-        {
-            _logger.error("Exception occured in creating the HeadersExchangeMBean", ex);
-            throw new AMQException("Exception occured in creating the HeadersExchangeMBean", ex);
-        }
+        return new HeadersExchangeMBean();
     }
 
     public Map<AMQShortString, List<AMQQueue>> getBindings()
     {
         return null;
     }
+
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
 
     private static class Registration
     {

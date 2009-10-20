@@ -31,12 +31,12 @@ public abstract class AbstractMessageStore implements MessageStore
 {
     protected LogSubject _logSubject;
 
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration hostConfig) throws Exception
+    public void configure(VirtualHost virtualHost) throws Exception
     {
         _logSubject = new MessageStoreLogSubject(virtualHost, this);
         CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1001(this.getClass().getName()));
     }
-    
+
     public void close() throws Exception
     {
         CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1003());

@@ -51,6 +51,8 @@ public interface Subscription
 
     void setQueue(AMQQueue queue, boolean exclusive);
 
+    void setNoLocal(boolean noLocal);
+
     AMQShortString getConsumerTag();
 
     long getSubscriptionID();
@@ -71,7 +73,7 @@ public interface Subscription
 
     void send(QueueEntry msg) throws AMQException;
 
-    void queueDeleted(AMQQueue queue); 
+    void queueDeleted(AMQQueue queue);
 
 
     boolean wouldSuspend(QueueEntry msg);
@@ -97,5 +99,8 @@ public interface Subscription
 
     void confirmAutoClose();
 
+    public void set(String key, Object value);
+
+    public Object get(String key);
 
 }
