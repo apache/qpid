@@ -91,11 +91,11 @@ class ConnectionTest(TestCase):
 
   def tearDown(self):
     self.running = False
-    connect("0.0.0.0", PORT).close()
+    connect("127.0.0.1", PORT).close()
     self.server.join(3)
 
   def connect(self, **kwargs):
-    return Connection(connect("0.0.0.0", PORT), **kwargs)
+    return Connection(connect("127.0.0.1", PORT), **kwargs)
 
   def test(self):
     c = self.connect()
