@@ -41,7 +41,7 @@ public class QpidLog4JConfiguratorTest extends TestCase
         File tmpFile = null;
         try
         {
-            tmpFile = File.createTempFile("LogManMBeanTestLog4jConfig", ".tmp");
+            tmpFile = File.createTempFile("QpidLog4JConfiguratorTestLog4jConfig", ".tmp");
             tmpFile.deleteOnExit();
 
             FileWriter fstream = new FileWriter(tmpFile);
