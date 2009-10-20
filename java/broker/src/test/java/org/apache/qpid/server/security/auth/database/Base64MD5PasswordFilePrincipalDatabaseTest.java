@@ -37,6 +37,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -54,6 +55,7 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
     private static final Principal PRINCIPAL = new UsernamePrincipal(PRINCIPAL_USERNAME);
     private Base64MD5PasswordFilePrincipalDatabase _database;
     private File _pwdFile;
+    private List<File> _testPwdFiles = new ArrayList<File>();
     
     static
     {
@@ -84,6 +86,31 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         _pwdFile = File.createTempFile(this.getClass().getName(), "pwd");
         _pwdFile.deleteOnExit();
         _database.setPasswordFile(_pwdFile.getAbsolutePath());
+        _testPwdFiles.clear();
+    }
+    
+    public void tearDown() throws Exception
+    {
+        //clean up the created default password file and any backup
+        File oldPwdFile = new File(_pwdFile.getAbsolutePath() + ".old");
+        if(oldPwdFile.exists())
+        {
+            oldPwdFile.delete();
+        }
+        
+        _pwdFile.delete();
+        
+        //clean up any additional files and their backups
+        for(File f : _testPwdFiles)
+        {
+            oldPwdFile = new File(f.getAbsolutePath() + ".old");
+            if(oldPwdFile.exists())
+            {
+                oldPwdFile.delete();
+            }
+            
+            f.delete();
+        }
     }
 
     private File createPasswordFile(int commentLines, int users)
@@ -109,6 +136,8 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
 
             writer.flush();
             writer.close();
+            
+            _testPwdFiles.add(testFile);
 
             return testFile;
 
@@ -178,8 +207,6 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         assertNotNull("Created User was not saved", _database.getUser(USERNAME));
 
         assertFalse("Duplicate user created.", _database.createPrincipal(principal, PASSWORD.toCharArray()));
-
-        testFile.delete();
     }
     
     public void testCreatePrincipalIsSavedToFile()
@@ -229,7 +256,6 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         {
             fail("Unable to valdate file contents due to:" + e.getMessage());
         }
-        testFile.delete();
     }
     
 
@@ -274,8 +300,6 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         }
 
         assertNull("Deleted user still present.", _database.getUser(USERNAME + "0"));
-
-        testFile.delete();
     }
 
     public void testGetUsers()
@@ -313,8 +337,6 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         {
             assertTrue("User " + i + " missing", verify[i]);
         }
-
-        testFile.delete();
     }
 
     public void testUpdatePasswordIsSavedToFile()
@@ -365,7 +387,6 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         {
             fail("Unable to valdate file contents due to:" + e.getMessage());
         }
-        testFile.delete();
     }
 
     public void testSetPasswordFileWithMissingFile()
@@ -404,8 +425,6 @@ public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
         {
             fail("Password File was not created." + e.getMessage());
         }
-
-        testFile.delete();
     }
     
     public void testCreateUserPrincipal() throws IOException
