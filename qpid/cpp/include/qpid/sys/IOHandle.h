@@ -35,6 +35,8 @@ namespace sys {
 class AsynchAcceptorPrivate;
 class AsynchAcceptResult;
 namespace windows {
+    class AsynchAcceptor;
+    class AsynchAcceptResult;
     class AsynchIO;
 }
 
@@ -43,8 +45,8 @@ class PollerHandle;
 class IOHandlePrivate;
 class IOHandle {
 
-    friend class AsynchAcceptorPrivate;
-    friend class AsynchAcceptResult;
+    friend class windows::AsynchAcceptResult;
+    friend class windows::AsynchAcceptor;
     friend class windows::AsynchIO;
 
     friend class PollerHandle;
@@ -52,7 +54,7 @@ class IOHandle {
 protected:
     IOHandlePrivate* const impl;
 
-	IOHandle(IOHandlePrivate*);
+    IOHandle(IOHandlePrivate*);
     QPID_COMMON_EXTERN virtual ~IOHandle();
 };
 

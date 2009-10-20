@@ -201,7 +201,7 @@ public:
     void registerProtocolFactory(const std::string& name, boost::shared_ptr<sys::ProtocolFactory>);
 
     /** Accept connections */
-    void accept();
+    QPID_BROKER_EXTERN void accept();
 
     /** Create a connection to another broker. */
     void connect(const std::string& host, uint16_t port, 

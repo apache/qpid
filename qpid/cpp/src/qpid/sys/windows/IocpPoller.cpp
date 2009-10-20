@@ -42,11 +42,11 @@ class PollerHandlePrivate {
     friend class PollerHandle;
 
     SOCKET fd;
-    AsynchIoResult::Completer cb;
+    windows::AsynchIoResult::Completer cb;
     AsynchIO::RequestCallback cbRequest;
 
     PollerHandlePrivate(SOCKET f,
-                        AsynchIoResult::Completer cb0 = 0,
+                        windows::AsynchIoResult::Completer cb0 = 0,
                         AsynchIO::RequestCallback rcb = 0)
       : fd(f), cb(cb0), cbRequest(rcb)
     {
@@ -133,13 +133,14 @@ void Poller::monitorHandle(PollerHandle& handle, Direction dir) {
         assert(dir == Poller::INPUT || dir == Poller::OUTPUT);
 
         if (dir == Poller::OUTPUT) {
-            AsynchWriteWanted *result = new AsynchWriteWanted(handle.impl->cb);
+            windows::AsynchWriteWanted *result =
+                new windows::AsynchWriteWanted(handle.impl->cb);
             PostQueuedCompletionStatus(impl->iocp, 0, 0, result->overlapped());
         }
         else {
-            AsynchCallbackRequest *result =
-                new AsynchCallbackRequest(handle.impl->cb,
-                                          handle.impl->cbRequest);
+            windows::AsynchCallbackRequest *result =
+                new windows::AsynchCallbackRequest(handle.impl->cb,
+                                                   handle.impl->cbRequest);
             PostQueuedCompletionStatus(impl->iocp, 0, 0, result->overlapped());
         }
     }
@@ -155,7 +156,7 @@ Poller::Event Poller::wait(Duration timeout) {
     DWORD numTransferred = 0;
     ULONG_PTR completionKey = 0;
     OVERLAPPED *overlapped = 0;
-    AsynchResult *result = 0;
+    windows::AsynchResult *result = 0;
 
     // Wait for either an I/O operation to finish (thus signaling the
     // IOCP handle) or a shutdown request to be made (thus signaling the
@@ -185,7 +186,7 @@ Poller::Event Poller::wait(Duration timeout) {
             return Event(0, SHUTDOWN);
         }
 
-        result = AsynchResult::from_overlapped(overlapped);
+        result = windows::AsynchResult::from_overlapped(overlapped);
         result->success (static_cast<size_t>(numTransferred));
     }
     else {
@@ -193,7 +194,7 @@ Poller::Event Poller::wait(Duration timeout) {
         // Dequeued a completion for a failed operation. Downcast back
         // to the result object and inform it that the operation failed.
         DWORD status = ::GetLastError();
-        result = AsynchResult::from_overlapped(overlapped);
+        result = windows::AsynchResult::from_overlapped(overlapped);
         result->failure (static_cast<int>(status));
       }
     }
