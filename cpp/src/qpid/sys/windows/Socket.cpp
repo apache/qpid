@@ -135,7 +135,9 @@ std::string getService(SOCKET fd, bool local)
 }  // namespace
 
 Socket::Socket() :
-	IOHandle(new IOHandlePrivate)
+    IOHandle(new IOHandlePrivate),
+    nonblocking(false),
+    nodelay(false)
 {
     SOCKET& socket = impl->fd;
     if (socket != INVALID_SOCKET) Socket::close();
@@ -145,7 +147,9 @@ Socket::Socket() :
 }
 
 Socket::Socket(IOHandlePrivate* h) :
-	IOHandle(h)
+    IOHandle(h),
+    nonblocking(false),
+    nodelay(false)
 {}
 
 void
@@ -162,6 +166,7 @@ Socket::createSocket(const SocketAddress& sa) const
 
     try {
         if (nonblocking) setNonblocking();
+        if (nodelay) setTcpNoDelay();
     } catch (std::exception&) {
         closesocket(s);
         socket = INVALID_SOCKET;
@@ -313,17 +318,16 @@ int Socket::getError() const
     return result;
 }
 
-void Socket::setTcpNoDelay(bool nodelay) const
+void Socket::setTcpNoDelay() const
 {
-    if (nodelay) {
-        int flag = 1;
-        int result = setsockopt(impl->fd,
-                                IPPROTO_TCP,
-                                TCP_NODELAY,
-                                (char *)&flag,
-                                sizeof(flag));
-        QPID_WINSOCK_CHECK(result);
-    }
+    int flag = 1;
+    int result = setsockopt(impl->fd,
+                            IPPROTO_TCP,
+                            TCP_NODELAY,
+                            (char *)&flag,
+                            sizeof(flag));
+    QPID_WINSOCK_CHECK(result);
+    nodelay = true;
 }
 
 }} // namespace qpid::sys

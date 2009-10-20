@@ -47,8 +47,8 @@ private:
                              const boost::shared_ptr<sys::Poller>& poller);
     ~PollableConditionPrivate();
 
-    void poke();
-    void dispatch(AsynchIoResult *result);
+  void poke();
+  void dispatch(windows::AsynchIoResult *result);
 
 private:
     PollableCondition::Callback cb;
@@ -82,7 +82,7 @@ void PollableConditionPrivate::poke()
     poller->monitorHandle(ph, Poller::INPUT);
 }
 
-void PollableConditionPrivate::dispatch(AsynchIoResult *result)
+void PollableConditionPrivate::dispatch(windows::AsynchIoResult *result)
 {
     delete result;       // Poller::monitorHandle() allocates this
     cb(parent);
