@@ -34,6 +34,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -47,12 +48,29 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
     
     private Principal _principal = new UsernamePrincipal(TEST_USERNAME);
     private PlainPasswordFilePrincipalDatabase _database;
+    private List<File> _testPwdFiles = new ArrayList<File>();
 
     public void setUp() throws Exception
     {
         _database = new PlainPasswordFilePrincipalDatabase();
+        _testPwdFiles.clear();
     }
 
+    public void tearDown() throws Exception
+    {
+        //clean up any additional files and their backups
+        for(File f : _testPwdFiles)
+        {
+            File oldPwdFile = new File(f.getAbsolutePath() + ".old");
+            if(oldPwdFile.exists())
+            {
+                oldPwdFile.delete();
+            }
+            
+            f.delete();
+        }
+    }
+    
     // ******* Test Methods ********** //
 
     public void testCreatePrincipal()
@@ -368,6 +386,8 @@ public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
 
             writer.flush();
             writer.close();
+            
+            _testPwdFiles.add(testFile);
 
             return testFile;
 
