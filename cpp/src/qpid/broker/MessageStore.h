@@ -46,15 +46,7 @@ class MessageStore : public TransactionalStore, public Recoverable {
   public:
 
     /**
-     * init the store, call before any other call. If not called, store
-     * is free to pick any defaults
-     *
-     * @param options Options object provided by concrete store plug in.
-     */
-    virtual bool init(const Options* options) = 0;
-
-    /**
-     * If called after init() but before recovery, will discard the database
+     * If called after initialization but before recovery, will discard the database
      * and reinitialize using an empty store dir. If the parameter pushDownStoreFiles
      * is true, the content of the store dir will be moved to a backup dir inside the
      * store dir. This is used when cluster nodes recover and must get thier content
