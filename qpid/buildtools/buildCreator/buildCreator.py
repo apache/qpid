@@ -1012,9 +1012,14 @@ def createVersionSubstitution(build, filename):
 		# We can assume source is valid.		
 		for s in sources:
 		    if sourceDependency == getName(s):		    	
+		    	# provide header <source>:<type>:<revision>
 			substitution += "\n " + ECHO_BIN + " -n '" + sourceDependency + ":" \
 			         + getType(s) + ":' >> " + filename
 			substitution += "\n" + getVersionCommand(s) + " >>" + filename
+			# Add Source URL to Revisions file
+			url = getValue(s.getElementsByTagName(URL)[0])
+			substitution += "\n" + ECHO_BIN + " \"URL:" + url + "\" >> "+filename
+			# Add Patches applied to this source to revisions file
 			substitution += addPatchVersions(s, filename)
 						   	    	     
     return substitution
@@ -1053,8 +1058,22 @@ def addPatchVersions(source, filename):
 		         getValue(patch.getElementsByTagName(PREFIX)[0]) + "\" >> " + filename
 			 
 	    if (patch.getElementsByTagName(PATH).length > 0):
-   		substitution += "\n" + ECHO_BIN + " \"\t\tPREFIX: " + \
+   		substitution += "\n" + ECHO_BIN + " \"\t\tPATH: " + \
 		         getValue(patch.getElementsByTagName(PATH)[0]) + "\" >> " + filename 
+	    
+	    global _rootDir
+	    patchSource= _rootDir + PATH_SEP + PATCH_DIR + PATH_SEP + getName(patch)
+	
+	    #
+	    # Include the list of patches files applied
+	    #
+	    for root, dirs, files in os.walk(patchSource):
+    		if '.svn' in dirs:
+			dirs.remove('.svn')
+	        files.sort()	
+        	for patchName in files:
+        	        substitution += "\n" + ECHO_BIN + " \"\t\tFILE: " + patchName + "\" >> " + filename 
+ 
     
 	   
 		
