@@ -31,25 +31,11 @@ namespace sys {
  * This is a class intended to abstract the Unix concept of file descriptor
  * or the Windows concept of HANDLE
  */
-// Windows-related classes
-class AsynchAcceptorPrivate;
-class AsynchAcceptResult;
-namespace windows {
-    class AsynchAcceptor;
-    class AsynchAcceptResult;
-    class AsynchIO;
-}
-
-// General classes
 class PollerHandle;
 class IOHandlePrivate;
 class IOHandle {
-
-    friend class windows::AsynchAcceptResult;
-    friend class windows::AsynchAcceptor;
-    friend class windows::AsynchIO;
-
     friend class PollerHandle;
+    friend class IOHandlePrivate;
 
 protected:
     IOHandlePrivate* const impl;

@@ -47,7 +47,11 @@ class SocketProxy : private qpid::sys::Runnable
     // Need a Socket we can get the fd from
     class LowSocket : public qpid::sys::Socket {
     public:
+#ifdef _WIN32
+        FdType getFd() { return toSocketHandle(*this); }
+#else
         FdType getFd() { return toFd(impl); }
+#endif
     };
 
   public:

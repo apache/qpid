@@ -330,4 +330,14 @@ void Socket::setTcpNoDelay() const
     nodelay = true;
 }
 
+inline IOHandlePrivate* IOHandlePrivate::getImpl(const qpid::sys::IOHandle &h)
+{
+    return h.impl;
+}
+
+SOCKET toSocketHandle(const Socket& s)
+{
+    return IOHandlePrivate::getImpl(s)->fd;
+}
+
 }} // namespace qpid::sys

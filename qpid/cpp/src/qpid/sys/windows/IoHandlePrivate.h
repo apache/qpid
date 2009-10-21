@@ -39,6 +39,9 @@ namespace sys {
 // can be a RequestCallback set - this carries the callback object through
 // from AsynchIO::requestCallback() through to the I/O completion processing.
 class IOHandlePrivate {
+    friend QPID_COMMON_EXTERN SOCKET toSocketHandle(const Socket& s);
+    static IOHandlePrivate* getImpl(const IOHandle& h);
+
 public:
     IOHandlePrivate(SOCKET f = INVALID_SOCKET,
                     windows::AsynchIoResult::Completer cb = 0,
@@ -51,7 +54,7 @@ public:
     AsynchIO::RequestCallback cbRequest;
 };
 
-QPID_COMMON_EXTERN SOCKET toFd(const IOHandlePrivate* h);
+QPID_COMMON_EXTERN SOCKET toSocketHandle(const Socket& s);
 
 }}
 

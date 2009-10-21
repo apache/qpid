@@ -74,6 +74,8 @@ protected:
     int status;
 };
 
+class AsynchAcceptor;
+
 class AsynchAcceptResult : public AsynchResult {
 
     friend class AsynchAcceptor;
