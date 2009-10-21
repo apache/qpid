@@ -108,7 +108,8 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
         catch (IOException ioe)
         {
-            _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL));
+            _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL) +"\n" +
+                         "Due to:"+ioe.getMessage());
         }
 
         createConnectionFactories(data, environment);
