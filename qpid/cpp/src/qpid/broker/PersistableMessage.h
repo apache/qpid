@@ -104,9 +104,9 @@ class PersistableMessage : public Persistable
 
     void flush();
     
-    bool QPID_BROKER_EXTERN isContentReleased() const;
+    QPID_BROKER_EXTERN bool isContentReleased() const;
 
-    void QPID_BROKER_EXTERN setStore(MessageStore*);
+    QPID_BROKER_EXTERN void setStore(MessageStore*);
     void requestContentRelease();
     void blockContentRelease();
     bool checkContentReleasable();
