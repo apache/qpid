@@ -132,6 +132,9 @@ public:
 
     void setDoClearDeliveryPropertiesExchange(bool b=true) { doClearDeliveryPropertiesExchange = b; }
 
+    /** Suppress sending detach in destructor. Used by cluster to build session state */
+    void disableAutoDetach();
+
 private:
     enum State {
         INACTIVE,
@@ -247,6 +250,8 @@ private:
 
     bool doClearDeliveryPropertiesExchange;
 
+    bool autoDetach;
+    
   friend class client::SessionHandler;
 };
 

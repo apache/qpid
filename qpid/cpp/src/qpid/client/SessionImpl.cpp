@@ -65,7 +65,8 @@ SessionImpl::SessionImpl(const std::string& name, boost::shared_ptr<ConnectionIm
       nextIn(0),
       nextOut(0),
       sendMsgCredit(0),
-      doClearDeliveryPropertiesExchange(true)
+      doClearDeliveryPropertiesExchange(true),
+      autoDetach(true)
 {
     channel.next = connectionShared.get();
 }
@@ -73,8 +74,11 @@ SessionImpl::SessionImpl(const std::string& name, boost::shared_ptr<ConnectionIm
 SessionImpl::~SessionImpl() {
     {
         Lock l(state);
-        if (state != DETACHED) {
-            QPID_LOG(warning, "Session was not closed cleanly");
+        if (state != DETACHED && state != DETACHING) {
+            QPID_LOG(warning, "Session was not closed cleanly: " << id);
+            // Inform broker but don't wait for detached as that deadlocks.
+            // The detached will be ignored as the channel will be invalid.
+            if (autoDetach) detach();
             setState(DETACHED);
             handleClosed();
             state.waitWaiters();
@@ -815,5 +819,7 @@ boost::shared_ptr<ConnectionImpl> SessionImpl::getConnection()
 {
     return connectionWeak.lock();
 }
+
+void SessionImpl::disableAutoDetach() { autoDetach = false; }
 
 }}
