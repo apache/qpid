@@ -19,6 +19,7 @@
  *
  */
 
+#include "config.h"
 #include "qpid/Modules.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
@@ -67,10 +68,17 @@ void loadModuleDir (std::string dirname, bool isDefault)
     }
 
     fs::directory_iterator endItr;
+    // CMake sets QPID_MODULE_SUFFIX; Autoconf doesn't, so assume Linux .so
+#if defined (QPID_MODULE_SUFFIX)
+    std::string suffix(QPID_MODULE_SUFFIX);
+#else
+    std::string suffix(".so");
+#endif
     for (fs::directory_iterator itr (dirPath); itr != endItr; ++itr)
     {
         if (!fs::is_directory(*itr) &&
-            itr->string().find (".so") == itr->string().length() - 3)
+            itr->string().find (suffix) ==
+                itr->string().length() - suffix.length())
             tryShlib (itr->string().data(), true);
     }
 }
