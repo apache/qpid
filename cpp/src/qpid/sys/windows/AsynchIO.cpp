@@ -79,16 +79,7 @@ namespace windows {
 /*
  * Asynch Acceptor
  *
- * TODO FIX this comment - is it still true?
- * This implementation uses knowledge that the DispatchHandle handle member
- * is derived from PollerHandle, which has a reference to the Socket.
- * No dispatching features of DispatchHandle are used - we just use the
- * conduit to the Socket.
- *
- * AsynchAcceptor uses an AsynchAcceptResult object to track completion
- * and status of each accept operation outstanding.
  */
-
 class AsynchAcceptor : public qpid::sys::AsynchAcceptor {
 
     friend class AsynchAcceptResult;
@@ -131,10 +122,10 @@ void AsynchAcceptor::restart(void) {
     DWORD bytesReceived = 0;  // Not used, needed for AcceptEx API
     AsynchAcceptResult *result = new AsynchAcceptResult(acceptedCallback,
                                                         this,
-                                                        toFd(socket.impl));
+                                                        toSocketHandle(socket));
     BOOL status;
-    status = ::fnAcceptEx(toFd(socket.impl),
-                          toFd(result->newSocket->impl),
+    status = ::fnAcceptEx(toSocketHandle(socket),
+                          toSocketHandle(*result->newSocket),
                           result->addressBuffer,
                           0,
                           AsynchAcceptResult::SOCKADDRMAXLEN,
@@ -153,7 +144,7 @@ AsynchAcceptResult::AsynchAcceptResult(AsynchAcceptor::Callback cb,
 }
 
 void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
-    ::setsockopt (toFd(newSocket->impl),
+    ::setsockopt (toSocketHandle(*newSocket),
                   SOL_SOCKET,
                   SO_UPDATE_ACCEPT_CONTEXT,
                   (char*)&listener,
@@ -354,6 +345,15 @@ private:
     void completion(AsynchIoResult *result);
 };
 
+// This is used to encapsulate pure callbacks into a handle
+class CallbackHandle : public IOHandle {
+public:
+    CallbackHandle(AsynchIoResult::Completer completeCb,
+                   AsynchIO::RequestCallback reqCb = 0) :
+    IOHandle(new IOHandlePrivate (INVALID_SOCKET, completeCb, reqCb))
+    {}
+};
+
 AsynchIO::AsynchIO(const Socket& s,
                    ReadCallback rCb,
                    EofCallback eofCb,
@@ -447,11 +447,7 @@ void AsynchIO::notifyPendingWrite() {
         return;
 
     InterlockedIncrement(&opsInProgress);
-    IOHandlePrivate *hp =
-        new IOHandlePrivate (INVALID_SOCKET,
-                             boost::bind(&AsynchIO::completion, this, _1));
-    IOHandle h(hp);
-    PollerHandle ph(h);
+    PollerHandle ph(CallbackHandle(boost::bind(&AsynchIO::completion, this, _1)));
     poller->monitorHandle(ph, Poller::OUTPUT);
 }
 
@@ -494,7 +490,7 @@ void AsynchIO::startReading() {
                                  readCount);
         DWORD bytesReceived = 0, flags = 0;
         InterlockedIncrement(&opsInProgress);
-        int status = WSARecv(toFd(socket.impl),
+        int status = WSARecv(toSocketHandle(socket),
                              const_cast<LPWSABUF>(result->getWSABUF()), 1,
                              &bytesReceived,
                              &flags,
@@ -534,12 +530,9 @@ void AsynchIO::requestCallback(RequestCallback callback) {
         return;
 
     InterlockedIncrement(&opsInProgress);
-    IOHandlePrivate *hp =
-        new IOHandlePrivate (INVALID_SOCKET,
-                             boost::bind(&AsynchIO::completion, this, _1),
-                             callback);
-    IOHandle h(hp);
-    PollerHandle ph(h);
+    PollerHandle ph(CallbackHandle(
+        boost::bind(&AsynchIO::completion, this, _1),
+        callback));
     poller->monitorHandle(ph, Poller::INPUT);
 }
 
@@ -596,7 +589,7 @@ void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
                               buff,
                               buff->dataCount);
     DWORD bytesSent = 0;
-    int status = WSASend(toFd(socket.impl),
+    int status = WSASend(toSocketHandle(socket),
                          const_cast<LPWSABUF>(result->getWSABUF()), 1,
                          &bytesSent,
                          0,

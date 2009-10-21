@@ -55,7 +55,7 @@ class PollerHandlePrivate {
 };
 
 PollerHandle::PollerHandle(const IOHandle& h) :
-  impl(new PollerHandlePrivate(toFd(h.impl), h.impl->event, h.impl->cbRequest))
+  impl(new PollerHandlePrivate(toSocketHandle(static_cast<const Socket&>(h)), h.impl->event, h.impl->cbRequest))
 {}
 
 PollerHandle::~PollerHandle() {
