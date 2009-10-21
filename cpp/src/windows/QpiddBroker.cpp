@@ -227,9 +227,6 @@ int QpiddBroker::execute (QpiddOptions *options) {
     }
 
     boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
-    if (options->broker.port == 0)
-        options->broker.port = brokerPtr->getPort("");
-    std::cout << options->broker.port << std::endl;
 
     // Make sure the pid directory exists, creating if needed. LockFile
     // will throw an exception that makes little sense if it can't create
@@ -254,6 +251,10 @@ int QpiddBroker::execute (QpiddOptions *options) {
     ShutdownHandler waitShut(brokerPtr);
     qpid::sys::Thread waitThr(waitShut);   // Wait for shutdown event
     SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
+    if (options->broker.port == 0)
+        options->broker.port = brokerPtr->getPort("");
+    brokerPtr->accept();
+    std::cout << options->broker.port << std::endl;
     brokerPtr->run();
     waitShut.signal();   // In case we shut down some other way
     waitThr.join();
