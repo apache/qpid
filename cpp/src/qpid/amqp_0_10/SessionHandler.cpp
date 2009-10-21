@@ -35,14 +35,14 @@ using namespace framing;
 using namespace std;
 
 void SessionHandler::checkAttached() {
-    if (!getState()) {
-        ignoring = true;
+    if (!getState()) 
         throw NotAttachedException(QPID_MSG("Channel " << channel.get() << " is not attached"));
-    }
 }
 
 SessionHandler::SessionHandler(FrameHandler* out, ChannelId ch)
-    : channel(ch, out), peer(channel), ignoring(false), sendReady(), receiveReady() {}
+    : channel(ch, out), peer(channel),
+      awaitingDetached(false),
+      sendReady(), receiveReady() {}
 
 SessionHandler::~SessionHandler() {}
 
@@ -50,7 +50,7 @@ namespace {
 bool isSessionControl(AMQMethodBody* m) {
     return m &&
         m->amqpClassId() == SESSION_CLASS_ID;
-}
+    }
 bool isSessionDetachedControl(AMQMethodBody* m) {
     return isSessionControl(m) &&
         m->amqpMethodId() == SESSION_DETACHED_METHOD_ID;
@@ -76,12 +76,13 @@ void SessionHandler::handleIn(AMQFrame& f) {
     // Note on channel states: a channel is attached if session != 0
     AMQMethodBody* m = f.getBody()->getMethod();
     try {
-        if (ignoring && !isSessionDetachedControl(m))
-            return;
-        else if (isSessionControl(m))
+        if (isSessionControl(m)) {
             invoke(*m);
+        }
         else {
-            checkAttached();
+            // Drop frames if we are awaiting a detached control or
+            // if we are currently detached.
+            if (awaitingDetached || !getState()) return;  
             if (!receiveReady)
                 throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to receive data"));
             if (!getState()->receiverRecord(f))
@@ -142,11 +143,11 @@ void SessionHandler::attach(const std::string& name_, bool force) {
     // Save the name for possible session-busy exception. Session-busy
     // can be thrown before we have attached the handler to a valid
     // SessionState, and in that case we need the name to send peer.detached
-    name = name_;               
+    name = name_;
     if (getState() && name == getState()->getId().getName())
         return;                 // Idempotent
     if (getState())
-        throw TransportBusyException(
+            throw TransportBusyException(
             QPID_MSG("Channel " << channel.get() << " already attached to " << getState()->getId()));
     setState(name, force);
     QPID_LOG(debug, "Attached channel " << channel.get() << " to " << getState()->getId());
@@ -157,8 +158,8 @@ void SessionHandler::attach(const std::string& name_, bool force) {
         sendCommandPoint(getState()->senderGetCommandPoint());
 }
 
-#define CHECK_NAME(NAME, MSG) do {                                       \
-    checkAttached();                                                \
+#define CHECK_NAME(NAME, MSG) do {                                      \
+    checkAttached();                                                    \
     if (NAME != getState()->getId().getName())                          \
         throw InvalidArgumentException(                                 \
             QPID_MSG(MSG << ": incorrect session name: " << NAME        \
@@ -178,7 +179,7 @@ void SessionHandler::detach(const std::string& name) {
 
 void SessionHandler::detached(const std::string& name, uint8_t code) {
     CHECK_NAME(name, "session.detached");
-    ignoring = false;
+    awaitingDetached = false;
     if (code != session::DETACH_CODE_NORMAL)
         channelException(convert(code), "session.detached from peer.");
     else {
@@ -273,7 +274,7 @@ void SessionHandler::gap(const SequenceSet& /*commands*/) {
 void SessionHandler::sendDetach()
 {
     checkAttached();
-    ignoring = true;
+    awaitingDetached = true;
     peer.detach(getState()->getId().getName());
 }
 
