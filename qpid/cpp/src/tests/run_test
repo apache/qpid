@@ -51,8 +51,8 @@ export LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
 VG_LOG="`basename $1`.vglog"
 rm -f $VG_LOG*
 
-# Use VALGRIND="valgrind --gen-suppressions=all" to generated suppressions
-VALGRIND_OPTS="
+# Use VALGRIND_OPTS="--gen-suppressions=all" to generated suppressions
+VALGRIND_OPTS="$VALGRIND_OPTS
 --leak-check=full
 --demangle=yes
 --suppressions=$srcdir/.valgrind.supp
