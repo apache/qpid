@@ -63,6 +63,8 @@ public class AMQPConnectionActorTest extends TestCase
         Configuration config = new PropertiesConfiguration();
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
+        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
+
         setUpWithConfig(serverConfig);
     }
 

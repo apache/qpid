@@ -53,6 +53,8 @@ public abstract class AbstractTestMessages extends TestCase
 
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
 
+        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");
+
         _logger = new UnitTestMessageLogger();
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, _logger);

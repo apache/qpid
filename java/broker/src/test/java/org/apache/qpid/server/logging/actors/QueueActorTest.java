@@ -46,6 +46,8 @@ public class QueueActorTest extends TestCase
         Configuration config = new PropertiesConfiguration();
         ServerConfiguration serverConfig = new ServerConfiguration(config);
 
+        serverConfig.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "on");        
+
         _rawLogger = new UnitTestMessageLogger();
         RootMessageLogger rootLogger =
                 new RootMessageLoggerImpl(serverConfig, _rawLogger);
