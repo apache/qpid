@@ -1,13 +1,23 @@
 {
    Leak in TCPConnector: https://bugzilla.redhat.com/show_bug.cgi?id=520600
    Memcheck:Leak
-   fun:*
+   fun:_vgrZU_libcZdsoZa_calloc
    fun:_dl_allocate_tls
-   fun:pthread_create*
-   ...
+   fun:*
+   fun:*
+   fun:*
    fun:_ZN4qpid6client12TCPConnector7connectERKSsi
 }
 
+{
+   Leak in TCPConnector: https://bugzilla.redhat.com/show_bug.cgi?id=520600
+   Memcheck:Leak
+   fun:_vgrZU_libcZdsoZa_calloc
+   fun:_dl_allocate_tls
+   fun:*
+   fun:*
+   fun:_ZN4qpid6client12TCPConnector7connectERKSsi
+}
 
 {
    Reported on FC5 and RHEL5 when md5 sasl libs are installed
