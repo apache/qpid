@@ -80,7 +80,6 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
             propagate = bk.fedBinding.addOrigin(fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
-                ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
             }
         } else {
             return false;
@@ -130,7 +129,6 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
             propagate = bk.fedBinding.delOrigin();
             if (mgmtExchange != 0) {
                 mgmtExchange->dec_bindingCount();
-                ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
             }
         } else {
             return false;

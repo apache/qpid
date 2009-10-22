@@ -212,7 +212,6 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             propagate = bk.fedBinding.addOrigin(fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
-                ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
             }
         }
     } else if (fedOp == fedOpUnbind) {
@@ -273,7 +272,6 @@ bool TopicExchange::unbind(Queue::shared_ptr queue, const string& constRoutingKe
     if(qv.empty()) bindings.erase(bi);
     if (mgmtExchange != 0) {
         mgmtExchange->dec_bindingCount();
-        ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
     }
 
     if (propagate)
