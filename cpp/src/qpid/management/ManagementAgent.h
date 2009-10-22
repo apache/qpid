@@ -80,7 +80,8 @@ public:
                                              uint8_t*    md5Sum,
                                              ManagementObject::writeSchemaCall_t schemaCall);
     QPID_BROKER_EXTERN ObjectId addObject   (ManagementObject* object,
-                                             uint64_t          persistId = 0);
+                                             uint64_t          persistId = 0,
+                                             bool              publishNow = false);
     QPID_BROKER_EXTERN void raiseEvent(const ManagementEvent& event,
                                        severity_t severity = SEV_DEFAULT);
     QPID_BROKER_EXTERN void clientAdded     (const std::string& routingKey);

@@ -97,7 +97,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
         // TODO set last bool true if system connection
         if (agent != 0) {
             mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
-            agent->addObject(mgmtObject, objectId);
+            agent->addObject(mgmtObject, objectId, true);
         }
         ConnectionState::setUrl(mgmtId);
     }
