@@ -16,8 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import atexit, time, socket
-from compat import select, set
+import atexit, time
+from compat import select, set, selectable_waiter
 from threading import Thread, Lock
 
 class Acceptor:
@@ -38,23 +38,6 @@ class Acceptor:
   def readable(self):
     sock, addr = self.sock.accept()
     self.handler(sock)
-
-class Sink:
-
-  def __init__(self, sock):
-    self.sock = sock
-
-  def fileno(self):
-    return self.sock.fileno()
-
-  def reading(self):
-    return True
-
-  def readable(self):
-    self.sock.recv(65536)
-
-  def __repr__(self):
-    return "Sink(%r)" % self.sock.fileno()
 
 class Selector:
 
@@ -78,20 +61,13 @@ class Selector:
     self.selectables = set()
     self.reading = set()
     self.writing = set()
-    listener = socket.socket()
-    listener.bind(('', 0))
-    listener.listen(1)
-    me_ip, me_port = listener.getsockname()
-    self.wakeup_sock = socket.socket()
-    self.wakeup_sock.connect(("127.0.0.1", me_port))
-    self.wait_sock, me = listener.accept()
-    listener.close()
-    self.reading.add(Sink(self.wait_sock))
+    self.waiter = selectable_waiter()
+    self.reading.add(self.waiter)
     self.stopped = False
     self.thread = None
 
   def wakeup(self):
-    self.wakeup_sock.send("\0")
+    self.waiter.wakeup()
 
   def register(self, selectable):
     self.selectables.add(selectable)
