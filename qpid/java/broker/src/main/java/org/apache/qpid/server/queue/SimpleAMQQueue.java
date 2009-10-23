@@ -393,7 +393,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         if (!isDeleted())
         {
             subscription.setQueue(this, exclusive);
-            subscription.setNoLocal(_nolocal);
+            if(_nolocal)
+            {
+                subscription.setNoLocal(_nolocal);
+            }
             _subscriptionList.add(subscription);
             if (isDeleted())
             {

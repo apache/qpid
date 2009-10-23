@@ -214,14 +214,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                     if ((id & FAST_CHANNEL_ACCESS_MASK) == 0)
                     {
                         done = (_fastAccessSessions[id] == null);
-                    } 
+                    }
                     else
                     {
                         done = (!_slowAccessSessions.keySet().contains(id));
                     }
                 }
             }
-             
+
             return id;
         }
 
@@ -320,11 +320,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     //Indicates whether we need to sync on every message ack
     private boolean _syncAck;
-    
+
     //Indicates the sync publish options (persistent|all)
     //By default it's async publish
-    private String _syncPublish = ""; 
-    
+    private String _syncPublish = "";
+
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -418,7 +418,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         if (connectionURL.getOption(ConnectionURL.OPTIONS_SYNC_PERSISTENCE) != null)
         {
-            _syncPersistence = 
+            _syncPersistence =
                 Boolean.parseBoolean(connectionURL.getOption(ConnectionURL.OPTIONS_SYNC_PERSISTENCE));
             _logger.warn("sync_persistence is a deprecated property, " +
             		"please use sync_publish={persistent|all} instead");
@@ -453,10 +453,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // use the default value set for all connections
             _syncPublish = System.getProperty((ClientProperties.SYNC_ACK_PROP_NAME),_syncPublish);
         }
-        
+
+        String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
+
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
         BrokerDetails brokerDetails = _failoverPolicy.getCurrentBrokerDetails();
-        if (brokerDetails.getTransport().equals(BrokerDetails.VM))
+        if (brokerDetails.getTransport().equals(BrokerDetails.VM) || "0-8".equals(amqpVersion) || "0-9".equals(amqpVersion))
         {
             _delegate = new AMQConnectionDelegate_8_0(this);
         }
@@ -538,7 +540,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             else if (!_connected)
             {
-                retryAllowed = _failoverPolicy.failoverAllowed(); 
+                retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
             }
         }
@@ -591,7 +593,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             throw new AMQConnectionFailureException(message, connectionException);
         }
-        
+
         _connectionMetaData = new QpidConnectionMetaData(this);
     }
 
@@ -1573,7 +1575,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _syncPersistence;
     }
-    
+
     /**
      * Indicates whether we need to sync on every message ack
      */
@@ -1581,12 +1583,12 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _syncAck;
     }
-    
+
     public String getSyncPublish()
     {
         return _syncPublish;
     }
-        
+
     public void setIdleTimeout(long l)
     {
         _delegate.setIdleTimeout(l);

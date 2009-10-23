@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.Collections;
 import java.util.Map.Entry;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -524,10 +525,26 @@ public class ServerConfiguration implements SignalHandler
         return getConfig().getInt("connector.processors", 4);
     }
 
-    public int getPort()
+    public List getPorts()
     {
-        return getConfig().getInt("connector.port", DEFAULT_PORT);
+        return getConfig().getList("connector.port", Collections.singletonList(DEFAULT_PORT));
     }
+
+    public List getPortExclude010()
+    {
+        return getConfig().getList("connector.non010port", Collections.EMPTY_LIST);
+    }
+
+    public List getPortExclude09()
+    {
+        return getConfig().getList("connector.non09port", Collections.EMPTY_LIST);
+    }
+
+    public List getPortExclude08()
+    {
+        return getConfig().getList("connector.non08port", Collections.EMPTY_LIST);
+    }
+
 
     public String getBind()
     {
