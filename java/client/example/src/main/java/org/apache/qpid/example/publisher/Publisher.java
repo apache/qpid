@@ -20,13 +20,7 @@ package org.apache.qpid.example.publisher;
 
 import org.apache.qpid.client.AMQConnectionFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.DeliveryMode;
-import javax.jms.Queue;
-import javax.jms.MessageProducer;
-import javax.jms.Connection;
-import javax.jms.Session;
+import javax.jms.*;
 
 import javax.naming.InitialContext;
 
@@ -50,7 +44,7 @@ public class Publisher
 
     protected String _name = "Publisher";
 
-    protected Queue _destination;
+    protected Destination _destination;
 
     protected static final String _defaultDestinationDir = "/tmp";
 
@@ -69,6 +63,17 @@ public class Publisher
             //then create a connection using the AMQConnectionFactory
             AMQConnectionFactory cf = (AMQConnectionFactory) ctx.lookup("local");
             _connection = cf.createConnection();
+
+            _connection.setExceptionListener(new ExceptionListener()
+            {
+                public void onException(JMSException jmse)
+                {
+                    // The connection may have broken invoke reconnect code if available.
+                    // The connection may have broken invoke reconnect code if available.
+                    System.err.println("ExceptionListener caught: " + jmse);
+                    //System.exit(0);
+                }
+            });
 
             //create a transactional session
             _session = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
@@ -93,6 +98,28 @@ public class Publisher
     }
 
     /**
+     * Creates and sends the number of messages specified in the param
+     */
+    public void sendMessage(int numMessages)
+    {
+        try
+        {
+            TextMessage txtMessage = _session.createTextMessage("msg");
+            for (int i=0;i<numMessages;i++)
+            {
+                sendMessage(txtMessage);
+                _log.info("Sent: " + i);
+            }
+        }
+        catch (JMSException j)
+        {
+            _log.error("Exception in sendMessage" + j);
+        }
+
+
+    }
+
+    /**
      * Publishes a non-persistent message using transacted session
      * Note that persistent is the default mode for send - so need to specify for transient
      */
@@ -101,7 +128,7 @@ public class Publisher
         try
         {
             //Send message via our producer which is not persistent
-            _producer.send(message, DeliveryMode.NON_PERSISTENT, _producer.getPriority(), _producer.getTimeToLive());
+            _producer.send(message, DeliveryMode.PERSISTENT, _producer.getPriority(), _producer.getTimeToLive());
 
             //commit the message send and close the transaction
             _session.commit();
@@ -124,7 +151,7 @@ public class Publisher
             }
         }
 
-        _log.info(_name + " finished sending message: " + message);
+        //_log.info(_name + " finished sending message: " + message);
         return true;
     }
 
