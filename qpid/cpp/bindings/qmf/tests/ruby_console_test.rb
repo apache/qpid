@@ -201,6 +201,19 @@ class ConsoleTest < ConsoleTestBase
     
   end
 
+  def test_D_get_with_agent
+    agents = @qmfc.agents
+    agents.each do |agent|
+      if agent.label == "qmfa"
+        parent = @qmfc.object(:class => "parent", :agent => agent)
+        assert(parent, "Number of parent objects")
+        return
+      end
+    end
+
+    fail("Didn't find a non-broker agent")
+  end
+
 end
 
 app = ConsoleTest.new

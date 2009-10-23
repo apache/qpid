@@ -448,18 +448,19 @@ module Qmf
       @impl.isDeleted
     end
 
-    def index()
+    def key()
     end
   end
 
   class ObjectId
-    attr_reader :impl
+    attr_reader :impl, :agent_key
     def initialize(impl=nil)
       if impl
         @impl = impl
       else
         @impl = Qmfengine::ObjectId.new
       end
+      @agent_key = "#{@impl.getBrokerBank}.#{@impl.getAgentBank}"
     end
 
     def object_num_high
@@ -468,14 +469,6 @@ module Qmf
 
     def object_num_low
       @impl.getObjectNumLo
-    end
-
-    def broker_bank
-      @impl.getBrokerBank
-    end
-
-    def agent_bank
-      @impl.getAgentBank
     end
 
     def ==(other)
@@ -748,7 +741,7 @@ module Qmf
   class SchemaClassKey
     attr_reader :impl
     def initialize(i)
-      @impl = i
+      @impl = Qmfengine::SchemaClassKey.new(i)
     end
 
     def package_name
@@ -956,11 +949,17 @@ module Qmf
 
     def objects(query, kwargs = {})
       timeout = 30
+      agent = nil
       kwargs.merge!(query) if query.class == Hash
 
       if kwargs.include?(:timeout)
         timeout = kwargs[:timeout]
         kwargs.delete(:timeout)
+      end
+
+      if kwargs.include?(:agent)
+        agent = kwargs[:agent]
+        kwargs.delete(:agent)
       end
 
       query = Query.new(kwargs) if query.class == Hash
@@ -975,7 +974,7 @@ module Qmf
         @sync_result = []
         broker = nil
         synchronize { broker = @broker_list[0] }
-        broker.send_query(query.impl, nil)
+        broker.send_query(query.impl, nil, agent)
         unless @cv.wait(timeout) { @sync_count == 0 }
           raise "Timed out waiting for response"
         end
@@ -1045,21 +1044,25 @@ module Qmf
       valid = @impl.getEvent(@event)
       while valid
         count += 1
-        case @event.kind
-        when Qmfengine::ConsoleEvent::AGENT_ADDED
-          @handler.agent_added(AgentProxy.new(@event.agent, nil)) if @handler
-        when Qmfengine::ConsoleEvent::AGENT_DELETED
-          @handler.agent_deleted(AgentProxy.new(@event.agent, nil)) if @handler
-        when Qmfengine::ConsoleEvent::NEW_PACKAGE
-          @handler.new_package(@event.name) if @handler
-        when Qmfengine::ConsoleEvent::NEW_CLASS
-          @handler.new_class(SchemaClassKey.new(@event.classKey)) if @handler
-        when Qmfengine::ConsoleEvent::OBJECT_UPDATE
-          @handler.object_update(ConsoleObject.new(nil, :impl => @event.object), @event.hasProps, @event.hasStats) if @handler
-        when Qmfengine::ConsoleEvent::EVENT_RECEIVED
-        when Qmfengine::ConsoleEvent::AGENT_HEARTBEAT
-          @handler.agent_heartbeat(AgentProxy.new(@event.agent, nil), @event.timestamp) if @handler
-        when Qmfengine::ConsoleEvent::METHOD_RESPONSE
+        begin
+          case @event.kind
+          when Qmfengine::ConsoleEvent::AGENT_ADDED
+            @handler.agent_added(AgentProxy.new(@event.agent, nil)) if @handler
+          when Qmfengine::ConsoleEvent::AGENT_DELETED
+            @handler.agent_deleted(AgentProxy.new(@event.agent, nil)) if @handler
+          when Qmfengine::ConsoleEvent::NEW_PACKAGE
+            @handler.new_package(@event.name) if @handler
+          when Qmfengine::ConsoleEvent::NEW_CLASS
+            @handler.new_class(SchemaClassKey.new(@event.classKey)) if @handler
+          when Qmfengine::ConsoleEvent::OBJECT_UPDATE
+            @handler.object_update(ConsoleObject.new(nil, :impl => @event.object), @event.hasProps, @event.hasStats) if @handler
+          when Qmfengine::ConsoleEvent::EVENT_RECEIVED
+          when Qmfengine::ConsoleEvent::AGENT_HEARTBEAT
+            @handler.agent_heartbeat(AgentProxy.new(@event.agent, nil), @event.timestamp) if @handler
+          when Qmfengine::ConsoleEvent::METHOD_RESPONSE
+          end
+        rescue
+          puts "Exception caught in callback thread: #{$!}"
         end
         @impl.popEvent
         valid = @impl.getEvent(@event)
@@ -1069,23 +1072,13 @@ module Qmf
   end
 
   class AgentProxy
-    attr_reader :broker
+    attr_reader :impl, :broker, :label, :key
 
     def initialize(impl, broker)
-      @impl = impl
+      @impl = Qmfengine::AgentProxy.new(impl)
       @broker = broker
-    end
-
-    def label
-      @impl.getLabel
-    end
-
-    def broker_bank
-      @impl.getBrokerBank
-    end
-
-    def agent_bank
-      @impl.getAgentBank
+      @label = @impl.getLabel
+      @key = "#{@impl.getBrokerBank}.#{@impl.getAgentBank}"
     end
   end
 
@@ -1130,8 +1123,9 @@ module Qmf
       end
     end
 
-    def send_query(query, ctx)
-      @impl.sendQuery(query, ctx)
+    def send_query(query, ctx, agent)
+      agent_impl = agent.impl if agent
+      @impl.sendQuery(query, ctx, agent_impl)
       @conn.kick
     end
 
