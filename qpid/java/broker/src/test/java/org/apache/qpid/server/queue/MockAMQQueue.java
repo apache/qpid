@@ -306,6 +306,7 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+
     public void checkMessageStatus() throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.

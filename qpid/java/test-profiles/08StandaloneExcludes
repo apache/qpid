@@ -23,7 +23,6 @@ org.apache.qpid.test.client.failover.FailoverTest#*
 // InVM Broker tests awaiting resolution of QPID-1103
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
-org.apache.qpid.server.security.acl.SimpleACLTest#*
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*

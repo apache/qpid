@@ -1673,7 +1673,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-
     public void checkMessageStatus() throws AMQException
     {
 
