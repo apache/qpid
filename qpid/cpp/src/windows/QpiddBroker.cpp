@@ -239,6 +239,9 @@ int QpiddBroker::execute (QpiddOptions *options) {
                                            ": " +
                                            qpid::sys::strError(err)));
     }
+    // Need the correct port number to use in the pid file name.
+    if (options->broker.port == 0)
+        options->broker.port = brokerPtr->getPort("");
     qpid::sys::LockFile myPid(brokerPidFile(myOptions->control.piddir,
                                             options->broker.port),
                               true);
@@ -251,8 +254,6 @@ int QpiddBroker::execute (QpiddOptions *options) {
     ShutdownHandler waitShut(brokerPtr);
     qpid::sys::Thread waitThr(waitShut);   // Wait for shutdown event
     SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
-    if (options->broker.port == 0)
-        options->broker.port = brokerPtr->getPort("");
     brokerPtr->accept();
     std::cout << options->broker.port << std::endl;
     brokerPtr->run();
