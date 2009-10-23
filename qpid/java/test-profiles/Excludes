@@ -19,3 +19,14 @@ org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
 
 // QPID-2081 :The configuration changes are now highlighting the close race condition
 org.apache.qpid.server.security.acl.SimpleACLTest#*
+
+// QPID-1816 : Client Ack has not been addressed
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDirtyClientAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testClientAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testDirtyClientAck 
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
+
+
+// QPID-143 : Failover can occur between receive and ack but we don't stop the ack.
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testAutoAck
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDupsOk

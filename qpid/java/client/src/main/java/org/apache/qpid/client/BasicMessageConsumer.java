@@ -779,6 +779,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                 else
                 {
                     _session.addDeliveredMessage(msg.getDeliveryTag());
+                    _session.markDirty();
                 }
 
                 break;

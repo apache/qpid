@@ -33,6 +33,7 @@ import javax.jms.Session;
 
 import junit.framework.Assert;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
