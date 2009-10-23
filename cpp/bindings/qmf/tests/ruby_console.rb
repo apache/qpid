@@ -25,7 +25,7 @@ require 'socket'
 class App < Qmf::ConsoleHandler
 
   def agent_added(agent)
-    puts "AgentAdded: #{agent.label} broker=#{agent.broker_bank} agent=#{agent.agent_bank}"
+    puts "AgentAdded: label=#{agent.label} key=#{agent.key}"
   end
 
   def agent_deleted(agent)
@@ -42,8 +42,7 @@ class App < Qmf::ConsoleHandler
 
   def object_update(object, hasProps, hasStats)
     puts "ObjectUpdate: #{object.object_class.class_name} props=#{hasProps} stats=#{hasStats}"
-    puts "    broker-bank=#{object.object_id.broker_bank}"
-    puts "     agent-bank=#{object.object_id.agent_bank}"
+    puts "      agent-key=#{object.object_id.agent_key}"
     puts "        package=#{object.object_class.package_name}"
   end
 

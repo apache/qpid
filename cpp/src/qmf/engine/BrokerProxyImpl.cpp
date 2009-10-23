@@ -741,6 +741,7 @@ bool MethodContext::handleMessage(uint8_t opcode, uint32_t sequence, const strin
 //==================================================================
 
 AgentProxy::AgentProxy(AgentProxyImpl* i) : impl(i) {}
+AgentProxy::AgentProxy(const AgentProxy& from) : impl(new AgentProxyImpl(*(from.impl))) {}
 AgentProxy::~AgentProxy() { delete impl; }
 const char* AgentProxy::getLabel() const { return impl->getLabel().c_str(); }
 uint32_t AgentProxy::getBrokerBank() const { return impl->getBrokerBank(); }
