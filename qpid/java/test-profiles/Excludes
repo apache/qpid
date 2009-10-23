@@ -30,3 +30,4 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
 // QPID-143 : Failover can occur between receive and ack but we don't stop the ack.
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testAutoAck
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testDupsOk
+

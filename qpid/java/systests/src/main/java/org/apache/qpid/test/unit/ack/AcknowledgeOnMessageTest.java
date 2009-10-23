@@ -77,6 +77,9 @@ public class AcknowledgeOnMessageTest extends AcknowledgeTest implements Message
             {
                 break;
             }
+            // Remember the currentCount as the lastCount for the next cycle.
+            // so we can exit if things get locked up.
+            lastCount = currentCount;
 
             complete = _receviedAll.await(5000L, TimeUnit.MILLISECONDS);
         }

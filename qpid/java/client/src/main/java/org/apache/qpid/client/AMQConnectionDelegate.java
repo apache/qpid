@@ -39,6 +39,15 @@ public interface AMQConnectionDelegate
     Session createSession(final boolean transacted, final int acknowledgeMode,
      final int prefetchHigh, final int prefetchLow) throws JMSException;
 
+    /**
+     * Create an XASession with default prefetch values of:
+     * High = MaxPrefetch
+     * Low  = MaxPrefetch / 2
+     * @return XASession
+     * @throws JMSException thrown if there is a problem creating the session.
+     */
+    XASession createXASession() throws JMSException;
+
     XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException;
 
     void failoverPrep();

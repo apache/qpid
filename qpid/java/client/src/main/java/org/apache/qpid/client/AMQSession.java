@@ -21,7 +21,6 @@
 package org.apache.qpid.client;
 
 import java.io.Serializable;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -92,7 +91,6 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.url.AMQBindingURL;
-import org.apache.mina.common.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,8 +112,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AMQSession<C extends BasicMessageConsumer, P extends BasicMessageProducer> extends Closeable implements Session, QueueSession, TopicSession
 {
-
-
 
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
     {
@@ -263,10 +259,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private int _ticket;
 
     /** Holds the high mark for prefetched message, at which the session is suspended. */
-    private int _defaultPrefetchHighMark;
+    private int _prefetchHighMark;
 
     /** Holds the low mark for prefetched messages, below which the session is resumed. */
-    private int _defaultPrefetchLowMark;
+    private int _prefetchLowMark;
 
     /** Holds the message listener, if any, which is attached to this session. */
     private MessageListener _messageListener = null;
@@ -447,13 +443,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         _channelId = channelId;
         _messageFactoryRegistry = messageFactoryRegistry;
-        _defaultPrefetchHighMark = defaultPrefetchHighMark;
-        _defaultPrefetchLowMark = defaultPrefetchLowMark;
+        _prefetchHighMark = defaultPrefetchHighMark;
+        _prefetchLowMark = defaultPrefetchLowMark;
 
         if (_acknowledgeMode == NO_ACKNOWLEDGE)
         {
             _queue =
-                    new FlowControllingBlockingQueue(_defaultPrefetchHighMark, _defaultPrefetchLowMark,
+                    new FlowControllingBlockingQueue(_prefetchHighMark, _prefetchLowMark,
                                                      new FlowControllingBlockingQueue.ThresholdListener()
                                                      {
                                                          private final AtomicBoolean _suspendState = new AtomicBoolean();
@@ -461,7 +457,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          public void aboveThreshold(int currentValue)
                                                          {
                                                              _logger.debug(
-                                                                     "Above threshold(" + _defaultPrefetchHighMark
+                                                                     "Above threshold(" + _prefetchHighMark
                                                                      + ") so suspending channel. Current value is " + currentValue);
                                                              _suspendState.set(true);
                                                              new Thread(new SuspenderRunner(_suspendState)).start();
@@ -471,7 +467,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          public void underThreshold(int currentValue)
                                                          {
                                                              _logger.debug(
-                                                                     "Below threshold(" + _defaultPrefetchLowMark
+                                                                     "Below threshold(" + _prefetchLowMark
                                                                      + ") so unsuspending channel. Current value is " + currentValue);
                                                              _suspendState.set(false);
                                                              new Thread(new SuspenderRunner(_suspendState)).start();
@@ -481,7 +477,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            _queue = new FlowControllingBlockingQueue(_defaultPrefetchHighMark, null);
+            _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
         }
     }
 
@@ -897,7 +893,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, false,
                                   messageSelector, null, true, true);
     }
 
@@ -905,7 +901,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, (destination instanceof Topic), null, null,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, (destination instanceof Topic), null, null,
                                   false, false);
     }
 
@@ -913,7 +909,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, true, null, null,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, true, null, null,
                                   false, false);
     }
 
@@ -921,7 +917,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, false, (destination instanceof Topic),
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, false, (destination instanceof Topic),
                                   messageSelector, null, false, false);
     }
 
@@ -930,7 +926,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, (destination instanceof Topic),
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, (destination instanceof Topic),
                                   messageSelector, null, false, false);
     }
 
@@ -939,7 +935,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, true,
+        return createConsumerImpl(destination, _prefetchHighMark, _prefetchLowMark, noLocal, true,
                                   messageSelector, null, false, false);
     }
 
@@ -1363,17 +1359,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public int getDefaultPrefetch()
     {
-        return _defaultPrefetchHighMark;
+        return _prefetchHighMark;
     }
 
     public int getDefaultPrefetchHigh()
     {
-        return _defaultPrefetchHighMark;
+        return _prefetchHighMark;
     }
 
     public int getDefaultPrefetchLow()
     {
-        return _defaultPrefetchLowMark;
+        return _prefetchLowMark;
     }
 
     public AMQShortString getDefaultQueueExchangeName()

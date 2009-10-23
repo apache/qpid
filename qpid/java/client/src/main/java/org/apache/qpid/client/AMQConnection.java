@@ -313,7 +313,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected AMQConnectionDelegate _delegate;
 
     // this connection maximum number of prefetched messages
-    protected int _maxPrefetch;
+    private int _maxPrefetch;
 
     //Indicates whether persistent messages are synchronized
     private boolean _syncPersistence;
