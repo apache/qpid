@@ -702,6 +702,7 @@ class Driver:
       sst.write_cmd(MessageStop(rcv.destination, sync=True), do_stop)
 
     if rcv.draining:
+      _rcv.draining = True
       def do_flush():
         rcv.impending = rcv.received
         rcv.granted = rcv.impending
