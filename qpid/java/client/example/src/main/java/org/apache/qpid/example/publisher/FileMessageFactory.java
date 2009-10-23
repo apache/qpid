@@ -19,7 +19,7 @@
 
 package org.apache.qpid.example.publisher;
 
-import org.apache.qpid.example.shared.FileUtils;
+import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.example.shared.Statics;
 
 import java.io.*;
@@ -42,10 +42,10 @@ public class FileMessageFactory
         try
         {
             _filename = filename;
-            _payload = FileUtils.getFileContent(filename);
+            _payload = FileUtils.readFileAsString(filename);
             _session = session;
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             MessageFactoryException mfe = new MessageFactoryException(e.toString(), e);
             throw mfe;
