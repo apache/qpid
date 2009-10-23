@@ -53,6 +53,7 @@ public class PrincipalPermissions
     private static final int PUBLISH_EXCHANGES_KEY = 0;
 
     private Map _permissions;
+    private boolean _fullVHostAccess = false;
 
     private String _user;
 
@@ -82,6 +83,9 @@ public class PrincipalPermissions
     {
         switch (permission)
         {
+            case ACCESS:// Parameters : None
+                grantAccess(permission);
+                break;
             case CONSUME: // Parameters : AMQShortString queueName, Boolean Temporary, Boolean ownQueueOnly
                 grantConsume(permission, parameters);
                 break;
@@ -98,7 +102,6 @@ public class PrincipalPermissions
                 break;
             /* The other cases just fall through to no-op */
             case DELETE:
-            case ACCESS: // This is a no-op as the existence of this PrincipalPermission object is scoped per VHost for ACCESS
             case BIND: // All the details are currently included in the create setup.
             case PURGE:
             case UNBIND:
@@ -107,6 +110,11 @@ public class PrincipalPermissions
 
     }
 
+    private void grantAccess(Permission permission)
+    {
+        _fullVHostAccess = true;
+    }
+    
 	private void grantPublish(Permission permission, Object... parameters) {
 		Map publishRights = (Map) _permissions.get(permission);
 
@@ -353,9 +361,8 @@ public class PrincipalPermissions
 
         switch (permission)
         {
-            case ACCESS:
-                return AuthzResult.ALLOWED; // This is here for completeness but the SimpleXML ACLManager never calls it.
-                // The existence of this user specific PP can be validated in the map SimpleXML maintains.
+            case ACCESS://No Parameters 
+                return AuthzResult.ALLOWED; // The existence of this user-specific PP infers some level of access is authorised
             case BIND: // Parameters : QueueBindMethod , Exchange , AMQQueue, AMQShortString routingKey
                 return authoriseBind(parameters);
             case CREATEQUEUE:// Parameters : boolean autodelete, AMQShortString name
@@ -371,12 +378,28 @@ public class PrincipalPermissions
             case PURGE:
             case UNBIND:
             default:
-                return AuthzResult.DENIED;
+                if(_fullVHostAccess)
+                {
+                    //user has been granted full access to the vhost
+                    return AuthzResult.ALLOWED;
+                }
+                else
+                {
+                    //SimpleXML ACL does not implement these permissions and should abstain
+                    return AuthzResult.ABSTAIN;
+                }
         }
 
     }
 
-	private AuthzResult authoriseConsume(Permission permission, Object... parameters) {
+	private AuthzResult authoriseConsume(Permission permission, Object... parameters)
+	{
+	    if(_fullVHostAccess)
+	    {
+	        //user has been granted full access to the vhost
+	        return AuthzResult.ALLOWED;
+	    }
+	    
 		if (parameters.length == 1 && parameters[0] instanceof AMQQueue)
 		{
 		    AMQQueue queue = ((AMQQueue) parameters[0]);
@@ -435,8 +458,15 @@ public class PrincipalPermissions
 		return AuthzResult.DENIED;
 	}
 
-	private AuthzResult authorisePublish(Permission permission, Object... parameters) {
-		Map publishRights = (Map) _permissions.get(permission);
+	private AuthzResult authorisePublish(Permission permission, Object... parameters)
+	{
+	    if(_fullVHostAccess)
+	    {
+	        //user has been granted full access to the vhost
+	        return AuthzResult.ALLOWED;
+	    }
+
+	    Map publishRights = (Map) _permissions.get(permission);
 
 		if (publishRights == null)
 		{
@@ -495,7 +525,14 @@ public class PrincipalPermissions
 		}
 	}
 
-	private AuthzResult authoriseCreateExchange(Permission permission, Object... parameters) {
+	private AuthzResult authoriseCreateExchange(Permission permission, Object... parameters)
+	{
+        if(_fullVHostAccess)
+        {
+            //user has been granted full access to the vhost
+            return AuthzResult.ALLOWED;
+        }
+
 		Map rights = (Map) _permissions.get(permission);
 
 		AMQShortString exchangeName = (AMQShortString) parameters[0];
@@ -512,8 +549,15 @@ public class PrincipalPermissions
 		}
 	}
 
-	private AuthzResult authoriseCreateQueue(Permission permission, Object... parameters) {
-		Map createRights = (Map) _permissions.get(permission);
+	private AuthzResult authoriseCreateQueue(Permission permission, Object... parameters)
+	{
+        if(_fullVHostAccess)
+        {
+            //user has been granted full access to the vhost
+            return AuthzResult.ALLOWED;
+        }
+
+        Map createRights = (Map) _permissions.get(permission);
 
 		// If there are no create rights then deny request
 		if (createRights == null)
@@ -550,8 +594,15 @@ public class PrincipalPermissions
 		}
 	}
 
-	private AuthzResult authoriseBind(Object... parameters) {
-		Exchange exchange = (Exchange) parameters[1];
+	private AuthzResult authoriseBind(Object... parameters)
+	{
+        if(_fullVHostAccess)
+        {
+            //user has been granted full access to the vhost
+            return AuthzResult.ALLOWED;
+        }
+	    
+        Exchange exchange = (Exchange) parameters[1];
 
 		AMQQueue bind_queueName = (AMQQueue) parameters[2];
 		AMQShortString routingKey = (AMQShortString) parameters[3];

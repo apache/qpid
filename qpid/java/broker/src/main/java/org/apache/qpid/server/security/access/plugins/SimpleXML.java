@@ -77,8 +77,29 @@ public class SimpleXML implements ACLPlugin
         processConsume(config);
 
         processCreate(config);
+        
+        processAccess(config);
     }
 
+    private void processAccess(Configuration config)
+    {
+        Configuration accessConfig = config.subset("access_control_list.access");
+        
+        if(accessConfig.isEmpty())
+        {
+            //there is no access configuration to process
+            return;
+        }
+        
+        // Process users that have full access permission
+        String[] users = accessConfig.getStringArray("users.user");
+
+        for (String user : users)
+        {
+            grant(Permission.ACCESS, user);
+        }
+    }
+    
     /**
      * Publish format takes Exchange + Routing Key Pairs
      *

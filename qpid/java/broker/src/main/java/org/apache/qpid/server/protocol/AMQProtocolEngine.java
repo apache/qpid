@@ -679,6 +679,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession() throws AMQException
     {
+        // REMOVE THIS SHOULD NOT BE HERE. 
         if (CurrentActor.get() == null)
         {
             CurrentActor.set(_actor);
@@ -694,6 +695,8 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             if (_managedObject != null)
             {
                 _managedObject.unregister();
+                // Ensure we only do this once.
+                _managedObject = null;
             }
 
             for (Task task : _taskList)

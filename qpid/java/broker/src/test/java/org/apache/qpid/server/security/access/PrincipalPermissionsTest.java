@@ -164,4 +164,37 @@ public class PrincipalPermissionsTest extends TestCase
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.PUBLISH, authArgs));
     }
 
+    public void testVhostAccess()
+    {
+        //Tests that granting a user Virtualhost level access allows all authorisation requests
+        //where previously they would be denied 
+        
+        //QPID-2133 createExchange rights currently allow all exchange creation unless rights for creating some
+        //specific exchanges are granted. Grant a specific exchange creation to cause all others to be denied.
+        Object[] createArgsCreateExchange = new Object[]{new AMQShortString("madeup"), _exchangeType};
+        Object[] authArgsCreateExchange = new Object[]{_exchangeName,_exchangeType};
+        assertEquals("Exchange creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEEXCHANGE, authArgsCreateExchange));
+        _perms.grant(Permission.CREATEEXCHANGE, createArgsCreateExchange);
+        
+        Object[] authArgsPublish = new Object[]{_exchange, _routingKey};        
+        Object[] authArgsConsume = new Object[]{_queue};
+        Object[] authArgsCreateQueue = new Object[]{_autoDelete, _queueName};
+        QueueBindBodyImpl bind = new QueueBindBodyImpl(_ticket, _queueName, _exchangeName, _routingKey, _nowait, _arguments);
+        Object[] authArgsBind = new Object[]{bind, _exchange, _queue, _routingKey};
+        
+        assertEquals("Exchange creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.CREATEEXCHANGE, authArgsCreateExchange));
+        assertEquals("Publish was not denied", AuthzResult.DENIED, _perms.authorise(Permission.PUBLISH, authArgsPublish));
+        assertEquals("Consume creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.CONSUME, authArgsConsume));
+        assertEquals("Queue creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.CREATEQUEUE, authArgsCreateQueue));
+        //BIND pre-grant authorise check disabled due to QPID-1597
+        //assertEquals("Binding creation was not denied", AuthzResult.DENIED, _perms.authorise(Permission.BIND, authArgsBind));
+        
+        _perms.grant(Permission.ACCESS);
+
+        assertEquals("Exchange creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEEXCHANGE, authArgsCreateExchange));
+        assertEquals("Publish was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.PUBLISH, authArgsPublish));
+        assertEquals("Consume creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authArgsConsume));
+        assertEquals("Queue creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgsCreateQueue));
+        assertEquals("Binding creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.BIND, authArgsBind));
+    }
 }
