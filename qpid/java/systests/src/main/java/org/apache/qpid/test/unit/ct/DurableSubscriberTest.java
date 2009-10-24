@@ -34,7 +34,7 @@ public class DurableSubscriberTest extends QpidTestCase
      * create and register a durable subscriber then close it
      * create a publisher and send a persistant message followed by a non persistant message
      * crash and restart the broker
-     * recreate the durable subscriber and check that only the first message is received                  white st
+     * recreate the durable subscriber and check that only the first message is received
      */
     public void testDurSubRestoredAfterNonPersistentMessageSent() throws Exception
     {
