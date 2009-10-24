@@ -269,12 +269,15 @@ public class AMQProtocolHandler implements ProtocolEngine
     /** See {@link FailoverHandler} to see rationale for separate thread. */
     private void startFailoverThread()
     {
-        Thread failoverThread = new Thread(_failoverHandler);
-        failoverThread.setName("Failover");
-        // Do not inherit daemon-ness from current thread as this can be a daemon
-        // thread such as a AnonymousIoService thread.
-        failoverThread.setDaemon(false);
-        failoverThread.start();
+        if(!_connection.isClosed())
+        {
+            Thread failoverThread = new Thread(_failoverHandler);
+            failoverThread.setName("Failover");
+            // Do not inherit daemon-ness from current thread as this can be a daemon
+            // thread such as a AnonymousIoService thread.
+            failoverThread.setDaemon(false);
+            failoverThread.start();
+        }
     }
 
     public void readerIdle()
@@ -298,7 +301,6 @@ public class AMQProtocolHandler implements ProtocolEngine
      */
     public void exception(Throwable cause)
     {
-        _logger.info("AS: HELLO");
         if (_failoverState == FailoverState.NOT_STARTED)
         {
             // if (!(cause instanceof AMQUndeliveredException) && (!(cause instanceof AMQAuthenticationException)))
