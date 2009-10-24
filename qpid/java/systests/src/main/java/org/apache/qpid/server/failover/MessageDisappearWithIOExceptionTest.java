@@ -201,11 +201,6 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
         assertTrue("Failover did not occur",
                    _failoverOccured.await(4000, TimeUnit.MILLISECONDS));
 
-        //Verify new protocolSession is not the same as the original
-        assertNotSame("Protocol Session has not changed",
-                      protocolSession,
-                      _connection.getProtocolHandler().getProtocolSession());
-
         /***********************************/
         // This verifies that the bug has been resolved
 
