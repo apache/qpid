@@ -65,8 +65,13 @@ public class AMQUserManagementMBeanTest extends TestCase
     @Override
     protected void tearDown() throws Exception
     {
-            _passwordFile.delete();
-            _accessFile.delete();
+        //clean up test password/access files
+        File _oldPasswordFile = new File(_passwordFile.getAbsolutePath() + ".old");
+        File _oldAccessFile = new File(_accessFile.getAbsolutePath() + ".old");
+        _oldPasswordFile.delete();
+        _oldAccessFile.delete();
+        _passwordFile.delete();
+        _accessFile.delete();
     }
 
     public void testDeleteUser()

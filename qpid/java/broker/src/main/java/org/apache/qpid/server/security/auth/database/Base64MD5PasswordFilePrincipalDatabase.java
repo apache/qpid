@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
@@ -428,7 +429,15 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
             BufferedReader reader = null;
             PrintStream writer = null;
-            File tmp = File.createTempFile(_passwordFile.getName(), ".tmp");
+            
+            Random r = new Random();
+            File tmp;
+            do
+            {
+                tmp = new File(_passwordFile.getPath() + r.nextInt() + ".tmp");
+            }
+            while(tmp.exists());
+            
             tmp.deleteOnExit();
 
             try
@@ -528,30 +537,26 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 old.delete();
             }
             
-            try
+            if(!_passwordFile.renameTo(old))
             {
-                if(!_passwordFile.renameTo(old))
+                //unable to rename the existing file to the backup name 
+                _logger.error("Could not backup the existing password file");
+                throw new IOException("Could not backup the existing password file");
+            }
+
+            if(!tmp.renameTo(_passwordFile))
+            {
+                //failed to rename the new file to the required filename
+                
+                if(!old.renameTo(_passwordFile))
                 {
-                    FileUtils.copyCheckedEx(_passwordFile, old);
+                    //unable to return the backup to required filename
+                    _logger.error("Could not rename the new password file into place, and unable to restore original file");
+                    throw new IOException("Could not rename the new password file into place, and unable to restore original file");
                 }
-            }
-            catch (IOException e)
-            {
-                _logger.error("Could not backup the existing password file: " +e);
-                throw new IOException("Could not backup the existing password file: " + e);
-            }
-            
-            try
-            {
-                if(!tmp.renameTo(_passwordFile))
-                {
-                    FileUtils.copyCheckedEx(tmp, _passwordFile);
-                }
-            }
-            catch (IOException e)
-            {
-                _logger.error("Could not copy the new password file into place: " +e);
-                throw new IOException("Could not copy the new password file into place: " + e);
+                
+                _logger.error("Could not rename the new password file into place");
+                throw new IOException("Could not rename the new password file into place");
             }
         }
         finally

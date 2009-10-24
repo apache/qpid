@@ -21,14 +21,18 @@
 
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.test.utils.QpidTestCase;
+
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-
-import org.apache.qpid.test.utils.QpidTestCase;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PersistentStoreTest extends QpidTestCase
 {
@@ -48,14 +52,12 @@ public class PersistentStoreTest extends QpidTestCase
         _destination = _session.createQueue(getTestQueueName());
         _consumer = _session.createConsumer(_destination);
         _consumer.close();
-        
+
         sendMessage(_session, _destination, NUM_MESSAGES);
         _session.commit();
     }
-    
-    /**
-     * Checks that a new consumer on a new connection can get NUM_MESSAGES from _destination 
-     */
+
+    /** Checks that a new consumer on a new connection can get NUM_MESSAGES from _destination */
     private void checkMessages() throws Exception, JMSException
     {
         _con = getConnection();
@@ -65,11 +67,11 @@ public class PersistentStoreTest extends QpidTestCase
         for (int i = 0; i < NUM_MESSAGES; i++)
         {
             Message msg = _consumer.receive(RECEIVE_TIMEOUT);
-            assertNotNull("Message "+i+" not received", msg);
+            assertNotNull("Message " + i + " not received", msg);
         }
         assertNull("No more messages should be received", _consumer.receive(100));
     }
-    
+
 //    /**
 //     * starts the server, sends 100 messages, restarts the server and gets 100 messages back
 //     * the test formerly referred to as BDB-Qpid-1
@@ -81,11 +83,11 @@ public class PersistentStoreTest extends QpidTestCase
 //        checkMessages();
 //    }
 
-
-    /** 
+    /**
      * starts the server, sends 100 messages, nukes then starts the server and gets 100 messages back
      * the test formerly referred to as BDB-Qpid-2
-     * @throws Exception 
+     *
+     * @throws Exception
      */
     public void testForcibleStartStop() throws Exception
     {
@@ -106,11 +108,12 @@ public class PersistentStoreTest extends QpidTestCase
 //        checkMessages();
 //    }
 
-    /** 
-     * starts the server, sends 100 committed messages, 5 uncommited ones, 
+    /**
+     * starts the server, sends 100 committed messages, 5 uncommited ones,
      * nukes and starts the server and gets 100 messages back
      * the test formerly referred to as BDB-Qpid-6
-     * @throws Exception 
+     *
+     * @throws Exception
      */
     public void testForcibleStartStopMidTransaction() throws Exception
     {
@@ -119,13 +122,14 @@ public class PersistentStoreTest extends QpidTestCase
         checkMessages();
     }
 
-    /** 
-     * starts the server, sends 100 committed messages, 5 uncommited ones, 
+    /**
+     * starts the server, sends 100 committed messages, 5 uncommited ones,
      * restarts the client and gets 100 messages back.
      * the test formerly referred to as BDB-Qpid-7
-     * 
+     *
      * FIXME: is this a PersistentStoreTest? Seems more like a transaction test to me.. aidan
-     * @throws Exception 
+     *
+     * @throws Exception
      */
     public void testClientDeathMidTransaction() throws Exception
     {
@@ -133,7 +137,7 @@ public class PersistentStoreTest extends QpidTestCase
         _con.close();
         checkMessages();
     }
-    
+
 //    /**
 //     * starts the server, sends 50 committed messages, copies $QPID_WORK to a new location,
 //     * sends 10 messages, stops the server, nukes the store, restores the copy, starts the server
@@ -143,5 +147,37 @@ public class PersistentStoreTest extends QpidTestCase
 //    {
 //        -- removing as this will leave 100msgs on a queue
 //    }
-    
+
+    /**
+     * This test requires that we can send messages without commiting.
+     * QTC always commits the messages sent via sendMessages.
+     *
+     * @param session the session to use for sending
+     * @param destination where to send them to
+     * @param count no. of messages to send
+     *
+     * @return the sent messges
+     *
+     * @throws Exception
+     */
+    @Override
+    public List<Message> sendMessage(Session session, Destination destination,
+                                     int count) throws Exception
+    {
+        List<Message> messages = new ArrayList<Message>(count);
+
+        MessageProducer producer = session.createProducer(destination);
+
+        for (int i = 0;i < (count); i++)
+        {
+            Message next = createNextMessage(session, i);
+
+            producer.send(next);
+
+            messages.add(next);
+        }
+
+        return messages;
+    }
+
 }

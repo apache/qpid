@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
@@ -365,10 +366,17 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             DOMSource source = new DOMSource(doc);
 
             File tmp;
+            Random r = new Random();
+            do
+            {
+                tmp = new File(log4jConfigFile.getPath() + r.nextInt() + ".tmp");
+            }
+            while(tmp.exists());
+            
+            tmp.deleteOnExit();
+            
             try
             {
-                tmp = File.createTempFile("LogManMBeanTemp", ".tmp");
-                tmp.deleteOnExit();
                 StreamResult result = new StreamResult(tmp);
                 transformer.transform(source, result);
             }
@@ -376,11 +384,6 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             {
                 _logger.warn("Could not transform the XML into new file: " +e);
                 throw new IOException("Could not transform the XML into new file: " +e);
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Could not create the new log4j XML file: " +e);
-                throw new IOException("Could not create the new log4j XML file: " +e);
             }
 
             // Swap temp file in to replace existing configuration file.
@@ -390,30 +393,26 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
                 old.delete();
             }
             
-            try
+            if(!log4jConfigFile.renameTo(old))
             {
-                if(!log4jConfigFile.renameTo(old))
+                //unable to rename the existing file to the backup name 
+                _logger.error("Could not backup the existing log4j XML file");
+                throw new IOException("Could not backup the existing log4j XML file");
+            }
+
+            if(!tmp.renameTo(log4jConfigFile))
+            {
+                //failed to rename the new file to the required filename
+                
+                if(!old.renameTo(log4jConfigFile))
                 {
-                    FileUtils.copyCheckedEx(log4jConfigFile, old);
+                    //unable to return the backup to required filename
+                    _logger.error("Could not rename the new log4j configuration file into place, and unable to restore original file");
+                    throw new IOException("Could not rename the new log4j configuration file into place, and unable to restore original file");
                 }
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Could not backup the existing log4j XML file: " +e);
-                throw new IOException("Could not backup the existing log4j XML file: " +e);
-            }
-            
-            try
-            {
-                if(!tmp.renameTo(log4jConfigFile))
-                {
-                    FileUtils.copyCheckedEx(tmp, log4jConfigFile);
-                }
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Could not copy the new configuration into place: " +e);
-                throw new IOException("Could not copy the new configuration into place: " +e);
+                
+                _logger.error("Could not rename the new log4j configuration file into place");
+                throw new IOException("Could not rename the new log4j configuration file into place");
             }
             
             return true;

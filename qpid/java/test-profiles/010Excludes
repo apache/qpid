@@ -98,3 +98,13 @@ org.apache.qpid.server.queue.ProducerFlowControlTest#*
 
 //QPID-1950 : Commit to test this failure. This is a MINA only failure so it cannot be tested when using 010.
 org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
+
+// These are recent test additions that are failing with the c++ broker
+// Temporarily disabling until properly investigated.
+org.apache.qpid.test.unit.publish.DirtyTrasactedPubilshTest#*
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#*
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#*
+
+org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
+

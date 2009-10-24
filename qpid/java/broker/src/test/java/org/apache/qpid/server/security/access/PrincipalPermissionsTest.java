@@ -45,6 +45,7 @@ public class PrincipalPermissionsTest extends TestCase
 
     // Common things that are passed to frame constructors
     private AMQShortString _queueName = new AMQShortString(this.getClass().getName()+"queue");
+    private AMQShortString _tempQueueName = new AMQShortString(this.getClass().getName()+"tempqueue");
     private AMQShortString _exchangeName = new AMQShortString("amq.direct");
     private AMQShortString _routingKey = new AMQShortString(this.getClass().getName()+"route");
     private int _ticket = 1;
@@ -60,7 +61,9 @@ public class PrincipalPermissionsTest extends TestCase
     private VirtualHost _virtualHost;
     private AMQShortString _owner = new AMQShortString(this.getClass().getName()+"owner");
     private AMQQueue _queue;
+    private AMQQueue _temporaryQueue;
     private Boolean _temporary = false;
+    private Boolean _ownQueue = false;
 
     @Override
     public void setUp()
@@ -75,6 +78,7 @@ public class PrincipalPermissionsTest extends TestCase
             _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration("test", env));
             _exchange = DirectExchange.TYPE.newInstance(_virtualHost, _exchangeName, _durable, _ticket, _autoDelete);
             _queue = AMQQueueFactory.createAMQQueueImpl(_queueName, false, _owner , false, _virtualHost, _arguments);
+            _temporaryQueue = AMQQueueFactory.createAMQQueueImpl(_tempQueueName, false, _owner , true, _virtualHost, _arguments);
         }
         catch (Exception e)
         {
@@ -102,7 +106,7 @@ public class PrincipalPermissionsTest extends TestCase
     {
         QueueBindBodyImpl bind = new QueueBindBodyImpl(_ticket, _queueName, _exchangeName, _routingKey, _nowait, _arguments);
         Object[] args = new Object[]{bind, _exchange, _queue, _routingKey};
-
+        
         assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.BIND, args));
         _perms.grant(Permission.BIND, (Object[]) null);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.BIND, args));
@@ -112,7 +116,7 @@ public class PrincipalPermissionsTest extends TestCase
     {
         Object[] grantArgs = new Object[]{_temporary , _queueName, _exchangeName, _routingKey};
         Object[] authArgs = new Object[]{_autoDelete, _queueName};
-
+        
         assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
         _perms.grant(Permission.CREATEQUEUE, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgs));
@@ -145,7 +149,7 @@ public class PrincipalPermissionsTest extends TestCase
     public void testConsume()
     {
         Object[] authArgs = new Object[]{_queue};
-        Object[] grantArgs = new Object[]{_queueName, _temporary, _temporary};
+        Object[] grantArgs = new Object[]{_queueName, _ownQueue};
 
         /* FIXME: This throws a null pointer exception QPID-1599
          * assertFalse(_perms.authorise(Permission.CONSUME, authArgs));
@@ -153,12 +157,12 @@ public class PrincipalPermissionsTest extends TestCase
         _perms.grant(Permission.CONSUME, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authArgs));
     }
-
+    
     public void testPublish()
     {
         Object[] authArgs = new Object[]{_exchange, _routingKey};
         Object[] grantArgs = new Object[]{_exchange.getName(), _routingKey};
-
+        
         assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.PUBLISH, authArgs));
         _perms.grant(Permission.PUBLISH, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.PUBLISH, authArgs));
@@ -197,4 +201,58 @@ public class PrincipalPermissionsTest extends TestCase
         assertEquals("Queue creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.CREATEQUEUE, authArgsCreateQueue));
         assertEquals("Binding creation was not allowed", AuthzResult.ALLOWED, _perms.authorise(Permission.BIND, authArgsBind));
     }
+
+    /**
+    * If the consume permission for temporary queues is for an unnamed queue then is should
+    * be global for any temporary queue but not for any non-temporary queue
+    */
+    public void testTemporaryUnnamedQueueConsume()
+    {
+       Object[] authNonTempQArgs = new Object[]{_queue};
+       Object[] authTempQArgs = new Object[]{_temporaryQueue};
+       Object[] grantArgs = new Object[]{true};
+
+       _perms.grant(Permission.CONSUME, grantArgs);
+
+       //Next line shows up bug - non temp queue should be denied
+       assertEquals(AuthzResult.DENIED, _perms.authorise(Permission.CONSUME, authNonTempQArgs));
+       assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authTempQArgs));
+    }
+
+    /**
+    * Test that temporary queue permissions before queue perms in the ACL config work correctly
+    */
+    public void testTemporaryQueueFirstConsume()
+    {
+       Object[] authNonTempQArgs = new Object[]{_queue};
+       Object[] authTempQArgs = new Object[]{_temporaryQueue};
+       Object[] grantArgs = new Object[]{true};
+       Object[] grantNonTempQArgs = new Object[]{_queueName, _ownQueue};
+
+       //should not matter if the temporary permission is processed first or last
+       _perms.grant(Permission.CONSUME, grantNonTempQArgs);
+       _perms.grant(Permission.CONSUME, grantArgs);
+
+       assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authNonTempQArgs));
+       assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authTempQArgs));
+    }
+
+    /**
+    * Test that temporary queue permissions after queue perms in the ACL config work correctly
+    */
+    public void testTemporaryQueueLastConsume()
+    {
+       Object[] authNonTempQArgs = new Object[]{_queue};
+       Object[] authTempQArgs = new Object[]{_temporaryQueue};
+       Object[] grantArgs = new Object[]{true};
+       Object[] grantNonTempQArgs = new Object[]{_queueName, _ownQueue};
+
+       //should not matter if the temporary permission is processed first or last
+       _perms.grant(Permission.CONSUME, grantArgs);
+       _perms.grant(Permission.CONSUME, grantNonTempQArgs);
+
+       assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authNonTempQArgs));
+       assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authTempQArgs));
+    }
+
 }

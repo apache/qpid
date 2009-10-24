@@ -53,6 +53,8 @@ public abstract class AbstractTestLogSubject extends TestCase
     {
         super.setUp();
 
+        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "ON");
+
         VirtualHost virtualHost = ApplicationRegistry.getInstance().
                 getVirtualHostRegistry().getVirtualHosts().iterator().next();
 
@@ -276,7 +278,7 @@ public abstract class AbstractTestLogSubject extends TestCase
      */
     public void testDisabled() throws ConfigurationException
     {
-        _config.addProperty("status-updates", "OFF");
+        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "OFF");
 
         List<Object> logs = performLog();
 

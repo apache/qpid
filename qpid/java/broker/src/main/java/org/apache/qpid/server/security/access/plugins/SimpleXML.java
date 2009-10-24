@@ -179,7 +179,25 @@ public class SimpleXML implements ACLPlugin
 
     private void processConsume(Configuration config)
     {
+        boolean temporary = false;
+        Configuration tempConfig = null;
         Configuration consumeConfig = config.subset("access_control_list.consume");
+
+        tempConfig = consumeConfig.subset("queues.temporary(0)");
+        if (tempConfig != null)
+        {
+            temporary = true;
+        }
+
+        //Permission all users who have rights to temp queues and topics
+        if (tempConfig != null && !tempConfig.isEmpty())
+        {
+            String[] tempUsers = tempConfig.getStringArray("users.user");
+            for (String user : tempUsers)
+            {
+                grant(Permission.CONSUME, user, temporary);
+            }
+        }
 
         // Process queue limited users
         int queueCount = 0;
@@ -190,14 +208,14 @@ public class SimpleXML implements ACLPlugin
             // Get queue Name
             AMQShortString queueName = new AMQShortString(queueConfig.getString("name"));
             // if there is no name then there may be a temporary element
-            boolean temporary = queueConfig.containsKey("temporary");
+
             boolean ownQueues = queueConfig.containsKey("own_queues");
 
             // Process permissions for this queue
             String[] users = queueConfig.getStringArray("users.user");
             for (String user : users)
             {
-                grant(Permission.CONSUME, user, queueName, temporary, ownQueues);
+                grant(Permission.CONSUME, user, queueName, ownQueues);
             }
 
             // See if we have another config
@@ -210,14 +228,33 @@ public class SimpleXML implements ACLPlugin
 
         for (String user : users)
         {
+            //NOTE: this call does not appear to do anything inside the grant section for consume
             grant(Permission.CONSUME, user);
         }
     }
 
     private void processCreate(Configuration config)
     {
+        boolean temporary = false;
+        Configuration tempConfig = null;
+
         Configuration createConfig = config.subset("access_control_list.create");
 
+        tempConfig = createConfig.subset("queues.temporary(0)");
+        if (tempConfig != null)
+        {
+            temporary = true;
+        }
+
+        //Permission all users who have rights to temp queues and topics
+        if (tempConfig != null && !tempConfig.isEmpty())
+        {
+            String[] tempUsers = tempConfig.getStringArray("users.user");
+            for (String user : tempUsers)
+            {
+                grant(Permission.CREATEQUEUE, user, temporary);
+            }
+        }
         // Process create permissions for queue creation
         int queueCount = 0;
         Configuration queueConfig = createConfig.subset("queues.queue(" + queueCount + ")");
@@ -227,9 +264,6 @@ public class SimpleXML implements ACLPlugin
             // Get queue Name
             AMQShortString queueName = new AMQShortString(queueConfig.getString("name"));
 
-            // if there is no name then there may be a temporary element
-            boolean temporary = queueConfig.containsKey("temporary");
-
             int exchangeCount = 0;
             Configuration exchangeConfig = queueConfig.subset("exchanges.exchange(" + exchangeCount + ")");
 
@@ -238,12 +272,15 @@ public class SimpleXML implements ACLPlugin
 
                 AMQShortString exchange = new AMQShortString(exchangeConfig.getString("name"));
                 AMQShortString routingKey = new AMQShortString(exchangeConfig.getString("routing_key"));
-
+               
                 // Process permissions for this queue
                 String[] users = exchangeConfig.getStringArray("users.user");
                 for (String user : users)
                 {
+                    //This is broken as the user name is not stored
                     grant(Permission.CREATEEXCHANGE, user, exchange);
+
+                    //This call could be cleaned up as temporary is now being set earlier (above) 
                     grant(Permission.CREATEQUEUE, user, temporary, (queueName.equals("") ? null : queueName), (exchange
                             .equals("") ? null : exchange), (routingKey.equals("") ? null : routingKey));
                 }
@@ -279,6 +316,7 @@ public class SimpleXML implements ACLPlugin
             String[] users = exchangeConfig.getStringArray("users.user");
             for (String user : users)
             {
+                //And this is broken too 
                 grant(Permission.CREATEEXCHANGE, user, exchange, clazz);
             }
 
