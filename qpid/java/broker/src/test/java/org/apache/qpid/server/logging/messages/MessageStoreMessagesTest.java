@@ -41,12 +41,12 @@ public class MessageStoreMessagesTest extends AbstractTestMessages
     {
         String location = "/path/to/the/message/store.files";
 
-        _logMessage = MessageStoreMessages.MST_1002(location);
+        _logMessage = ConfigStoreMessages.CFG_1002(location);
         List<Object> log = performLog();
 
         String[] expected = {"Store location :", location};
 
-        validateLogMessage(log, "MST-1002", expected);
+        validateLogMessage(log, "CFG-1002", expected);
     }
 
     public void testMessage1003()
