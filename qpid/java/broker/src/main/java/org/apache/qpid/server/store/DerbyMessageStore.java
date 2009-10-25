@@ -112,11 +112,11 @@ public class DerbyMessageStore implements MessageStore
 
 
     private static final String CREATE_META_DATA_TABLE = "CREATE TABLE "+META_DATA_TABLE_NAME+" ( message_id bigint not null, meta_data blob, PRIMARY KEY ( message_id ) )";
-    private static final String CREATE_MESSAGE_CONTENT_TABLE = "CREATE TABLE "+MESSAGE_CONTENT_TABLE_NAME+" ( message_id bigint not null, offset int not null, content blob , PRIMARY KEY (message_id, offset) )";
+    private static final String CREATE_MESSAGE_CONTENT_TABLE = "CREATE TABLE "+MESSAGE_CONTENT_TABLE_NAME+" ( message_id bigint not null, offset int not null, last_byte int not null, content blob , PRIMARY KEY (message_id, offset) )";
 
-    private static final String INSERT_INTO_MESSAGE_CONTENT = "INSERT INTO " + MESSAGE_CONTENT_TABLE_NAME + "( message_id, offset, content ) values (?, ?, ?)";
+    private static final String INSERT_INTO_MESSAGE_CONTENT = "INSERT INTO " + MESSAGE_CONTENT_TABLE_NAME + "( message_id, offset, last_byte, content ) values (?, ?, ?, ?)";
     private static final String SELECT_FROM_MESSAGE_CONTENT =
-            "SELECT offset, content FROM " + MESSAGE_CONTENT_TABLE_NAME + " WHERE message_id = ? AND offset >= ? AND offset < ? ORDER BY message_id, offset";
+            "SELECT offset, content FROM " + MESSAGE_CONTENT_TABLE_NAME + " WHERE message_id = ? AND last_byte > ? AND offset < ? ORDER BY message_id, offset";
     private static final String DELETE_FROM_MESSAGE_CONTENT = "DELETE FROM " + MESSAGE_CONTENT_TABLE_NAME + " WHERE message_id = ?";
 
     private static final String INSERT_INTO_META_DATA = "INSERT INTO " + META_DATA_TABLE_NAME + "( message_id , meta_data ) values (?, ?)";;
@@ -1194,21 +1194,24 @@ public class DerbyMessageStore implements MessageStore
                 conn = newConnection();
             }
 
-            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_CONTENT);
-            stmt.setLong(1,messageId);
-            stmt.setInt(2, offset);
-
             src = src.slice();
 
             byte[] chunkData = new byte[src.limit()];
             src.duplicate().get(chunkData);
+
+            PreparedStatement stmt = conn.prepareStatement(INSERT_INTO_MESSAGE_CONTENT);
+            stmt.setLong(1,messageId);
+            stmt.setInt(2, offset);
+            stmt.setInt(3, offset+chunkData.length);
+
+
             /* this would be the Java 6 way of doing things
             Blob dataAsBlob = conn.createBlob();
             dataAsBlob.setBytes(1L, chunkData);
             stmt.setBlob(3, dataAsBlob);
             */
             ByteArrayInputStream bis = new ByteArrayInputStream(chunkData);
-            stmt.setBinaryStream(3, bis, chunkData.length);
+            stmt.setBinaryStream(4, bis, chunkData.length);
             stmt.executeUpdate();
 
             if(newConnection)
