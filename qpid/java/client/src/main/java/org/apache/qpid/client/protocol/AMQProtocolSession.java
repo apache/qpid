@@ -102,7 +102,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
     {
-        _protocolHandler = protocolHandler;        
+        _protocolHandler = protocolHandler;
         _protocolVersion = connection.getProtocolVersion();
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
                                                                            this);
@@ -156,7 +156,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public SaslClient getSaslClient()
     {
-        return _saslClient;    
+        return _saslClient;
     }
 
     /**
@@ -192,7 +192,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      * @throws AMQException if this was not expected
      */
     public void unprocessedMessageReceived(final int channelId, UnprocessedMessage message) throws AMQException
-    {        
+    {
         if ((channelId & FAST_CHANNEL_ACCESS_MASK) == 0)
         {
             _channelId2UnprocessedMsgArray[channelId] = message;
@@ -467,5 +467,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public void setSender(Sender<java.nio.ByteBuffer> sender)
     {
         // No-op, interface munging
+    }
+
+
+    @Override
+    public String toString()
+    {
+        return "AMQProtocolSession[" + _connection + ']';
     }
 }

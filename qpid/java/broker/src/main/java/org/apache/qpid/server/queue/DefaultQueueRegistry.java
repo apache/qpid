@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -44,12 +44,12 @@ public class DefaultQueueRegistry implements QueueRegistry
         return _virtualHost;
     }
 
-    public void registerQueue(AMQQueue queue) throws AMQException
+    public void registerQueue(AMQQueue queue)
     {
         _queueMap.put(queue.getName(), queue);
     }
 
-    public void unregisterQueue(AMQShortString name) throws AMQException
+    public void unregisterQueue(AMQShortString name)
     {
         _queueMap.remove(name);
     }
@@ -67,5 +67,10 @@ public class DefaultQueueRegistry implements QueueRegistry
     public Collection<AMQQueue> getQueues()
     {
         return _queueMap.values();
+    }
+
+    public AMQQueue getQueue(String queue)
+    {
+        return getQueue(new AMQShortString(queue));
     }
 }

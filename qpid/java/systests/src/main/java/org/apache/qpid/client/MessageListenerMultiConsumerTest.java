@@ -113,12 +113,12 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
         for (int loops = 0; (msg < MSG_COUNT) || (loops < MAX_LOOPS); loops++)
         {
 
-            if (_consumer1.receive(100) != null)
+            if (_consumer1.receive(1000) != null)
             {
                 msg++;
             }
 
-            if (_consumer2.receive(100) != null)
+            if (_consumer2.receive(1000) != null)
             {
                 msg++;
             }

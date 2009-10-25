@@ -31,7 +31,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.ConsumerTagNotUniqueException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
@@ -41,12 +40,10 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.MockChannel;
 
-import java.security.Principal;
 
 public class InternalBrokerBaseCase extends TestCase
 {
@@ -55,7 +52,6 @@ public class InternalBrokerBaseCase extends TestCase
     protected MockChannel _channel;
     protected InternalTestProtocolSession _session;
     protected VirtualHost _virtualHost;
-    protected StoreContext _storeContext = new StoreContext();
     protected AMQQueue _queue;
     protected AMQShortString QUEUE_NAME;
 
@@ -97,7 +93,7 @@ public class InternalBrokerBaseCase extends TestCase
 
     protected void checkStoreContents(int messageCount)
     {
-        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageMetaDataMap().size());
+        assertEquals("Message header count incorrect in the MetaDataMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getMessageCount());
 
         //The above publish message is sufficiently small not to fit in the header so no Body is required.
         //assertEquals("Message body count incorrect in the ContentBodyMap", messageCount, ((TestableMemoryMessageStore) _messageStore).getContentBodyMap().size());
@@ -114,11 +110,7 @@ public class InternalBrokerBaseCase extends TestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
-        catch (ConsumerTagNotUniqueException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+
         //Keep the compiler happy
         return null;
     }
@@ -137,11 +129,7 @@ public class InternalBrokerBaseCase extends TestCase
             e.printStackTrace();
             fail(e.getMessage());
         }
-        catch (ConsumerTagNotUniqueException e)
-        {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+
         //Keep the compiler happy
         return null;
     }

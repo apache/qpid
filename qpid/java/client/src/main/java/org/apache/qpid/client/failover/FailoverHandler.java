@@ -21,7 +21,6 @@
 package org.apache.qpid.client.failover;
 
 import org.apache.qpid.AMQDisconnectedException;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.AMQState;
@@ -94,7 +93,6 @@ public class FailoverHandler implements Runnable
      * Creates a failover handler on a protocol session, for a particular MINA session (network connection).
      *
      * @param amqProtocolHandler The protocol handler that spans the failover.
-     * @param session            The MINA session, for the failing connection.
      */
     public FailoverHandler(AMQProtocolHandler amqProtocolHandler)
     {
@@ -135,9 +133,11 @@ public class FailoverHandler implements Runnable
             // have a state waiter waiting until the connection is closed for some reason. Or in future we may have
             // a slightly more complex state model therefore I felt it was worthwhile doing this.
             AMQStateManager existingStateManager = _amqProtocolHandler.getStateManager();
-            
+
+
             // Use a fresh new StateManager for the reconnection attempts
             _amqProtocolHandler.setStateManager(new AMQStateManager());
+
 
             if (!_amqProtocolHandler.getConnection().firePreFailover(_host != null))
             {
@@ -190,7 +190,7 @@ public class FailoverHandler implements Runnable
             }
             else
             {
-                // Set the new Protocol Session in the StateManager.               
+                // Set the new Protocol Session in the StateManager.
                 existingStateManager.setProtocolSession(_amqProtocolHandler.getProtocolSession());
 
                 // Now that the ProtocolHandler has been reconnected clean up
@@ -198,7 +198,7 @@ public class FailoverHandler implements Runnable
                 // it any old exception that had occured prior to failover may
                 // prohibit reconnection.
                 // e.g. During testing when the broker is shutdown gracefully.
-                // The broker 
+                // The broker
                 // Clear any exceptions we gathered
                 if (existingStateManager.getCurrentState() != AMQState.CONNECTION_OPEN)
                 {

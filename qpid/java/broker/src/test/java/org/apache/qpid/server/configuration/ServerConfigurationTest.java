@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,7 @@ import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Collections;
 
 import junit.framework.TestCase;
 
@@ -482,12 +483,17 @@ public class ServerConfigurationTest extends TestCase
     {
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        assertEquals(5672, serverConfig.getPort());
+        assertNotNull(serverConfig.getPorts());
+        assertEquals(1, serverConfig.getPorts().size());
+        assertEquals(5672, serverConfig.getPorts().get(0));
+
 
         // Check value we set
-        _config.setProperty("connector.port", 10);
+        _config.setProperty("connector.port", "10");
         serverConfig = new ServerConfiguration(_config);
-        assertEquals(10, serverConfig.getPort());
+        assertNotNull(serverConfig.getPorts());
+        assertEquals(1, serverConfig.getPorts().size());
+        assertEquals("10", serverConfig.getPorts().get(0));
     }
 
     public void testGetBind() throws ConfigurationException
@@ -723,7 +729,9 @@ public class ServerConfigurationTest extends TestCase
         ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
         assertEquals(4235, config.getSSLPort()); // From first file, not
                                                  // overriden by second
-        assertEquals(2342, config.getPort()); // From the first file, not
+        assertNotNull(config.getPorts());
+        assertEquals(1, config.getPorts().size());
+        assertEquals("2342", config.getPorts().get(0)); // From the first file, not
                                               // present in the second
         assertEquals(true, config.getQpidNIO()); // From the second file, not
                                                  // present in the first
@@ -967,7 +975,7 @@ public class ServerConfigurationTest extends TestCase
         out.write("\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
         out.write("</firewall>\n");
         out.close();
-        
+
         reg.getConfiguration().reparseConfigFile();
 
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));

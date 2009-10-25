@@ -42,10 +42,14 @@ public class MockSubscription implements Subscription
     private AMQShortString tag = new AMQShortString("mocktag");
     private AMQQueue queue = null;
     private StateListener _listener = null;
-    private QueueEntry lastSeen = null;
+    private AMQQueue.Context _queueContext = null;
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();
+
+    private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
+    private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
+
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
@@ -81,14 +85,19 @@ public class MockSubscription implements Subscription
         return _subscriptionID;
     }
 
-    public QueueEntry getLastSeenEntry()
+    public AMQQueue.Context getQueueContext()
     {
-        return lastSeen;
+        return _queueContext;
     }
 
     public SubscriptionAcquiredState getOwningState()
     {
-        return new QueueEntry.SubscriptionAcquiredState(this);
+        return _owningState;
+    }
+
+    public QueueEntry.SubscriptionAssignedState getAssignedState()
+    {
+        return _assignedState;
     }
 
     public LogActor getLogActor()
@@ -116,6 +125,21 @@ public class MockSubscription implements Subscription
         return true;
     }
 
+    public void confirmAutoClose()
+    {
+
+    }
+
+    public void set(String key, Object value)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Object get(String key)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public boolean isAutoClose()
     {
         return false;
@@ -129,6 +153,16 @@ public class MockSubscription implements Subscription
     public boolean isClosed()
     {
         return _closed;
+    }
+
+    public boolean acquires()
+    {
+        return true;
+    }
+
+    public boolean seesRequeues()
+    {
+        return true;
     }
 
     public boolean isSuspended()
@@ -149,30 +183,32 @@ public class MockSubscription implements Subscription
     {
     }
 
+    public void onDequeue(QueueEntry queueEntry)
+    {
+    }
+
     public void restoreCredit(QueueEntry queueEntry)
     {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void send(QueueEntry msg) throws AMQException
     {
-        lastSeen = msg;
         messages.add(msg);
     }
 
-    public boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue)
+    public void setQueueContext(AMQQueue.Context queueContext)
     {
-        boolean result = false;
-        if (expected != null)
-        {
-            result = (expected.equals(lastSeen));
-        }
-        lastSeen = newValue;
-        return result;
+        _queueContext = queueContext;
     }
 
     public void setQueue(AMQQueue queue, boolean exclusive)
     {
         this.queue = queue;
+    }
+
+    public void setNoLocal(boolean noLocal)
+    {        
     }
 
     public void setStateListener(StateListener listener)

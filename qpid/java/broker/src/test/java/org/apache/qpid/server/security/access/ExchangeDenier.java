@@ -14,16 +14,16 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.security.access;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.security.PrincipalHolder;
 
 public class ExchangeDenier extends AllowAll
 {
@@ -40,9 +40,9 @@ public class ExchangeDenier extends AllowAll
             return new ExchangeDenier();
         }
     };
-    
+
     @Override
-    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
     {
         return AuthzResult.DENIED;
     }

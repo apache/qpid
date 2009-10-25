@@ -40,7 +40,7 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
@@ -60,11 +60,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
     public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
-        MessageStore store = virtualHost.getMessageStore();
+        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
 
         if (!body.getPassive())
@@ -109,11 +109,31 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 else
                 {
                     queue = createQueue(queueName, body, virtualHost, session);
+                    queue.setPrincipalHolder(session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
                         store.createQueue(queue, body.getArguments());
                     }
                     queueRegistry.registerQueue(queue);
+                    if(queue.isExclusive()  && !queue.isAutoDelete())
+                    {
+                        final AMQQueue q = queue;
+                        queue.setExclusiveOwner(session);
+                        final AMQProtocolSession.Task sessionCloseTask = new AMQProtocolSession.Task()
+                        {
+                            public void doTask(AMQProtocolSession session) throws AMQException
+                            {
+                                q.setExclusiveOwner(null);
+                            }
+                        };
+                        session.addSessionCloseTask(sessionCloseTask);
+                        queue.addQueueDeleteTask(new AMQQueue.Task() {
+                            public void doTask(AMQQueue queue) throws AMQException
+                            {
+                                session.removeSessionCloseTask(sessionCloseTask);
+                            }
+                        });
+                    }
                     if (autoRegister)
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
@@ -123,14 +143,18 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     }
                 }
             }
-            else if (queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
+            else if (queue.getPrincipalHolder() != null
+                      && queue.getPrincipalHolder().getPrincipal() != null
+                      && queue.getPrincipalHolder().getPrincipal().getName() != null
+                      && (!queue.getPrincipalHolder().getPrincipal().getName().equals(session.getPrincipal().getName())
+                          || ((!body.getPassive() && queue.getExclusiveOwner() != null && queue.getExclusiveOwner() != session))))
             {
                 throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
                                                                            + "declared on another client ID('"
-                                                                           + queue.getOwner() + "')");
-            }
+                                                                           + queue.getPrincipalHolder().getPrincipal().getName() + "')");
 
+            }
             AMQChannel channel = session.getChannel(channelId);
 
             if (channel == null)
@@ -197,7 +221,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
             });
         }// if exclusive and not durable
-        
+
         return queue;
     }
 }

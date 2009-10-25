@@ -68,7 +68,7 @@ public class AMQPChannelActor extends AbstractActor
          */
         _logString = "[" + MessageFormat.format(ChannelLogSubject.CHANNEL_FORMAT,
                                                session.getSessionID(),
-                                               session.getAuthorizedID().getName(),
+                                               session.getPrincipal().getName(),
                                                session.getRemoteAddress(),
                                                session.getVirtualHost().getName(),
                                                channel.getChannelId())

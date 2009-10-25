@@ -46,7 +46,7 @@ public class ChannelLogSubject extends AbstractLogSubject
         // Provide the value for the 4th replacement.
         setLogStringWithFormat(CHANNEL_FORMAT,
               session.getSessionID(),
-              session.getAuthorizedID().getName(),
+              session.getPrincipal().getName(),
               session.getRemoteAddress(),
               session.getVirtualHost().getName(),
               channel.getChannelId());

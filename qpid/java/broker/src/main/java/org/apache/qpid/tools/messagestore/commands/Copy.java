@@ -14,14 +14,16 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.tools.messagestore.commands;
 
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
 
 public class Copy extends Move
 {
@@ -49,7 +51,9 @@ public class Copy extends Move
 
     protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue)
     {
-        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getName().toString(), _storeContext);
+        ServerTransaction txn = new LocalTransaction(fromQueue.getVirtualHost().getTransactionLog());
+        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getName().toString(), txn);
+        txn.commit();
     }
 
 }

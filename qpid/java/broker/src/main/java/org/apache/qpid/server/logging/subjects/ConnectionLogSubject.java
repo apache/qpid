@@ -41,7 +41,7 @@ public class ConnectionLogSubject extends AbstractLogSubject
     public ConnectionLogSubject(AMQProtocolSession session)
     {
         setLogStringWithFormat(CONNECTION_FORMAT, session.getSessionID(),
-               session.getAuthorizedID().getName(),
+               session.getPrincipal().getName(),
                session.getRemoteAddress(),
                session.getVirtualHost().getName());
     }

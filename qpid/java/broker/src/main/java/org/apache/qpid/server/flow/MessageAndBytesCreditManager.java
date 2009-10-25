@@ -1,8 +1,6 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
-
-import java.util.concurrent.atomic.AtomicLong;
+import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -29,14 +27,24 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
     private long _messageCredit;
     private long _bytesCredit;
 
-    MessageAndBytesCreditManager(final long messageCredit, final long bytesCredit)
+    public MessageAndBytesCreditManager(final long messageCredit, final long bytesCredit)
     {
         _messageCredit = messageCredit;
         _bytesCredit = bytesCredit;
     }
 
-    public synchronized void addCredit(long messageCredit, long bytesCredit)
+    public synchronized long getMessageCredit()
     {
+        return _messageCredit;
+    }
+
+    public synchronized long getBytesCredit()
+    {
+        return _bytesCredit;
+    }
+
+    public synchronized void restoreCredit(long messageCredit, long bytesCredit)
+    {        
         _messageCredit += messageCredit;
         _bytesCredit += bytesCredit;
         setSuspended(hasCredit());
@@ -54,7 +62,7 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
         return (_messageCredit > 0L) && ( _bytesCredit > 0L );
     }
 
-    public synchronized boolean useCreditForMessage(AMQMessage msg)
+    public synchronized boolean useCreditForMessage(ServerMessage msg)
     {
         if(_messageCredit == 0L)
         {
@@ -75,5 +83,10 @@ public class MessageAndBytesCreditManager extends AbstractFlowCreditManager impl
             return true;
         }
         
+    }
+
+    public synchronized void setBytesCredit(long bytesCredit)
+    {
+        _bytesCredit = bytesCredit;
     }
 }

@@ -89,11 +89,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
         // TODO: use system property thingy for this
-        if (System.getProperty("UseTransportIo", "false").equals("false"))   
+        if (System.getProperty("UseTransportIo", "false").equals("false"))
         {
             TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
-        } 
-        else 
+        }
+        else
         {
             _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
         }
@@ -197,7 +197,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
      * Low  = MaxPrefetch / 2
      * @return XASession
      * @throws JMSException thrown if there is a problem creating the session.
-     */        
+     */
     public XASession createXASession() throws JMSException
     {
         return createXASession((int) _conn.getMaxPrefetch(), (int) _conn.getMaxPrefetch() / 2);
@@ -214,7 +214,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         // todo Be aware of possible changes to parameter order as versions change.
         BasicQosBody basicQosBody = _conn.getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
         _conn._protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
-        
+
         if (transacted)
         {
             if (_logger.isDebugEnabled())
@@ -222,7 +222,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
             TxSelectBody body = _conn.getProtocolHandler().getMethodRegistry().createTxSelectBody();
-            
+
             // TODO: Be aware of possible changes to parameter order as versions change.
             _conn._protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
         }
@@ -299,7 +299,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             }
         }
     }
-    
+
     public void setIdleTimeout(long l){}
 
     public int getMaxChannelID()

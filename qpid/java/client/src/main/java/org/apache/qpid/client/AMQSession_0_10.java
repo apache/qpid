@@ -468,7 +468,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey,AMQShortString[] bindingKeys)
     throws JMSException
     {
-        String rk = "";
+        String rk = null;
         boolean res;
         if (bindingKeys != null && bindingKeys.length>0)
         {

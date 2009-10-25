@@ -28,38 +28,34 @@ import org.apache.qpid.transport.Receiver;
 
 /**
  * A ProtocolEngine is a Receiver for java.nio.ByteBuffers. It takes the data passed to it in the received
- * decodes it and then process the result. 
- */ 
-public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer> 
-{ 
-   // Sets the network driver providing data for this ProtocolEngine 
+ * decodes it and then process the result.
+ */
+public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>
+{
+   // Sets the network driver providing data for this ProtocolEngine
    void setNetworkDriver (NetworkDriver driver);
- 
-   // Returns the remote address of the NetworkDriver 
+
+   // Returns the remote address of the NetworkDriver
    SocketAddress getRemoteAddress();
 
-   // Returns the local address of the NetworkDriver 
+   // Returns the local address of the NetworkDriver
    SocketAddress getLocalAddress();
- 
-   // Returns number of bytes written 
+
+   // Returns number of bytes written
    long getWrittenBytes();
- 
-   // Returns number of bytes read 
+
+   // Returns number of bytes read
    long getReadBytes();
- 
-   // Called by the NetworkDriver when the socket has been closed for reading 
+
+   // Called by the NetworkDriver when the socket has been closed for reading
    void closed();
- 
-   // Called when the NetworkEngine has not written data for the specified period of time (will trigger a  
-   // heartbeat) 
+
+   // Called when the NetworkEngine has not written data for the specified period of time (will trigger a
+   // heartbeat)
    void writerIdle();
-  
-   // Called when the NetworkEngine has not read data for the specified period of time (will close the connection) 
+
+   // Called when the NetworkEngine has not read data for the specified period of time (will close the connection)
    void readerIdle();
- 
-   /**
-    * Accepts an AMQFrame for writing to the network. The ProtocolEngine encodes the frame into bytes and
-    * passes the data onto the NetworkDriver for sending
-    */ 
-   void writeFrame(AMQDataBlock frame);
-} 
+
+
+}

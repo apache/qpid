@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -65,16 +65,9 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         return null;
     }
 
-    public void register() throws AMQException
+    public void register() throws JMException
     {
-        try
-        {
-            getManagedObjectRegistry().registerObject(this);
-        }
-        catch (JMException e)
-        {
-            throw new AMQException("Error registering managed object " + this + ": " + e, e);
-        }
+        getManagedObjectRegistry().registerObject(this);
     }
 
     protected ManagedObjectRegistry getManagedObjectRegistry()
@@ -98,7 +91,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
     {
         return getObjectInstanceName() + "[" + getType() + "]";
     }
-    
+
 
     /**
      * Created the ObjectName as per the JMX Specs
@@ -140,7 +133,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
 
         objectName.append(",");
         objectName.append("version=").append(_version);
-        
+
         return new ObjectName(objectName.toString());
     }
 

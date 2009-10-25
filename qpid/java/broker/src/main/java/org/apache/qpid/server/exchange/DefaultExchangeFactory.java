@@ -59,6 +59,20 @@ public class DefaultExchangeFactory implements ExchangeFactory
         return _exchangeClassMap.values();
     }
 
+    public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
+            throws AMQException
+    {
+        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(new AMQShortString(type));
+        if (exchType == null)
+        {
+
+            throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
+        }
+        Exchange e = exchType.newInstance(_host, (new AMQShortString(exchange)).intern(), durable, 0, autoDelete);
+        return e;
+
+    }
+
     public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                                    int ticket)
             throws AMQException
@@ -92,7 +106,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
                     return;
                 }
                 Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
-                ExchangeType type = exchangeTypeClass.newInstance();
+                ExchangeType<? extends ExchangeType> type = exchangeTypeClass.newInstance();
                 registerExchangeType(type);
             }
             catch (ClassCastException classCastEx)

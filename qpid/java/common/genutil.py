@@ -198,6 +198,7 @@ class Field:
       self.read = "dec.read%s()" % self.coder
       self.write = "enc.write%s(check(struct).%s)" % (self.coder, self.name)
     self.type = jtype(self.type_node)
+    self.ref_type = jref(self.type)
     self.default = DEFAULTS.get(self.type, "null")
     self.has = camel(1, "has", self.name)
     self.get = camel(1, "get", self.name)

@@ -110,10 +110,6 @@ import org.slf4j.LoggerFactory;
  * <tr><td>
  * </table>
  *
- * @todo Explain the system property: amqj.shared_read_write_pool. How does putting the protocol codec filter before the
- * async write filter make it a shared pool? The pooling filter uses the same thread pool for reading and writing
- * anyway, see {@link org.apache.qpid.pool.PoolingFilter}, docs for comments. Will putting the protocol codec
- * filter before it mean not doing the read/write asynchronously but in the main filter thread?
  * @todo Use a single handler instance, by shifting everything to do with the 'protocol session' state, including
  * failover state, into AMQProtocolSession, and tracking that from AMQConnection? The lifecycles of
  * AMQProtocolSesssion and AMQConnection will be the same, so if there is high cohesion between them, they could
@@ -172,10 +168,10 @@ public class AMQProtocolHandler implements ProtocolEngine
     private Job _writeJob;
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
     private NetworkDriver _networkDriver;
-    
+
     private long _writtenBytes;
     private long _readBytes;
-    
+
     /**
      * Creates a new protocol handler, associated with the specified client connection instance.
      *
@@ -214,10 +210,6 @@ public class AMQProtocolHandler implements ProtocolEngine
      * where the connection died, an attempt to failover automatically to a new connection may be started. The failover
      * process will be started, provided that it is the clients policy to allow failover, and provided that a failover
      * has not already been started or failed.
-     *
-     * <p/>It is important to note that when the connection dies this method may be called or {@link #exceptionCaught}
-     * may be called first followed by this method. This depends on whether the client was trying to send data at the
-     * time of the failure.
      *
      * @todo Clarify: presumably exceptionCaught is called when the client is sending during a connection failure and
      * not otherwise? The above comment doesn't make that clear.
@@ -261,7 +253,7 @@ public class AMQProtocolHandler implements ProtocolEngine
                 {
                     _logger.debug("sessionClose() not allowed to failover");
                     _connection.exceptionReceived(new AMQDisconnectedException(
-                            "Server closed connection and reconnection " + "not permitted.", 
+                            "Server closed connection and reconnection " + "not permitted.",
                             _stateManager.getLastException()));
                 }
                 else
@@ -277,12 +269,15 @@ public class AMQProtocolHandler implements ProtocolEngine
     /** See {@link FailoverHandler} to see rationale for separate thread. */
     private void startFailoverThread()
     {
-        Thread failoverThread = new Thread(_failoverHandler);
-        failoverThread.setName("Failover");
-        // Do not inherit daemon-ness from current thread as this can be a daemon
-        // thread such as a AnonymousIoService thread.
-        failoverThread.setDaemon(false);
-        failoverThread.start();
+        if(!_connection.isClosed())
+        {
+            Thread failoverThread = new Thread(_failoverHandler);
+            failoverThread.setName("Failover");
+            // Do not inherit daemon-ness from current thread as this can be a daemon
+            // thread such as a AnonymousIoService thread.
+            failoverThread.setDaemon(false);
+            failoverThread.start();
+        }
     }
 
     public void readerIdle()
@@ -293,7 +288,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         _logger.warn("Timed out while waiting for heartbeat from peer.");
         _networkDriver.close();
     }
-    
+
     public void writerIdle()
     {
         _logger.debug("Protocol Session [" + this + "] idle: reader");
@@ -365,6 +360,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     public void propagateExceptionToAllWaiters(Exception e)
     {
         getStateManager().error(e);
+
         propagateExceptionToFrameListeners(e);
     }
 
@@ -582,7 +578,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         }
 
         _connection.bytesSent(_writtenBytes);
-        
+
         if (wait)
         {
             _networkDriver.flush();
@@ -642,7 +638,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
                 _frameListeners.add(listener);
                 //FIXME: At this point here we should check or before add we should check _stateManager is in an open
-                // state so as we don't check we are likely just to time out here as I believe is being seen in QPID-1255 
+                // state so as we don't check we are likely just to time out here as I believe is being seen in QPID-1255
             }
             writeFrame(frame);
 
@@ -828,7 +824,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         _networkDriver = driver;
     }
-    
+
     /** @param delay delay in seconds (not ms) */
     void initHeartbeats(int delay)
     {

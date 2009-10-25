@@ -21,12 +21,16 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -42,7 +46,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private final SimpleQueueEntryList _queueEntryList;
 
-    private final AMQMessage _message;
+    private MessageReference _message;
 
     private Set<Subscription> _rejectedBy = null;
 
@@ -75,6 +79,11 @@ public class QueueEntryImpl implements QueueEntry
 
     volatile QueueEntryImpl _next;
 
+    private static final int DELIVERED_TO_CONSUMER = 1;
+    private static final int REDELIVERED = 2;
+
+    private volatile int _deliveryState;
+
 
     QueueEntryImpl(SimpleQueueEntryList queueEntryList)
     {
@@ -83,18 +92,19 @@ public class QueueEntryImpl implements QueueEntry
     }
 
 
-    public QueueEntryImpl(SimpleQueueEntryList queueEntryList, AMQMessage message, final long entryId)
+    public QueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message, final long entryId)
     {
         _queueEntryList = queueEntryList;
-        _message = message;
+
+        _message = message == null ? null : message.newReference();
 
         _entryIdUpdater.set(this, entryId);
     }
 
-    public QueueEntryImpl(SimpleQueueEntryList queueEntryList, AMQMessage message)
+    public QueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message)
     {
         _queueEntryList = queueEntryList;
-        _message = message;
+        _message = message == null ? null :  message.newReference();
     }
 
     protected void setEntryId(long entryId)
@@ -112,24 +122,36 @@ public class QueueEntryImpl implements QueueEntry
         return _queueEntryList.getQueue();
     }
 
-    public AMQMessage getMessage()
+    public ServerMessage getMessage()
     {
-        return _message;
+        return  _message == null ? null : _message.getMessage();
     }
 
     public long getSize()
     {
-        return getMessage().getSize();
+        return getMessage() == null ? 0 : getMessage().getSize();
     }
 
     public boolean getDeliveredToConsumer()
     {
-        return getMessage().getDeliveredToConsumer();
+        return (_deliveryState & DELIVERED_TO_CONSUMER) != 0;
     }
 
     public boolean expired() throws AMQException
     {
-        return getMessage().expired(getQueue());
+        ServerMessage message = getMessage();
+        if(message != null)
+        {
+            long expiration = message.getExpiration();
+            if (expiration != 0L)
+            {
+                long now = System.currentTimeMillis();
+
+                return (now > expiration);
+            }
+        }
+        return false;
+
     }
 
     public boolean isAcquired()
@@ -145,6 +167,24 @@ public class QueueEntryImpl implements QueueEntry
     private boolean acquire(final EntryState state)
     {
         boolean acquired = _stateUpdater.compareAndSet(this,AVAILABLE_STATE, state);
+
+        // deal with the case where the node has been assigned to a given subscription already
+        // including the case that the node is assigned to a closed subscription
+        if(!acquired)
+        {
+            if(state != NON_SUBSCRIPTION_ACQUIRED_STATE)
+            {
+                EntryState currentState = _state;
+                if(currentState.getState() == State.AVAILABLE
+                   && ((currentState == AVAILABLE_STATE)
+                       || (((SubscriptionAcquiredState)state).getSubscription() ==
+                           ((SubscriptionAssignedState)currentState).getSubscription())
+                       || ((SubscriptionAssignedState)currentState).getSubscription().isClosed() ))
+                {
+                    acquired = _stateUpdater.compareAndSet(this,currentState, state);
+                }
+            }
+        }
         if(acquired && _stateChangeListeners != null)
         {
             notifyStateChange(State.AVAILABLE, State.ACQUIRED);
@@ -155,7 +195,12 @@ public class QueueEntryImpl implements QueueEntry
 
     public boolean acquire(Subscription sub)
     {
-        return acquire(sub.getOwningState());
+        final boolean acquired = acquire(sub.getOwningState());
+        if(acquired)
+        {
+            _deliveryState |= DELIVERED_TO_CONSUMER;
+        }
+        return acquired;
     }
 
     public boolean acquiredBySubscription()
@@ -164,38 +209,89 @@ public class QueueEntryImpl implements QueueEntry
         return (_state instanceof SubscriptionAcquiredState);
     }
 
-    public void setDeliveredToSubscription()
+    public boolean isAcquiredBy(Subscription subscription)
     {
-        getMessage().setDeliveredToConsumer();
+        EntryState state = _state;
+        return state instanceof SubscriptionAcquiredState
+               && ((SubscriptionAcquiredState)state).getSubscription() == subscription;
     }
 
     public void release()
     {
         _stateUpdater.set(this,AVAILABLE_STATE);
-    }
-
-    public String debugIdentity()
-    {
-        AMQMessage message = getMessage();
-        if (message == null)
+        if(!getQueue().isDeleted())
         {
-            return "null";
+            getQueue().requeue(this);
+            if(_stateChangeListeners != null)
+            {
+                notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+            }
+
         }
-        else
+        else if(acquire())
         {
-            return message.debugIdentity();
+            routeToAlternate();
         }
+
+
     }
 
-
-    public boolean immediateAndNotDelivered() 
+    public boolean releaseButRetain()
     {
-        return getMessage().immediateAndNotDelivered();
+        EntryState state = _state;
+
+        boolean stateUpdated = false;
+
+        if(state instanceof SubscriptionAcquiredState)
+        {
+            Subscription sub = ((SubscriptionAcquiredState) state).getSubscription();
+            if(_stateUpdater.compareAndSet(this, state, sub.getAssignedState()))
+            {
+                System.err.println("Message released (and retained)" + getMessage().getMessageNumber());
+                getQueue().requeue(this);
+                if(_stateChangeListeners != null)
+                {
+                    notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+                }
+                stateUpdated = true;
+            }
+        }
+
+        return stateUpdated;
+
     }
 
-    public void setRedelivered(boolean b)
+    public boolean immediateAndNotDelivered()
     {
-        getMessage().setRedelivered(b);
+        return !getDeliveredToConsumer() && isImmediate();
+    }
+
+    private boolean isImmediate()
+    {
+        final ServerMessage message = getMessage();
+        return message != null && message.isImmediate();
+    }
+
+    public void setRedelivered()
+    {
+        _deliveryState |= REDELIVERED;
+    }
+
+    public AMQMessageHeader getMessageHeader()
+    {
+        final ServerMessage message = getMessage();
+        return message == null ? null : message.getMessageHeader();
+    }
+
+    public boolean isPersistent()
+    {
+        final ServerMessage message = getMessage();
+        return message != null && message.isPersistent();
+    }
+
+    public boolean isRedelivered()
+    {
+        return (_deliveryState & REDELIVERED) != 0;
     }
 
     public Subscription getDeliveredSubscription()
@@ -230,12 +326,12 @@ public class QueueEntryImpl implements QueueEntry
         }
         else
         {
-            _log.warn("Requesting rejection by null subscriber:" + debugIdentity());
+            _log.warn("Requesting rejection by null subscriber:" + this);
         }
     }
 
     public boolean isRejectedBy(Subscription subscription)
-    {        
+    {
 
         if (_rejectedBy != null) // We have subscriptions that rejected this message
         {
@@ -247,17 +343,16 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-
-    public void requeue(final StoreContext storeContext) throws AMQException
+    public void requeue(Subscription subscription)
     {
-        getQueue().requeue(storeContext, this);
+        getQueue().requeue(this, subscription);
         if(_stateChangeListeners != null)
         {
             notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
         }
     }
 
-    public void dequeue(final StoreContext storeContext) throws FailedDequeueException
+    public void dequeue()
     {
         EntryState state = _state;
 
@@ -266,10 +361,10 @@ public class QueueEntryImpl implements QueueEntry
             if (state instanceof SubscriptionAcquiredState)
             {
                 Subscription s = ((SubscriptionAcquiredState) state).getSubscription();
-                s.restoreCredit(this);
+                s.onDequeue(this);
             }
 
-            getQueue().dequeue(storeContext, this);
+            getQueue().dequeue(this);
             if(_stateChangeListeners != null)
             {
                 notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
@@ -287,23 +382,74 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void dispose(final StoreContext storeContext) throws MessageCleanupException
+    public void dispose()
     {
         if(delete())
         {
-            getMessage().decrementReference(storeContext);
+            _message.release();
         }
     }
 
-    public void discard(StoreContext storeContext) throws FailedDequeueException, MessageCleanupException
+    public void discard()
     {
         //if the queue is null then the message is waiting to be acked, but has been removed.
         if (getQueue() != null)
         {
-            dequeue(storeContext);
+            dequeue();
         }
 
-        dispose(storeContext);
+        dispose();
+    }
+
+    public void routeToAlternate()
+    {
+        final AMQQueue currentQueue = getQueue();
+            Exchange alternateExchange = currentQueue.getAlternateExchange();
+
+            if(alternateExchange != null)
+            {
+                final List<AMQQueue> rerouteQueues = alternateExchange.route(new InboundMessageAdapter(this));
+                final ServerMessage message = getMessage();
+                if(rerouteQueues != null && rerouteQueues.size() != 0)
+                {
+                    ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
+
+                    txn.enqueue(rerouteQueues, message, new ServerTransaction.Action() {
+                        public void postCommit()
+                        {
+                            try
+                            {
+                                for(AMQQueue queue : rerouteQueues)
+                                {
+                                    QueueEntry entry = queue.enqueue(message);
+                                }
+                            }
+                            catch (AMQException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        public void onRollback()
+                        {
+
+                        }
+                    });
+                    txn.dequeue(currentQueue,message,
+                                new ServerTransaction.Action()
+                                {
+                                    public void postCommit()
+                                    {
+                                        discard();
+                                    }
+
+                                    public void onRollback()
+                                    {
+
+                                    }
+                                });
+                }
+            }
     }
 
     public boolean isQueueDeleted()
@@ -379,7 +525,7 @@ public class QueueEntryImpl implements QueueEntry
 
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
-            _queueEntryList.advanceHead();            
+            _queueEntryList.advanceHead();
             return true;
         }
         else

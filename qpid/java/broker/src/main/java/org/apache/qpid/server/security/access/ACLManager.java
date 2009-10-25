@@ -14,9 +14,9 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.security.access;
 
@@ -32,14 +32,11 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.SecurityConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
-import org.apache.qpid.server.security.access.plugins.SimpleXML;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class ACLManager
@@ -78,7 +75,7 @@ public class ACLManager
     {
         _hostPlugins = configurePlugins(hostConfig);
     }
-    
+
     public Map<String, ACLPlugin> configurePlugins(SecurityConfiguration hostConfig) throws ConfigurationException
     {
         Configuration securityConfig = hostConfig.getConfiguration();
@@ -108,7 +105,7 @@ public class ACLManager
             }
         }
         return plugins;
-    }    
+    }
 
     public static Logger getLogger()
     {
@@ -131,18 +128,18 @@ public class ACLManager
             if (result == AuthzResult.DENIED)
             {
                 // Something vetoed the access, we're done
-                return false; 
+                return false;
             }
             else if (result == AuthzResult.ALLOWED)
             {
-                // Remove plugin from global check list since 
+                // Remove plugin from global check list since
                 // host allow overrides global allow
                 remainingPlugins.remove(plugin.getKey());
             }
         }
-        
+
         for (ACLPlugin plugin : remainingPlugins.values())
-        {   
+        {
             result = checker.allowed(plugin);
             if (result == AuthzResult.DENIED)
             {
@@ -152,7 +149,7 @@ public class ACLManager
         return true;
     }
 
-    public boolean authoriseBind(final AMQProtocolSession session, final Exchange exch, final AMQQueue queue,
+    public boolean authoriseBind(final PrincipalHolder session, final Exchange exch, final AMQQueue queue,
             final AMQShortString routingKey)
     {
         return checkAllPlugins(new AccessCheck()
@@ -167,7 +164,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseConnect(final AMQProtocolSession session, final VirtualHost virtualHost)
+    public boolean authoriseConnect(final PrincipalHolder session, final VirtualHost virtualHost)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -181,7 +178,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseConsume(final AMQProtocolSession session, final boolean noAck, final AMQQueue queue)
+    public boolean authoriseConsume(final PrincipalHolder session, final boolean noAck, final AMQQueue queue)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -195,7 +192,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseConsume(final AMQProtocolSession session, final boolean exclusive, final boolean noAck,
+    public boolean authoriseConsume(final PrincipalHolder session, final boolean exclusive, final boolean noAck,
             final boolean noLocal, final boolean nowait, final AMQQueue queue)
     {
         return checkAllPlugins(new AccessCheck()
@@ -210,7 +207,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseCreateExchange(final AMQProtocolSession session, final boolean autoDelete,
+    public boolean authoriseCreateExchange(final PrincipalHolder session, final boolean autoDelete,
             final boolean durable, final AMQShortString exchangeName, final boolean internal, final boolean nowait,
             final boolean passive, final AMQShortString exchangeType)
     {
@@ -227,7 +224,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseCreateQueue(final AMQProtocolSession session, final boolean autoDelete,
+    public boolean authoriseCreateQueue(final PrincipalHolder session, final boolean autoDelete,
             final boolean durable, final boolean exclusive, final boolean nowait, final boolean passive,
             final AMQShortString queue)
     {
@@ -243,7 +240,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseDelete(final AMQProtocolSession session, final AMQQueue queue)
+    public boolean authoriseDelete(final PrincipalHolder session, final AMQQueue queue)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -257,7 +254,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseDelete(final AMQProtocolSession session, final Exchange exchange)
+    public boolean authoriseDelete(final PrincipalHolder session, final Exchange exchange)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -270,8 +267,8 @@ public class ACLManager
 
         });
     }
-    
-    public boolean authorisePublish(final AMQProtocolSession session, final boolean immediate, final boolean mandatory,
+
+    public boolean authorisePublish(final PrincipalHolder session, final boolean immediate, final boolean mandatory,
             final AMQShortString routingKey, final Exchange e)
     {
         return checkAllPlugins(new AccessCheck()
@@ -286,7 +283,7 @@ public class ACLManager
         });
     }
 
-    public boolean authorisePurge(final AMQProtocolSession session, final AMQQueue queue)
+    public boolean authorisePurge(final PrincipalHolder session, final AMQQueue queue)
     {
         return checkAllPlugins(new AccessCheck()
         {
@@ -300,7 +297,7 @@ public class ACLManager
         });
     }
 
-    public boolean authoriseUnbind(final AMQProtocolSession session, final Exchange exch,
+    public boolean authoriseUnbind(final PrincipalHolder session, final Exchange exch,
             final AMQShortString routingKey, final AMQQueue queue)
     {
         return checkAllPlugins(new AccessCheck()

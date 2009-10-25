@@ -215,7 +215,7 @@ public class BindingLoggingTest extends AbstractTestLogging
         List<String> results = _monitor.findMatches(BND_PREFIX);
 
         // We will have two binds as we bind all queues to the default exchange
-        assertEquals("Result set larger than expected.", 4, results.size());
+        assertEquals("Result not as expected." + results, 4, results.size());
 
 
         String messageID = "BND-1001";
@@ -241,7 +241,7 @@ public class BindingLoggingTest extends AbstractTestLogging
 
         String subject = fromSubject(log);
 
-        assertTrue("Routing Key does not start with TempQueue:"+AbstractTestLogSubject.getSlice("rk", subject), 
+        assertTrue("Routing Key does not start with TempQueue:"+AbstractTestLogSubject.getSlice("rk", subject),
                      AbstractTestLogSubject.getSlice("rk", subject).startsWith("TempQueue"));
         assertEquals("Virtualhost not correct.", "/test",
                      AbstractTestLogSubject.getSlice("vh", subject));

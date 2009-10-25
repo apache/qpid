@@ -54,6 +54,7 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -236,8 +237,17 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
          * The registry is exported on the defined management port 'port'. We will export the RMIConnectorServer
          * on 'port +1'. Use of these two well-defined ports will ease any navigation through firewall's. 
          */
-        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(port+PORT_EXPORT_OFFSET, csf, ssf, env); 
-        final String hostname = InetAddress.getLocalHost().getHostName();
+        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(port+PORT_EXPORT_OFFSET, csf, ssf, env);
+        String localHost;
+        try
+        {
+            localHost = InetAddress.getLocalHost().getHostName();
+        }
+        catch(UnknownHostException ex)
+        {
+            localHost="127.0.0.1";
+        }
+        final String hostname = localHost;
         final JMXServiceURL externalUrl = new JMXServiceURL(
                 "service:jmx:rmi://"+hostname+":"+(port+PORT_EXPORT_OFFSET)+"/jndi/rmi://"+hostname+":"+port+"/jmxrmi");
 

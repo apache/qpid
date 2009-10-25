@@ -35,6 +35,7 @@ public class StoreContext
     private String _name;
     private Object _payload;
 
+
     public StoreContext()
     {
         _name = "StoreContext";
@@ -68,4 +69,5 @@ public class StoreContext
     {
         return "<_name = " + _name + ", _payload = " + _payload + ">";
     }
+
 }

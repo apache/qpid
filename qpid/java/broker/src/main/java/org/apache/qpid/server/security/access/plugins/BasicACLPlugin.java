@@ -21,46 +21,45 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ACLPlugin;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public abstract class BasicACLPlugin implements ACLPlugin
 {
 
-    // Returns true or false if the plugin should authorise or deny the request    
+    // Returns true or false if the plugin should authorise or deny the request
     protected abstract AuthzResult getResult();
-    
-    public AuthzResult authoriseBind(AMQProtocolSession session, Exchange exch,
+
+    public AuthzResult authoriseBind(PrincipalHolder session, Exchange exch,
             AMQQueue queue, AMQShortString routingKey)
     {
         return getResult();
     }
 
-    public AuthzResult authoriseConnect(AMQProtocolSession session,
+    public AuthzResult authoriseConnect(PrincipalHolder session,
             VirtualHost virtualHost)
     {
         return getResult();
     }
 
-    public AuthzResult authoriseConsume(AMQProtocolSession session, boolean noAck,
+    public AuthzResult authoriseConsume(PrincipalHolder session, boolean noAck,
             AMQQueue queue)
     {
-        return getResult();    
+        return getResult();
     }
 
-    public AuthzResult authoriseConsume(AMQProtocolSession session,
+    public AuthzResult authoriseConsume(PrincipalHolder session,
             boolean exclusive, boolean noAck, boolean noLocal, boolean nowait,
             AMQQueue queue)
     {
         return getResult();
     }
 
-    public AuthzResult authoriseCreateExchange(AMQProtocolSession session,
+    public AuthzResult authoriseCreateExchange(PrincipalHolder session,
             boolean autoDelete, boolean durable, AMQShortString exchangeName,
             boolean internal, boolean nowait, boolean passive,
             AMQShortString exchangeType)
@@ -68,36 +67,36 @@ public abstract class BasicACLPlugin implements ACLPlugin
         return getResult();
     }
 
-    public AuthzResult authoriseCreateQueue(AMQProtocolSession session,
+    public AuthzResult authoriseCreateQueue(PrincipalHolder session,
             boolean autoDelete, boolean durable, boolean exclusive,
             boolean nowait, boolean passive, AMQShortString queue)
     {
         return getResult();
     }
 
-    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
     {
         return getResult();
     }
 
-    public AuthzResult authoriseDelete(AMQProtocolSession session, Exchange exchange)
+    public AuthzResult authoriseDelete(PrincipalHolder session, Exchange exchange)
     {
         return getResult();
     }
 
-    public AuthzResult authorisePublish(AMQProtocolSession session,
+    public AuthzResult authorisePublish(PrincipalHolder session,
             boolean immediate, boolean mandatory, AMQShortString routingKey,
             Exchange e)
     {
         return getResult();
     }
 
-    public AuthzResult authorisePurge(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authorisePurge(PrincipalHolder session, AMQQueue queue)
     {
         return getResult();
     }
 
-    public AuthzResult authoriseUnbind(AMQProtocolSession session, Exchange exch,
+    public AuthzResult authoriseUnbind(PrincipalHolder session, Exchange exch,
             AMQShortString routingKey, AMQQueue queue)
     {
         return getResult();

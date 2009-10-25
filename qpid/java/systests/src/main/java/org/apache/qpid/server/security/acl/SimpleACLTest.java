@@ -873,7 +873,12 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         {
             Throwable cause = e.getLinkedException();
 
-            if (!(cause instanceof AMQAuthenticationException))
+            if (cause == null)
+            {
+                e.printStackTrace(System.out);
+                fail("JMS Exception did not have cause");
+            }
+            else if (!(cause instanceof AMQAuthenticationException))
             {
                 cause.printStackTrace(System.out);
                 assertEquals("Incorrect exception", IllegalStateException.class, cause.getClass());

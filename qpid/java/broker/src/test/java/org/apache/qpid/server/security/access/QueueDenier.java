@@ -14,21 +14,20 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.server.security.access;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.ACLPlugin.AuthzResult;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
+import org.apache.qpid.server.security.PrincipalHolder;
 
 public class QueueDenier extends AllowAll
 {
-    
+
     public static final ACLPluginFactory FACTORY = new ACLPluginFactory()
     {
         public boolean supportsTag(String name)
@@ -43,18 +42,18 @@ public class QueueDenier extends AllowAll
             return plugin;
         }
     };
-    
+
     private String _queueName = "";
 
-    
+
     @Override
-    public AuthzResult authoriseDelete(AMQProtocolSession session, AMQQueue queue)
+    public AuthzResult authoriseDelete(PrincipalHolder session, AMQQueue queue)
     {
         if (!(queue.getName().toString().equals(_queueName)))
         {
             return AuthzResult.ALLOWED;
-        } 
-        else 
+        }
+        else
         {
             return AuthzResult.DENIED;
         }

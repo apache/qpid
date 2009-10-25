@@ -26,12 +26,12 @@ import org.apache.qpid.server.filter.jms.selector.SelectorParser;
 import org.apache.qpid.server.queue.Filterable;
 
 
-public class JMSSelectorFilter<E extends Exception> implements MessageFilter<E>
+public class JMSSelectorFilter implements MessageFilter
 {
     private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
 
     private String _selector;
-    private BooleanExpression<E> _matcher;
+    private BooleanExpression _matcher;
 
     public JMSSelectorFilter(String selector) throws AMQException
     {
@@ -39,7 +39,7 @@ public class JMSSelectorFilter<E extends Exception> implements MessageFilter<E>
         _matcher = new SelectorParser().parse(selector);
     }
 
-    public boolean matches(Filterable<E> message) throws E
+    public boolean matches(Filterable message)
     {
         boolean match = _matcher.matches(message);
         if(_logger.isDebugEnabled())

@@ -79,15 +79,21 @@ public class LargeMessageTest extends QpidTestCase
     }
 
     // Test boundary of 1 packet to 2 packets
-    public void test64kminus1()
+    public void test64kminus9()
     {
-        checkLargeMessage((64 * 1024) - 1);
+        checkLargeMessage((64 * 1024) - 9);
     }
 
-    public void test64k()
+    public void test64kminus8()
     {
-        checkLargeMessage(64 * 1024);
+        checkLargeMessage((64 * 1024)-8);
     }
+
+    public void test64kminus7()
+    {
+        checkLargeMessage((64 * 1024)-7);
+    }
+
 
     public void test64kplus1()
     {

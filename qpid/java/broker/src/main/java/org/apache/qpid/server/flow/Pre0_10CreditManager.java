@@ -20,7 +20,7 @@
 */
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 public class Pre0_10CreditManager extends AbstractFlowCreditManager implements FlowCreditManager
 {
@@ -81,7 +81,17 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
     }
 
 
-    public synchronized void addCredit(final long messageCredit, final long bytesCredit)
+    public long getMessageCredit()
+    {
+        return _messageCredit;
+    }
+
+    public long getBytesCredit()
+    {
+        return _bytesCredit;
+    }
+
+    public synchronized void restoreCredit(final long messageCredit, final long bytesCredit)
     {
         final long messageCreditLimit = _messageCreditLimit;
         boolean notifyIncrease = true;
@@ -123,7 +133,7 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
                 && (_messageCreditLimit == 0L || _messageCredit > 0);
     }
 
-    public synchronized boolean useCreditForMessage(final AMQMessage msg)
+    public synchronized boolean useCreditForMessage(final ServerMessage msg)
     {
         if(_messageCreditLimit != 0L)
         {

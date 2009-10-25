@@ -22,6 +22,10 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
+import java.util.Date;
+import java.util.Map;
+import java.math.BigDecimal;
+
 /**
  * AMQTypedValue combines together a native Java Object value, and an {@link AMQType}, as a fully typed AMQP parameter
  * value. It provides the ability to read and write fully typed parameters to and from byte buffers. It also provides
@@ -113,4 +117,63 @@ public class AMQTypedValue
         return _type.hashCode() ^ (_value == null ? 0 : _value.hashCode());
     }
 
+
+    public static AMQTypedValue toTypedValue(Object val)
+    {
+        if(val == null)
+        {
+            return AMQType.VOID.asTypedValue(null);
+        }
+
+        Class klass = val.getClass();
+        if(klass == String.class)
+        {
+            return AMQType.ASCII_STRING.asTypedValue(val);
+        }
+        else if(klass == Character.class)
+        {
+            return AMQType.ASCII_CHARACTER.asTypedValue(val);
+        }
+        else if(klass == Integer.class)
+        {
+            return AMQType.INT.asTypedValue(val);
+        }
+        else if(klass == Long.class)
+        {
+            return AMQType.LONG.asTypedValue(val);
+        }
+        else if(klass == Float.class)
+        {
+            return AMQType.FLOAT.asTypedValue(val);
+        }
+        else if(klass == Double.class)
+        {
+            return AMQType.DOUBLE.asTypedValue(val);
+        }
+        else if(klass == Date.class)
+        {
+            return AMQType.TIMESTAMP.asTypedValue(val);
+        }
+        else if(klass == Byte.class)
+        {
+            return AMQType.BYTE.asTypedValue(val);
+        }
+        else if(klass == Boolean.class)
+        {
+            return AMQType.BOOLEAN.asTypedValue(val);
+        }
+        else if(klass == byte[].class)
+        {
+            return AMQType.BINARY.asTypedValue(val);
+        }
+        else if(klass == BigDecimal.class)
+        {
+            return AMQType.DECIMAL.asTypedValue(val);
+        }
+        else if(val instanceof Map)
+        {
+            return AMQType.FIELD_TABLE.asTypedValue(FieldTable.convertToFieldTable((Map)val));
+        }
+        return null;
+    }
 }

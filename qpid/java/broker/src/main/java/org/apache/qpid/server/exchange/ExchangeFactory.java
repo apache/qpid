@@ -38,4 +38,6 @@ public interface ExchangeFactory
     void initialise(VirtualHostConfiguration hostConfig);
 
     Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
+
+    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
 }

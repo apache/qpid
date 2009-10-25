@@ -25,24 +25,22 @@ package org.apache.qpid.server.filter;
 
 import java.math.BigDecimal;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.Filterable;
 
 /**
  * Represents a constant expression
  */
-public class ConstantExpression<E extends Exception> implements Expression<E>
+public class ConstantExpression implements Expression
 {
 
-    static class BooleanConstantExpression<E extends Exception> extends ConstantExpression<E> implements BooleanExpression<E>
+    static class BooleanConstantExpression extends ConstantExpression implements BooleanExpression
     {
         public BooleanConstantExpression(Object value)
         {
             super(value);
         }
 
-        public boolean matches(Filterable<E> message) throws E
+        public boolean matches(Filterable message)
         {
             Object object = evaluate(message);
 
@@ -121,7 +119,7 @@ public class ConstantExpression<E extends Exception> implements Expression<E>
         this.value = value;
     }
 
-    public Object evaluate(Filterable<E> message) throws E
+    public Object evaluate(Filterable message)
     {
         return value;
     }

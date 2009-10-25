@@ -33,7 +33,6 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.access.Permission;
 
 public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBody>
 {
@@ -106,7 +105,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, "Permission denied");
                 }
 
-                long purged = queue.clearQueue(channel.getStoreContext());
+                long purged = queue.clearQueue();
 
 
                 if(!body.getNowait())

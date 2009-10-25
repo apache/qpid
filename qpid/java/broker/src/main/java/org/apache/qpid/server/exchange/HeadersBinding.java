@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.message.AMQMessageHeader;
 
 /**
  * Defines binding and matching based on a set of headers.
@@ -87,7 +88,7 @@ class HeadersBinding
      * Creates a binding for a set of mappings. Those mappings whose value is
      * null or the empty string are assumed only to be required headers, with
      * no constraint on the value. Those with a non-null value are assumed to
-     * define a required match of value. 
+     * define a required match of value.
      * @param mappings the defined mappings this binding should use
      */
 
@@ -139,7 +140,7 @@ class HeadersBinding
      * @return true if the headers define any required keys and match any required
      * values
      */
-    public boolean matches(FieldTable headers)
+    public boolean matches(AMQMessageHeader headers)
     {
         if(headers == null)
         {
@@ -151,13 +152,13 @@ class HeadersBinding
         }
     }
 
-    private boolean and(FieldTable headers)
+    private boolean and(AMQMessageHeader headers)
     {
-        if(headers.keys().containsAll(required))
+        if(headers.containsHeaders(required))
         {
             for(Map.Entry<String, Object> e : matches.entrySet())
             {
-                if(!e.getValue().equals(headers.getObject(e.getKey())))
+                if(!e.getValue().equals(headers.getHeader(e.getKey())))
                 {
                     return false;
                 }
@@ -171,17 +172,50 @@ class HeadersBinding
     }
 
 
-    private boolean or(final FieldTable headers)
+    private boolean or(final AMQMessageHeader headers)
     {
-        if(required.isEmpty() || !(Boolean) headers.processOverElements(new RequiredOrProcessor()))
+        if(required.isEmpty())
         {
-            return ((!matches.isEmpty()) && (Boolean) headers.processOverElements(new MatchesOrProcessor()))
-                    || (required.isEmpty() && matches.isEmpty());
+            return  matches.isEmpty() || passesMatchesOr(headers);
         }
         else
         {
-            return true;
+            if(!passesRequiredOr(headers))
+            {
+                return !matches.isEmpty() && passesMatchesOr(headers);
+            }
+            else
+            {
+                return true;
+            }
+
         }
+    }
+
+    private boolean passesMatchesOr(AMQMessageHeader headers)
+    {
+        for(Map.Entry<String,Object> entry : matches.entrySet())
+        {
+            if(headers.containsHeader(entry.getKey())
+               && ((entry.getValue() == null && headers.getHeader(entry.getKey()) == null)
+                   || (entry.getValue().equals(headers.getHeader(entry.getKey())))))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean passesRequiredOr(AMQMessageHeader headers)
+    {
+        for(String name : required)
+        {
+            if(headers.containsHeader(name))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void processSpecial(String key, Object value)

@@ -31,19 +31,28 @@ public abstract class AbstractFlowCreditManager implements FlowCreditManager
 
     public final void addStateListener(FlowCreditManagerListener listener)
     {
-        _listeners.add(listener);
+        synchronized(_listeners)
+        {
+            _listeners.add(listener);
+        }
     }
 
     public final boolean removeListener(FlowCreditManagerListener listener)
     {
-        return _listeners.remove(listener);
+        synchronized(_listeners)
+        {
+            return _listeners.remove(listener);
+        }
     }
 
     private void notifyListeners(final boolean suspended)
     {
-        for(FlowCreditManagerListener listener : _listeners)
+        synchronized(_listeners)
         {
-            listener.creditStateChanged(!suspended);
+            for(FlowCreditManagerListener listener : _listeners)
+            {
+                listener.creditStateChanged(!suspended);
+            }
         }
     }
 

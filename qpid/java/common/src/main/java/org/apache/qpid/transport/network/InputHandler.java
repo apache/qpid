@@ -39,7 +39,7 @@ import static org.apache.qpid.transport.network.InputHandler.State.*;
  * @author Rafael H. Schloming
  */
 
-public final class InputHandler implements Receiver<ByteBuffer>
+public class InputHandler implements Receiver<ByteBuffer>
 {
 
     public enum State

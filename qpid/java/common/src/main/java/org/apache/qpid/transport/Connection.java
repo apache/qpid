@@ -55,7 +55,7 @@ public class Connection extends ConnectionInvoker
 
     private static final Logger log = Logger.get(Connection.class);
 
-    enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
+    public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
 
     class DefaultConnectionListener implements ConnectionListener
     {
@@ -84,7 +84,8 @@ public class Connection extends ConnectionInvoker
     private SaslServer saslServer;
     private SaslClient saslClient;
     private long idleTimeout = 0;
-    
+    private String _authorizationID;
+
     // want to make this final
     private int _connectionId;
 
@@ -118,7 +119,7 @@ public class Connection extends ConnectionInvoker
         sender.setIdleTimeout(idleTimeout);         
     }
 
-    void setState(State state)
+    protected void setState(State state)
     {
         synchronized (lock)
         {
@@ -315,7 +316,14 @@ public class Connection extends ConnectionInvoker
     public void dispatch(Method method)
     {
         Session ssn = getSession(method.getChannel());
-        ssn.received(method);
+        if(ssn != null)
+        {
+            ssn.received(method);
+        }
+        else
+        {
+            // TODO
+        }
     }
 
     public int getChannelMax()
@@ -525,7 +533,17 @@ public class Connection extends ConnectionInvoker
     {
         return idleTimeout;
     }
-    
+
+    public void setAuthorizationID(String authorizationID)
+    {
+        _authorizationID = authorizationID;
+    }
+
+    public String getAuthorizationID()
+    {
+        return _authorizationID;
+    }
+
     public String toString()
     {
         return String.format("conn:%x", System.identityHashCode(this));

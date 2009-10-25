@@ -75,7 +75,7 @@ public class AMQPConnectionActor extends AbstractActor
     {
         _logString = "[" + MessageFormat.format(USER_FORMAT,
                                                 session.getSessionID(),
-                                                session.getAuthorizedID().getName(),
+                                                session.getPrincipal().getName(),
                                                 session.getRemoteAddress())
                      + "] ";
 
@@ -105,7 +105,7 @@ public class AMQPConnectionActor extends AbstractActor
          */
         _logString = "[" + MessageFormat.format(ConnectionLogSubject.CONNECTION_FORMAT,
                                                 session.getSessionID(),
-                                                session.getAuthorizedID().getName(),
+                                                session.getPrincipal().getName(),
                                                 session.getRemoteAddress(),
                                                 session.getVirtualHost().getName())
                      + "] ";

@@ -1,6 +1,6 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,10 +33,21 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
         _messageCredit = new AtomicLong(initialCredit);
     }
 
-    public void addCredit(long messageCredit, long bytesCredit)
+    public long getMessageCredit()
     {
-        setSuspended(false);
+        return _messageCredit.get();
+    }
+
+    public long getBytesCredit()
+    {
+        return -1L;
+    }
+
+    public void restoreCredit(long messageCredit, long bytesCredit)
+    {
         _messageCredit.addAndGet(messageCredit);
+        setSuspended(false);
+
     }
 
     public void removeAllCredit()
@@ -50,7 +61,7 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
         return _messageCredit.get() > 0L;
     }
 
-    public boolean useCreditForMessage(AMQMessage msg)
+    public boolean useCreditForMessage(ServerMessage msg)
     {
         if(hasCredit())
         {
@@ -73,4 +84,5 @@ public class MessageOnlyCreditManager extends AbstractFlowCreditManager implemen
         }
                 
     }
+
 }

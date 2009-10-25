@@ -26,46 +26,37 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.Filterable;
 
-public class SimpleFilterManager implements FilterManager<AMQException>
+public class SimpleFilterManager implements FilterManager
 {
     private final Logger _logger = Logger.getLogger(SimpleFilterManager.class);
 
-    private final ConcurrentLinkedQueue<MessageFilter<AMQException>> _filters;
+    private final ConcurrentLinkedQueue<MessageFilter> _filters;
     private String _toString = "";
 
     public SimpleFilterManager()
     {
         _logger.debug("Creating SimpleFilterManager");
-        _filters = new ConcurrentLinkedQueue<MessageFilter<AMQException>>();
+        _filters = new ConcurrentLinkedQueue<MessageFilter>();
     }
 
-    public void add(MessageFilter<AMQException> filter)
+    public void add(MessageFilter filter)
     {
         _filters.add(filter);
         updateStringValue();
     }
 
-    public void remove(MessageFilter<AMQException> filter)
+    public void remove(MessageFilter filter)
     {
         _filters.remove(filter);
         updateStringValue();
     }
 
-    public boolean allAllow(Filterable<AMQException> msg)
+    public boolean allAllow(Filterable msg)
     {
-        for (MessageFilter<AMQException> filter : _filters)
+        for (MessageFilter filter : _filters)
         {
-            try
+            if (!filter.matches(msg))
             {
-                if (!filter.matches(msg))
-                {
-                    return false;
-                }
-            }
-            catch (AMQException e)
-            {
-                //fixme
-                e.printStackTrace();  
                 return false;
             }
         }
@@ -87,7 +78,7 @@ public class SimpleFilterManager implements FilterManager<AMQException>
     private void updateStringValue()
     {
         StringBuilder toString = new  StringBuilder();
-        for (MessageFilter<AMQException> filter : _filters)
+        for (MessageFilter filter : _filters)
         {
             toString.append(filter.toString());
             toString.append(",");

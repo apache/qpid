@@ -229,7 +229,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         if (_socketConnector instanceof SocketConnector)
         {
             ((SocketConnector) _socketConnector).setWorkerTimeout(0);
-        }   
+        }
         
         ConnectFuture future = _socketConnector.connect(new InetSocketAddress(destination, port), this, cfg);
         future.join();
@@ -279,7 +279,10 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     public void send(ByteBuffer msg)
     {
-        _lastWriteFuture = _ioSession.write(org.apache.mina.common.ByteBuffer.wrap(msg));
+        org.apache.mina.common.ByteBuffer minaBuf = org.apache.mina.common.ByteBuffer.allocate(msg.capacity());
+        minaBuf.put(msg);
+        minaBuf.flip();
+        _lastWriteFuture = _ioSession.write(minaBuf);
     }
 
     public void setIdleTimeout(long l)

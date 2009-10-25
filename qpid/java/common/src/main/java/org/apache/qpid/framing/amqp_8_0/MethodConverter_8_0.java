@@ -80,6 +80,11 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
         _basicPublishMethodId = BasicPublishBodyImpl.METHOD_ID;
                 
     }
+   
+    public AMQBody convertToBody(java.nio.ByteBuffer buf)
+    {
+        return new ContentBody(ByteBuffer.wrap(buf));
+    }
 
     public MessagePublishInfo convertToInfo(AMQMethodBody methodBody)
     {

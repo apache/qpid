@@ -50,7 +50,8 @@ public class MessageRequeueTest extends QpidTestCase
     protected final String queue = "direct://amq.direct//message-requeue-test-queue";
     protected String payload = "Message:";
 
-    protected final String BROKER = "vm://:1";
+    //protected final String BROKER = "vm://:1";
+    protected final String BROKER = "tcp://127.0.0.1:5672";
     private boolean testReception = true;
 
     private long[] receieved = new long[numTestMessages + 1];
