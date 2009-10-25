@@ -393,6 +393,7 @@ public class AMQChannel
      */
     public void close() throws AMQException
     {
+        setClosing(true);
 
         unsubscribeAllConsumers();
         _transaction.rollback();
@@ -406,7 +407,6 @@ public class AMQChannel
             _logger.error("Caught AMQException whilst attempting to reque:" + e);
         }
 
-        setClosing(true);
     }
 
     private void setClosing(boolean closing)
@@ -792,7 +792,7 @@ public class AMQChannel
 
     public boolean isSuspended()
     {
-        return _suspended.get();
+        return _suspended.get()  || _closing || _session.isClosing();
     }
 
     public void commit() throws AMQException

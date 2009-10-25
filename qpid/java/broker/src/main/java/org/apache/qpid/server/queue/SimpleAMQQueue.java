@@ -1890,4 +1890,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _resourceName;
     }
+
+
+    @Override
+    public String toString()
+    {
+        return String.valueOf(getName());
+    }
 }

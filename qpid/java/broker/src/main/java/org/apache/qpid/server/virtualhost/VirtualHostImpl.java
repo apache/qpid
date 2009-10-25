@@ -599,4 +599,10 @@ public class VirtualHostImpl implements Accessable, VirtualHost
             }
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return _name;
+    }
 }

@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.JMException;
 import javax.security.sasl.SaslServer;
@@ -124,7 +126,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private Object _lastSent;
 
-    protected boolean _closed;
+    protected volatile boolean _closed;
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
 
@@ -158,6 +160,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
     private long _maxFrameSize;
+    private final AtomicBoolean _closing = new AtomicBoolean(false);
 
     public ManagedObject getManagedObject()
     {
@@ -202,6 +205,11 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public long getMaxFrameSize()
     {
         return _maxFrameSize;
+    }
+
+    public boolean isClosing()
+    {
+        return _closing.get();
     }
 
     public void received(final ByteBuffer msg)
@@ -679,34 +687,58 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession() throws AMQException
     {
-        // REMOVE THIS SHOULD NOT BE HERE. 
-        if (CurrentActor.get() == null)
+        if(_closing.compareAndSet(false,true))
         {
-            CurrentActor.set(_actor);
+            // REMOVE THIS SHOULD NOT BE HERE.
+            if (CurrentActor.get() == null)
+            {
+                CurrentActor.set(_actor);
+            }
+            if (!_closed)
+            {
+                if (_virtualHost != null)
+                {
+                    _virtualHost.getConnectionRegistry().deregisterConnection(this);
+                }
+
+                closeAllChannels();
+                if (_managedObject != null)
+                {
+                    _managedObject.unregister();
+                    // Ensure we only do this once.
+                    _managedObject = null;
+                }
+
+                for (Task task : _taskList)
+                {
+                    task.doTask(this);
+                }
+
+                synchronized(this)
+                {
+                    _closed = true;
+                    notifyAll();
+                }
+                _poolReference.releaseExecutorService();
+                CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
+            }
         }
-        if (!_closed)
+        else
         {
-            if (_virtualHost != null)
+            synchronized(this)
             {
-                _virtualHost.getConnectionRegistry().deregisterConnection(this);
-            }
+                while(!_closed)
+                {
+                    try
+                    {
+                        wait(1000);
+                    }
+                    catch (InterruptedException e)
+                    {
 
-            closeAllChannels();
-            if (_managedObject != null)
-            {
-                _managedObject.unregister();
-                // Ensure we only do this once.
-                _managedObject = null;
+                    }
+                }
             }
-
-            for (Task task : _taskList)
-            {
-                task.doTask(this);
-            }
-
-            _closed = true;
-            _poolReference.releaseExecutorService();
-            CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
         }
     }
 

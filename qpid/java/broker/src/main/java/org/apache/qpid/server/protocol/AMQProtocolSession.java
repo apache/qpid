@@ -47,6 +47,8 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
 
     long getMaxFrameSize();
 
+    boolean isClosing();
+
     public static final class ProtocolSessionIdentifier
     {
         private final Object _sessionIdentifier;
