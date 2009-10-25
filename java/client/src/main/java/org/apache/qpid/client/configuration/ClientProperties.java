@@ -33,7 +33,7 @@ public class ClientProperties
     public static final String IGNORE_SET_CLIENTID_PROP_NAME = "ignore_setclientID";
 
     /**
-     * This property is currently used within the 0.10 code path only 
+     * This property is currently used within the 0.10 code path only
      * The maximum number of pre-fetched messages per destination
      * This property is used for all the connection unless it is overwritten by the connectionURL
      * type: long
@@ -46,13 +46,13 @@ public class ClientProperties
      * type: boolean
      */
     public static final String SYNC_PERSISTENT_PROP_NAME = "sync_persistence";
-    
+
     /**
      * When true a sync command is sent after sending a message ack.
      * type: boolean
      */
     public static final String SYNC_ACK_PROP_NAME = "sync_ack";
-        
+
     /**
      * sync_publish property - {persistent|all}
      * If set to 'persistent',then persistent messages will be publish synchronously
@@ -60,17 +60,17 @@ public class ClientProperties
      * published synchronously.
      */
     public static final String SYNC_PUBLISH_PROP_NAME = "sync_publish";
-    
+
     /**
      * This value will be used in the following settings
      * To calculate the SO_TIMEOUT option of the socket (2*idle_timeout)
      * If this values is between the max and min values specified for heartbeat
      * by the broker in TuneOK it will be used as the heartbeat interval.
-     * If not a warning will be printed and the max value specified for 
+     * If not a warning will be printed and the max value specified for
      * heartbeat in TuneOK will be used
      */
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
-    
+
 
      /**
      * ==========================================================
@@ -100,4 +100,6 @@ public class ClientProperties
      */
     public static final String WRITE_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
     public static final String WRITE_BUFFER_LIMIT_DEFAULT = "262144";
+
+    public static final String AMQP_VERSION = "qpid.amqp.version";
 }

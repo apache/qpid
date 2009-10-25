@@ -20,25 +20,18 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.message.AMQMessage;
 
 public class MockAMQMessage extends AMQMessage
 {
     public MockAMQMessage(long messageId)
             throws AMQException
     {
-       super(new MockAMQMessageHandle(messageId) ,
-                (StoreContext)null,
-                (MessagePublishInfo)new MockMessagePublishInfo());
+       super(new MockStoredMessage(messageId));
     }
 
-    protected MockAMQMessage(AMQMessage msg)
-            throws AMQException
-    {
-        super(msg);
-    }
+
 
 
     @Override
@@ -46,4 +39,5 @@ public class MockAMQMessage extends AMQMessage
     {
         return 0l;
     }
+
 }

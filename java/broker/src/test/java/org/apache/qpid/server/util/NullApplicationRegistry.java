@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,8 +36,9 @@ import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -76,7 +77,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _virtualHostRegistry = new VirtualHostRegistry(this);
         PropertiesConfiguration vhostProps = new PropertiesConfiguration();
         VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
-        VirtualHost dummyHost = new VirtualHost(hostConfig);
+        VirtualHost dummyHost = new VirtualHostImpl(hostConfig);
         _virtualHostRegistry.registerVirtualHost(dummyHost);
         _virtualHostRegistry.setDefaultVirtualHostName("test");
         _pluginManager = new PluginManager("");
@@ -97,7 +98,7 @@ public class NullApplicationRegistry extends ApplicationRegistry
 
         try
         {
-            super.close();                                                  
+            super.close();
         }
         finally
         {

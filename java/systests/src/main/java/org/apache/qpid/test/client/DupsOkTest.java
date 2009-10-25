@@ -79,7 +79,7 @@ public class DupsOkTest extends QpidTestCase
      * This test sends x messages and receives them with an async consumer.
      * Waits for all messages to be received or for 60 s
      * and checks whether the queue is empty.
-     * 
+     *
      * @throws Exception
      */
     public void testDupsOK() throws Exception
@@ -93,7 +93,7 @@ public class DupsOkTest extends QpidTestCase
 
         assertEquals("The queue should have msgs at start", MSG_COUNT, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
 
-        clientConnection.start();        
+        clientConnection.start();
 
         consumer.setMessageListener(new MessageListener()
         {
@@ -110,7 +110,7 @@ public class DupsOkTest extends QpidTestCase
                 if (message instanceof TextMessage)
                 {
                     try
-                    {                 
+                    {
                         if (message.getIntProperty("count") == MSG_COUNT)
                         {
                             try
@@ -156,7 +156,11 @@ public class DupsOkTest extends QpidTestCase
         // before the dispatcher has sent the ack back to the broker.
         consumer.close();
 
-        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession).getQueueDepth((AMQDestination) _queue));
+        clientSession.close();
+
+        final Session clientSession2 = clientConnection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
+
+        assertEquals("The queue should have 0 msgs left", 0, ((AMQSession) clientSession2).getQueueDepth((AMQDestination) _queue));
 
         clientConnection.close();
     }

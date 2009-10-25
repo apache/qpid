@@ -25,15 +25,14 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MessageMetaData;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.logging.LogSubject;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.nio.ByteBuffer;
 
 public class SlowMessageStore implements MessageStore
 {
@@ -47,14 +46,21 @@ public class SlowMessageStore implements MessageStore
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";
 
-    public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
+    // ***** MessageStore Interface.
+
+    public void configureConfigStore(String name,
+                          ConfigurationRecoveryHandler recoveryHandler,
+                          Configuration config,
+                          LogSubject logSubject) throws Exception
     {
-        _logger.info("Starting SlowMessageStore on Virtualhost:" + virtualHost.getName());
-        Configuration delays = config.getStoreConfiguration().subset(DELAYS);
+        //To change body of implemented methods use File | Settings | File Templates.
+
+        _logger.info("Starting SlowMessageStore on Virtualhost:" + name);
+        Configuration delays = config.subset(DELAYS);
 
         configureDelays(delays);
 
-        String messageStoreClass = config.getStoreConfiguration().getString("realStore");
+        String messageStoreClass = config.getString("realStore");
 
         if (delays.containsKey(DEFAULT_DELAY))
         {
@@ -73,11 +79,11 @@ public class SlowMessageStore implements MessageStore
                                              " does not.");
             }
             _realStore = (MessageStore) o;
-            _realStore.configure(virtualHost, base + ".store", config);
+            _realStore.configureConfigStore(name, recoveryHandler, config, logSubject);
         }
         else
         {
-            _realStore.configure(virtualHost, base + ".store", config);
+            _realStore.configureConfigStore(name, recoveryHandler, config, logSubject);
         }
     }
 
@@ -133,7 +139,7 @@ public class SlowMessageStore implements MessageStore
             }
 
             long slept = (System.nanoTime() - start) / 1000000;
-            
+
             if (slept >= delay)
             {
                 _logger.info("Done sleep for:" + slept+":"+delay);
@@ -146,7 +152,14 @@ public class SlowMessageStore implements MessageStore
         }
     }
 
-    // ***** MessageStore Interface.
+
+    public void configureMessageStore(String name,
+                                      MessageStoreRecoveryHandler recoveryHandler,
+                                      Configuration config,
+                                      LogSubject logSubject) throws Exception
+    {
+        _realStore.configureMessageStore(name, recoveryHandler, config, logSubject);
+    }
 
     public void close() throws Exception
     {
@@ -155,12 +168,11 @@ public class SlowMessageStore implements MessageStore
         doPostDelay("close");
     }
 
-    public void removeMessage(StoreContext storeContext, Long messageId) throws AMQException
+    public <M extends StorableMessageMetaData> StoredMessage<M> addMessage(M metaData)
     {
-        doPreDelay("removeMessage");
-        _realStore.removeMessage(storeContext, messageId);
-        doPostDelay("removeMessage");
+        return _realStore.addMessage(metaData);
     }
+
 
     public void createExchange(Exchange exchange) throws AMQException
     {
@@ -209,90 +221,93 @@ public class SlowMessageStore implements MessageStore
         doPostDelay("removeQueue");
     }
 
-    public void enqueueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
+    public void configureTransactionLog(String name,
+                                        TransactionLogRecoveryHandler recoveryHandler,
+                                        Configuration storeConfiguration, LogSubject logSubject)
+            throws Exception
     {
-        doPreDelay("enqueueMessage");
-        _realStore.enqueueMessage(context, queue, messageId);
-        doPostDelay("enqueueMessage");
+        _realStore.configureTransactionLog(name, recoveryHandler, storeConfiguration, logSubject);
     }
 
-    public void dequeueMessage(StoreContext context, AMQQueue queue, Long messageId) throws AMQException
-    {
-        doPreDelay("dequeueMessage");
-        _realStore.dequeueMessage(context, queue, messageId);
-        doPostDelay("dequeueMessage");
-    }
-
-    public void beginTran(StoreContext context) throws AMQException
+    public Transaction newTransaction()
     {
         doPreDelay("beginTran");
-        _realStore.beginTran(context);
+        Transaction txn = new SlowTransaction(_realStore.newTransaction());
         doPostDelay("beginTran");
+        return txn;
     }
 
-    public void commitTran(StoreContext context) throws AMQException
-    {
-        doPreDelay("commitTran");
-        _realStore.commitTran(context);
-        doPostDelay("commitTran");
-    }
-
-    public void abortTran(StoreContext context) throws AMQException
-    {
-        doPreDelay("abortTran");
-        _realStore.abortTran(context);
-        doPostDelay("abortTran");
-    }
-
-    public boolean inTran(StoreContext context)
-    {
-        doPreDelay("inTran");
-        boolean b = _realStore.inTran(context);
-        doPostDelay("inTran");
-        return b;
-    }
-
-    public Long getNewMessageId()
-    {
-        doPreDelay("getNewMessageId");
-        Long l = _realStore.getNewMessageId();
-        doPostDelay("getNewMessageId");
-        return l;
-    }
-
-    public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody) throws AMQException
-    {
-        doPreDelay("storeContentBodyChunk");
-        _realStore.storeContentBodyChunk(context, messageId, index, contentBody, lastContentBody);
-        doPostDelay("storeContentBodyChunk");
-    }
-
-    public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData) throws AMQException
-    {
-        doPreDelay("storeMessageMetaData");
-        _realStore.storeMessageMetaData(context, messageId, messageMetaData);
-        doPostDelay("storeMessageMetaData");
-    }
-
-    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
-    {
-        doPreDelay("getMessageMetaData");
-        MessageMetaData mmd = _realStore.getMessageMetaData(context, messageId);
-        doPostDelay("getMessageMetaData");
-        return mmd;
-    }
-
-    public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
-    {
-        doPreDelay("getContentBodyChunk");
-        ContentChunk c = _realStore.getContentBodyChunk(context, messageId, index);
-        doPostDelay("getContentBodyChunk");
-        return c;
-    }
 
     public boolean isPersistent()
     {
         return _realStore.isPersistent();
     }
+
+    public void storeMessageHeader(Long messageNumber, ServerMessage message)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void storeContent(Long messageNumber, long offset, ByteBuffer body)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public ServerMessage getMessage(Long messageNumber)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    private class SlowTransaction implements Transaction
+    {
+        private final Transaction _underlying;
+
+        private SlowTransaction(Transaction underlying)
+        {
+            _underlying = underlying;
+        }
+
+        public void enqueueMessage(TransactionLogResource queue, Long messageId)
+                throws AMQException
+        {
+            doPreDelay("enqueueMessage");
+            _underlying.enqueueMessage(queue, messageId);
+            doPostDelay("enqueueMessage");
+        }
+
+        public void dequeueMessage(TransactionLogResource queue, Long messageId)
+                throws AMQException
+        {
+            doPreDelay("dequeueMessage");
+            _underlying.dequeueMessage(queue, messageId);
+            doPostDelay("dequeueMessage");
+        }
+
+        public void commitTran()
+                throws AMQException
+        {
+            doPreDelay("commitTran");
+            _underlying.commitTran();
+            doPostDelay("commitTran");
+        }
+
+        public StoreFuture commitTranAsync()
+                throws AMQException
+        {
+            doPreDelay("commitTran");
+            StoreFuture future = _underlying.commitTranAsync();
+            doPostDelay("commitTran");
+            return future;
+        }
+
+        public void abortTran()
+                throws AMQException
+        {
+            doPreDelay("abortTran");
+            _underlying.abortTran();
+            doPostDelay("abortTran");
+        }
+    }
+
 
 }

@@ -35,18 +35,18 @@ import org.apache.qpid.server.queue.Filterable;
 /**
  * An expression which performs an operation on two expression values
  */
-public abstract class UnaryExpression<E extends Exception> implements Expression<E>
+public abstract class UnaryExpression implements Expression
 {
 
     private static final BigDecimal BD_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE);
-    protected Expression<E> right;
+    protected Expression right;
 
-    public static<E extends Exception> Expression<E> createNegate(Expression<E> left)
+    public static Expression createNegate(Expression left)
     {
         return new NegativeExpression(left);
     }
 
-    public static<E extends Exception> BooleanExpression createInExpression(PropertyExpression<E> right, List elements, final boolean not)
+    public static BooleanExpression createInExpression(PropertyExpression right, List elements, final boolean not)
     {
 
         // Use a HashSet if there are many elements.
@@ -69,14 +69,14 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         return new InExpression(right, inList, not);
     }
 
-    abstract static class BooleanUnaryExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E>
+    abstract static class BooleanUnaryExpression extends UnaryExpression implements BooleanExpression
     {
-        public BooleanUnaryExpression(Expression<E> left)
+        public BooleanUnaryExpression(Expression left)
         {
             super(left);
         }
 
-        public boolean matches(Filterable<E> message) throws E
+        public boolean matches(Filterable message)
         {
             Object object = evaluate(message);
 
@@ -85,7 +85,7 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
     }
     ;
 
-    public static<E extends Exception> BooleanExpression<E> createNOT(BooleanExpression<E> left)
+    public static<E extends Exception> BooleanExpression createNOT(BooleanExpression left)
     {
         return new NotExpression(left);
     }
@@ -100,7 +100,7 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         return new XQueryExpression(xpath);
     }
 
-    public static<E extends Exception> BooleanExpression createBooleanCast(Expression<E> left)
+    public static<E extends Exception> BooleanExpression createBooleanCast(Expression left)
     {
         return new BooleanCastExpression(left);
     }
@@ -151,7 +151,7 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         this.right = left;
     }
 
-    public Expression<E> getRight()
+    public Expression getRight()
     {
         return right;
     }
@@ -204,14 +204,14 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
      */
     public abstract String getExpressionSymbol();
 
-    private static class NegativeExpression<E extends Exception> extends UnaryExpression<E>
+    private static class NegativeExpression extends UnaryExpression
     {
-        public NegativeExpression(final Expression<E> left)
+        public NegativeExpression(final Expression left)
         {
             super(left);
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
             Object rvalue = right.evaluate(message);
             if (rvalue == null)
@@ -233,19 +233,19 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         }
     }
 
-    private static class InExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    private static class InExpression extends BooleanUnaryExpression
     {
         private final Collection _inList;
         private final boolean _not;
 
-        public InExpression(final PropertyExpression<E> right, final Collection inList, final boolean not)
+        public InExpression(final PropertyExpression right, final Collection inList, final boolean not)
         {
             super(right);
             _inList = inList;
             _not = not;
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
 
             Object rvalue = right.evaluate(message);
@@ -309,14 +309,14 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         }
     }
 
-    private static class NotExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    private static class NotExpression extends BooleanUnaryExpression
     {
-        public NotExpression(final BooleanExpression<E> left)
+        public NotExpression(final BooleanExpression left)
         {
             super(left);
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
             Boolean lvalue = (Boolean) right.evaluate(message);
             if (lvalue == null)
@@ -333,14 +333,14 @@ public abstract class UnaryExpression<E extends Exception> implements Expression
         }
     }
 
-    private static class BooleanCastExpression<E extends Exception> extends BooleanUnaryExpression<E>
+    private static class BooleanCastExpression extends BooleanUnaryExpression
     {
-        public BooleanCastExpression(final Expression<E> left)
+        public BooleanCastExpression(final Expression left)
         {
             super(left);
         }
 
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
             Object rvalue = right.evaluate(message);
             if (rvalue == null)

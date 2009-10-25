@@ -14,8 +14,8 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
- * 
+ *  under the License.
+ *
  */
 
 package org.apache.qpid.server.configuration;
@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.Collections;
 import java.util.Map.Entry;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -124,7 +125,7 @@ public class ServerConfiguration implements SignalHandler
         }
         catch (IllegalArgumentException e)
         {
-            // We're on something that doesn't handle SIGHUP, how sad, Windows. 
+            // We're on something that doesn't handle SIGHUP, how sad, Windows.
         }
     }
 
@@ -221,7 +222,7 @@ public class ServerConfiguration implements SignalHandler
         String localeString = getConfig().getString(ADVANCED_LOCALE);
         // Expecting locale of format langauge_country_variant
 
-        // If the configuration does not have a defined locale use the JVM default 
+        // If the configuration does not have a defined locale use the JVM default
         if (localeString == null)
         {
             return Locale.getDefault();
@@ -524,10 +525,26 @@ public class ServerConfiguration implements SignalHandler
         return getConfig().getInt("connector.processors", 4);
     }
 
-    public int getPort()
+    public List getPorts()
     {
-        return getConfig().getInt("connector.port", DEFAULT_PORT);
+        return getConfig().getList("connector.port", Collections.singletonList(DEFAULT_PORT));
     }
+
+    public List getPortExclude010()
+    {
+        return getConfig().getList("connector.non010port", Collections.EMPTY_LIST);
+    }
+
+    public List getPortExclude09()
+    {
+        return getConfig().getList("connector.non09port", Collections.EMPTY_LIST);
+    }
+
+    public List getPortExclude08()
+    {
+        return getConfig().getList("connector.non08port", Collections.EMPTY_LIST);
+    }
+
 
     public String getBind()
     {
@@ -625,48 +642,48 @@ public class ServerConfiguration implements SignalHandler
     {
         return new NetworkDriverConfiguration()
         {
-            
+
             public Integer getTrafficClass()
             {
                 return null;
             }
-            
+
             public Boolean getTcpNoDelay()
             {
                 // Can't call parent getTcpNoDelay since it just calls this one
                 return getConfig().getBoolean("connector.tcpNoDelay", true);
             }
-            
+
             public Integer getSoTimeout()
             {
                 return null;
             }
-            
+
             public Integer getSoLinger()
             {
                 return null;
             }
-            
+
             public Integer getSendBufferSize()
             {
                 return getBufferWriteLimit();
             }
-            
+
             public Boolean getReuseAddress()
             {
                 return null;
             }
-            
+
             public Integer getReceiveBufferSize()
             {
                 return getBufferReadLimit();
             }
-            
+
             public Boolean getOOBInline()
             {
                 return null;
             }
-            
+
             public Boolean getKeepAlive()
             {
                 return null;

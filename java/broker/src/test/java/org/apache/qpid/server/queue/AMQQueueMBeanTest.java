@@ -29,7 +29,10 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.RequiredDeliveryException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
@@ -38,19 +41,15 @@ import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
 import javax.management.JMException;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Collections;
 
 /**
  * Test class to test AMQQueueMBean attribtues and operations
@@ -61,8 +60,6 @@ public class AMQQueueMBeanTest extends TestCase
     private AMQQueue _queue;
     private AMQQueueMBean _queueMBean;
     private MessageStore _messageStore;
-    private StoreContext _storeContext = new StoreContext();
-    private TransactionalContext _transactionalContext;
     private VirtualHost _virtualHost;
     private AMQProtocolSession _protocolSession;
     private static final SubscriptionFactoryImpl SUBSCRIPTION_FACTORY = SubscriptionFactoryImpl.INSTANCE;
@@ -108,7 +105,7 @@ public class AMQQueueMBeanTest extends TestCase
         //Ensure that the data has been removed from the Store
         verifyBrokerState();
     }
-    
+
     public void testDeleteMessages() throws Exception
     {
         int messageCount = 10;
@@ -129,9 +126,9 @@ public class AMQQueueMBeanTest extends TestCase
         }
         catch(Exception e)
         {
-            
+
         }
-        
+
         //delete last message, leaving 2nd to 9th
         _queueMBean.deleteMessages(10L,10L);
         assertTrue(_queueMBean.getMessageCount() == (messageCount - 2));
@@ -143,7 +140,7 @@ public class AMQQueueMBeanTest extends TestCase
         }
         catch(Exception e)
         {
-            
+
         }
 
         //delete remaining messages, leaving none
@@ -159,18 +156,16 @@ public class AMQQueueMBeanTest extends TestCase
     private void verifyBrokerState()
     {
 
-        TestableMemoryMessageStore store = new TestableMemoryMessageStore((MemoryMessageStore) _virtualHost.getMessageStore());
+        TestableMemoryMessageStore store = (TestableMemoryMessageStore)_virtualHost.getMessageStore();
 
         // Unlike MessageReturnTest there is no need for a delay as there this thread does the clean up.
-        assertNotNull("ContentBodyMap should not be null", store.getContentBodyMap());       
-        assertEquals("Expected the store to have no content:" + store.getContentBodyMap(), 0, store.getContentBodyMap().size());
-        assertNotNull("MessageMetaDataMap should not be null", store.getMessageMetaDataMap());
-        assertEquals("Expected the store to have no metadata:" + store.getMessageMetaDataMap(), 0, store.getMessageMetaDataMap().size());
+
+        assertEquals("Store should have no messages:" + store.getMessageCount(), 0, store.getMessageCount());
     }
 
     public void testConsumerCount() throws AMQException
     {
-        
+
         assertTrue(_queue.getActiveConsumerCount() == 0);
         assertTrue(_queueMBean.getActiveConsumerCount() == 0);
 
@@ -182,7 +177,7 @@ public class AMQQueueMBeanTest extends TestCase
 
         Subscription subscription =
                 SUBSCRIPTION_FACTORY.createSubscription(channel.getChannelId(), protocolSession, new AMQShortString("test"), false, null, false, channel.getCreditManager());
-        
+
         _queue.registerSubscription(subscription, false);
         assertEquals(1,(int)_queueMBean.getActiveConsumerCount());
 
@@ -225,7 +220,6 @@ public class AMQQueueMBeanTest extends TestCase
         assertTrue(_queueMBean.getMaximumQueueDepth() == (maxQueueDepth));
 
         assertTrue(_queueMBean.getName().equals("testQueue"));
-        assertTrue(_queueMBean.getOwner().equals("AMQueueMBeanTest"));
         assertFalse(_queueMBean.isAutoDelete());
         assertFalse(_queueMBean.isDurable());
     }
@@ -261,7 +255,7 @@ public class AMQQueueMBeanTest extends TestCase
         {
 
         }
-        
+
         try
         {
             long end = Integer.MAX_VALUE;
@@ -275,16 +269,21 @@ public class AMQQueueMBeanTest extends TestCase
         }
 
         IncomingMessage msg = message(false, false);
-        long id = msg.getMessageId();
-        _queue.clearQueue(_storeContext);
+        _queue.clearQueue();
         ArrayList<AMQQueue> qs = new ArrayList<AMQQueue>();
         qs.add(_queue);
         msg.enqueue(qs);
-        msg.routingComplete(_messageStore, new MessageHandleFactory());
+        MessageMetaData mmd = msg.headersReceived();
+        msg.setStoredMessage(_messageStore.addMessage(mmd));
+        long id = msg.getMessageNumber();
 
         msg.addContentBodyFrame(new ContentChunk()
         {
             ByteBuffer _data = ByteBuffer.allocate((int)MESSAGE_SIZE);
+
+            {
+                _data.limit((int)MESSAGE_SIZE);
+            }
 
             public int getSize()
             {
@@ -301,7 +300,12 @@ public class AMQQueueMBeanTest extends TestCase
 
             }
         });
-        msg.deliverToQueues();
+
+        AMQMessage m = new AMQMessage(msg.getStoredMessage());
+        for(AMQQueue q : msg.getDestinationQueues())
+        {
+            q.enqueue(m);
+        }
 //        _queue.process(_storeContext, new QueueEntry(_queue, msg), false);
         _queueMBean.viewMessageContent(id);
         try
@@ -350,7 +354,7 @@ public class AMQQueueMBeanTest extends TestCase
         contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes
         contentHeaderBody.properties = new BasicContentHeaderProperties();
         ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) (persistent ? 2 : 1));
-        IncomingMessage msg = new IncomingMessage(_messageStore.getNewMessageId(), publish, _transactionalContext,  _protocolSession);
+        IncomingMessage msg = new IncomingMessage(publish);
         msg.setContentHeaderBody(contentHeaderBody);
         return msg;
 
@@ -360,14 +364,16 @@ public class AMQQueueMBeanTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
+
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+        IApplicationRegistry  applicationRegistry  = new TestApplicationRegistry(new ServerConfiguration(configuration));
+        ApplicationRegistry.initialise(applicationRegistry );
+
+        configuration.setProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
+
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
         _messageStore = _virtualHost.getMessageStore();
-
-        _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
-                                                            null,
-                                                            new LinkedList<RequiredDeliveryException>()
-        );
 
         _queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("AMQueueMBeanTest"), false, _virtualHost,
                                                     null);
@@ -391,7 +397,8 @@ public class AMQQueueMBeanTest extends TestCase
             currentMessage.enqueue(qs);
 
             // route header
-            currentMessage.routingComplete(_messageStore, new MessageHandleFactory());
+            MessageMetaData mmd = currentMessage.headersReceived();
+            currentMessage.setStoredMessage(_messageStore.addMessage(mmd));
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(
@@ -400,7 +407,12 @@ public class AMQQueueMBeanTest extends TestCase
                                                        .convertToContentChunk(
                                                        new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),
                                                                        MESSAGE_SIZE)));
-            currentMessage.deliverToQueues();
+
+            AMQMessage m = new AMQMessage(currentMessage.getStoredMessage());
+            for(AMQQueue q : currentMessage.getDestinationQueues())
+            {
+                q.enqueue(m);
+            }
 
 
         }

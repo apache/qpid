@@ -23,29 +23,29 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.security.PrincipalHolder;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.AMQException;
-import org.apache.commons.configuration.Configuration;
 
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedList;
 
 public class MockAMQQueue implements AMQQueue
 {
     private boolean _deleted = false;
     private AMQShortString _name;
     private VirtualHost _virtualhost;
+
+    private PrincipalHolder _principalHolder;
+
+    private Object _exclusiveOwner;
 
     public MockAMQQueue(String name)
     {
@@ -55,6 +55,11 @@ public class MockAMQQueue implements AMQQueue
     public AMQShortString getName()
     {
         return _name;
+    }
+
+    public void setNoLocal(boolean b)
+    {
+        
     }
 
     public boolean isDurable()
@@ -162,17 +167,22 @@ public class MockAMQQueue implements AMQQueue
        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
+    public QueueEntry enqueue(ServerMessage message) throws AMQException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException
+    public void requeue(QueueEntry entry)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException
+    public void requeue(QueueEntryImpl storeContext, Subscription subscription)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void dequeue(QueueEntry entry)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -211,23 +221,23 @@ public class MockAMQQueue implements AMQQueue
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
-    
+
     public List<QueueEntry> getMessagesRangeOnTheQueue(long fromPosition, long toPosition)
     {
         return null;
     }
 
-    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext)
+    public void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, StoreContext storeContext)
+    public void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName, ServerTransaction storeContext)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext)
+    public void removeMessagesFromQueue(long fromMessageId, long toMessageId)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -286,16 +296,16 @@ public class MockAMQQueue implements AMQQueue
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void deleteMessageFromTop(StoreContext storeContext) throws AMQException
+    public void deleteMessageFromTop()
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public long clearQueue(StoreContext storeContext) throws AMQException
+    public long clearQueue()
     {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
-   
+
 
     public void checkMessageStatus() throws AMQException
     {
@@ -327,8 +337,28 @@ public class MockAMQQueue implements AMQQueue
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean isExclusive()
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Exchange getAlternateExchange()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setAlternateExchange(Exchange exchange)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Map<String, Object> getArguments()
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void checkCapacity(AMQChannel channel)
-    {               
+    {
     }
 
     public ManagedObject getManagedObject()
@@ -343,7 +373,7 @@ public class MockAMQQueue implements AMQQueue
 
     public void setMinimumAlertRepeatGap(long value)
     {
-        
+
     }
 
     public long getCapacity()
@@ -368,7 +398,32 @@ public class MockAMQQueue implements AMQQueue
 
     public void configure(QueueConfiguration config)
     {
-        
+
     }
 
+    public PrincipalHolder getPrincipalHolder()
+    {
+        return _principalHolder;
+    }
+
+    public void setPrincipalHolder(PrincipalHolder principalHolder)
+    {
+        _principalHolder = principalHolder;
+    }
+
+    public Object getExclusiveOwner()
+    {
+        return _exclusiveOwner;
+    }
+
+    public void setExclusiveOwner(Object exclusiveOwner)
+    {
+        _exclusiveOwner = exclusiveOwner;
+    }
+
+
+    public String getResourceName()
+    {
+        return _name.toString();
+    }
 }

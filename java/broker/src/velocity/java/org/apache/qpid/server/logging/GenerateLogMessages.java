@@ -108,6 +108,8 @@ public class GenerateLogMessages
         createMessageClass("ManagementConsole", "MNG");
         createMessageClass("VirtualHost", "VHT");
         createMessageClass("MessageStore", "MST");
+        createMessageClass("ConfigStore", "CFG");
+        createMessageClass("TransactionLog", "TXN");
         createMessageClass("Connection", "CON");
         createMessageClass("Channel", "CHN");
         createMessageClass("Queue", "QUE");

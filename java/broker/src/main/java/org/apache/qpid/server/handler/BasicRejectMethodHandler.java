@@ -81,13 +81,13 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                 message = channel.getUnacknowledgedMessageMap().remove(deliveryTag);
                 if(message != null)
                 {
-                    message.discard(channel.getStoreContext());
+                    message.discard();
                 }
                 //sendtoDeadLetterQueue(msg)
                 return;
             }
 
-            if (!message.getMessage().isReferenced())
+            if (message.getMessage() == null)
             {
                 _logger.warn("Message as already been purged, unable to Reject.");
                 return;
@@ -96,7 +96,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting: DT:" + deliveryTag + "-" + message.getMessage().debugIdentity() +
+                _logger.debug("Rejecting: DT:" + deliveryTag + "-" + message.getMessage() +
                               ": Requeue:" + body.getRequeue() +
                               //": Resend:" + evt.getMethod().resend +
                               " on channel:" + channel.debugIdentity());

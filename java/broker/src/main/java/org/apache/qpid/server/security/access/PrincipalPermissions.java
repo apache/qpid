@@ -425,8 +425,9 @@ public class PrincipalPermissions
                 // This will allow consumption from any temporary queue including ones not owned by this user.
                 // Of course the exclusivity will not be broken.
                 {
+
                     // if not limited to ownQueuesOnly then ok else check queue Owner.
-                    return (!ownQueuesOnly || queue.getOwner().equals(_user)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                    return (!ownQueuesOnly || new AMQShortString(queue.getPrincipalHolder().getPrincipal().getName()).equals(_user)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                 }
             }
             //if this is a temporary queue and the user does not have permissions for temporary queues then deny
@@ -441,7 +442,7 @@ public class PrincipalPermissions
                 // if no queues are listed then ALL are ok othereise it must be specified.
                 if (ownQueuesOnly)
                 {
-                    if (queue.getOwner().equals(_user))
+                    if ( new AMQShortString(queue.getPrincipalHolder().getPrincipal().getName()).equals(_user))
                     {
                         return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
                     }

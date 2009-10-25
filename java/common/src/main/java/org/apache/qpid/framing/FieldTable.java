@@ -828,6 +828,7 @@ public class FieldTable
         recalculateEncodedSize();
     }
 
+
     public static interface FieldTableElementProcessor
     {
         public boolean processElement(String propertyName, AMQTypedValue value);
@@ -904,10 +905,13 @@ public class FieldTable
         }
     }
 
+    public Object get(String key)
+    {
+        return get(new AMQShortString(key));
+    }
 
     public Object get(AMQShortString key)
     {
-
         return getObject(key);
     }
 
@@ -1184,4 +1188,24 @@ public class FieldTable
 
         return _properties.equals(f._properties);
     }
+
+    public static FieldTable convertToFieldTable(Map<String, Object> map)
+    {
+        if (map != null)
+        {
+            FieldTable table = new FieldTable();
+            for(Map.Entry<String,Object> entry : map.entrySet())
+            {
+                table.put(new AMQShortString(entry.getKey()), entry.getValue());
+            }
+
+            return table;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+
 }

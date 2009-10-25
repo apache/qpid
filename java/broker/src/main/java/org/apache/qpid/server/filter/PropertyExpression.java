@@ -27,7 +27,6 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.server.queue.Filterable;
@@ -35,7 +34,7 @@ import org.apache.qpid.server.queue.Filterable;
 /**
  * Represents a property  expression
  */
-public class PropertyExpression<E extends Exception> implements Expression<E>
+public class PropertyExpression implements Expression
 {
     // Constants - defined the same as JMS
     private static final int NON_PERSISTENT = 1;
@@ -44,12 +43,12 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
     private static final Logger _logger = org.apache.log4j.Logger.getLogger(PropertyExpression.class);
 
-    private static final HashMap<String, Expression<? extends Exception>> JMS_PROPERTY_EXPRESSIONS = new HashMap<String, Expression<? extends Exception>>();
+    private static final HashMap<String, Expression> JMS_PROPERTY_EXPRESSIONS = new HashMap<String, Expression>();
 
     {
-        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new Expression<E>()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new Expression()
                                      {
-                                         public Object evaluate(Filterable<E> message)
+                                         public Object evaluate(Filterable message)
                                          {
                                              //TODO
                                              return null;
@@ -73,9 +72,9 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
         JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration", new ExpirationExpression());
 
-        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new Expression<E>()
+        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new Expression()
                                      {
-                                         public Object evaluate(Filterable message) throws E
+                                         public Object evaluate(Filterable message)
                                          {
                                              return message.isRedelivered();
                                          }
@@ -83,7 +82,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
     }
 
     private final String name;
-    private final Expression<E> jmsPropertyExpression;
+    private final Expression jmsPropertyExpression;
 
     public boolean outerTest()
     {
@@ -96,10 +95,10 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
         
 
-        jmsPropertyExpression = (Expression<E>) JMS_PROPERTY_EXPRESSIONS.get(name);
+        jmsPropertyExpression = (Expression) JMS_PROPERTY_EXPRESSIONS.get(name);
     }
 
-    public Object evaluate(Filterable<E> message) throws E
+    public Object evaluate(Filterable message)
     {
 
         if (jmsPropertyExpression != null)
@@ -108,17 +107,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         }
         else
         {
-
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
-
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Looking up property:" + name);
-                _logger.debug("Properties are:" + _properties.getHeaders().keySet());
-            }
-
-            return _properties.getHeaders().getObject(name);
+            return message.getMessageHeader().getHeader(name);
         }
     }
 
@@ -158,39 +147,30 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
     }
 
-    private static class ReplyToExpression<E extends Exception> implements Expression<E>
+    private static class ReplyToExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
-
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
-            AMQShortString replyTo = _properties.getReplyTo();
-
-            return (replyTo == null) ? null : replyTo.toString();
-
+            String replyTo = message.getMessageHeader().getReplyTo();
+            return replyTo;
         }
 
     }
 
-    private static class TypeExpression<E extends Exception> implements Expression<E>
+    private static class TypeExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
-                CommonContentHeaderProperties _properties =
-                    (CommonContentHeaderProperties)
-                        message.getContentHeaderBody().properties;
-                AMQShortString type = _properties.getType();
 
-                return (type == null) ? null : type.toString();
+                String type = message.getMessageHeader().getType();
+                return type;
 
         }
     }
 
-    private static class DeliveryModeExpression<E extends Exception> implements Expression<E>
+    private static class DeliveryModeExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
                 int mode = message.isPersistent() ? PERSISTENT : NON_PERSISTENT;
                 if (_logger.isDebugEnabled())
@@ -202,68 +182,53 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         }
     }
 
-    private static class PriorityExpression<E extends Exception> implements Expression<E>
+    private static class PriorityExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
-
-            return (int) _properties.getPriority();
+            byte priority = message.getMessageHeader().getPriority();
+            return (int) priority;
         }
     }
 
-    private static class MessageIDExpression<E extends Exception> implements Expression<E>
+    private static class MessageIDExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
 
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
-            AMQShortString messageId = _properties.getMessageId();
+            String messageId = message.getMessageHeader().getMessageId();
 
-            return (messageId == null) ? null : messageId;
+            return messageId;
 
         }
     }
 
-    private static class TimestampExpression<E extends Exception> implements Expression<E>
+    private static class TimestampExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
-
-            return _properties.getTimestamp();
+            long timestamp = message.getMessageHeader().getTimestamp();
+            return timestamp;
         }
     }
 
-    private static class CorrelationIdExpression<E extends Exception> implements Expression<E>
+    private static class CorrelationIdExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
-            AMQShortString correlationId = _properties.getCorrelationId();
 
-            return (correlationId == null) ? null : correlationId.toString();
+            String correlationId = message.getMessageHeader().getCorrelationId();
+
+            return correlationId;
         }
     }
 
-    private static class ExpirationExpression<E extends Exception> implements Expression<E>
+    private static class ExpirationExpression implements Expression
     {
-        public Object evaluate(Filterable<E> message) throws E
+        public Object evaluate(Filterable message)
         {
-
-            CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
-
-            return _properties.getExpiration();
+            long expiration = message.getMessageHeader().getExpiration();
+            return expiration;
 
         }
     }

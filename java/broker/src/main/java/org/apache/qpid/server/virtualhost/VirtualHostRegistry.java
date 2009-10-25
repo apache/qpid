@@ -21,7 +21,6 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class VirtualHostRegistry
 {
-    private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String,VirtualHost>();
+    private final Map<String, VirtualHost> _registry = new ConcurrentHashMap<String, VirtualHost>();
 
 
     private String _defaultVirtualHostName;

@@ -21,16 +21,13 @@
 package org.apache.qpid.tools.messagestore.commands;
 
 import org.apache.commons.codec.binary.Hex;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntryImpl;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.tools.utils.Console;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -100,7 +97,7 @@ public class Dump extends Show
 
         for (QueueEntry entry : messages)
         {
-            AMQMessage msg = entry.getMessage();
+            ServerMessage msg = entry.getMessage();
             if (!includeMsg(msg, msgids))
             {
                 continue;
@@ -112,7 +109,7 @@ public class Dump extends Show
 
             // Show general message information
             hex.add(Show.Columns.ID.name());
-            ascii.add(msg.getMessageId().toString());
+            ascii.add(msg.getMessageNumber().toString());
 
             hex.add(Console.ROW_DIVIDER);
             ascii.add(Console.ROW_DIVIDER);
@@ -136,10 +133,10 @@ public class Dump extends Show
             hex.add(Console.ROW_DIVIDER);
             ascii.add(Console.ROW_DIVIDER);
 
-            Iterator bodies = msg.getContentBodyIterator();
-            if (bodies.hasNext())
-            {
 
+            final int messageSize = (int) msg.getSize();
+            if (messageSize != 0)
+            {
                 hex.add("Hex");
                 hex.add(Console.ROW_DIVIDER);
 
@@ -147,14 +144,19 @@ public class Dump extends Show
                 ascii.add("ASCII");
                 ascii.add(Console.ROW_DIVIDER);
 
-                while (bodies.hasNext())
+                java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocate(64 * 1024);
+
+                int position = 0;
+
+                while(position < messageSize)
                 {
-                    ContentChunk chunk = (ContentChunk) bodies.next();
 
+                    position += msg.getContent(buf, position);
+                    buf.flip();
                     //Duplicate so we don't destroy original data :)
-                    ByteBuffer hexBuffer = chunk.getData().duplicate();
+                    java.nio.ByteBuffer hexBuffer = buf;
 
-                    ByteBuffer charBuffer = hexBuffer.duplicate();
+                    java.nio.ByteBuffer charBuffer = hexBuffer.duplicate();
 
                     Hex hexencoder = new Hex();
 
@@ -232,6 +234,7 @@ public class Dump extends Show
 
                         ascii.add(asciiLine);
                     }
+                    buf.clear();
                 }
             }
             else
@@ -252,7 +255,7 @@ public class Dump extends Show
         return display;
     }
 
-    private void addShowInformation(List<String> column1, List<String> column2, AMQMessage msg,
+    private void addShowInformation(List<String> column1, List<String> column2, ServerMessage msg,
                                     String title, boolean routing, boolean headers, boolean messageHeaders)
     {
         List<QueueEntry> single = new LinkedList<QueueEntry>();

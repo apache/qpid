@@ -25,7 +25,6 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
 
 public class AMQQueueFactoryTest extends TestCase
 {
@@ -55,31 +54,18 @@ public class AMQQueueFactoryTest extends TestCase
         FieldTable fieldTable = new FieldTable();
         fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 5);
 
-        try
-        {
-            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testPriorityQueue"), false, new AMQShortString("owner"), false,
-                                               _virtualHost, fieldTable);
 
-            assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());            
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testPriorityQueue"), false, new AMQShortString("owner"), false,
+                                           _virtualHost, fieldTable);
+
+        assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());
     }
 
 
     public void testSimpleQueueRegistration()
     {
-        try
-        {
-            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
-                                               _virtualHost, null);
-            assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
-        }
-        catch (AMQException e)
-        {
-            fail(e.getMessage());
-        }
+        AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
+                                           _virtualHost, null);
+        assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
     }
 }

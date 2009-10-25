@@ -133,7 +133,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
     public String getAuthorizedId()
     {
-        return (_protocolSession.getAuthorizedID() != null ) ? _protocolSession.getAuthorizedID().getName() : null;
+        return (_protocolSession.getPrincipal() != null ) ? _protocolSession.getPrincipal().getName() : null;
     }
 
     public String getVersion()
@@ -227,7 +227,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
 
-            _protocolSession.commitTransactions(channel);
+            _protocolSession.rollbackTransactions(channel);
         }
         catch (AMQException ex)
         {

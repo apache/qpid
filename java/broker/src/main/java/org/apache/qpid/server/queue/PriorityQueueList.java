@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.ServerMessage;
 
 public class PriorityQueueList implements QueueEntryList
 {
@@ -52,26 +53,18 @@ public class PriorityQueueList implements QueueEntryList
         return _queue;
     }
 
-    public QueueEntry add(AMQMessage message)
+    public QueueEntry add(ServerMessage message)
     {
-        try
+        int index = message.getMessageHeader().getPriority() - _priorityOffset;
+        if(index >= _priorities)
         {
-            int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
-            if(index >= _priorities)
-            {
-                index = _priorities-1;
-            }
-            else if(index < 0)
-            {
-                index = 0;
-            }
-            return _priorityLists[index].add(message);
+            index = _priorities-1;
         }
-        catch (AMQException e)
+        else if(index < 0)
         {
-            // TODO - fix AMQ Exception
-            throw new RuntimeException(e);
+            index = 0;
         }
+        return _priorityLists[index].add(message);
 
     }
 

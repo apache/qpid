@@ -127,7 +127,12 @@ if fields:
 ${
 for f in fields:
   if f.option: continue
-  out("        $(f.set)($(f.name));\n")
+  if f.ref_type != f.type:
+    out("        $(f.set)($(f.name));\n")
+  else:
+    out("        if($(f.name) != null) {\n")
+    out("            $(f.set)($(f.name));\n")
+    out("        }\n")
 
 if segments:
   out("        setHeader(header);\n")

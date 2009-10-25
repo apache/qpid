@@ -27,6 +27,7 @@ import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQBrokerManagerMBeanTest extends TestCase
@@ -46,7 +47,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange3)) == null);
 
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
         mbean.createNewExchange(exchange1, "direct", false);
         mbean.createNewExchange(exchange2, "topic", false);
         mbean.createNewExchange(exchange3, "headers", false);
@@ -68,7 +69,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
     {
         String queueName = "testQueue_" + System.currentTimeMillis();
 
-        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
 
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
 

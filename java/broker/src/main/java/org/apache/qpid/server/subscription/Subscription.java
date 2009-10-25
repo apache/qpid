@@ -46,10 +46,12 @@ public interface Subscription
     AMQQueue getQueue();
 
     QueueEntry.SubscriptionAcquiredState getOwningState();
+    QueueEntry.SubscriptionAssignedState getAssignedState();
+
 
     void setQueue(AMQQueue queue, boolean exclusive);
 
-    AMQChannel getChannel();
+    void setNoLocal(boolean noLocal);
 
     AMQShortString getConsumerTag();
 
@@ -63,23 +65,24 @@ public interface Subscription
 
     boolean isClosed();
 
-    boolean isBrowser();
+    boolean acquires();
+
+    boolean seesRequeues();
 
     void close();
 
-    boolean filtersMessages();
-
     void send(QueueEntry msg) throws AMQException;
 
-    void queueDeleted(AMQQueue queue); 
+    void queueDeleted(AMQQueue queue);
 
 
     boolean wouldSuspend(QueueEntry msg);
 
     void getSendLock();
+
     void releaseSendLock();
 
-    void resend(final QueueEntry entry) throws AMQException;
+    void onDequeue(final QueueEntry queueEntry);
 
     void restoreCredit(final QueueEntry queueEntry);
 
@@ -87,13 +90,17 @@ public interface Subscription
 
     public State getState();
 
-    QueueEntry getLastSeenEntry();
+    AMQQueue.Context getQueueContext();
 
-    boolean setLastSeenEntry(QueueEntry expected, QueueEntry newValue);
+    void setQueueContext(AMQQueue.Context queueContext);
 
 
     boolean isActive();
 
+    void confirmAutoClose();
 
+    public void set(String key, Object value);
+
+    public Object get(String key);
 
 }

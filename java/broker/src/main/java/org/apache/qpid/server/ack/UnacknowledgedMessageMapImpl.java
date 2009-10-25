@@ -20,20 +20,13 @@
  */
 package org.apache.qpid.server.ack;
 
-import org.apache.qpid.server.store.StoreContext;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.txn.TransactionalContext;
 
 public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 {
@@ -61,17 +54,13 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
         else
         {
-            msgs.put(deliveryTag, get(deliveryTag));
+            final QueueEntry entry = get(deliveryTag);
+            if(entry != null)
+            {
+                msgs.put(deliveryTag, entry);
+            }
         }
 
-    }
-
-    public boolean contains(long deliveryTag) throws AMQException
-    {
-        synchronized (_lock)
-        {
-            return _map.containsKey(deliveryTag);
-        }
     }
 
     public void remove(Map<Long,QueueEntry> msgs)
@@ -135,15 +124,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public void acknowledgeMessage(long deliveryTag, boolean multiple, TransactionalContext txnContext)
-            throws AMQException
-    {
-        synchronized (_lock)
-        {
-            txnContext.acknowledgeMessage(deliveryTag, _lastDeliveryTag, multiple, this);
-        }
-    }
-
     public int size()
     {
         synchronized (_lock)
@@ -161,39 +141,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public void drainTo(long deliveryTag, StoreContext storeContext) throws AMQException
-   
-    {
-        synchronized (_lock)
-        {
-            Iterator<Map.Entry<Long, QueueEntry>> it = _map.entrySet().iterator();
-            while (it.hasNext())
-            {
-                Map.Entry<Long, QueueEntry> unacked = it.next();
-
-                if (unacked.getKey() > deliveryTag)
-                {
-                    //This should not occur now.
-                    throw new AMQException("UnacknowledgedMessageMap is out of order:" + unacked.getKey() +
-                                           " When deliveryTag is:" + deliveryTag + "ES:" + _map.entrySet().toString());
-                }
-
-                //Message has been ack so discard it. This will dequeue and decrement the reference.
-                unacked.getValue().discard(storeContext);
-
-                it.remove();
-
-                _unackedSize -= unacked.getValue().getMessage().getSize();
-
-
-                if (unacked.getKey() == deliveryTag)
-                {
-                    break;
-                }
-            }
-        }
-    }
-    
     public QueueEntry get(long key)
     {
         synchronized (_lock)
@@ -225,8 +172,4 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public long getUnacknowledgeBytes()
-    {
-        return _unackedSize;
-    }
 }

@@ -57,11 +57,11 @@ public class ACLManagerTest extends TestCase
         BufferedWriter out = new BufferedWriter(new FileWriter(tmpFile));
         out.write("<security><queueDenier>notyet</queueDenier><exchangeDenier>yes</exchangeDenier></security>");
         out.close();
-        
+
         _conf = new SecurityConfiguration(new XMLConfiguration(tmpFile));
-        
+
         // Create ACLManager
-        
+
         _pluginManager = new MockPluginManager("");
         _authzManager = new ACLManager(_conf, _pluginManager);
 
@@ -79,15 +79,15 @@ public class ACLManagerTest extends TestCase
         // Correctly Close the AR we created
         ApplicationRegistry.remove();
         super.tearDown();
-    }    
-    
+    }
+
     public void testACLManagerConfigurationPluginManager() throws Exception
     {
         AMQQueue queue = new MockAMQQueue("notyet");
         AMQQueue otherQueue = new MockAMQQueue("other");
-        
+
         assertFalse(_authzManager.authoriseDelete(_session, queue));
-        
+
         // This should only be denied if the config hasn't been correctly passed in
         assertTrue(_authzManager.authoriseDelete(_session, otherQueue));
         assertTrue(_authzManager.authorisePurge(_session, queue));
@@ -96,11 +96,11 @@ public class ACLManagerTest extends TestCase
     public void testACLManagerConfigurationPluginManagerACLPlugin() throws ConfigurationException
     {
         _authzManager = new ACLManager(_conf, _pluginManager, ExchangeDenier.FACTORY);
-        
+
         Exchange exchange = null;
         assertFalse(_authzManager.authoriseDelete(_session, exchange));
     }
-    
+
     public void testConfigurePlugins() throws ConfigurationException
     {
         Configuration hostConfig = new PropertiesConfiguration();

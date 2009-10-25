@@ -23,6 +23,8 @@ package org.apache.qpid.test.utils;
 import org.apache.qpid.util.FileUtils;
 
 import javax.naming.NamingException;
+import javax.jms.JMSException;
+import javax.naming.NamingException;
 
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.slf4j.Logger;

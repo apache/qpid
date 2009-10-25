@@ -22,17 +22,10 @@ package org.apache.qpid.server.protocol;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
-
-import java.security.Principal;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends TestCase
@@ -66,14 +59,14 @@ public class MaxChannelsTest extends TestCase
         }
         assertEquals("Maximum number of channels not set.", new Long(maxChannels), new Long(_session.getChannels().size()));
     }
-    
+
     @Override
     public void setUp()
     {
         //Highlight that this test will cause a new AR to be created
         ApplicationRegistry.getInstance();
     }
-    
+
     @Override
     public void tearDown() throws Exception
     {
@@ -87,7 +80,7 @@ public class MaxChannelsTest extends TestCase
         {
             // Correctly Close the AR we created
             ApplicationRegistry.remove();
-        }        
+        }
     }
 
 }

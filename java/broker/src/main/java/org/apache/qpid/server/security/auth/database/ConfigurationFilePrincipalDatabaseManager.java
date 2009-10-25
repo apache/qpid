@@ -215,14 +215,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
                 _logger.warn("Unable to load access file:" + jmxaccesssFile);
             }
 
-            try
-            {
-                _mbean.register();
-            }
-            catch (AMQException e)
-            {
-                _logger.warn("Unable to register user management MBean");
-            }
+            _mbean.register();
         }
         catch (JMException e)
         {

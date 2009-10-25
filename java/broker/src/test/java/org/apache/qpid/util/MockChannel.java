@@ -35,9 +35,6 @@ public class MockChannel extends AMQChannel
         super(session, channelId, messageStore);
     }
 
-    public Subscription getSubscription(AMQShortString subscription)
-    {
-        return _tag2SubscriptionMap.get(subscription);
-    }
-    
+
+
 }

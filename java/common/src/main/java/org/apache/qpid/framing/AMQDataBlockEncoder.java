@@ -50,7 +50,7 @@ public final class AMQDataBlockEncoder implements MessageEncoder
         {
             _logger.debug("Encoded frame byte-buffer is '" + EncodingUtils.convertToHexString(buffer) + "'");
         }
-
+        
         out.write(buffer);
     }
 

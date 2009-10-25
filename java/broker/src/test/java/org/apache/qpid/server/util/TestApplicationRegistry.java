@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,8 +35,9 @@ import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.logging.RootMessageLoggerImpl;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
@@ -60,7 +61,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
 
 
     private ServerConfiguration _config;
-    
+
     public TestApplicationRegistry() throws ConfigurationException
     {
     	super(new ServerConfiguration(new PropertiesConfiguration()));
@@ -96,10 +97,10 @@ public class TestApplicationRegistry extends ApplicationRegistry
         _messageStore = new TestableMemoryMessageStore();
 
         _virtualHostRegistry = new VirtualHostRegistry(this);
-        
+
         PropertiesConfiguration vhostProps = new PropertiesConfiguration();
         VirtualHostConfiguration hostConfig = new VirtualHostConfiguration("test", vhostProps);
-        _vHost = new VirtualHost(hostConfig, _messageStore);
+        _vHost = new VirtualHostImpl(hostConfig, _messageStore);
 
         _virtualHostRegistry.registerVirtualHost(_vHost);
 
@@ -152,7 +153,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
             CurrentActor.remove();
         }
     }
-    
+
 }
 
 

@@ -26,10 +26,13 @@
  */
 package org.apache.qpid.server.output;
 
-import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.AMQException;
 
 public interface ProtocolOutputConverter
@@ -41,16 +44,16 @@ public interface ProtocolOutputConverter
         ProtocolOutputConverter newInstance(AMQProtocolSession session);
     }
 
-    void writeDeliver(AMQMessage message, int channelId, long deliveryTag, AMQShortString consumerTag)
+    void writeDeliver(QueueEntry entry, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException;
 
-    void writeGetOk(AMQMessage message, int channelId, long deliveryTag, int queueSize) throws AMQException;
+    void writeGetOk(QueueEntry message, int channelId, long deliveryTag, int queueSize) throws AMQException;
 
     byte getProtocolMinorVersion();
 
     byte getProtocolMajorVersion();
 
-    void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText)
+    void writeReturn(MessagePublishInfo messagePublishInfo, ContentHeaderBody header, MessageContentSource msgContent,  int channelId, int replyCode, AMQShortString replyText)
                     throws AMQException;
 
     void writeFrame(AMQDataBlock block);

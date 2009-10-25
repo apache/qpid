@@ -81,7 +81,7 @@ public class Session extends SessionInvoker
     private Binary name;
     private long expiry;
     private int channel;
-    private SessionDelegate delegate = new SessionDelegate();
+    private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
     private long timeout = 60000;
     private boolean autoSync = false;
@@ -111,9 +111,15 @@ public class Session extends SessionInvoker
 
     private Thread resumer = null;
 
-    Session(Connection connection, Binary name, long expiry)
+    protected Session(Connection connection, Binary name, long expiry)
+    {
+        this(connection, new SessionDelegate(), name, expiry);
+    }
+
+    protected Session(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         this.connection = connection;
+        this.delegate = delegate;
         this.name = name;
         this.expiry = expiry;
         initReceiver();
@@ -440,7 +446,7 @@ public class Session extends SessionInvoker
         }
     }
 
-    boolean complete(int lower, int upper)
+    protected boolean complete(int lower, int upper)
     {
         //avoid autoboxing
         if(log.isDebugEnabled())
@@ -457,8 +463,9 @@ public class Session extends SessionInvoker
                 if (m != null)
                 {
                     commandBytes -= m.getBodySize();
+                    m.complete();
+                    commands[idx] = null;                    
                 }
-                commands[idx] = null;
             }
             if (le(lower, maxComplete + 1))
             {
@@ -486,12 +493,27 @@ public class Session extends SessionInvoker
         }
     }
 
-    final private boolean isFull(int id)
+    protected boolean isFull(int id)
     {
-        return id - maxComplete >= commands.length || commandBytes >= byteLimit;
+        return isCommandsFull(id) || isBytesFull();
+    }
+
+    protected boolean isBytesFull()
+    {
+        return commandBytes >= byteLimit;
+    }
+
+    protected boolean isCommandsFull(int id)
+    {
+        return id - maxComplete >= commands.length;
     }
 
     public void invoke(Method m)
+    {
+        invoke(m,(Runnable)null);
+    }
+
+    public void invoke(Method m, Runnable postIdSettingAction)
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
@@ -553,8 +575,13 @@ public class Session extends SessionInvoker
                           "(state=%s)", state));
                 }
 
-                int next = commandsOut++;
+                int next;
+                next = commandsOut++;
                 m.setId(next);
+                if(postIdSettingAction != null)
+                {
+                    postIdSettingAction.run();
+                }
 
                 if (isFull(next))
                 {
@@ -607,7 +634,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if (expiry > 0 && !m.isUnreliable())
+                if ((expiry > 0 && !m.isUnreliable()) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
@@ -617,6 +644,7 @@ public class Session extends SessionInvoker
                     m.setSync(true);
                 }
                 needSync = !m.isSync();
+                
                 try
                 {
                     send(m);
@@ -641,7 +669,7 @@ public class Session extends SessionInvoker
 
                 // flush every 64K commands to avoid ambiguity on
                 // wraparound
-                if ((next % 65536) == 0)
+                if (shouldIssueFlush(next))
                 {
                     try
                     {
@@ -667,6 +695,11 @@ public class Session extends SessionInvoker
         {
             send(m);
         }
+    }
+
+    protected boolean shouldIssueFlush(int next)
+    {
+        return (next % 65536) == 0;
     }
 
     public void sync()
@@ -909,6 +942,14 @@ public class Session extends SessionInvoker
                         result.notifyAll();
                     }
                 }
+            }
+            if(state == CLOSED)
+            {
+                delegate.closed(this);
+            }
+            else
+            {
+                delegate.detached(this);
             }
         }
     }
