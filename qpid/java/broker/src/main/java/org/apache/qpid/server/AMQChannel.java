@@ -981,7 +981,7 @@ public class AMQChannel
             {
                 final boolean immediate = _incommingMessage.isImmediate();
 
-                ServerTransaction txn = null;
+
 
                 for(AMQQueue queue : _destinationQueues)
                 {
@@ -991,30 +991,23 @@ public class AMQChannel
 
                     if(immediate && !entry.getDeliveredToConsumer() && entry.acquire())
                     {
-                          if(txn == null)
-                          {
-                              txn = new LocalTransaction(_messageStore);
-                              Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
-                              entries.add(entry);
-                              txn.dequeue(queue, entry.getMessage(), new MessageAcknowledgeAction(entries));
-                          }
-
+                        ServerTransaction txn = new LocalTransaction(_messageStore);
+                        Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
+                        entries.add(entry);
+                        txn.dequeue(queue, entry.getMessage(), new MessageAcknowledgeAction(entries));
+                        txn.commit();
 
                         AMQMessage message = (AMQMessage) entry.getMessage();
-                                        _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
-                                                              message.getContentHeaderBody(),
-                                                              message,
-                                                              _channelId,
-                                                              AMQConstant.NO_CONSUMERS.getCode(),
-                                                             new AMQShortString("Immediate delivery is not possible."));
+                        _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
+                                              message.getContentHeaderBody(),
+                                              message,
+                                              _channelId,
+                                              AMQConstant.NO_CONSUMERS.getCode(),
+                                             new AMQShortString("Immediate delivery is not possible."));
 
 
                     }
 
-                }
-                if(txn != null)
-                {
-                    txn.commit();
                 }
             }
             catch (AMQException e)
