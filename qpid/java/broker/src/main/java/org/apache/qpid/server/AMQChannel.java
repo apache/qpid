@@ -55,6 +55,7 @@ import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.logging.actors.AMQPChannelActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 
 public class AMQChannel
 {
@@ -119,6 +120,8 @@ public class AMQChannel
 
     private static final Runnable NULL_TASK = new Runnable() { public void run() {} };
     private List<QueueEntry> _resendList = new ArrayList<QueueEntry>();
+    private static final
+    AMQShortString IMMEDIATE_DELIVERY_REPLY_TEXT = new AMQShortString("Immediate delivery is not possible.");
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
@@ -991,19 +994,42 @@ public class AMQChannel
 
                     if(immediate && !entry.getDeliveredToConsumer() && entry.acquire())
                     {
+
+
                         ServerTransaction txn = new LocalTransaction(_messageStore);
                         Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
                         entries.add(entry);
-                        txn.dequeue(queue, entry.getMessage(), new MessageAcknowledgeAction(entries));
+                        final AMQMessage message = (AMQMessage) entry.getMessage();
+                        txn.dequeue(queue, entry.getMessage(),
+                                    new MessageAcknowledgeAction(entries)
+                                    {
+                                        @Override
+                                        public void postCommit()
+                                        {
+                                            try
+                                            {
+                                                final
+                                                ProtocolOutputConverter outputConverter =
+                                                                            _session.getProtocolOutputConverter();
+
+                                                outputConverter.writeReturn(message.getMessagePublishInfo(),
+                                                                            message.getContentHeaderBody(),
+                                                                            message,
+                                                                            _channelId,
+                                                                            AMQConstant.NO_CONSUMERS.getCode(),
+                                                                            IMMEDIATE_DELIVERY_REPLY_TEXT);
+                                            }
+                                            catch (AMQException e)
+                                            {
+                                                throw new RuntimeException(e);
+                                            }
+                                            super.postCommit();
+                                        }
+                                    }
+                        );
                         txn.commit();
 
-                        AMQMessage message = (AMQMessage) entry.getMessage();
-                        _session.getProtocolOutputConverter().writeReturn(message.getMessagePublishInfo(),
-                                              message.getContentHeaderBody(),
-                                              message,
-                                              _channelId,
-                                              AMQConstant.NO_CONSUMERS.getCode(),
-                                             new AMQShortString("Immediate delivery is not possible."));
+
 
 
                     }
