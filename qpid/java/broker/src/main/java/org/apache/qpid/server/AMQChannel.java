@@ -996,7 +996,7 @@ public class AMQChannel
                               txn = new LocalTransaction(_messageStore);
                               Collection<QueueEntry> entries = new ArrayList<QueueEntry>(1);
                               entries.add(entry);
-                              txn.enqueue(queue, entry.getMessage(), new MessageAcknowledgeAction(entries));
+                              txn.dequeue(queue, entry.getMessage(), new MessageAcknowledgeAction(entries));
                           }
 
 
