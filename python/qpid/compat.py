@@ -43,26 +43,46 @@ if tuple(sys.version_info[0:2]) < (2, 4):
 else:
   from select import select
 
+class BaseWaiter:
+
+  def wakeup(self):
+    self._do_write()
+
+  def wait(self, timeout=None):
+    if timeout is not None:
+      ready, _, _ = select([self], [], [], timeout)
+    else:
+      ready = True
+
+    if ready:
+      self._do_read()
+      return True
+    else:
+      return False
+
+  def reading(self):
+    return True
+
+  def readable(self):
+    self._do_read()
+
 if sys.platform in ('win32', 'cygwin'):
   import socket
 
-  class SockWaiter:
+  class SockWaiter(BaseWaiter):
 
     def __init__(self, read_sock, write_sock):
       self.read_sock = read_sock
       self.write_sock = write_sock
 
-    def wakeup(self):
+    def _do_write(self):
       self.write_sock.send("\0")
+
+    def _do_read(self):
+      self.read_sock.recv(65536)
 
     def fileno(self):
       return self.read_sock.fileno()
-
-    def reading(self):
-      return True
-
-    def readable(self):
-      self.read_sock.recv(65536)
 
   def __repr__(self):
     return "SockWaiter(%r, %r)" % (self.read_sock, self.write_sock)
@@ -80,23 +100,20 @@ if sys.platform in ('win32', 'cygwin'):
 else:
   import os
 
-  class PipeWaiter:
+  class PipeWaiter(BaseWaiter):
 
     def __init__(self, read_fd, write_fd):
       self.read_fd = read_fd
       self.write_fd = write_fd
 
-    def wakeup(self):
+    def _do_write(self):
       os.write(self.write_fd, "\0")
+
+    def _do_read(self):
+      os.read(self.read_fd, 65536)
 
     def fileno(self):
       return self.read_fd
-
-    def reading(self):
-      return True
-
-    def readable(self):
-      os.read(self.read_fd, 65536)
 
     def __repr__(self):
       return "PipeWaiter(%r, %r)" % (self.read_fd, self.write_fd)

@@ -31,11 +31,11 @@ Areas that still need work:
 """
 
 from codec010 import StringCodec
-from concurrency import synchronized, Waiter
+from concurrency import synchronized, Waiter, Condition
 from datatypes import timestamp, uuid4, Serial
 from logging import getLogger
 from ops import PRIMITIVE
-from threading import Thread, RLock, Condition
+from threading import Thread, RLock
 from util import default
 
 log = getLogger("qpid.messaging")

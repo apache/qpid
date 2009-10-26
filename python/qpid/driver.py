@@ -755,7 +755,7 @@ class Driver:
       sst.outgoing_idx -= 1
       assert msg == m
     sst.write_cmd(MessageTransfer(destination=_snd._exchange, headers=(dp, mp),
-                                   payload=body, sync=True), msg_acked)
+                                  payload=body, sync=True), msg_acked)
 
   def do_message_transfer(self, xfr):
     sst = self.get_sst(xfr)
