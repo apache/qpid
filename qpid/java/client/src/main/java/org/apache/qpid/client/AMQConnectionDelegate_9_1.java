@@ -18,23 +18,15 @@
  * under the License.
  *
  */
+package org.apache.qpid.client;
 
-package org.apache.qpid.framing.amqp_8_0;
 
-public abstract class AMQMethodBody_8_0 extends org.apache.qpid.framing.AMQMethodBodyImpl
+public class AMQConnectionDelegate_9_1 extends AMQConnectionDelegate_8_0
 {
 
-    public byte getMajor()
+    public AMQConnectionDelegate_9_1(AMQConnection conn)
     {
-        return 8;
+        super(conn);
     }
-
-    public byte getMinor()
-    {
-        return 0;
-    }
-
-
-        
 
 }

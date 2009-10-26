@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.qpid.AMQConnectionClosedException;
@@ -123,6 +124,8 @@ public class AMQProtocolHandler implements ProtocolEngine
     private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolHandler.class);
     private static final Logger _protocolLogger = LoggerFactory.getLogger("qpid.protocol");
     private static final boolean PROTOCOL_DEBUG = (System.getProperty("amqj.protocol.logging.level") != null);
+
+    private static final long MAXIMUM_STATE_WAIT_TIME = Long.parseLong(System.getProperty("amqj.MaximumStateWait", "30000"));
 
     /**
      * The connection that this protocol handler is associated with. There is a 1-1 mapping between connection
@@ -736,7 +739,10 @@ public class AMQProtocolHandler implements ProtocolEngine
         {
             if (_failoverLatch != null)
             {
-                _failoverLatch.await();
+                if(!_failoverLatch.await(MAXIMUM_STATE_WAIT_TIME, TimeUnit.MILLISECONDS))
+                {
+
+                }
             }
         }
     }

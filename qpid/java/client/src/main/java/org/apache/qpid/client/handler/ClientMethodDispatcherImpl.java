@@ -79,6 +79,16 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
                                      }
                                  });
 
+
+        _dispatcherFactories.put(ProtocolVersion.v0_91,
+                                 new DispatcherFactory()
+                                 {
+                                     public ClientMethodDispatcherImpl createMethodDispatcher(AMQProtocolSession session)
+                                     {
+                                         return new ClientMethodDispatcherImpl_0_91(session);
+                                     }
+                                 });
+
     }
 
     public static ClientMethodDispatcherImpl newMethodDispatcher(ProtocolVersion version, AMQProtocolSession session)

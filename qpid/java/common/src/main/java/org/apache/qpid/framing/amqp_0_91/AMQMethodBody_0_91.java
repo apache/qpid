@@ -19,22 +19,19 @@
  *
  */
 
-package org.apache.qpid.framing.amqp_8_0;
+package org.apache.qpid.framing.amqp_0_91;
 
-public abstract class AMQMethodBody_8_0 extends org.apache.qpid.framing.AMQMethodBodyImpl
+public abstract class AMQMethodBody_0_91 extends org.apache.qpid.framing.AMQMethodBodyImpl
 {
 
     public byte getMajor()
     {
-        return 8;
+        return 0;
     }
 
     public byte getMinor()
     {
-        return 0;
+        return 91;
     }
-
-
-        
 
 }
