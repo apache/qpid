@@ -48,12 +48,7 @@ SessionHandler::~SessionHandler() {}
 
 namespace {
 bool isSessionControl(AMQMethodBody* m) {
-    return m &&
-        m->amqpClassId() == SESSION_CLASS_ID;
-    }
-bool isSessionDetachedControl(AMQMethodBody* m) {
-    return isSessionControl(m) &&
-        m->amqpMethodId() == SESSION_DETACHED_METHOD_ID;
+    return m && m->amqpClassId() == SESSION_CLASS_ID;
 }
 
 session::DetachCode convert(uint8_t code) {
@@ -76,13 +71,19 @@ void SessionHandler::handleIn(AMQFrame& f) {
     // Note on channel states: a channel is attached if session != 0
     AMQMethodBody* m = f.getBody()->getMethod();
     try {
+        // Ignore all but detach controls while awaiting detach
+        if (awaitingDetached) {
+            if (!isSessionControl(m)) return;
+            if (m->amqpMethodId() != SESSION_DETACH_METHOD_ID &&
+                m->amqpMethodId() != SESSION_DETACHED_METHOD_ID)
+                return;
+        }
         if (isSessionControl(m)) {
             invoke(*m);
         }
         else {
-            // Drop frames if we are awaiting a detached control or
-            // if we are currently detached.
-            if (awaitingDetached || !getState()) return;  
+            // Drop frames if we are detached.
+            if (!getState()) return;  
             if (!receiveReady)
                 throw IllegalStateException(QPID_MSG(getState()->getId() << ": Not ready to receive data"));
             if (!getState()->receiverRecord(f))
