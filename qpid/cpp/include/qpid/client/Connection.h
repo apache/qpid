@@ -200,7 +200,11 @@ class Connection
 
     QPID_CLIENT_EXTERN bool isOpen() const;
 
-    QPID_CLIENT_EXTERN std::vector<Url> getKnownBrokers();
+    /** In a cluster, returns the initial set of known broker URLs
+     * at the time of connection.
+     */
+    QPID_CLIENT_EXTERN std::vector<Url> getInitialBrokers();
+
     QPID_CLIENT_EXTERN void registerFailureCallback ( boost::function<void ()> fn );
 
     /**

@@ -112,8 +112,8 @@ QPID_AUTO_TEST_CASE(DisconnectedListen) {
 
     Catcher<TransportFailure> runner(bind(&SubscriptionManager::run, boost::ref(fix.subs)));
     fix.connection.proxy.close();
-    runner.join();
-    BOOST_CHECK_THROW(fix.session.close(), TransportFailure);
+    runner.join();    
+    BOOST_CHECK_THROW(fix.session.queueDeclare(arg::queue="x"), TransportFailure);
 }
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {

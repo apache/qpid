@@ -57,9 +57,7 @@ SessionImpl::SessionImpl(const std::string& name, boost::shared_ptr<ConnectionIm
       detachedLifetime(0),
       maxFrameSize(conn->getNegotiatedSettings().maxFrameSize),
       id(conn->getNegotiatedSettings().username, name.empty() ? Uuid(true).str() : name),
-      connectionShared(conn),
-      connectionWeak(conn),
-      weakPtr(false),
+      connection(conn),
       ioHandler(*this),
       proxy(ioHandler),
       nextIn(0),
@@ -68,7 +66,7 @@ SessionImpl::SessionImpl(const std::string& name, boost::shared_ptr<ConnectionIm
       doClearDeliveryPropertiesExchange(true),
       autoDetach(true)
 {
-    channel.next = connectionShared.get();
+    channel.next = connection.get();
 }
 
 SessionImpl::~SessionImpl() {
@@ -87,8 +85,7 @@ SessionImpl::~SessionImpl() {
         }
         delete sendMsgCredit;
     }
-    boost::shared_ptr<ConnectionImpl> c =  connectionWeak.lock();
-    if (c) c->erase(channel);
+    connection->erase(channel);
 }
 
 
@@ -122,6 +119,7 @@ void SessionImpl::open(uint32_t timeout) // user thread
 void SessionImpl::close() //user thread
 {
     Lock l(state);
+    if (state == DETACHED || state == DETACHING) return;
     if (detachedLifetime) setTimeout(0);
     detach();
     waitFor(DETACHED);
@@ -129,8 +127,6 @@ void SessionImpl::close() //user thread
 
 void SessionImpl::resume(boost::shared_ptr<ConnectionImpl>) // user thread
 {
-    // weakPtr sessions should not be resumed.
-    if (weakPtr) return;
     throw NotImplementedException("Resume not yet implemented by client!");
 }
 
@@ -509,11 +505,8 @@ void SessionImpl::proxyOut(AMQFrame& frame) // network thread
 
 void SessionImpl::sendFrame(AMQFrame& frame, bool canBlock)
 {
-    boost::shared_ptr<ConnectionImpl> c =  connectionWeak.lock();
-    if (c) {
-        channel.handle(frame);
-        c->expand(frame.encodedSize(), canBlock);
-    }
+    channel.handle(frame);
+    connection->expand(frame.encodedSize(), canBlock);
 }
 
 void SessionImpl::deliver(AMQFrame& frame) // network thread
@@ -809,17 +802,9 @@ uint32_t SessionImpl::getTimeout() const {
     return detachedLifetime;
 }
 
-void SessionImpl::setWeakPtr(bool weak) {
-    weakPtr = weak;
-    if (weakPtr)
-        connectionShared.reset();   // Only keep weak pointer
-    else
-        connectionShared = connectionWeak.lock();
-}
-
 boost::shared_ptr<ConnectionImpl> SessionImpl::getConnection()
 {
-    return connectionWeak.lock();
+    return connection;
 }
 
 void SessionImpl::disableAutoDetach() { autoDetach = false; }

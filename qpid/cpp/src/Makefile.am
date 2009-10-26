@@ -652,7 +652,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Dispatcher.h			\
   qpid/client/Execution.h			\
   qpid/client/FailoverListener.cpp		\
-  qpid/client/FailoverListener.h		\
   qpid/client/FailoverManager.cpp		\
   qpid/client/Future.cpp			\
   qpid/client/FutureCompletion.cpp		\
@@ -744,6 +743,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/client/Completion.h		\
   ../include/qpid/client/Connection.h		\
   ../include/qpid/client/ConnectionSettings.h	\
+  ../include/qpid/client/FailoverListener.h	\
   ../include/qpid/client/FailoverManager.h	\
   ../include/qpid/client/FlowControl.h		\
   ../include/qpid/client/Future.h		\

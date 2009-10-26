@@ -77,7 +77,9 @@ Connection& FailoverManager::connect(std::vector<Url> brokers)
         } else {
             state = CONNECTING;
             Connection c;
-            attempt(c, settings, brokers.empty() ? connection.getKnownBrokers() : brokers);
+            if (brokers.empty() && failoverListener.get())
+                brokers = failoverListener->getKnownBrokers();
+            attempt(c, settings, brokers);
             if (c.isOpen()) state = IDLE;
             else state = CANT_CONNECT;
             connection = c;
@@ -118,6 +120,7 @@ void FailoverManager::attempt(Connection& c, ConnectionSettings s)
     try {
         QPID_LOG(info, "Attempting to connect to " << s.host << " on " << s.port << "..."); 
         c.open(s);
+        failoverListener.reset(new FailoverListener(c));
         QPID_LOG(info, "Connected to " << s.host << " on " << s.port); 
     } catch (const Exception& e) {
         QPID_LOG(info, "Could not connect to " << s.host << " on " << s.port << ": " << e.what()); 

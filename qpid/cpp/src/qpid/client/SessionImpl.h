@@ -120,11 +120,6 @@ public:
     /** Get timeout in seconds. */
     uint32_t getTimeout() const;
 
-    /** Make this session use a weak_ptr to the ConnectionImpl.
-     * Used for sessions created by the ConnectionImpl itself.
-     */
-    void setWeakPtr(bool weak=true);
-
     /** 
      * get the Connection associated with this connection
      */
@@ -224,9 +219,7 @@ private:
     const uint64_t maxFrameSize;
     const SessionId id;
 
-    boost::shared_ptr<ConnectionImpl> connectionShared;
-    boost::weak_ptr<ConnectionImpl> connectionWeak;
-    bool weakPtr;
+    boost::shared_ptr<ConnectionImpl> connection;
 
     framing::FrameHandler::MemFunRef<SessionImpl, &SessionImpl::proxyOut> ioHandler;
     framing::ChannelHandler channel;

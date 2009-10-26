@@ -126,8 +126,8 @@ struct ClientT {
     ClientT(const qpid::client::ConnectionSettings& settings, const std::string& name_=std::string())
         : connection(settings), session(connection.newSession(name_)), subs(session), name(name_) {}
 
-    ~ClientT() { connection.close(); }
-    void close() { session.close(); connection.close(); }
+    ~ClientT() { close(); }
+    void close() { if (connection.isOpen()) { session.close(); connection.close(); } }
 };
 
 typedef ClientT<> Client;

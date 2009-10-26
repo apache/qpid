@@ -42,7 +42,6 @@ namespace client {
 class Connector;
 struct ConnectionSettings;
 class SessionImpl;
-class FailoverListener;
 
 class ConnectionImpl : public Bounds,
                        public framing::FrameHandler,
@@ -58,7 +57,6 @@ class ConnectionImpl : public Bounds,
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::scoped_ptr<Connector> connector;
-    boost::scoped_ptr<FailoverListener> failover;
     framing::ProtocolVersion version;
     uint16_t nextChannel;
     sys::Mutex lock;
@@ -90,9 +88,8 @@ class ConnectionImpl : public Bounds,
     void erase(uint16_t channel);
     const ConnectionSettings& getNegotiatedSettings();
 
-    std::vector<Url> getKnownBrokers();
+    std::vector<Url> getInitialBrokers();
     void registerFailureCallback ( boost::function<void ()> fn ) { failureCallback = fn; }
-    void stopFailoverListener();
 
     framing::ProtocolVersion getVersion() { return version; }
 };

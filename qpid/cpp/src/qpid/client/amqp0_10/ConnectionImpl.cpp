@@ -136,7 +136,9 @@ void ConnectionImpl::connect(const AbsTime& started)
 
 bool ConnectionImpl::tryConnect()
 {
-    if (tryConnect(url) || tryConnect(connection.getKnownBrokers())) {
+    if (tryConnect(url) ||
+        (failoverListener.get() && tryConnect(failoverListener->getKnownBrokers())))
+    {
         return resetSessions();
     } else {
         return false;
@@ -148,6 +150,7 @@ bool ConnectionImpl::tryConnect(const Url& u)
     try {
         QPID_LOG(info, "Trying to connect to " << url << "...");                
         connection.open(u, settings);
+        failoverListener.reset(new FailoverListener(connection));
         return true;
     } catch (const Exception& e) {
         //TODO: need to fix timeout on open so that it throws TransportFailure

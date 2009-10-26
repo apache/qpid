@@ -22,7 +22,6 @@
 #include "qpid/client/Connector.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/client/SessionImpl.h"
-#include "qpid/client/FailoverListener.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
@@ -88,7 +87,6 @@ ConnectionImpl::~ConnectionImpl() {
     // Important to close the connector first, to ensure the
     // connector thread does not call on us while the destructor
     // is running.
-    failover.reset();
     if (connector) connector->close();
 }
 
@@ -175,7 +173,6 @@ void ConnectionImpl::open()
     } else {
         QPID_LOG(debug, "No security layer in place");
     }
-    failover.reset(new FailoverListener(shared_from_this(), handler.knownBrokersUrls));
 }
 
 void ConnectionImpl::idleIn()
@@ -256,8 +253,8 @@ const ConnectionSettings& ConnectionImpl::getNegotiatedSettings()
     return handler;
 }
 
-std::vector<qpid::Url> ConnectionImpl::getKnownBrokers() {
-    return failover ? failover->getKnownBrokers() : handler.knownBrokersUrls;
+std::vector<qpid::Url> ConnectionImpl::getInitialBrokers() {
+    return handler.knownBrokersUrls;
 }
 
 boost::shared_ptr<SessionImpl>  ConnectionImpl::newSession(const std::string& name, uint32_t timeout, uint16_t channel) {
@@ -266,7 +263,5 @@ boost::shared_ptr<SessionImpl>  ConnectionImpl::newSession(const std::string& na
     simpl->open(timeout);
     return simpl;
 }
-
-void ConnectionImpl::stopFailoverListener() { failover->stop(); }
 
 }} // namespace qpid::client

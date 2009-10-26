@@ -152,8 +152,8 @@ void Connection::close() {
         impl->close();
 }
 
-std::vector<Url> Connection::getKnownBrokers() {
-    return impl ? impl->getKnownBrokers() : std::vector<Url>();
+std::vector<Url> Connection::getInitialBrokers() {
+    return impl ? impl->getInitialBrokers() : std::vector<Url>();
 }
 
 }} // namespace qpid::client
