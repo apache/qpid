@@ -120,7 +120,6 @@ class App(qmf.AgentHandler):
                 ## form of property access
                 assert self._parent["uint8val"] == 0xc7
                 assert self._parent.uint64val == 0x9494949449494949
-                assert self._parent.queryCount >= 0
 
             # note the alternative argument access syntax:
             elif args.test == "small":
