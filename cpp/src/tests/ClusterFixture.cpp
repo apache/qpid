@@ -141,13 +141,14 @@ void ClusterFixture::killWithSilencer(size_t n, client::Connection& c, int sig) 
  * Get the known broker ports from a Connection.
  *@param n if specified wait for the cluster size to be n, up to a timeout.
  */
-std::set<int> knownBrokerPorts(qpid::client::Connection& source, int n) {
-    std::vector<qpid::Url> urls = source.getKnownBrokers();
+std::set<int> knownBrokerPorts(qpid::client::Connection& c, int n) {
+    FailoverListener fl(c);
+    std::vector<qpid::Url> urls = fl.getKnownBrokers();
     if (n >= 0 && unsigned(n) != urls.size()) {
         // Retry up to 10 secs in .1 second intervals.
         for (size_t retry=100; urls.size() != unsigned(n) && retry != 0; --retry) {
             qpid::sys::usleep(1000*100); // 0.1 secs
-            urls = source.getKnownBrokers();
+            urls = fl.getKnownBrokers();
         }
     }
     std::set<int> s;

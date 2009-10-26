@@ -22,12 +22,13 @@
  *
  */
 
-#include "qpid/client/Connection.h"
-#include "qpid/client/ConnectionSettings.h"
 #include "qpid/Exception.h"
 #include "qpid/client/AsyncSession.h"
-#include "qpid/sys/Monitor.h"
 #include "qpid/client/ClientImportExport.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ConnectionSettings.h"
+#include "qpid/client/FailoverListener.h"
+#include "qpid/sys/Monitor.h"
 #include <vector>
 
 namespace qpid {
@@ -123,6 +124,7 @@ class FailoverManager
 
     qpid::sys::Monitor lock;
     Connection connection;
+    std::auto_ptr<FailoverListener> failoverListener;
     ConnectionSettings settings;
     ReconnectionStrategy* strategy;
     State state;

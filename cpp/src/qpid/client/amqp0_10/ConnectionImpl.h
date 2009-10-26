@@ -25,6 +25,7 @@
 #include "qpid/messaging/Variant.h"
 #include "qpid/Url.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/FailoverListener.h"
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Semaphore.h"
@@ -50,6 +51,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     qpid::sys::Mutex lock;//used to protect data structures
     qpid::sys::Semaphore semaphore;//used to coordinate reconnection
     qpid::client::Connection connection;
+    std::auto_ptr<FailoverListener> failoverListener;
     qpid::Url url;
     qpid::client::ConnectionSettings settings;
     Sessions sessions;

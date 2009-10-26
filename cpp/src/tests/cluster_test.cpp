@@ -358,13 +358,15 @@ QPID_AUTO_TEST_CASE(testTxTransaction) {
     rollbackSession.txRollback();
     rollbackSession.messageRelease(rollbackMessage.getId());
 
-
     // Verify queue status: just the comitted messages and dequeues should remain.
     BOOST_CHECK_EQUAL(c1.session.queueQuery("q").getMessageCount(), 4u);
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIMEOUT).getData(), "B");
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIMEOUT).getData(), "a");
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIMEOUT).getData(), "b");
     BOOST_CHECK_EQUAL(c1.subs.get("q", TIMEOUT).getData(), "c");
+
+    commitSession.close();
+    rollbackSession.close();
 }
 
 QPID_AUTO_TEST_CASE(testUnacked) {
@@ -859,9 +861,12 @@ QPID_AUTO_TEST_CASE(testHeartbeatCancelledOnFailover)
     Receiver receiver(fmgr, "my-queue", "my-data");
     qpid::sys::Thread runner(receiver);
     receiver.waitForReady();
-    cluster.kill(1);
-    //sleep for 2 secs to allow the heartbeat task to fire on the now dead connection:
-    ::usleep(2*1000*1000);
+    {
+        ScopedSuppressLogging allQuiet; // suppress connection closed messages
+        cluster.kill(1);
+        //sleep for 2 secs to allow the heartbeat task to fire on the now dead connection:
+        ::usleep(2*1000*1000);
+    }
     fmgr.execute(sender);
     runner.join();
     BOOST_CHECK(!receiver.failed);
