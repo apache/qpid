@@ -21,6 +21,7 @@
 # boundary-conditions, config
 
 import time
+from qpid import compat
 from qpid.tests import Test
 from qpid.harness import Skipped
 from qpid.messaging import Connection, ConnectError, Disconnected, Empty, \
@@ -585,7 +586,7 @@ class AddressErrorTests(Base):
       snd.send("hello")
       assert False, "send succeeded"
     except exc, e:
-      assert check(e), "unexpected error: %s" % e
+      assert check(e), "unexpected error: %s" % compat.format_exc(e)
       snd.close()
 
   def fetchErrorTest(self, addr, exc, check=lambda e: True):
@@ -594,7 +595,7 @@ class AddressErrorTests(Base):
       rcv.fetch(timeout=0)
       assert False, "fetch succeeded"
     except exc, e:
-      assert check(e), "unexpected error: %s" % e
+      assert check(e), "unexpected error: %s" % compat.format_exc(e)
       rcv.close()
 
   def testNoneTarget(self):
