@@ -36,6 +36,7 @@ import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
@@ -184,6 +185,11 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
             else if(getProtocolVersion().equals(ProtocolVersion.v0_9))
             {
                 BasicRecoverSyncBody body = ((MethodRegistry_0_9)getMethodRegistry()).createBasicRecoverSyncBody(false);
+                _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverSyncOkBody.class);
+            }
+            else if(getProtocolVersion().equals(ProtocolVersion.v0_91))
+            {
+                BasicRecoverSyncBody body = ((MethodRegistry_0_91)getMethodRegistry()).createBasicRecoverSyncBody(false);
                 _connection.getProtocolHandler().syncWrite(body.generateFrame(_channelId), BasicRecoverSyncOkBody.class);
             }
             else

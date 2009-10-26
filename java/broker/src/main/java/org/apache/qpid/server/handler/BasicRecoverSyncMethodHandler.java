@@ -27,6 +27,7 @@ import org.apache.qpid.framing.BasicRecoverBody;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.BasicRecoverSyncBody;
+import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -66,6 +67,13 @@ public class BasicRecoverSyncMethodHandler implements StateAwareMethodListener<B
         if(session.getProtocolVersion().equals(ProtocolVersion.v0_9))
         {
             MethodRegistry_0_9 methodRegistry = (MethodRegistry_0_9) session.getMethodRegistry();
+            AMQMethodBody recoverOk = methodRegistry.createBasicRecoverSyncOkBody();
+            session.writeFrame(recoverOk.generateFrame(channelId));
+
+        }
+        else if(session.getProtocolVersion().equals(ProtocolVersion.v0_91))
+        {
+            MethodRegistry_0_91 methodRegistry = (MethodRegistry_0_91) session.getMethodRegistry();
             AMQMethodBody recoverOk = methodRegistry.createBasicRecoverSyncOkBody();
             session.writeFrame(recoverOk.generateFrame(channelId));
 

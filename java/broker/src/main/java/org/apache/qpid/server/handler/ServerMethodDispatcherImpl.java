@@ -59,6 +59,14 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
                                              return new ServerMethodDispatcherImpl_0_9(stateManager);
                                          }
                                      });
+            _dispatcherFactories.put(ProtocolVersion.v0_91,
+                         new DispatcherFactory()
+                         {
+                             public MethodDispatcher createMethodDispatcher(AMQStateManager stateManager)
+                             {
+                                 return new ServerMethodDispatcherImpl_0_91(stateManager);
+                             }
+                         });
 
         }
 

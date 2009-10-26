@@ -54,7 +54,10 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
     
     public ProtocolInitiation(ProtocolVersion pv)
     {
-        this(AMQP_HEADER, CURRENT_PROTOCOL_CLASS, TCP_PROTOCOL_INSTANCE, pv.getMajorVersion(), pv.getMinorVersion());
+        this(AMQP_HEADER, CURRENT_PROTOCOL_CLASS,
+             pv.equals(ProtocolVersion.v0_91) ? 0 : TCP_PROTOCOL_INSTANCE,
+             pv.equals(ProtocolVersion.v0_91) ? 9 : pv.getMajorVersion(),
+             pv.equals(ProtocolVersion.v0_91) ? 1 : pv.getMinorVersion());
     }
 
     public ProtocolInitiation(ByteBuffer in)
@@ -124,7 +127,6 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
     {
         /**
          *
-         * @param session the session
          * @param in input buffer
          * @return true if we have enough data to decode the PI frame fully, false if more
          * data is required
@@ -162,13 +164,24 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
             throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
                                                 _protocolClass, null);
         }
-        if (_protocolInstance != TCP_PROTOCOL_INSTANCE)
+
+        ProtocolVersion pv;
+
+        // Hack for 0-9-1 which changed how the header was defined
+        if(_protocolInstance == 0 && _protocolMajor == 9 && _protocolMinor == 1)
+        {
+            pv = ProtocolVersion.v0_91;
+
+        }
+        else if (_protocolInstance != TCP_PROTOCOL_INSTANCE)
         {
             throw new AMQProtocolInstanceException("Protocol instance " + TCP_PROTOCOL_INSTANCE + " was expected; received " +
                                                    _protocolInstance, null);
         }
-
-        ProtocolVersion pv = new ProtocolVersion(_protocolMajor, _protocolMinor);
+        else
+        {
+            pv = new ProtocolVersion(_protocolMajor, _protocolMinor);
+        }
         
 
         if (!pv.isSupported())
