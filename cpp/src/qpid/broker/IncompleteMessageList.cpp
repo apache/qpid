@@ -31,7 +31,10 @@ IncompleteMessageList::IncompleteMessageList() :
 IncompleteMessageList::~IncompleteMessageList() 
 {
     sys::Mutex::ScopedLock l(lock);
-    std::for_each(incomplete.begin(), incomplete.end(), boost::bind(&Message::resetEnqueueCompleteCallback, _1));
+    for (Messages::iterator i = incomplete.begin(); i != incomplete.end(); ++i) {
+        (*i)->resetEnqueueCompleteCallback();
+        (*i)->resetDequeueCompleteCallback();
+    }
 }
 
 void IncompleteMessageList::add(boost::intrusive_ptr<Message> msg)
