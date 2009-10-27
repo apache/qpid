@@ -104,12 +104,18 @@ find_program(HELP2MAN help2man DOC "Location of the help2man program")
 option(GEN_MANPAGES "Use help2man to generate man pages" ON)
 if (GEN_MANPAGES AND NOT HELP2MAN)
   message(STATUS "Can't locate the help2man command; man pages will not be generated")
+  set (GEN_MANPAGES OFF)
 endif (GEN_MANPAGES AND NOT HELP2MAN)
 
 # FindDoxygen module tries to locate doxygen and Graphviz dot
-option(GEN_DOXYGEN "Use doxygen to generate user documentation" ON)
+set (docs_default ON)
+if (NOT DOXYGEN_EXECUTABLE)
+  set (docs_default OFF)
+endif (NOT DOXYGEN_EXECUTABLE)
+option(GEN_DOXYGEN "Use doxygen to generate user documentation" ${docs_default})
 if (GEN_DOXYGEN AND NOT DOXYGEN_EXECUTABLE)
   message(STATUS "Can't locate the doxygen command; user documentation will not be generated")
+  set (GEN_DOXYGEN OFF)
 endif (GEN_DOXYGEN AND NOT DOXYGEN_EXECUTABLE)
 
 find_program(VALGRIND valgrind DOC "Location of the valgrind program")
@@ -134,9 +140,11 @@ endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # TODO: Not all these libs are needed everywhere:
-# Linux only uses filesystem program_options unit_test_framework (which itself uses regex)
+# Linux only uses filesystem program_options unit_test_framework
+# (which itself uses regex); system is only needed indirectly and is included
+# in the Windows install package.
 find_package(Boost 1.33 REQUIRED
-             COMPONENTS filesystem program_options date_time thread
+             COMPONENTS filesystem program_options date_time thread system
                         regex unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
@@ -160,23 +168,69 @@ if (NOT Boost_REGEX_LIBRARY)
   set(Boost_REGEX_LIBRARY boost_regex)
 endif (NOT Boost_REGEX_LIBRARY)
 
+# The Windows install also wants the Boost DLLs and headers that the release
+# is built with. The DLLs enable everything to run, and the headers ensure
+# that users building Qpid C++ client programs can compile (the C++ API
+# still exposes Boost headers, but hopefully this will be fixed in the
+# future).
+#
+# On Windows you can pick whether the static or dynamic versions of the libs
+# are used; allow this choice to the user. Since we also install the Boost
+# DLLs that are needed for the Windows package, none are needed for the
+# static link case; else drop them into the install. Do this all first, since
 # Boost on Windows can use automatic linking to pick up the correct
-# Boost libs based on compile-time touching of the headers. So don't really
-# need to add them to the link lines. But on Windows you can also pick whether
-# the static or dynamic versions of the libs are used; allow this choice to
-# the user.
+# Boost libs based on compile-time touching of the headers. Since we don't
+# really need to add them to the link lines, set the names to blanks.
 if (MSVC)
+   option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
+   if (QPID_LINK_BOOST_DYNAMIC)
+      add_definitions( /D BOOST_ALL_DYN_LINK)
+      string (REPLACE .lib .dll
+              _boost_date_time_debug ${Boost_DATE_TIME_LIBRARY_DEBUG})
+      string (REPLACE .lib .dll
+              _boost_date_time_release ${Boost_DATE_TIME_LIBRARY_RELEASE})
+      string (REPLACE .lib .dll
+              _boost_filesystem_debug ${Boost_FILESYSTEM_LIBRARY_DEBUG})
+      string (REPLACE .lib .dll
+              _boost_filesystem_release ${Boost_FILESYSTEM_LIBRARY_RELEASE})
+      string (REPLACE .lib .dll
+              _boost_program_options_debug ${Boost_PROGRAM_OPTIONS_LIBRARY_DEBUG})
+      string (REPLACE .lib .dll
+              _boost_program_options_release ${Boost_PROGRAM_OPTIONS_LIBRARY_RELEASE})
+      string (REPLACE .lib .dll
+              _boost_regex_debug ${Boost_REGEX_LIBRARY_DEBUG})
+      string (REPLACE .lib .dll
+              _boost_regex_release ${Boost_REGEX_LIBRARY_RELEASE})
+      string (REPLACE .lib .dll
+              _boost_system_debug ${Boost_SYSTEM_LIBRARY_DEBUG})
+      string (REPLACE .lib .dll
+              _boost_system_release ${Boost_SYSTEM_LIBRARY_RELEASE})
+      string (REPLACE .lib .dll
+              _boost_thread_debug ${Boost_THREAD_LIBRARY_DEBUG})
+      string (REPLACE .lib .dll
+              _boost_thread_release ${Boost_THREAD_LIBRARY_RELEASE})
+      install (PROGRAMS
+               ${_boost_date_time_debug} ${_boost_date_time_release}
+               ${_boost_filesystem_debug} ${_boost_filesystem_release}
+               ${_boost_program_options_debug} ${_boost_program_options_release}
+               ${_boost_regex_debug} ${_boost_regex_release}
+               ${_boost_system_debug} ${_boost_system_release}
+               ${_boost_thread_debug} ${_boost_thread_release}
+               DESTINATION ${QPID_INSTALL_LIBDIR}
+               COMPONENT ${QPID_COMPONENT_COMMON})
+   endif (QPID_LINK_BOOST_DYNAMIC)
+
+   # Need the boost headers regardless of which way the libs go.
+   install (DIRECTORY ${BOOST_INCLUDEDIR}/boost
+            DESTINATION ${QPID_INSTALL_INCLUDEDIR}
+            COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
+
    set(Boost_DATE_TIME_LIBRARY "")
    set(Boost_THREAD_LIBRARY "")
    set(Boost_PROGRAM_OPTIONS_LIBRARY "")
    set(Boost_FILESYSTEM_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
    set(Boost_REGEX_LIBRARY "")
-
-   option(QPID_LINK_BOOST_DYNAMIC "Link with dynamic Boost libs (OFF to link static)" ON)
-   if (QPID_LINK_BOOST_DYNAMIC)
-      add_definitions( /D BOOST_ALL_DYN_LINK)
-   endif (QPID_LINK_BOOST_DYNAMIC)
 endif (MSVC)
 
 include_directories( ${Boost_INCLUDE_DIR} )
@@ -343,13 +397,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidcommon_platform_LIBS
     rpcrt4 ws2_32
   )
-  set (qpidcommon_platform_INSTALL_HEADERS
-     ../include/qpid/sys/windows/Condition.h
-     ../include/qpid/sys/windows/IntegerTypes.h
-     ../include/qpid/sys/windows/Mutex.h
-     ../include/qpid/sys/windows/Time.h
-     ../include/qpid/sys/windows/check.h
-  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
@@ -401,14 +448,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${Boost_FILESYSTEM_LIBRARY}
     uuid
     ${CMAKE_DL_LIBS}
-  )
-  set (qpidcommon_platform_INSTALL_HEADERS
-     ../include/qpid/sys/posix/Condition.h
-     ../include/qpid/sys/posix/IntegerTypes.h
-     ../include/qpid/sys/posix/Mutex.h
-     ../include/qpid/sys/posix/PrivatePosix.h
-     ../include/qpid/sys/posix/Time.h
-     ../include/qpid/sys/posix/check.h
   )
 
   set (qpidbroker_platform_SOURCES
@@ -499,6 +538,19 @@ set_target_properties (qpidcommon PROPERTIES
 install (TARGETS qpidcommon
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_COMMON})
+# When the client programming component is installed, Windows also needs
+# the debug variant of qpidcommon and qpidclient, and the PDBs for those
+# as well. It would be nice to figure out a way to put some sanity checking
+# here... as it is, success relies on the packager building the debug then
+# the release, then packaging the release build.
+if (WIN32)
+    install (PROGRAMS
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.dll
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.lib
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidcommond.pdb
+             DESTINATION ${QPID_INSTALL_LIBDIR}
+             COMPONENT ${QPID_COMPONENT_CLIENT})
+endif (WIN32)
 
 set (qpidclient_SOURCES
      ${rgen_client_srcs}
@@ -513,7 +565,6 @@ set (qpidclient_SOURCES
      qpid/client/Demux.cpp
      qpid/client/Dispatcher.cpp
      qpid/client/FailoverManager.cpp
-     qpid/client/FailoverListener.h
      qpid/client/FailoverListener.cpp
      qpid/client/Future.cpp
      qpid/client/FutureCompletion.cpp
@@ -528,7 +579,6 @@ set (qpidclient_SOURCES
      qpid/client/QueueOptions.cpp
      qpid/client/Results.cpp
      qpid/client/SessionBase_0_10.cpp
-     ../include/qpid/client/SessionBase_0_10.h
      qpid/client/SessionBase_0_10Access.h
      qpid/client/ConnectionAccess.h
      qpid/client/SessionImpl.cpp
@@ -576,86 +626,6 @@ set (qpidclient_SOURCES
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
 )
-set (qpidclient_INSTALL_HEADERS
-     ../include/qpid/Address.h
-     ../include/qpid/CommonImportExport.h
-     ../include/qpid/Exception.h
-     ../include/qpid/InlineAllocator.h
-     ../include/qpid/InlineVector.h
-     ../include/qpid/Msg.h
-     ../include/qpid/Options.h
-     ../include/qpid/RangeSet.h
-     ../include/qpid/SessionId.h
-     ../include/qpid/Url.h
-     ../include/qpid/client/AsyncSession.h
-     ../include/qpid/client/ClientImportExport.h
-     ../include/qpid/client/Completion.h
-     ../include/qpid/client/Connection.h
-     ../include/qpid/client/ConnectionSettings.h
-     ../include/qpid/client/FailoverManager.h
-     ../include/qpid/client/FlowControl.h
-     ../include/qpid/client/Future.h
-     ../include/qpid/client/FutureCompletion.h
-     ../include/qpid/client/FutureResult.h
-     ../include/qpid/client/Handle.h
-     ../include/qpid/client/LocalQueue.h
-     ../include/qpid/client/Message.h
-     ../include/qpid/client/MessageListener.h
-     ../include/qpid/client/MessageReplayTracker.h
-     ../include/qpid/client/QueueOptions.h
-     ../include/qpid/client/Session.h
-     ../include/qpid/client/SessionBase_0_10.h
-     ../include/qpid/client/Subscription.h
-     ../include/qpid/client/SubscriptionManager.h
-     ../include/qpid/client/SubscriptionSettings.h
-     ../include/qpid/client/TypedResult.h
-     ../include/qpid/framing/Array.h
-     ../include/qpid/framing/Buffer.h
-     ../include/qpid/framing/FieldTable.h
-     ../include/qpid/framing/FieldValue.h
-     ../include/qpid/framing/List.h
-     ../include/qpid/framing/ProtocolVersion.h
-     ../include/qpid/framing/SequenceNumber.h
-     ../include/qpid/framing/SequenceSet.h
-     ../include/qpid/framing/StructHelper.h
-     ../include/qpid/framing/Uuid.h
-     ../include/qpid/framing/amqp_types.h
-     ../include/qpid/framing/amqp_types_full.h
-     ../include/qpid/log/Logger.h
-     ../include/qpid/log/Options.h
-     ../include/qpid/log/Selector.h
-     ../include/qpid/log/SinkOptions.h
-     ../include/qpid/log/Statement.h
-     ../include/qpid/management/Args.h
-     ../include/qpid/management/Manageable.h
-     ../include/qpid/management/ManagementEvent.h
-     ../include/qpid/management/ManagementObject.h
-     ../include/qpid/sys/Condition.h
-     ../include/qpid/sys/IOHandle.h
-     ../include/qpid/sys/IntegerTypes.h
-     ../include/qpid/sys/Monitor.h
-     ../include/qpid/sys/Mutex.h
-     ../include/qpid/sys/Runnable.h
-     ../include/qpid/sys/StrError.h
-     ../include/qpid/sys/SystemInfo.h
-     ../include/qpid/sys/Thread.h
-     ../include/qpid/sys/Time.h
-     ../include/qpid/messaging/Address.h
-     ../include/qpid/messaging/Connection.h
-     ../include/qpid/messaging/Codec.h
-     ../include/qpid/messaging/Filter.h
-     ../include/qpid/messaging/ListContent.h
-     ../include/qpid/messaging/ListView.h
-     ../include/qpid/messaging/MapContent.h
-     ../include/qpid/messaging/MapView.h
-     ../include/qpid/messaging/Message.h
-     ../include/qpid/messaging/MessageListener.h
-     ../include/qpid/messaging/Sender.h
-     ../include/qpid/messaging/Receiver.h
-     ../include/qpid/messaging/Session.h
-     ../include/qpid/messaging/Variant.h
-     ../include/qpid/client/amqp0_10/Codecs.h
-)
 
 add_library (qpidclient SHARED ${qpidclient_SOURCES})
 target_link_libraries (qpidclient qpidcommon)
@@ -663,9 +633,18 @@ set_target_properties (qpidclient PROPERTIES VERSION ${qpidc_version})
 install (TARGETS qpidclient
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT})
-install (DIRECTORY ../include/qpid DESTINATION ${QPID_INSTALL_INCLUDEDIR}
+install (DIRECTORY ../include/qpid ${CMAKE_CURRENT_BINARY_DIR}/../include/qpid
+         DESTINATION ${QPID_INSTALL_INCLUDEDIR}
          COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
          PATTERN ".svn" EXCLUDE)
+if (WIN32)
+    install (PROGRAMS
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.dll
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.lib
+             ${CMAKE_CURRENT_BINARY_DIR}/Debug/qpidclientd.pdb
+             DESTINATION ${QPID_INSTALL_LIBDIR}
+             COMPONENT ${QPID_COMPONENT_CLIENT})
+endif (WIN32)
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
@@ -755,6 +734,10 @@ target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRA
 install (TARGETS qpidd RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
+if (CPACK_NSIS)
+    set (CPACK_NSIS_MENU_LINKS
+         "qpidd" "Start Qpid Broker")
+endif (CPACK_NSIS)
 
 # QMF library
 # Library Version Information (CURRENT.REVISION.AGE):
@@ -908,4 +891,5 @@ add_definitions(-DHAVE_CONFIG_H)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+add_subdirectory(qpid/store)
 add_subdirectory(tests)
