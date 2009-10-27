@@ -33,7 +33,7 @@ class Message;
 namespace client {
 namespace amqp0_10 {
 
-class OutgoingMessage;
+struct OutgoingMessage;
 
 /**
  *

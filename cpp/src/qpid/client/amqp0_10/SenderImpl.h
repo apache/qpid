@@ -36,7 +36,7 @@ namespace amqp0_10 {
 
 class AddressResolution;
 class MessageSink;
-class OutgoingMessage;
+struct OutgoingMessage;
 
 /**
  *
