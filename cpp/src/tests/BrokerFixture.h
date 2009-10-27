@@ -127,7 +127,7 @@ struct ClientT {
         : connection(settings), session(connection.newSession(name_)), subs(session), name(name_) {}
 
     ~ClientT() { close(); }
-    void close() { if (connection.isOpen()) { session.close(); connection.close(); } }
+    void close() { session.close(); connection.close(); }
 };
 
 typedef ClientT<> Client;

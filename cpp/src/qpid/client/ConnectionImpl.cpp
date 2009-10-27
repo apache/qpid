@@ -188,13 +188,16 @@ void ConnectionImpl::idleOut()
 
 void ConnectionImpl::close()
 {
-    if (heartbeatTask) {
+    if (heartbeatTask) 
         heartbeatTask->cancel();
+    // close() must be idempotent and no-throw as it will often be called in destructors.
+    if (handler.isOpen()) {
+        try {
+            handler.close();
+            closed(CLOSE_CODE_NORMAL, "Closed by client");
+        } catch (...) {}
     }
-
-    if (!handler.isOpen()) return;
-    handler.close();
-    closed(CLOSE_CODE_NORMAL, "Closed by client");
+    assert(!handler.isOpen());
 }
 
 

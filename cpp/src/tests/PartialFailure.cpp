@@ -102,6 +102,10 @@ QPID_AUTO_TEST_CASE(testCoincidentErrors) {
         try { Client c11(cluster[1], "c11"); ++alive; } catch (...) {}
 
         BOOST_CHECK_EQUAL(alive, 1);
+
+        // Close inside ScopedSuppressLogging to avoid warnings 
+        c0.close();
+        c1.close();
     }
 }
 
@@ -138,6 +142,11 @@ QPID_AUTO_TEST_CASE(testNormalErrors) {
         BOOST_CHECK_EQUAL(3u, knownBrokerPorts(c2.connection, 3).size());
         BOOST_CHECK_EQUAL(c2.subs.get("c0", TIMEOUT).getData(), "stay");
         BOOST_CHECK_EQUAL(c2.subs.get("c1", TIMEOUT).getData(), "stay");
+
+        // Close inside ScopedSuppressLogging to avoid warnings 
+        c0.close();
+        c1.close();
+        c2.close();
     }
 }
 
@@ -166,6 +175,11 @@ QPID_AUTO_TEST_CASE(testErrorAfterJoin) {
         BOOST_CHECK_THROW(c0.session.messageTransfer(content=pMessage("xxx", "q")), TransportFailure);
 
         BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c2.connection, 1).size());
+
+        // Close inside ScopedSuppressLogging to avoid warnings 
+        c0.close();
+        c1.close();
+        c2.close();
     }
 }
 
@@ -196,6 +210,11 @@ QPID_AUTO_TEST_CASE(testSinglePartialFailure) {
         c0.session.messageTransfer(content=pMessage("c", "q"));
         BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 5u);
         BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c0.connection, 1).size());
+
+        // Close inside ScopedSuppressLogging to avoid warnings 
+        c0.close();
+        c1.close();
+        c2.close();
     }
 }
 
@@ -224,6 +243,12 @@ QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
         // FIXME aconway 2009-06-30: This check fails sporadically with 2 != 3.
         // It should pass reliably.
         // BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c0.connection, 2).size());
+
+        // Close inside ScopedSuppressLogging to avoid warnings 
+        c0.close();
+        c1.close();
+        c2.close();
+        c3.close();
     }
 }
 
@@ -254,6 +279,9 @@ QPID_AUTO_TEST_CASE(testPartialFailureMemberLeaves) {
         Client c00(cluster[0], "c00"); // Old connection is dead.
         BOOST_CHECK_EQUAL(c00.session.queueQuery("q").getMessageCount(), 1u);
         BOOST_CHECK_EQUAL(1u, knownBrokerPorts(c00.connection, 1).size());
+
+        // Close inside ScopedSuppressLogging to avoid warnings 
+        c0.close();
     }
 }
 #endif

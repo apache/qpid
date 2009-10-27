@@ -119,10 +119,15 @@ void SessionImpl::open(uint32_t timeout) // user thread
 void SessionImpl::close() //user thread
 {
     Lock l(state);
-    if (state == DETACHED || state == DETACHING) return;
-    if (detachedLifetime) setTimeout(0);
-    detach();
-    waitFor(DETACHED);
+    // close() must be idempotent and no-throw as it will often be called in destructors.
+    if (state != DETACHED && state != DETACHING) {
+        try {
+            if (detachedLifetime) setTimeout(0);
+            detach();
+            waitFor(DETACHED);
+        } catch (...) {}
+        setState(DETACHED);
+    }
 }
 
 void SessionImpl::resume(boost::shared_ptr<ConnectionImpl>) // user thread
