@@ -344,6 +344,7 @@ MSSqlProvider::earlyInitialize(Plugin::Target &target)
         // be sure to close the database connection before return to avoid
         // leaving a connection up that will not be used.
         try {
+            initState();     // This initializes COM
             std::auto_ptr<DatabaseConnection> db(new DatabaseConnection());
             db->open(options.connectString, "");
             _ConnectionPtr conn(*db);
