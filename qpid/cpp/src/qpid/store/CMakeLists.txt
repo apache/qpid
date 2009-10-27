@@ -49,6 +49,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 set_target_properties (store PROPERTIES VERSION ${qpidc_version})
+install (TARGETS store # RUNTIME
+         DESTINATION ${QPIDD_MODULE_DIR}
+         COMPONENT ${QPID_COMPONENT_BROKER})
 
 # Build the MS SQL Storage Provider plugin
 set (mssql_default ON)
@@ -71,4 +74,7 @@ if (BUILD_MSSQL)
                ms-sql/State.cpp
                ms-sql/VariantHelper.cpp)
   target_link_libraries (mssql_store qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY})
+  install (TARGETS mssql_store # RUNTIME
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
 endif (BUILD_MSSQL)
