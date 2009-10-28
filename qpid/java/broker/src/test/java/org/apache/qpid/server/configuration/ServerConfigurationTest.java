@@ -233,7 +233,8 @@ public class ServerConfigurationTest extends TestCase
     {
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        assertEquals(true, serverConfig.getStatusUpdatesEnabled());
+        assertEquals(ServerConfiguration.DEFAULT_STATUS_UPDATES.equalsIgnoreCase("on"),
+                     serverConfig.getStatusUpdatesEnabled());
 
         // Check disabling we set
         _config.setProperty(ServerConfiguration.STATUS_UPDATES, "off");
