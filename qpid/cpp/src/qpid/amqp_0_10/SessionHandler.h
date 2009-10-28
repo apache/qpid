@@ -101,14 +101,15 @@ class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
     QPID_COMMON_EXTERN virtual void handleOut(framing::AMQFrame&);
 
     framing::ChannelHandler channel;
-    framing::AMQP_AllProxy::Session  peer;
-    bool ignoring;
-    bool sendReady, receiveReady;
-    std::string name;
 
   private:
     void checkAttached();
     void sendCommandPoint(const SessionPoint&);
+
+    framing::AMQP_AllProxy::Session  peer;
+    std::string name;
+    bool awaitingDetached;
+    bool sendReady, receiveReady;
 };
 }} // namespace qpid::amqp_0_10
 

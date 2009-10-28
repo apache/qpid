@@ -313,6 +313,7 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
     // Create a client session to update session state. 
     boost::shared_ptr<client::ConnectionImpl> cimpl = client::ConnectionAccess::getImpl(shadowConnection);
     boost::shared_ptr<client::SessionImpl> simpl = cimpl->newSession(ss->getId().getName(), ss->getTimeout(), sh.getChannel());
+    simpl->disableAutoDetach();
     client::SessionBase_0_10Access(shadowSession).set(simpl);
     AMQP_AllProxy::ClusterConnection proxy(simpl->out);
 

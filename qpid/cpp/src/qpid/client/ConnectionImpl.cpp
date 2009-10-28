@@ -95,11 +95,21 @@ ConnectionImpl::~ConnectionImpl() {
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionImpl>& session, uint16_t channel)
 {
     Mutex::ScopedLock l(lock);
-    session->setChannel(channel == NEXT_CHANNEL ? nextChannel++ : channel);
-    boost::weak_ptr<SessionImpl>& s = sessions[session->getChannel()];
-    boost::shared_ptr<SessionImpl> ss = s.lock();
-    if (ss) throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attached to " << ss->getId()));
-    s = session;
+    for (uint16_t i = 0; i < NEXT_CHANNEL; i++) { //will at most search through channels once
+        uint16_t c = channel == NEXT_CHANNEL ? nextChannel++ : channel;
+        boost::weak_ptr<SessionImpl>& s = sessions[c];
+        boost::shared_ptr<SessionImpl> ss = s.lock();
+        if (!ss) {
+            //channel is free, we can assign it to this session
+            session->setChannel(c);
+            s = session;
+            return;
+        } else if (channel != NEXT_CHANNEL) {
+            //channel is taken and was requested explicitly so don't look for another
+            throw SessionBusyException(QPID_MSG("Channel " << ss->getChannel() << " attached to " << ss->getId()));
+        } //else channel is busy, but we can keep looking for a free one
+    }
+
 }
 
 void ConnectionImpl::handle(framing::AMQFrame& frame)
@@ -165,7 +175,6 @@ void ConnectionImpl::open()
     } else {
         QPID_LOG(debug, "No security layer in place");
     }
-
     failover.reset(new FailoverListener(shared_from_this(), handler.knownBrokersUrls));
 }
 
@@ -246,7 +255,7 @@ const ConnectionSettings& ConnectionImpl::getNegotiatedSettings()
 {
     return handler;
 }
-    
+
 std::vector<qpid::Url> ConnectionImpl::getKnownBrokers() {
     return failover ? failover->getKnownBrokers() : handler.knownBrokersUrls;
 }
