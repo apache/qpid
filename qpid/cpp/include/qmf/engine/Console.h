@@ -134,6 +134,7 @@ namespace engine {
      */
     class AgentProxy {
     public:
+        AgentProxy(const AgentProxy& from);
         ~AgentProxy();
         const char* getLabel() const;
         uint32_t getBrokerBank() const;

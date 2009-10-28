@@ -535,7 +535,7 @@ class ConsoleObject(QmfObject):
         return self.impl.isDeleted()
 
 
-    def index(self): pass
+    def key(self): pass
 
 
 
@@ -545,6 +545,7 @@ class ObjectId:
             self.impl = impl
         else:
             self.impl = qmfengine.ObjectId()
+        self.agent_key = "%d.%d" % (self.impl.getBrokerBank(), self.impl.getAgentBank())
     
     
     def object_num_high(self):
@@ -555,13 +556,8 @@ class ObjectId:
         return self.impl.getObjectNumLo()
     
     
-    def broker_bank(self):
-        return self.impl.getBrokerBank()
-
-
-    def agent_bank(self):
-        return self.impl.getAgentBank()
-
+    def agent_key(self):
+        self.agent_key
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__): return False
@@ -1076,13 +1072,18 @@ class Console(Thread):
     
     def objects(self, query, kwargs = {}):
         timeout = 30
+        agent = None
         temp_args = kwargs.copy()
         if type(query) == type({}):
             temp_args.update(query)
 
-        if "timeout" in temp_args:
-            timeout = temp_args["timeout"]
-            temp_args.pop("timeout")
+        if "_timeout" in temp_args:
+            timeout = temp_args["_timeout"]
+            temp_args.pop("_timeout")
+
+        if "_agent" in temp_args:
+            agent = temp_args["_agent"]
+            temp_args.pop("_agent")
 
         if type(query) == type({}):
             query = Query(temp_args)
@@ -1097,7 +1098,7 @@ class Console(Thread):
             self._sync_count = 1
             self._sync_result = []
             broker = self._broker_list[0]
-            broker.send_query(query.impl, None)
+            broker.send_query(query.impl, None, agent)
             self._cv.wait(timeout)
             if self._sync_count == 1:
                 raise Exception("Timed out: waiting for query response")
@@ -1193,38 +1194,40 @@ class Console(Thread):
         valid = self.impl.getEvent(self._event)
         while valid:
             count += 1
-            if self._event.kind == qmfengine.ConsoleEvent.AGENT_ADDED:
-                logging.debug("Console Event AGENT_ADDED received")
-                if self._handler:
-                    self._handler.agent_added(AgentProxy(self._event.agent, None))
-            elif self._event.kind == qmfengine.ConsoleEvent.AGENT_DELETED:
-                logging.debug("Console Event AGENT_DELETED received")
-                if self._handler:
-                    self._handler.agent_deleted(AgentProxy(self._event.agent, None))
-            elif self._event.kind == qmfengine.ConsoleEvent.NEW_PACKAGE:
-                logging.debug("Console Event NEW_PACKAGE received")
-                if self._handler:
-                    self._handler.new_package(self._event.name)
-            elif self._event.kind == qmfengine.ConsoleEvent.NEW_CLASS:
-                logging.debug("Console Event NEW_CLASS received")
-                if self._handler:
-                    self._handler.new_class(SchemaClassKey(self._event.classKey))
-            elif self._event.kind == qmfengine.ConsoleEvent.OBJECT_UPDATE:
-                logging.debug("Console Event OBJECT_UPDATE received")
-                if self._handler:
-                    self._handler.object_update(ConsoleObject(None, {"impl":self._event.object}),
-                                                self._event.hasProps, self._event.hasStats)
-            elif self._event.kind == qmfengine.ConsoleEvent.EVENT_RECEIVED:
-                logging.debug("Console Event EVENT_RECEIVED received")
-            elif self._event.kind == qmfengine.ConsoleEvent.AGENT_HEARTBEAT:
-                logging.debug("Console Event AGENT_HEARTBEAT received")
-                if self._handler:
-                    self._handler.agent_heartbeat(AgentProxy(self._event.agent, None), self._event.timestamp)
-            elif self._event.kind == qmfengine.ConsoleEvent.METHOD_RESPONSE:
-                logging.debug("Console Event METHOD_RESPONSE received")
-            else:
-                logging.debug("Console thread received unknown event: '%s'" % str(self._event.kind))
-            
+            try:
+                if self._event.kind == qmfengine.ConsoleEvent.AGENT_ADDED:
+                    logging.debug("Console Event AGENT_ADDED received")
+                    if self._handler:
+                        self._handler.agent_added(AgentProxy(self._event.agent, None))
+                elif self._event.kind == qmfengine.ConsoleEvent.AGENT_DELETED:
+                    logging.debug("Console Event AGENT_DELETED received")
+                    if self._handler:
+                        self._handler.agent_deleted(AgentProxy(self._event.agent, None))
+                elif self._event.kind == qmfengine.ConsoleEvent.NEW_PACKAGE:
+                    logging.debug("Console Event NEW_PACKAGE received")
+                    if self._handler:
+                        self._handler.new_package(self._event.name)
+                elif self._event.kind == qmfengine.ConsoleEvent.NEW_CLASS:
+                    logging.debug("Console Event NEW_CLASS received")
+                    if self._handler:
+                        self._handler.new_class(SchemaClassKey(self._event.classKey))
+                elif self._event.kind == qmfengine.ConsoleEvent.OBJECT_UPDATE:
+                    logging.debug("Console Event OBJECT_UPDATE received")
+                    if self._handler:
+                        self._handler.object_update(ConsoleObject(None, {"impl":self._event.object}),
+                                                    self._event.hasProps, self._event.hasStats)
+                elif self._event.kind == qmfengine.ConsoleEvent.EVENT_RECEIVED:
+                    logging.debug("Console Event EVENT_RECEIVED received")
+                elif self._event.kind == qmfengine.ConsoleEvent.AGENT_HEARTBEAT:
+                    logging.debug("Console Event AGENT_HEARTBEAT received")
+                    if self._handler:
+                        self._handler.agent_heartbeat(AgentProxy(self._event.agent, None), self._event.timestamp)
+                elif self._event.kind == qmfengine.ConsoleEvent.METHOD_RESPONSE:
+                    logging.debug("Console Event METHOD_RESPONSE received")
+                else:
+                    logging.debug("Console thread received unknown event: '%s'" % str(self._event.kind))
+            except e:
+                print "Exception caught in callback thread:", e
             self.impl.popEvent()
             valid = self.impl.getEvent(self._event)
         return count
@@ -1236,19 +1239,15 @@ class AgentProxy:
     def __init__(self, impl, broker):
         self.impl = impl
         self.broker = broker
+        self.key = "%d.%d" % (self.impl.getBrokerBank(), self.impl.getAgentBank())
 
 
     def label(self):
         return self.impl.getLabel()
 
 
-    def broker_bank(self):
-        return self.impl.getBrokerBank()
-
-
-    def agent_bank(self):
-        return self.impl.getAgentBank()
-
+    def key(self):
+        return self.key
 
 
 class Broker(ConnectionHandler):
@@ -1298,8 +1297,11 @@ class Broker(ConnectionHandler):
             self._cv.release()
 
 
-    def send_query(self, query, ctx):
-        self.impl.sendQuery(query, ctx)
+    def send_query(self, query, ctx, agent):
+        agent_impl = None
+        if agent:
+            agent_impl = agent.impl
+        self.impl.sendQuery(query, ctx, agent_impl)
         self.conn.kick()
 
 
