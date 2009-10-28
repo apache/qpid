@@ -112,7 +112,7 @@ void Timer::run()
                 // Warn on callback overrun
                 AbsTime end(AbsTime::now());
                 Duration overrun(tasks.top()->nextFireTime, end);
-                bool late = delay > 10 * TIME_MSEC;
+                bool late = delay > 50 * TIME_MSEC;
                 bool overran = overrun > 2 * TIME_MSEC;
                 if (late)
                 if (overran) {
