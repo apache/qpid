@@ -602,7 +602,7 @@ def applyPatch(patch):
     if prefix != None:
         basecommand = basecommand + " -p "+prefix
 
-    basecommand = basecommand + " -d "+ _rootDir + PATH_SEP + BUILD_DIR + PATH_SEP + source + PATH_SEP
+    basecommand = basecommand + " -E -d "+ _rootDir + PATH_SEP + BUILD_DIR + PATH_SEP + source + PATH_SEP
 
     if path != None:
         basecommand = basecommand + path
