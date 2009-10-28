@@ -1080,18 +1080,62 @@ public class QpidTestCase extends TestCase
         return count;
     }
 
+    /**
+     * Send messages to the given destination.
+     *
+     * If session is transacted then messages will be commited before returning
+     *
+     * @param session the session to use for sending
+     * @param destination where to send them to
+     * @param count no. of messages to send
+     *
+     * @return the sent messges
+     *
+     * @throws Exception
+     */
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count) throws Exception
     {
         return sendMessage(session, destination, count, 0, 0);
     }
 
+    /**
+     * Send messages to the given destination.
+     *
+     * If session is transacted then messages will be commited before returning
+     *
+     * @param session the session to use for sending
+     * @param destination where to send them to
+     * @param count no. of messages to send
+     *
+     * @param batchSize the batchSize in which to commit, 0 means no batching,
+     * but a single commit at the end
+     * @return the sent messgse
+     *
+     * @throws Exception
+     */
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count, int batchSize) throws Exception
     {
         return sendMessage(session, destination, count, 0, batchSize);
     }    
 
+    /**
+     * Send messages to the given destination.
+     *
+     * If session is transacted then messages will be commited before returning
+     *
+     * @param session the session to use for sending
+     * @param destination where to send them to
+     * @param count no. of messages to send
+     *
+     * @param offset offset allows the INDEX value of the message to be adjusted.
+     * @param batchSize the batchSize in which to commit, 0 means no batching,
+     * but a single commit at the end
+     * @return the sent messgse
+     *
+     * @throws Exception
+     */
     public List<Message> sendMessage(Session session, Destination destination,
                                      int count, int offset, int batchSize) throws Exception
     {
