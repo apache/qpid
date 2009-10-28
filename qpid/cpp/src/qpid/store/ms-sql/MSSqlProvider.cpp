@@ -954,28 +954,33 @@ MSSqlProvider::createDb(_ConnectionPtr conn, const std::string &name)
         " (messageId bigint REFERENCES tblMessage(persistenceId) NOT NULL,"
         "  queueId bigint REFERENCES tblQueue(persistenceId) NOT NULL)";
     _variant_t unused;
-     _bstr_t dbStr = dbCmd.c_str();
-    conn->Execute(dbStr, &unused, adExecuteNoRecords);
-    _bstr_t useStr = useCmd.c_str();
-    conn->Execute(useStr, &unused, adExecuteNoRecords);
-    std::string makeTable = tableCmd + TblQueue + colSpecs;
-    _bstr_t makeTableStr = makeTable.c_str();
-    conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
-    makeTable = tableCmd + TblExchange + colSpecs;
-    makeTableStr = makeTable.c_str();
-    conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
-    makeTable = tableCmd + TblConfig + colSpecs;
-    makeTableStr = makeTable.c_str();
-    conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
-    makeTable = tableCmd + TblMessage + colSpecs;
-    makeTableStr = makeTable.c_str();
-    conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
-    makeTable = tableCmd + TblBinding + bindingSpecs;
-    makeTableStr = makeTable.c_str();
-    conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
-    makeTable = tableCmd + TblMessageMap + messageMapSpecs;
-    makeTableStr = makeTable.c_str();
-    conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+    _bstr_t dbStr = dbCmd.c_str();
+    try {
+        conn->Execute(dbStr, &unused, adExecuteNoRecords);
+        _bstr_t useStr = useCmd.c_str();
+        conn->Execute(useStr, &unused, adExecuteNoRecords);
+        std::string makeTable = tableCmd + TblQueue + colSpecs;
+        _bstr_t makeTableStr = makeTable.c_str();
+        conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+        makeTable = tableCmd + TblExchange + colSpecs;
+        makeTableStr = makeTable.c_str();
+        conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+        makeTable = tableCmd + TblConfig + colSpecs;
+        makeTableStr = makeTable.c_str();
+        conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+        makeTable = tableCmd + TblMessage + colSpecs;
+        makeTableStr = makeTable.c_str();
+        conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+        makeTable = tableCmd + TblBinding + bindingSpecs;
+        makeTableStr = makeTable.c_str();
+        conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+        makeTable = tableCmd + TblMessageMap + messageMapSpecs;
+        makeTableStr = makeTable.c_str();
+        conn->Execute(makeTableStr, &unused, adExecuteNoRecords);
+    }
+    catch(_com_error &e) {
+        throw ADOException("MSSQL can't create " + name, e);
+    }
 }
 
 void

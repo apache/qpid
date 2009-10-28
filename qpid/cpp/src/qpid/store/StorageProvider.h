@@ -25,6 +25,7 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
+#include "qpid/Exception.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/broker/MessageStore.h"
@@ -63,7 +64,7 @@ class StorageProvider : public qpid::Plugin, public qpid::broker::MessageStore
 {
 public:
 
-    class Exception : public std::exception
+    class Exception : public qpid::Exception
     {
     public:
         virtual ~Exception() throw() {}
