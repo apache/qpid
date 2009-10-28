@@ -40,7 +40,9 @@ namespace engine {
         O_GT = 5,
         O_GE = 6,
         O_RE_MATCH = 7,
-        O_RE_NOMATCH = 8
+        O_RE_NOMATCH = 8,
+        O_PRESENT = 9,
+        O_NOT_PRESENT = 10
     };
 
     struct QueryOperand {
