@@ -134,6 +134,26 @@
                 </security>
             </test>
         </virtualhost>
+
+        <virtualhost>
+            <name>test2</name>
+            <test2>
+                <security>
+                    <access>
+                        <class>org.apache.qpid.server.security.access.plugins.SimpleXML</class>
+                    </access>
+                    
+                    <access_control_list>
+                        <!-- This section grants specific users full permissions to all artifacts in this virtualhost -->
+                        <access>
+                            <users>
+                                <user>guest</user>
+                            </users>
+                        </access>
+                    </access_control_list>
+                </security>
+            </test2>
+        </virtualhost>
     </virtualhosts>
 </broker>
 

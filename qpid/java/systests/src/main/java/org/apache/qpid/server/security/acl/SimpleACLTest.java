@@ -26,9 +26,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -119,17 +121,19 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     
     public void testAccessVhostAuthorisedGuest() throws IOException, Exception
     {
-        //The 'guest' user normally has no access, as tested below in testAccessNoRights(), and so is unable to perform
-        //actions such as connecting (and by extension, creating a queue, and consuming from a queue etc). In order to test
-        //the vhost-wide 'access' right, we will now give the guest user 'access' ACL rights and perform various such actions.
-        setConfigurationProperty("virtualhosts.virtualhost.test.security.access_control_list.access.users.user", "guest");
+        //The 'guest' user has no access to the 'test' vhost, as tested below in testAccessNoRights(), and so
+        //is unable to perform actions such as connecting (and by extension, creating a queue, and consuming 
+        //from a queue etc). In order to test the vhost-wide 'access' ACL right, the 'guest' user has been given 
+        //this right in the 'test2' vhost.
 
         setUpACLTest();
         
         try
         {
-            //get a connection
-            Connection conn = getConnection("guest", "guest");
+            //get a connection to the 'test2' vhost using the guest user and perform various actions.
+            Connection conn = getConnection(new AMQConnectionURL(
+                    "amqp://username:password@clientid/test2?brokerlist='" + getBroker() + "'"));
+            
             ((AMQConnection) conn).setConnectionListener(this);
 
             Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
