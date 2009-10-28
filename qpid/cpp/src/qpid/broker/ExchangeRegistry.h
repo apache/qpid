@@ -71,7 +71,7 @@ class ExchangeRegistry{
 
     /** Call f for each exchange in the registry. */
     template <class F> void eachExchange(F f) const {
-        qpid::sys::RWlock::ScopedWlock l(lock);
+        qpid::sys::RWlock::ScopedRlock l(lock);
         for (ExchangeMap::const_iterator i = exchanges.begin(); i != exchanges.end(); ++i)
             f(i->second);
     }
