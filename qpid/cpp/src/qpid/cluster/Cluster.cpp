@@ -349,7 +349,6 @@ const ClusterUpdateOfferBody* castUpdateOffer(const framing::AMQBody* body) {
 // This thread decodes frames from events.
 void Cluster::deliveredEvent(const Event& e) {
     if (e.isCluster()) {
-        QPID_LOG(trace, *this << " DLVR: " << e);
         EventFrame ef(e, e.getFrame());
         // Stop the deliverEventQueue on update offers.
         // This preserves the connection decoder fragments for an update.
@@ -361,8 +360,7 @@ void Cluster::deliveredEvent(const Event& e) {
         }
         deliverFrame(ef);
     }
-    else if(!discarding) {    
-        QPID_LOG(trace, *this << " DLVR: " << e);
+    else if(!discarding) { 
         if (e.isControl())
             deliverFrame(EventFrame(e, e.getFrame()));
         else {
@@ -376,8 +374,6 @@ void Cluster::deliveredEvent(const Event& e) {
             }
         }
     }
-    else // Discard connection events if discarding is set.
-        QPID_LOG(trace, *this << " DROP: " << e);
 }
 
 void Cluster::flagError(
