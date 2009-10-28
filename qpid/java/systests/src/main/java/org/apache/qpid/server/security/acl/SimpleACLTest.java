@@ -102,7 +102,51 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
             fail("Connection was not created due to:" + e);
         }
     }
+    
+    public void testAccessVhostAuthorisedGuest() throws IOException, Exception
+    {
+        //The 'guest' user normally has no access, as tested below in testAccessNoRights(), and so is unable to perform
+        //actions such as connecting (and by extension, creating a queue, and consuming from a queue etc). In order to test
+        //the vhost-wide 'access' right, we will now give the guest user 'access' ACL rights and perform various such actions.
+        setConfigurationProperty("virtualhosts.virtualhost.test.security.access_control_list.access.users.user", "guest");
 
+        setUpACLTest();
+        
+        try
+        {
+            //get a connection
+            Connection conn = getConnection("guest", "guest");
+            ((AMQConnection) conn).setConnectionListener(this);
+
+            Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            conn.start();
+
+            //create Queues and consumers for each
+            Queue namedQueue = sesh.createQueue("vhostAccessCreatedQueue" + getTestQueueName());
+            Queue tempQueue = sesh.createTemporaryQueue();
+            MessageConsumer consumer = sesh.createConsumer(namedQueue);
+            MessageConsumer tempConsumer = sesh.createConsumer(tempQueue);
+
+            //send a message to each queue (also causing an exchange declare)
+            MessageProducer sender = ((AMQSession)sesh).createProducer(null);
+            ((org.apache.qpid.jms.MessageProducer) sender).send(namedQueue, sesh.createTextMessage("test"),
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+            ((org.apache.qpid.jms.MessageProducer) sender).send(tempQueue, sesh.createTextMessage("test"),
+                                                                DeliveryMode.NON_PERSISTENT, 0, 0L, false, false, true);
+
+            //consume the messages from the queues
+            consumer.receive(2000);
+            tempConsumer.receive(2000);
+
+            conn.close();
+        }
+        catch (Exception e)
+        {
+            fail("Test failed due to:" + e.getMessage());
+        }
+    }
+    
     public void testAccessNoRights() throws Exception
     {
     	setUpACLTest();
