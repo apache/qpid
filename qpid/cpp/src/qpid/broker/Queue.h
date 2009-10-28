@@ -336,6 +336,12 @@ namespace qpid {
 
             // For cluster update
             QueueListeners& getListeners();
+
+            /**
+             * Reserve space in policy for an enqueued message that
+             * has been recovered in the prepared state (dtx only)
+             */
+            void recoverPrepared(boost::intrusive_ptr<Message>& msg);
         };
     }
 }

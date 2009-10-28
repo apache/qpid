@@ -179,6 +179,10 @@ void Queue::deliver(boost::intrusive_ptr<Message>& msg){
     }
 }
 
+void Queue::recoverPrepared(boost::intrusive_ptr<Message>& msg)
+{
+    if (policy.get()) policy->recoverEnqueued(msg);
+}
 
 void Queue::recover(boost::intrusive_ptr<Message>& msg){
     if (policy.get()) policy->recoverEnqueued(msg);
