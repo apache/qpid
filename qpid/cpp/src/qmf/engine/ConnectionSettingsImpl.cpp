@@ -185,6 +185,11 @@ Value ConnectionSettingsImpl::getAttr(const string& key) const
         return intval;
     }
 
+    if (key == attrSendUserId) {
+        boolval.setBool(sendUserId);
+        return boolval;
+    }
+
     return strval;
 }
 
