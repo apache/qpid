@@ -38,7 +38,7 @@ namespace {
   class NoopDeleter {
   public:
       NoopDeleter() {}
-      void operator()(qpid::broker::MessageStore *p) {}
+      void operator()(qpid::broker::MessageStore * /*p*/) {}
   };
 }
 

@@ -293,7 +293,7 @@ public:
      *
      * Request recovery of queue and message state.
      */
-    virtual void recover(qpid::broker::RecoveryManager& recoverer) {}
+    virtual void recover(qpid::broker::RecoveryManager& /*recoverer*/) {}
 
     /**
      * @name Methods that do the recovery of the various objects that
