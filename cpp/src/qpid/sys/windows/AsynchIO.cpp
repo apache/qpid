@@ -189,9 +189,9 @@ AsynchConnector::AsynchConnector(const Socket& sock,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb)
   : connCallback(connCb), failCallback(failCb), socket(sock) {
-    socket.setNonblocking();
     try {
         socket.connect(hostname, port);
+        socket.setNonblocking();
         connCallback(socket);
     } catch(std::exception& e) {
         if (failCallback)
