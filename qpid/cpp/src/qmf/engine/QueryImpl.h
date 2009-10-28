@@ -85,6 +85,8 @@ namespace engine {
         bool getDecreasing() const { return orderDecreasing; }
 
         void encode(qpid::framing::Buffer& buffer) const;
+        bool singleAgent() const { return oid.get() != 0; }
+        uint32_t agentBank() const { return singleAgent() ? oid->getAgentBank() : 0; }
 
         std::string packageName;
         std::string className;

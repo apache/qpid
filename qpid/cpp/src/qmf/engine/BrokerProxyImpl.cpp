@@ -206,19 +206,31 @@ void BrokerProxyImpl::sendQuery(const Query& query, void* context, const AgentPr
 {
     SequenceContext::Ptr queryContext(new QueryContext(*this, context));
     Mutex::ScopedLock _lock(lock);
+    bool sent = false;
     if (agent != 0) {
-        sendGetRequestLH(queryContext, query, agent);
+        if (sendGetRequestLH(queryContext, query, agent))
+            sent = true;
     } else {
         // TODO (optimization) only send queries to agents that have the requested class+package
         for (map<uint32_t, AgentProxyPtr>::const_iterator iter = agentList.begin();
              iter != agentList.end(); iter++) {
-            sendGetRequestLH(queryContext, query, iter->second.get());
+            if (sendGetRequestLH(queryContext, query, iter->second.get()))
+                sent = true;
         }
+    }
+
+    if (!sent) {
+        queryContext->reserve();
+        queryContext->release();
     }
 }
 
-void BrokerProxyImpl::sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent)
+bool BrokerProxyImpl::sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent)
 {
+    if (query.impl->singleAgent()) {
+        if (query.impl->agentBank() != agent->getAgentBank())
+            return false;
+    }
     stringstream key;
     Buffer outBuffer(outputBuffer, MA_BUFFER_SIZE);
     uint32_t sequence(seqMgr.reserve(queryContext));
@@ -229,6 +241,7 @@ void BrokerProxyImpl::sendGetRequestLH(SequenceContext::Ptr queryContext, const 
     key << "agent.1." << agent->impl->agentBank;
     sendBufferLH(outBuffer, QMF_EXCHANGE, key.str());
     QPID_LOG(trace, "SENT GetQuery seq=" << sequence << " key=" << key.str());
+    return true;
 }
 
 string BrokerProxyImpl::encodeMethodArguments(const SchemaMethod* schema, const Value* argmap, Buffer& buffer)
