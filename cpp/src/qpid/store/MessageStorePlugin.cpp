@@ -73,6 +73,7 @@ MessageStorePlugin::earlyInitialize (qpid::Plugin::Target& target)
     if (providers.empty()) {
         QPID_LOG(warning,
                  "Message store plugin: No storage providers available.");
+        provider = providers.end();
         return;
     }
     if (!options.providerName.empty()) {
@@ -86,10 +87,12 @@ MessageStorePlugin::earlyInitialize (qpid::Plugin::Target& target)
     else {
         // No specific provider chosen; if there's only one, use it. Else
         // report the need to pick one.
-        if (providers.size() > 1)
+        if (providers.size() > 1) {
+            provider = providers.end();
             throw Exception("Message store plugin: multiple provider plugins "
                             "loaded; must either load only one or select one "
                             "using --storage-provider");
+        }
         provider = providers.begin();
     }
 

@@ -46,8 +46,15 @@ public:
     ADOException(const std::string& _text, _com_error &e)
       : Exception(_text) {
         text += ": ";
-        _bstr_t wmsg = e.Description();
-        text += (const char *)wmsg;
+        IErrorInfo *i = e.ErrorInfo();
+        if (i != 0) {
+            _bstr_t wmsg = e.Description();
+            text += (const char *)wmsg;
+            i->Release();
+        }
+        else {
+            text += e.ErrorMessage();
+        }
     }
 };
 
