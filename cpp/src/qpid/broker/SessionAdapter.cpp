@@ -88,12 +88,12 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
         try{
             std::pair<Exchange::shared_ptr, bool> response = getBroker().getExchanges().declare(exchange, type, durable, args);
             if (response.second) {
-                if (durable) {
-                    getBroker().getStore().create(*response.first, args);
-                }
                 if (alternate) {
                     response.first->setAlternate(alternate);
                     alternate->incAlternateUsers();
+                }
+                if (durable) {
+                    getBroker().getStore().create(*response.first, args);
                 }
             } else {
                 checkType(response.first, type);

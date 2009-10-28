@@ -25,6 +25,7 @@
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/MessageProperties.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/broker/DeliverableMessage.h"
 
 using namespace qpid::broker;
@@ -202,16 +203,19 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
 {
     string name;
     string type;
+    string altName;
     FieldTable args;
 
     buffer.getShortString(name);
     bool durable(buffer.getOctet());
     buffer.getShortString(type);
+    buffer.getShortString(altName);
     buffer.get(args);
 
     try {
         Exchange::shared_ptr exch = exchanges.declare(name, type, durable, args).first;
         exch->sequenceNo = args.getAsInt64(qpidSequenceCounter);
+        exch->alternateName.assign(altName);
         return exch;
     } catch (const UnknownExchangeTypeException&) {
         QPID_LOG(warning, "Could not create exchange " << name << "; type " << type << " is not recognised");
@@ -224,6 +228,7 @@ void Exchange::encode(Buffer& buffer) const
     buffer.putShortString(name);
     buffer.putOctet(durable);
     buffer.putShortString(getType());
+    buffer.putShortString(alternate.get() ? alternate->getName() : string(""));
     if (args.isSet(qpidSequenceCounter))
         args.setInt64(std::string(qpidSequenceCounter),sequenceNo);
     buffer.put(args);
@@ -234,7 +239,20 @@ uint32_t Exchange::encodedSize() const
     return name.size() + 1/*short string size*/
         + 1 /*durable*/
         + getType().size() + 1/*short string size*/
+        + (alternate.get() ? alternate->getName().size() : 0) + 1/*short string size*/
         + args.encodedSize();
+}
+
+void Exchange::recoveryComplete(ExchangeRegistry& exchanges)
+{
+    if (!alternateName.empty()) {
+        try {
+            Exchange::shared_ptr ae = exchanges.get(alternateName);
+            setAlternate(ae);
+        } catch (const NotFoundException&) {
+            QPID_LOG(warning, "Could not set alternate exchange \"" << alternateName << "\": does not exist.");
+        }
+    }
 }
 
 ManagementObject* Exchange::GetManagementObject (void) const

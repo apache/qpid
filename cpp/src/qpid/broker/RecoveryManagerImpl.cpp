@@ -157,6 +157,7 @@ void RecoveryManagerImpl::recoveryComplete()
 {
     //notify all queues
     queues.eachQueue(boost::bind(&Queue::recoveryComplete, _1));
+    exchanges.eachExchange(boost::bind(&Exchange::recoveryComplete, _1, boost::ref(exchanges)));
 }
 
 RecoverableMessageImpl:: RecoverableMessageImpl(const intrusive_ptr<Message>& _msg, uint64_t _stagingThreshold) : msg(_msg), stagingThreshold(_stagingThreshold) 

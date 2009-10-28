@@ -59,6 +59,7 @@ public:
 private:
     const std::string name;
     const bool durable;
+    std::string alternateName;
     boost::shared_ptr<Exchange> alternate;
     uint32_t alternateUsers;
     mutable uint64_t persistenceId;
@@ -172,6 +173,10 @@ public:
     void removeDynamicBridge(DynamicBridge* db);
     virtual bool supportsDynamicBinding() { return false; }
     Broker* getBroker() const { return broker; }
+    /**
+     * Notify exchange that recovery has completed.
+     */
+    void recoveryComplete(ExchangeRegistry& exchanges);
 
 protected:
     qpid::sys::Mutex bridgeLock;
