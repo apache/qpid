@@ -47,7 +47,6 @@ public class PrincipalPermissions
     private static final Object CREATE_QUEUE_QUEUES_KEY = new Object();
     private static final Object CREATE_QUEUE_EXCHANGES_KEY = new Object();
 
-    private static final Object CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY = new Object();
     private static final Object CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY = new Object();
 
     private static final int PUBLISH_EXCHANGES_KEY = 0;
@@ -181,165 +180,168 @@ public class PrincipalPermissions
 		rights.put(name, className);
 	}
 
-	private void grantCreateQueue(Permission permission, Object... parameters) {
-		Map createRights = (Map) _permissions.get(permission);
+	private void grantCreateQueue(Permission permission, Object... parameters)
+    {
+        Map createRights = (Map) _permissions.get(permission);
 
-		if (createRights == null)
-		{
-		    createRights = new ConcurrentHashMap();
-		    _permissions.put(permission, createRights);
+        if (createRights == null)
+        {
+            createRights = new ConcurrentHashMap();
+            _permissions.put(permission, createRights);
+        }
 
-		}
+        //The existence of the empty map mean permission to all.
+        if (parameters.length == 0)
+        {
+            return;
+        }
 
-		//The existence of the empty map mean permission to all.
-		if (parameters.length == 0)
-		{
-		    return;
-		}
+        // Get the queues map
+        Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
 
-		Boolean temporary = (Boolean) parameters[0];
+        //Initialiase the queue permissions if not already done
+        if (create_queues == null)
+        {
+            create_queues = new ConcurrentHashMap();
+            //initialise temp queue permission to false and overwrite below if true
+            create_queues.put(CREATE_QUEUE_TEMPORARY_KEY, false);
+            createRights.put(CREATE_QUEUES_KEY, create_queues);
+        }
 
-		AMQShortString queueName = parameters.length > 1 ? (AMQShortString) parameters[1] : null;
-		AMQShortString exchangeName = parameters.length > 2 ? (AMQShortString) parameters[2] : null;
-		//Set the routingkey to the specified value or the queueName if present
-		AMQShortString routingKey = (parameters.length > 3 && null != parameters[3]) ? (AMQShortString) parameters[3] : queueName;
+         //Create empty list of queues
+        Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
 
-		// Get the queues map
-		Map create_queues = (Map) createRights.get(CREATE_QUEUES_KEY);
+        if (create_queues_queues == null)
+        {
+            create_queues_queues = new ConcurrentHashMap();
+            create_queues.put(CREATE_QUEUE_QUEUES_KEY, create_queues_queues);
+        }
 
-		if (create_queues == null)
-		{
-		    create_queues = new ConcurrentHashMap();
-		    createRights.put(CREATE_QUEUES_KEY, create_queues);
-		}
+        // If we are initialising and granting CREATE rights to all temporary queues, then that's all we do
+        Boolean temporary = false;
+        if (parameters.length == 1)
+        {
+            temporary = (Boolean) parameters[0];
+            create_queues.put(CREATE_QUEUE_TEMPORARY_KEY, temporary);
+            return;
+        }
 
-		//Allow all temp queues to be created
-		create_queues.put(CREATE_QUEUE_TEMPORARY_KEY, temporary);
+        //From here we can be permissioning a variety of things, with varying parameters
+        AMQShortString queueName = parameters.length > 1 ? (AMQShortString) parameters[1] : null;
+        AMQShortString exchangeName = parameters.length > 2 ? (AMQShortString) parameters[2] : null;
+        //Set the routingkey to the specified value or the queueName if present
+        AMQShortString routingKey = (parameters.length > 3 && null != parameters[3]) ? (AMQShortString) parameters[3] : queueName;
+        // if we have a queueName then we need to store any associated exchange / rk bindings
+        if (queueName != null)
+        {
+            Map queue = (Map) create_queues_queues.get(queueName);
+            if (queue == null)
+            {
+                queue = new ConcurrentHashMap();
+                create_queues_queues.put(queueName, queue);
+            }
 
-		//Create empty list of queues
-		Map create_queues_queues = (Map) create_queues.get(CREATE_QUEUE_QUEUES_KEY);
+            if (exchangeName != null)
+            {
+                queue.put(exchangeName, routingKey);
+            }
 
-		if (create_queues_queues == null)
-		{
-		    create_queues_queues = new ConcurrentHashMap();
-		    create_queues.put(CREATE_QUEUE_QUEUES_KEY, create_queues_queues);
-		}
+            //If no exchange is specified then the presence of the queueName in the map says any exchange is ok
+        }
 
-		// We are granting CREATE rights to all temporary queues only
-		if (parameters.length == 1)
-		{
-		    return;
-		}
+        // Store the exchange that we are being granted rights to. This will be used as part of binding
 
-		// if we have a queueName then we need to store any associated exchange / rk bindings
-		if (queueName != null)
-		{
-		    Map queue = (Map) create_queues_queues.get(queueName);
-		    if (queue == null)
-		    {
-		        queue = new ConcurrentHashMap();
-		        create_queues_queues.put(queueName, queue);
-		    }
+        //Lookup the list of exchanges
+        Map create_queues_exchanges = (Map) create_queues.get(CREATE_QUEUE_EXCHANGES_KEY);
 
-		    if (exchangeName != null)
-		    {
-		        queue.put(exchangeName, routingKey);
-		    }
+        if (create_queues_exchanges == null)
+        {
+            create_queues_exchanges = new ConcurrentHashMap();
+            create_queues.put(CREATE_QUEUE_EXCHANGES_KEY, create_queues_exchanges);
+        }
 
-		    //If no exchange is specified then the presence of the queueName in the map says any exchange is ok
-		}
+        //if we have an exchange
+        if (exchangeName != null)
+        {
+            //Retrieve the list of permitted exchanges.
+            Map exchanges = (Map) create_queues_exchanges.get(exchangeName);
 
-		// Store the exchange that we are being granted rights to. This will be used as part of binding
+            if (exchanges == null)
+            {
+                exchanges = new ConcurrentHashMap();
+                create_queues_exchanges.put(exchangeName, exchanges);
+            }
 
-		//Lookup the list of exchanges
-		Map create_queues_exchanges = (Map) create_queues.get(CREATE_QUEUE_EXCHANGES_KEY);
+            //Store the binding details of queue/rk for this exchange.
+            if (queueName != null)
+            {
+                //Retrieve the list of permitted routingKeys.
+                Map rKeys = (Map) exchanges.get(exchangeName);
 
-		if (create_queues_exchanges == null)
-		{
-		    create_queues_exchanges = new ConcurrentHashMap();
-		    create_queues.put(CREATE_QUEUE_EXCHANGES_KEY, create_queues_exchanges);
-		}
+                if (rKeys == null)
+                {
+                    rKeys = new ConcurrentHashMap();
+                    exchanges.put(CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY, rKeys);
+                }
 
-		//if we have an exchange
-		if (exchangeName != null)
-		{
-		    //Retrieve the list of permitted exchanges.
-		    Map exchanges = (Map) create_queues_exchanges.get(exchangeName);
+                rKeys.put(queueName, routingKey);
+            }
+        }
+    }
 
-		    if (exchanges == null)
-		    {
-		        exchanges = new ConcurrentHashMap();
-		        create_queues_exchanges.put(exchangeName, exchanges);
-		    }
+    /**
+     * Grant consume permissions
+     */
+    private void grantConsume(Permission permission, Object... parameters)
+    {
+        Map consumeRights = (Map) _permissions.get(permission);
 
-		    //Store the temporary setting CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY
-		    exchanges.put(CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY, temporary);
+        if (consumeRights == null)
+        {
+           consumeRights = new ConcurrentHashMap();
+           _permissions.put(permission, consumeRights);
 
-		    //Store the binding details of queue/rk for this exchange.
-		    if (queueName != null)
-		    {
-		        //Retrieve the list of permitted routingKeys.
-		        Map rKeys = (Map) exchanges.get(exchangeName);
-
-		        if (rKeys == null)
-		        {
-		            rKeys = new ConcurrentHashMap();
-		            exchanges.put(CREATE_QUEUE_EXCHANGES_ROUTINGKEYS_KEY, rKeys);
-		        }
-
-		        rKeys.put(queueName, routingKey);
-		    }
-		}
-	}
-
-	private void grantConsume(Permission permission, Object... parameters) {
-		Map consumeRights = (Map) _permissions.get(permission);
-
-		if (consumeRights == null)
-		{
-		    consumeRights = new ConcurrentHashMap();
-		    _permissions.put(permission, consumeRights);
-		}
-
-		//if we have parametsre
-		if (parameters.length > 0)
-		{
-		    AMQShortString queueName = (AMQShortString) parameters[0];
-		    Boolean temporary = (Boolean) parameters[1];
-		    Boolean ownQueueOnly = (Boolean) parameters[2];
-
-		    if (temporary)
-		    {
-		        consumeRights.put(CONSUME_TEMPORARY_KEY, true);
-		    }
-		    else
-		    {
-		        consumeRights.put(CONSUME_TEMPORARY_KEY, false);
-		    }
-
-		    if (ownQueueOnly)
-		    {
-		        consumeRights.put(CONSUME_OWN_QUEUES_ONLY_KEY, true);
-		    }
-		    else
-		    {
-		        consumeRights.put(CONSUME_OWN_QUEUES_ONLY_KEY, false);
-		    }
+           //initialise own and temporary rights to false to be overwritten below if set
+           consumeRights.put(CONSUME_TEMPORARY_KEY, false);
+           consumeRights.put(CONSUME_OWN_QUEUES_ONLY_KEY, false);
+        }
 
 
-		    LinkedList queues = (LinkedList) consumeRights.get(CONSUME_QUEUES_KEY);
-		    if (queues == null)
-		    {
-		        queues = new LinkedList();
-		        consumeRights.put(CONSUME_QUEUES_KEY, queues);
-		    }
+        //if we only have one param then we're permissioning temporary queues and topics
+        if (parameters.length == 1)
+        {
+           Boolean temporary = (Boolean) parameters[0];
 
-		    if (queueName != null)
-		    {
-		        queues.add(queueName);
-		    }
-		}
-	}
+           if (temporary)
+           {
+               consumeRights.put(CONSUME_TEMPORARY_KEY, true);
+           }
+        }
+
+        //if we have 2 parameters - should be a contract for this, but for now we'll handle it as is
+        if (parameters.length == 2)
+        {
+           AMQShortString queueName = (AMQShortString) parameters[0];
+           Boolean ownQueueOnly = (Boolean) parameters[1];
+
+           if (ownQueueOnly)
+           {
+               consumeRights.put(CONSUME_OWN_QUEUES_ONLY_KEY, true);
+           }
+
+           LinkedList queues = (LinkedList) consumeRights.get(CONSUME_QUEUES_KEY);
+           if (queues == null)
+           {
+               queues = new LinkedList();
+               consumeRights.put(CONSUME_QUEUES_KEY, queues);
+           }
+
+           if (queueName != null)
+           {
+               queues.add(queueName);
+           }
+        }
+    }
 
     /**
      * 
@@ -399,62 +401,63 @@ public class PrincipalPermissions
 	        //user has been granted full access to the vhost
 	        return AuthzResult.ALLOWED;
 	    }
-	    
-		if (parameters.length == 1 && parameters[0] instanceof AMQQueue)
-		{
-		    AMQQueue queue = ((AMQQueue) parameters[0]);
-		    Map queuePermissions = (Map) _permissions.get(permission);
-		    
-		    if (queuePermissions == null)
-		    {
-		    	//if the outer map is null, the user has no CONSUME rights at all
-		    	return AuthzResult.DENIED;
-		    }
 
-		    List queues = (List) queuePermissions.get(CONSUME_QUEUES_KEY);
+        if (parameters.length == 1 && parameters[0] instanceof AMQQueue)
+        {
+            AMQQueue queue = ((AMQQueue) parameters[0]);
+            Map queuePermissions = (Map) _permissions.get(permission);
 
-		    Boolean temporayQueues = (Boolean) queuePermissions.get(CONSUME_TEMPORARY_KEY);
-		    Boolean ownQueuesOnly = (Boolean) queuePermissions.get(CONSUME_OWN_QUEUES_ONLY_KEY);
+            if (queuePermissions == null)
+            {
+                //we have a problem - we've never granted this type of permission .....
+                return AuthzResult.DENIED;
+            }
 
-		    // If user is allowed to publish to temporary queues and this is a temp queue then allow it.
-		    if (temporayQueues)
-		    {
-		        if (queue.isAutoDelete())
-		        // This will allow consumption from any temporary queue including ones not owned by this user.
-		        // Of course the exclusivity will not be broken.
-		        {
-		            // if not limited to ownQueuesOnly then ok else check queue Owner.
-		            return (!ownQueuesOnly || queue.getOwner().equals(_user)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
-		        }
-		        else
-		        {
-		            return AuthzResult.DENIED;
-		        }
-		    }
+            List queues = (List) queuePermissions.get(CONSUME_QUEUES_KEY);
 
-		    // if queues are white listed then ensure it is ok
-		    if (queues != null)
-		    {
-		        // if no queues are listed then ALL are ok othereise it must be specified.
-		        if (ownQueuesOnly)
-		        {
-		            if (queue.getOwner().equals(_user))
-		            {
-		                return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
-		            }
-		            else
-		            {
-		                return AuthzResult.DENIED;
-		            }
-		        }
+            Boolean temporaryQueues = (Boolean) queuePermissions.get(CONSUME_TEMPORARY_KEY);
+            Boolean ownQueuesOnly = (Boolean) queuePermissions.get(CONSUME_OWN_QUEUES_ONLY_KEY);
 
-		        // If we are
-		        return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
-		    }
-		}
 
-		// Can't authenticate without the right parameters
-		return AuthzResult.DENIED;
+            // If user is allowed to consume from temporary queues and this is a temp queue then allow it.
+            if (temporaryQueues && queue.isAutoDelete())
+            {
+                // This will allow consumption from any temporary queue including ones not owned by this user.
+                // Of course the exclusivity will not be broken.
+                {
+                    // if not limited to ownQueuesOnly then ok else check queue Owner.
+                    return (!ownQueuesOnly || queue.getOwner().equals(_user)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                }
+            }
+            //if this is a temporary queue and the user does not have permissions for temporary queues then deny
+            else if (!temporaryQueues && queue.isAutoDelete())
+            {
+                return AuthzResult.DENIED;
+            }
+
+            // if queues are white listed then ensure it is ok
+            if (queues != null)
+            {
+                // if no queues are listed then ALL are ok othereise it must be specified.
+                if (ownQueuesOnly)
+                {
+                    if (queue.getOwner().equals(_user))
+                    {
+                        return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+                    }
+                    else
+                    {
+                        return AuthzResult.DENIED;
+                    }
+                }
+
+                // If we are
+                return (queues.size() == 0 || queues.contains(queue.getName())) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
+            }
+        }
+
+        // Can't authenticate without the right parameters
+        return AuthzResult.DENIED;
 	}
 
 	private AuthzResult authorisePublish(Permission permission, Object... parameters)
@@ -662,31 +665,7 @@ public class PrincipalPermissions
 		}
 		else
 		{
-		    //There a is no white list for queues
-
-		    // So can allow all queues to be bound
-		    //  but we should first check and see if we have a temp queue and validate that we are allowed
-		    //  to bind temp queues.
-
-		    //Check to see if we have a temporary queue
-		    if (bind_queueName.isAutoDelete())
-		    {
-		        // Check and see if we have an exchange white list.
-		        Map bind_exchanges = (Map) bind_create_queues.get(CREATE_QUEUE_EXCHANGES_KEY);
-
-		        // If the exchange exists then we must check to see if temporary queues are allowed here
-		        if (bind_exchanges != null)
-		        {
-		            // Check to see if the requested exchange is allowed.
-		            Map exchangeDetails = (Map) bind_exchanges.get(exchange.getName());
-
-		            return ((Boolean) exchangeDetails.get(CREATE_QUEUE_EXCHANGES_TEMPORARY_KEY)) ? AuthzResult.ALLOWED : AuthzResult.DENIED;
-		        }
-
-		        //no white list so all allowed, drop through to return true below.
-		    }
-
-		    // not a temporary queue and no white list so all allowed.
+		    //no white list so all allowed.
 		    return AuthzResult.ALLOWED;
 		}
 	}
