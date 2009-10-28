@@ -82,7 +82,6 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     if (bindings.add_unless(binding, MatchArgs(queue, args))) {
         if (mgmtExchange != 0) {
             mgmtExchange->inc_bindingCount();
-            ((_qmf::Queue*) queue->GetManagementObject())->inc_bindingCount();
         }
         routeIVE();
         return true;
@@ -95,7 +94,6 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, 
     if (bindings.remove_if(MatchKey(queue, bindingKey))) {
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
-            ((_qmf::Queue*) queue->GetManagementObject())->dec_bindingCount();
         }
         return true;
     } else {

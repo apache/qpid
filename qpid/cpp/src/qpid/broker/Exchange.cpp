@@ -306,6 +306,7 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
                             if (!origin.empty())
                                 mgmtBinding->set_origin(origin);
                             agent->addObject (mgmtBinding, agent->allocateId(this));
+                            static_cast<_qmf::Queue*>(mo)->inc_bindingCount();
                         }
                 }
         }
@@ -314,8 +315,12 @@ Exchange::Binding::Binding(const string& _key, Queue::shared_ptr _queue, Exchang
 
 Exchange::Binding::~Binding ()
 {
-    if (mgmtBinding != 0)
+    if (mgmtBinding != 0) {
+        ManagementObject* mo = queue->GetManagementObject();
+        if (mo != 0)
+            static_cast<_qmf::Queue*>(mo)->dec_bindingCount();
         mgmtBinding->resourceDestroy ();
+    }
 }
 
 ManagementObject* Exchange::Binding::GetManagementObject () const
