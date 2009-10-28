@@ -1,15 +1,11 @@
 {
-   Leak due to un-joined thread in TCPConnector.
+   Leak in TCPConnector: https://bugzilla.redhat.com/show_bug.cgi?id=520600
    Memcheck:Leak
-   fun:_vgrZU_libcZdsoZa_calloc
+   fun:*
    fun:_dl_allocate_tls
-   fun:pthread_create@@GLIBC_2.2.5
-   fun:_ZN4qpid3sys13ThreadPrivateC1EPNS0_8RunnableE
-   fun:_ZN4qpid3sys6ThreadC1EPNS0_8RunnableE
+   fun:pthread_create*
+   ...
    fun:_ZN4qpid6client12TCPConnector7connectERKSsi
-   fun:_ZN4qpid6client14ConnectionImpl4openEv
-   fun:_ZN4qpid6client10Connection4openERKNS0_18ConnectionSettingsE
-   fun:_ZN4qpid6client10Connection4openERKSsiS3_S3_S3_t
 }
 
 
