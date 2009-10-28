@@ -125,12 +125,12 @@ public:
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
     Options config;
+    std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
     std::auto_ptr<MessageStore> store;
     AclModule* acl;
     DataDir dataDir;
 
-    std::auto_ptr<management::ManagementAgent> managementAgent;
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     LinkRegistry links;

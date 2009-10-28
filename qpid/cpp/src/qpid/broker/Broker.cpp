@@ -137,10 +137,10 @@ const std::string knownHostsNone("none");
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
+    managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     store(0),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
-    managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
     queues(this),
     exchanges(this),
     links(this),
