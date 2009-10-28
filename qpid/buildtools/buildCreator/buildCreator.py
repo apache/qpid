@@ -614,6 +614,7 @@ def applyPatch(patch):
     for root, dirs, files in os.walk(patchSource):
     	if '.svn' in dirs:
 		dirs.remove('.svn')
+        files.sort()	
         for patchName in files:
 	                log("Applying patch '" + name + "'("+patchName+") to " + source)
         	        runCommandShowError(basecommand + patchSource + PATH_SEP + patchName)
