@@ -42,3 +42,64 @@ if tuple(sys.version_info[0:2]) < (2, 4):
     return old_select(list(rlist), list(wlist), list(xlist), timeout)
 else:
   from select import select
+
+if sys.platform in ('win32', 'cygwin'):
+  import socket
+
+  class SockWaiter:
+
+    def __init__(self, read_sock, write_sock):
+      self.read_sock = read_sock
+      self.write_sock = write_sock
+
+    def wakeup(self):
+      self.write_sock.send("\0")
+
+    def fileno(self):
+      return self.read_sock.fileno()
+
+    def reading(self):
+      return True
+
+    def readable(self):
+      self.read_sock.recv(65536)
+
+  def __repr__(self):
+    return "SockWaiter(%r, %r)" % (self.read_sock, self.write_sock)
+
+  def selectable_waiter():
+    listener = socket.socket()
+    listener.bind(('', 0))
+    listener.listen(1)
+    _, port = listener.getsockname()
+    write_sock = socket.socket()
+    write_sock.connect(("127.0.0.1", port))
+    read_sock, _ = listener.accept()
+    listener.close()
+    return SockWaiter(read_sock, write_sock)
+else:
+  import os
+
+  class PipeWaiter:
+
+    def __init__(self, read_fd, write_fd):
+      self.read_fd = read_fd
+      self.write_fd = write_fd
+
+    def wakeup(self):
+      os.write(self.write_fd, "\0")
+
+    def fileno(self):
+      return self.read_fd
+
+    def reading(self):
+      return True
+
+    def readable(self):
+      os.read(self.read_fd, 65536)
+
+    def __repr__(self):
+      return "PipeWaiter(%r, %r)" % (self.read_fd, self.write_fd)
+
+  def selectable_waiter():
+    return PipeWaiter(*os.pipe())
