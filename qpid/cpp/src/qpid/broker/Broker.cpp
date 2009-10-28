@@ -309,7 +309,6 @@ void Broker::setStore (boost::shared_ptr<MessageStore>& _store)
 }
 
 void Broker::run() {
-    accept();
     QPID_LOG(notice, "Broker running");
     Dispatcher d(poller);
     int numIOThreads = config.workerThreads;
