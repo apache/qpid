@@ -103,7 +103,7 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     callbacks.cpg_deliver_fn = &globalDeliver;
     callbacks.cpg_confchg_fn = &globalConfigChange;
 
-    QPID_LOG(info, "Initializing CPG");
+    QPID_LOG(notice, "Initializing CPG");
     cpg_error_t err = cpg_initialize(&handle, &callbacks);
     int retries = 6; // FIXME aconway 2009-08-06: configure, use same config for cman connection.
     while (err == CPG_ERR_TRY_AGAIN && --retries) {
@@ -123,7 +123,7 @@ Cpg::~Cpg() {
     try {
         shutdown();
     } catch (const std::exception& e) {
-        QPID_LOG(error, "Exception in Cpg destructor: " << e.what());
+        QPID_LOG(error, "Error during CPG shutdown: " << e.what());
     }
 }
 
