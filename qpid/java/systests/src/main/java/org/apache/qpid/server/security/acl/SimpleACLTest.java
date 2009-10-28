@@ -193,54 +193,6 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
         }
     }
 
-    public void testGuestConsumeWithCreateRightsAndWithoutConsumeRights() throws NamingException, ConfigurationException, IOException, Exception
-    {
-        //Customise the ACL config to give the guest user some create (could be any, non-consume) rights to 
-        //force creation of a PrincipalPermissions instance to perform the consume rights check against.
-        setConfigurationProperty("virtualhosts.virtualhost.test.security.access_control_list.create.queues.queue.users.user", "guest");
-        
-        setUpACLTest();
-        
-        //QPID-2081: use a latch to sync on exception causing connection close, to work 
-        //around the connection close race during tearDown() causing sporadic failures
-        final CountDownLatch exceptionReceived = new CountDownLatch(1);
-        
-        try
-        {
-            Connection conn = getConnection("guest", "guest");
-
-            conn.setExceptionListener(new ExceptionListener()
-            {
-                public void onException(JMSException e)
-                {
-                    exceptionReceived.countDown();
-                }
-            });
-
-            
-            Session sesh = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            conn.start();
-
-            sesh.createConsumer(sesh.createQueue("example.RequestQueue"));
-
-            conn.close();
-        }
-        catch (JMSException e)
-        {
-            Throwable cause = e.getLinkedException();
-
-            assertNotNull("There was no liked exception", cause);
-            assertEquals("Wrong linked exception type", AMQAuthenticationException.class, cause.getClass());
-            assertEquals("Incorrect error code received", 403, ((AMQAuthenticationException) cause).getErrorCode().getCode());
-        
-            //use the latch to ensure the control thread waits long enough for the exception thread 
-            //to have done enough to mark the connection closed before teardown commences
-            assertTrue("Timed out waiting for conneciton to report close",
-            		exceptionReceived.await(2, TimeUnit.SECONDS));
-        }
-    }
-
     public void testClientConsumeFromTempQueueValid() throws AMQException, URLSyntaxException, Exception
     {
     	setUpACLTest();

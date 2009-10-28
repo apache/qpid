@@ -151,10 +151,8 @@ public class PrincipalPermissionsTest extends TestCase
     {
         Object[] authArgs = new Object[]{_queue};
         Object[] grantArgs = new Object[]{_queueName, _ownQueue};
-        
-        /* FIXME: This throws a null pointer exception QPID-1599
-         * assertFalse(_perms.authorise(Permission.CONSUME, authArgs));
-         */
+
+        assertEquals(AuthzResult.DENIED,_perms.authorise(Permission.CONSUME, authArgs));
         _perms.grant(Permission.CONSUME, grantArgs);
         assertEquals(AuthzResult.ALLOWED, _perms.authorise(Permission.CONSUME, authArgs));
     }
