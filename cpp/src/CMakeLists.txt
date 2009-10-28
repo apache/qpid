@@ -141,10 +141,9 @@ endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # TODO: Not all these libs are needed everywhere:
 # Linux only uses filesystem program_options unit_test_framework
-# (which itself uses regex); system is only needed indirectly and is included
-# in the Windows install package.
+# (which itself uses regex).
 find_package(Boost 1.33 REQUIRED
-             COMPONENTS filesystem program_options date_time thread system
+             COMPONENTS filesystem program_options date_time thread
                         regex unit_test_framework)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
@@ -202,13 +201,18 @@ if (MSVC)
       string (REPLACE .lib .dll
               _boost_regex_release ${Boost_REGEX_LIBRARY_RELEASE})
       string (REPLACE .lib .dll
-              _boost_system_debug ${Boost_SYSTEM_LIBRARY_DEBUG})
-      string (REPLACE .lib .dll
-              _boost_system_release ${Boost_SYSTEM_LIBRARY_RELEASE})
-      string (REPLACE .lib .dll
               _boost_thread_debug ${Boost_THREAD_LIBRARY_DEBUG})
       string (REPLACE .lib .dll
               _boost_thread_release ${Boost_THREAD_LIBRARY_RELEASE})
+      # Boost 1.35 added the system library, which gets indirectly linked in
+      # via other Boost libs. So, if building with Boost 1.35 or later, also
+      # include system in the Windows install package.
+      if (NOT Boost_VERSION LESS 103500)
+         string (REPLACE boost_thread boost_system
+                 _boost_system_debug ${_boost_thread_debug})
+         string (REPLACE boost_thread boost_system
+                 _boost_system_release ${_boost_thread_release})
+      endif (NOT Boost_VERSION LESS 103500)
       install (PROGRAMS
                ${_boost_date_time_debug} ${_boost_date_time_release}
                ${_boost_filesystem_debug} ${_boost_filesystem_release}
