@@ -23,3 +23,15 @@ Index: src/Makefile.am
  
  ## Generated code
  
+Index: examples/makedist.mk
+===================================================================
+--- examples/makedist.mk        (revision 830311)
++++ examples/makedist.mk        (working copy)
+@@ -1,6 +1,6 @@
+ # Settings to build the examples in automake
+ AM_CXXFLAGS = $(WARNING_CFLAGS)
+-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
++INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src
+ CLIENT_LIB=$(top_builddir)/src/libqpidclient.la
+ CONSOLE_LIB=$(top_builddir)/src/libqmfconsole.la
+ CLIENTFLAGS=-lqpidclient
