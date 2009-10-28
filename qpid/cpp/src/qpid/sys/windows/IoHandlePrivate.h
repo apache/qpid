@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/windows/AsynchIoResult.h"
 #include "qpid/CommonImportExport.h"
 
@@ -40,13 +41,13 @@ namespace sys {
 class IOHandlePrivate {
 public:
     IOHandlePrivate(SOCKET f = INVALID_SOCKET,
-                    AsynchIoResult::Completer cb = 0,
+                    windows::AsynchIoResult::Completer cb = 0,
                     AsynchIO::RequestCallback reqCallback = 0) :
     fd(f), event(cb), cbRequest(reqCallback)
     {}
     
     SOCKET fd;
-    AsynchIoResult::Completer event;
+    windows::AsynchIoResult::Completer event;
     AsynchIO::RequestCallback cbRequest;
 };
 

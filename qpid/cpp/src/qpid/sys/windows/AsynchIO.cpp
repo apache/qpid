@@ -74,6 +74,7 @@ void lookUpAcceptEx() {
 
 namespace qpid {
 namespace sys {
+namespace windows {
 
 /*
  * Asynch Acceptor
@@ -88,13 +89,13 @@ namespace sys {
  * and status of each accept operation outstanding.
  */
 
-class AsynchAcceptorPrivate {
+class AsynchAcceptor : public qpid::sys::AsynchAcceptor {
 
     friend class AsynchAcceptResult;
 
 public:
-    AsynchAcceptorPrivate(const Socket& s, AsynchAcceptor::Callback callback);
-    ~AsynchAcceptorPrivate();
+    AsynchAcceptor(const Socket& s, AsynchAcceptor::Callback callback);
+    ~AsynchAcceptor();
     void start(Poller::shared_ptr poller);
 
 private:
@@ -104,19 +105,7 @@ private:
     const Socket& socket;
 };
 
-AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback) :
-  impl(new AsynchAcceptorPrivate(s, callback))
-{}
-
-AsynchAcceptor::~AsynchAcceptor()
-{ delete impl; }
-
-void AsynchAcceptor::start(Poller::shared_ptr poller) {
-    impl->start(poller);
-}
-
-AsynchAcceptorPrivate::AsynchAcceptorPrivate(const Socket& s,
-                                             AsynchAcceptor::Callback callback)
+AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback)
   : acceptedCallback(callback),
     socket(s) {
 
@@ -128,16 +117,17 @@ AsynchAcceptorPrivate::AsynchAcceptorPrivate(const Socket& s,
 #endif
 }
 
-AsynchAcceptorPrivate::~AsynchAcceptorPrivate(void) {
+AsynchAcceptor::~AsynchAcceptor()
+{
     socket.close();
 }
 
-void AsynchAcceptorPrivate::start(Poller::shared_ptr poller) {
+void AsynchAcceptor::start(Poller::shared_ptr poller) {
     poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     restart ();
 }
 
-void AsynchAcceptorPrivate::restart(void) {
+void AsynchAcceptor::restart(void) {
     DWORD bytesReceived = 0;  // Not used, needed for AcceptEx API
     AsynchAcceptResult *result = new AsynchAcceptResult(acceptedCallback,
                                                         this,
@@ -156,7 +146,7 @@ void AsynchAcceptorPrivate::restart(void) {
 
 
 AsynchAcceptResult::AsynchAcceptResult(AsynchAcceptor::Callback cb,
-                                       AsynchAcceptorPrivate *acceptor,
+                                       AsynchAcceptor *acceptor,
                                        SOCKET listener)
   : callback(cb), acceptor(acceptor), listener(listener) {
     newSocket.reset (new Socket());
@@ -174,12 +164,10 @@ void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
 }
 
 void AsynchAcceptResult::failure(int status) {
-  //if (status != WSA_OPERATION_ABORTED)
-  // Can there be anything else?  ;
-  delete this;
+    //if (status != WSA_OPERATION_ABORTED)
+    // Can there be anything else?  ;
+    delete this;
 }
-
-namespace windows {
 
 /*
  * AsynchConnector does synchronous connects for now... to do asynch the
@@ -224,6 +212,12 @@ AsynchConnector::AsynchConnector(const Socket& sock,
 
 } // namespace windows
 
+AsynchAcceptor* AsynchAcceptor::create(const Socket& s, 
+                                       Callback callback)
+{
+    return new windows::AsynchAcceptor(s, callback);
+}
+
 AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
                                                     Poller::shared_ptr poller,
                                                     std::string hostname,
@@ -231,12 +225,12 @@ AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
                                                     ConnectedCallback connCb,
                                                     FailedCallback failCb)
 {
-    return new qpid::sys::windows::AsynchConnector(s,
-                                                   poller,
-                                                   hostname,
-                                                   port,
-                                                   connCb,
-                                                   failCb);
+    return new windows::AsynchConnector(s,
+                                        poller,
+                                        hostname,
+                                        port,
+                                        connCb,
+                                        failCb);
 }
 
 
