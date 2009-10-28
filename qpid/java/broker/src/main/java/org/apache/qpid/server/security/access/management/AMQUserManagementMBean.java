@@ -51,6 +51,7 @@ import java.io.FileOutputStream;
 import java.util.Properties;
 import java.util.List;
 import java.util.Enumeration;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.security.Principal;
@@ -439,7 +440,14 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
             _accessRightsUpdate.lock();
 
             // Create temporary file
-            File tmp = File.createTempFile(_accessFile.getName(), ".tmp");
+            Random r = new Random();
+            File tmp;
+            do
+            {
+                tmp = new File(_accessFile.getPath() + r.nextInt() + ".tmp");
+            }
+            while(tmp.exists());
+            
             tmp.deleteOnExit();
 
             FileOutputStream output = new FileOutputStream(tmp);
@@ -453,30 +461,26 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 old.delete();
             }
             
-            try
+            if(!_accessFile.renameTo(old))
             {
-                if(!_accessFile.renameTo(old))
+                //unable to rename the existing file to the backup name 
+                _logger.error("Could not backup the existing management rights file");
+                throw new IOException("Could not backup the existing management rights file");
+            }
+
+            if(!tmp.renameTo(_accessFile))
+            {
+                //failed to rename the new file to the required filename
+                
+                if(!old.renameTo(_accessFile))
                 {
-                    FileUtils.copyCheckedEx(_accessFile, old);
+                    //unable to return the backup to required filename
+                    _logger.error("Could not rename the new management rights file into place, and unable to restore original file");
+                    throw new IOException("Could not rename the new management rights file into place, and unable to restore original file");
                 }
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Could not backup the existing management rights file: " +e);
-                throw new IOException("Could not backup the existing management rights file: " +e);
-            }
-            
-            try
-            {
-                if(!tmp.renameTo(_accessFile))
-                {
-                    FileUtils.copyCheckedEx(tmp, _accessFile);
-                }
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Could not copy the new management rights file into place: " +e);
-                throw new IOException("Could not copy the new management rights file into place" +e);
+                
+                _logger.error("Could not rename the new management rights file into place");
+                throw new IOException("Could not rename the new management rights file into place");
             }
         }
         finally
