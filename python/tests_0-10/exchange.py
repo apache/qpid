@@ -271,6 +271,28 @@ class DeclareMethodExchangeFieldReservedRuleTests(TestHelper):
     
     
     """
+    def test(self):
+        try:
+            self.session.exchange_declare(exchange="amq.", type="direct")
+            self.fail("Expected not allowed error (530) for exchanges starting with \"amq.\".")
+        except SessionException, e:
+            self.assertEquals(e.args[0].error_code, 530)
+        # connection closed, reopen it
+        self.tearDown()
+        self.setUp()
+        try:
+            self.session.exchange_declare(exchange="amq.abc123", type="direct")
+            self.fail("Expected not allowed error (530) for exchanges starting with \"amq.\".")
+        except SessionException, e:
+            self.assertEquals(e.args[0].error_code, 530)
+        # connection closed, reopen it
+        self.tearDown()
+        self.setUp()
+        # The following should be legal:
+        self.session.exchange_declare(exchange="amq", type="direct")
+        self.session.exchange_declare(exchange=".amq.", type="direct")
+        self.session.exchange_declare(exchange="abc.amq.", type="direct")
+        self.session.exchange_declare(exchange="abc.amq.def", type="direct")
 
 
 class DeclareMethodTypeFieldTypedRuleTests(TestHelper):
