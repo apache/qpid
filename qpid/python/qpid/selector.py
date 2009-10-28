@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import atexit, os, time
+import atexit, time, socket
 from compat import select, set
 from threading import Thread, Lock
 
@@ -41,20 +41,20 @@ class Acceptor:
 
 class Sink:
 
-  def __init__(self, fd):
-    self.fd = fd
+  def __init__(self, sock):
+    self.sock = sock
 
   def fileno(self):
-    return self.fd
+    return self.sock.fileno()
 
   def reading(self):
     return True
 
   def readable(self):
-    os.read(self.fd, 65536)
+    self.sock.recv(65536)
 
   def __repr__(self):
-    return "Sink(%r)" % self.fd
+    return "Sink(%r)" % self.sock.fileno()
 
 class Selector:
 
@@ -78,13 +78,20 @@ class Selector:
     self.selectables = set()
     self.reading = set()
     self.writing = set()
-    self.wait_fd, self.wakeup_fd = os.pipe()
-    self.reading.add(Sink(self.wait_fd))
+    listener = socket.socket()
+    listener.bind(('', 0))
+    listener.listen(1)
+    me_ip, me_port = listener.getsockname()
+    self.wakeup_sock = socket.socket()
+    self.wakeup_sock.connect(("127.0.0.1", me_port))
+    self.wait_sock, me = listener.accept()
+    listener.close()
+    self.reading.add(Sink(self.wait_sock))
     self.stopped = False
     self.thread = None
 
   def wakeup(self):
-    os.write(self.wakeup_fd, "\0")
+    self.wakeup_sock.send("\0")
 
   def register(self, selectable):
     self.selectables.add(selectable)
