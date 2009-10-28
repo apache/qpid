@@ -58,6 +58,20 @@ public class SimpleACLTest extends QpidTestCase implements ConnectionListener
     	//Each test now calls the private setUpACLTest to allow them to make 
     	//individual customisations to the base ACL settings
     }
+
+
+    public void tearDown() throws Exception
+    {
+        try
+        {
+            super.tearDown();
+        }
+        catch (JMSException e)
+        {
+            //we're throwing this away as it can happen in this test as the state manager remembers exceptions
+            //that we provoked with authentication failures, where the test passes - we can ignore on con close
+        }
+    }
     
     private void setUpACLTest() throws Exception
     {
