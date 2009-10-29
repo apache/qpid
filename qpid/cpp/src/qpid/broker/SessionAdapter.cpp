@@ -85,8 +85,8 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
         checkType(actual, type);
         checkAlternate(actual, alternate);
     }else{        
-        if(exchange.find("amq.") == 0) {
-            throw framing::NotAllowedException(QPID_MSG("Exchange names beginning with \"amq.\" are reserved. (exchange=\"" << exchange << "\")"));
+        if(exchange.find("amq.") == 0 || exchange.find("qpid.") == 0) {
+            throw framing::NotAllowedException(QPID_MSG("Exchange names beginning with \"amq.\" or \"qpid.\" are reserved. (exchange=\"" << exchange << "\")"));
         }
         try{
             std::pair<Exchange::shared_ptr, bool> response = getBroker().getExchanges().declare(exchange, type, durable, args);

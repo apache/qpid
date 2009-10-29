@@ -269,30 +269,49 @@ class DeclareMethodExchangeFieldReservedRuleTests(TestHelper):
     standardised exchanges. The client MUST NOT attempt to create an exchange
     starting with "amq.".
     
-    
+    Similarly, exchanges starting with "qpid." are reserved for Qpid
+    implementation-specific system exchanges (such as the management exchange).
+    The client must not attempt to create an exchange starting with the string
+    "qpid.".
     """
-    def test(self):
+    def template(self, reservedString, exchangeType):
         try:
-            self.session.exchange_declare(exchange="amq.", type="direct")
-            self.fail("Expected not allowed error (530) for exchanges starting with \"amq.\".")
+            self.session.exchange_declare(exchange=reservedString, type=exchangeType)
+            self.fail("Expected not allowed error (530) for exchanges starting with \"" + reservedString + "\".")
         except SessionException, e:
             self.assertEquals(e.args[0].error_code, 530)
         # connection closed, reopen it
         self.tearDown()
         self.setUp()
         try:
-            self.session.exchange_declare(exchange="amq.abc123", type="direct")
-            self.fail("Expected not allowed error (530) for exchanges starting with \"amq.\".")
+            self.session.exchange_declare(exchange=reservedString + "abc123", type=exchangeType)
+            self.fail("Expected not allowed error (530) for exchanges starting with \"" + reservedString + "\".")
         except SessionException, e:
             self.assertEquals(e.args[0].error_code, 530)
         # connection closed, reopen it
         self.tearDown()
         self.setUp()
         # The following should be legal:
-        self.session.exchange_declare(exchange="amq", type="direct")
-        self.session.exchange_declare(exchange=".amq.", type="direct")
-        self.session.exchange_declare(exchange="abc.amq.", type="direct")
-        self.session.exchange_declare(exchange="abc.amq.def", type="direct")
+        self.session.exchange_declare(exchange=reservedString[:-1], type=exchangeType)
+        self.session.exchange_delete(exchange=reservedString[:-1])
+        self.session.exchange_declare(exchange=reservedString[1:], type=exchangeType)
+        self.session.exchange_delete(exchange=reservedString[1:])
+        self.session.exchange_declare(exchange="." + reservedString, type=exchangeType)
+        self.session.exchange_delete(exchange="." + reservedString)
+        self.session.exchange_declare(exchange="abc." + reservedString, type=exchangeType)
+        self.session.exchange_delete(exchange="abc." + reservedString)
+        self.session.exchange_declare(exchange="abc." + reservedString + "def", type=exchangeType)
+        self.session.exchange_delete(exchange="abc." + reservedString + "def")
+
+    def test_amq(self):
+        self.template("amq.", "direct")
+        self.template("amq.", "topic")
+        self.template("amq.", "fanout")
+
+    def test_qpid(self):
+        self.template("qpid.", "direct")
+        self.template("qpid.", "topic")
+        self.template("qpid.", "fanout")
 
 
 class DeclareMethodTypeFieldTypedRuleTests(TestHelper):
