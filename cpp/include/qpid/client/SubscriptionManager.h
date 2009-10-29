@@ -164,6 +164,9 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
 
 
     /** Get a single message from a queue.
+     * (Note: this currently uses a subscription per invocation and is
+     * thus relatively expensive. The subscription is cancelled as
+     * part of each call which can trigger auto-deletion).
      *@param result is set to the message from the queue.
      *@param timeout wait up this timeout for a message to appear.
      *@return true if result was set, false if no message available after timeout.
@@ -171,6 +174,9 @@ class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionMana
     QPID_CLIENT_EXTERN bool get(Message& result, const std::string& queue, sys::Duration timeout=0);
 
     /** Get a single message from a queue.
+     * (Note: this currently uses a subscription per invocation and is
+     * thus relatively expensive. The subscription is cancelled as
+     * part of each call which can trigger auto-deletion).
      *@param timeout wait up this timeout for a message to appear.
      *@return message from the queue.
      *@throw Exception if the timeout is exceeded.
