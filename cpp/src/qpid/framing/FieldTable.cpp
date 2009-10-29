@@ -218,7 +218,7 @@ void FieldTable::decode(Buffer& buffer){
     if (len) {
         uint32_t available = buffer.available();
         if (available < len)
-            throw IllegalArgumentException(QPID_MSG("Not enough data for  field table."));
+            throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
         uint32_t count = buffer.getLong();
         uint32_t leftover = available - len;
         while(buffer.available() > leftover && count--){
