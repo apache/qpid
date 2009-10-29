@@ -92,7 +92,7 @@ case "$1" in
   force-reload)
 	restart
 	;;
-  try-restart)
+  try-restart|condrestart)
 	[ -e $lockfile ] && restart || :
 	;;
   *)
