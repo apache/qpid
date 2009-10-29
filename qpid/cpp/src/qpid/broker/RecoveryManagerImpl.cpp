@@ -155,8 +155,8 @@ RecoverableConfig::shared_ptr RecoveryManagerImpl::recoverConfig(framing::Buffer
 
 void RecoveryManagerImpl::recoveryComplete()
 {
-    //notify all queues
-    queues.eachQueue(boost::bind(&Queue::recoveryComplete, _1));
+    //notify all queues and exchanges
+    queues.eachQueue(boost::bind(&Queue::recoveryComplete, _1, boost::ref(exchanges)));
     exchanges.eachExchange(boost::bind(&Exchange::recoveryComplete, _1, boost::ref(exchanges)));
 }
 

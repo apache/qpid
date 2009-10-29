@@ -97,6 +97,7 @@ namespace qpid {
             std::auto_ptr<QueuePolicy> policy;
             bool policyExceeded;
             QueueBindings bindings;
+            std::string alternateExchangeName;
             boost::shared_ptr<Exchange> alternateExchange;
             framing::SequenceNumber sequence;
             qmf::org::apache::qpid::broker::Queue* mgmtObject;
@@ -332,7 +333,7 @@ namespace qpid {
             /**
              * Notify queue that recovery has completed.
              */
-            void recoveryComplete();
+            void recoveryComplete(ExchangeRegistry& exchanges);
 
             // For cluster update
             QueueListeners& getListeners();
