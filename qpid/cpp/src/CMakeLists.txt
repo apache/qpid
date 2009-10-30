@@ -225,7 +225,7 @@ if (MSVC)
    endif (QPID_LINK_BOOST_DYNAMIC)
 
    # Need the boost headers regardless of which way the libs go.
-   install (DIRECTORY ${BOOST_INCLUDEDIR}/boost
+   install (DIRECTORY ${Boost_INCLUDE_DIR}/boost
             DESTINATION ${QPID_INSTALL_INCLUDEDIR}
             COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
 
