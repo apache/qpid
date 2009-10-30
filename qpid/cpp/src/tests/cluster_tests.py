@@ -18,12 +18,44 @@
 # under the License.
 #
 
-import os, signal, sys, unittest
-from testlib import TestBaseCluster
+import os, signal, sys
+from brokertest import *
+from qpid import datatypes, messaging, tests
+from testlib import TestBaseCluster     # Old framework
 
+
+# New framework tests
+class NewTests(BrokerTest):
+
+    def test_basic(self):
+        """Test basic cluster message replication."""
+        # Start a cluster, send some messages to member 0.
+        cluster = Cluster(self, 2)
+        s0 = cluster[0].connect().session()
+        s0.sender("q {create:always}").send(messaging.Message("x"))
+        s0.sender("q {create:always}").send(messaging.Message("y"))
+        s0.connection.close()
+
+        # Verify messages available on member 1.
+        s1 = cluster[1].connect().session()
+        m = s1.receiver("q", capacity=1).fetch(timeout=1)
+        s1.acknowledge()
+        self.assertEqual("x", m.content)
+        s1.connection.close()
+
+        # Start member 2 and verify messages available.
+        s2 = cluster.start().connect().session()
+        m = s2.receiver("q", capacity=1).fetch(timeout=1)
+        s1.acknowledge()
+        self.assertEqual("y", m.content)
+        s2.connection.close()
+
+        self.passed()
+
+# Old framework tests
 class ShortTests(TestBaseCluster):
     """Basic cluster with async store tests"""
-    
+
     def test_01_Initialization(self):
         """Start a single cluster containing several nodes, and stop it again"""
         try:
@@ -401,5 +433,5 @@ class LongTests(TestBaseCluster):
 if __name__ == '__main__':
     if os.getenv("STORE_LIB") != None:
         print "NOTE: Store enabled for the following tests:"
-    if not unittest.main(): sys.exit(1)
+    if not test.main(): sys.exit(1)
   
