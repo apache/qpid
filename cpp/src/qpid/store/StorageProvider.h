@@ -311,7 +311,8 @@ public:
     virtual void recoverQueues(qpid::broker::RecoveryManager& recoverer,
                                QueueMap& queueMap) = 0;
     virtual void recoverBindings(qpid::broker::RecoveryManager& recoverer,
-                                 const ExchangeMap& exchangeMap) = 0;
+                                 const ExchangeMap& exchangeMap,
+                                 const QueueMap& queueMap) = 0;
     virtual void recoverMessages(qpid::broker::RecoveryManager& recoverer,
                                  MessageMap& messageMap,
                                  MessageQueueMap& messageQueueMap) = 0;

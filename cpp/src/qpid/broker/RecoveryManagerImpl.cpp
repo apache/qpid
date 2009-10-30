@@ -78,7 +78,7 @@ class RecoverableExchangeImpl : public RecoverableExchange
 public:
     RecoverableExchangeImpl(Exchange::shared_ptr _exchange, QueueRegistry& _queues) : exchange(_exchange), queues(_queues) {}
     void setPersistenceId(uint64_t id);
-    void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args);
+    void bind(const std::string& queue, const std::string& routingKey, qpid::framing::FieldTable& args);
 };
 
 class RecoverableConfigImpl : public RecoverableConfig
@@ -230,7 +230,9 @@ void RecoverableConfigImpl::setPersistenceId(uint64_t id)
         bridge->setPersistenceId(id);
 }
 
-void RecoverableExchangeImpl::bind(string& queueName, string& key, framing::FieldTable& args)
+void RecoverableExchangeImpl::bind(const string& queueName,
+                                   const string& key,
+                                   framing::FieldTable& args)
 {
     Queue::shared_ptr queue = queues.find(queueName);
     exchange->bind(queue, key, &args);

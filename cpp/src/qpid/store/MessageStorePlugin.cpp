@@ -409,7 +409,7 @@ MessageStorePlugin::recover(broker::RecoveryManager& recoverer)
     provider->second->recoverConfigs(recoverer);
     provider->second->recoverExchanges(recoverer, exchanges);
     provider->second->recoverQueues(recoverer, queues);
-    provider->second->recoverBindings(recoverer, exchanges);
+    provider->second->recoverBindings(recoverer, exchanges, queues);
     provider->second->recoverMessages(recoverer, messages, messageQueueMap);
     // Enqueue msgs where needed.
     for (MessageQueueMap::const_iterator i = messageQueueMap.begin();

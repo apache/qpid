@@ -267,7 +267,8 @@ public:
     virtual void recoverQueues(qpid::broker::RecoveryManager& recoverer,
                                QueueMap& queueMap);
     virtual void recoverBindings(qpid::broker::RecoveryManager& recoverer,
-                                 const ExchangeMap& exchangeMap);
+                                 const ExchangeMap& exchangeMap,
+                                 const QueueMap& queueMap);
     virtual void recoverMessages(qpid::broker::RecoveryManager& recoverer,
                                  MessageMap& messageMap,
                                  MessageQueueMap& messageQueueMap);
@@ -424,8 +425,10 @@ MSSqlProvider::destroy(PersistableQueue& queue)
         db->beginTransaction();
         rsQueues.open(db, TblQueue);
         rsBindings.open(db, TblBinding);
+        // Remove bindings first; the queue IDs can't be ripped out from
+        // under the references in the bindings table.
+        rsBindings.removeForQueue(queue.getPersistenceId());
         rsQueues.remove(queue);
-        rsBindings.remove(queue.getName());
         db->commitTransaction();
     }
     catch(_com_error &e) {
@@ -468,8 +471,10 @@ MSSqlProvider::destroy(const PersistableExchange& exchange)
         db->beginTransaction();
         rsExchanges.open(db, TblExchange);
         rsBindings.open(db, TblBinding);
+        // Remove bindings first; the exchange IDs can't be ripped out from
+        // under the references in the bindings table.
+        rsBindings.removeForExchange(exchange.getPersistenceId());
         rsExchanges.remove(exchange);
-        rsBindings.remove(exchange.getPersistenceId());
         db->commitTransaction();
     }
     catch(_com_error &e) {
@@ -492,7 +497,10 @@ MSSqlProvider::bind(const PersistableExchange& exchange,
         BindingRecordset rsBindings;
         db->beginTransaction();
         rsBindings.open(db, TblBinding);
-        rsBindings.add(exchange.getPersistenceId(), queue.getName(), key, args);
+        rsBindings.add(exchange.getPersistenceId(),
+                       queue.getPersistenceId(),
+                       key,
+                       args);
         db->commitTransaction();
     }
     catch(_com_error &e) {
@@ -517,7 +525,7 @@ MSSqlProvider::unbind(const PersistableExchange& exchange,
         db->beginTransaction();
         rsBindings.open(db, TblBinding);
         rsBindings.remove(exchange.getPersistenceId(),
-                          queue.getName(),
+                          queue.getPersistenceId(),
                           key,
                           args);
         db->commitTransaction();
@@ -888,12 +896,13 @@ MSSqlProvider::recoverQueues(qpid::broker::RecoveryManager& recoverer,
 
 void
 MSSqlProvider::recoverBindings(qpid::broker::RecoveryManager& recoverer,
-                               const ExchangeMap& exchangeMap)
+                               const ExchangeMap& exchangeMap,
+                               const QueueMap& queueMap)
 {
     DatabaseConnection *db = initConnection();
     BindingRecordset rsBindings;
     rsBindings.open(db, TblBinding);
-    rsBindings.recover(recoverer, exchangeMap);
+    rsBindings.recover(recoverer, exchangeMap, queueMap);
 }
 
 void
@@ -947,7 +956,7 @@ MSSqlProvider::createDb(_ConnectionPtr conn, const std::string &name)
         "  fieldTableBlob varbinary(MAX) NOT NULL)";
     const std::string bindingSpecs =
         " (exchangeId bigint REFERENCES tblExchange(persistenceId) NOT NULL,"
-        "  queueName varchar(255) NOT NULL,"
+        "  queueId bigint REFERENCES tblQueue(persistenceId) NOT NULL,"
         "  routingKey varchar(255),"
         "  fieldTableBlob varbinary(MAX))";
     const std::string messageMapSpecs =
