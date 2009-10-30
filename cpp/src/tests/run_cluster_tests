@@ -29,7 +29,7 @@ TEST_DIR=${top_builddir}/src/tests
 . $srcdir/python_env.sh
 
 if test -z $1; then
-	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.ShortTests.\*"
+	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.NewTests.*"
 else
 	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.LongTests.\*"
 	echo "Running $1..."
