@@ -33,7 +33,7 @@ namespace qmf {
 namespace engine {
 
     class Console;
-    struct ConsoleImpl;
+    class ConsoleImpl;
     class BrokerProxyImpl;
     class AgentProxy;
     struct AgentProxyImpl;
@@ -54,7 +54,7 @@ namespace engine {
 
     private:
         friend struct MethodResponseImpl;
-        friend struct ConsoleImpl;
+        friend class ConsoleImpl;
         MethodResponse(MethodResponseImpl* impl);
         MethodResponseImpl* impl;
     };
@@ -173,7 +173,7 @@ namespace engine {
         void sendQuery(const Query& query, void* context, const AgentProxy* agent = 0);
 
     private:
-        friend struct ConsoleImpl;
+        friend class ConsoleImpl;
         friend struct StaticContext;
         BrokerProxyImpl* impl;
     };
