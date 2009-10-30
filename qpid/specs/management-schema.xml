@@ -129,10 +129,11 @@
     <property name="vhostRef"   type="objId" references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="name"       type="sstr"  access="RC" index="y"/>
 
-    <property name="durable"    type="bool"  access="RC"/>
-    <property name="autoDelete" type="bool"  access="RC"/>
-    <property name="exclusive"  type="bool"  access="RC"/>
-    <property name="arguments"  type="map"   access="RO" desc="Arguments supplied in queue.declare"/>
+    <property name="durable"     type="bool"  access="RC"/>
+    <property name="autoDelete"  type="bool"  access="RC"/>
+    <property name="exclusive"   type="bool"  access="RC"/>
+    <property name="arguments"   type="map"   access="RO" desc="Arguments supplied in queue.declare"/>
+    <property name="altExchange" type="objId" references="Exchange" access="RO" optional="y"/>
 
     <statistic name="msgTotalEnqueues"    type="count64"  unit="message"     desc="Total messages enqueued"/>
     <statistic name="msgTotalDequeues"    type="count64"  unit="message"     desc="Total messages dequeued"/>

@@ -953,6 +953,12 @@ Queue::shared_ptr Queue::decode ( QueueRegistry& queues, Buffer& buffer, bool re
 void Queue::setAlternateExchange(boost::shared_ptr<Exchange> exchange)
 {
     alternateExchange = exchange;
+    if (mgmtObject) {
+        if (exchange.get() != 0)
+            mgmtObject->set_altExchange(exchange->GetManagementObject()->getObjectId());
+        else
+            mgmtObject->clr_altExchange();
+    }
 }
 
 boost::shared_ptr<Exchange> Queue::getAlternateExchange()

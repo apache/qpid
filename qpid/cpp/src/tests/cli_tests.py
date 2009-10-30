@@ -127,6 +127,7 @@ class CliTests(TestBase010):
         self.startQmf();
         qmf = self.qmf
         exName = "testalt"
+        qName = "testqalt"
         altName = "amq.direct"
 
         ret = os.system(self.command(" add exchange topic %s --alternate-exchange=%s" % (exName, altName)))
@@ -143,6 +144,19 @@ class CliTests(TestBase010):
                 if not exchange.altExchange:
                     self.fail("Alternate exchange not set")
                 self.assertEqual(exchange._altExchange_.name, altName)
+        self.assertEqual(found, True)
+
+        ret = os.system(self.command(" add queue %s --alternate-exchange=%s" % (qName, altName)))
+        self.assertEqual(ret, 0)
+
+        queues = qmf.getObjects(_class="queue")
+        found = False
+        for queue in queues:
+            if queue.name == qName:
+                found = True
+                if not queue.altExchange:
+                    self.fail("Alternate exchange not set")
+                self.assertEqual(queue._altExchange_.name, altName)
         self.assertEqual(found, True)
 
     def test_qpid_route(self):
