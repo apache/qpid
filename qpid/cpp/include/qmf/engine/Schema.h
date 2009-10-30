@@ -150,7 +150,7 @@ namespace engine {
     private:
         friend struct SchemaClassKeyImpl;
         friend class BrokerProxyImpl;
-        friend struct ConsoleImpl;
+        friend class ConsoleImpl;
         SchemaClassKey(SchemaClassKeyImpl* impl);
         SchemaClassKeyImpl* impl;
     };
