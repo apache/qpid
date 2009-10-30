@@ -82,9 +82,13 @@ Recordset::open(DatabaseConnection* conn, const std::string& table)
 {
     _ConnectionPtr p = *conn;
     TESTHR(rs.CreateInstance(__uuidof(::Recordset)));
+    // Client-side cursors needed to get access to newly added
+    // identity column immediately. Recordsets need this to get the
+    // persistence ID for the broker objects.
+    rs->CursorLocation = adUseClient;
     rs->Open(table.c_str(),
              _variant_t((IDispatch *)p, true), 
-             adOpenKeyset,
+             adOpenStatic,
              adLockOptimistic,
              adCmdTable);
     tableName = table;

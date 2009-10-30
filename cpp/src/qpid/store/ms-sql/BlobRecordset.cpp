@@ -49,9 +49,10 @@ BlobRecordset::add(const qpid::broker::Persistable& item)
 {
     BlobEncoder blob (item);   // Marshall item info to a blob
     rs->AddNew();
-    item.setPersistenceId(rs->Fields->Item["persistenceId"]->Value);
     rs->Fields->GetItem("fieldTableBlob")->AppendChunk(blob);
     rs->Update();
+    uint64_t id = rs->Fields->Item["persistenceId"]->Value;
+    item.setPersistenceId(id);
 }
 
 void
