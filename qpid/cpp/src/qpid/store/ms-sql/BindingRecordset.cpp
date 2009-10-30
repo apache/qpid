@@ -32,17 +32,32 @@ namespace store {
 namespace ms_sql {
 
 void
+BindingRecordset::removeFilter(const std::string& filter)
+{
+    rs->PutFilter (VariantHelper<std::string>(filter));
+    long recs = rs->GetRecordCount();
+    if (recs == 0)
+        return;   // Nothing to do
+    while (recs > 0) {
+        // Deleting adAffectAll doesn't work as documented; go one by one.
+        rs->Delete(adAffectCurrent);
+        if (--recs > 0)
+            rs->MoveNext();
+    }
+    rs->Update();
+}
+
+void
 BindingRecordset::add(uint64_t exchangeId,
-                      const std::string& queueName,
+                      uint64_t queueId,
                       const std::string& routingKey,
                       const qpid::framing::FieldTable& args)
 {
-    VariantHelper<std::string> queueNameStr(queueName);
     VariantHelper<std::string> routingKeyStr(routingKey);
     BlobEncoder blob (args);   // Marshall field table to a blob
     rs->AddNew();
     rs->Fields->GetItem("exchangeId")->Value = exchangeId;
-    rs->Fields->GetItem("queueName")->Value = queueNameStr;
+    rs->Fields->GetItem("queueId")->Value = queueId;
     rs->Fields->GetItem("routingKey")->Value = routingKeyStr;
     rs->Fields->GetItem("fieldTableBlob")->AppendChunk(blob);
     rs->Update();
@@ -50,57 +65,40 @@ BindingRecordset::add(uint64_t exchangeId,
 
 void
 BindingRecordset::remove(uint64_t exchangeId,
-                         const std::string& queueName,
+                         uint64_t queueId,
                          const std::string& routingKey,
                          const qpid::framing::FieldTable& /*args*/)
 {
     // Look up the affected binding.
     std::ostringstream filter;
     filter << "exchangeId = " << exchangeId
-           << " AND queueName = '" << queueName << "'"
+           << " AND queueId = " << queueId
            << " AND routingKey = '" << routingKey << "'" << std::ends;
-    rs->PutFilter (VariantHelper<std::string>(filter.str()));
-    if (rs->RecordCount != 0) {
-        // Delete the records
-        rs->Delete(adAffectGroup);
-        rs->Update();
-    }
-    requery();
+    removeFilter(filter.str());
 }
 
 void
-BindingRecordset::remove(uint64_t exchangeId)
+BindingRecordset::removeForExchange(uint64_t exchangeId)
 {
     // Look up the affected bindings by the exchange ID
     std::ostringstream filter;
     filter << "exchangeId = " << exchangeId << std::ends;
-    rs->PutFilter (VariantHelper<std::string>(filter.str()));
-    if (rs->RecordCount != 0) {
-        // Delete the records
-        rs->Delete(adAffectGroup);
-        rs->Update();
-    }
-    requery();
+    removeFilter(filter.str());
 }
 
 void
-BindingRecordset::remove(const std::string& queueName)
+BindingRecordset::removeForQueue(uint64_t queueId)
 {
-    // Look up the affected bindings by the exchange ID
+    // Look up the affected bindings by the queue ID
     std::ostringstream filter;
-    filter << "queueName = '" << queueName << "'" << std::ends;
-    rs->PutFilter (VariantHelper<std::string>(filter.str()));
-    if (rs->RecordCount != 0) {
-        // Delete the records
-        rs->Delete(adAffectGroup);
-        rs->Update();
-    }
-    requery();
+    filter << "queueId = " << queueId << std::ends;
+    removeFilter(filter.str());
 }
 
 void
-BindingRecordset::recover(qpid::broker::RecoveryManager& recoverer,
-                          std::map<uint64_t, broker::RecoverableExchange::shared_ptr> exchMap)
+BindingRecordset::recover(broker::RecoveryManager& recoverer,
+                          const store::ExchangeMap& exchMap,
+                          const store::QueueMap& queueMap)
 {
     if (rs->BOF && rs->EndOfFile)
         return;   // Nothing to do
@@ -114,9 +112,26 @@ BindingRecordset::recover(qpid::broker::RecoveryManager& recoverer,
         long blobSize = rs->Fields->Item["fieldTableBlob"]->ActualSize;
         BlobAdapter blob(blobSize);
         blob = rs->Fields->Item["fieldTableBlob"]->GetChunk(blobSize);
-        broker::RecoverableExchange::shared_ptr exch = exchMap[b.exchangeId];
-        std::string q(b.queueName), k(b.routingKey);
-        exch->bind(q, k, blob);
+        store::ExchangeMap::const_iterator exch = exchMap.find(b.exchangeId);
+        if (exch == exchMap.end()) {
+            std::ostringstream msg;
+            msg << "Error recovering bindings; exchange ID " << b.exchangeId
+                << " not found in exchange map";
+            throw qpid::Exception(msg.str());
+        }
+        broker::RecoverableExchange::shared_ptr exchPtr = exch->second;
+        store::QueueMap::const_iterator q = queueMap.find(b.queueId);
+        if (q == queueMap.end()) {
+            std::ostringstream msg;
+            msg << "Error recovering bindings; queue ID " << b.queueId
+                << " not found in queue map";
+            throw qpid::Exception(msg.str());
+        }
+        broker::RecoverableQueue::shared_ptr qPtr = q->second;
+        // The recovery manager wants the queue name, so get it from the
+        // RecoverableQueue.
+        std::string key(b.routingKey);
+        exchPtr->bind(qPtr->getName(), key, blob);
         rs->MoveNext();
     }
 
@@ -138,8 +153,8 @@ BindingRecordset::dump()
     piAdoRecordBinding->BindToRecordset(&b);
    
     while (VARIANT_FALSE == rs->EndOfFile) {
-      QPID_LOG(notice, "exch " << b.exchangeId
-                       << ", q: " << b.queueName
+      QPID_LOG(notice, "exch Id " << b.exchangeId
+                       << ", q Id " << b.queueId
                        << ", k: " << b.routingKey);
       rs->MoveNext();
     }

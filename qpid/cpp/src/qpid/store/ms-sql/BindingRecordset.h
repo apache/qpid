@@ -24,6 +24,7 @@
 
 #include <icrsint.h>
 #include "Recordset.h"
+#include <qpid/store/StorageProvider.h>
 #include <qpid/broker/RecoveryManager.h>
 
 namespace qpid {
@@ -40,40 +41,43 @@ class BindingRecordset : public Recordset {
     class Binding : public CADORecordBinding {
         BEGIN_ADO_BINDING(Binding)
           ADO_FIXED_LENGTH_ENTRY2(1, adBigInt, exchangeId, FALSE)
-          ADO_VARIABLE_LENGTH_ENTRY4(2, adVarChar, queueName, 
-                                     sizeof(queueName), FALSE)
+          ADO_FIXED_LENGTH_ENTRY2(2, adBigInt, queueId, FALSE)
           ADO_VARIABLE_LENGTH_ENTRY4(3, adVarChar, routingKey, 
                                      sizeof(routingKey), FALSE)
         END_ADO_BINDING()
 
     public:
         uint64_t exchangeId;
-        char queueName[256];
+        uint64_t queueId;
         char routingKey[256];
     };
+
+    // Remove all records matching the specified filter/query.
+    void removeFilter(const std::string& filter);
 
 public:
     // Add a new binding
     void add(uint64_t exchangeId,
-             const std::string& queueName,
+             uint64_t queueId,
              const std::string& routingKey,
              const qpid::framing::FieldTable& args);
 
     // Remove a specific binding
     void remove(uint64_t exchangeId,
-                const std::string& queueName,
+                uint64_t queueId,
                 const std::string& routingKey,
                 const qpid::framing::FieldTable& args);
 
     // Remove all bindings for the specified exchange
-    void remove(uint64_t exchangeId);
+    void removeForExchange(uint64_t exchangeId);
 
     // Remove all bindings for the specified queue
-    void remove(const std::string& queueName);
+    void removeForQueue(uint64_t queueId);
 
     // Recover bindings set using exchMap to get from Id to RecoverableExchange.
     void recover(qpid::broker::RecoveryManager& recoverer,
-                 std::map<uint64_t, broker::RecoverableExchange::shared_ptr> exchMap);
+                 const qpid::store::ExchangeMap& exchMap,
+                 const qpid::store::QueueMap& queueMap);
 
     // Dump table contents; useful for debugging.
     void dump();
