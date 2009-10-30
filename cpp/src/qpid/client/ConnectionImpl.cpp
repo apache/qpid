@@ -156,8 +156,14 @@ void ConnectionImpl::open()
         handler.setRcvTimeoutTask(heartbeatTask);
         theTimer().add(heartbeatTask);
     }
- 
-    handler.waitForOpen();
+
+    try {
+        handler.waitForOpen();
+    } catch (...) {
+        // Make sure the connector thread is joined.
+        connector->close();
+        throw;
+    }
 
     // If the SASL layer has provided an "operational" userId for the connection,
     // put it in the negotiated settings.

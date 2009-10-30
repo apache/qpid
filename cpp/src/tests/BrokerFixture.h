@@ -94,6 +94,7 @@ struct  BrokerFixture : private boost::noncopyable {
 struct LocalConnection : public qpid::client::Connection {
     LocalConnection(uint16_t port) { open("localhost", port); }
     LocalConnection(const qpid::client::ConnectionSettings& s) { open(s); }
+    ~LocalConnection() { close(); }
 };
 
 /** A local client connection via a socket proxy. */

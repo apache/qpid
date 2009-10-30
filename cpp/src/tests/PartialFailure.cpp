@@ -98,8 +98,8 @@ QPID_AUTO_TEST_CASE(testCoincidentErrors) {
         async(c1.session).messageTransfer(content=pMessage("TEST_STORE_DO: s1[exception]", "q"));
 
         int alive=0;
-        try { Client c00(cluster[0], "c00"); ++alive; } catch (...) {}
-        try { Client c11(cluster[1], "c11"); ++alive; } catch (...) {}
+        try { Client c00(cluster[0], "c00"); ++alive; c00.close(); } catch (...) {}
+        try { Client c11(cluster[1], "c11"); ++alive; c11.close(); } catch (...) {}
 
         BOOST_CHECK_EQUAL(alive, 1);
 
