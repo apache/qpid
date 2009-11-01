@@ -59,9 +59,12 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     void declareDestination(AMQDestination destination)
     {
-        ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare(destination.getExchangeName().toString(),
-                                                                          destination.getExchangeClass().toString(),
-                                                                          null, null);
+        String name = destination.getExchangeName().toString();
+        ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
+            (name,
+             destination.getExchangeClass().toString(),
+             null, null,
+             name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
     }
 
     //--- Overwritten methods
