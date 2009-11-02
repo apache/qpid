@@ -20,6 +20,7 @@
  */
 #include "qpid/client/SaslFactory.h"
 #include "qpid/client/ConnectionSettings.h"
+#include <map>
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -326,11 +327,33 @@ int getUserFromSettings(void* context, int /*id*/, const char** result, unsigned
     }
 }
 
-int getPasswordFromSettings(sasl_conn_t* /*conn*/, void* context, int /*id*/, sasl_secret_t** psecret)
+namespace {
+// Global map of secrest allocated for SASL connections via callback
+// to getPasswordFromSettings. Ensures secrets are freed.
+class SecretsMap {
+    typedef std::map<sasl_conn_t*, void*> Map;
+    Map map;
+  public:
+    void keep(sasl_conn_t* conn, void* secret) {
+        Map::iterator i = map.find(conn);
+        if (i != map.end()) free(i->second);
+        map[conn] = secret;
+    }
+
+    ~SecretsMap() {
+        for (Map::iterator i = map.begin(); i != map.end(); ++i)
+            free(i->second);
+    }
+};
+SecretsMap getPasswordFromSettingsSecrets;
+}
+
+int getPasswordFromSettings(sasl_conn_t* conn, void* context, int /*id*/, sasl_secret_t** psecret)
 {
     if (context) {
         size_t length = ((ConnectionSettings*) context)->password.size();
         sasl_secret_t* secret = (sasl_secret_t*) malloc(sizeof(sasl_secret_t) + length);
+        getPasswordFromSettingsSecrets.keep(conn, secret);
         secret->len = length;
         memcpy(secret->data, ((ConnectionSettings*) context)->password.data(), length);
         *psecret = secret;
