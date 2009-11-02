@@ -120,7 +120,7 @@ class TestBase(unittest.TestCase):
         try:
             ret = os.spawnl(os.P_WAIT, self._qpiddExec, self._qpiddExec, "--port=%d" % nodeTuple[self.PORT], "--quit")
             if ret != 0:
-                raise Exception("stopBroker(): port=%d: qpidd -q returned %d" % (port, ret))
+                raise Exception("stopBroker(): port=%d: qpidd -q returned %d" % (nodeTuple[self.PORT], ret))
             try:
                 os.waitpid(nodeTuple[self.PID], 0)
             except:
