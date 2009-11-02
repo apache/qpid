@@ -20,7 +20,7 @@
 
 import os, signal, sys
 from brokertest import *
-from qpid import datatypes, messaging, tests
+from qpid import datatypes, messaging
 from testlib import TestBaseCluster     # Old framework
 
 
