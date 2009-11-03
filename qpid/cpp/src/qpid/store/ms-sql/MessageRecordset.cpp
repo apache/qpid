@@ -42,6 +42,8 @@ MessageRecordset::add(const boost::intrusive_ptr<qpid::broker::PersistableMessag
     rs->AddNew();
     rs->Fields->GetItem("fieldTableBlob")->AppendChunk(blob);
     rs->Update();
+    uint64_t id = rs->Fields->Item["persistenceId"]->Value;
+    msg->setPersistenceId(id);
 }
 
 void
