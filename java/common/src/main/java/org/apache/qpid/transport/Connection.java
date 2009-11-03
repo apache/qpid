@@ -322,7 +322,8 @@ public class Connection extends ConnectionInvoker
         }
         else
         {
-            // TODO
+            throw new ProtocolViolationException(
+					"Received frames for an already dettached session", null);
         }
     }
 
