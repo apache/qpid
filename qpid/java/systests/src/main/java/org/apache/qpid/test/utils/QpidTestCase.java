@@ -50,6 +50,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -160,7 +161,9 @@ public class QpidTestCase extends TestCase
     protected static final String BROKER_READY = "broker.ready";
     private static final String BROKER_STOPPED = "broker.stopped";
     private static final String TEST_OUTPUT = "test.output";
-
+    private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
+    private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
+        
     // values
     protected static final String JAVA = "java";
     protected static final String CPP = "cpp";
@@ -181,9 +184,14 @@ public class QpidTestCase extends TestCase
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     private String _output = System.getProperty(TEST_OUTPUT);
-
+    
+    private static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");    
+    protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
+    
     protected File _outputFile;
-
+    
+    protected PrintStream _brokerOutputStream;
+    
     private Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
 
     private InitialContext _initialContext;
@@ -209,17 +217,18 @@ public class QpidTestCase extends TestCase
     }
 
     public void runBare() throws Throwable
-    {
+    {    	
         _testName = getClass().getSimpleName() + "." + getName();
         String qname = getClass().getName() + "." + getName();
 
-        // Initalise this for each test run
+        // Initialize this for each test run
         _env = new HashMap<String, String>();
 
         PrintStream oldOut = System.out;
         PrintStream oldErr = System.err;
         PrintStream out = null;
         PrintStream err = null;
+        
         boolean redirected = _output != null && _output.length() > 0;
         if (redirected)
         {
@@ -228,6 +237,16 @@ public class QpidTestCase extends TestCase
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
             System.setOut(out);
             System.setErr(err);
+                        
+            if (_interleaveBrokerLog)
+            {
+            	_brokerOutputStream = out;            	
+            }
+            else
+            {
+            	_brokerOutputStream = new PrintStream(new FileOutputStream(String
+    					.format("%s/TEST-%s.broker.out", _output, qname)), true);	
+            }
         }
 
         _logger.info("========== start " + _testName + " ==========");
@@ -266,6 +285,10 @@ public class QpidTestCase extends TestCase
                 System.setOut(oldOut);
                 err.close();
                 out.close();
+                if (!_interleaveBrokerLog)
+                { 	
+                	_brokerOutputStream.close();
+                }
             }
         }
     }
@@ -300,20 +323,22 @@ public class QpidTestCase extends TestCase
     {
 
         private LineNumberReader in;
+        private PrintStream out;
         private String ready;
         private CountDownLatch latch;
         private boolean seenReady;
         private String stopped;
         private String stopLine;
 
-        public Piper(InputStream in, String ready)
+        public Piper(InputStream in, PrintStream out, String ready)
         {
-            this(in, ready, null);
+            this(in, out, ready, null);
         }
 
-        public Piper(InputStream in, String ready, String stopped)
+        public Piper(InputStream in, PrintStream out, String ready, String stopped)
         {
             this.in = new LineNumberReader(new InputStreamReader(in));
+            this.out = out;
             this.ready = ready;
             this.stopped = stopped;
             this.seenReady = false;
@@ -328,9 +353,9 @@ public class QpidTestCase extends TestCase
             }
         }
 
-        public Piper(InputStream in)
+        public Piper(InputStream in, PrintStream out)
         {
-            this(in, null);
+            this(in, out, null);
         }
 
         public boolean await(long timeout, TimeUnit unit) throws InterruptedException
@@ -352,8 +377,13 @@ public class QpidTestCase extends TestCase
             {
                 String line;
                 while ((line = in.readLine()) != null)
-                {
-                    System.out.println(line);
+                {	
+                	if (_interleaveBrokerLog)
+                	{
+                		line = _brokerLogPrefix + line;
+                	}
+                	out.println(line);
+                	                	
                     if (latch != null && line.contains(ready))
                     {
                         seenReady = true;
@@ -528,6 +558,7 @@ public class QpidTestCase extends TestCase
             process = pb.start();
 
             Piper p = new Piper(process.getInputStream(),
+            		            _brokerOutputStream,
                                 System.getProperty(BROKER_READY),
                                 System.getProperty(BROKER_STOPPED));
 
@@ -591,7 +622,7 @@ public class QpidTestCase extends TestCase
                 ProcessBuilder pb = new ProcessBuilder(_brokerClean.split("\\s+"));
                 pb.redirectErrorStream(true);
                 Process clean = pb.start();
-                new Piper(clean.getInputStream()).start();
+                new Piper(clean.getInputStream(),_brokerOutputStream).start();
 
                 clean.waitFor();
 

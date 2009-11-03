@@ -60,6 +60,8 @@
   <property name="module.release.bz2"  location="${module.release}/${module.namever}.tar.bz2"/>
 
   <property name="module.genpom.args"  value=""/>
+  <property name="broker.log.prefix" value="BROKER: "/> 
+  <property name="broker.log.interleave" value="true"/>
 
   <property name="module.qpid.jar"     location="${module.release.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${module.qpid.jar}"/>
@@ -276,6 +278,7 @@
       <sysproperty key="broker.stopped" value="${broker.stopped}" />
       <sysproperty key="broker.config" value="${broker.config}" />
       <sysproperty key="test.output" value="${module.results}"/>
+
       <syspropertyset>
         <propertyref prefix="test"/>
       </syspropertyset>
@@ -284,7 +287,11 @@
       </syspropertyset>
       <syspropertyset>
         <propertyref prefix="javax.net.ssl"/>
+      </syspropertyset>  
+      <syspropertyset>
+         <propertyref prefix="broker"/>
       </syspropertyset>
+      
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
       <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
       <sysproperty key="QPID_EXAMPLE_HOME" value="${qpid.home}"/>
@@ -526,6 +533,7 @@
   </target>
 
   <target name="cover-test" depends="instrument">
+
     <mkdir dir="${build.coveragereport}" />
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
@@ -543,9 +551,14 @@
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="test.output" value="${module.results}"/>
+
       <syspropertyset>
         <propertyref prefix="test"/>
       </syspropertyset>
+      <syspropertyset>
+          <propertyref prefix="broker"/>
+      </syspropertyset>
+
       <sysproperty key="max_prefetch" value ="${max_prefetch}"/>
       <sysproperty key="example.plugin.target" value="${project.root}/build/lib/plugins"/>
       <sysproperty key="QPID_EXAMPLE_HOME" value="${project.root}/build"/>
