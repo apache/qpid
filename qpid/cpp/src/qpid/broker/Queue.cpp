@@ -249,8 +249,9 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
             if (lastValueQueue) {
                 clearLVQIndex(*i);
             }
+            QPID_LOG(debug,
+                     "Acquired message at " << i->position << " from " << name);
             messages.erase(i);
-            QPID_LOG(debug, "Acquired message at " << i->position << " from " << name);
             return true;
         }
     }
@@ -267,8 +268,10 @@ bool Queue::acquire(const QueuedMessage& msg) {
                 msg.payload.get() == checkLvqReplace(*i).payload.get()) )  {
 
             clearLVQIndex(msg);
+            QPID_LOG(debug,
+                     "Match found, acquire succeeded: " <<
+                     i->position << " == " << msg.position);
             messages.erase(i);
-            QPID_LOG(debug, "Match found, acquire succeeded: " << i->position << " == " << msg.position);
             return true;
         } else {
             QPID_LOG(debug, "No match: " << i->position << " != " << msg.position);
