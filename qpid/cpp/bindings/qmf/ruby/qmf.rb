@@ -456,7 +456,7 @@ module Qmf
     attr_reader :impl, :agent_key
     def initialize(impl=nil)
       if impl
-        @impl = impl
+        @impl = Qmfengine::ObjectId.new(impl)
       else
         @impl = Qmfengine::ObjectId.new
       end
@@ -594,7 +594,7 @@ module Qmf
     attr_reader :impl
     def initialize(kwargs = {})
       if kwargs.include?(:impl)
-        @impl = kwargs[:impl]
+        @impl = Qmfengine::Query.new(kwargs[:impl])
       else
         package = ''
         if kwargs.include?(:key)
