@@ -44,9 +44,11 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 ManagementAgent::RemoteAgent::~RemoteAgent ()
 {
-    if (mgmtObject != 0)
-        mgmtObject->resourceDestroy();
     QPID_LOG(trace, "Remote Agent removed bank=[" << brokerBank << "." << agentBank << "]");
+    if (mgmtObject != 0) {
+        mgmtObject->resourceDestroy();
+        agent.deleteObjectNowLH(mgmtObject->getObjectId());
+    }
 }
 
 ManagementAgent::ManagementAgent () :
@@ -441,6 +443,32 @@ void ManagementAgent::periodicProcessing (void)
         sendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         QPID_LOG(trace, "SEND HeartbeatInd to=" << routingKey);
     }
+}
+
+void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
+{
+    ManagementObjectMap::iterator iter = managementObjects.find(oid);
+    if (iter == managementObjects.end())
+        return;
+    ManagementObject* object = iter->second;
+    if (!object->isDeleted())
+        return;
+
+#define DNOW_BUFSIZE 2048
+    char     msgChars[DNOW_BUFSIZE];
+    uint32_t contentSize;
+    Buffer   msgBuffer(msgChars, DNOW_BUFSIZE);
+
+    encodeHeader(msgBuffer, 'c');
+    object->writeProperties(msgBuffer);
+    contentSize = msgBuffer.getPosition();
+    msgBuffer.reset();
+    stringstream key;
+    key << "console.obj.1.0." << object->getPackageName() << "." << object->getClassName();
+    sendBuffer(msgBuffer, contentSize, mExchange, key.str());
+    QPID_LOG(trace, "SEND Immediate(delete) ContentInd to=" << key.str());
+
+    managementObjects.erase(oid);
 }
 
 void ManagementAgent::sendCommandComplete (string replyToKey, uint32_t sequence,
@@ -871,7 +899,7 @@ void ManagementAgent::handleAttachRequestLH (Buffer& inBuffer, string replyToKey
 
     assignedBank = assignBankLH(requestedAgentBank);
 
-    RemoteAgent* agent = new RemoteAgent;
+    RemoteAgent* agent = new RemoteAgent(*this);
     agent->brokerBank = brokerBank;
     agent->agentBank  = assignedBank;
     agent->routingKey = replyToKey;

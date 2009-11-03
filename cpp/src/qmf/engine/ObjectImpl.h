@@ -56,7 +56,7 @@ namespace engine {
 
         void destroy();
         const ObjectId* getObjectId() const { return objectId.get(); }
-        void setObjectId(ObjectId* oid) { objectId.reset(oid); }
+        void setObjectId(ObjectId* oid) { objectId.reset(new ObjectId(*oid)); }
         const SchemaObjectClass* getClass() const { return objectClass; }
         Value* getValue(const std::string& key) const;
         void invokeMethod(const std::string& methodName, const Value* inArgs, void* context) const;

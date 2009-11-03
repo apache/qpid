@@ -113,11 +113,13 @@ private:
     //
     struct RemoteAgent : public Manageable
     {
+        ManagementAgent&  agent;
         uint32_t          brokerBank;
         uint32_t          agentBank;
         std::string       routingKey;
         ObjectId          connectionRef;
         qmf::org::apache::qpid::broker::Agent*    mgmtObject;
+        RemoteAgent(ManagementAgent& _agent) : agent(_agent) {}
         ManagementObject* GetManagementObject (void) const { return mgmtObject; }
         virtual ~RemoteAgent ();
     };
@@ -212,6 +214,7 @@ private:
 
     void writeData ();
     void periodicProcessing (void);
+    void deleteObjectNowLH(const ObjectId& oid);
     void encodeHeader       (framing::Buffer& buf, uint8_t  opcode, uint32_t  seq = 0);
     bool checkHeader        (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendBuffer         (framing::Buffer&             buf,
