@@ -59,7 +59,7 @@ struct DaemonOptions : public qpid::Options {
     std::string piddir;
     std::string transport;
 
-    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10), transport(TCP)
+    DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(600), transport(TCP)
     {
         char *home = ::getenv("HOME");
 

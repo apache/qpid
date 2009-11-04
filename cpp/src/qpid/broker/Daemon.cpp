@@ -123,7 +123,7 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
         FD_ZERO(&fds);
         FD_SET(pipeFds[0], &fds);
         int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
-        if(n==0) throw Exception("Timed out waiting for daemon");
+        if(n==0) throw Exception("Timed out waiting for daemon (If store recovery is in progress, use longer wait time)");
         if(n<0) throw ErrnoException("Error waiting for daemon");
         uint16_t port = 0;
         /*
