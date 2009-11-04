@@ -27,7 +27,7 @@ namespace qpid {
 namespace sys {
 
 void Shlib::load(const char* name) {
-    dlerror();
+    ::dlerror();
     handle = ::dlopen(name, RTLD_NOW);
     const char* error = ::dlerror();
     if (error) {
