@@ -37,6 +37,9 @@ TESTS +=					\
 	federated_cluster_test			\
 	clustered_replication_test
 
+# Clean up after cluster_test and start_cluster
+CLEANFILES += cluster_test.acl cluster.ports
+
 EXTRA_DIST +=					\
 	ais_check				\
 	run_cluster_test			\
