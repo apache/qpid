@@ -30,6 +30,21 @@
 
 namespace fs=boost::filesystem;
 
+namespace {
+
+// CMake sets QPID_MODULE_SUFFIX; Autoconf doesn't, so assume Linux .so
+#if defined (QPID_MODULE_SUFFIX)
+    std::string suffix(QPID_MODULE_SUFFIX);
+#else
+    std::string suffix(".so");
+#endif
+
+bool isShlibName(const std::string& name) {
+    return name.find (suffix) == name.length() - suffix.length();
+}
+
+}
+
 namespace qpid {
 
 ModuleOptions::ModuleOptions(const std::string& defaultModuleDir)
@@ -41,7 +56,9 @@ ModuleOptions::ModuleOptions(const std::string& defaultModuleDir)
         ("no-module-dir", optValue(noLoad),          "Don't load modules from module directory");
 }
 
-void tryShlib(const char* libname, bool noThrow) {
+void tryShlib(const char* libname_, bool noThrow) {
+    std::string libname(libname_);
+    if (!isShlibName(libname)) libname += suffix;
     try {
         sys::Shlib shlib(libname);
         QPID_LOG (info, "Loaded Module: " << libname);
@@ -68,17 +85,9 @@ void loadModuleDir (std::string dirname, bool isDefault)
     }
 
     fs::directory_iterator endItr;
-    // CMake sets QPID_MODULE_SUFFIX; Autoconf doesn't, so assume Linux .so
-#if defined (QPID_MODULE_SUFFIX)
-    std::string suffix(QPID_MODULE_SUFFIX);
-#else
-    std::string suffix(".so");
-#endif
     for (fs::directory_iterator itr (dirPath); itr != endItr; ++itr)
     {
-        if (!fs::is_directory(*itr) &&
-            itr->string().find (suffix) ==
-                itr->string().length() - suffix.length())
+        if (!fs::is_directory(*itr) && isShlibName(itr->string()))
             tryShlib (itr->string().data(), true);
     }
 }

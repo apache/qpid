@@ -24,7 +24,6 @@
 #include "qpid/Version.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Statement.h"
-#include "qpid/sys/Shlib.h"
 
 #include <iostream>
 #include <memory>
