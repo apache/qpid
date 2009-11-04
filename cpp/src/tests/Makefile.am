@@ -318,7 +318,7 @@ check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
 libdlclose_noop_la_SOURCES = dlclose_noop.c
 
-CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
+CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 
 # Longer running stability tests, not run by default check: target.
 # Not run under valgrind, too slow
