@@ -37,11 +37,12 @@ namespace ms_sql {
  */
 class BlobRecordset : public Recordset {
 protected:
-    // Remove a record given its Id.
-    void remove(uint64_t id);
 
 public:
     void add(const qpid::broker::Persistable& item);
+
+    // Remove a record given its Id.
+    void remove(uint64_t id);
     void remove(const qpid::broker::Persistable& item);
 
     // Dump table contents; useful for debugging.

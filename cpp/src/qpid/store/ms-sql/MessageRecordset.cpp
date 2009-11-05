@@ -113,7 +113,7 @@ MessageRecordset::loadContent(const boost::intrusive_ptr<const qpid::broker::Per
 
 void
 MessageRecordset::recover(qpid::broker::RecoveryManager& recoverer,
-                          std::map<uint64_t, broker::RecoverableMessage::shared_ptr> messageMap)
+                          std::map<uint64_t, broker::RecoverableMessage::shared_ptr>& messageMap)
 {
     if (rs->BOF && rs->EndOfFile)
         return;   // Nothing to do
