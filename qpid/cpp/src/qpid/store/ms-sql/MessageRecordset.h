@@ -74,7 +74,7 @@ public:
 
     // Recover messages and save a map of those recovered.
     void recover(qpid::broker::RecoveryManager& recoverer,
-                 std::map<uint64_t, broker::RecoverableMessage::shared_ptr> messageMap);
+                 std::map<uint64_t, broker::RecoverableMessage::shared_ptr>& messageMap);
 
     // Dump table contents; useful for debugging.
     void dump();

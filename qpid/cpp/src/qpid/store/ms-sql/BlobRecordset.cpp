@@ -31,6 +31,17 @@ namespace store {
 namespace ms_sql {
 
 void
+BlobRecordset::add(const qpid::broker::Persistable& item)
+{
+    BlobEncoder blob (item);   // Marshall item info to a blob
+    rs->AddNew();
+    rs->Fields->GetItem("fieldTableBlob")->AppendChunk(blob);
+    rs->Update();
+    uint64_t id = rs->Fields->Item["persistenceId"]->Value;
+    item.setPersistenceId(id);
+}
+
+void
 BlobRecordset::remove(uint64_t id)
 {
     // Look up the item by its persistenceId
@@ -42,17 +53,6 @@ BlobRecordset::remove(uint64_t id)
         rs->Delete(adAffectCurrent);
         rs->Update();
     }
-}
-
-void
-BlobRecordset::add(const qpid::broker::Persistable& item)
-{
-    BlobEncoder blob (item);   // Marshall item info to a blob
-    rs->AddNew();
-    rs->Fields->GetItem("fieldTableBlob")->AppendChunk(blob);
-    rs->Update();
-    uint64_t id = rs->Fields->Item["persistenceId"]->Value;
-    item.setPersistenceId(id);
 }
 
 void

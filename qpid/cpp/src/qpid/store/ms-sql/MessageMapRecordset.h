@@ -23,6 +23,7 @@
  */
 
 #include <icrsint.h>
+#include <vector>
 #include "Recordset.h"
 #include <qpid/broker/RecoveryManager.h>
 
@@ -40,7 +41,7 @@ class MessageMapRecordset : public Recordset {
     class MessageMap : public CADORecordBinding {
         BEGIN_ADO_BINDING(MessageMap)
           ADO_FIXED_LENGTH_ENTRY2(1, adBigInt, messageId, FALSE)
-          ADO_FIXED_LENGTH_ENTRY2(1, adBigInt, queueId, FALSE)
+          ADO_FIXED_LENGTH_ENTRY2(2, adBigInt, queueId, FALSE)
         END_ADO_BINDING()
 
     public:
@@ -56,6 +57,13 @@ public:
     // enqueued on at least one other queue; false if the message no longer
     // exists on any other queues.
     bool remove(uint64_t messageId, uint64_t queueId);
+
+    // Remove mappings for all messages on a specified queue. If there are
+    // messages that were only on the specified queue and are, therefore,
+    // orphaned now, return them in the orphaned vector. The orphaned
+    // messages can be deleted permanently as they are not referenced on
+    // any other queues.
+    void removeForQueue(uint64_t queueId, std::vector<uint64_t>& orphaned);
 
     // Recover the mappings of message ID -> vector<queue ID>.
     void recover(MessageQueueMap& msgMap);
