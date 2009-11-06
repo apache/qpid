@@ -28,6 +28,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularDataSupport;
 
+import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ServerRegistry;
@@ -79,16 +80,19 @@ public class ConnectionOperationsTabControl extends TabControl
             
     private TabularDataSupport _channels = null;
     private ManagedConnection _cmb;
+    private ApiVersion _ApiVersion;
     
     static final String CHAN_ID = ManagedConnection.COMPOSITE_ITEM_NAMES[0];
     static final String TRANSACTIONAL = ManagedConnection.COMPOSITE_ITEM_NAMES[1];
     static final String DEFAULT_QUEUE = ManagedConnection.COMPOSITE_ITEM_NAMES[2];
     static final String UNACKED_COUNT = ManagedConnection.COMPOSITE_ITEM_NAMES[3];
+    static final String FLOW_BLOCKED = ManagedConnection.COMPOSITE_ITEM_NAMES[4];
     
     public ConnectionOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
         super(tabFolder);
         _mbean = mbean;
+        _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
         _cmb = (ManagedConnection) MBeanServerInvocationHandler.newProxyInstance(mbsc, 
                                 mbean.getObjectName(), ManagedConnection.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
@@ -167,8 +171,16 @@ public class ConnectionOperationsTabControl extends TabControl
         _tableViewer = new TableViewer(_table);
         final TableSorter tableSorter = new TableSorter();
       
-        String[] titles = {"Channel Id", "Transactional", "Num Unacked Msg", "Default Queue"};
-        int[] bounds = { 105, 115, 145, 200 };
+        String[] titles;
+        if(_ApiVersion.greaterThanOrEqualTo(1, 5))
+        {
+            titles = new String[]{"Id", "Transactional", "Num Unacked Msg", "Default Queue", "Flow Blocked"};
+        }
+        else
+        {
+            titles = new String[]{"Id", "Transactional", "Num Unacked Msg", "Default Queue"};
+        }
+        int[] bounds = { 40, 110, 145, 200, 110 };
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;
@@ -407,6 +419,8 @@ public class ConnectionOperationsTabControl extends TabControl
                     return String.valueOf(((CompositeDataSupport) element).get(UNACKED_COUNT));
                 case 3 : // default queue column 
                     return String.valueOf(((CompositeDataSupport) element).get(DEFAULT_QUEUE));
+                case 4 : // flow blocked column 
+                    return String.valueOf(((CompositeDataSupport) element).get(FLOW_BLOCKED));
                 default :
                     return "-";
             }
@@ -475,6 +489,10 @@ public class ConnectionOperationsTabControl extends TabControl
                 case 3:
                     comparison = String.valueOf(chan1.get(DEFAULT_QUEUE)).compareTo(
                                                         String.valueOf(chan2.get(DEFAULT_QUEUE)));
+                    break;
+                case 4:
+                    comparison = String.valueOf(chan1.get(FLOW_BLOCKED)).compareTo(
+                                                        String.valueOf(chan2.get(FLOW_BLOCKED)));
                     break;
                 default:
                     comparison = 0;
