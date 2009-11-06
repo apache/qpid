@@ -45,7 +45,6 @@ import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
 import org.apache.qpid.management.common.mbeans.ServerInformation;
-import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
@@ -551,7 +550,8 @@ public class MBeanUtility
         
         //Detect the value of the 'version' key property on the UserManagement MBean ObjectName.
         //If present, we have a v1.2 API server. If null, we have a v1.1 API server.
-        objName = new ObjectName(server.getDomain() + ":type="+ UserManagement.TYPE + ",*");
+        //Use an ObjectName pattern (the ?) to match the 'type' and allow this to work for non-admin users
+        objName = new ObjectName(server.getDomain() + ":type="+ "UserManagemen?" + ",*");
         objectInstances = mbsc.queryNames(objName, null);
         
         if(objectInstances.size() != 0)
