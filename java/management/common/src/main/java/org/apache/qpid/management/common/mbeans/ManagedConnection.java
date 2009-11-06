@@ -41,12 +41,13 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 public interface ManagedConnection
 {
     static final String TYPE = "Connection";
-    static final int VERSION = 1;
+    static final int VERSION = 2;
     
     //TabularType and contained CompositeType key/description information
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
-    String[] COMPOSITE_ITEM_NAMES = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
-    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
+    //"Flow Blocked" added in Qpid JMX API 1.5
+    String[] COMPOSITE_ITEM_NAMES = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count", "Flow Blocked"};
+    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count", "Flow Blocked"};
     String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
 
     @MBeanAttribute(name = "ClientId", description = "Client Id")
