@@ -1013,4 +1013,9 @@ public class AMQChannel
         AMQMethodBody responseBody = methodRegistry.createChannelFlowBody(flow);
         _session.writeFrame(responseBody.generateFrame(_channelId));
     }
+    
+    public boolean getBlocking()
+    {
+        return _blocking.get();
+    }
 }
