@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -33,6 +34,9 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 
 import javax.management.JMException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
+
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class AMQProtocolSessionMBeanTest extends TestCase
@@ -85,6 +89,29 @@ public class AMQProtocolSessionMBeanTest extends TestCase
             log.debug("expected exception is thrown :" + ex.getMessage());
         }
 
+        // check channels() return type conveys flow control blocking status correctly
+        AMQChannel channel4 = new AMQChannel(_protocolSession, 4, _messageStore);
+        _protocolSession.addChannel(channel4);
+        channel4.setDefaultQueue(queue);
+        
+        final String blocking = ManagedConnection.COMPOSITE_ITEM_NAMES[4];
+        TabularData channels = _mbean.channels();
+        CompositeData chan4result = channels.get(new Integer[]{4});
+        assertNotNull(chan4result);
+        assertEquals("Flow should not have been blocked", false, chan4result.get(blocking));
+        
+        channel4.block(queue);
+        channels = _mbean.channels();
+        chan4result = channels.get(new Integer[]{4});
+        assertNotNull(chan4result);
+        assertEquals("Flow should have been blocked", true, chan4result.get(blocking));    
+        
+        channel4.unblock(queue);
+        channels = _mbean.channels();
+        chan4result = channels.get(new Integer[]{4});
+        assertNotNull(chan4result);
+        assertEquals("Flow should have been unblocked", false, chan4result.get(blocking));  
+        
         // check if closing of session works
         _protocolSession.addChannel(new AMQChannel(_protocolSession, 5, _messageStore));
         _mbean.closeConnection();
