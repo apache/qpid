@@ -85,7 +85,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     // openmbean data types for representing the channel attributes
 
     private static final OpenType[] _channelAttributeTypes =
-        { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER };
+        { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER, SimpleType.BOOLEAN };
     private static CompositeType _channelType = null; // represents the data type for channel data
     private static TabularType _channelsType = null; // Data type for list of channels type
     private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION =
@@ -256,7 +256,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                 {
                     channel.getChannelId(), channel.isTransactional(),
                     (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName().asString() : null,
-                    channel.getUnacknowledgedMessageMap().size()
+                    channel.getUnacknowledgedMessageMap().size(), channel.getBlocking()
                 };
 
             CompositeData channelData = new CompositeDataSupport(_channelType, COMPOSITE_ITEM_NAMES, itemValues);
