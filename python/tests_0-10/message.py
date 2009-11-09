@@ -815,6 +815,41 @@ class MessageTests(TestBase010):
         #ensure there are no other messages
         self.assertEmpty(queueC)
 
+    def test_release_order(self):
+        session = self.session
+
+        #create queue
+        session.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+
+        #send messages
+        for i in range(1, 11):
+            session.message_transfer(message=Message(session.delivery_properties(routing_key="q"), "message-%d" % (i)))
+
+        #subscribe:
+        session.message_subscribe(queue="q", destination="a")
+        a = session.incoming("a")
+        session.message_flow(unit = session.credit_unit.byte, value = 0xFFFFFFFFL, destination = "a")
+        session.message_flow(unit = session.credit_unit.message, value = 10, destination = "a")
+
+        for i in range(1, 11):
+            msg = a.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.body)
+            if (i % 2):
+                #accept all odd messages
+                session.message_accept(RangedSet(msg.id))
+            else:
+                #release all even messages
+                session.message_release(RangedSet(msg.id))
+
+        #browse:
+        session.message_subscribe(queue="q", destination="b", acquire_mode=1)
+        b = session.incoming("b")
+        b.start()
+        for i in [2, 4, 6, 8, 10]:
+            msg = b.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.body)
+
+
     def test_empty_body(self):
         session = self.session
         session.queue_declare(queue="xyz", exclusive=True, auto_delete=True)

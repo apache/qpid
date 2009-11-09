@@ -252,6 +252,7 @@ void UpdateClient::updateQueue(client::AsyncSession& s, const boost::shared_ptr<
     MessageUpdater updater(q->getName(), s, expiry);
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
     q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, s, q->getName(), _1));
+    ClusterConnectionProxy(s).queuePosition(q->getName(), q->getPosition());
 }
 
 void UpdateClient::updateExclusiveQueue(const boost::shared_ptr<broker::Queue>& q) {

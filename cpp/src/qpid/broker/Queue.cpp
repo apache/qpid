@@ -217,7 +217,11 @@ void Queue::requeue(const QueuedMessage& msg){
         Mutex::ScopedLock locker(messageLock);
         if (!isEnqueued(msg)) return;
         msg.payload->enqueueComplete(); // mark the message as enqueued
-        messages.push_front(msg);
+        //put message back in correct position:
+        Messages::reverse_iterator i = messages.rbegin();
+        while (i != messages.rend() && msg.position < i->position) { ++i; }
+        messages.insert(i.base(), msg);
+
         listeners.populate(copy);
 
         // for persistLastNode - don't force a message twice to disk, but force it if no force before 
