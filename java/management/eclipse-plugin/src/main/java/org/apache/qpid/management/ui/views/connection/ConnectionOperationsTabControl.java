@@ -180,7 +180,7 @@ public class ConnectionOperationsTabControl extends TabControl
         {
             titles = new String[]{"Id", "Transactional", "Num Unacked Msg", "Default Queue"};
         }
-        int[] bounds = { 40, 110, 145, 200, 110 };
+        int[] bounds = { 50, 110, 145, 200, 110 };
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;

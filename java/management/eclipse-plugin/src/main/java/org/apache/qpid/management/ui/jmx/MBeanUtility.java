@@ -520,7 +520,7 @@ public class MBeanUtility
      * @throws IOException 
      */
     public static void classifyManagementApiVersion(ManagedServer server, JMXServerRegistry serverRegistry) 
-         throws ManagementConsoleException, MalformedObjectNameException, NullPointerException, IOException
+         throws MalformedObjectNameException, NullPointerException, IOException
     {
         MBeanServerConnection mbsc = serverRegistry.getServerConnection();
         
@@ -570,11 +570,12 @@ public class MBeanUtility
                     serverRegistry.setManagementApiVersion(new ApiVersion(1, 1));
                 }
             }
-            
-            return;
         }
-        
-        throw new ManagementConsoleException("Unable to classify the server management API version");
+        else
+        {
+            //UserManagement MBean wasnt present, connected to an old server: classify as v1.0 API
+            serverRegistry.setManagementApiVersion(new ApiVersion(1, 0));
+        }
     }
     
     public static void printOutput(String statement)
