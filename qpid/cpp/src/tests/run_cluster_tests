@@ -19,21 +19,12 @@
 # under the License.
 #
 
-# Check that top_builddir and srcdir are set
-# If not, assume local run from test dir
-if [ -z ${top_builddir} -o -z ${srcdir} ]; then
-	srcdir=`dirname $0`
-	top_builddir=${srcdir}/../../
-fi
-TEST_DIR=${top_builddir}/src/tests
-. $srcdir/python_env.sh
+absdir() { echo `cd $1; pwd`; }
 
-if test -z $1; then
-	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.NewTests.*"
-else
-	CLUSTER_TEST="$PYTHON_COMMANDS/qpid-python-test -m cluster_tests cluster_tests.LongTests.\*"
-	echo "Running $1..."
-fi
+srcdir=$(absdir $(dirname $0))
+top_builddir=$(absdir ../..)
+
+. $srcdir/python_env.sh
 
 # Check AIS requirements
 . $srcdir/ais_check
@@ -65,29 +56,15 @@ if test ! -x ${top_builddir}/../python/commands/qpid-config; then
 	fi
 fi
 
+# Delete old cluster test data
+OUTDIR=brokertest.tmp
+rm -rf $OUTDIR
+mkdir -p $OUTDIR
 
-# Make sure temp dir exists if this is the first to use it
-TMP_DATA_DIR=${TEST_DIR}/test_tmp
-if ! test -d ${TMP_DATA_DIR} ; then
-   	mkdir -p ${TMP_DATA_DIR}/cluster
-else
-    # Delete old cluster test dirs
-    rm -rf ${TMP_DATA_DIR}/cluster
-    mkdir -p ${TMP_DATA_DIR}/cluster
-fi
-export TMP_DATA_DIR
-
+# FIXME aconway 2009-11-06: pass OUTDIR to test.
 
 # Run the test
-with_ais_group ${CLUSTER_TEST}
-RETCODE=$?
-
-if test x${RETCODE} != x0; then 
-    exit 1;
-fi
-
-
-# Delete cluster store dir if test was successful.
-rm -rf ${TMP_DATA_DIR}
-
-exit 0
+with_ais_group $PYTHON_COMMANDS/qpid-python-test -m cluster_tests
+## || exit 1
+#rm -rf $OUTDIR
+#exit 0
