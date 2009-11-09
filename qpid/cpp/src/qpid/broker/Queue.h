@@ -148,6 +148,8 @@ namespace qpid {
                     }
                 }
             }
+            
+            Messages::iterator findAt(framing::SequenceNumber pos);
 
         public:
 
@@ -221,6 +223,7 @@ namespace qpid {
             uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
 
             QPID_BROKER_EXTERN uint32_t getMessageCount() const;
+            QPID_BROKER_EXTERN uint32_t getEnqueueCompleteMessageCount() const;
             QPID_BROKER_EXTERN uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }
             bool isExclusiveOwner(const OwnershipToken* const o) const;

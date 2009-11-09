@@ -120,9 +120,10 @@ QPID_AUTO_TEST_CASE(testAsyncMessageCount){
     queue->process(msg1);
     sleep(2);
     uint32_t compval=0;
-    BOOST_CHECK_EQUAL(compval, queue->getMessageCount());
+    BOOST_CHECK_EQUAL(compval, queue->getEnqueueCompleteMessageCount());
     msg1->enqueueComplete();
     compval=1;
+    BOOST_CHECK_EQUAL(compval, queue->getEnqueueCompleteMessageCount());
     BOOST_CHECK_EQUAL(compval, queue->getMessageCount());
 }
 
