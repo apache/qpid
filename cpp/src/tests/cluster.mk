@@ -79,6 +79,6 @@ cluster_test_SOURCES =				\
 
 cluster_test_LDADD=$(lib_client) $(lib_broker) -lboost_unit_test_framework
 
-qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests long_cluster_tests.py testlib.py brokertest.py
+qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests long_cluster_tests.py testlib.py brokertest.py cluster_tests.fail
 
 endif
