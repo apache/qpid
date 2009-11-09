@@ -42,7 +42,7 @@ struct ConnectionSettings;
 class Sasl
 {
   public:
-    virtual std::string start(const std::string& mechanisms) = 0;
+    virtual std::string start(const std::string& mechanisms, unsigned int ssf) = 0;
     virtual std::string step(const std::string& challenge) = 0;
     virtual std::string getMechanism() = 0;
     virtual std::string getUserId() = 0;

@@ -33,10 +33,12 @@ class SecureConnectionFactory : public sys::ConnectionCodec::Factory
     SecureConnectionFactory(Broker& b);            
 
     sys::ConnectionCodec*
-    create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id);
+    create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id,
+           unsigned int conn_ssf);
 
     sys::ConnectionCodec*
-    create(sys::OutputControl&, const std::string& id);
+    create(sys::OutputControl&, const std::string& id,
+           unsigned int conn_ssf);
 
   private:
     Broker& broker;

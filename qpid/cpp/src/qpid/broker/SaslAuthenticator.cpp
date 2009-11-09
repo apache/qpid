@@ -48,8 +48,9 @@ class NullAuthenticator : public SaslAuthenticator
     Connection& connection;
     framing::AMQP_ClientProxy::Connection client;
     std::string realm;
+    const bool encrypt;
 public:
-    NullAuthenticator(Connection& connection, bool dummy=false/*dummy arg to match CyrusAuthenticator*/);
+    NullAuthenticator(Connection& connection, bool encrypt);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
     void start(const std::string& mechanism, const std::string& response);
@@ -130,12 +131,12 @@ std::auto_ptr<SaslAuthenticator> SaslAuthenticator::createAuthenticator(Connecti
     } else {
         QPID_LOG(debug, "SASL: No Authentication Performed");
         needWarning = false;
-        return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c));
+        return std::auto_ptr<SaslAuthenticator>(new NullAuthenticator(c, c.getBroker().getOptions().requireEncrypted));
     }
 }
 
-  NullAuthenticator::NullAuthenticator(Connection& c, bool /*dummy*/) : connection(c), client(c.getOutput()), 
-                                                      realm(c.getBroker().getOptions().realm) {}
+NullAuthenticator::NullAuthenticator(Connection& c, bool e) : connection(c), client(c.getOutput()), 
+                                                              realm(c.getBroker().getOptions().realm), encrypt(e) {}
 NullAuthenticator::~NullAuthenticator() {}
 
 void NullAuthenticator::getMechanisms(Array& mechanisms)
@@ -146,6 +147,10 @@ void NullAuthenticator::getMechanisms(Array& mechanisms)
 
 void NullAuthenticator::start(const string& mechanism, const string& response)
 {
+    if (encrypt) {
+        QPID_LOG(error, "Rejected un-encrypted connection.");
+        throw ConnectionForcedException("Connection must be encrypted.");
+    }
     if (mechanism == "PLAIN") { // Old behavior
         if (response.size() > 0) {
             string uid;
@@ -227,10 +232,24 @@ void CyrusAuthenticator::init()
     //TODO: should the actual SSF values be configurable here?
     secprops.min_ssf = encrypt ? 10: 0;
     secprops.max_ssf = 256;
-    secprops.maxbufsize = 65535;
 
-    QPID_LOG(debug, "min_ssf: " << secprops.min_ssf << ", max_ssf: " << secprops.max_ssf);
-    
+    // If the transport provides encryption, notify the SASL library of
+    // the key length and set the ssf range to prevent double encryption.
+    sasl_ssf_t external_ssf = (sasl_ssf_t) connection.getSSF();
+    if (external_ssf) {
+        int result = sasl_setprop(sasl_conn, SASL_SSF_EXTERNAL, &external_ssf);
+        if (result != SASL_OK) {
+            throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external SSF: " << result));
+        }
+
+        secprops.max_ssf = secprops.min_ssf = 0;
+    }
+
+    QPID_LOG(debug, "min_ssf: " << secprops.min_ssf <<
+             ", max_ssf: " << secprops.max_ssf <<
+             ", external_ssf: " << external_ssf );
+
+    secprops.maxbufsize = 65535;
     secprops.property_names = 0;
     secprops.property_values = 0;
     secprops.security_flags = 0; /* or SASL_SEC_NOANONYMOUS etc as appropriate */

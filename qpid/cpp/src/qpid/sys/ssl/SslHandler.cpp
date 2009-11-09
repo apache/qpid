@@ -111,7 +111,7 @@ void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
             decoded = in.getPosition();
             QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
             try {
-                codec = factory->create(protocolInit.getVersion(), *this, identifier);
+                codec = factory->create(protocolInit.getVersion(), *this, identifier, aio->getKeyLen());
                 if (!codec) {
                     //TODO: may still want to revise this...
                     //send valid version header & close connection.
@@ -166,7 +166,7 @@ void SslHandler::nobuffs(SslIO&) {
 
 void SslHandler::idle(SslIO&){
     if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier);
+        codec = factory->create(*this, identifier, aio->getKeyLen());
         write(framing::ProtocolInitiation(codec->getVersion()));
         return;
     }

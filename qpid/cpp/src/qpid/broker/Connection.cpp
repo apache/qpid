@@ -71,8 +71,9 @@ struct ConnectionTimeoutTask : public sys::TimerTask {
     }
 };
 
-Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, bool isLink_, uint64_t objectId) :
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId_, unsigned int ssf, bool isLink_, uint64_t objectId) :
     ConnectionState(out_, broker_),
+    ssf(ssf),
     adapter(*this, isLink_),
     isLink(isLink_),
     mgmtClosing(false),

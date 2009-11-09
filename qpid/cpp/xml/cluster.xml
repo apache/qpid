@@ -81,7 +81,12 @@
   <class name="cluster-connection" code="0x81" label="Qpid clustering extensions.">
 
     <!-- Announce a new connection -->
-    <control name="announce" code="0x1"/>
+    <control name="announce" code="0x1">
+      <!-- Security Strength Factor (ssf): if the transport provides
+      encryption (e.g. ssl), ssf is the bit length of the key.  Zero if no
+      encryption provided. -->
+      <field name="ssf" type="uint32"/>
+    </control>
 
     <!-- Marks the cluster-wide point when a connection is considered closed. -->
     <control name="deliver-close" code="0x2"/>

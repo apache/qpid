@@ -74,6 +74,8 @@ class Connector : public framing::OutputHandler
 
     virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
 
+    virtual unsigned int getSSF() = 0;
+
 };
 
 }}

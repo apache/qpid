@@ -436,3 +436,4 @@ void SslIO::close(DispatchHandle& h) {
     }
 }
 
+int SslIO::getKeyLen() {return socket.getKeyLen();}

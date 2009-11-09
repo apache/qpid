@@ -121,6 +121,7 @@ public:
     typedef boost::function1<void, SslIO&> BuffersEmptyCallback;
     typedef boost::function1<void, SslIO&> IdleCallback;
 
+
 private:
     ReadCallback readCallback;
     EofCallback eofCallback;
@@ -154,6 +155,8 @@ public:
     void queueWriteClose();
     bool writeQueueEmpty() { return writeQueue.empty(); }
     BufferBase* getQueuedBuffer();
+
+    int getKeyLen();
 
 private:
     ~SslIO();

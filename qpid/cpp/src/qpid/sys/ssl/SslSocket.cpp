@@ -274,4 +274,24 @@ void SslSocket::setTcpNoDelay(bool nodelay) const
     }
 }
 
+
+/** get the bit length of the current cipher's key */
+int SslSocket::getKeyLen() const
+{
+    int enabled = 0;
+    int keySize = 0;
+    SECStatus   rc;
+
+    rc = SSL_SecurityStatus( socket,
+                             &enabled,
+                             NULL,
+                             NULL,
+                             &keySize,
+                             NULL, NULL );
+    if (rc == SECSuccess && enabled) {
+        return keySize;
+    }
+    return 0;
+}
+
 }}} // namespace qpid::sys::ssl

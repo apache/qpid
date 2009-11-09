@@ -212,7 +212,8 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
     }
 
     if (sasl.get()) {
-        string response = sasl->start(mechanism.empty() ? mechlist : mechanism);
+        string response = sasl->start(mechanism.empty() ? mechlist : mechanism,
+                                      getSSF ? getSSF() : 0);
         proxy.startOk(properties, sasl->getMechanism(), response, locale);
     } else {
         //TODO: verify that desired mechanism and locale are supported

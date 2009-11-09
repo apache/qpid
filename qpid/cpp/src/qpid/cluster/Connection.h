@@ -63,10 +63,13 @@ class Connection :
         
 {
   public:
+    
     /** Local connection. */
-    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, MemberId, bool catchUp, bool isLink);
+    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, MemberId, bool catchUp, bool isLink,
+               unsigned int ssf);
     /** Shadow connection. */
-    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, const ConnectionId& id);
+    Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& logId, const ConnectionId& id,
+               unsigned int ssf);
     ~Connection();
     
     ConnectionId getId() const { return self; }
@@ -155,7 +158,7 @@ class Connection :
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
-    void announce() {}          // handled by Cluster.
+    void announce(uint32_t) {}  // handled by Cluster.
     void abort();
     void deliverClose();
 

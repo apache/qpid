@@ -36,11 +36,12 @@ typedef std::auto_ptr<sys::ConnectionInputHandler> InputPtr;
 SecureConnectionFactory::SecureConnectionFactory(Broker& b) : broker(b) {}
 
 sys::ConnectionCodec*
-SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
+SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
+                                unsigned int conn_ssf ) {
     if (v == ProtocolVersion(0, 10)) {
         SecureConnectionPtr sc(new SecureConnection());
         CodecPtr c(new amqp_0_10::Connection(out, id, false));
-        ConnectionPtr i(new broker::Connection(c.get(), broker, id, false));
+        ConnectionPtr i(new broker::Connection(c.get(), broker, id, conn_ssf, false));
         i->setSecureConnection(sc.get());
         c->setInputHandler(InputPtr(i.release()));
         sc->setCodec(std::auto_ptr<sys::ConnectionCodec>(c));
@@ -50,11 +51,12 @@ SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, cons
 }
 
 sys::ConnectionCodec*
-SecureConnectionFactory::create(sys::OutputControl& out, const std::string& id) {
+SecureConnectionFactory::create(sys::OutputControl& out, const std::string& id,
+                                unsigned int conn_ssf) {
     // used to create connections from one broker to another
     SecureConnectionPtr sc(new SecureConnection());
     CodecPtr c(new amqp_0_10::Connection(out, id, true));
-    ConnectionPtr i(new broker::Connection(c.get(), broker, id, true));
+    ConnectionPtr i(new broker::Connection(c.get(), broker, id, conn_ssf, true ));
     i->setSecureConnection(sc.get());
     c->setInputHandler(InputPtr(i.release()));
     sc->setCodec(std::auto_ptr<sys::ConnectionCodec>(c));

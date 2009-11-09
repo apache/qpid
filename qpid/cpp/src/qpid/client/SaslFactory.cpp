@@ -80,7 +80,7 @@ class CyrusSasl : public Sasl
   public:
     CyrusSasl(const ConnectionSettings&);
     ~CyrusSasl();
-    std::string start(const std::string& mechanisms);
+    std::string start(const std::string& mechanisms, unsigned int ssf);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -176,7 +176,7 @@ namespace {
     const std::string SSL("ssl");
 }
 
-std::string CyrusSasl::start(const std::string& mechanisms)
+std::string CyrusSasl::start(const std::string& mechanisms, unsigned int ssf)
 {
     QPID_LOG(debug, "CyrusSasl::start(" << mechanisms << ")");
     int result = sasl_client_new(settings.service.c_str(),
@@ -189,7 +189,18 @@ std::string CyrusSasl::start(const std::string& mechanisms)
     if (result != SASL_OK) throw InternalErrorException(QPID_MSG("Sasl error: " << sasl_errdetail(conn)));
 
     sasl_security_properties_t secprops;
-    
+
+    if (ssf) {
+        sasl_ssf_t external_ssf = (sasl_ssf_t) ssf;
+        if (external_ssf) {
+            int result = sasl_setprop(conn, SASL_SSF_EXTERNAL, &external_ssf);
+            if (result != SASL_OK) {
+                throw framing::InternalErrorException(QPID_MSG("SASL error: unable to set external SSF: " << result));
+            }
+            QPID_LOG(debug, "external SSF detected and set to " << ssf);
+        }
+    }
+
     secprops.min_ssf = settings.minSsf;
     secprops.max_ssf = settings.maxSsf;
     secprops.maxbufsize = 65535;

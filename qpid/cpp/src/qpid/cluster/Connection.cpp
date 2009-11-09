@@ -72,9 +72,10 @@ const std::string shadowPrefix("[shadow]");
 
 
 // Shadow connection
-Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out, const std::string& logId, const ConnectionId& id)
+    Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out, const std::string& logId,
+                           const ConnectionId& id, unsigned int ssf)
     : cluster(c), self(id), catchUp(false), output(*this, out),
-      connection(&output, cluster.getBroker(), shadowPrefix+logId), expectProtocolHeader(false),
+      connection(&output, cluster.getBroker(), shadowPrefix+logId, ssf), expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
       consumerNumbering(c.getUpdateReceiver().consumerNumbering)
 { init(); }
@@ -82,10 +83,11 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out, const std:
 // Local connection
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& logId, MemberId member,
-                       bool isCatchUp, bool isLink
+                       bool isCatchUp, bool isLink, unsigned int ssf
 ) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), output(*this, out),
     connection(&output, cluster.getBroker(),
                isCatchUp ? shadowPrefix+logId : logId,
+               ssf,
                isLink,
                isCatchUp ? ++catchUpId : 0),
     expectProtocolHeader(isLink), mcastFrameHandler(cluster.getMulticast(), self),
