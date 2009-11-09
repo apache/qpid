@@ -23,6 +23,7 @@ from threading import Thread
 from brokertest import *
 from qpid import datatypes, messaging
 from qpid.harness import Skipped
+from qpid.messaging import Message
 
 
 class ClusterTests(BrokerTest):
@@ -47,7 +48,7 @@ class ClusterTests(BrokerTest):
         # Start member 2 and verify messages available.
         s2 = cluster.start().connect().session()
         m = s2.receiver("q", capacity=1).fetch(timeout=1)
-        s1.acknowledge()
+        s2.acknowledge()
         self.assertEqual("y", m.content)
         s2.connection.close()
 
@@ -55,7 +56,6 @@ class ClusterTests(BrokerTest):
         """Test fail-over during continuous send-receive"""
         # FIXME aconway 2009-11-09: this test is failing, showing lost messages.
         # Enable when fixed
-        return                          # FIXME should be raise Skipped or negative test?
 
         # Original cluster will all be killed so expect exit with failure
         cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL)
@@ -75,3 +75,46 @@ class ClusterTests(BrokerTest):
 
         self.sender.stop()
         self.receiver.stop(self.sender.sent)
+
+
+class ClusterStoreTests(BrokerTest):
+    """
+    Cluster tests that can only be run if there is a store available.
+    """
+    args = ["--load-module",BrokerTest.store_lib]
+
+    def test_store_loaded(self):
+        """Ensure we are indeed loading a working store"""
+        broker = self.broker(self.args, name="recoverme", expect=EXPECT_EXIT_FAIL)
+        m = messaging.Message("x", durable=True)
+        broker.send_message("q", m)
+        broker.kill()
+        broker = self.broker(self.args, name="recoverme")
+        self.assertEqual("x", broker.get_message("q").content)
+
+    def test_kill_restart(self):
+        """Verify we can kill/resetart a broker with store in a cluster"""
+        cluster = self.cluster(1, self.args)
+        cluster.start("restartme", expect=EXPECT_EXIT_FAIL).kill()
+
+        # Send a message, retrieve from the restarted broker
+        cluster[0].send_message("q", "x")
+        m = cluster.start("restartme").get_message("q")
+        self.assertEqual("x", m.content)
+
+    def test_total_shutdown(self):
+        """Test we use the correct store to recover after total shutdown"""
+        cluster = self.cluster(2, args=self.args, expect=EXPECT_EXIT_FAIL)
+        cluster[0].send_message("q", Message("a", durable=True))
+        cluster[0].kill()
+        self.assertEqual("a", cluster[1].get_message("q").content)
+        cluster[1].send_message("q", Message("b", durable=True))
+        cluster[1].kill()
+
+        # Start 1 first, we should see its store used.
+        cluster.start(name=cluster.name+"-1")
+        cluster.start(name=cluster.name+"-0")
+        self.assertEqual("b", cluster[2].get_message("q").content)
+
+        
+    

@@ -23,6 +23,7 @@
 import os, signal, string, tempfile, popen2, socket, threading, time
 import qpid
 from qpid import connection, messaging, util
+from qpid.compat import format_exc
 from qpid.harness import Skipped
 from unittest import TestCase
 from copy import copy
@@ -141,7 +142,7 @@ class Broker(Popen):
         Popen.__init__(self, cmd, expect)
         try: self.port = int(self.stdout.readline())
         except Exception:
-            raise Exception("Failed to start broker: "+self.cmd_str())
+            raise Exception("Failed to start broker, log: "+self.log)
         test.cleanup_popen(self)
         self.host = "localhost"         # Placeholder for remote brokers.
 
@@ -161,6 +162,18 @@ class Broker(Popen):
         s = c.session(str(qpid.datatypes.uuid4()))
         s.queue_declare(queue=queue)
         c.close()
+
+    def send_message(self, queue, message):
+        s = self.connect().session()
+        s.sender(queue+" {create:always}").send(message)
+        s.connection.close()
+
+    def get_message(self, queue):
+        s = self.connect().session()
+        m = s.receiver(queue+" {create:always}", capacity=1).fetch(timeout=1)
+        s.acknowledge()
+        s.connection.close()
+        return m
 
 class Cluster:
     """A cluster of brokers in a test."""
@@ -213,9 +226,12 @@ class BrokerTest(TestCase):
     qpidRoute_exec = os.getenv("QPID_ROUTE_EXEC")
     receiver_exec = os.getenv("RECEIVER_EXEC")
     sender_exec = os.getenv("SENDER_EXEC")
+    store_lib = os.getenv("STORE_LIB")
 
+    def configure(self, config): self.config=config
+    
     def setUp(self):
-        self.dir = os.path.join("brokertest.tmp", self.id())
+        self.dir = os.path.join(self.config.defines["OUTDIR"], self.id())
         os.makedirs(self.dir)
         self.popens = []
 
@@ -282,7 +298,7 @@ class Sender(StoppableThread):
                 self.sender.stdin.write(str(self.sent)+"\n")
                 self.sender.stdin.flush()
                 self.sent += 1
-        except Exception, e: self.error = e
+        except Exception, e: self.error = RethrownException(e)
 
 class Receiver(Thread):
     """
@@ -309,7 +325,7 @@ class Receiver(Thread):
                 finally:
                     self.lock.release()
         except Exception, e:
-            self.error = e
+            self.error = RethrownException(e)
 
     def stop(self, count):
         """Returns when received >= count"""
@@ -319,3 +335,7 @@ class Receiver(Thread):
         self.join()
         if self.error: raise self.error
 
+class RethrownException(Exception):
+    """Captures the original stack trace to be thrown later""" 
+    def __init__(self, e):
+        Exception.__init__(self, format_exc())

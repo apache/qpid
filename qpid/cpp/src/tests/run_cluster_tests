@@ -20,24 +20,11 @@
 #
 
 absdir() { echo `cd $1; pwd`; }
-
 srcdir=$(absdir $(dirname $0))
 top_builddir=$(absdir ../..)
 
 . $srcdir/python_env.sh
-
-# Check AIS requirements
-. $srcdir/ais_check
-
-# Check XML exchange requirements
-XML_LIB=$srcdir/../.libs/xml.so
-if [ -f ${XML_LIB} ]; then
-	export XML_LIB
-fi
-
-
-# Set up environment for python tests
-export PYTHONPATH=${srcdir}:${PYTHON_DIR}
+export PYTHONPATH=${srcdir}:${PYTHONPATH}
 export QPIDD_EXEC=${top_builddir}/src/qpidd
 export CLUSTER_LIB=${top_builddir}/src/.libs/cluster.so
 export QPID_CONFIG_EXEC=${srcdir}/../../../python/commands/qpid-config
@@ -45,26 +32,21 @@ export QPID_ROUTE_EXEC=${srcdir}/../../../python/commands/qpid-route
 export RECEIVER_EXEC=${top_builddir}/src/tests/receiver
 export SENDER_EXEC=${top_builddir}/src/tests/sender
 
+# Check XML exchange requirements
+XML_LIB=$srcdir/../.libs/xml.so
+test -f ${XML_LIB} && export XML_LIB
 
-# Check for existence of qpid tools (either in svn tree or full install)
-# This prevents make dist / make distcheck from failing without python tools being present
-if test ! -x ${top_builddir}/../python/commands/qpid-config; then
-	path=`which qpid-config`
-	if test $?; then
-		echo "WARNING: qpid tools not found, skipping test ${CLUSTER_TEST}" 
-		exit 0
-	fi
-fi
+# Check AIS requirements
+. $srcdir/ais_check
 
 # Delete old cluster test data
 OUTDIR=brokertest.tmp
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
 
-# FIXME aconway 2009-11-06: pass OUTDIR to test.
+# Ignore tests requiring a store by default. 
+TESTS="-i cluster_tests.ClusterStoreTests.* -I $srcdir/cluster_tests.fail"
 
-# Run the test
-with_ais_group $PYTHON_COMMANDS/qpid-python-test -m cluster_tests
-## || exit 1
-#rm -rf $OUTDIR
+with_ais_group $PYTHON_COMMANDS/qpid-python-test -DOUTDIR=$OUTDIR -m cluster_tests $TESTS || exit 1
+rm -rf $OUTDIR
 #exit 0
