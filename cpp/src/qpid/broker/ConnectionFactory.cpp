@@ -35,7 +35,8 @@ ConnectionFactory::ConnectionFactory(Broker& b) : broker(b) {}
 ConnectionFactory::~ConnectionFactory() {}
 
 sys::ConnectionCodec*
-ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id) {
+ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
+                          unsigned int ) {
     if (v == ProtocolVersion(0, 10)) {
         ConnectionPtr c(new amqp_0_10::Connection(out, id, false));
         c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, false)));
@@ -45,7 +46,8 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
 }
 
 sys::ConnectionCodec*
-ConnectionFactory::create(sys::OutputControl& out, const std::string& id) {
+ConnectionFactory::create(sys::OutputControl& out, const std::string& id,
+                          unsigned int) {
     // used to create connections from one broker to another
     ConnectionPtr c(new amqp_0_10::Connection(out, id, true));
     c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, true)));

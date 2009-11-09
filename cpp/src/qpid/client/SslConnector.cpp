@@ -135,6 +135,7 @@ public:
     SslConnector(framing::ProtocolVersion pVersion,
               const ConnectionSettings&, 
               ConnectionImpl*);
+    unsigned int getSSF() { return socket.getKeyLen(); }
 };
 
 // Static constructor which registers connector here

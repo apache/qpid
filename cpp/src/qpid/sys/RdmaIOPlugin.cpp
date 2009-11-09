@@ -139,7 +139,7 @@ void RdmaIOHandler::initProtocolOut() {
     // but we must be able to send
     assert( codec == 0 );
     assert( aio->writable() && aio->bufferAvailable() );
-    codec = factory->create(*this, identifier);
+    codec = factory->create(*this, identifier, 0);
     write(framing::ProtocolInitiation(codec->getVersion()));
 }
 
@@ -186,7 +186,7 @@ void RdmaIOHandler::initProtocolIn(Rdma::Buffer* buff) {
         decoded = in.getPosition();
         QPID_LOG(debug, "Rdma: RECV [" << identifier << "] INIT(" << protocolInit << ")");
 
-        codec = factory->create(protocolInit.getVersion(), *this, identifier);
+        codec = factory->create(protocolInit.getVersion(), *this, identifier, 0);
 
         // If we failed to create the codec then we don't understand the offered protocol version
         if (!codec) {

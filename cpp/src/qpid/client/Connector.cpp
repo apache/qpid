@@ -148,6 +148,7 @@ public:
     TCPConnector(framing::ProtocolVersion pVersion,
               const ConnectionSettings&, 
               ConnectionImpl*);
+    unsigned int getSSF() { return 0; }
 };
 
 // Static constructor which registers connector here

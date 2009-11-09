@@ -144,7 +144,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
             decoded = in.getPosition();
             QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
             try {
-                codec = factory->create(protocolInit.getVersion(), *this, identifier);
+                codec = factory->create(protocolInit.getVersion(), *this, identifier, 0);
                 if (!codec) {
                     //TODO: may still want to revise this...
                     //send valid version header & close connection.
@@ -200,7 +200,7 @@ void AsynchIOHandler::nobuffs(AsynchIO&) {
 
 void AsynchIOHandler::idle(AsynchIO&){
     if (isClient && codec == 0) {
-        codec = factory->create(*this, identifier);
+        codec = factory->create(*this, identifier, 0);
         write(framing::ProtocolInitiation(codec->getVersion()));
         return;
     }

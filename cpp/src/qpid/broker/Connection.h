@@ -78,7 +78,8 @@ class Connection : public sys::ConnectionInputHandler,
         virtual void connectionError(const std::string&) = 0;
     };
 
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, bool isLink = false, uint64_t objectId = 0);
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId, unsigned int ssf,
+               bool isLink = false, uint64_t objectId = 0);
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
@@ -138,11 +139,14 @@ class Connection : public sys::ConnectionInputHandler,
     // Used by cluster to update connection status
     sys::AggregateOutput& getOutputTasks() { return outputTasks; }
 
+    unsigned int getSSF() { return ssf; }
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     ChannelMap channels;
+    unsigned int ssf;
     ConnectionHandler adapter;
     const bool isLink;
     bool mgmtClosing;

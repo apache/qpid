@@ -100,6 +100,8 @@ public:
      */
     int getError() const;
 
+    int getKeyLen() const;
+
 private:
     mutable std::string connectname;
     mutable PRFileDesc* socket;

@@ -52,12 +52,15 @@ class ConnectionCodec : public sys::ConnectionCodec {
         Cluster& cluster;
         Factory(boost::shared_ptr<sys::ConnectionCodec::Factory> f, Cluster& c)
             : next(f), cluster(c) {}
-        sys::ConnectionCodec* create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id);
-        sys::ConnectionCodec* create(sys::OutputControl&, const std::string& id);
+        sys::ConnectionCodec* create(framing::ProtocolVersion, sys::OutputControl&, const std::string& id,
+                                     unsigned int conn_ssf);
+        sys::ConnectionCodec* create(sys::OutputControl&, const std::string& id,
+                                     unsigned int conn_ssf);
     };
 
     ConnectionCodec(const framing::ProtocolVersion&, sys::OutputControl& out,
-                    const std::string& logId, Cluster& c, bool catchUp, bool isLink);
+                    const std::string& logId, Cluster& c, bool catchUp, bool isLink,
+                    unsigned int ssf);
     ~ConnectionCodec();
 
     // ConnectionCodec functions.
