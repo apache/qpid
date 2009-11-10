@@ -19,11 +19,11 @@
 #
 
 import os, signal, sys, time
-from threading import Thread
-from brokertest import *
 from qpid import datatypes, messaging
+from qpid.brokertest import *
 from qpid.harness import Skipped
 from qpid.messaging import Message
+from threading import Thread
 
 
 class ClusterTests(BrokerTest):
