@@ -865,6 +865,7 @@ module Qmf
       @sync_count = nil
       @sync_result = nil
       @select = []
+      @bt_count = 0
       @cb_cond = new_cond
       @cb_thread = Thread.new do
         run_cb_thread
@@ -1061,8 +1062,12 @@ module Qmf
             @handler.agent_heartbeat(AgentProxy.new(@event.agent, nil), @event.timestamp) if @handler
           when Qmfengine::ConsoleEvent::METHOD_RESPONSE
           end
-        rescue
-          puts "Exception caught in callback thread: #{$!}"
+        rescue Exception => ex
+          puts "Exception caught in callback: #{ex}"
+          if @bt_count < 2
+            puts ex.backtrace
+            @bt_count += 1
+          end
         end
         @impl.popEvent
         valid = @impl.getEvent(@event)
