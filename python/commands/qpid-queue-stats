@@ -79,7 +79,7 @@ class BrokerManager(Console):
 
     if len(self.filter) > 0 :
       match = False
-                    
+
       for x in self.filter:
         if x.match(name):                 
           match = True
@@ -103,12 +103,14 @@ class BrokerManager(Console):
         (deltaTime / 1000000000.0)
     print "%-41s%10.2f%11d%13.2f%13.2f" % \
         (name, deltaTime / 1000000000, record.msgDepth, enqueueRate, dequeueRate)
+    sys.stdout.flush()
 
 
   def Display (self):
     self.session.bindClass("org.apache.qpid.broker", "queue")
     print "Queue Name                                     Sec       Depth     Enq Rate     Deq Rate"
     print "========================================================================================"
+    sys.stdout.flush()
     try:
       while True:
         sleep (1)
