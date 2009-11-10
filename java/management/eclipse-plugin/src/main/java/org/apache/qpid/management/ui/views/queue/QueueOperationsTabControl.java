@@ -399,6 +399,35 @@ public class QueueOperationsTabControl extends TabControl
             }
         });
         
+        if(_ApiVersion.lessThan(1, 3)) //if the server predates Qpid JMX API 1.3
+        {
+            final Button deleteFirstMessageButton = _toolkit.createButton(buttonsComposite, "Delete 1st Unacquired Msg", SWT.PUSH);
+            deleteFirstMessageButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            deleteFirstMessageButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent se)
+                {
+                    int response = ViewUtility.popupOkCancelConfirmationMessage("Delete 1st unacquired message", 
+                                                                                "Delete 1st unacquired message on the queue?");
+                    if (response == SWT.OK)
+                    {
+                        try
+                        {
+                            _qmb.deleteMessageFromTop();
+                            ViewUtility.operationResultFeedback(null, "Deleted 1st unacquired message on the queue", null);
+                        }
+                        catch (Exception e)
+                        {
+                            ViewUtility.operationFailedStatusBarMessage("Error deleting 1st unacquired message on queue");
+                            MBeanUtility.handleException(_mbean, e);
+                        }
+
+                        refresh(_mbean);;
+                    }
+                }
+            });
+        }
+        
         final Button copyMessagesButton;
         if(_ApiVersion.greaterThanOrEqualTo(1, 3))//if the server supports Qpid JMX API 1.3
         {
