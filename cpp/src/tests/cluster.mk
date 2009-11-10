@@ -57,7 +57,8 @@ EXTRA_DIST +=					\
 	testlib.py				\
 	brokertest.py				\
 	cluster_tests.py			\
-	long_cluster_tests.py
+	long_cluster_tests.py			\
+	cluster_tests.fail
 
 LONG_TESTS +=					\
 	run_long_cluster_tests			\
