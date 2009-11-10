@@ -280,6 +280,58 @@ QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 
 }
 
+
+QPID_AUTO_TEST_CASE(testSeek){
+
+	Queue::shared_ptr queue(new Queue("my-queue", true));
+
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
+
+	//enqueue 2 messages
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+    queue->deliver(msg3);
+
+    TestConsumer::shared_ptr consumer(new TestConsumer(false));
+    SequenceNumber seq(2);
+    consumer->position = seq;
+
+    QueuedMessage qm;
+    queue->dispatch(consumer);
+    
+    BOOST_CHECK_EQUAL(msg3.get(), consumer->last.get());
+    queue->dispatch(consumer);
+    queue->dispatch(consumer); // make sure over-run is safe
+ 
+}
+
+QPID_AUTO_TEST_CASE(testSearch){
+
+	Queue::shared_ptr queue(new Queue("my-queue", true));
+
+    intrusive_ptr<Message> msg1 = create_message("e", "A");
+    intrusive_ptr<Message> msg2 = create_message("e", "B");
+    intrusive_ptr<Message> msg3 = create_message("e", "C");
+
+	//enqueue 2 messages
+    queue->deliver(msg1);
+    queue->deliver(msg2);
+    queue->deliver(msg3);
+
+    SequenceNumber seq(2);
+    QueuedMessage qm = queue->find(seq);
+    
+    BOOST_CHECK_EQUAL(seq.getValue(), qm.position.getValue());
+    
+    queue->acquire(qm);
+    BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
+    SequenceNumber seq1(3);
+    QueuedMessage qm1 = queue->find(seq1);
+    BOOST_CHECK_EQUAL(seq1.getValue(), qm1.position.getValue());
+    
+}
 const std::string nullxid = "";
 
 class SimpleDummyCtxt : public TransactionContext {};
