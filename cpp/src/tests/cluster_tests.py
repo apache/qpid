@@ -53,28 +53,42 @@ class ClusterTests(BrokerTest):
         s2.connection.close()
 
     def test_failover(self):
-        """Test fail-over during continuous send-receive"""
-        # FIXME aconway 2009-11-09: this test is failing, showing lost messages.
-        # Enable when fixed
+        """Test fail-over during continuous send-receive with errors"""
 
         # Original cluster will all be killed so expect exit with failure
         cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL)
 
+
         # Start sender and receiver threads
         cluster[0].declare_queue("test-queue")
-        self.receiver = Receiver(cluster[1])
-        self.receiver.start()
-        self.sender = Sender(cluster[2])
-        self.sender.start()
+        receiver = NumberedReceiver(cluster[1])
+        receiver.start()
+        sender = NumberedSender(cluster[2])
+        sender.start()
 
         # Kill original brokers, start new ones.
         for i in range(3):
             cluster[i].kill()
-            cluster.start()
+            b = cluster.start()
             time.sleep(1)
 
-        self.sender.stop()
-        self.receiver.stop(self.sender.sent)
+        sender.stop()
+        receiver.stop(sender.sent)
+
+    def send_receive_verify(self, b1, b2, queue, msgs):
+        b1.send_messages(queue, msgs)
+        self.assertEqual(msgs, [ m.content for m in b2.get_messages(queue,len(msgs))])
+        
+    def test_error_storm(self):
+        """Verify cluster behaves with clients generating a lot of errors."""
+        cluster = self.cluster(3)
+        errgen = [ ErrorGenerator(b) for b in cluster ]
+        msgs = [ str(i) for i in range(10) ]
+        self.send_receive_verify(cluster[0], cluster[1], "q", msgs)
+        self.send_receive_verify(cluster[1], cluster[2], "q", msgs)
+        for i in range(3):
+            cluster.start()
+            self.send_receive_verify(cluster[1], cluster[2], "q", msgs)
 
 
 class ClusterStoreTests(BrokerTest):

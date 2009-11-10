@@ -45,7 +45,7 @@ rm -rf $OUTDIR
 mkdir -p $OUTDIR
 
 # Ignore tests requiring a store by default. 
-TESTS="-i cluster_tests.ClusterStoreTests.* -I $srcdir/cluster_tests.fail"
+TESTS="-i cluster_tests.ClusterStoreTests.* -I $srcdir/cluster_tests.fail $*"
 
 with_ais_group $PYTHON_COMMANDS/qpid-python-test -DOUTDIR=$OUTDIR -m cluster_tests $TESTS || exit 1
 rm -rf $OUTDIR
