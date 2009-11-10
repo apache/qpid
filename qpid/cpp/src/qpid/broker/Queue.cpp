@@ -429,6 +429,7 @@ bool Queue::dispatch(Consumer::shared_ptr c)
     }
 }
 
+// Find the next message 
 bool Queue::seek(QueuedMessage& msg, Consumer::shared_ptr c) {
     Mutex::ScopedLock locker(messageLock);
     if (!messages.empty() && messages.back().position > c->position) {
@@ -436,13 +437,11 @@ bool Queue::seek(QueuedMessage& msg, Consumer::shared_ptr c) {
             msg = getFront();
             return true;
         } else {        
-            //TODO: can improve performance of this search, for now just searching linearly from end
-            Messages::reverse_iterator pos;
-            for (Messages::reverse_iterator i = messages.rbegin(); i != messages.rend() && i->position > c->position; i++) {
-                pos = i;
+            Messages::iterator pos = findAt(c->position);
+            if (pos != messages.end() && pos+1 != messages.end()) {
+                msg = *(pos+1);
+                return true;
             }
-            msg = *pos;
-            return true;
         }
     }
     listeners.addListener(c);
