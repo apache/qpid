@@ -17,12 +17,19 @@
 # under the License.
 #
 
-class Test:
+from qpid.tests import Test
+from qpid.address import parse
 
-  def __init__(self, name):
-    self.name = name
+class AddressTests(Test):
 
-  def configure(self, config):
-    self.config = config
+  def testHash(self):
+    name, subject, options = parse("foo/bar.#")
+    assert name == "foo", name
+    assert subject == "bar.#", bar
+    assert options == None
 
-import address, framing, messaging
+  def testStar(self):
+    name, subject, options = parse("foo/bar.*")
+    assert name == "foo", name
+    assert subject == "bar.*", bar
+    assert options == None
