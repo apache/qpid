@@ -383,22 +383,6 @@ public class QueueOperationsTabControl extends TabControl
             }
         });
         
-        final Button moveMessagesButton = _toolkit.createButton(buttonsComposite, "Move Message(s) ...", SWT.PUSH);
-        moveMessagesButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
-        moveMessagesButton.setEnabled(false);
-        moveMessagesButton.addSelectionListener(new SelectionAdapter()
-        {
-            public void widgetSelected(SelectionEvent e)
-            {
-                if (_table.getSelectionIndex() == -1)
-                {
-                    return;
-                }
-                
-                moveOrCopyMessages(moveMessagesButton.getShell(), QueueOperations.MOVE);
-            }
-        });
-        
         if(_ApiVersion.lessThan(1, 3)) //if the server predates Qpid JMX API 1.3
         {
             final Button deleteFirstMessageButton = _toolkit.createButton(buttonsComposite, "Delete 1st Unacquired Msg", SWT.PUSH);
@@ -426,6 +410,35 @@ public class QueueOperationsTabControl extends TabControl
                     }
                 }
             });
+        }
+        
+        final Button moveMessagesButton;
+        if(_ApiVersion.greaterThanOrEqualTo(1, 3)) 
+        {
+            //If the server supports Qpid JMX API 1.3, show the move message button.
+            //This is being disabled for earlier brokers due to bugs affecting the result appearance
+            //and impacting on the ability of the source queues to deliver further messages.
+            
+            moveMessagesButton = _toolkit.createButton(buttonsComposite, "Move Message(s) ...", SWT.PUSH);
+
+            moveMessagesButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+            moveMessagesButton.setEnabled(false);
+            moveMessagesButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    if (_table.getSelectionIndex() == -1)
+                    {
+                        return;
+                    }
+
+                    moveOrCopyMessages(moveMessagesButton.getShell(), QueueOperations.MOVE);
+                }
+            });
+        }
+        else
+        {
+            moveMessagesButton = null;
         }
         
         final Button copyMessagesButton;
@@ -570,7 +583,10 @@ public class QueueOperationsTabControl extends TabControl
                     headerText.setText("Select a message to view its header.");
                     redeliveredText.setText("-");
                     viewSelectedMsgButton.setEnabled(false);
-                    moveMessagesButton.setEnabled(false);
+                    if(moveMessagesButton != null)
+                    {
+                        moveMessagesButton.setEnabled(false);
+                    }
                     if(copyMessagesButton != null)
                     {
                         copyMessagesButton.setEnabled(false);
@@ -584,7 +600,10 @@ public class QueueOperationsTabControl extends TabControl
                 }
                 else
                 {   
-                    moveMessagesButton.setEnabled(true);
+                    if(moveMessagesButton != null)
+                    {
+                        moveMessagesButton.setEnabled(true);
+                    }
                     if(copyMessagesButton != null)
                     {
                         copyMessagesButton.setEnabled(true);
