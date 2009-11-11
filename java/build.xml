@@ -233,4 +233,13 @@
       </exec>
   </target>
 
+  <target name="testkit" depends="build,compile-tests">
+    <jython path="${mllib.dir}">
+      <args>
+        <arg value="${mllib.dir}/qpid-python-test"/>
+        <arg value="-m ${basedir}/testkit/testkit"/>
+      </args>
+    </jython>
+  </target>
+
 </project>
