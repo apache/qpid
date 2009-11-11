@@ -278,7 +278,7 @@ namespace qpid {
             QPID_BROKER_EXTERN QueuedMessage get();
 
             /** Get the message at position pos */
-            QueuedMessage find(framing::SequenceNumber pos) const;
+            QPID_BROKER_EXTERN QueuedMessage find(framing::SequenceNumber pos) const;
 
             const QueuePolicy* getPolicy();
 
