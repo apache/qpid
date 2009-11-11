@@ -20,7 +20,7 @@
  -->
 <project name="Test Kit" default="build">
 
-    <property name="module.depends" value="client broker common"/>
+    <property name="module.depends" value="client common tools"/>
 
     <import file="../module.xml"/>
 
