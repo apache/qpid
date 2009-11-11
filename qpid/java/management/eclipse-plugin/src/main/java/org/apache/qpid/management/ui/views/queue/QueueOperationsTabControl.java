@@ -392,7 +392,9 @@ public class QueueOperationsTabControl extends TabControl
                 public void widgetSelected(SelectionEvent se)
                 {
                     int response = ViewUtility.popupOkCancelConfirmationMessage("Delete 1st unacquired message", 
-                                                                                "Delete 1st unacquired message on the queue?");
+                                                                                "Delete 1st unacquired message on the queue?\n\n"
+                                                                              + "NOTE: Any ongoing consumer activity may mean this is "
+                                                                              + "not the first message listed in the table.");
                     if (response == SWT.OK)
                     {
                         try
