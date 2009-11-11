@@ -31,8 +31,6 @@ try:
   _have_sasl = True
 except:
   pass
-finally:
-  pass
 
 log = getLogger("qpid.io.ctl")
 
