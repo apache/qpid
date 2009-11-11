@@ -118,6 +118,12 @@ public class JMXServerRegistry extends ServerRegistry
      */
     public void closeServerConnection() throws IOException
     {
+        if(isServerConnectionClosed())
+        {
+            //connection was already closed
+            return;
+        }
+        
         try
         {
             //remove the listener from the JMXConnector
@@ -165,6 +171,8 @@ public class JMXServerRegistry extends ServerRegistry
         {
             _jmxc.close();
         }
+        
+        serverConnectionClosed();
     }
     
     public ManagedBean getManagedObject(String uniqueName)

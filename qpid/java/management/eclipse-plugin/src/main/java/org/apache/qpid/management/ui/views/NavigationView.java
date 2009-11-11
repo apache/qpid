@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
@@ -95,7 +96,7 @@ public class NavigationView extends ViewPart
 
     private PreferenceStore _preferences;
     // Map of connected servers
-    private HashMap<ManagedServer, TreeObject> _managedServerMap = new HashMap<ManagedServer, TreeObject>();
+    private ConcurrentHashMap<ManagedServer, TreeObject> _managedServerMap = new ConcurrentHashMap<ManagedServer, TreeObject>();
     
     private static HashSet<String> _serverTopLevelMBeans = new HashSet<String>();
     {
@@ -719,6 +720,11 @@ public class NavigationView extends ViewPart
      */
     private void removeManagedObject(TreeObject parent)
     {
+        if(parent == null)
+        {
+           return;
+        }
+        
         List<TreeObject> list = parent.getChildren();
         for (TreeObject child : list)
         {
@@ -1263,7 +1269,7 @@ public class NavigationView extends ViewPart
 
                 try
                 {
-                    Thread.sleep(3000);
+                    Thread.sleep(2000);
                 }
                 catch (Exception ex)
                 { }
@@ -1340,7 +1346,18 @@ public class NavigationView extends ViewPart
                     {
                         for (ManagedServer server : closedServers)
                         {
-                            removeManagedObject(_managedServerMap.get(server));
+                            if(server == null)
+                            {
+                                continue;
+                            }
+                            
+                            TreeObject node = _managedServerMap.get(server);
+                            if(node ==null)
+                            {
+                                continue;
+                            }
+                            
+                            removeManagedObject(node);
                             _managedServerMap.remove(server);
                             ApplicationRegistry.removeServer(server);
                         }
