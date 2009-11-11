@@ -736,7 +736,7 @@ void Exchange::configure(const Address& address)
 
 bool Node::enabled(const Variant& policy, CheckMode mode)
 {
-    bool result;
+    bool result = false;
     switch (mode) {
       case FOR_RECEIVER:
         result = in(policy, RECEIVER_MODES);

@@ -611,6 +611,7 @@ struct DeletePolicyFixture : public MessagingFixture
           case NEVER:
             return "{delete:never}";
         }
+        return "";
     }
 
     void testAll()
