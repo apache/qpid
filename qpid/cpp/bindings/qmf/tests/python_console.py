@@ -128,7 +128,7 @@ class QmfInteropTests(TestBase010):
         self.assertEqual(parent.int16val, -1000)
         self.assertEqual(parent.int8val,  -100)
 
-    def test_D_userid_for_method(self):
+    def disabled_test_D_userid_for_method(self):
         self.startQmf();
         qmf = self.qmf
 
