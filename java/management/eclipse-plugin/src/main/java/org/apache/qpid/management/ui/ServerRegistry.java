@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.management.ui.jmx.ClientListener;
 import org.apache.qpid.management.ui.model.ManagedAttributeModel;
@@ -49,6 +50,8 @@ public abstract class ServerRegistry
     // map of all virtual host manager mbeans
     private ConcurrentMap<String,ManagedBean> _vhostManagers = new ConcurrentHashMap<String,ManagedBean>();
     
+    private AtomicBoolean _serverConnectionClosed = new AtomicBoolean(false);
+    
     public ServerRegistry()
     {
         
@@ -57,6 +60,16 @@ public abstract class ServerRegistry
     public ServerRegistry(ManagedServer server)
     {
         _managedServer = server;
+    }
+    
+    public void serverConnectionClosed()
+    {
+        _serverConnectionClosed.set(true);
+    }
+    
+    public boolean isServerConnectionClosed()
+    {
+        return _serverConnectionClosed.get();
     }
     
     public void setManagementApiVersion(ApiVersion mgmtApiVersion)

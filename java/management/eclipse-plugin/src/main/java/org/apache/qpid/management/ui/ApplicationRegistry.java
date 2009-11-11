@@ -21,9 +21,8 @@
 package org.apache.qpid.management.ui;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.eclipse.jface.resource.FontRegistry;
@@ -91,9 +90,8 @@ public abstract class ApplicationRegistry
     
     /*
      * This maps all the managed servers to the respective server registry.
-     * Server can be JMX MBeanServer or a C++ server
      */
-    private static HashMap<ManagedServer, ServerRegistry> _serverRegistryMap = new HashMap<ManagedServer, ServerRegistry>();
+    private static ConcurrentHashMap<ManagedServer, ServerRegistry> _serverRegistryMap = new ConcurrentHashMap<ManagedServer, ServerRegistry>();
     
     // This map gets updated when a server connection closes.
     private static List<ManagedServer> _closedServerList = new CopyOnWriteArrayList<ManagedServer>();    
@@ -131,7 +129,19 @@ public abstract class ApplicationRegistry
     
     public static boolean isServerConnected(ManagedServer server)
     {
-        return _serverRegistryMap.containsKey(server);
+        if(server == null)
+        {
+            //checking for null is not permitted in a CHM
+            return false;
+        }
+        
+        ServerRegistry reg = _serverRegistryMap.get(server);
+        if(reg !=null)
+        {
+            return !reg.isServerConnectionClosed();
+        }
+
+        return false;
     }
     
     // remove the server from the registry
@@ -139,6 +149,27 @@ public abstract class ApplicationRegistry
     {
         _closedServerList.add(server);
         removeServer(server);
+    }
+    
+    // remove the server from the registry
+    public static void serverConnectionClosedRemotely(ManagedServer server)
+    {
+        ServerRegistry reg = _serverRegistryMap.get(server);
+        if(reg !=null)
+        {
+            synchronized(server)
+            {
+                if(reg.isServerConnectionClosed())
+                {
+                    //the connection closure was already processed
+                    return;
+                }
+
+                reg.serverConnectionClosed();
+            }
+        }
+        
+        serverConnectionClosed(server);
     }
     
     /*
