@@ -115,7 +115,7 @@ public class AMQTopicSessionAdaptor implements TopicSession, AMQSessionAdapter
 
     public ObjectMessage createObjectMessage(Serializable serializable) throws JMSException
     {
-        return _session.createObjectMessage();
+        return _session.createObjectMessage(serializable);
     }
 
     public StreamMessage createStreamMessage() throws JMSException
