@@ -67,7 +67,7 @@ class Address
                                const Variant::Map& options, const std::string& type = "");
     QPID_CLIENT_EXTERN Address(const Address& address);
     QPID_CLIENT_EXTERN ~Address();
-    Address& operator=(const Address&);
+    QPID_CLIENT_EXTERN Address& operator=(const Address&);
     QPID_CLIENT_EXTERN const std::string& getName() const;
     QPID_CLIENT_EXTERN void setName(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getSubject() const;

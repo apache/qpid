@@ -92,7 +92,7 @@ class FieldValue {
     QPID_COMMON_EXTERN bool operator==(const FieldValue&) const;
     QPID_COMMON_EXTERN bool operator!=(const FieldValue& v) const { return !(*this == v); }
 
-    void print(std::ostream& out) const;
+    QPID_COMMON_EXTERN void print(std::ostream& out) const;
 
     template <typename T> bool convertsTo() const { return false; }
     template <typename T> T get() const { throw InvalidConversionException(); }
