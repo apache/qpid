@@ -594,7 +594,6 @@ set (qpidclient_SOURCES
      qpid/messaging/Address.cpp
      qpid/messaging/Connection.cpp
      qpid/messaging/ConnectionImpl.h
-     qpid/messaging/Filter.cpp
      qpid/messaging/ListContent.cpp
      qpid/messaging/ListView.cpp
      qpid/messaging/MapContent.cpp

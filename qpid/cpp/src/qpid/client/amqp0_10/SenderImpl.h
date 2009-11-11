@@ -47,8 +47,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     enum State {UNRESOLVED, ACTIVE, CANCELLED};
 
     SenderImpl(SessionImpl& parent, const std::string& name, 
-               const qpid::messaging::Address& address, 
-               const qpid::messaging::Variant::Map& options);
+               const qpid::messaging::Address& address);
     void send(const qpid::messaging::Message&);
     void cancel();
     void setCapacity(uint32_t);
@@ -60,7 +59,6 @@ class SenderImpl : public qpid::messaging::SenderImpl
     SessionImpl& parent;
     const std::string name;
     const qpid::messaging::Address address;
-    const qpid::messaging::Variant::Map options;
     State state;
     std::auto_ptr<MessageSink> sink;
 

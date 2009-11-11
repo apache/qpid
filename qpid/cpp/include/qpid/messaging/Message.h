@@ -32,7 +32,7 @@ namespace client {
 
 namespace messaging {
 
-struct Address;
+class Address;
 class Codec;
 struct MessageImpl;
 

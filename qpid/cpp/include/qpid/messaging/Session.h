@@ -24,7 +24,7 @@
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Handle.h"
 #include "qpid/sys/Time.h"
-#include "Variant.h"
+#include <string>
 
 namespace qpid {
 namespace client {
@@ -35,8 +35,7 @@ template <class> class PrivateImplRef;
 
 namespace messaging {
 
-struct Address;
-struct Filter;
+class Address;
 class Message;
 class MessageListener;
 class Sender;
@@ -90,13 +89,10 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN Message fetch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     QPID_CLIENT_EXTERN bool dispatch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
 
-    QPID_CLIENT_EXTERN Sender createSender(const Address& address, const VariantMap& options = VariantMap());
-    QPID_CLIENT_EXTERN Sender createSender(const std::string& address, const VariantMap& options = VariantMap());
-
-    QPID_CLIENT_EXTERN Receiver createReceiver(const Address& address, const VariantMap& options = VariantMap());
-    QPID_CLIENT_EXTERN Receiver createReceiver(const Address& address, const Filter& filter, const VariantMap& options = VariantMap());
-    QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address, const VariantMap& options = VariantMap());
-    QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address, const Filter& filter, const VariantMap& options = VariantMap());
+    QPID_CLIENT_EXTERN Sender createSender(const Address& address);
+    QPID_CLIENT_EXTERN Sender createSender(const std::string& address);
+    QPID_CLIENT_EXTERN Receiver createReceiver(const Address& address);
+    QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address);
 
     QPID_CLIENT_EXTERN Address createTempQueue(const std::string& baseName = std::string());
   private:

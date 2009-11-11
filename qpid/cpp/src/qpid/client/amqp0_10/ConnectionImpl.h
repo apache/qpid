@@ -50,11 +50,11 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
 
     qpid::sys::Mutex lock;//used to protect data structures
     qpid::sys::Semaphore semaphore;//used to coordinate reconnection
+    Sessions sessions;
     qpid::client::Connection connection;
     std::auto_ptr<FailoverListener> failoverListener;
     qpid::Url url;
     qpid::client::ConnectionSettings settings;
-    Sessions sessions;
     bool reconnectionEnabled;
     int timeout;
     int minRetryInterval;

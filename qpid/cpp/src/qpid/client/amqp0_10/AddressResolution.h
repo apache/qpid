@@ -50,13 +50,10 @@ class AddressResolution
 {
   public:
     std::auto_ptr<MessageSource> resolveSource(qpid::client::Session session,
-                                               const qpid::messaging::Address& address, 
-                                               const qpid::messaging::Filter* filter,
-                                               const qpid::messaging::Variant::Map& options);
-
+                                               const qpid::messaging::Address& address);
+    
     std::auto_ptr<MessageSink> resolveSink(qpid::client::Session session,
-                                           const qpid::messaging::Address& address, 
-                                           const qpid::messaging::Variant::Map& options);
+                                           const qpid::messaging::Address& address);
 
     static qpid::messaging::Address convert(const qpid::framing::ReplyTo&);
     static qpid::framing::ReplyTo convert(const qpid::messaging::Address&);

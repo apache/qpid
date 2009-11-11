@@ -39,7 +39,7 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
     message.setData(from.getContent());
     message.getMessageProperties().setContentType(from.getContentType());
     const Address& address = from.getReplyTo();
-    if (!address.value.empty()) {
+    if (address) {
         message.getMessageProperties().setReplyTo(AddressResolution::convert(address));
     }
     translate(from.getHeaders(), message.getMessageProperties().getApplicationHeaders());

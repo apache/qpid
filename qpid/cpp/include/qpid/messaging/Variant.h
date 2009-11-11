@@ -30,9 +30,6 @@
 #include "qpid/client/ClientImportExport.h"
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
 
 /**
@@ -93,6 +90,7 @@ class Variant
     QPID_CLIENT_EXTERN ~Variant();
 
     QPID_CLIENT_EXTERN VariantType getType() const;
+    QPID_CLIENT_EXTERN bool isVoid() const;
     
     QPID_CLIENT_EXTERN Variant& operator=(bool);
     QPID_CLIENT_EXTERN Variant& operator=(uint8_t);

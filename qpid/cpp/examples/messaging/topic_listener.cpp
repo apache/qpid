@@ -20,11 +20,11 @@
  */
 
 #include <qpid/messaging/Connection.h>
-#include <qpid/messaging/Filter.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/MessageListener.h>
 #include <qpid/messaging/Session.h>
 #include <qpid/messaging/Receiver.h>
+#include <qpid/messaging/Variant.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -57,15 +57,14 @@ void Listener::received(Message& message)
 }
 
 int main(int argc, char** argv) {
-    const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
-    const char* pattern = argc>2 ? argv[2] : "#.#";
+    const std::string url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
+    const std::string pattern = argc>2 ? argv[2] : "#.#";
 
     try {
         Connection connection = Connection::open(url);
         Session session = connection.newSession();
 
-        Filter filter(Filter::WILDCARD, pattern, "control");
-        Receiver receiver = session.createReceiver("news_service", filter);
+        Receiver receiver = session.createReceiver("news_service {filter:[control, " + pattern + "]}");
         Listener listener(receiver);        
         receiver.setListener(&listener);
         receiver.setCapacity(1);
@@ -78,5 +77,3 @@ int main(int argc, char** argv) {
     }
     return 1;   
 }
-
-

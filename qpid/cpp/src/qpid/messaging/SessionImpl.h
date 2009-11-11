@@ -23,7 +23,6 @@
  */
 #include "qpid/RefCounted.h"
 #include <string>
-#include "qpid/messaging/Variant.h"
 #include "qpid/sys/Time.h"
 
 namespace qpid {
@@ -53,9 +52,8 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual Message fetch(qpid::sys::Duration timeout) = 0;
     virtual bool dispatch(qpid::sys::Duration timeout) = 0;
     virtual Address createTempQueue(const std::string& baseName) = 0;
-    virtual Sender createSender(const Address& address, const VariantMap& options) = 0;
-    virtual Receiver createReceiver(const Address& address, const VariantMap& options) = 0;
-    virtual Receiver createReceiver(const Address& address, const Filter& filter, const VariantMap& options) = 0;
+    virtual Sender createSender(const Address& address) = 0;
+    virtual Receiver createReceiver(const Address& address) = 0;
     virtual uint32_t available() = 0;
     virtual uint32_t pendingAck() = 0;
   private:

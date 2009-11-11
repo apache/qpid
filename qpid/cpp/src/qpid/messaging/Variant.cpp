@@ -529,6 +529,7 @@ Variant& Variant::operator=(const Variant& v)
 }
 
 VariantType Variant::getType() const { return impl->getType(); }
+bool Variant::isVoid() const { return impl->getType() == VAR_VOID; }
 bool Variant::asBool() const { return impl->asBool(); }
 uint8_t Variant::asUint8() const { return impl->asUint8(); }
 uint16_t Variant::asUint16() const { return impl->asUint16(); }

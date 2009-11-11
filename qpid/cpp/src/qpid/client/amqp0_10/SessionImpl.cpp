@@ -28,7 +28,6 @@
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
-#include "qpid/messaging/Filter.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/messaging/MessageListener.h"
@@ -132,36 +131,22 @@ struct SessionImpl::CreateReceiver : Command
 {
     qpid::messaging::Receiver result;
     const qpid::messaging::Address& address;
-    const Filter* filter;
-    const qpid::messaging::Variant::Map& options;
     
-    CreateReceiver(SessionImpl& i, const qpid::messaging::Address& a, const Filter* f, 
-                   const qpid::messaging::Variant::Map& o) :
-        Command(i), address(a), filter(f), options(o) {}
-    void operator()() { result = impl.createReceiverImpl(address, filter, options); }
+    CreateReceiver(SessionImpl& i, const qpid::messaging::Address& a) :
+        Command(i), address(a) {}
+    void operator()() { result = impl.createReceiverImpl(address); }
 };
 
-Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address, const VariantMap& options)
-{ 
-    CreateReceiver f(*this, address, 0, options);
-    while (!execute(f)) {}
-    return f.result;
-}
-
-Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address, 
-                                     const Filter& filter, const VariantMap& options)
-{ 
-    CreateReceiver f(*this, address, &filter, options);
-    while (!execute(f)) {}
-    return f.result;
-}
-
-Receiver SessionImpl::createReceiverImpl(const qpid::messaging::Address& address,
-                                         const Filter* filter, const VariantMap& options)
+Receiver SessionImpl::createReceiver(const qpid::messaging::Address& address)
 {
-    std::string name = address;
+    return get1<CreateReceiver, Receiver>(address);
+}
+
+Receiver SessionImpl::createReceiverImpl(const qpid::messaging::Address& address)
+{
+    std::string name = address.getName();
     getFreeKey(name, receivers);
-    Receiver receiver(new ReceiverImpl(*this, name, address, filter, options));
+    Receiver receiver(new ReceiverImpl(*this, name, address));
     getImplPtr<Receiver, ReceiverImpl>(receiver)->init(session, resolver);
     receivers[name] = receiver;
     return receiver;
@@ -171,26 +156,22 @@ struct SessionImpl::CreateSender : Command
 {
     qpid::messaging::Sender result;
     const qpid::messaging::Address& address;
-    const qpid::messaging::Variant::Map& options;
     
-    CreateSender(SessionImpl& i, const qpid::messaging::Address& a,
-                 const qpid::messaging::Variant::Map& o) :
-        Command(i), address(a), options(o) {}
-    void operator()() { result = impl.createSenderImpl(address, options); }
+    CreateSender(SessionImpl& i, const qpid::messaging::Address& a) :
+        Command(i), address(a) {}
+    void operator()() { result = impl.createSenderImpl(address); }
 };
 
-Sender SessionImpl::createSender(const qpid::messaging::Address& address, const VariantMap& options)
+Sender SessionImpl::createSender(const qpid::messaging::Address& address)
 {
-    CreateSender f(*this, address, options);
-    while (!execute(f)) {}
-    return f.result;
+    return get1<CreateSender, Sender>(address);
 }
 
-Sender SessionImpl::createSenderImpl(const qpid::messaging::Address& address, const VariantMap& options)
+Sender SessionImpl::createSenderImpl(const qpid::messaging::Address& address)
 { 
-    std::string name = address;
+    std::string name = address.getName();
     getFreeKey(name, senders);
-    Sender sender(new SenderImpl(*this, name, address, options));
+    Sender sender(new SenderImpl(*this, name, address));
     getImplPtr<Sender, SenderImpl>(sender)->init(session, resolver);
     senders[name] = sender;
     return sender;

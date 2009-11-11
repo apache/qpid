@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
         Sender sender = session.createSender("service_queue");
 
         //create temp queue & receiver...
-        Address responseQueue = session.createTempQueue();
+        Address responseQueue("#response-queue {create:always, type:queue, node-properties:{x-amqp0-10-auto-delete:true}}");
         Receiver receiver = session.createReceiver(responseQueue);
 
 	// Now send some messages ...

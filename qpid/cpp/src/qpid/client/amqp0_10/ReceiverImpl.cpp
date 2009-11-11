@@ -103,7 +103,7 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
 
     session = s;
     if (state == UNRESOLVED) {
-        source = resolver.resolveSource(session, address, filter, options);
+        source = resolver.resolveSource(session, address);
         state = STOPPED;//TODO: if session is started, go straight to started
     }
     if (state == CANCELLED) {
@@ -136,11 +136,9 @@ uint32_t ReceiverImpl::pendingAck()
 }
 
 ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name, 
-                           const qpid::messaging::Address& a,
-                           const qpid::messaging::Filter* f, 
-                           const qpid::messaging::Variant::Map& o) : 
+                           const qpid::messaging::Address& a) : 
 
-    parent(p), destination(name), address(a), filter(f), options(o), byteCredit(0xFFFFFFFF), 
+    parent(p), destination(name), address(a), byteCredit(0xFFFFFFFF), 
     state(UNRESOLVED), capacity(0), listener(0), window(0) {}
 
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout)
