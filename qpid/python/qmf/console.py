@@ -38,6 +38,9 @@ from threading       import Lock, Condition, Thread
 from time            import time, strftime, gmtime
 from cStringIO       import StringIO
 
+#import qpid.log
+#qpid.log.enable(name="qpid.io.cmd", level=qpid.log.DEBUG)
+
 class Console:
   """ To access the asynchronous operations, a class must be derived from
   Console with overrides of any combination of the available methods. """
@@ -100,9 +103,12 @@ class BrokerURL(URL):
         self.port = 5671
       else:
         self.port = 5672
-    self.authName = str(self.user or "guest")
-    self.authPass = str(self.password or "guest")
-    self.authMech = "PLAIN"
+    self.authName = None
+    self.authPass = None
+    if self.user:
+      self.authName = str(self.user)
+    if self.password:
+      self.authPass = str(self.password)
 
   def name(self):
     return self.host + ":" + str(self.port)
@@ -469,10 +475,10 @@ class Session:
   def __repr__(self):
     return "QMF Console Session Manager (brokers: %d)" % len(self.brokers)
 
-  def addBroker(self, target="localhost", timeout=None):
+  def addBroker(self, target="localhost", timeout=None, mechanisms=None):
     """ Connect to a Qpid broker.  Returns an object of type Broker. """
     url = BrokerURL(target)
-    broker = Broker(self, url.host, url.port, url.authMech, url.authName, url.authPass,
+    broker = Broker(self, url.host, url.port, mechanisms, url.authName, url.authPass,
                     ssl = url.scheme == URL.AMQPS, connTimeout=timeout)
 
     self.brokers.append(broker)
@@ -1557,10 +1563,11 @@ class Broker:
   SYNC_TIME = 60
   nextSeq = 1
 
-  def __init__(self, session, host, port, authMech, authUser, authPass, ssl=False, connTimeout=None):
+  def __init__(self, session, host, port, authMechs, authUser, authPass, ssl=False, connTimeout=None):
     self.session  = session
     self.host = host
     self.port = port
+    self.mechanisms = authMechs
     self.ssl = ssl
     self.connTimeout = connTimeout
     self.authUser = authUser
@@ -1654,7 +1661,8 @@ class Broker:
         connSock = ssl(sock)
       else:
         connSock = sock
-      self.conn = Connection(connSock, username=self.authUser, password=self.authPass)
+      self.conn = Connection(connSock, username=self.authUser, password=self.authPass,
+                             mechanism = self.mechanisms, host=self.host, service="qpidd")
       def aborted():
         raise Timeout("Waiting for connection to be established with broker")
       oldAborted = self.conn.aborted
