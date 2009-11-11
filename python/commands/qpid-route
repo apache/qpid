@@ -93,12 +93,12 @@ class RouteManager:
         broker = brokers[0]
         link = self.getLink()
         if link == None:
-            if self.remote.authName == "anonymous":
+            if not self.remote.authName or self.remote.authName == "anonymous":
                 mech = "ANONYMOUS"
             else:
                 mech = "PLAIN"
             res = broker.connect(self.remote.host, self.remote.port, _durable,
-                                 mech, self.remote.authName, self.remote.authPass,
+                                 mech, self.remote.authName or "", self.remote.authPass or "",
                                  _transport)
             if _verbose:
                 print "Connect method returned:", res.status, res.text

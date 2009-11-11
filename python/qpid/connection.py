@@ -65,6 +65,7 @@ class Connection(Framer):
     self.thread.setDaemon(True)
 
     self.channel_max = 65535
+    self.user_id = None
 
     self.op_enc = OpEncoder()
     self.seg_enc = SegmentEncoder()
@@ -156,6 +157,8 @@ class Connection(Framer):
     while not self.closed:
       try:
         data = self.sock.recv(64*1024)
+        if self.security_layer_rx and data:
+          status, data = self.security_layer_rx.decode(data)
         if not data:
           self.detach_all()
           break

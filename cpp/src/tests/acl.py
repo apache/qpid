@@ -66,7 +66,7 @@ class ACLTests(TestBase010):
         Test the deny all mode
         """
         aclf = ACLFile()
-        aclf.write('acl allow guest@QPID all all\n')
+        aclf.write('acl allow anonymous all all\n')
         aclf.write('acl allow bob@QPID create queue\n')
         aclf.write('acl deny all all')
         aclf.close()        
@@ -330,7 +330,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID create queue name=q4\n')                
         aclf.write('acl allow bob@QPID delete queue name=q4\n')   
         aclf.write('acl allow bob@QPID create queue name=q5 maxqueuesize=1000 maxqueuecount=100\n')                   
-        aclf.write('acl allow guest@QPID all all\n')
+        aclf.write('acl allow anonymous all all\n')
         aclf.write('acl deny all all')
         aclf.close()        
         
@@ -581,7 +581,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID unbind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
         aclf.write('acl allow bob@QPID access exchange name=myEx queuename=q1 routingkey=rk1.*\n')
         aclf.write('acl allow bob@QPID delete exchange name=myEx\n')
-        aclf.write('acl allow guest@QPID all all\n') 
+        aclf.write('acl allow anonymous all all\n') 
         aclf.write('acl deny all all')
         aclf.close()        
         
@@ -740,7 +740,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID consume queue name=q1\n')
         aclf.write('acl allow bob@QPID consume queue name=q2\n')
         aclf.write('acl allow bob@QPID create queue\n')                                
-        aclf.write('acl allow guest@QPID all\n')                                
+        aclf.write('acl allow anonymous all\n')                                
         aclf.write('acl deny all all')
         aclf.close()        
         
@@ -836,7 +836,7 @@ class ACLTests(TestBase010):
         aclf.write('acl allow bob@QPID publish exchange name=amq.topic\n')
         aclf.write('acl allow bob@QPID publish exchange name=myEx routingkey=rk2\n')
         aclf.write('acl allow bob@QPID create exchange\n')    
-        aclf.write('acl allow guest@QPID all all \n')    
+        aclf.write('acl allow anonymous all all \n')    
         aclf.write('acl deny all all')
         aclf.close()        
         
