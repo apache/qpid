@@ -40,7 +40,7 @@ class WindowsSasl : public Sasl
   public:
     WindowsSasl(const ConnectionSettings&);
     ~WindowsSasl();
-    std::string start(const std::string& mechanisms);
+    std::string start(const std::string& mechanisms, unsigned int ssf);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -90,7 +90,8 @@ WindowsSasl::~WindowsSasl()
 {
 }
 
-std::string WindowsSasl::start(const std::string& mechanisms)
+std::string WindowsSasl::start(const std::string& mechanisms,
+                               unsigned int /*ssf*/)
 {
     QPID_LOG(debug, "WindowsSasl::start(" << mechanisms << ")");
 
