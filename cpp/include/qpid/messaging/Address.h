@@ -22,33 +22,71 @@
  *
  */
 #include <string>
+#include "qpid/Exception.h"
+#include "qpid/messaging/Variant.h"
 #include "qpid/client/ClientImportExport.h"
 #include <ostream>
 
 namespace qpid {
-namespace client {
-}
-
 namespace messaging {
+
+struct InvalidAddress : public qpid::Exception 
+{
+    InvalidAddress(const std::string& msg);
+};
+
+struct MalformedAddress : public qpid::Exception 
+{
+    MalformedAddress(const std::string& msg);
+};
+
+class AddressImpl;
 
 /**
  * Represents an address to which messages can be sent and from which
  * messages can be received. Often a simple name is sufficient for
- * this. However this struct allows the type of address to be
- * specified allowing more sophisticated treatment if necessary.
+ * this, however this can be augmented with a subject pattern and
+ * options.
+ * 
+ * All parts of an address can be specified in a string of the
+ * following form:
+ * 
+ * <address> [ / <subject> ] [ { <key> : <value> , ... } ]
+ * 
+ * Here the <address> is a simple name for the addressed entity and
+ * <subject> is a subject or subject pattern for messages sent to or
+ * received from this address. The options are specified as a series
+ * of key value pairs enclosed in curly brackets (denoting a map).
  */
-struct Address
+class Address
 {
-    std::string value;
-    std::string type;
-
+  public:
     QPID_CLIENT_EXTERN Address();
     QPID_CLIENT_EXTERN Address(const std::string& address);
-    QPID_CLIENT_EXTERN Address(const std::string& address, const std::string& type);
-    QPID_CLIENT_EXTERN operator const std::string&() const;
-    QPID_CLIENT_EXTERN const std::string& toStr() const;
+    QPID_CLIENT_EXTERN Address(const std::string& name, const std::string& subject,
+                               const Variant::Map& options, const std::string& type = "");
+    QPID_CLIENT_EXTERN Address(const Address& address);
+    QPID_CLIENT_EXTERN ~Address();
+    Address& operator=(const Address&);
+    QPID_CLIENT_EXTERN const std::string& getName() const;
+    QPID_CLIENT_EXTERN void setName(const std::string&);
+    QPID_CLIENT_EXTERN const std::string& getSubject() const;
+    QPID_CLIENT_EXTERN void setSubject(const std::string&);
+    QPID_CLIENT_EXTERN bool hasSubject() const;
+    QPID_CLIENT_EXTERN const Variant::Map& getOptions() const;
+    QPID_CLIENT_EXTERN Variant::Map& getOptions();
+    QPID_CLIENT_EXTERN void setOptions(const Variant::Map&);
+
+    QPID_CLIENT_EXTERN std::string getType() const;
+    QPID_CLIENT_EXTERN void setType(const std::string&);
+
+    QPID_CLIENT_EXTERN const Variant& getOption(const std::string& key) const;
+
+    QPID_CLIENT_EXTERN std::string toStr() const;
     QPID_CLIENT_EXTERN operator bool() const;
     QPID_CLIENT_EXTERN bool operator !() const;
+  private:
+    AddressImpl* impl;
 };
 
 QPID_CLIENT_EXTERN std::ostream& operator<<(std::ostream& out, const Address& address);

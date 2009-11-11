@@ -63,13 +63,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void sync();
     void flush();
     qpid::messaging::Address createTempQueue(const std::string& baseName);
-    qpid::messaging::Sender createSender(const qpid::messaging::Address& address,
-                                         const qpid::messaging::VariantMap& options);
-    qpid::messaging::Receiver createReceiver(const qpid::messaging::Address& address,
-                                             const qpid::messaging::VariantMap& options);
-    qpid::messaging::Receiver createReceiver(const qpid::messaging::Address& address, 
-                                             const qpid::messaging::Filter& filter,
-                                             const qpid::messaging::VariantMap& options);
+    qpid::messaging::Sender createSender(const qpid::messaging::Address& address);
+    qpid::messaging::Receiver createReceiver(const qpid::messaging::Address& address);
 
     void* getLastConfirmedSent();
     void* getLastConfirmedAcknowledged();
@@ -129,11 +124,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void closeImpl();
     void syncImpl();
     void flushImpl();
-    qpid::messaging::Sender createSenderImpl(const qpid::messaging::Address& address, 
-                                             const qpid::messaging::VariantMap& options);
-    qpid::messaging::Receiver createReceiverImpl(const qpid::messaging::Address& address, 
-                                                 const qpid::messaging::Filter* filter, 
-                                                 const qpid::messaging::VariantMap& options);
+    qpid::messaging::Sender createSenderImpl(const qpid::messaging::Address& address);
+    qpid::messaging::Receiver createReceiverImpl(const qpid::messaging::Address& address);
     uint32_t availableImpl(const std::string* destination);
     uint32_t pendingAckImpl(const std::string* destination);
 

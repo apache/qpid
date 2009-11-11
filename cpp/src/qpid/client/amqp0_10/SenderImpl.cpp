@@ -29,9 +29,8 @@ namespace client {
 namespace amqp0_10 {
 
 SenderImpl::SenderImpl(SessionImpl& _parent, const std::string& _name, 
-                       const qpid::messaging::Address& _address, 
-                       const qpid::messaging::Variant::Map& _options) : 
-    parent(_parent), name(_name), address(_address), options(_options), state(UNRESOLVED),
+                       const qpid::messaging::Address& _address) : 
+    parent(_parent), name(_name), address(_address), state(UNRESOLVED),
     capacity(50), window(0), flushed(false) {}
 
 void SenderImpl::send(const qpid::messaging::Message& message) 
@@ -63,7 +62,7 @@ void SenderImpl::init(qpid::client::AsyncSession s, AddressResolution& resolver)
 {
     session = s;
     if (state == UNRESOLVED) {
-        sink = resolver.resolveSink(session, address, options);
+        sink = resolver.resolveSink(session, address);
         state = ACTIVE;
     }
     if (state == CANCELLED) {

@@ -19,32 +19,25 @@
  *
  */
 
-#include <qpid/messaging/Address.h>
 #include <qpid/messaging/Connection.h>
-#include <qpid/messaging/Filter.h>
 #include <qpid/messaging/Message.h>
 #include <qpid/messaging/Receiver.h>
 #include <qpid/messaging/Session.h>
+#include <qpid/messaging/Variant.h>
 
 #include <cstdlib>
 #include <iostream>
 
-#include <sstream>
-
 using namespace qpid::messaging;
 
-using std::stringstream;
-using std::string;
-
 int main(int argc, char** argv) {
-    const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
-    const char* pattern = argc>2 ? argv[2] : "#.#";
+    const std::string url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
+    const std::string pattern = argc>2 ? argv[2] : "#.#";
 
     try {
         Connection connection = Connection::open(url);
         Session session = connection.newSession();
-        Filter filter(Filter::WILDCARD, pattern, "control");
-        Receiver receiver = session.createReceiver(Address("news_service", "topic"), filter);
+        Receiver receiver = session.createReceiver("news_service {filter:[control, " + pattern + "]}");
         while (true) {
             Message message = receiver.fetch();
             std::cout << "Message: " << message.getContent() << std::endl;

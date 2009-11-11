@@ -19,28 +19,293 @@
  *
  */
 #include "qpid/messaging/Address.h"
+#include "qpid/framing/Uuid.h"
+#include <sstream>
+#include <boost/format.hpp>
 
 namespace qpid {
 namespace messaging {
 
-Address::Address() {}
-Address::Address(const std::string& address) : value(address) {}
-Address::Address(const std::string& address, const std::string& t) : value(address), type(t) {}
-Address::operator const std::string&() const { return value; }
-const std::string& Address::toStr() const { return value; }
-Address::operator bool() const { return !value.empty(); }
-bool Address::operator !() const { return value.empty(); }
+namespace {
+const std::string SUBJECT_DIVIDER = "/";
+const std::string SPACE = " ";
+const std::string TYPE = "type";
+}
+class AddressImpl
+{
+  public:
+    std::string name;
+    std::string subject;
+    Variant::Map options;
+ 
+    AddressImpl() {}
+    AddressImpl(const std::string& n, const std::string& s, const Variant::Map& o) :
+        name(n), subject(s), options(o) {}
+};
 
-const std::string TYPE_SEPARATOR(":");
+class AddressParser
+{
+  public:
+    AddressParser(const std::string&);
+    bool parse(Address& address);
+  private:
+    const std::string& input;
+    std::string::size_type current;
+    static const std::string RESERVED;
+
+    bool readChar(char c);
+    bool readQuotedString(Variant& value);
+    bool readString(Variant& value, char delimiter);
+    bool readWord(std::string& word);
+    bool readSimpleValue(Variant& word);
+    bool readKey(std::string& key);
+    bool readValue(Variant& value);
+    bool readKeyValuePair(Variant::Map& map);
+    bool readMap(Variant& value);
+    bool readList(Variant& value);
+    bool error(const std::string& message);
+    bool eos();
+    bool iswhitespace();
+    bool isreserved();
+};
+
+Address::Address() : impl(new AddressImpl()) {}
+Address::Address(const std::string& address) : impl(new AddressImpl())
+{ 
+    AddressParser parser(address);
+    parser.parse(*this);
+}
+Address::Address(const std::string& name, const std::string& subject, const Variant::Map& options,
+                 const std::string& type)
+    : impl(new AddressImpl(name, subject, options)) { setType(type); }
+Address::Address(const Address& a) :
+    impl(new AddressImpl(a.impl->name, a.impl->subject, a.impl->options)) {}
+Address::~Address() { delete impl; }
+
+Address& Address::operator=(const Address& a) { *impl = *a.impl; return *this; }
+
+
+std::string Address::toStr() const
+{
+    std::stringstream out;
+    out << impl->name;
+    if (!impl->subject.empty()) out << SUBJECT_DIVIDER << impl->subject;
+    if (!impl->options.empty()) out << " {" << impl->options << "}";
+    return out.str();
+}
+Address::operator bool() const { return !impl->name.empty(); }
+bool Address::operator !() const { return impl->name.empty(); }
+
+const std::string& Address::getName() const { return impl->name; }
+void Address::setName(const std::string& name) { impl->name = name; }
+const std::string& Address::getSubject() const { return impl->subject; }
+bool Address::hasSubject() const { return !(impl->subject.empty()); }
+void Address::setSubject(const std::string& subject) { impl->subject = subject; }
+const Variant::Map& Address::getOptions() const { return impl->options; }
+Variant::Map& Address::getOptions() { return impl->options; }
+void Address::setOptions(const Variant::Map& options) { impl->options = options; }
+
+
+namespace{
+const Variant EMPTY_VARIANT;
+const std::string EMPTY_STRING;
+}
+
+std::string Address::getType() const
+{
+    const Variant& type = getOption(TYPE);
+    return type.isVoid() ? EMPTY_STRING : type.asString();
+}
+void Address::setType(const std::string& type) { impl->options[TYPE] = type; }
+
+const Variant& Address::getOption(const std::string& key) const
+{
+    Variant::Map::const_iterator i = impl->options.find(key);
+    if (i == impl->options.end()) return EMPTY_VARIANT;
+    else return i->second;
+}
 
 std::ostream& operator<<(std::ostream& out, const Address& address)
 {
-    if (!address.type.empty()) {
-        out << address.type;
-        out << TYPE_SEPARATOR;
-    }
-    out << address.value;
+    out << address.toStr();
     return out;
 }
 
+InvalidAddress::InvalidAddress(const std::string& msg) : Exception(msg) {}
+
+MalformedAddress::MalformedAddress(const std::string& msg) : Exception(msg) {}
+
+AddressParser::AddressParser(const std::string& s) : input(s), current(0) {}
+
+bool AddressParser::error(const std::string& message)
+{
+    throw MalformedAddress(message);//TODO: add more debug detail to error message (position etc)
+}
+
+bool AddressParser::parse(Address& address)
+{
+    std::string name;
+    if (readWord(name)) {
+        if (name.find('#') == 0) name = qpid::framing::Uuid(true).str() + name;
+        address.setName(name);
+        if (readChar('/')) {
+            std::string subject;
+            if (readWord(subject)) {
+                address.setSubject(subject);
+            } else {
+                return error("Expected subject after /");
+            }
+        }
+        Variant options = Variant::Map();
+        if (readMap(options)) {
+            address.setOptions(options.asMap());
+        }
+        return true;
+    } else {
+        return input.empty() || error("Expected name");
+    }
+}
+
+bool AddressParser::readList(Variant& value)
+{
+    if (readChar('[')) {
+        value = Variant::List();
+        Variant item;
+        while (readValue(item)) {
+            value.asList().push_back(item);
+            if (!readChar(',')) break;
+        }
+        return readChar(']') || error("Unmatched '['!");
+    } else {
+        return false;
+    }
+}
+
+bool AddressParser::readMap(Variant& value)
+{
+    if (readChar('{')) {
+        value = Variant::Map();
+        while (readKeyValuePair(value.asMap()) && readChar(',')) {}
+        return readChar('}') || error("Unmatched '{'!");
+    } else {
+        return false;
+    }
+}
+
+bool AddressParser::readKeyValuePair(Variant::Map& map)
+{
+    std::string key;
+    Variant value;
+    if (readKey(key)) {
+        if (readChar(':') && readValue(value)) {
+            map[key] = value;
+            return true;
+        } else {
+            return error("Bad key-value pair!");
+        }
+    } else {
+        return false;
+    }
+}
+
+bool AddressParser::readKey(std::string& key)
+{
+    return readWord(key);
+}
+
+bool AddressParser::readValue(Variant& value)
+{
+    return readSimpleValue(value) || readQuotedString(value) || 
+        readMap(value)  || readList(value) || error("Expected value");
+}
+
+bool AddressParser::readString(Variant& value, char delimiter)
+{
+    if (readChar(delimiter)) {
+        std::string::size_type start = current++;
+        while (!eos()) {
+            if (input.at(current) == delimiter) {
+                if (current > start) {
+                    value = input.substr(start, current - start);
+                } else {
+                    value = "";
+                }
+                ++current;
+                return true;
+            } else {
+                ++current;
+            }
+        }
+        return error("Unmatched delimiter");
+    } else {
+        return false;
+    }
+}
+
+bool AddressParser::readQuotedString(Variant& value)
+{
+    return readString(value, '"') || readString(value, '\'');
+}
+
+bool AddressParser::readSimpleValue(Variant& value)
+{
+    std::string s;
+    if (readWord(s)) {
+        value = s;
+        try { value = value.asInt64(); return true; } catch (const InvalidConversion&) {}
+        try { value = value.asDouble(); return true; } catch (const InvalidConversion&) {}
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AddressParser::readWord(std::string& value)
+{
+    //skip leading whitespace
+    while (!eos() && iswhitespace()) ++current;
+
+    //read any number of non-whitespace, non-reserved chars into value
+    std::string::size_type start = current;
+    while (!eos() && !iswhitespace() && !isreserved()) ++current;
+    
+    if (current > start) {
+        value = input.substr(start, current - start);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool AddressParser::readChar(char c)
+{
+    while (!eos()) {
+        if (iswhitespace()) { 
+            ++current; 
+        } else if (input.at(current) == c) {
+            ++current;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return false;
+}
+
+bool AddressParser::iswhitespace()
+{
+    return ::isspace(input.at(current));
+}
+
+bool AddressParser::isreserved()
+{
+    return RESERVED.find(input.at(current)) != std::string::npos;
+}
+
+bool AddressParser::eos()
+{
+    return current >= input.size();
+}
+
+const std::string AddressParser::RESERVED = "\'\"{}[],:/";
 }} // namespace qpid::messaging

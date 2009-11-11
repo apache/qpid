@@ -22,7 +22,6 @@
  *
  */
 #include "qpid/messaging/Address.h"
-#include "qpid/messaging/Filter.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ReceiverImpl.h"
 #include "qpid/messaging/Variant.h"
@@ -48,9 +47,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     enum State {UNRESOLVED, STOPPED, STARTED, CANCELLED};
 
     ReceiverImpl(SessionImpl& parent, const std::string& name,
-                 const qpid::messaging::Address& address,
-                 const qpid::messaging::Filter* filter,
-                 const qpid::messaging::Variant::Map& options);
+                 const qpid::messaging::Address& address);
 
     void init(qpid::client::AsyncSession session, AddressResolution& resolver);
     bool get(qpid::messaging::Message& message, qpid::sys::Duration timeout);
@@ -72,8 +69,6 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     SessionImpl& parent;
     const std::string destination;
     const qpid::messaging::Address address;
-    const qpid::messaging::Filter* filter;
-    const qpid::messaging::Variant::Map options;
     const uint32_t byteCredit;
     State state;
 

@@ -20,7 +20,6 @@
  */
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/Address.h"
-#include "qpid/messaging/Filter.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Receiver.h"
@@ -48,30 +47,22 @@ void Session::acknowledge() { impl->acknowledge(); }
 void Session::reject(Message& m) { impl->reject(m); }
 void Session::close() { impl->close(); }
 
-Sender Session::createSender(const Address& address, const VariantMap& options)
+Sender Session::createSender(const Address& address)
 {
-    return impl->createSender(address, options);
+    return impl->createSender(address);
 }
-Receiver Session::createReceiver(const Address& address, const VariantMap& options)
+Receiver Session::createReceiver(const Address& address)
 {
-    return impl->createReceiver(address, options);
-}
-Receiver Session::createReceiver(const Address& address, const Filter& filter, const VariantMap& options)
-{ 
-    return impl->createReceiver(address, filter, options);
+    return impl->createReceiver(address);
 }
 
-Sender Session::createSender(const std::string& address, const VariantMap& options)
+Sender Session::createSender(const std::string& address)
 { 
-    return impl->createSender(Address(address), options); 
+    return impl->createSender(Address(address)); 
 }
-Receiver Session::createReceiver(const std::string& address, const VariantMap& options)
+Receiver Session::createReceiver(const std::string& address)
 { 
-    return impl->createReceiver(Address(address), options); 
-}
-Receiver Session::createReceiver(const std::string& address, const Filter& filter, const VariantMap& options)
-{ 
-    return impl->createReceiver(Address(address), filter, options); 
+    return impl->createReceiver(Address(address)); 
 }
 
 Address Session::createTempQueue(const std::string& baseName)
