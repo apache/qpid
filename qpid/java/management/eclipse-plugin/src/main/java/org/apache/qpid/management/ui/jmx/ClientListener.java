@@ -58,12 +58,12 @@ public class ClientListener implements NotificationListener
         }
         else if (JMXConnectionNotification.FAILED.equals(type))
         {
-            ApplicationRegistry.serverConnectionClosed(server);
+            ApplicationRegistry.serverConnectionClosedRemotely(server);
             MBeanUtility.printOutput("JMX Connection to " + server.getName() + " failed.");
         }
         else if (JMXConnectionNotification.CLOSED.equals(type))
         {
-            ApplicationRegistry.serverConnectionClosed(server);
+            ApplicationRegistry.serverConnectionClosedRemotely(server);
             MBeanUtility.printOutput("JMX Connection to " + server.getName() + " was closed.");
         }
     }

@@ -110,6 +110,11 @@ public class MBeanView extends ViewPart
             
             setServer();
             
+            if(!ApplicationRegistry.isServerConnected(_server))
+            {
+                return;
+            }
+            
             if (MBEAN.equals(_selectedNode.getType()))
             {
                 _mbean = (ManagedBean)_selectedNode.getManagedObject();
@@ -488,6 +493,11 @@ public class MBeanView extends ViewPart
     
     public void refresh()
     {
+        if(!ApplicationRegistry.isServerConnected(_server))
+        {
+            return;
+        }
+        
         if (_tabFolder != null && !_tabFolder.isDisposed())
         {
             if(_tabFolder.getVisible())
