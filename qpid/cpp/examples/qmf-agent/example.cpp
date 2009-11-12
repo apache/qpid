@@ -36,6 +36,8 @@
 
 #include <sstream>
 
+static bool running = true;
+
 using namespace std;
 using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
@@ -101,7 +103,7 @@ CoreClass::CoreClass(ManagementAgent* _agent, string _name) : name(_name), agent
 void CoreClass::doLoop()
 {
     // Periodically bump a counter to provide a changing statistical value
-    while (1) {
+    while (running) {
         qpid::sys::sleep(1);
         mgmtObject->inc_count();
         mgmtObject->set_state("IN_LOOP");
@@ -155,8 +157,7 @@ ManagementAgent::Singleton* singleton;
 
 void shutdown(int)
 {
-    delete singleton;
-    exit(0);
+    running = false;
 }
 
 int main_int(int argc, char** argv)
@@ -187,6 +188,9 @@ int main_int(int argc, char** argv)
     CoreClass core3(agent, "Example Core Object #3");
 
     core1.doLoop();
+
+    // done, cleanup and exit
+    delete singleton;
 
     return 0;
 }
