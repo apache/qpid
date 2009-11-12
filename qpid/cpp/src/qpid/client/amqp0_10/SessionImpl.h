@@ -73,6 +73,10 @@ class SessionImpl : public qpid::messaging::SessionImpl
     qpid::messaging::Message fetch(qpid::sys::Duration timeout);
     bool dispatch(qpid::sys::Duration timeout);
 
+    bool nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout);
+    qpid::messaging::Receiver nextReceiver(qpid::sys::Duration timeout);
+
+
     bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout);    
 
     void receiverCancelled(const std::string& name);
@@ -115,6 +119,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     bool acceptAny(qpid::messaging::Message*, bool, IncomingMessages::MessageTransfer&);
     bool accept(ReceiverImpl*, qpid::messaging::Message*, bool, IncomingMessages::MessageTransfer&);
     bool getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout);
+    bool getNextReceiver(qpid::messaging::Receiver* receiver, IncomingMessages::MessageTransfer& transfer);
     void reconnect();
 
     void commitImpl();
