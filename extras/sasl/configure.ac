@@ -11,14 +11,14 @@ dnl
 dnl When updating the name/version number here, also update it in
 dnl src/qpid/Version.h
 
-AC_INIT([qpidc], [0.5], [dev@qpid.apache.org])
+AC_INIT([saslwrapper], [0.1], [dev@qpid.apache.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 
 # Minimum Autoconf version required.
 AC_PREREQ(2.59)
 
-AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
@@ -235,65 +235,6 @@ fi
 AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
 
 
-specdir=`pwd`/$srcdir/../specs  
-AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
-AC_SUBST(AMQP_FINAL_XML)
-AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
-
-# URL and download URL for the package.
-URL=http://rhm.et.redhat.com/qpidc
-AC_SUBST(URL)
-DOWNLOAD_URL=http://rhm.et.redhat.com/download
-AC_SUBST(DOWNLOAD_URL)
-
-# Check for headers from required devel kits.
-AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
-  AC_MSG_ERROR([Missing required header files.]))
-
-# Check for optional cluster requirements.
-tmp_LIBS=$LIBS
-tmp_LDFLAGS=$LDFLAGS
-LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais -L/usr/lib/corosync -L/usr/lib64/corosync"
-AC_CHECK_LIB([cpg],[cpg_local_get],[have_libcpg=yes],)
-AC_CHECK_HEADERS([openais/cpg.h corosync/cpg.h],[have_cpg_h=yes],)
-AC_ARG_WITH([cpg],  
-  [AS_HELP_STRING([--with-cpg], [Build with CPG support for clustering.])],
-  [case "${withval}" in
-    yes)			# yes - require dependencies
-    test x$have_libcpg = xyes || AC_MSG_ERROR([libcpg not found, install openais-devel or corosync-devel])
-    test x$have_cpg_h = xyes || AC_MSG_ERROR([cpg.h not found, install openais-devel or corosync-devel])
-    with_cpg=yes
-    ;;
-    no) with_cpg=no ;; 
-    *) AC_MSG_ERROR([Bad value ${withval} for --with-cpg option]) ;;
-   esac],
-   [		   # not specified - use if present
-    test x$have_libcpg = xyes -a x$have_cpg_h = xyes && with_cpg=yes
-   ]
-)
-AM_CONDITIONAL([HAVE_LIBCPG], [test x$with_cpg = xyes])
-# Clean up unnceccassary flags if we don't use clustering
-AS_IF([test ! x$with_cpg = xyes], [LDFLAGS=$tmp_LDFLAGS])
-
-AC_CHECK_LIB([cman],[cman_is_quorate],have_libcman=yes,)
-AC_CHECK_HEADERS([libcman.h],have_libcman_h=yes,)
-AC_ARG_WITH([libcman],  
-  [AS_HELP_STRING([--with-libcman], [Integration with libcman quorum service.])],
-  [case "${withval}" in
-    yes)			# yes - require dependencies
-    test x$have_libcman = xyes || AC_MSG_ERROR([libcman not found, install cman-devel or cmanlib-devel])
-    test x$have_libcman_h = xyes || AC_MSG_ERROR([libcman.h not found, install cman-devel or cmanlib-devel])
-    with_libcman=yes
-    ;;
-    no) with_libcman=no ;; 
-    *) AC_MSG_ERROR([Bad value ${withval} for --with-libcman option]) ;;
-   esac],
-   [				# not specified - use if present and we're using with_cpg
-    test x$have_libcman = xyes -a x$have_libcman_h = xyes -a x$with_cpg = xyes &&   with_libcman=yes
-   ]
-)
-AM_CONDITIONAL([HAVE_LIBCMAN], [test x$with_libcman = xyes])
-
 LIBS=$tmp_LIBS
 
 # Setup --with-sasl/--without-sasl as arguments to configure
@@ -333,140 +274,6 @@ AS_IF([test "x$WANT_SASL" != xno],
 AM_CONDITIONAL([HAVE_SASL], [test "x$have_sasl" = xyes])
 
 
-# Setup --with-xml/--without-xml as arguments to configure
-use_xml=yes
-want_xml=check
-AC_ARG_WITH([xml],
-  [AS_HELP_STRING([--with-xml], [Build with XML Exchange])],
-  [want_xml=$withval])
-
-case $want_xml in
-  yes|no|check) ;;
-  *) AC_MSG_ERROR([Bad value for --with-xml: $withval]) ;;
-esac
-
-test $want_xml = no && use_xml=no
-
-# If the user doesn't say not to use XML, see if it's available.
-if test $use_xml != no; then
-  # Then see if XQilla is available
-  tmp_LIBS=$LIBS
-  AC_CHECK_LIB([xerces-c], [_init], , [use_xml=no])
-  AC_CHECK_HEADER([xercesc/framework/MemBufInputSource.hpp], , [use_xml=no])
-  AC_CHECK_HEADER([xqilla/xqilla-simple.hpp], , [use_xml=no])
-  AC_CHECK_LIB([xqilla], [_init], , [use_xml=no])
-  # Remove from LIBS, we will link it explicitly in make files.
-  LIBS=$tmp_LIBS
-
-  # If XQilla is not available, yet specifically requested, die.
-  test $use_xml:$want_xml = no:yes &&
-    AC_MSG_ERROR([XML Exchange requested, but XQilla or Xerces-C not available])
-
-  # Else XQilla is available - use it to build
-  test $use_xml = yes &&
-    AC_DEFINE([HAVE_XML], [1], [Compile-in XML Exchange support.])
-fi
-
-AM_CONDITIONAL([HAVE_XML], [test $use_xml = yes])
-
-# Setup --with-rdma/--without-rdma as arguments to configure
-tmp_LIBS=$LIBS
-AC_ARG_WITH([rdma],
-  [AS_HELP_STRING([--with-rdma], [Build with support for Remote DMA protocols])],
-  [case ${withval} in
-   yes)
-     with_RDMA=yes
-     AC_CHECK_LIB([ibverbs],[ibv_create_qp],,[AC_MSG_ERROR([libibverbs not found])])
-     AC_CHECK_LIB([rdmacm],[rdma_create_id],,[AC_MSG_ERROR([librdmacm not found])])
-     AC_CHECK_HEADERS([infiniband/verbs.h],,[AC_MSG_ERROR([ibverbs header files not found])])
-     AC_CHECK_HEADERS([rdma/rdma_cma.h],,[AC_MSG_ERROR([rdma_cm header files not found])])
-     ;;
-   no)
-     with_RDMA=no
-     ;;
-   *)
-     AC_MSG_ERROR([Bad value for --with-rdma: ${withval}])
-     ;;
-   esac],
-  [
-   with_RDMA=yes
-   AC_CHECK_LIB([ibverbs],[ibv_create_qp],,[with_RDMA=no])
-   AC_CHECK_LIB([rdmacm],[rdma_create_id],,[with_RDMA=no])
-   AC_CHECK_HEADERS([infiniband/verbs.h],,[with_RDMA=no])
-   AC_CHECK_HEADERS([rdma/rdma_cma.h],,[with_RDMA=no])
-  ]
-)
-# Remove from LIBS, we will link it explicitly in make files.
-LIBS=$tmp_LIBS
-AM_CONDITIONAL([RDMA], [test x$with_RDMA = xyes])
-
-# Setup --with-ssl/--without-ssl as arguments to configure
-SSL_CFLAGS=""
-SSL_LDFLAGS=""
-AC_ARG_WITH([ssl],
-  [AS_HELP_STRING([--with-ssl], [Build with support for SSL])],
-  [case ${withval} in
-   yes)
-     with_SSL=yes
-     AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
-     AS_IF([test x$NSPR_CONFIG = x], [AC_MSG_ERROR([libnspr not found])], [])
-     AC_PATH_PROG([NSS_CONFIG], [nss-config])
-     AS_IF([test x$NSS_CONFIG = x], [AC_MSG_ERROR([libnss not found])], [])
-     SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
-     SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"
-     ;;
-   no)
-     with_SSL=no
-     ;;
-   *)
-     AC_MSG_ERROR([Bad value for --with-ssl: ${withval}])
-     ;;
-   esac],
-  [
-    with_SSL=yes
-    AC_PATH_PROG([NSPR_CONFIG], [nspr-config])
-    AS_IF([test x$NSPR_CONFIG = x], [with_SSL=no], 
-      [AC_PATH_PROG([NSS_CONFIG], [nss-config])
-       AS_IF([test x$NSS_CONFIG = x], [with_SSL=no], 
-             [SSL_CFLAGS="`$NSPR_CONFIG --cflags` `$NSS_CONFIG --cflags`"
-              SSL_LDFLAGS="`$NSPR_CONFIG --libs` `$NSS_CONFIG --libs`"])])
-  ]
-)
-# Remove from LIBS, we will link it explicitly in make files.
-AM_CONDITIONAL([SSL], [test x$with_SSL = xyes])
-AC_SUBST([SSL_CFLAGS])
-AC_SUBST([SSL_LDFLAGS])
-
-
-poller=no
-AC_ARG_WITH([poller],
- [AS_HELP_STRING([--with-poller], [The low level poller implementation: poll/solaris-ecf/epoll])],
- [case ${withval} in
-  poll)
-   AC_CHECK_HEADERS([sys/poll.h],[poller=no],[AC_MSG_ERROR([Can't find poll.h header file for poll])])
-   ;;
-  solaris-ecf)
-   AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],[AC_MSG_ERROR([Can't find port.h header file for solaris-ecf])])
-   ;;
-  epoll)
-   AC_CHECK_HEADERS([sys/epoll.h],[poller=epoll],[AC_MSG_ERROR([Can't find epoll.h header file for epoll])])
-   ;;
- esac],
- [
-  AC_CHECK_HEADERS([sys/poll.h],[poller=no],)
-  AC_CHECK_HEADERS([port.h],[poller=solaris-ecf],)
-  AC_CHECK_HEADERS([sys/epoll.h],[poller=epoll],)
- ]
-)
-
-AM_CONDITIONAL([HAVE_ECF], [test x$poller = xsolaris-ecf])
-AM_CONDITIONAL([HAVE_EPOLL], [test x$poller = xepoll])
-
-#Filter not implemented or invalid mechanisms
-if test $poller = xno; then
-  AC_MSG_ERROR([Polling mechanism not implemented for $host])
-fi
-
 #Guess host architecture, to choose platform-dependent objects
 case "$host" in
      *sun-solaris*)
@@ -503,28 +310,8 @@ AM_PATH_PYTHON()
 # Files to generate	
 AC_CONFIG_FILES([
   Makefile
-  examples/Makefile
-  examples/direct/Makefile
-  examples/fanout/Makefile
-  examples/pub-sub/Makefile
-  examples/request-response/Makefile
-  examples/failover/Makefile
-  examples/xml-exchange/Makefile
-  examples/qmf-console/Makefile
-  examples/tradedemo/Makefile
-  examples/messaging/Makefile
-  bindings/qmf/Makefile
-  bindings/qmf/ruby/Makefile
-  bindings/qmf/python/Makefile
-  bindings/qmf/tests/Makefile
-  managementgen/Makefile
-  etc/Makefile
   src/Makefile
-  src/tests/Makefile
-  docs/man/Makefile
-  docs/api/Makefile
-  docs/api/user.doxygen
-  docs/api/developer.doxygen
+  python/Makefile
   ])
 AC_OUTPUT
 

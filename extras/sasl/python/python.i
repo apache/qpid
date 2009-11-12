@@ -17,7 +17,7 @@
  * under the License.
  */
 
-%module qpidsasl
+%module saslwrapper
 
 
 /* unsigned32 Convert from Python --> C */
@@ -165,5 +165,5 @@
 
 
 
-%include "../saslwrapper.i"
+%include "../src/saslwrapper.i"
 
