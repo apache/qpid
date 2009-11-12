@@ -114,7 +114,7 @@ class BrokerURL(URL):
     return self.host + ":" + str(self.port)
 
   def match(self, host, port):
-    return socket.getaddrinfo(self.host, self.port)[0][4] == socket.gethostbyname(host, port)[0][4]
+    return socket.getaddrinfo(self.host, self.port)[0][4] == socket.getaddrinfo(host, port)[0][4]
 
 class Object(object):
   """ This class defines a 'proxy' object representing a real managed object on an agent.
