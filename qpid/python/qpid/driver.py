@@ -123,6 +123,9 @@ HEADER="!4s4B"
 EMPTY_DP = DeliveryProperties()
 EMPTY_MP = MessageProperties()
 
+SUBJECT = "qpid.subject"
+TO = "qpid.to"
+
 class Driver:
 
   def __init__(self, connection):
@@ -739,11 +742,11 @@ class Driver:
     if msg.subject is not None:
       if mp.application_headers is None:
         mp.application_headers = {}
-      mp.application_headers["subject"] = msg.subject
+      mp.application_headers[SUBJECT] = msg.subject
     if msg.to is not None:
       if mp.application_headers is None:
         mp.application_headers = {}
-      mp.application_headers["to"] = msg.to
+      mp.application_headers[TO] = msg.to
     if msg.durable:
       dp.delivery_mode = delivery_mode.persistent
     enc, dec = get_codec(msg.content_type)
@@ -787,8 +790,8 @@ class Driver:
     msg = Message(content)
     msg.id = mp.message_id
     if ap is not None:
-      msg.to = ap.get("to")
-      msg.subject = ap.get("subject")
+      msg.to = ap.get(TO)
+      msg.subject = ap.get(SUBJECT)
     msg.user_id = mp.user_id
     if mp.reply_to is not None:
       msg.reply_to = reply_to2addr(mp.reply_to)
