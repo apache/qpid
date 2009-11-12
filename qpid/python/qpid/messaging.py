@@ -295,10 +295,6 @@ class Session:
     self.closed = False
 
     self._lock = connection._lock
-    self.running = True
-    self.thread = Thread(target = self.run)
-    self.thread.setDaemon(True)
-    self.thread.start()
 
   def __repr__(self):
     return "<Session %s>" % self.name
@@ -342,8 +338,8 @@ class Session:
   @synchronized
   def receiver(self, source, **options):
     """
-    Creates a receiver that may be used to actively fetch or to listen
-    for the arrival of L{Messages<Message>} from the specified source.
+    Creates a receiver that may be used to fetch L{Messages<Message>}
+    from the specified source.
 
     @type source: str
     @param source: the source of L{Messages<Message>}
@@ -390,6 +386,13 @@ class Session:
         log.debug("RETR [%s] %s", self, msg)
         return msg
     return None
+
+  @synchronized
+  def next_receiver(self, timeout=None):
+    if self._ewait(lambda: self.incoming, timeout):
+      return self.incoming[0]._receiver
+    else:
+      raise Empty
 
   @synchronized
   def acknowledge(self, message=None, sync=True):
@@ -465,28 +468,7 @@ class Session:
     """
     for rcv in self.receivers:
       rcv.stop()
-    # TODO: think about stopping individual receivers in listen mode
-    self._wait(lambda: self._peek(self._pred) is None)
     self.started = False
-
-  def _pred(self, m):
-    return m._receiver.listener is not None
-
-  @synchronized
-  def run(self):
-    self.running = True
-    try:
-      while True:
-        msg = self._get(self._pred)
-        if msg is None:
-          break;
-        else:
-          msg._receiver.listener(msg)
-          if self._peek(self._pred) is None:
-            self.connection._waiter.notifyAll()
-    finally:
-      self.running = False
-      self.connection._waiter.notifyAll()
 
   @synchronized
   def close(self):
@@ -498,10 +480,7 @@ class Session:
 
     self.closing = True
     self._wakeup()
-    self._ewait(lambda: self.closed and not self.running)
-    while self.thread.isAlive():
-      self.thread.join(3)
-    self.thread = None
+    self._ewait(lambda: self.closed)
     # XXX: should be able to express this condition through API calls
     self._ewait(lambda: not self.outgoing and not self.acked)
     self.connection._remove_session(self)
@@ -636,8 +615,7 @@ class Receiver:
 
   """
   Receives incoming messages from a remote source. Messages may be
-  actively fetched with L{fetch} or a listener may be installed with
-  L{listen}.
+  fetched with L{fetch}.
   """
 
   def __init__(self, session, index, source, options, started):
@@ -659,7 +637,6 @@ class Receiver:
     self.linked = False
     self.closing = False
     self.closed = False
-    self.listener = None
     self._lock = self.session._lock
 
   def _wakeup(self):
@@ -693,16 +670,6 @@ class Receiver:
       return self.capacity.value
     else:
       return self.capacity
-
-  @synchronized
-  def listen(self, listener=None):
-    """
-    Sets the message listener for this receiver.
-
-    @type listener: callable
-    @param listener: a callable object to be notified on message arrival
-    """
-    self.listener = listener
 
   def _pred(self, msg):
     return msg._receiver == self
