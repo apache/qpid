@@ -48,9 +48,9 @@ class Broker:
     if not match: raise ValueError("'%s' is not a valid broker url" % (text))
     user, password, host, port = match.groups()
 
-    self.host = socket.gethostbyname (host)
     if port: self.port = int(port)
     else: self.port = 5672
+    self.host = socket.getaddrinfo(host, self.port)[0][4][0]
     self.username = user or "guest"
     self.password = password or "guest"
 
