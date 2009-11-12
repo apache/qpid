@@ -57,7 +57,7 @@ class ClusterTests(BrokerTest):
 
         # Original cluster will all be killed so expect exit with failure
         cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL)
-
+        for b in cluster: ErrorGenerator(b)
 
         # Start sender and receiver threads
         cluster[0].declare_queue("test-queue")
@@ -67,29 +67,18 @@ class ClusterTests(BrokerTest):
         sender.start()
 
         # Kill original brokers, start new ones.
-        for i in range(3):
+        endtime = time.time() + (int(self.config.defines.get("DURATION") or 3))
+        i = 0
+        while time.time() < endtime:
+            print time.time(), endtime
             cluster[i].kill()
-            b = cluster.start()
+            i += 1
+            b = cluster.start(expect=EXPECT_EXIT_FAIL)
+            ErrorGenerator(b)
             time.sleep(1)
-
         sender.stop()
         receiver.stop(sender.sent)
-
-    def send_receive_verify(self, b1, b2, queue, msgs):
-        b1.send_messages(queue, msgs)
-        self.assertEqual(msgs, [ m.content for m in b2.get_messages(queue,len(msgs))])
-        
-    def test_error_storm(self):
-        """Verify cluster behaves with clients generating a lot of errors."""
-        cluster = self.cluster(3)
-        errgen = [ ErrorGenerator(b) for b in cluster ]
-        msgs = [ str(i) for i in range(10) ]
-        self.send_receive_verify(cluster[0], cluster[1], "q", msgs)
-        self.send_receive_verify(cluster[1], cluster[2], "q", msgs)
-        for i in range(3):
-            cluster.start()
-            self.send_receive_verify(cluster[1], cluster[2], "q", msgs)
-
+        for i in range(i, len(cluster)): cluster[i].kill()
 
 class ClusterStoreTests(BrokerTest):
     """
