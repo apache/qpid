@@ -228,6 +228,35 @@ class SessionTests(Base):
     assert msg.content == content
     self.ssn.acknowledge(msg)
 
+  def testNextReceiver(self):
+    ADDR = 'test-next-rcv-queue {create: always}'
+    rcv1 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
+    rcv2 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
+    rcv3 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
+
+    # XXX: this won't work if it is before the receiver creation
+    self.ssn.start()
+
+    snd = self.ssn.sender(ADDR)
+
+    msgs = []
+    for i in range(10):
+      content = self.content("testNextReceiver", i)
+      snd.send(content)
+      msgs.append(content)
+
+    fetched = []
+    try:
+      while True:
+        rcv = self.ssn.next_receiver(timeout=self.delay())
+        assert rcv in (rcv1, rcv2, rcv3)
+        assert rcv.pending() > 0
+        fetched.append(rcv.fetch().content)
+    except Empty:
+      pass
+    assert msgs == fetched, "expecting %s, got %s" % (msgs, fetched)
+    self.ssn.acknowledge()
+
   def testStart(self):
     START_Q = 'test-start-queue {create: always}'
     rcv = self.ssn.receiver(START_Q)
@@ -436,22 +465,6 @@ class ReceiverTests(Base):
     content = self.content(base, count)
     self.snd.send(content)
     return content
-
-  def testListen(self):
-    msgs = Queue()
-    def listener(m):
-      msgs.put(m)
-      self.ssn.acknowledge(m)
-    self.rcv.listen(listener)
-    content = self.send("testListen")
-    try:
-      msg = msgs.get(timeout=self.delay())
-      assert False, "did not expect message: %s" % msg
-    except QueueEmpty:
-      pass
-    self.rcv.start()
-    msg = msgs.get(timeout=self.delay())
-    assert msg.content == content
 
   def testFetch(self):
     try:
