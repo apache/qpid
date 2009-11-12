@@ -97,12 +97,12 @@ class Console:
 class BrokerURL(URL):
   def __init__(self, text):
     URL.__init__(self, text)
-    socket.gethostbyname(self.host)
     if self.port is None:
       if self.scheme == URL.AMQPS:
         self.port = 5671
       else:
         self.port = 5672
+    socket.getaddrinfo(self.host, self.port)[0][4][0]
     self.authName = None
     self.authPass = None
     if self.user:
@@ -114,7 +114,7 @@ class BrokerURL(URL):
     return self.host + ":" + str(self.port)
 
   def match(self, host, port):
-    return socket.gethostbyname(self.host) == socket.gethostbyname(host) and self.port == port
+    return socket.getaddrinfo(self.host, self.port)[0][4] == socket.gethostbyname(host, port)[0][4]
 
 class Object(object):
   """ This class defines a 'proxy' object representing a real managed object on an agent.
