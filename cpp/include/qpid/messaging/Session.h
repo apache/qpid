@@ -88,13 +88,14 @@ class Session : public qpid::client::Handle<SessionImpl>
     QPID_CLIENT_EXTERN bool fetch(Message& message, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     QPID_CLIENT_EXTERN Message fetch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     QPID_CLIENT_EXTERN bool dispatch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    QPID_CLIENT_EXTERN Receiver nextReceiver(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    
 
     QPID_CLIENT_EXTERN Sender createSender(const Address& address);
     QPID_CLIENT_EXTERN Sender createSender(const std::string& address);
     QPID_CLIENT_EXTERN Receiver createReceiver(const Address& address);
     QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address);
-
-    QPID_CLIENT_EXTERN Address createTempQueue(const std::string& baseName = std::string());
   private:
   friend class qpid::client::PrivateImplRef<Session>;
 };

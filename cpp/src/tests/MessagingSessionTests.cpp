@@ -354,6 +354,28 @@ QPID_AUTO_TEST_CASE(testSessionDispatch)
     BOOST_CHECK_EQUAL(collector.messageData, boost::assign::list_of<std::string>("Message_1")("Message_2")("Message_3"));
 }
 
+QPID_AUTO_TEST_CASE(testNextReceiver)
+{
+    MultiQueueFixture fix;
+
+    for (uint i = 0; i < fix.queues.size(); i++) {
+        Receiver r = fix.session.createReceiver(fix.queues[i]);
+        r.setCapacity(10u);
+        r.start();//TODO: add Session::start
+    }
+
+    for (uint i = 0; i < fix.queues.size(); i++) {
+        Sender s = fix.session.createSender(fix.queues[i]);
+        Message msg((boost::format("Message_%1%") % (i+1)).str());
+        s.send(msg);
+    }
+
+    for (uint i = 0; i < fix.queues.size(); i++) {
+        Message msg;
+        BOOST_CHECK(fix.session.nextReceiver().fetch(msg, qpid::sys::TIME_SEC));
+        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1)).str());
+    }
+}
 
 QPID_AUTO_TEST_CASE(testMapMessage)
 {

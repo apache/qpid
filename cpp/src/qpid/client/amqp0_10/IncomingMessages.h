@@ -70,8 +70,7 @@ class IncomingMessages
 
     void setSession(qpid::client::AsyncSession session);
     bool get(Handler& handler, qpid::sys::Duration timeout);
-    //bool get(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    //bool get(const std::string& destination, qpid::messaging::Message& message, qpid::sys::Duration timeout);
+    bool getNextDestination(std::string& destination, qpid::sys::Duration timeout);
     void accept();
     void releaseAll();
     void releasePending(const std::string& destination);
@@ -90,6 +89,7 @@ class IncomingMessages
     AcceptTracker acceptTracker;
 
     bool process(Handler*, qpid::sys::Duration);
+    bool wait(qpid::sys::Duration);
     void retrieve(FrameSetPtr, qpid::messaging::Message*);
 
 };

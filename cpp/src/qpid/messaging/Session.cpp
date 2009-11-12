@@ -65,11 +65,6 @@ Receiver Session::createReceiver(const std::string& address)
     return impl->createReceiver(Address(address)); 
 }
 
-Address Session::createTempQueue(const std::string& baseName)
-{ 
-    return impl->createTempQueue(baseName); 
-}
-
 void Session::sync()
 {
     impl->sync();
@@ -94,6 +89,18 @@ bool Session::dispatch(qpid::sys::Duration timeout)
 {
     return impl->dispatch(timeout);
 }
+
+bool Session::nextReceiver(Receiver& receiver, qpid::sys::Duration timeout)
+{
+    return impl->nextReceiver(receiver, timeout);
+}
+
+
+Receiver Session::nextReceiver(qpid::sys::Duration timeout)
+{
+    return impl->nextReceiver(timeout);
+}
+
 uint32_t Session::available() { return impl->available(); }
 uint32_t Session::pendingAck() { return impl->pendingAck(); }
 
