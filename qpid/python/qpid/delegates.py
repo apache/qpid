@@ -27,7 +27,7 @@ import sys
 
 _have_sasl = None
 try:
-  import qpidsasl
+  import saslwrapper
   _have_sasl = True
 except:
   pass
@@ -175,7 +175,7 @@ class Client(Delegate):
     self.password  = password
 
     if _have_sasl:
-      self.sasl = qpidsasl.Client()
+      self.sasl = saslwrapper.Client()
       if username and len(username) > 0:
         self.sasl.setAttr("username", str(username))
       if password and len(password) > 0:

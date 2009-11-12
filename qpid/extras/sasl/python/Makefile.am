@@ -17,17 +17,27 @@
 # under the License.
 #
 
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
+if HAVE_SWIG
+if HAVE_PYTHON_DEVEL
 
-AUTOMAKE_OPTIONS = 1.9.2 foreign
-ACLOCAL_AMFLAGS = -I m4
+EXTRA_DIST = python.i
+INCLUDES = -I$(top_srcdir)/include
 
-EXTRA_DIST = \
-  LICENSE NOTICE README SSL RELEASE_NOTES DESIGN \
-  xml/cluster.xml INSTALL-WINDOWS
+generated_file_list = saslwrapper.cpp saslwrapper.py
+BUILT_SOURCES = $(generated_file_list)
 
-SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf
+$(generated_file_list): python.i $(top_srcdir)/src/saslwrapper.i
+	$(SWIG) -c++ -python -Wall -I/usr/include $(INCLUDES) -o saslwrapper.cpp $(srcdir)/python.i
 
-# Update libtool, if needed.
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
+pylibdir = $(PYTHON_LIB)
+lib_LTLIBRARIES = _saslwrapper.la
+
+_saslwrapper_la_LDFLAGS = -avoid-version -module -shared
+_saslwrapper_la_LIBADD = $(PYTHON_LIBS) $(top_builddir)/src/libsaslwrapper.la -lsasl2
+_saslwrapper_la_CXXFLAGS = -I$(PYTHON_INC)
+nodist__saslwrapper_la_SOURCES = saslwrapper.cpp
+
+CLEANFILES = $(generated_file_list)
+
+endif
+endif

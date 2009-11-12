@@ -17,11 +17,13 @@
 # under the License.
 #
 
-if HAVE_SWIG
-if HAVE_SASL
+EXTRA_DIST = saslwrapper.i
+INCLUDES = -I$(top_srcdir)/include
+
+nobase_include_HEADERS = ../include/saslwrapper.h
 
 lib_LTLIBRARIES = libsaslwrapper.la
-libsaslwrapper_la_SOURCES = saslwrapper.h cyrus/saslwrapper.cpp
+libsaslwrapper_la_SOURCES = cyrus/saslwrapper.cpp
 
 # Library Version Information:
 #
@@ -35,31 +37,3 @@ REVISION = 0
 AGE      = 0
 
 libsaslwrapper_la_LDFLAGS = -version-info $(CURRENT):$(REVISION):$(AGE)
-EXTRA_DIST = saslwrapper.i
-CLEANFILES =
-
-if HAVE_PYTHON_DEVEL
-
-EXTRA_DIST += $(srcdir)/python/python.i
-generated_file_list = python/qpidsasl.cpp python/qpidsasl.py
-BUILT_SOURCES = $(generated_file_list)
-
-$(generated_file_list): $(srcdir)/python/python.i $(srcdir)/saslwrapper.i
-	$(SWIG) -c++ -python -Wall -I/usr/include -I. -o python/qpidsasl.cpp $(srcdir)/python/python.i
-
-pylibdir = $(PYTHON_LIB)
-lib_LTLIBRARIES += _qpidsasl.la
-
-_qpidsasl_la_LDFLAGS = -avoid-version -module -shared
-_qpidsasl_la_LIBADD = $(PYTHON_LIBS) libsaslwrapper.la -lsasl2
-_qpidsasl_la_CXXFLAGS = -I$(PYTHON_INC)
-nodist__qpidsasl_la_SOURCES = python/qpidsasl.cpp
-
-CLEANFILES += $(generated_file_list)
-endif
-
-if HAVE_RUBY_DEVEL
-endif
-
-endif
-endif
