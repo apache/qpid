@@ -176,25 +176,25 @@ class Broker(Popen):
 
     def send_message(self, queue, message):
         s = self.connect().session()
-        s.sender(queue+" {create:always}").send(message)
+        s.sender(queue+"; {create:always}").send(message)
         s.connection.close()
 
     def send_messages(self, queue, messages):
         s = self.connect().session()
-        sender = s.sender(queue+" {create:always}")
+        sender = s.sender(queue+"; {create:always}")
         for m in messages: sender.send(m)
         s.connection.close()
 
     def get_message(self, queue):
         s = self.connect().session()
-        m = s.receiver(queue+" {create:always}", capacity=1).fetch(timeout=1)
+        m = s.receiver(queue+"; {create:always}", capacity=1).fetch(timeout=1)
         s.acknowledge()
         s.connection.close()
         return m
 
     def get_messages(self, queue, n):
         s = self.connect().session()
-        receiver = s.receiver(queue+" {create:always}", capacity=n)
+        receiver = s.receiver(queue+"; {create:always}", capacity=n)
         m = [receiver.fetch(timeout=1) for i in range(n)]
         s.acknowledge()
         s.connection.close()

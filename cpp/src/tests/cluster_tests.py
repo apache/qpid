@@ -34,8 +34,8 @@ class ClusterTests(BrokerTest):
         # Start a cluster, send some messages to member 0.
         cluster = self.cluster(2)
         s0 = cluster[0].connect().session()
-        s0.sender("q {create:always}").send(messaging.Message("x"))
-        s0.sender("q {create:always}").send(messaging.Message("y"))
+        s0.sender("q; {create:always}").send(messaging.Message("x"))
+        s0.sender("q; {create:always}").send(messaging.Message("y"))
         s0.connection.close()
 
         # Verify messages available on member 1.
