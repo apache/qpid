@@ -433,7 +433,9 @@ runDeclareQueuesClient ( brokerVector brokers,
                             char const *  host,
                             char const *  path,
                             int verbosity,
-                            int durable
+                            int durable,
+                            char const * queue_prefix,
+                            int n_queues
                           )
 {
     string name("declareQueues");
@@ -456,6 +458,13 @@ runDeclareQueuesClient ( brokerVector brokers,
       argv.push_back ( "1" );
     else
       argv.push_back ( "0" );
+
+    argv.push_back ( queue_prefix );
+
+    char n_queues_str[20];
+    sprintf ( n_queues_str, "%d", n_queues );
+    argv.push_back ( n_queues_str );
+
     argv.push_back ( 0 );
     pid_t pid = fork();
 
@@ -475,10 +484,11 @@ runDeclareQueuesClient ( brokerVector brokers,
 
 pid_t
 startReceivingClient ( brokerVector brokers,
-                         char const *  host,
-                         char const *  receiverPath,
-                         char const *  reportFrequency,
-                         int verbosity
+                         char const * host,
+                         char const * receiverPath,
+                         char const * reportFrequency,
+                         int verbosity,
+                         char const * queue_name
                        )
 {
     string name("receiver");
@@ -502,6 +512,7 @@ startReceivingClient ( brokerVector brokers,
     argv.push_back ( portStr );
     argv.push_back ( reportFrequency );
     argv.push_back ( verbosityStr );
+    argv.push_back ( queue_name );
     argv.push_back ( 0 );
 
     pid_t pid = fork();
@@ -522,12 +533,13 @@ startReceivingClient ( brokerVector brokers,
 
 pid_t
 startSendingClient ( brokerVector brokers,
-                       char const *  host,
-                       char const *  senderPath,
-                       char const *  nMessages,
-                       char const *  reportFrequency,
+                       char const * host,
+                       char const * senderPath,
+                       char const * nMessages,
+                       char const * reportFrequency,
                        int verbosity,
-                       int durability
+                       int durability,
+                       char const * queue_name
                      )
 {
     string name("sender");
@@ -555,6 +567,7 @@ startSendingClient ( brokerVector brokers,
       argv.push_back ( "1" );
     else
       argv.push_back ( "0" );
+    argv.push_back ( queue_name );
     argv.push_back ( 0 );
 
     pid_t pid = fork();
@@ -589,10 +602,10 @@ using namespace qpid::tests;
 int
 main ( int argc, char const ** argv )
 {
-    if ( argc != 9 ) {
+    if ( argc != 11 ) {
         cerr << "Usage: "
              << argv[0]
-             << "moduleOrDir declareQueuesPath senderPath receiverPath nMessages reportFrequency verbosity durable"
+             << "moduleOrDir declareQueuesPath senderPath receiverPath nMessages reportFrequency verbosity durable n_queues n_brokers"
              << endl;
         cerr << "\tverbosity is an integer, durable is 0 or 1\n";
         return BAD_ARGS;
@@ -608,6 +621,8 @@ main ( int argc, char const ** argv )
     char const * reportFrequency    = argv[i++];
     int          verbosity          = atoi(argv[i++]);
     int          durable            = atoi(argv[i++]);
+    int          n_queues           = atoi(argv[i++]);
+    int          n_brokers          = atoi(argv[i++]);
 
     char const * host               = "127.0.0.1";
     int maxBrokers = 50;
@@ -625,8 +640,7 @@ main ( int argc, char const ** argv )
     if ( verbosity > 1 )
         cout << "Starting initial cluster...\n";
 
-    int nBrokers = 3;
-    for ( int i = 0; i < nBrokers; ++ i ) {
+    for ( int i = 0; i < n_brokers; ++ i ) {
         startNewBroker ( brokers,
                          moduleOrDir,
                          clusterName,
@@ -638,10 +652,22 @@ main ( int argc, char const ** argv )
     if ( verbosity > 0 )
         printBrokers ( brokers );
 
+     // Get prefix for each queue name.
+     stringstream queue_prefix;
+     queue_prefix << "failover_soak_" << getpid();
+
+
      // Run the declareQueues child.
      int childStatus;
      pid_t dqClientPid =
-     runDeclareQueuesClient ( brokers, host, declareQueuesPath, verbosity, durable );
+     runDeclareQueuesClient ( brokers, 
+                              host, 
+                              declareQueuesPath, 
+                              verbosity, 
+                              durable,
+                              queue_prefix.str().c_str(),
+                              n_queues
+                            );
      if ( -1 == dqClientPid ) {
          cerr << "END_OF_TEST ERROR_START_DECLARE_1\n";
          return CANT_FORK_DQ;
@@ -656,32 +682,42 @@ main ( int argc, char const ** argv )
      allMyChildren.exited ( dqClientPid, childStatus );
 
 
+     /*
+       Start one receiving and one sending client for each queue.
+     */
+     for ( int i = 0; i < n_queues; ++ i ) {
 
-     // Start the receiving client.
-     pid_t receivingClientPid =
-     startReceivingClient ( brokers,
-                              host,
-                              receiverPath,
-                              reportFrequency,
-                              verbosity );
-     if ( -1 == receivingClientPid ) {
-         cerr << "END_OF_TEST ERROR_START_RECEIVER\n";
-         return CANT_FORK_RECEIVER;
-     }
+         stringstream queue_name;
+         queue_name << queue_prefix.str() << '_' << i;
+
+         // Receiving client ---------------------------
+         pid_t receivingClientPid =
+         startReceivingClient ( brokers,
+                                  host,
+                                  receiverPath,
+                                  reportFrequency,
+                                  verbosity,
+                                  queue_name.str().c_str() );
+         if ( -1 == receivingClientPid ) {
+             cerr << "END_OF_TEST ERROR_START_RECEIVER\n";
+             return CANT_FORK_RECEIVER;
+         }
 
 
-     // Start the sending client.
-     pid_t sendingClientPid =
-     startSendingClient ( brokers,
-                            host,
-                            senderPath,
-                            nMessages,
-                            reportFrequency,
-                            verbosity,
-                            durable );
-     if ( -1 == sendingClientPid ) {
-         cerr << "END_OF_TEST ERROR_START_SENDER\n";
-         return CANT_FORK_SENDER;
+         // Sending client ---------------------------
+         pid_t sendingClientPid =
+         startSendingClient ( brokers,
+                                host,
+                                senderPath,
+                                nMessages,
+                                reportFrequency,
+                                verbosity,
+                                durable,
+                                queue_name.str().c_str() );
+         if ( -1 == sendingClientPid ) {
+             cerr << "END_OF_TEST ERROR_START_SENDER\n";
+             return CANT_FORK_SENDER;
+         }
      }
 
 
@@ -689,7 +725,7 @@ main ( int argc, char const ** argv )
          maxSleep = 4;
 
 
-     for ( int totalBrokers = 3;
+     for ( int totalBrokers = n_brokers;
            totalBrokers < maxBrokers;
            ++ totalBrokers
          )
