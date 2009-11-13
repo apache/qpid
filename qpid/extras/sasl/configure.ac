@@ -312,6 +312,7 @@ AC_CONFIG_FILES([
   Makefile
   src/Makefile
   python/Makefile
+  ruby/Makefile
   ])
 AC_OUTPUT
 
