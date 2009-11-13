@@ -211,7 +211,7 @@ pclfile = "%s.ops.pcl" % file
 
 if os.path.exists(pclfile) and \
       os.path.getmtime(pclfile) > os.path.getmtime(file):
-  f = open(pclfile, "read")
+  f = open(pclfile, "r")
   types = pickle.load(f)
   f.close()
 else:
@@ -249,7 +249,7 @@ else:
   types = [make(nd) for nd in type_decls]
 
   if os.access(os.path.dirname(os.path.abspath(pclfile)), os.W_OK):
-    f = open(pclfile, "write")
+    f = open(pclfile, "w")
     pickle.dump(types, f)
     f.close()
 
