@@ -66,7 +66,7 @@ class Base(Test):
       return "%s[%s, %s]" % (base, count, self.test_id)
 
   def ping(self, ssn):
-    PING_Q = 'ping-queue {create: always}'
+    PING_Q = 'ping-queue; {create: always}'
     # send a message
     sender = ssn.sender(PING_Q, durable=self.durable())
     content = self.content("ping")
@@ -190,7 +190,7 @@ class ConnectionTests(Base):
     self.conn.close()
     assert not self.conn.connected()
 
-ACK_Q = 'test-ack-queue {create: always}'
+ACK_Q = 'test-ack-queue; {create: always}'
 
 class SessionTests(Base):
 
@@ -202,7 +202,7 @@ class SessionTests(Base):
     return self.conn.session()
 
   def testSender(self):
-    snd = self.ssn.sender('test-snd-queue {create: always}',
+    snd = self.ssn.sender('test-snd-queue; {create: always}',
                           durable=self.durable())
     snd2 = self.ssn.sender(snd.target, durable=self.durable())
     assert snd is not snd2
@@ -216,7 +216,7 @@ class SessionTests(Base):
     self.ssn.acknowledge(msg)
 
   def testReceiver(self):
-    rcv = self.ssn.receiver('test-rcv-queue {create: always}')
+    rcv = self.ssn.receiver('test-rcv-queue; {create: always}')
     rcv2 = self.ssn.receiver(rcv.source)
     assert rcv is not rcv2
     rcv2.close()
@@ -229,7 +229,7 @@ class SessionTests(Base):
     self.ssn.acknowledge(msg)
 
   def testNextReceiver(self):
-    ADDR = 'test-next-rcv-queue {create: always}'
+    ADDR = 'test-next-rcv-queue; {create: always}'
     rcv1 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
     rcv2 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
     rcv3 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
@@ -258,7 +258,7 @@ class SessionTests(Base):
     self.ssn.acknowledge()
 
   def testStart(self):
-    START_Q = 'test-start-queue {create: always}'
+    START_Q = 'test-start-queue; {create: always}'
     rcv = self.ssn.receiver(START_Q)
     assert not rcv.started
     self.ssn.start()
@@ -267,7 +267,7 @@ class SessionTests(Base):
     assert rcv.started
 
   def testStop(self):
-    STOP_Q = 'test-stop-queue {create: always}'
+    STOP_Q = 'test-stop-queue; {create: always}'
     self.ssn.start()
     rcv = self.ssn.receiver(STOP_Q)
     assert rcv.started
@@ -345,8 +345,8 @@ class SessionTests(Base):
     return contents
 
   def txTest(self, commit):
-    TX_Q = 'test-tx-queue {create: always}'
-    TX_Q_COPY = 'test-tx-queue-copy {create: always}'
+    TX_Q = 'test-tx-queue; {create: always}'
+    TX_Q_COPY = 'test-tx-queue-copy; {create: always}'
     txssn = self.conn.session(transactional=True)
     contents = self.send(self.ssn, TX_Q, "txTest", 3)
     txrcv = txssn.receiver(TX_Q)
@@ -376,7 +376,7 @@ class SessionTests(Base):
     self.txTest(False)
 
   def txTestSend(self, commit):
-    TX_SEND_Q = 'test-tx-send-queue {create: always}'
+    TX_SEND_Q = 'test-tx-send-queue; {create: always}'
     txssn = self.conn.session(transactional=True)
     contents = self.send(txssn, TX_SEND_Q, "txTestSend", 3)
     rcv = self.ssn.receiver(TX_SEND_Q)
@@ -399,7 +399,7 @@ class SessionTests(Base):
     self.txTestSend(False)
 
   def txTestAck(self, commit):
-    TX_ACK_Q = 'test-tx-ack-queue {create: always}'
+    TX_ACK_Q = 'test-tx-ack-queue; {create: always}'
     txssn = self.conn.session(transactional=True)
     txrcv = txssn.receiver(TX_ACK_Q)
     self.assertEmpty(txrcv)
@@ -444,7 +444,7 @@ class SessionTests(Base):
     except Disconnected:
       pass
 
-RECEIVER_Q = 'test-receiver-queue {create: always}'
+RECEIVER_Q = 'test-receiver-queue; {create: always}'
 
 class ReceiverTests(Base):
 
@@ -581,7 +581,7 @@ class ReceiverTests(Base):
   # XXX: need testClose
 
 NOSUCH_Q = "this-queue-should-not-exist"
-UNPARSEABLE_ADDR = "{bad address}"
+UNPARSEABLE_ADDR = "name/subject; {bad options"
 UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"
 
 class AddressErrorTests(Base):
@@ -630,24 +630,24 @@ class AddressErrorTests(Base):
   def testUnparseableTarget(self):
     # XXX: should have specific exception for this
     self.sendErrorTest(UNPARSEABLE_ADDR, SendError,
-                       lambda e: "expecting ID" in str(e))
+                       lambda e: "expecting COLON" in str(e))
 
   def testUnparseableSource(self):
     # XXX: should have specific exception for this
     self.fetchErrorTest(UNPARSEABLE_ADDR, ReceiveError,
-                        lambda e: "expecting ID" in str(e))
+                        lambda e: "expecting COLON" in str(e))
 
   def testUnlexableTarget(self):
     # XXX: should have specific exception for this
     self.sendErrorTest(UNLEXABLE_ADDR, SendError,
-                       lambda e: "unrecognized character" in str(e))
+                       lambda e: "unrecognized characters" in str(e))
 
   def testUnlexableSource(self):
     # XXX: should have specific exception for this
     self.fetchErrorTest(UNLEXABLE_ADDR, ReceiveError,
-                        lambda e: "unrecognized character" in str(e))
+                        lambda e: "unrecognized characters" in str(e))
 
-SENDER_Q = 'test-sender-q {create: always}'
+SENDER_Q = 'test-sender-q; {create: always}'
 
 class SenderTests(Base):
 
@@ -756,7 +756,7 @@ class MessageTests(Base):
     m.content = u"<html/>"
     assert m.content_type == "text/html; charset=utf8"
 
-ECHO_Q = 'test-message-echo-queue {create: always}'
+ECHO_Q = 'test-message-echo-queue; {create: always}'
 
 class MessageEchoTests(Base):
 

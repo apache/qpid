@@ -42,7 +42,7 @@ class JavaClientTest(BrokerTest):
     # temp hack: just creating the queue here and closing it.
     def start_error_watcher(self,broker=None):
         ssn = broker.connect().session()
-        err_watcher = ssn.receiver("control {create:always}", capacity=1)
+        err_watcher = ssn.receiver("control; {create:always}", capacity=1)
         ssn.close()  
 
     def client(self,**options):
@@ -76,7 +76,7 @@ class JavaClientTest(BrokerTest):
     # temp hack: just creating a receiver and closing session soon after.
     def monitor_clients(self,broker=None,run_time=600,error_ck_freq=60):
         ssn = broker.connect().session()
-        err_watcher = ssn.receiver("control {create:always}", capacity=1)
+        err_watcher = ssn.receiver("control; {create:always}", capacity=1)
         i = run_time/error_ck_freq
         for j in range(i):            
             try:   
