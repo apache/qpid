@@ -42,5 +42,5 @@ EXTRA_DIST=                  \
 	verify_cpp_python.in \
 	verify_python_cpp    \
 	verify_python_cpp.in \
-	request_response_client.vcproj \
-	request_response_server.vcproj
+	request-response_client.vcproj \
+	request-response_server.vcproj
