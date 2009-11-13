@@ -17,7 +17,8 @@
 # under the License.
 #
 from qpid.datatypes import Message, RangedSet
-from qpid.testlib import testrunner, TestBase010
+#from qpid.testlib import testrunner, TestBase010
+from qpid.testlib import TestBase010
 
 class PersistenceTests(TestBase010):
     def test_delete_queue_after_publish(self):
