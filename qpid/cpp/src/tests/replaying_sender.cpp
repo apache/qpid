@@ -54,14 +54,21 @@ class Sender : public FailoverManager::Command
     uint sent;
     const uint reportFrequency;
     Message message;
-
     int verbosity;
     int persistence;
+    string queueName;
 };
 
-Sender::Sender(const std::string& queue, uint count_, uint reportFreq ) : sender(10), count(count_), sent(0), reportFrequency(reportFreq), verbosity(0), persistence(0)
+Sender::Sender(const std::string& queue, uint count_, uint reportFreq ) 
+    : sender(10), 
+      count(count_), 
+      sent(0), 
+      reportFrequency(reportFreq), 
+      verbosity(0), 
+      persistence(0),
+      queueName ( queue )
 {
-    message.getDeliveryProperties().setRoutingKey(queue);
+    message.getDeliveryProperties().setRoutingKey(queueName.c_str());
 }
 
 void Sender::execute(AsyncSession& session, bool isRetry)
@@ -81,7 +88,13 @@ void Sender::execute(AsyncSession& session, bool isRetry)
         sender.send(message);
         if (count > reportFrequency && !(sent % reportFrequency)) {
             if ( verbosity > 0 )
-                std::cout << "Sender sent " << sent << " of " << count << std::endl;
+                std::cout << "Sender sent " 
+                          << sent 
+                          << " of " 
+                          << count 
+                          << " on queue "
+                          << queueName
+                          << std::endl;
         }
     }
     message.setData("That's all, folks!");
@@ -104,9 +117,9 @@ int main(int argc, char ** argv)
 {
     ConnectionSettings settings;
 
-    if ( argc != 7 )
+    if ( argc != 8 )
     {
-      std::cerr << "Usage: replaying_sender host port n_messages report_frequency verbosity persistence\n";
+      std::cerr << "Usage: replaying_sender host port n_messages report_frequency verbosity persistence queue_name\n";
       return 1;
     }
 
@@ -116,9 +129,10 @@ int main(int argc, char ** argv)
     int reportFrequency = atoi(argv[4]);
     int verbosity       = atoi(argv[5]);
     int persistence     = atoi(argv[6]);
+    char * queue_name   = argv[7];
 
     FailoverManager connection(settings);
-    Sender sender("message_queue", n_messages, reportFrequency );
+    Sender sender(queue_name, n_messages, reportFrequency );
     sender.setVerbosity   ( verbosity   );
     sender.setPersistence ( persistence );
     try {
@@ -127,7 +141,8 @@ int main(int argc, char ** argv)
         {
             std::cout << "Sender finished.  Sent "
                       << sender.getSent()
-                      << " messages."
+                      << " messages on queue "
+                      << queue_name
                       << endl;
         }
         connection.close();
