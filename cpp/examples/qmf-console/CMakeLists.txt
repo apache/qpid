@@ -17,7 +17,7 @@
 # under the License.
 #
 
-add_example(console console qmfconsole)
-add_example(console printevents qmfconsole)
-add_example(console ping qmfconsole)
-add_example(console queuestats qmfconsole)
+add_example(qmf-console console qmfconsole)
+add_example(qmf-console printevents qmfconsole)
+add_example(qmf-console ping qmfconsole)
+add_example(qmf-console queuestats qmfconsole)

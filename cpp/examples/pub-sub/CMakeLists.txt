@@ -17,5 +17,5 @@
 # under the License.
 #
 
-add_example(pub_sub topic_listener)
-add_example(pub_sub topic_publisher)
+add_example(pub-sub topic_listener)
+add_example(pub-sub topic_publisher)

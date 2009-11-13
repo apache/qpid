@@ -17,6 +17,8 @@
 # under the License.
 #
 
+if (BUILD_XML)
 add_example(xml-exchange declare_queues)
 add_example(xml-exchange xml_producer)
 add_example(xml-exchange listener)
+endif (BUILD_XML)

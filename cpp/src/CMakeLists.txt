@@ -737,10 +737,10 @@ target_link_libraries (qpidd qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRA
 install (TARGETS qpidd RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
-if (CPACK_NSIS)
+if (CPACK_GENERATOR STREQUAL "NSIS")
     set (CPACK_NSIS_MENU_LINKS
          "qpidd" "Start Qpid Broker")
-endif (CPACK_NSIS)
+endif (CPACK_GENERATOR STREQUAL "NSIS")
 
 # QMF library
 # Library Version Information (CURRENT.REVISION.AGE):

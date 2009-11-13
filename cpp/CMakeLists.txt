@@ -23,106 +23,48 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
-set (QPID_VERSION_MAJOR 0)
-set (QPID_VERSION_MINOR 6)
+include(BuildInstallSettings.cmake)
+
 set (qpidc_version ${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR})
 
 enable_testing()
 include (CTest)
 
-# When doing installs, there are a number of components that the item can
-# be associated with. Since there may be different sets of components desired
-# for the various platforms, the component names are defined here. When
-# setting the COMPONENT in an install directive, use these to ensure that
-# the item is installed correctly.
-#
+# Overall packaging/install options.
 # This section also has all the setup for various packaging-specific options.
+set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 if (WIN32)
-  set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+  # Include installing the MSVCRT library
+  include(InstallRequiredSystemLibraries)
+  set (CPACK_GENERATOR "NSIS")
   set (CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/packaging/NSIS\\\\qpid-icon.ico")
   set (CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/packaging/NSIS\\\\qpid-icon.ico")
   set (CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/packaging/NSIS\\\\qpid-install-banner.bmp")
+  set (CPACK_NSIS_URL_INFO_ABOUT "http://qpid.apache.org/")
+  # Needs this to correctly set up Start menu links later.
+  set (CPACK_PACKAGE_EXECUTABLES "")
 
-  # Install types; these defines the component sets that are installed.
-  # Each component (below) indicates which of these install type(s) it is
-  # included in. The user can refine the components at install time.
-  set (CPACK_ALL_INSTALL_TYPES Broker Development Full)
-
-  set (QPID_COMPONENT_COMMON Common)
-  set (CPACK_COMPONENT_COMMON_INSTALL_TYPES Broker Development Full)
-  set (CPACK_COMPONENT_COMMON_DISPLAY_NAME "Required common runtime items")
-  set (CPACK_COMPONENT_COMMON_DESCRIPTION
-       "Run-time library common to all runtime components in Qpid.\n
-        This item is required by both broker and client components.")
-
-  set (QPID_COMPONENT_BROKER Broker)
-  set (CPACK_COMPONENT_BROKER_DEPENDS Common)
-  set (CPACK_COMPONENT_BROKER_INSTALL_TYPES Broker Full)
-  set (CPACK_COMPONENT_BROKER_DISPLAY_NAME "Broker")
-  set (CPACK_COMPONENT_BROKER_DESCRIPTION
-       "Messaging broker; controls message flow within the system.\n
-        At least one broker is required to run any messaging application.")
-
-  set (QPID_COMPONENT_CLIENT Client)
-  set (CPACK_COMPONENT_CLIENT_DEPENDS Common)
-  set (CPACK_COMPONENT_CLIENT_INSTALL_TYPES Development Full)
-  set (CPACK_COMPONENT_CLIENT_DISPLAY_NAME "Client runtime libraries")
-  set (CPACK_COMPONENT_CLIENT_DESCRIPTION
-       "Runtime library components required to build and execute a client application.")
-
-  set (QPID_COMPONENT_CLIENT_INCLUDE ClientInclude)
-  set (CPACK_COMPONENT_CLIENTINCLUDE_INSTALL_TYPES Development Full)
-  set (CPACK_COMPONENT_CLIENTINCLUDE_DISPLAY_NAME
-       "Client programming header files")
-  set (CPACK_COMPONENT_CLIENTINCLUDE_DESCRIPTION
-       "C++ header files required to build any Qpid messaging application.")
-
-  set (QPID_COMPONENT_QMF QMF)
-  set (CPACK_COMPONENT_QMF_INSTALL_TYPES Development Full)
-  set (CPACK_COMPONENT_QMF_DISPLAY_NAME
-       "Qpid Management Framework (QMF)")
-  set (CPACK_COMPONENT_QMF_DESCRIPTION
-       "QMF Agent allows you to embed QMF management in your program.\n
-        QMF Console allows you to build management programs using QMF.")
-
-  set (QPID_INSTALL_BINDIR bin CACHE STRING
-       "Directory to install user executables")
-  set (QPID_INSTALL_CONFDIR conf CACHE STRING
-       "Directory to install configuration files")
-  set (QPID_INSTALL_DATADIR conf CACHE STRING
-       "Directory to install read-only arch.-independent data root")
-  set (QPID_INSTALL_HTMLDIR html CACHE STRING
-       "Directory to install HTML documentation")
-  set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
-       "Directory to install programming header files")
-  set (QPID_INSTALL_LIBDIR bin CACHE STRING
-       "Directory to install library files")
-  set (QPID_INSTALL_SBINDIR bin CACHE STRING
-       "Directory to install system admin executables")
-  set (QPIDC_MODULE_DIR plugins/client CACHE STRING
-       "Directory to load client plug-in modules from")
-  set (QPIDD_MODULE_DIR plugins/broker CACHE STRING
-       "Directory to load broker plug-in modules from")
-
-  # The WCF/C++ client is built separately (it doesn't have a CMakeLists.txt)
-  # but installed with the C++ components on Windows.
-  # Don't freak out if it's not there (but it may be good to freak out if
-  # building the real one...)
+  # The WCF/C++ client is built separately (it doesn't build via CMake)
+  # but is installed with the C++ components on Windows.
   install (PROGRAMS
-           ../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Channel.dll
-           ../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Interop.dll
+           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Channel.dll
+           ${CMAKE_SOURCE_DIR}/../wcf/src/Apache/Qpid/Channel/bin/Debug/Apache.Qpid.Interop.dll
            DESTINATION ${QPID_INSTALL_LIBDIR}
-           COMPONENT ${QPID_COMPONENT_CLIENT}
-           OPTIONAL)
-# Not sure about this syntax yet... or how to only do it if Client is installed.
-#  set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-#       gacutil -I '$INSTDIR\\${QPID_INSTALL_LIBDIR}\\Apache.Qpid.Channel.dll'
-#       gacutil -I '$INSTDIR\\${QPID_INSTALL_LIBDIR}\\Apache.Qpid.Interop.dll'
-#      ")
-#  set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
-#       gacutil /u 'Apache.Qpid.Channel'
-#       gacutil /u 'Apache.Qpid.Interop'
-#      ")
+           COMPONENT ${QPID_COMPONENT_CLIENT})
+  install (DIRECTORY ${CMAKE_SOURCE_DIR}/../wcf/samples/Channel
+           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
+           COMPONENT ${QPID_COMPONENT_EXAMPLES}
+           PATTERN ".svn" EXCLUDE)
+
+set (CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+     ExecWait 'gacutil -I \\\"$INSTDIR\\\\${QPID_INSTALL_LIBDIR}\\\\Apache.Qpid.Channel.dll\\\"'
+     ExecWait 'gacutil -I \\\"$INSTDIR\\\\${QPID_INSTALL_LIBDIR}\\\\Apache.Qpid.Interop.dll\\\"'
+    ")
+set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+     ExecWait 'gacutil /u \\\"Apache.Qpid.Channel\\\"'
+     ExecWait 'gacutil /u \\\"Apache.Qpid.Interop\\\"'
+    ")
+
 endif (WIN32)
 
 if (CMAKE_SYSTEM_NAME STREQUAL Linux)
@@ -130,43 +72,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   # /etc and most in the install location, we need to use a DESTDIR build
   # rather than the usual simple use of CPACK_INSTALL_PREFIX.
   set (CPACK_SET_DESTDIR ON)
-
-  set (QPID_COMPONENT_BROKER runtime)
-  set (QPID_COMPONENT_CLIENT runtime)
-  set (QPID_COMPONENT_COMMON runtime)
-  set (CPACK_COMPONENT_RUNTIME_DISPLAY_NAME
-       "Items required to run broker and/or client programs")
-  set (QPID_COMPONENT_CLIENT_INCLUDE development)
-  set (QPID_COMPONENT_QMF development)
-  set (CPACK_COMPONENT_DEVELOPMENT_DISPLAY_NAME
-       "Items required to build new C++ Qpid client programs")
-
-
-  set (QPID_INSTALL_BINDIR bin CACHE STRING
-       "Directory to install user executables")
-  set (QPID_INSTALL_CONFDIR /etc/qpid CACHE STRING
-       "Directory to install configuration files")
-  set (QPID_INSTALL_DATADIR share/qpid CACHE STRING
-       "Directory to install read-only arch.-independent data root")
-  set (QPID_INSTALL_HTMLDIR html CACHE STRING
-       "Directory to install HTML documentation")
-  set (QPID_INSTALL_INCLUDEDIR include CACHE STRING
-       "Directory to install programming header files")
-  set (QPID_INSTALL_LIBDIR lib CACHE STRING
-       "Directory to install library files")
-  set (QPID_INSTALL_SBINDIR sbin CACHE STRING
-       "Directory to install system admin executables")
-  set (QPIDC_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/client CACHE STRING
-       "Directory to load client plug-in modules from")
-  set (QPIDD_MODULE_DIR ${QPID_INSTALL_LIBDIR}/qpid/daemon CACHE STRING
-       "Directory to load broker plug-in modules from")
 endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
 
 set (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf CACHE STRING
      "Name of the Qpid client configuration file")
 set (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf CACHE STRING
      "Name of the Qpid broker configuration file")
-
 
 install(FILES  LICENSE NOTICE README SSL RELEASE_NOTES DESIGN
                xml/cluster.xml INSTALL-WINDOWS

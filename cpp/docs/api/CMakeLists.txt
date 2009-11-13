@@ -32,5 +32,9 @@ if (GEN_DOXYGEN)
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
              DESTINATION ${QPID_INSTALL_HTMLDIR}
              COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE})
-
+    if (CPACK_GENERATOR STREQUAL "NSIS")
+        set (CPACK_NSIS_MENU_LINKS
+             "${QPID_INSTALL_HTMLDIR}/index.html" "Qpid C++ API Documentation"
+             "https://issues.apache.org/jira/browse/QPID" "Report Qpid Problem")
+    endif (CPACK_GENERATOR STREQUAL "NSIS")
 endif (GEN_DOXYGEN)
