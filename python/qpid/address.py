@@ -40,7 +40,7 @@ COMMA = Type("COMMA", r",")
 NUMBER = Type("NUMBER", r'[+-]?[0-9]*\.?[0-9]+')
 ID = Type("ID", r'[a-zA-Z_][a-zA-Z0-9_]*')
 STRING = Type("STRING", r""""(?:[^\\"]|\\.)*"|'(?:[^\\']|\\.)*'""")
-ESC = Type("ESC", r"\\[^ux]|\\x[0-9][0-9]|\\u[0-9][0-9][0-9][0-0]")
+ESC = Type("ESC", r"\\[^ux]|\\x[0-9a-fA-F][0-9a-fA-F]|\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")
 SYM = Type("SYM", r"[.#*%@$^!+-]")
 WSPACE = Type("WSPACE", r"[ \n\r\t]+")
 EOF = Type("EOF")
@@ -106,8 +106,10 @@ def tok2str(tok):
   if tok.type is STRING:
     return eval(tok.value)
   elif tok.type is ESC:
-    if tok.value[1] in ("x", "u"):
+    if tok.value[1] == "x":
       return eval('"%s"' % tok.value)
+    elif tok.value[1] == "u":
+      return eval('u"%s"' % tok.value)
     else:
       return tok.value[1]
   else:

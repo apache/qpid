@@ -48,7 +48,8 @@ class AddressTests(Test):
                "foo.bar", "baz.qux:moo:arf", {"key": "value"})
 
   def testOptionsTrailingComma(self):
-    self.valid("name/subject; {key: value,}", "name", "subject", {"key": "value"})
+    self.valid("name/subject; {key: value,}", "name", "subject",
+               {"key": "value"})
 
   def testSemiSubject(self):
     self.valid("foo.bar/'baz.qux;moo:arf'; {key: value}",
@@ -66,15 +67,44 @@ class AddressTests(Test):
                "baz.qux.{moo,arf", {"key": "value"})
 
   def testSlashQuote(self):
-    self.valid("foo.bar\\/baz.qux.{moo,arf; {key: value}", "foo.bar/baz.qux.{moo,arf",
+    self.valid("foo.bar\\/baz.qux.{moo,arf; {key: value}",
+               "foo.bar/baz.qux.{moo,arf",
                None, {"key": "value"})
 
-  def testSlashEsc(self):
-    self.valid("foo.bar\\x00baz.qux.{moo,arf; {key: value}", "foo.bar\x00baz.qux.{moo,arf",
+  def testSlashHexEsc1(self):
+    self.valid("foo.bar\\x00baz.qux.{moo,arf; {key: value}",
+               "foo.bar\x00baz.qux.{moo,arf",
                None, {"key": "value"})
+
+  def testSlashHexEsc2(self):
+    self.valid("foo.bar\\xffbaz.qux.{moo,arf; {key: value}",
+               "foo.bar\xffbaz.qux.{moo,arf",
+               None, {"key": "value"})
+
+  def testSlashHexEsc3(self):
+    self.valid("foo.bar\\xFFbaz.qux.{moo,arf; {key: value}",
+               "foo.bar\xFFbaz.qux.{moo,arf",
+               None, {"key": "value"})
+
+  def testSlashUnicode1(self):
+    self.valid("foo.bar\\u1234baz.qux.{moo,arf; {key: value}",
+               u"foo.bar\u1234baz.qux.{moo,arf", None, {"key": "value"})
+
+  def testSlashUnicode2(self):
+    self.valid("foo.bar\\u0000baz.qux.{moo,arf; {key: value}",
+               u"foo.bar\u0000baz.qux.{moo,arf", None, {"key": "value"})
+
+  def testSlashUnicode3(self):
+    self.valid("foo.bar\\uffffbaz.qux.{moo,arf; {key: value}",
+               u"foo.bar\uffffbaz.qux.{moo,arf", None, {"key": "value"})
+
+  def testSlashUnicode4(self):
+    self.valid("foo.bar\\uFFFFbaz.qux.{moo,arf; {key: value}",
+               u"foo.bar\uFFFFbaz.qux.{moo,arf", None, {"key": "value"})
 
   def testNoName(self):
-    self.invalid("; {key: value}", "unexpected token SEMI(';') line:1,0:; {key: value}")
+    self.invalid("; {key: value}",
+                 "unexpected token SEMI(';') line:1,0:; {key: value}")
 
   def testEmpty(self):
     self.invalid("", "unexpected token EOF line:1,0:")
