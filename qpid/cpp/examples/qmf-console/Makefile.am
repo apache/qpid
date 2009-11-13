@@ -48,7 +48,7 @@ examples_DATA= \
 	$(MAKEDIST)
 
 EXTRA_DIST=                  \
-	qmf_console_console.vcproj \
-	qmf_console_ping.vcproj \
-	qmf_console_printevents.vcproj \
-	qmf_console_queuestats.vcproj
+	qmf-console_console.vcproj \
+	qmf-console_ping.vcproj \
+	qmf-console_printevents.vcproj \
+	qmf-console_queuestats.vcproj

@@ -52,3 +52,15 @@ map_sender_LDADD=$(CLIENT_LIB)
 
 map_receiver_SOURCES=map_receiver.cpp
 map_receiver_LDADD=$(CLIENT_LIB)
+
+EXTRA_DIST=                  \
+	messaging_client.vcproj \
+	messaging_map_receiver.vcproj \
+	messaging_map_sender.vcproj \
+	messaging_queue_listener.vcproj \
+	messaging_queue_receiver.vcproj \
+	messaging_queue_sender.vcproj \
+	messaging_server.vcproj \
+	messaging_topic_listener.vcproj \
+	messaging_topic_receiver.vcproj \
+	messaging_topic_sender.vcproj

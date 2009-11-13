@@ -42,5 +42,5 @@ EXTRA_DIST=                  \
 	verify_cpp_python.in \
 	verify_python_cpp    \
 	verify_python_cpp.in \
-	pub_sub_topic_listener.vcproj \
-	pub_sub_topic_publisher.vcproj
+	pub-sub_topic_listener.vcproj \
+	pub-sub_topic_publisher.vcproj
