@@ -200,6 +200,27 @@
   
   <!--
   ===============================================================
+  Subscription
+  ===============================================================
+  -->
+  <class name="Subscription">
+    <property name="sessionRef"     type="objId"    references="Exchange" access="RC" index="y" parentRef="y"/>
+    <property name="queueRef"       type="objId"    references="Session"   access="RC" index="y"/>
+    <property name="name"           type="sstr"     access="RC" index="y"/>
+    <property name="arguments"      type="map"      access="RC"/>
+    <property name="acquire"        type="bool"     access="RC"/>
+    <property name="ackExpected"    type="bool"     access="RC"/>
+    <property name="syncFrequency"  type="uint32"   access="RC"/>
+    <property name="resumeID"       type="sstr"     access="RC"/>
+    <property name="resumeTTL"      type="uint64"   access="RC"/>
+    <property name="exclusive"      type="bool"     access="RC"/>
+    <property name="mode"           type="sstr"     access="RO" desc="WINDOW or CREDIT"/>
+    <statistic name="delivered"     type="count64"  unit="message" desc="Messages delivered"/>
+    <statistic name="accepted"      type="count64"  unit="message" desc="Messages accepted"/>
+  </class>
+  
+  <!--
+  ===============================================================
   Connection
   ===============================================================
   -->

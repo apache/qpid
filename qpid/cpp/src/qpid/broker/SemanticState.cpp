@@ -58,6 +58,11 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 using qpid::ptr_map_ptr;
+using qpid::management::ManagementAgent;
+using qpid::management::ManagementObject;
+using qpid::management::Manageable;
+using qpid::management::Args;
+namespace _qmf = qmf::org::apache::qpid::broker;
 
 SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
     : session(ss),
@@ -261,8 +266,38 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     byteCredit(0),
     notifyEnabled(true),
     syncFrequency(_arguments.getAsInt(QPID_SYNC_FREQUENCY)),
-    deliveryCount(0)
-{}
+    deliveryCount(0),
+    mgmtObject(0)
+{
+    if (parent != 0 && queue.get() != 0 && queue->GetManagementObject() !=0)
+    {
+        ManagementAgent* agent = parent->session.getBroker().getManagementAgent();
+        qpid::management::Manageable* ms = dynamic_cast<qpid::management::Manageable*> (&(parent->session));
+        
+        if (agent != 0)
+        {
+            mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId() ,name ,arguments,
+                acquire, ackExpected, syncFrequency, resumeId, resumeTtl, exclusive);
+            agent->addObject (mgmtObject, agent->allocateId(this));
+            mgmtObject->set_mode("WINDOW");
+        }
+    }
+}
+
+ManagementObject* SemanticState::ConsumerImpl::GetManagementObject (void) const
+{
+    return (ManagementObject*) mgmtObject;
+}
+
+Manageable::status_t SemanticState::ConsumerImpl::ManagementMethod (uint32_t methodId, Args&, string&)
+{
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+
+    QPID_LOG (debug, "Queue::ManagementMethod [id=" << methodId << "]");
+
+    return status;
+}
+
 
 OwnershipToken* SemanticState::ConsumerImpl::getSession()
 {
@@ -283,6 +318,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
     if (acquire && !ackExpected) {
         queue->dequeue(0, msg);
     }
+    if (mgmtObject) { mgmtObject->inc_delivered(); }
     return true;
 }
 
@@ -299,6 +335,7 @@ bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
     // in future.
     // 
     blocked = !(filter(msg) && checkCredit(msg));
+    if (mgmtObject && !blocked && acquire) { mgmtObject->inc_accepted(); }
     return !blocked;
 }
 
@@ -341,7 +378,11 @@ bool SemanticState::ConsumerImpl::checkCredit(intrusive_ptr<Message>& msg)
     return enoughCredit;
 }
 
-SemanticState::ConsumerImpl::~ConsumerImpl() {}
+SemanticState::ConsumerImpl::~ConsumerImpl() 
+{
+    if (mgmtObject != 0)
+        mgmtObject->resourceDestroy ();
+}
 
 void SemanticState::cancel(ConsumerImpl::shared_ptr c)
 {
@@ -524,11 +565,17 @@ void SemanticState::stop(const std::string& destination)
 void SemanticState::ConsumerImpl::setWindowMode()
 {
     windowing = true;
+    if (mgmtObject){
+        mgmtObject->set_mode("WINDOW");
+    }
 }
 
 void SemanticState::ConsumerImpl::setCreditMode()
 {
     windowing = false;
+    if (mgmtObject){
+        mgmtObject->set_mode("CREDIT");
+    }
 }
 
 void SemanticState::ConsumerImpl::addByteCredit(uint32_t value)

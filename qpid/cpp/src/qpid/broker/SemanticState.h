@@ -38,6 +38,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/broker/AclModule.h"
+#include "qmf/org/apache/qpid/broker/Subscription.h"
 
 #include <list>
 #include <map>
@@ -58,7 +59,8 @@ class SessionContext;
 class SemanticState : private boost::noncopyable {
   public:
     class ConsumerImpl : public Consumer, public sys::OutputTask,
-                         public boost::enable_shared_from_this<ConsumerImpl>
+                         public boost::enable_shared_from_this<ConsumerImpl>,
+                         public management::Manageable
     {
         mutable qpid::sys::Mutex lock;
         SemanticState* const parent;
@@ -77,6 +79,7 @@ class SemanticState : private boost::noncopyable {
         bool notifyEnabled;
         const int syncFrequency;
         int deliveryCount;
+        qmf::org::apache::qpid::broker::Subscription* mgmtObject;
 
         bool checkCredit(boost::intrusive_ptr<Message>& msg);
         void allocateCredit(boost::intrusive_ptr<Message>& msg);
@@ -130,6 +133,9 @@ class SemanticState : private boost::noncopyable {
 
         SemanticState& getParent() { return *parent; }
         const SemanticState& getParent() const { return *parent; }
+        // Manageable entry points
+        management::ManagementObject* GetManagementObject (void) const;
+        management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     };
 
   private:
