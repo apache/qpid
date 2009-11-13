@@ -1,6 +1,3 @@
-#ifndef _BINDINGS_SASLWRAPPER_H_
-#define _BINDINGS_SASLWRAPPER_H_ 1
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -147,5 +144,3 @@ namespace saslwrapper {
     };
 
 }
-
-#endif

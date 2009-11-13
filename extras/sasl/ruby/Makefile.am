@@ -17,14 +17,27 @@
 # under the License.
 #
 
-LIBTOOL_DEPS = @LIBTOOL_DEPS@
+if HAVE_SWIG
+if HAVE_RUBY_DEVEL
 
-AUTOMAKE_OPTIONS = 1.9.2 foreign
-ACLOCAL_AMFLAGS = -I m4
+EXTRA_DIST = ruby.i
+INCLUDES = -I$(top_srcdir)/include
 
-EXTRA_DIST = LICENSE
-SUBDIRS = src python ruby
+generated_file_list = saslwrapper.cpp
+BUILT_SOURCES = $(generated_file_list)
 
-# Update libtool, if needed.
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
+$(generated_file_list): ruby.i $(top_srcdir)/src/saslwrapper.i
+	$(SWIG) -c++ -ruby -Wall -I/usr/include $(INCLUDES) -o saslwrapper.cpp $(srcdir)/ruby.i
+
+rubylibdir = $(RUBY_LIB)
+lib_LTLIBRARIES = saslwrapper.la
+
+saslwrapper_la_LDFLAGS = -avoid-version -module -shared ".$(RUBY_DLEXT)"
+saslwrapper_la_LIBADD = $(RUBY_LIBS) $(top_builddir)/src/libsaslwrapper.la -lsasl2
+saslwrapper_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
+nodist_saslwrapper_la_SOURCES = saslwrapper.cpp
+
+CLEANFILES = $(generated_file_list)
+
+endif
+endif
