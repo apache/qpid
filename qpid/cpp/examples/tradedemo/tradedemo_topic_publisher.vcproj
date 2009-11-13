@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="Windows-1252"?>
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
@@ -51,7 +71,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
                                 PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -69,7 +89,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -80,7 +100,7 @@
 				OutputFile="$(OutDir)\topic_publisher.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;..\..\src"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -133,7 +153,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
                                 PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
@@ -148,7 +168,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -159,7 +179,7 @@
 				OutputFile="$(OutDir)\topic_publisher.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;..\..\src"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -214,7 +234,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
                                 PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
@@ -232,7 +252,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -244,7 +264,7 @@
 				OutputFile="$(OutDir)\topic_publisher.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;..\..\src"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="17"
@@ -297,7 +317,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
                                 PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;_CRT_NONSTDC_NO_WARNINGS;_AMD64_;_WIN64;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="true"
@@ -312,7 +332,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;_WIN64"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,..\..\src,..\..\src\gen"
+				AdditionalIncludeDirectories="$(BOOST_ROOT)\include\$(BOOST_VERSION),$(BOOST_ROOT)\.,$(QPID_ROOT)\include,..\..\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -324,7 +344,7 @@
 				OutputFile="$(OutDir)\topic_publisher.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;..\..\src"
+				AdditionalLibraryDirectories=".;$(BOOST_ROOT)\lib;$(QPID_ROOT)\bin,..\..\bin"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"

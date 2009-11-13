@@ -22,17 +22,28 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
-# This will probably need some fiddling to get right for installed kits.
-get_directory_property(QPIDC_TOP PARENT_DIRECTORY)
 include_directories(${CMAKE_BINARY_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Shouldn't need this... but there are still client header inclusions of Boost.
+# Shouldn't need this... but there are still client header inclusions
+# of Boost. When building examples at an install site, the Boost files
+# should be locatable aside from these settings.
 include_directories( ${Boost_INCLUDE_DIR} )
 link_directories( ${Boost_LIBRARY_DIRS} )
 
+# Visual Studio needs some Windows-specific simplifications.
+# Linux needs to reference the boost libs, even though they should be
+# resolved via the Qpid libs.
 if (MSVC)
   add_definitions( /D "NOMINMAX" /D "WIN32_LEAN_AND_MEAN" )
+  # On Windows, prevent the accidental inclusion of Boost headers from
+  # autolinking in the Boost libs. There should be no direct references to
+  # Boost in the examples, and references via qpidclient/qpidcommon are
+  # resolved in the Qpid libs.
+  add_definitions( /D "BOOST_ALL_DYN_LINK" /D "BOOST_ALL_NO_LIB" )
+else (MSVC)
+  set(_boost_libs_needed ${Boost_PROGRAM_OPTIONS_LIBRARY}
+                         ${Boost_FILESYSTEM_LIBRARY})
 endif (MSVC)
 
 # There are numerous duplicate names within the examples. Since all target
@@ -44,14 +55,35 @@ macro(add_example subdir example)
   set_target_properties(${subdir}_${example} PROPERTIES OUTPUT_NAME ${example})
   if (${ARGC} GREATER 2)
     target_link_libraries(${subdir}_${example} ${ARGN} qpidclient
-                          ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                          ${Boost_FILESYSTEM_LIBRARY})
+                          ${_boost_libs_needed})
   else (${ARGC} GREATER 2)
     target_link_libraries(${subdir}_${example} qpidclient
-                          ${Boost_PROGRAM_OPTIONS_LIBRARY}
-                          ${Boost_FILESYSTEM_LIBRARY})
+                          ${_boost_libs_needed})
   endif (${ARGC} GREATER 2)
+  # For installs, don't install the built example; that would be pointless.
+  # Install the things a user needs to build the example on-site.
+  install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp
+           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/${subdir}
+           COMPONENT ${QPID_COMPONENT_EXAMPLES})
+  if (MSVC)
+    install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}_${example}.vcproj
+             DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/${subdir}
+             COMPONENT ${QPID_COMPONENT_EXAMPLES})
+  endif (MSVC)
+
 endmacro(add_example)
+
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
+               ${CMAKE_CURRENT_SOURCE_DIR}/README.verify
+               ${CMAKE_CURRENT_SOURCE_DIR}/verify
+               ${CMAKE_CURRENT_SOURCE_DIR}/verify_all
+         DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
+         COMPONENT ${QPID_COMPONENT_EXAMPLES})
+if (MSVC)
+  install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/examples.sln
+           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
+           COMPONENT ${QPID_COMPONENT_EXAMPLES})
+endif (MSVC)
 
 add_subdirectory(direct)
 add_subdirectory(failover)
