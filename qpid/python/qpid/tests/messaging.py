@@ -169,23 +169,6 @@ class ConnectionTests(Base):
     self.conn.connect()
     self.ping(ssn)
 
-  def testStart(self):
-    ssn = self.conn.session()
-    assert not ssn.started
-    self.conn.start()
-    assert ssn.started
-    ssn2 = self.conn.session()
-    assert ssn2.started
-
-  def testStop(self):
-    self.conn.start()
-    ssn = self.conn.session()
-    assert ssn.started
-    self.conn.stop()
-    assert not ssn.started
-    ssn2 = self.conn.session()
-    assert not ssn2.started
-
   def testClose(self):
     self.conn.close()
     assert not self.conn.connected()
@@ -234,9 +217,6 @@ class SessionTests(Base):
     rcv2 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
     rcv3 = self.ssn.receiver(ADDR, capacity=UNLIMITED)
 
-    # XXX: this won't work if it is before the receiver creation
-    self.ssn.start()
-
     snd = self.ssn.sender(ADDR)
 
     msgs = []
@@ -256,25 +236,6 @@ class SessionTests(Base):
       pass
     assert msgs == fetched, "expecting %s, got %s" % (msgs, fetched)
     self.ssn.acknowledge()
-
-  def testStart(self):
-    START_Q = 'test-start-queue; {create: always}'
-    rcv = self.ssn.receiver(START_Q)
-    assert not rcv.started
-    self.ssn.start()
-    assert rcv.started
-    rcv = self.ssn.receiver(START_Q)
-    assert rcv.started
-
-  def testStop(self):
-    STOP_Q = 'test-stop-queue; {create: always}'
-    self.ssn.start()
-    rcv = self.ssn.receiver(STOP_Q)
-    assert rcv.started
-    self.ssn.stop()
-    assert not rcv.started
-    rcv = self.ssn.receiver(STOP_Q)
-    assert not rcv.started
 
   # XXX, we need a convenient way to assert that required queues are
   # empty on setup, and possibly also to drain queues on teardown
@@ -491,11 +452,11 @@ class ReceiverTests(Base):
     assert msg.content == three
     self.ssn.acknowledge()
 
-  def testStart(self):
-    content = self.send("testStart")
+  def testCapacityIncrease(self):
+    content = self.send("testCapacityIncrease")
     self.sleep()
     assert self.rcv.pending() == 0
-    self.rcv.start()
+    self.rcv.capacity = UNLIMITED
     self.sleep()
     assert self.rcv.pending() == 1
     msg = self.rcv.fetch(0)
@@ -503,17 +464,17 @@ class ReceiverTests(Base):
     assert self.rcv.pending() == 0
     self.ssn.acknowledge()
 
-  def testStop(self):
-    self.rcv.start()
-    one = self.send("testStop", 1)
+  def testCapacityDecrease(self):
+    self.rcv.capacity = UNLIMITED
+    one = self.send("testCapacityDecrease", 1)
     self.sleep()
     assert self.rcv.pending() == 1
     msg = self.rcv.fetch(0)
     assert msg.content == one
 
-    self.rcv.stop()
+    self.rcv.capacity = 0
 
-    two = self.send("testStop", 2)
+    two = self.send("testCapacityDecrease", 2)
     self.sleep()
     assert self.rcv.pending() == 0
     msg = self.rcv.fetch(0)
@@ -522,7 +483,7 @@ class ReceiverTests(Base):
     self.ssn.acknowledge()
 
   def testPending(self):
-    self.rcv.start()
+    self.rcv.capacity = UNLIMITED
     assert self.rcv.pending() == 0
 
     for i in range(3):
@@ -545,7 +506,6 @@ class ReceiverTests(Base):
 
   def testCapacity(self):
     self.rcv.capacity = 5
-    self.rcv.start()
     self.assertPending(self.rcv, 0)
 
     for i in range(15):
@@ -565,7 +525,6 @@ class ReceiverTests(Base):
 
   def testCapacityUNLIMITED(self):
     self.rcv.capacity = UNLIMITED
-    self.rcv.start()
     self.assertPending(self.rcv, 0)
 
     for i in range(10):
