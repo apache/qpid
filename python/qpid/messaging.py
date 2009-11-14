@@ -436,14 +436,15 @@ class Session:
     """
     Close the session.
     """
+    # XXX: should be able to express this condition through API calls
+    self._ewait(lambda: not self.outgoing and not self.acked)
+
     for link in self.receivers + self.senders:
       link.close()
 
     self.closing = True
     self._wakeup()
     self._ewait(lambda: self.closed)
-    # XXX: should be able to express this condition through API calls
-    self._ewait(lambda: not self.outgoing and not self.acked)
     self.connection._remove_session(self)
 
 class SendError(SessionError):
@@ -557,10 +558,12 @@ class Sender:
     """
     Close the Sender.
     """
-    # XXX: should make driver do something here
-    if not self.closed:
+    self.closing = True
+    self._wakeup()
+    try:
+      self.session._ewait(lambda: self.closed)
+    finally:
       self.session.senders.remove(self)
-      self.closed = True
 
 class ReceiveError(SessionError):
   pass
