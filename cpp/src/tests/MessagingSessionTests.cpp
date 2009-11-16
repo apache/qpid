@@ -270,17 +270,14 @@ QPID_AUTO_TEST_CASE(testSimpleTopic)
     sender.send(msg);
     Receiver sub1 = fix.session.createReceiver(fix.topic);
     sub1.setCapacity(10u);
-    sub1.start();
     msg.setContent("two");
     sender.send(msg);
     Receiver sub2 = fix.session.createReceiver(fix.topic);
     sub2.setCapacity(10u);
-    sub2.start();
     msg.setContent("three");
     sender.send(msg);
     Receiver sub3 = fix.session.createReceiver(fix.topic);
     sub3.setCapacity(10u);
-    sub3.start();
     msg.setContent("four");
     sender.send(msg);
     BOOST_CHECK_EQUAL(fetch(sub2, 2), boost::assign::list_of<std::string>("three")("four"));
@@ -304,7 +301,6 @@ QPID_AUTO_TEST_CASE(testNextReceiver)
     for (uint i = 0; i < fix.queues.size(); i++) {
         Receiver r = fix.session.createReceiver(fix.queues[i]);
         r.setCapacity(10u);
-        r.start();//TODO: add Session::start
     }
 
     for (uint i = 0; i < fix.queues.size(); i++) {
@@ -394,11 +390,9 @@ QPID_AUTO_TEST_CASE(testAvailable)
 
     Receiver r1 = fix.session.createReceiver(fix.queues[0]);
     r1.setCapacity(100);
-    r1.start();
 
     Receiver r2 = fix.session.createReceiver(fix.queues[1]);
     r2.setCapacity(100);
-    r2.start();
 
     Sender s1 = fix.session.createSender(fix.queues[0]);
     Sender s2 = fix.session.createSender(fix.queues[1]);

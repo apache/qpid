@@ -80,16 +80,6 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * serving before throwing an exception.
      */
     QPID_CLIENT_EXTERN Message fetch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
-    
-    /**
-     * Enables the message flow for this receiver
-     */
-    QPID_CLIENT_EXTERN void start();
-    /**
-     * Stops the message flow for this receiver (but does not cancel
-     * the subscription).
-     */
-    QPID_CLIENT_EXTERN void stop();
     /**
      * Sets the capacity for the receiver. The capacity determines how
      * many incoming messages can be held in the receiver before being

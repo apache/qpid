@@ -74,12 +74,16 @@ void ReceiverImpl::cancel()
 
 void ReceiverImpl::start()
 {
-    execute<Start>();
+    if (state == STOPPED) {
+        state = STARTED;
+        startFlow();
+    }
 }
 
 void ReceiverImpl::stop()
 {
-    execute<Stop>();
+    state = STOPPED;
+    session.messageStop(destination);
 }
 
 void ReceiverImpl::setCapacity(uint32_t c)
@@ -103,14 +107,14 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
     session = s;
     if (state == UNRESOLVED) {
         source = resolver.resolveSource(session, address);
-        state = STOPPED;//TODO: if session is started, go straight to started
+        state = STARTED;
     }
     if (state == CANCELLED) {
         source->cancel(session, destination);
         parent.receiverCancelled(destination);        
     } else {
         source->subscribe(session, destination);
-        if (state == STARTED) start();
+        start();
     }
 }
 
@@ -169,20 +173,6 @@ void ReceiverImpl::cancelImpl()
         source->cancel(session, destination);
         parent.receiverCancelled(destination);
     }
-}
-
-void ReceiverImpl::startImpl()
-{
-    if (state == STOPPED) {
-        state = STARTED;
-        startFlow();
-    }
-}
-
-void ReceiverImpl::stopImpl()
-{
-    state = STOPPED;
-    session.messageStop(destination);
 }
 
 void ReceiverImpl::setCapacityImpl(uint32_t c)

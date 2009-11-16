@@ -80,8 +80,6 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     //implementation of public facing methods
     bool fetchImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
     bool getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    void startImpl();
-    void stopImpl();
     void cancelImpl();
     void setCapacityImpl(uint32_t);
 
@@ -114,18 +112,6 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
         Fetch(ReceiverImpl& i, qpid::messaging::Message& m, qpid::sys::Duration t) : 
             Command(i), message(m), timeout(t), result(false) {}
         void operator()() { result = impl.fetchImpl(message, timeout); }
-    };
-
-    struct Stop : Command
-    {
-        Stop(ReceiverImpl& i) : Command(i) {}
-        void operator()() { impl.stopImpl(); }
-    };
-
-    struct Start : Command
-    {
-        Start(ReceiverImpl& i) : Command(i) {}
-        void operator()() { impl.startImpl(); }
     };
 
     struct Cancel : Command

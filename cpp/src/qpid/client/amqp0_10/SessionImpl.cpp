@@ -344,13 +344,18 @@ void SessionImpl::commitImpl()
 
 void SessionImpl::rollbackImpl()
 {
-    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) i->second.stop();
+    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
+        getImplPtr<Receiver, ReceiverImpl>(i->second)->stop();
+    }
     //ensure that stop has been processed and all previously sent
     //messages are available for release:                   
     session.sync();
     incoming.releaseAll();
     session.txRollback();    
-    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) i->second.start();
+
+    for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
+        getImplPtr<Receiver, ReceiverImpl>(i->second)->start();
+    }
 }
 
 void SessionImpl::acknowledgeImpl()
