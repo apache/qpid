@@ -568,14 +568,21 @@ class AddressTests(Base):
     rcv = self.ssn.receiver("test-create-queue")
     self.drain(rcv, expected=[content])
 
-  def testCreateExchange(self):
-    snd = self.ssn.sender("test-create-exchange; {create: always, "
-                          "delete: always, node-properties: {type: topic, "
-                          "durable: False, x-properties: {auto_delete: true}}}")
+  def createExchangeTest(self, props=""):
+    addr = """test-create-exchange; {
+                create: always,
+                delete: always,
+                node-properties: {
+                  type: topic,
+                  durable: False,
+                  x-properties: {auto_delete: true, %s}
+                }
+              }""" % props
+    snd = self.ssn.sender(addr)
     snd.send("ping")
     rcv1 = self.ssn.receiver("test-create-exchange/first")
-    rcv2 = self.ssn.receiver("test-create-exchange/second")
-    rcv3 = self.ssn.receiver("test-create-exchange")
+    rcv2 = self.ssn.receiver("test-create-exchange/first")
+    rcv3 = self.ssn.receiver("test-create-exchange/second")
     for r in (rcv1, rcv2, rcv3):
       try:
         r.fetch(0)
@@ -583,12 +590,21 @@ class AddressTests(Base):
       except Empty:
         pass
     msg1 = Message(self.content("testCreateExchange", 1), subject="first")
-    msg2 = Message(self.content("testCreateExchange", 1), subject="second")
+    msg2 = Message(self.content("testCreateExchange", 2), subject="second")
     snd.send(msg1)
     snd.send(msg2)
     self.drain(rcv1, expected=[msg1.content])
-    self.drain(rcv2, expected=[msg2.content])
-    self.drain(rcv3, expected=[msg1.content, msg2.content])
+    self.drain(rcv2, expected=[msg1.content])
+    self.drain(rcv3, expected=[msg2.content])
+
+  def testCreateExchange(self):
+    self.createExchangeTest()
+
+  def testCreateExchangeDirect(self):
+    self.createExchangeTest("type: direct")
+
+  def testCreateExchangeTopic(self):
+    self.createExchangeTest("type: topic")
 
   def testDeleteBySender(self):
     snd = self.ssn.sender("test-delete; {create: always}")
