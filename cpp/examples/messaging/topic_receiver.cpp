@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     try {
         Connection connection = Connection::open(url);
         Session session = connection.newSession();
-        Receiver receiver = session.createReceiver("news_service {filter:[control, " + pattern + "]}");
+        Receiver receiver = session.createReceiver("news_service; {filter:[control, " + pattern + "]}");
         while (true) {
             Message message = receiver.fetch();
             std::cout << "Message: " << message.getContent() << std::endl;

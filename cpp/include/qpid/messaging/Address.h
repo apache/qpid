@@ -51,7 +51,7 @@ class AddressImpl;
  * All parts of an address can be specified in a string of the
  * following form:
  * 
- * <address> [ / <subject> ] [ { <key> : <value> , ... } ]
+ * <address> [ / <subject> ] ; [ { <key> : <value> , ... } ]
  * 
  * Here the <address> is a simple name for the addressed entity and
  * <subject> is a subject or subject pattern for messages sent to or

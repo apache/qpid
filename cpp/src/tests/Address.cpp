@@ -46,7 +46,7 @@ QPID_AUTO_TEST_CASE(testParseSubject)
 
 QPID_AUTO_TEST_CASE(testParseOptions)
 {
-    Address address("my-topic {a:bc, x:101, y:'a string'}");
+    Address address("my-topic; {a:bc, x:101, y:'a string'}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
     BOOST_CHECK_EQUAL(std::string("bc"), address.getOption("a").asString());
     BOOST_CHECK_EQUAL((uint16_t) 101, address.getOption("x").asInt64());
@@ -55,7 +55,7 @@ QPID_AUTO_TEST_CASE(testParseOptions)
 
 QPID_AUTO_TEST_CASE(testParseSubjectAndOptions)
 {
-    Address address("my-topic/my-subject {a:bc, x:101, y:'a string'}");
+    Address address("my-topic/my-subject; {a:bc, x:101, y:'a string'}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
     BOOST_CHECK_EQUAL(std::string("my-subject"), address.getSubject());
     BOOST_CHECK_EQUAL(std::string("bc"), address.getOption("a").asString());
@@ -65,7 +65,7 @@ QPID_AUTO_TEST_CASE(testParseSubjectAndOptions)
 
 QPID_AUTO_TEST_CASE(testParseNestedOptions)
 {
-    Address address("my-topic {a:{p:202, q:'another string'}, x:101, y:'a string'}");
+    Address address("my-topic; {a:{p:202, q:'another string'}, x:101, y:'a string'}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
     BOOST_CHECK_EQUAL((uint16_t) 202, address.getOptions()["a"].asMap()["p"].asInt64());
     BOOST_CHECK_EQUAL(std::string("another string"), address.getOptions()["a"].asMap()["q"].asString());
@@ -75,7 +75,7 @@ QPID_AUTO_TEST_CASE(testParseNestedOptions)
 
 QPID_AUTO_TEST_CASE(testParseOptionsWithList)
 {
-    Address address("my-topic {a:[202, 'another string'], x:101}");
+    Address address("my-topic; {a:[202, 'another string'], x:101}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
     Variant::List& list = address.getOptions()["a"].asList();
     Variant::List::const_iterator i = list.begin();
