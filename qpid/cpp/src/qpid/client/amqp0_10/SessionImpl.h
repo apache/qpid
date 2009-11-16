@@ -62,20 +62,11 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void close();
     void sync();
     void flush();
-    qpid::messaging::Address createTempQueue(const std::string& baseName);
     qpid::messaging::Sender createSender(const qpid::messaging::Address& address);
     qpid::messaging::Receiver createReceiver(const qpid::messaging::Address& address);
 
-    void* getLastConfirmedSent();
-    void* getLastConfirmedAcknowledged();
-
-    bool fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout);
-    qpid::messaging::Message fetch(qpid::sys::Duration timeout);
-    bool dispatch(qpid::sys::Duration timeout);
-
     bool nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout);
     qpid::messaging::Receiver nextReceiver(qpid::sys::Duration timeout);
-
 
     bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout);    
 
@@ -116,8 +107,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     Receivers receivers;
     Senders senders;
 
-    bool acceptAny(qpid::messaging::Message*, bool, IncomingMessages::MessageTransfer&);
-    bool accept(ReceiverImpl*, qpid::messaging::Message*, bool, IncomingMessages::MessageTransfer&);
+    bool accept(ReceiverImpl*, qpid::messaging::Message*, IncomingMessages::MessageTransfer&);
     bool getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout);
     bool getNextReceiver(qpid::messaging::Receiver* receiver, IncomingMessages::MessageTransfer& transfer);
     void reconnect();
