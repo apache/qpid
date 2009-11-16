@@ -86,6 +86,13 @@ QPID_AUTO_TEST_CASE(testParseOptionsWithList)
     BOOST_CHECK_EQUAL((uint16_t) 101, address.getOption("x").asInt64());
 }
 
+QPID_AUTO_TEST_CASE(testParseQuotedNameAndSubject)
+{
+    Address address("'my topic with / in it'/'my subject with ; in it'");
+    BOOST_CHECK_EQUAL(std::string("my topic with / in it"), address.getName());
+    BOOST_CHECK_EQUAL(std::string("my subject with ; in it"), address.getSubject());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }}
