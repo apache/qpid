@@ -42,8 +42,6 @@ bool Receiver::get(Message& message, qpid::sys::Duration timeout) { return impl-
 Message Receiver::get(qpid::sys::Duration timeout) { return impl->get(timeout); }
 bool Receiver::fetch(Message& message, qpid::sys::Duration timeout) { return impl->fetch(message, timeout); }
 Message Receiver::fetch(qpid::sys::Duration timeout) { return impl->fetch(timeout); }
-void Receiver::start() { impl->start(); }
-void Receiver::stop() { impl->stop(); }
 void Receiver::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Receiver::getCapacity() { return impl->getCapacity(); }
 uint32_t Receiver::available() { return impl->available(); }

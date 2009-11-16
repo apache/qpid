@@ -41,8 +41,6 @@ class ReceiverImpl : public virtual qpid::RefCounted
     virtual Message get(qpid::sys::Duration timeout) = 0;
     virtual bool fetch(Message& message, qpid::sys::Duration timeout) = 0;
     virtual Message fetch(qpid::sys::Duration timeout) = 0;
-    virtual void start() = 0;
-    virtual void stop() = 0;
     virtual void setCapacity(uint32_t) = 0;
     virtual uint32_t getCapacity() = 0;
     virtual uint32_t available() = 0;
