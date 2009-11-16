@@ -201,7 +201,7 @@ class SessionTests(Base):
     self.ssn.acknowledge(msg)
 
   def testReceiver(self):
-    rcv = self.ssn.receiver('test-rcv-queue; {create: always, delete: always}')
+    rcv = self.ssn.receiver('test-rcv-queue; {create: always}')
     rcv2 = self.ssn.receiver(rcv.source)
     assert rcv is not rcv2
     rcv2.close()
@@ -212,6 +212,7 @@ class SessionTests(Base):
     msg = rcv.fetch(0)
     assert msg.content == content
     self.ssn.acknowledge(msg)
+    snd2 = self.ssn.receiver('test-rcv-queue; {delete: always}')
 
   def testNextReceiver(self):
     ADDR = 'test-next-rcv-queue; {create: always, delete: always}'
@@ -550,6 +551,44 @@ class AddressTests(Base):
 
   def setup_session(self):
     return self.conn.session()
+
+  def testBadOption(self):
+    snd = self.ssn.sender("test-bad-option; {create: always, node-properties: {this-property-does-not-exist: 3}}")
+    try:
+      snd.send("ping")
+    except SendError, e:
+      assert "unrecognized option" in str(e)
+
+  def testCreateQueue(self):
+    snd = self.ssn.sender("test-create-queue; {create: always, delete: always, "
+                          "node-properties: {type: queue, durable: False, "
+                          "x-properties: {auto_delete: true}}}")
+    content = self.content("testCreateQueue")
+    snd.send(content)
+    rcv = self.ssn.receiver("test-create-queue")
+    self.drain(rcv, expected=[content])
+
+  def testCreateExchange(self):
+    snd = self.ssn.sender("test-create-exchange; {create: always, "
+                          "delete: always, node-properties: {type: topic, "
+                          "durable: False, x-properties: {auto_delete: true}}}")
+    snd.send("ping")
+    rcv1 = self.ssn.receiver("test-create-exchange/first")
+    rcv2 = self.ssn.receiver("test-create-exchange/second")
+    rcv3 = self.ssn.receiver("test-create-exchange")
+    for r in (rcv1, rcv2, rcv3):
+      try:
+        r.fetch(0)
+        assert False
+      except Empty:
+        pass
+    msg1 = Message(self.content("testCreateExchange", 1), subject="first")
+    msg2 = Message(self.content("testCreateExchange", 1), subject="second")
+    snd.send(msg1)
+    snd.send(msg2)
+    self.drain(rcv1, expected=[msg1.content])
+    self.drain(rcv2, expected=[msg2.content])
+    self.drain(rcv3, expected=[msg1.content, msg2.content])
 
   def testDeleteBySender(self):
     snd = self.ssn.sender("test-delete; {create: always}")

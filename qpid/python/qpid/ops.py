@@ -259,8 +259,8 @@ COMPOUND = {}
 COMMANDS = {}
 CONTROLS = {}
 
-for name, bases, dict in types:
-  t = type(name, bases, dict)
+for name, bases, _dict in types:
+  t = type(name, bases, _dict)
   vars[name] = t
 
   if issubclass(t, Command):
