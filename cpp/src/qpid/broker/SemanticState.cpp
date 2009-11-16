@@ -276,10 +276,10 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
         
         if (agent != 0)
         {
-            mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId() ,name ,arguments,
-                acquire, ackExpected, syncFrequency, resumeId, resumeTtl, exclusive);
+            mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId() ,name,
+                !acquire, ackExpected, exclusive ,arguments);
             agent->addObject (mgmtObject, agent->allocateId(this));
-            mgmtObject->set_mode("WINDOW");
+            mgmtObject->set_creditMode("WINDOW");
         }
     }
 }
@@ -335,7 +335,6 @@ bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
     // in future.
     // 
     blocked = !(filter(msg) && checkCredit(msg));
-    if (mgmtObject && !blocked && acquire) { mgmtObject->inc_accepted(); }
     return !blocked;
 }
 
@@ -566,7 +565,7 @@ void SemanticState::ConsumerImpl::setWindowMode()
 {
     windowing = true;
     if (mgmtObject){
-        mgmtObject->set_mode("WINDOW");
+        mgmtObject->set_creditMode("WINDOW");
     }
 }
 
@@ -574,7 +573,7 @@ void SemanticState::ConsumerImpl::setCreditMode()
 {
     windowing = false;
     if (mgmtObject){
-        mgmtObject->set_mode("CREDIT");
+        mgmtObject->set_creditMode("CREDIT");
     }
 }
 
