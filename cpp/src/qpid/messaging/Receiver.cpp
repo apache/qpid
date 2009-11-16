@@ -49,6 +49,5 @@ uint32_t Receiver::getCapacity() { return impl->getCapacity(); }
 uint32_t Receiver::available() { return impl->available(); }
 uint32_t Receiver::pendingAck() { return impl->pendingAck(); }
 void Receiver::cancel() { impl->cancel(); }
-void Receiver::setListener(MessageListener* listener) { impl->setListener(listener); }
 
 }} // namespace qpid::messaging

@@ -75,21 +75,6 @@ void Session::flush()
     impl->flush();
 }
 
-bool Session::fetch(Message& message, qpid::sys::Duration timeout)
-{
-    return impl->fetch(message, timeout);
-}
-
-Message Session::fetch(qpid::sys::Duration timeout)
-{
-    return impl->fetch(timeout);
-}
-
-bool Session::dispatch(qpid::sys::Duration timeout)
-{
-    return impl->dispatch(timeout);
-}
-
 bool Session::nextReceiver(Receiver& receiver, qpid::sys::Duration timeout)
 {
     return impl->nextReceiver(receiver, timeout);

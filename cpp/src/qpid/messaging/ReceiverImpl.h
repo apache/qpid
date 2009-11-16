@@ -48,7 +48,6 @@ class ReceiverImpl : public virtual qpid::RefCounted
     virtual uint32_t available() = 0;
     virtual uint32_t pendingAck() = 0;
     virtual void cancel() = 0;
-    virtual void setListener(MessageListener*) = 0;
 };
 }} // namespace qpid::messaging
 

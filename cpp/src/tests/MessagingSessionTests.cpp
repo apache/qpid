@@ -28,7 +28,6 @@
 #include "qpid/messaging/MapContent.h"
 #include "qpid/messaging/MapView.h"
 #include "qpid/messaging/Message.h"
-#include "qpid/messaging/MessageListener.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Session.h"
@@ -187,16 +186,6 @@ struct MultiQueueFixture : MessagingFixture
     }
 
 };
-
-struct MessageDataCollector : MessageListener
-{
-    std::vector<std::string> messageData;
-
-    void received(Message& message) {
-        messageData.push_back(message.getContent());
-    }
-};
-
 std::vector<std::string> fetch(Receiver& receiver, int count, qpid::sys::Duration timeout=qpid::sys::TIME_SEC*5)
 {
     std::vector<std::string> data;
@@ -306,52 +295,6 @@ QPID_AUTO_TEST_CASE(testSimpleTopic)
 
 
     //TODO: check pending messages...
-}
-
-QPID_AUTO_TEST_CASE(testSessionFetch)
-{
-    MultiQueueFixture fix;
-
-    for (uint i = 0; i < fix.queues.size(); i++) {
-        Receiver r = fix.session.createReceiver(fix.queues[i]);
-        r.setCapacity(10u);
-        r.start();//TODO: add Session::start
-    }
-
-    for (uint i = 0; i < fix.queues.size(); i++) {
-        Sender s = fix.session.createSender(fix.queues[i]);
-        Message msg((boost::format("Message_%1%") % (i+1)).str());
-        s.send(msg);
-    }
-
-    for (uint i = 0; i < fix.queues.size(); i++) {
-        Message msg;
-        BOOST_CHECK(fix.session.fetch(msg, qpid::sys::TIME_SEC));
-        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1)).str());
-    }
-}
-
-QPID_AUTO_TEST_CASE(testSessionDispatch)
-{
-    MultiQueueFixture fix;
-
-    MessageDataCollector collector;
-    for (uint i = 0; i < fix.queues.size(); i++) {
-        Receiver r = fix.session.createReceiver(fix.queues[i]);
-        r.setListener(&collector);
-        r.setCapacity(10u);
-        r.start();//TODO: add Session::start
-    }
-
-    for (uint i = 0; i < fix.queues.size(); i++) {
-        Sender s = fix.session.createSender(fix.queues[i]);
-        Message msg((boost::format("Message_%1%") % (i+1)).str());
-        s.send(msg);
-    }
-
-    while (fix.session.dispatch(qpid::sys::TIME_SEC)) ;
-
-    BOOST_CHECK_EQUAL(collector.messageData, boost::assign::list_of<std::string>("Message_1")("Message_2")("Message_3"));
 }
 
 QPID_AUTO_TEST_CASE(testNextReceiver)

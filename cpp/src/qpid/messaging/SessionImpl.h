@@ -48,9 +48,6 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual void close() = 0;
     virtual void sync() = 0;
     virtual void flush() = 0;
-    virtual bool fetch(Message& message, qpid::sys::Duration timeout) = 0;
-    virtual Message fetch(qpid::sys::Duration timeout) = 0;
-    virtual bool dispatch(qpid::sys::Duration timeout) = 0;
     virtual Sender createSender(const Address& address) = 0;
     virtual Receiver createReceiver(const Address& address) = 0;
     virtual bool nextReceiver(Receiver& receiver, qpid::sys::Duration timeout) = 0;

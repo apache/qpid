@@ -799,7 +799,6 @@ nobase_include_HEADERS +=			\
   ../include/qpid/messaging/MapContent.h 	\
   ../include/qpid/messaging/MapView.h 		\
   ../include/qpid/messaging/Message.h 		\
-  ../include/qpid/messaging/MessageListener.h 	\
   ../include/qpid/messaging/Sender.h 		\
   ../include/qpid/messaging/Receiver.h 	        \
   ../include/qpid/messaging/Session.h 		\

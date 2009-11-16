@@ -30,7 +30,6 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
-#include "qpid/messaging/MessageListener.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Session.h"
@@ -177,13 +176,6 @@ Sender SessionImpl::createSenderImpl(const qpid::messaging::Address& address)
     return sender;
 }
 
-qpid::messaging::Address SessionImpl::createTempQueue(const std::string& baseName)
-{
-    std::string name = baseName + std::string("_") + session.getId().getName();
-    session.queueDeclare(arg::queue=name, arg::exclusive=true, arg::autoDelete=true);
-    return qpid::messaging::Address(name);
-}
-
 SessionImpl& SessionImpl::convert(qpid::messaging::Session& s)
 {
     boost::intrusive_ptr<SessionImpl> impl = getImplPtr<qpid::messaging::Session, SessionImpl>(s);
@@ -225,32 +217,14 @@ bool SessionImpl::getNextReceiver(Receiver* receiver, IncomingMessages::MessageT
 
 bool SessionImpl::accept(ReceiverImpl* receiver, 
                          qpid::messaging::Message* message, 
-                         bool isDispatch, 
                          IncomingMessages::MessageTransfer& transfer)
 {
     if (receiver->getName() == transfer.getDestination()) {
         transfer.retrieve(message);
-        if (isDispatch) {
-            qpid::sys::Mutex::ScopedUnlock u(lock);
-            qpid::messaging::MessageListener* listener = receiver->getListener();
-            if (listener) listener->received(*message);
-        }
         receiver->received(*message);
         return true;
     } else {
         return false;
-    }
-}
-
-bool SessionImpl::acceptAny(qpid::messaging::Message* message, bool isDispatch, IncomingMessages::MessageTransfer& transfer)
-{
-    Receivers::iterator i = receivers.find(transfer.getDestination());
-    if (i == receivers.end()) {
-        QPID_LOG(error, "Received message for unknown destination " << transfer.getDestination());
-        return false;
-    } else {
-        boost::intrusive_ptr<ReceiverImpl> receiver = getImplPtr<Receiver, ReceiverImpl>(i->second);
-        return receiver && (!isDispatch || receiver->getListener()) && accept(receiver.get(), message, isDispatch, transfer);
     }
 }
 
@@ -261,35 +235,8 @@ bool SessionImpl::getIncoming(IncomingMessages::Handler& handler, qpid::sys::Dur
 
 bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout)
 {
-    IncomingMessageHandler handler(boost::bind(&SessionImpl::accept, this, &receiver, &message, false, _1));
+    IncomingMessageHandler handler(boost::bind(&SessionImpl::accept, this, &receiver, &message, _1));
     return getIncoming(handler, timeout);
-}
-
-bool SessionImpl::dispatch(qpid::sys::Duration timeout)
-{
-    qpid::sys::Mutex::ScopedLock l(lock);
-    while (true) {
-        try {
-            qpid::messaging::Message message;
-            IncomingMessageHandler handler(boost::bind(&SessionImpl::acceptAny, this, &message, true, _1));
-            return getIncoming(handler, timeout);
-        } catch (TransportFailure&) {
-            reconnect();
-        }
-    }
-}
-
-bool SessionImpl::fetch(qpid::messaging::Message& message, qpid::sys::Duration timeout)
-{
-    qpid::sys::Mutex::ScopedLock l(lock);
-    while (true) {
-        try {
-            IncomingMessageHandler handler(boost::bind(&SessionImpl::acceptAny, this, &message, false, _1));
-            return getIncoming(handler, timeout);
-        } catch (TransportFailure&) {
-            reconnect();
-        }
-    }
 }
 
 bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout)
@@ -418,13 +365,6 @@ void SessionImpl::rejectImpl(qpid::messaging::Message& m)
     session.messageReject(set);
 }
 
-qpid::messaging::Message SessionImpl::fetch(qpid::sys::Duration timeout) 
-{
-    qpid::messaging::Message result;
-    if (!fetch(result, timeout)) throw Receiver::NoMessageAvailable();
-    return result;
-}
-
 void SessionImpl::receiverCancelled(const std::string& name)
 {
     receivers.erase(name);
@@ -440,16 +380,6 @@ void SessionImpl::senderCancelled(const std::string& name)
 void SessionImpl::reconnect()
 {
     connection.reconnect();    
-}
-
-void* SessionImpl::getLastConfirmedSent()
-{
-    return 0;
-}
-
-void* SessionImpl::getLastConfirmedAcknowledged()
-{
-    return 0;
 }
 
 }}} // namespace qpid::client::amqp0_10

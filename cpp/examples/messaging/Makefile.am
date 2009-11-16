@@ -21,22 +21,16 @@ examplesdir=$(pkgdatadir)/examples/messaging
 MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
-noinst_PROGRAMS=queue_sender queue_listener queue_receiver topic_sender topic_listener topic_receiver client server map_sender map_receiver
+noinst_PROGRAMS=queue_sender queue_receiver topic_sender topic_receiver client server map_sender map_receiver
 
 queue_sender_SOURCES=queue_sender.cpp
 queue_sender_LDADD=$(CLIENT_LIB)
-
-queue_listener_SOURCES=queue_listener.cpp
-queue_listener_LDADD=$(CLIENT_LIB)
 
 queue_receiver_SOURCES=queue_receiver.cpp
 queue_receiver_LDADD=$(CLIENT_LIB)
 
 topic_sender_SOURCES=topic_sender.cpp
 topic_sender_LDADD=$(CLIENT_LIB)
-
-topic_listener_SOURCES=topic_listener.cpp
-topic_listener_LDADD=$(CLIENT_LIB)
 
 topic_receiver_SOURCES=topic_receiver.cpp
 topic_receiver_LDADD=$(CLIENT_LIB)

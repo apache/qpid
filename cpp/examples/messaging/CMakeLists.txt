@@ -17,11 +17,9 @@
 # under the License.
 #
 
-add_example(messaging queue_listener)
 add_example(messaging queue_receiver)
 add_example(messaging queue_sender)
 
-add_example(messaging topic_listener)
 add_example(messaging topic_receiver)
 add_example(messaging topic_sender)
 

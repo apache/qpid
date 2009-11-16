@@ -22,7 +22,6 @@
 #include "AddressResolution.h"
 #include "MessageSource.h"
 #include "SessionImpl.h"
-#include "qpid/messaging/MessageListener.h"
 #include "qpid/messaging/Receiver.h"
 
 namespace qpid {
@@ -115,8 +114,6 @@ void ReceiverImpl::init(qpid::client::AsyncSession s, AddressResolution& resolve
     }
 }
 
-void ReceiverImpl::setListener(qpid::messaging::MessageListener* l) { listener = l; }
-qpid::messaging::MessageListener* ReceiverImpl::getListener() { return listener; }
 
 const std::string& ReceiverImpl::getName() const { return destination; }
 
@@ -139,7 +136,7 @@ ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
                            const qpid::messaging::Address& a) : 
 
     parent(p), destination(name), address(a), byteCredit(0xFFFFFFFF), 
-    state(UNRESOLVED), capacity(0), listener(0), window(0) {}
+    state(UNRESOLVED), capacity(0), window(0) {}
 
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::sys::Duration timeout)
 {

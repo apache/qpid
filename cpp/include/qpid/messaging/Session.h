@@ -45,7 +45,7 @@ class Subscription;
 
 /**
  * A session represents a distinct 'conversation' which can involve
- * sending and receiving messages from different sources and sinks.
+ * sending and receiving messages to and from different addresses.
  */
 class Session : public qpid::client::Handle<SessionImpl>
 {
@@ -85,10 +85,22 @@ class Session : public qpid::client::Handle<SessionImpl>
      * has not yet been confirmed as processed by the server.
      */
     QPID_CLIENT_EXTERN uint32_t pendingAck();
-    QPID_CLIENT_EXTERN bool fetch(Message& message, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
-    QPID_CLIENT_EXTERN Message fetch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
-    QPID_CLIENT_EXTERN bool dispatch(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    /**
+     * Retrieves the receiver for the next available message. If there
+     * are no available messages at present the call will block for up
+     * to the specified timeout waiting for one to arrive. Returns
+     * true if a message was available at the point of return, in
+     * which case the passed in receiver reference will be set to the
+     * receiver for that message or fals if no message was available.
+     */
     QPID_CLIENT_EXTERN bool nextReceiver(Receiver&, qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
+    /**
+     * Returns the receiver for the next available message. If there
+     * are no available messages at present the call will block for up
+     * to the specified timeout waiting for one to arrive. Will throw
+     * Receiver::NoMessageAvailable if no message became available in
+     * time.
+     */
     QPID_CLIENT_EXTERN Receiver nextReceiver(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     
 

@@ -36,7 +36,6 @@ template <class> class PrivateImplRef;
 namespace messaging {
 
 class Message;
-class MessageListener;
 class ReceiverImpl;
 
 /**
@@ -121,13 +120,6 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * Cancels this receiver.
      */
     QPID_CLIENT_EXTERN void cancel();
-
-    /**
-     * Set a message listener for this receiver.
-     * 
-     * @see Session::dispatch()
-     */
-    QPID_CLIENT_EXTERN void setListener(MessageListener* listener);
   private:
   friend class qpid::client::PrivateImplRef<Receiver>;
 };
