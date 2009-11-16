@@ -90,7 +90,7 @@ class SessionState:
     # sender state
     self.sent = Serial(0)
     self.acknowledged = RangedSet()
-    self.completions = {}
+    self.actions = {}
     self.min_completion = self.sent
     self.max_completion = self.sent
     self.results = {}
@@ -105,14 +105,14 @@ class SessionState:
     id = self.sent
     self.write_cmd(query, lambda: handler(self.results.pop(id)))
 
-  def write_cmd(self, cmd, completion=noop):
-    if completion != noop:
+  def write_cmd(self, cmd, action=noop):
+    if action != noop:
       cmd.sync = True
     if self.detached:
       raise Exception("detached")
     cmd.id = self.sent
     self.sent += 1
-    self.completions[cmd.id] = completion
+    self.actions[cmd.id] = action
     self.max_completion = cmd.id
     self.write_op(cmd)
 
@@ -333,8 +333,8 @@ class Driver:
 
     if not sc.commands.empty():
       while sst.min_completion in sc.commands:
-        if sst.completions.has_key(sst.min_completion):
-          sst.completions.pop(sst.min_completion)()
+        if sst.actions.has_key(sst.min_completion):
+          sst.actions.pop(sst.min_completion)()
         sst.min_completion += 1
 
   def session_known_completed(self, kcmp):
