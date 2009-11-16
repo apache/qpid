@@ -18,9 +18,34 @@
 #
 
 from qpid.tests import Test
-from qpid.address import parse, ParseError
+from qpid.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE
 
 class AddressTests(Test):
+
+  def lex(self, addr, *types):
+    toks = [t.type for t in lex(addr) if t.type not in (WSPACE, EOF)]
+    assert list(types) == toks, "expected %s, got %s" % (types, toks)
+
+  def testDashInId1(self):
+    self.lex("foo-bar", ID)
+
+  def testDashInId2(self):
+    self.lex("foo-3", ID)
+
+  def testDashAlone1(self):
+    self.lex("foo - bar", ID, SYM, ID)
+
+  def testDashAlone2(self):
+    self.lex("foo - 3", ID, SYM, NUMBER)
+
+  def testLeadingDash(self):
+    self.lex("-foo", SYM, ID)
+
+  def testTrailingDash(self):
+    self.lex("foo-", ID, SYM)
+
+  def testNegativeNum(self):
+    self.lex("-3", NUMBER)
 
   def valid(self, addr, name=None, subject=None, options=None):
     expected = (name, subject, options)
