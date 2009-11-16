@@ -28,6 +28,7 @@ namespace messaging {
 
 namespace {
 const std::string SUBJECT_DIVIDER = "/";
+const std::string OPTIONS_DIVIDER = ";";
 const std::string SPACE = " ";
 const std::string TYPE = "type";
 }
@@ -54,18 +55,22 @@ class AddressParser
     static const std::string RESERVED;
 
     bool readChar(char c);
-    bool readQuotedString(Variant& value);
-    bool readString(Variant& value, char delimiter);
-    bool readWord(std::string& word);
+    bool readQuotedString(std::string& s);
+    bool readQuotedValue(Variant& value);
+    bool readString(std::string& value, char delimiter);
+    bool readWord(std::string& word, const std::string& delims = RESERVED);
     bool readSimpleValue(Variant& word);
     bool readKey(std::string& key);
     bool readValue(Variant& value);
     bool readKeyValuePair(Variant::Map& map);
     bool readMap(Variant& value);
     bool readList(Variant& value);
+    bool readName(std::string& name);
+    bool readSubject(std::string& subject);
     bool error(const std::string& message);
     bool eos();
     bool iswhitespace();
+    bool in(const std::string& delims);
     bool isreserved();
 };
 
@@ -90,7 +95,7 @@ std::string Address::toStr() const
     std::stringstream out;
     out << impl->name;
     if (!impl->subject.empty()) out << SUBJECT_DIVIDER << impl->subject;
-    if (!impl->options.empty()) out << " {" << impl->options << "}";
+    if (!impl->options.empty()) out << OPTIONS_DIVIDER << " {" << impl->options << "}";
     return out.str();
 }
 Address::operator bool() const { return !impl->name.empty(); }
@@ -145,22 +150,26 @@ bool AddressParser::error(const std::string& message)
 bool AddressParser::parse(Address& address)
 {
     std::string name;
-    if (readWord(name)) {
+    if (readName(name)) {
         if (name.find('#') == 0) name = qpid::framing::Uuid(true).str() + name;
         address.setName(name);
         if (readChar('/')) {
             std::string subject;
-            if (readWord(subject)) {
+            if (readSubject(subject)) {
                 address.setSubject(subject);
             } else {
                 return error("Expected subject after /");
             }
         }
-        Variant options = Variant::Map();
-        if (readMap(options)) {
-            address.setOptions(options.asMap());
+        if (readChar(';')) {
+            Variant options = Variant::Map();
+            if (readMap(options)) {
+                address.setOptions(options.asMap());
+            }
         }
-        return true;
+        //skip trailing whitespace
+        while (!eos() && iswhitespace()) ++current;
+        return eos() || error("Unexpected chars in address: " + input.substr(current));
     } else {
         return input.empty() || error("Expected name");
     }
@@ -215,11 +224,11 @@ bool AddressParser::readKey(std::string& key)
 
 bool AddressParser::readValue(Variant& value)
 {
-    return readSimpleValue(value) || readQuotedString(value) || 
+    return readSimpleValue(value) || readQuotedValue(value) || 
         readMap(value)  || readList(value) || error("Expected value");
 }
 
-bool AddressParser::readString(Variant& value, char delimiter)
+bool AddressParser::readString(std::string& value, char delimiter)
 {
     if (readChar(delimiter)) {
         std::string::size_type start = current++;
@@ -242,9 +251,30 @@ bool AddressParser::readString(Variant& value, char delimiter)
     }
 }
 
-bool AddressParser::readQuotedString(Variant& value)
+bool AddressParser::readName(std::string& name)
 {
-    return readString(value, '"') || readString(value, '\'');
+    return readQuotedString(name) || readWord(name, "/;");
+}
+
+bool AddressParser::readSubject(std::string& subject)
+{
+    return readQuotedString(subject) || readWord(subject, ";");
+}
+
+bool AddressParser::readQuotedString(std::string& s)
+{
+    return readString(s, '"') || readString(s, '\'');
+}
+
+bool AddressParser::readQuotedValue(Variant& value)
+{
+    std::string s;
+    if (readQuotedString(s)) {
+        value = s;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool AddressParser::readSimpleValue(Variant& value)
@@ -260,14 +290,14 @@ bool AddressParser::readSimpleValue(Variant& value)
     }
 }
 
-bool AddressParser::readWord(std::string& value)
+bool AddressParser::readWord(std::string& value, const std::string& delims)
 {
     //skip leading whitespace
     while (!eos() && iswhitespace()) ++current;
 
     //read any number of non-whitespace, non-reserved chars into value
     std::string::size_type start = current;
-    while (!eos() && !iswhitespace() && !isreserved()) ++current;
+    while (!eos() && !iswhitespace() && !in(delims)) ++current;
     
     if (current > start) {
         value = input.substr(start, current - start);
@@ -299,7 +329,12 @@ bool AddressParser::iswhitespace()
 
 bool AddressParser::isreserved()
 {
-    return RESERVED.find(input.at(current)) != std::string::npos;
+    return in(RESERVED);
+}
+
+bool AddressParser::in(const std::string& chars)
+{
+    return chars.find(input.at(current)) != std::string::npos;
 }
 
 bool AddressParser::eos()
