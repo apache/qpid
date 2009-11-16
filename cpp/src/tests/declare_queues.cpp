@@ -21,6 +21,7 @@
 
 #include <qpid/client/FailoverManager.h>
 #include <qpid/client/Session.h>
+#include <qpid/sys/Time.h>
 #include <qpid/Exception.h>
 
 #include <cstdlib>
@@ -81,7 +82,7 @@ main(int argc, char ** argv)
                            << "  port: " << settings.port << endl;
                       return 1;
                   }
-                  sleep ( 1 );
+                  qpid::sys::sleep ( 1 );
                 }
             }
        }
