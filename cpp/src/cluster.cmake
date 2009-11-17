@@ -97,6 +97,10 @@ if (BUILD_CLUSTER)
        qpid/cluster/Dispatchable.h
        qpid/cluster/UpdateClient.cpp
        qpid/cluster/UpdateClient.h
+       qpid/cluster/RetractClient.cpp
+       qpid/cluster/RetractClient.h
+       qpid/cluster/ErrorCheck.cpp
+       qpid/cluster/ErrorCheck.h
        qpid/cluster/Event.cpp
        qpid/cluster/Event.h
        qpid/cluster/EventFrame.h
@@ -106,11 +110,13 @@ if (BUILD_CLUSTER)
        qpid/cluster/FailoverExchange.cpp
        qpid/cluster/FailoverExchange.h
        qpid/cluster/UpdateExchange.h
+       qpid/cluster/UpdateReceiver.h
        qpid/cluster/LockedConnectionMap.h
        qpid/cluster/Multicaster.cpp
        qpid/cluster/Multicaster.h
        qpid/cluster/McastFrameHandler.h
        qpid/cluster/NoOpConnectionOutputHandler.h
+       qpid/cluster/Numbering.h
        qpid/cluster/OutputInterceptor.cpp
        qpid/cluster/OutputInterceptor.h
        qpid/cluster/PollerDispatch.cpp
@@ -128,7 +134,7 @@ if (BUILD_CLUSTER)
 
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(cluster PROPERTIES
-                          LINK_FLAGS -Wl,--no-undefined)
+                          LINK_FLAGS "-Wl,--no-undefined -pthread")
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
   install (TARGETS cluster
