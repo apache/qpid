@@ -26,6 +26,7 @@
 #include <boost/regex.hpp>
 #include <boost/assign/list_of.hpp>
 #include <vector>
+#include <set>
 #include <ostream>
 
 // Print a sequence
@@ -43,12 +44,15 @@ bool seqEqual(const T& a, const U& b) {
     return (i == a.end()) && (j == b.end());
 }
 
-// ostream and == operators so we can compare vectors and boost::assign::list_of
-// with BOOST_CHECK_EQUALS
+// ostream and == operators so we can compare vectors and sets with
+// boost::assign::list_of with BOOST_CHECK_EQUALS
 namespace std {                 // In namespace std so boost can find them.
 
 template <class T>
 ostream& operator<<(ostream& o, const vector<T>& v) { return seqPrint(o, v); }
+
+template <class T>
+ostream& operator<<(ostream& o, const set<T>& v) { return seqPrint(o, v); }
 
 template <class T>
 ostream& operator<<(ostream& o, const boost::assign_detail::generic_list<T>& l) { return seqPrint(o, l); }
@@ -58,6 +62,12 @@ bool operator == (const vector<T>& a, const boost::assign_detail::generic_list<T
 
 template <class T>
 bool operator == (const boost::assign_detail::generic_list<T>& b, const vector<T>& a) { return seqEqual(a, b); }
+
+template <class T>
+bool operator == (const set<T>& a, const boost::assign_detail::generic_list<T>& b) { return seqEqual(a, b); }
+
+template <class T>
+bool operator == (const boost::assign_detail::generic_list<T>& b, const set<T>& a) { return seqEqual(a, b); }
 }
 
 namespace qpid {

@@ -33,13 +33,10 @@
 #include <vector>
 #include <deque>
 #include <map>
-#include <set>
 #include <iosfwd>
 
 namespace qpid {
 namespace cluster {
-
-typedef std::set<MemberId> MemberSet;
 
 /**
  * Map of established cluster members and joiners waiting for an update,

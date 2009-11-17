@@ -217,12 +217,15 @@ MemberId Cpg::self() const {
 
 namespace { int byte(uint32_t value, int i) { return (value >> (i*8)) & 0xff; } }
 
-ostream& operator <<(ostream& out, const MemberId& id) {
-    out << byte(id.first, 0) << "."
-        << byte(id.first, 1) << "."
-        << byte(id.first, 2) << "."
-        << byte(id.first, 3);
-    return out << ":" << id.second;
+ostream& operator<<(ostream& out, const MemberId& id) {
+    if (id.first) {
+        out << byte(id.first, 0) << "."
+            << byte(id.first, 1) << "."
+            << byte(id.first, 2) << "."
+            << byte(id.first, 3)
+            << ":";
+    }
+    return out << id.second;
 }
 
 ostream& operator<<(ostream& o, const ConnectionId& c) {

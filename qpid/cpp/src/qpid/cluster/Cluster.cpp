@@ -153,7 +153,7 @@ namespace _qmf = ::qmf::org::apache::qpid::cluster;
  * Currently use SVN revision to avoid clashes with versions from
  * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 834052;
+const uint32_t Cluster::CLUSTER_VERSION = 835547;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -162,12 +162,19 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     ClusterDispatcher(Cluster& c, const MemberId& id, Cluster::Lock& l_) : cluster(c), member(id), l(l_) {}
 
     void updateRequest(const std::string& url) { cluster.updateRequest(member, url, l); }
+    void initialStatus(bool active, bool persistent, const framing::FieldTable& props) {
+        cluster.initialStatus(member, active, persistent, props);
+    }
     void ready(const std::string& url) { cluster.ready(member, url, l); }
     void configChange(const std::string& current) { cluster.configChange(member, current, l); }
-    void updateOffer(uint64_t updatee, const Uuid& id, uint32_t version) { cluster.updateOffer(member, updatee, id, version, l); }
+    void updateOffer(uint64_t updatee, const Uuid& id, uint32_t version) {
+        cluster.updateOffer(member, updatee, id, version, l);
+    }
     void retractOffer(uint64_t updatee) { cluster.retractOffer(member, updatee, l); }
     void messageExpired(uint64_t id) { cluster.messageExpired(member, id, l); }
-    void errorCheck(uint8_t type, const framing::SequenceNumber& frameSeq) { cluster.errorCheck(member, type, frameSeq, l); }
+    void errorCheck(uint8_t type, const framing::SequenceNumber& frameSeq) {
+        cluster.errorCheck(member, type, frameSeq, l);
+    }
 
     void shutdown() { cluster.shutdown(member, l); }
 
@@ -603,6 +610,10 @@ void Cluster::updateRequest(const MemberId& id, const std::string& url, Lock& l)
     makeOffer(id, l);
 }
 
+void Cluster::initialStatus(const MemberId&, bool /*active*/, bool /*persistent*/,
+                     const framing::FieldTable&) {
+    // FIXME aconway 2009-11-12: fill in.
+}
 void Cluster::ready(const MemberId& id, const std::string& url, Lock& l) {
     if (map.ready(id, Url(url))) 
         memberUpdate(l);

@@ -147,6 +147,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&,
                      uint32_t version, Lock&);
     void retractOffer(const MemberId& updater, uint64_t updatee, Lock&);
+    void initialStatus(const MemberId&, bool active, bool persistent, const framing::FieldTable& props);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
