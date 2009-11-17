@@ -122,9 +122,18 @@ if (BUILD_CLUSTER)
 
   add_library (cluster MODULE ${cluster_SOURCES})
   target_link_libraries (cluster ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient)
-#cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
+
   set_target_properties (cluster PROPERTIES
                          PREFIX "")
+
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties(cluster PROPERTIES
+                          LINK_FLAGS -Wl,--no-undefined)
+  endif (CMAKE_COMPILER_IS_GNUCXX)
+
+  install (TARGETS cluster
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
 
 endif (BUILD_CLUSTER)
 
