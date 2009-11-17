@@ -20,6 +20,7 @@
  */
 #include "MemberSet.h"
 #include <ostream>
+#include <algorithm>
 
 namespace qpid {
 namespace cluster {
