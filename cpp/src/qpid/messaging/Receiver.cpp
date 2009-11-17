@@ -21,6 +21,7 @@
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/ReceiverImpl.h"
+#include "qpid/messaging/Session.h"
 #include "qpid/client/PrivateImplRef.h"
 
 namespace qpid {
@@ -48,4 +49,5 @@ uint32_t Receiver::available() { return impl->available(); }
 uint32_t Receiver::pendingAck() { return impl->pendingAck(); }
 void Receiver::cancel() { impl->cancel(); }
 const std::string& Receiver::getName() const { return impl->getName(); }
+Session Receiver::getSession() const { return impl->getSession(); }
 }} // namespace qpid::messaging

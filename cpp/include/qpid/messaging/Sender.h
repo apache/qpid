@@ -37,7 +37,7 @@ namespace messaging {
 
 class Message;
 class SenderImpl;
-
+class Session;
 /**
  * Interface through which messages are sent.
  */
@@ -73,6 +73,11 @@ class Sender : public qpid::client::Handle<SenderImpl>
      * Returns the name of this sender.
      */
     QPID_CLIENT_EXTERN const std::string& getName() const;
+
+    /**
+     * Returns a handle to the session associated with this sender.
+     */
+    QPID_CLIENT_EXTERN Session getSession() const;
   private:
   friend class qpid::client::PrivateImplRef<Sender>;
 };

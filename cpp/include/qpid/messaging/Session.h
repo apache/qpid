@@ -37,6 +37,7 @@ template <class> class PrivateImplRef;
 namespace messaging {
 
 class Address;
+class Connection;
 class Message;
 class MessageListener;
 class Sender;
@@ -133,6 +134,12 @@ class Session : public qpid::client::Handle<SessionImpl>
      * if there is none for that name.
      */
     QPID_CLIENT_EXTERN Receiver getReceiver(const std::string& name) const;
+    /**
+     * Returns a handle to the connection this session is associated
+     * with.
+     */
+    QPID_CLIENT_EXTERN Connection getConnection() const;
+
   private:
   friend class qpid::client::PrivateImplRef<Session>;
 };

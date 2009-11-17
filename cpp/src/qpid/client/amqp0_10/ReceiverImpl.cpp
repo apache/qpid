@@ -23,6 +23,7 @@
 #include "MessageSource.h"
 #include "SessionImpl.h"
 #include "qpid/messaging/Receiver.h"
+#include "qpid/messaging/Session.h"
 
 namespace qpid {
 namespace client {
@@ -185,6 +186,9 @@ void ReceiverImpl::setCapacityImpl(uint32_t c)
         }
     }
 }
-
+qpid::messaging::Session ReceiverImpl::getSession() const
+{
+    return qpid::messaging::Session(&parent);
+}
 
 }}} // namespace qpid::client::amqp0_10

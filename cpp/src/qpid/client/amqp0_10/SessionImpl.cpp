@@ -28,6 +28,7 @@
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/messaging/Sender.h"
@@ -422,6 +423,11 @@ void SessionImpl::senderCancelled(const std::string& name)
 void SessionImpl::reconnect()
 {
     connection.reconnect();    
+}
+
+qpid::messaging::Connection SessionImpl::getConnection() const
+{
+    return qpid::messaging::Connection(&connection);
 }
 
 }}} // namespace qpid::client::amqp0_10

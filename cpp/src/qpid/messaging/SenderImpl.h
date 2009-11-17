@@ -30,6 +30,7 @@ namespace client {
 namespace messaging {
 
 class Message;
+class Session;
 
 class SenderImpl : public virtual qpid::RefCounted
 {
@@ -41,6 +42,7 @@ class SenderImpl : public virtual qpid::RefCounted
     virtual uint32_t getCapacity() = 0;
     virtual uint32_t pending() = 0;
     virtual const std::string& getName() const = 0;
+    virtual Session getSession() const = 0;
   private:
 };
 }} // namespace qpid::messaging
