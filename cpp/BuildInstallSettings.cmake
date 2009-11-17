@@ -109,10 +109,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Linux)
   set (CPACK_COMPONENT_DEVELOPMENT_DISPLAY_NAME
        "Items required to build new C++ Qpid client programs")
 
-
   set (QPID_INSTALL_BINDIR bin CACHE STRING
        "Directory to install user executables")
-  set (QPID_INSTALL_CONFDIR /etc/qpid CACHE STRING
+  set (QPID_INSTALL_CONFDIR etc/qpid CACHE STRING
        "Directory to install configuration files")
   set (QPID_INSTALL_DATADIR share/qpid CACHE STRING
        "Directory to install read-only arch.-independent data root")
