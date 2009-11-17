@@ -54,6 +54,8 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual Receiver nextReceiver(qpid::sys::Duration timeout) = 0;
     virtual uint32_t available() = 0;
     virtual uint32_t pendingAck() = 0;
+    virtual Sender getSender(const std::string& name) const = 0;
+    virtual Receiver getReceiver(const std::string& name) const = 0;
   private:
 };
 }} // namespace qpid::messaging
