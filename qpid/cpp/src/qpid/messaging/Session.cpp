@@ -20,6 +20,7 @@
  */
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/Address.h"
+#include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Receiver.h"
@@ -96,6 +97,11 @@ Sender Session::getSender(const std::string& name) const
 Receiver Session::getReceiver(const std::string& name) const
 { 
     return impl->getReceiver(name); 
+}
+
+Connection Session::getConnection() const
+{ 
+    return impl->getConnection(); 
 }
 
 KeyError::KeyError(const std::string& msg) : Exception(msg) {}

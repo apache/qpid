@@ -31,8 +31,8 @@ namespace client {
 
 namespace messaging {
 
-struct Address;
-struct Filter;
+class Address;
+class Connection;
 class Message;
 class Sender;
 class Receiver;
@@ -56,6 +56,7 @@ class SessionImpl : public virtual qpid::RefCounted
     virtual uint32_t pendingAck() = 0;
     virtual Sender getSender(const std::string& name) const = 0;
     virtual Receiver getReceiver(const std::string& name) const = 0;
+    virtual Connection getConnection() const = 0;
   private:
 };
 }} // namespace qpid::messaging

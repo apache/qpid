@@ -23,6 +23,7 @@
 #include "SessionImpl.h"
 #include "AddressResolution.h"
 #include "OutgoingMessage.h"
+#include "qpid/messaging/Session.h"
 
 namespace qpid {
 namespace client {
@@ -132,6 +133,11 @@ void SenderImpl::cancelImpl()
 const std::string& SenderImpl::getName() const
 {
     return name;
+}
+
+qpid::messaging::Session SenderImpl::getSession() const
+{
+    return qpid::messaging::Session(&parent);
 }
 
 }}} // namespace qpid::client::amqp0_10

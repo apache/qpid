@@ -21,6 +21,7 @@
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/SenderImpl.h"
+#include "qpid/messaging/Session.h"
 #include "qpid/client/PrivateImplRef.h"
 
 namespace qpid {
@@ -44,5 +45,6 @@ void Sender::setCapacity(uint32_t c) { impl->setCapacity(c); }
 uint32_t Sender::getCapacity() { return impl->getCapacity(); }
 uint32_t Sender::pending() { return impl->pending(); }
 const std::string& Sender::getName() const { return impl->getName(); }
+Session Sender::getSession() const { return impl->getSession(); }
 
 }} // namespace qpid::messaging

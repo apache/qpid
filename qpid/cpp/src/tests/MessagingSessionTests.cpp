@@ -718,7 +718,7 @@ QPID_AUTO_TEST_CASE(testGetReceiver)
     BOOST_CHECK_THROW(fix.session.getReceiver("UnknownReceiver"), qpid::messaging::KeyError);
 }
 
-QPID_AUTO_TEST_CASE(testGetSession)
+QPID_AUTO_TEST_CASE(testGetSessionFromConnection)
 {
     QueueFixture fix;
     fix.connection.newSession("my-session");
@@ -730,6 +730,19 @@ QPID_AUTO_TEST_CASE(testGetSession)
     BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
     BOOST_CHECK_THROW(fix.connection.getSession("UnknownSession"), qpid::messaging::KeyError);
 }
+
+QPID_AUTO_TEST_CASE(testGetConnectionFromSession)
+{
+    QueueFixture fix;
+    Message out(Uuid(true).str());
+    Sender sender = fix.session.createSender(fix.queue);
+    sender.send(out);
+    Message in;
+    sender.getSession().getConnection().newSession("incoming");
+    BOOST_CHECK(fix.connection.getSession("incoming").createReceiver(fix.queue).fetch(in));
+    BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 

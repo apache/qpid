@@ -32,8 +32,8 @@
 namespace qpid {
 
 namespace messaging {
-struct Address;
-struct Filter;
+class Address;
+class Connection;
 class Message;
 class Receiver;
 class Sender;
@@ -70,6 +70,8 @@ class SessionImpl : public qpid::messaging::SessionImpl
 
     bool nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout);
     qpid::messaging::Receiver nextReceiver(qpid::sys::Duration timeout);
+
+    qpid::messaging::Connection getConnection() const;
 
     bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::sys::Duration timeout);    
 

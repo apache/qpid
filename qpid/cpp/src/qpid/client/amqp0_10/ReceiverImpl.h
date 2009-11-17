@@ -63,6 +63,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     uint32_t available();
     uint32_t pendingAck();
     void received(qpid::messaging::Message& message);
+    qpid::messaging::Session getSession() const;
   private:
     SessionImpl& parent;
     const std::string destination;
