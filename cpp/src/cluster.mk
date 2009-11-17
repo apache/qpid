@@ -82,6 +82,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/PollerDispatch.h			\
   qpid/cluster/ProxyInputHandler.h		\
   qpid/cluster/Quorum.h				\
+  qpid/cluster/InitialStatusMap.h		\
+  qpid/cluster/InitialStatusMap.cpp		\
   qpid/cluster/types.h
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la

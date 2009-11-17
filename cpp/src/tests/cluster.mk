@@ -75,9 +75,10 @@ cluster_test_SOURCES =				\
 	ForkedBroker.h				\
 	ForkedBroker.cpp			\
 	PartialFailure.cpp			\
-	ClusterFailover.cpp
+	ClusterFailover.cpp			\
+	InitialStatusMap.cpp
 
-cluster_test_LDADD=$(lib_client) $(lib_broker) -lboost_unit_test_framework
+cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_framework
 
 qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests long_cluster_tests.py testlib.py cluster_tests.fail
 

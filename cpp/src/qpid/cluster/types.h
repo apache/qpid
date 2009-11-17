@@ -29,6 +29,7 @@
 #include <utility>
 #include <iosfwd>
 #include <string>
+#include <set>
 
 
 extern "C" {
@@ -52,8 +53,8 @@ enum EventType { DATA, CONTROL };
 
 /** first=node-id, second=pid */
 struct MemberId : std::pair<uint32_t, uint32_t> {
-    explicit MemberId(uint64_t n) : std::pair<uint32_t,uint32_t>( n >> 32, n & 0xffffffff) {}
-    explicit MemberId(uint32_t node=0, uint32_t pid=0) : std::pair<uint32_t,uint32_t>(node, pid) {}
+    MemberId(uint64_t n=0) : std::pair<uint32_t,uint32_t>( n >> 32, n & 0xffffffff) {}
+    MemberId(uint32_t node, uint32_t pid) : std::pair<uint32_t,uint32_t>(node, pid) {}
     MemberId(const cpg_address& caddr) : std::pair<uint32_t,uint32_t>(caddr.nodeid, caddr.pid) {}
     MemberId(const std::string&); // Decode from string.
     uint32_t getNode() const { return first; }
@@ -74,6 +75,8 @@ struct ConnectionId : public std::pair<MemberId, uint64_t>  {
     MemberId getMember() const { return first; }
     uint64_t getNumber() const { return second; }
 };
+
+typedef std::set<MemberId> MemberSet;
 
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
 

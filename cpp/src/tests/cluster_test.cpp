@@ -54,11 +54,6 @@
 #include <algorithm>
 #include <iterator>
 
-namespace std {                 // ostream operators in std:: namespace
-template <class T>
-ostream& operator<<(ostream& o, const std::set<T>& s) { return seqPrint(o, s); }
-}
-
 using namespace std;
 using namespace qpid;
 using namespace qpid::cluster;
