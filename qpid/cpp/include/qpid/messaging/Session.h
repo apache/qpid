@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/Exception.h"
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Handle.h"
 #include "qpid/sys/Time.h"
@@ -42,6 +43,11 @@ class Sender;
 class Receiver;
 class SessionImpl;
 class Subscription;
+
+struct KeyError : qpid::Exception
+{
+    QPID_CLIENT_EXTERN KeyError(const std::string&);
+};
 
 /**
  * A session represents a distinct 'conversation' which can involve
@@ -103,11 +109,30 @@ class Session : public qpid::client::Handle<SessionImpl>
      */
     QPID_CLIENT_EXTERN Receiver nextReceiver(qpid::sys::Duration timeout=qpid::sys::TIME_INFINITE);
     
-
+    /**
+     * Create a new sender through which messages can be sent to the
+     * specified address.
+     */
     QPID_CLIENT_EXTERN Sender createSender(const Address& address);
     QPID_CLIENT_EXTERN Sender createSender(const std::string& address);
+
+    /**
+     * Create a new receiver through which messages can be received
+     * from the specified address.
+     */
     QPID_CLIENT_EXTERN Receiver createReceiver(const Address& address);
     QPID_CLIENT_EXTERN Receiver createReceiver(const std::string& address);
+
+    /**
+     * Returns the sender with the specified name or throws KeyError
+     * if there is none for that name.
+     */
+    QPID_CLIENT_EXTERN Sender getSender(const std::string& name) const;
+    /**
+     * Returns the receiver with the specified name or throws KeyError
+     * if there is none for that name.
+     */
+    QPID_CLIENT_EXTERN Receiver getReceiver(const std::string& name) const;
   private:
   friend class qpid::client::PrivateImplRef<Session>;
 };

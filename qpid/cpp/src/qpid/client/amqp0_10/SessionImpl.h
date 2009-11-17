@@ -65,6 +65,9 @@ class SessionImpl : public qpid::messaging::SessionImpl
     qpid::messaging::Sender createSender(const qpid::messaging::Address& address);
     qpid::messaging::Receiver createReceiver(const qpid::messaging::Address& address);
 
+    qpid::messaging::Sender getSender(const std::string& name) const;
+    qpid::messaging::Receiver getReceiver(const std::string& name) const;
+
     bool nextReceiver(qpid::messaging::Receiver& receiver, qpid::sys::Duration timeout);
     qpid::messaging::Receiver nextReceiver(qpid::sys::Duration timeout);
 
@@ -99,7 +102,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     typedef std::map<std::string, qpid::messaging::Receiver> Receivers;
     typedef std::map<std::string, qpid::messaging::Sender> Senders;
 
-    qpid::sys::Mutex lock;
+    mutable qpid::sys::Mutex lock;
     ConnectionImpl& connection;
     qpid::client::Session session;
     AddressResolution resolver;

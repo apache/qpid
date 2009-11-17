@@ -89,4 +89,15 @@ Receiver Session::nextReceiver(qpid::sys::Duration timeout)
 uint32_t Session::available() { return impl->available(); }
 uint32_t Session::pendingAck() { return impl->pendingAck(); }
 
+Sender Session::getSender(const std::string& name) const
+{ 
+    return impl->getSender(name); 
+}
+Receiver Session::getReceiver(const std::string& name) const
+{ 
+    return impl->getReceiver(name); 
+}
+
+KeyError::KeyError(const std::string& msg) : Exception(msg) {}
+
 }} // namespace qpid::messaging

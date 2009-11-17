@@ -39,6 +39,7 @@
 #include <boost/intrusive_ptr.hpp>
 
 using qpid::messaging::Filter;
+using qpid::messaging::KeyError;
 using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Sender;
 using qpid::messaging::Receiver;
@@ -174,6 +175,28 @@ Sender SessionImpl::createSenderImpl(const qpid::messaging::Address& address)
     getImplPtr<Sender, SenderImpl>(sender)->init(session, resolver);
     senders[name] = sender;
     return sender;
+}
+
+Sender SessionImpl::getSender(const std::string& name) const
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    Senders::const_iterator i = senders.find(name);
+    if (i == senders.end()) {
+        throw KeyError(name);
+    } else {
+        return i->second;
+    }    
+}
+
+Receiver SessionImpl::getReceiver(const std::string& name) const
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    Receivers::const_iterator i = receivers.find(name);
+    if (i == receivers.end()) {
+        throw KeyError(name);
+    } else {
+        return i->second;
+    }
 }
 
 SessionImpl& SessionImpl::convert(qpid::messaging::Session& s)

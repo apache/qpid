@@ -24,6 +24,7 @@
 #include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Handle.h"
 #include "qpid/sys/IntegerTypes.h"
+#include <string>
 
 namespace qpid {
 namespace client {
@@ -68,6 +69,10 @@ class Sender : public qpid::client::Handle<SenderImpl>
      */
     QPID_CLIENT_EXTERN uint32_t pending();
 
+    /**
+     * Returns the name of this sender.
+     */
+    QPID_CLIENT_EXTERN const std::string& getName() const;
   private:
   friend class qpid::client::PrivateImplRef<Sender>;
 };

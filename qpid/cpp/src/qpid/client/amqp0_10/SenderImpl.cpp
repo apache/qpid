@@ -129,4 +129,9 @@ void SenderImpl::cancelImpl()
     parent.senderCancelled(name);
 }
 
+const std::string& SenderImpl::getName() const
+{
+    return name;
+}
+
 }}} // namespace qpid::client::amqp0_10

@@ -694,6 +694,35 @@ QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
     fix.admin.deleteQueue("q");
 }
 
+QPID_AUTO_TEST_CASE(testGetSender)
+{
+    QueueFixture fix;
+    std::string name = fix.session.createSender(fix.queue).getName();
+    Sender sender = fix.session.getSender(name);
+    BOOST_CHECK_EQUAL(name, sender.getName());
+    Message out(Uuid(true).str());
+    sender.send(out);
+    Message in;
+    BOOST_CHECK(fix.session.createReceiver(fix.queue).fetch(in));
+    BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
+    BOOST_CHECK_THROW(fix.session.getSender("UnknownSender"), qpid::messaging::KeyError);
+}
+
+
+QPID_AUTO_TEST_CASE(testGetReceiver)
+{
+    QueueFixture fix;
+    std::string name = fix.session.createReceiver(fix.queue).getName();
+    Receiver receiver = fix.session.getReceiver(name);
+    BOOST_CHECK_EQUAL(name, receiver.getName());
+    Message out(Uuid(true).str());
+    fix.session.createSender(fix.queue).send(out);
+    Message in;
+    BOOST_CHECK(receiver.fetch(in));
+    BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
+    BOOST_CHECK_THROW(fix.session.getReceiver("UnknownReceiver"), qpid::messaging::KeyError);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

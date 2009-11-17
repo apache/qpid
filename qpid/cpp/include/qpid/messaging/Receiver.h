@@ -110,6 +110,12 @@ class Receiver : public qpid::client::Handle<ReceiverImpl>
      * Cancels this receiver.
      */
     QPID_CLIENT_EXTERN void cancel();
+
+    /**
+     * Returns the name of this receiver.
+     */
+    QPID_CLIENT_EXTERN const std::string& getName() const;
+
   private:
   friend class qpid::client::PrivateImplRef<Receiver>;
 };

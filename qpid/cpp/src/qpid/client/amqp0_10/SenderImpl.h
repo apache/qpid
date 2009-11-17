@@ -54,6 +54,7 @@ class SenderImpl : public qpid::messaging::SenderImpl
     uint32_t getCapacity();
     uint32_t pending();
     void init(qpid::client::AsyncSession, AddressResolution&);
+    const std::string& getName() const;
 
   private:
     SessionImpl& parent;
