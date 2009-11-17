@@ -19,6 +19,7 @@
  *
  */
 
+#include "InitialStatusMap.h"
 #include "ClusterMap.h"
 #include "ClusterSettings.h"
 #include "Cpg.h"
@@ -144,10 +145,11 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     // Cluster controls implement XML methods from cluster.xml.
     void updateRequest(const MemberId&, const std::string&, Lock&);
-    void updateOffer(const MemberId& updater, uint64_t updatee, const framing::Uuid&,
-                     uint32_t version, Lock&);
+    void updateOffer(const MemberId& updater, uint64_t updatee, Lock&);
     void retractOffer(const MemberId& updater, uint64_t updatee, Lock&);
-    void initialStatus(const MemberId&, bool active, bool persistent, const framing::FieldTable& props);
+    void initialStatus(const MemberId&, bool active, bool persistent,
+                       const framing::Uuid& id, uint32_t version,
+                       const std::string& url, Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
@@ -164,6 +166,10 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);       
+
+    void initMapCompleted(Lock&);
+
+
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback. 
@@ -241,7 +247,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     //    Local cluster state, cluster map
     enum {
-        INIT,    ///< Initial state, no CPG messages received.
+        INIT,    ///< Establishing inital cluster stattus.
         JOINER,  ///< Sent update request, waiting for update offer.
         UPDATEE, ///< Stalled receive queue at update offer, waiting for update to complete.
         CATCHUP, ///< Update complete, unstalled but has not yet seen own "ready" event.
@@ -252,8 +258,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     } state;
 
     ConnectionMap connections;
+    InitialStatusMap initMap;
     ClusterMap map;
-    ClusterMap::Set elders;
+    MemberSet elders;
     size_t lastSize;
     bool lastBroker;
     sys::Thread updateThread;

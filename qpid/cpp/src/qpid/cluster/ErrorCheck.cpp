@@ -39,11 +39,6 @@ ErrorCheck::ErrorCheck(Cluster& c)
     : cluster(c), mcast(c.getMulticast()), frameSeq(0), type(ERROR_TYPE_NONE), connection(0)
 {}
 
-ostream& operator<<(ostream& o, const ErrorCheck::MemberSet& ms) {
-    copy(ms.begin(), ms.end(), ostream_iterator<MemberId>(o, " "));
-    return o;
-}
-
 void ErrorCheck::error(
     Connection& c, ErrorType t, framing::SequenceNumber seq, const MemberSet& ms,
     const std::string& msg)
@@ -115,7 +110,7 @@ ErrorCheck::FrameQueue::iterator ErrorCheck::review(const FrameQueue::iterator& 
         const ClusterConfigChangeBody* configChange =
             static_cast<const ClusterConfigChangeBody*>(method);
         if (configChange) {
-            MemberSet members(ClusterMap::decode(configChange->getCurrent()));
+            MemberSet members(decodeMemberSet(configChange->getCurrent()));
             QPID_LOG(debug, cluster << " apply config change to error "
                      << frameSeq << ": " << members);
             MemberSet intersect;

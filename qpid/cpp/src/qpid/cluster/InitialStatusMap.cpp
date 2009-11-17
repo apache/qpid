@@ -29,13 +29,12 @@ namespace qpid {
 namespace cluster {
 
 InitialStatusMap::InitialStatusMap(const MemberId& self_)
-    : self(self_), complete(), updateNeeded(), resendNeeded()
-{
-    map[self] = optional<Status>();
-}
+    : self(self_), completed(), resendNeeded()
+{}
 
 void InitialStatusMap::configChange(const MemberSet& members) {
     resendNeeded = false;
+    bool wasComplete = isComplete();
     if (firstConfig.empty()) firstConfig = members;
     MemberSet::const_iterator i = members.begin();
     Map::iterator j = map.begin();
@@ -66,10 +65,13 @@ void InitialStatusMap::configChange(const MemberSet& members) {
         for (Map::iterator i = map.begin(); i != map.end(); ++i)
             i->second = optional<Status>();
     }
+    completed = isComplete() && !wasComplete; // Set completed on the transition.
 }
 
 void InitialStatusMap::received(const MemberId& m, const Status& s){
+    bool wasComplete = isComplete();
     map[m] = s;
+    completed = isComplete() && !wasComplete; // Set completed on the transition.
 }
 
 bool InitialStatusMap::notInitialized(const Map::value_type& v) {
@@ -81,7 +83,11 @@ bool InitialStatusMap::isActive(const Map::value_type& v) {
 }
 
 bool InitialStatusMap::isComplete() {
-    return find_if(map.begin(), map.end(), &notInitialized) == map.end();
+    return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end();
+}
+
+bool InitialStatusMap::transitionToComplete() {
+    return completed;
 }
 
 bool InitialStatusMap::isResendNeeded() {
@@ -105,6 +111,28 @@ MemberSet InitialStatusMap::getElders() {
             elders.insert(*i);
     }
     return elders;
+}
+
+// Get cluster ID from an active member or the youngest newcomer.
+framing::Uuid InitialStatusMap::getClusterId() {
+    assert(isComplete());
+    assert(!map.empty());
+    Map::iterator i = find_if(map.begin(), map.end(), &isActive);
+    if (i != map.end())
+        return i->second->getClusterId(); // An active member
+    else
+        return map.begin()->second->getClusterId();
+}
+
+std::map<MemberId, Url> InitialStatusMap::getMemberUrls() {
+    assert(isComplete());
+    assert(!isUpdateNeeded());
+    std::map<MemberId, Url> urlMap;
+    for (Map::iterator i = map.begin(); i != map.end(); ++i) {
+        assert(i->second);
+        urlMap.insert(std::make_pair(i->first, i->second->getUrl()));
+    }
+    return urlMap;
 }
 
 }} // namespace qpid::cluster

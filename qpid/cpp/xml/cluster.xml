@@ -40,8 +40,6 @@
     <!-- Sender offers an update to a new joiner. -->
     <control name = "update-offer" code="0x2">
       <field name="updatee" type="uint64"/>
-      <field name="cluster-id" type="uuid"/>
-      <field name="version" type="uint32"/>
     </control>
 
     <!-- Sender retracts an offer to a new joiner. -->
@@ -53,7 +51,9 @@
     <control name="initial-status" code="0x4">
       <field name="active" type="bit"/>
       <field name="persistent" type="bit"/>
-      <field name="properties" type="map"/>>
+      <field name="cluster-id" type="uuid"/>>
+      <field name="version" type="uint32"/>
+      <field name="url" type="str16"/>>
     </control>
 
     <!-- New member or updater is ready as an active member. -->

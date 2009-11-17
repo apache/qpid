@@ -29,6 +29,11 @@ from threading import Thread
 class ClusterTests(BrokerTest):
     """Cluster tests with support for testing with a store plugin."""
 
+    def duration(self):
+        d = self.config.defines.get("DURATION")
+        if d: return float(d)*60
+        else: return 3
+
     def test_message_replication(self):
         """Test basic cluster message replication."""
         # Start a cluster, send some messages to member 0.
@@ -66,11 +71,10 @@ class ClusterTests(BrokerTest):
         sender = NumberedSender(cluster[2])
         sender.start()
 
-        # Kill original brokers, start new ones.
-        endtime = time.time() + (int(self.config.defines.get("DURATION") or 3))
+        # Kill original brokers, start new ones for the duration.
+        endtime = time.time() + self.duration()
         i = 0
         while time.time() < endtime:
-            print time.time(), endtime
             cluster[i].kill()
             i += 1
             b = cluster.start(expect=EXPECT_EXIT_FAIL)
