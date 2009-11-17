@@ -85,6 +85,10 @@ if (BUILD_SSL)
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
+  install (TARGETS ssl
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
+
   add_library (sslconnector MODULE qpid/client/SslConnector.cpp)
   target_link_libraries (sslconnector qpidclient sslcommon)
   set_target_properties (sslconnector PROPERTIES
@@ -94,5 +98,9 @@ if (BUILD_SSL)
     set_target_properties(sslconnector PROPERTIES
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
+
+  install (TARGETS sslconnector
+           DESTINATION ${QPIDC_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_CLIENT})
 
 endif (BUILD_SSL)

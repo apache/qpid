@@ -317,7 +317,7 @@ if (BUILD_XML)
                            PREFIX ""
                            LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
-  install (TARGETS xml RUNTIME
+  install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
 

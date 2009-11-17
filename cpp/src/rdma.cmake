@@ -71,6 +71,10 @@ if (BUILD_RDMA)
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
+  install (TARGETS rdmawrap
+           DESTINATION ${QPID_INSTALL_LIBDIR}
+           COMPONENT ${QPID_COMPONENT_COMMON})
+
   add_library (rdma MODULE qpid/sys/RdmaIOPlugin.cpp)
   target_link_libraries (rdma qpidbroker rdmawrap)
   set_target_properties (rdma PROPERTIES
@@ -82,6 +86,10 @@ if (BUILD_RDMA)
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
+  install (TARGETS rdma
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
+
   add_library (rdmaconnector MODULE qpid/client/RdmaConnector.cpp)
   target_link_libraries (rdmaconnector qpidclient rdmawrap)
   set_target_properties (rdmaconnector PROPERTIES
@@ -92,6 +100,10 @@ if (BUILD_RDMA)
                           COMPILE_FLAGS -Wno-missing-field-initializers
                           LINK_FLAGS -Wl,--no-undefined)
   endif (CMAKE_COMPILER_IS_GNUCXX)
+
+  install (TARGETS rdmaconnector
+           DESTINATION ${QPIDC_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_CLIENT})
 
   # RDMA test/sample programs
   add_executable (RdmaServer qpid/sys/rdma/RdmaServer.cpp)
