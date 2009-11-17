@@ -22,6 +22,7 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/amqp_0_10/Connection.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
@@ -37,6 +38,11 @@ ConnectionFactory::~ConnectionFactory() {}
 sys::ConnectionCodec*
 ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std::string& id,
                           unsigned int ) {
+    if (broker.getConnectionCounter().allowConnection())
+    {
+        QPID_LOG(error, "Client max connection count limit exceeded: " << broker.getOptions().maxConnections << " connection refushed");
+        return 0;
+    }
     if (v == ProtocolVersion(0, 10)) {
         ConnectionPtr c(new amqp_0_10::Connection(out, id, false));
         c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, false)));
