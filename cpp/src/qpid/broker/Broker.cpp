@@ -155,6 +155,7 @@ Broker::Broker(const Broker::Options& conf) :
     queueEvents(poller,!conf.asyncQueueEvents), 
     recovery(true),
     expiryPolicy(new ExpiryPolicy),
+    connectionCounter(conf.maxConnections),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
     if (conf.enableMgmt) {

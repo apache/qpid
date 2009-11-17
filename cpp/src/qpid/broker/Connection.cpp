@@ -102,6 +102,7 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std
         }
         ConnectionState::setUrl(mgmtId);
     }
+    if (!isShadow()) broker.getConnectionCounter().inc_connectionCount();
 }
 
 void Connection::requestIOProcessing(boost::function0<void> callback)
@@ -125,6 +126,8 @@ Connection::~Connection()
         heartbeatTimer->cancel();
     if (timeoutTimer)
         timeoutTimer->cancel();
+
+    if (!isShadow()) broker.getConnectionCounter().dec_connectionCount();
 }
 
 void Connection::received(framing::AMQFrame& frame) {

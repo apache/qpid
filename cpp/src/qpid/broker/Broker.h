@@ -51,6 +51,7 @@
 #include "qpid/sys/Timer.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/sys/Mutex.h"
 
 #include <boost/intrusive_ptr.hpp>
 #include <string>
@@ -116,6 +117,26 @@ public:
       private:
         std::string getHome();
     };
+    
+    class ConnectionCounter {
+            int maxConnections;
+            int connectionCount;
+            sys::Mutex connectionCountLock;
+        public:
+            ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
+            void inc_connectionCount() {    
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                connectionCount++;
+            } 
+            void dec_connectionCount() {    
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                connectionCount--;
+            }
+            bool allowConnection() {
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                return (maxConnections <= connectionCount);
+            } 
+    };
 
   private:
     typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
@@ -147,7 +168,7 @@ public:
     std::string federationTag;
     bool recovery;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
-
+    ConnectionCounter connectionCounter;
   public:
     virtual ~Broker();
 
@@ -238,6 +259,8 @@ public:
     bool getRecovery() const { return recovery; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
+    
+    ConnectionCounter& getConnectionCounter() {return connectionCounter;}
 };
 
 }}
