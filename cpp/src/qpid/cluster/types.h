@@ -29,8 +29,6 @@
 #include <utility>
 #include <iosfwd>
 #include <string>
-#include <set>
-
 
 extern "C" {
 #if defined (HAVE_OPENAIS_CPG_H)
@@ -75,8 +73,6 @@ struct ConnectionId : public std::pair<MemberId, uint64_t>  {
     MemberId getMember() const { return first; }
     uint64_t getNumber() const { return second; }
 };
-
-typedef std::set<MemberId> MemberSet;
 
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
 

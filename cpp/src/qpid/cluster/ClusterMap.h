@@ -22,7 +22,7 @@
  *
  */
 
-#include "qpid/cluster/types.h"
+#include "MemberSet.h"
 #include "qpid/Url.h"
 #include "qpid/framing/ClusterConnectionMembershipBody.h"
 #include "qpid/framing/SequenceNumber.h"
@@ -47,16 +47,14 @@ class ClusterMap {
     typedef std::map<MemberId, Url> Map;
     typedef std::set<MemberId> Set;
 
-    static Set decode(const std::string&);
-        
     ClusterMap();
-    ClusterMap(const MemberId& id, const Url& url, bool isReady);
+    ClusterMap(const Map& map);
     ClusterMap(const framing::FieldTable& joiners, const framing::FieldTable& members, framing::SequenceNumber frameSeq);
 
     /** Update from config change.
      *@return true if member set changed.
      */
-    bool configChange(const std::string& addresses);
+    bool configChange(const Set& members);
 
     bool isJoiner(const MemberId& id) const { return joiners.find(id) != joiners.end(); }
     bool isMember(const MemberId& id) const { return members.find(id) != members.end(); }
@@ -84,11 +82,6 @@ class ClusterMap {
 
     /**@return true If this is a new member */ 
     bool ready(const MemberId& id, const Url&);
-
-    /**
-     * Utility method to return intersection of two member sets
-     */
-    static Set intersection(const Set& a, const Set& b);
 
     framing::SequenceNumber getFrameSeq() { return frameSeq; }
     framing::SequenceNumber incrementFrameSeq() { return ++frameSeq; }

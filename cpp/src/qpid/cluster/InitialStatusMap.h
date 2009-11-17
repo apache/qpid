@@ -22,7 +22,7 @@
  *
  */
 
-#include "types.h"
+#include "MemberSet.h"
 #include <qpid/framing/ClusterInitialStatusBody.h>
 #include <boost/optional.hpp>
 
@@ -48,10 +48,19 @@ class InitialStatusMap
 
     /**@return true if the map is complete. */
     bool isComplete();
-    /**@pre isComplete. @return this node's elders */
+    /**@return true if the map was completed by the last config change or received. */
+    bool transitionToComplete();
+    /**@pre isComplete(). @return this node's elders */
     MemberSet getElders();
-    /**@pre isComplete. @return True if we need an update. */
+    /**@pre isComplete(). @return True if we need an update. */
     bool isUpdateNeeded();
+    /**@pre isComplete(). @return Cluster-wide cluster ID. */
+    framing::Uuid getClusterId();
+
+    /**@pre isComplete() && !isUpdateNeeded().
+     *@return member->URL map for all members.
+     */
+    std::map<MemberId, Url> getMemberUrls();
 
   private:
     typedef std::map<MemberId, boost::optional<Status> > Map;
@@ -61,7 +70,7 @@ class InitialStatusMap
     Map map;
     MemberSet firstConfig;
     MemberId self;
-    bool complete, updateNeeded, resendNeeded;
+    bool completed, resendNeeded;
 };
 }} // namespace qpid::cluster
 

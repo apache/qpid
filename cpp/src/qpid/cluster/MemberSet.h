@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_MEMBERSET_H
+#define QPID_CLUSTER_MEMBERSET_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,29 +21,23 @@
  * under the License.
  *
  */
-#include "qpid/framing/AMQContentBody.h"
-#include <iostream>
 
-qpid::framing::AMQContentBody::AMQContentBody(){
-}
+#include "types.h"
+#include <set>
+#include <iosfwd>
 
-qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
-}
+namespace qpid {
+namespace cluster {
 
-uint32_t qpid::framing::AMQContentBody::encodedSize() const{
-    return data.size();
-}
-void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
-    buffer.putRawData(data);
-}
-void qpid::framing::AMQContentBody::decode(Buffer& buffer, uint32_t _size){
-    buffer.getRawData(data, _size);
-}
+typedef std::set<MemberId> MemberSet;
 
-void qpid::framing::AMQContentBody::print(std::ostream& out) const
-{
-    out << "content (" << encodedSize() << " bytes)";
-    const size_t max = 32;
-    out << " " << data.substr(0, max);
-    if (data.size() > max) out << "...";
-}
+MemberSet decodeMemberSet(const std::string&);
+
+MemberSet intersection(const MemberSet& a, const MemberSet& b);
+
+std::ostream& operator<<(std::ostream& o, const MemberSet& ms);
+
+
+}} // namespace qpid::cluster
+
+#endif  /*!QPID_CLUSTER_MEMBERSET_H*/

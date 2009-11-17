@@ -28,24 +28,20 @@
 #include <iterator>
 #include <ostream>
 
+using namespace std;
+using namespace boost;
+
 namespace qpid {
 using namespace framing;
 
 namespace cluster {
-
-ClusterMap::Set ClusterMap::decode(const std::string& s) {
-    Set set;
-    for (std::string::const_iterator i = s.begin(); i < s.end(); i += 8)  
-        set.insert(MemberId(std::string(i, i+8)));
-    return set;
-}
 
 namespace {
 
 void addFieldTableValue(FieldTable::ValueMap::value_type vt, ClusterMap::Map& map, ClusterMap::Set& set) {
     MemberId id(vt.first);
     set.insert(id);
-    std::string url = vt.second->get<std::string>();
+    string url = vt.second->get<string>();
     if (!url.empty())
         map.insert(ClusterMap::Map::value_type(id, Url(url)));
 }
@@ -56,37 +52,34 @@ void insertFieldTableFromMapValue(FieldTable& ft, const ClusterMap::Map::value_t
 
 void assignFieldTable(FieldTable& ft, const ClusterMap::Map& map) {
     ft.clear();
-    std::for_each(map.begin(), map.end(), boost::bind(&insertFieldTableFromMapValue, boost::ref(ft), _1));
+    for_each(map.begin(), map.end(), bind(&insertFieldTableFromMapValue, ref(ft), _1));
 }
 
 }
 
 ClusterMap::ClusterMap() : frameSeq(0) {}
 
-ClusterMap::ClusterMap(const MemberId& id, const Url& url , bool isMember) : frameSeq(0) {
-    alive.insert(id);
-    if (isMember)
-        members[id] = url;
-    else
-        joiners[id] = url;
+ClusterMap::ClusterMap(const Map& map) : frameSeq(0) {
+    transform(map.begin(), map.end(), inserter(alive, alive.begin()), bind(&Map::value_type::first, _1));
+    members = map;
 }
 
 ClusterMap::ClusterMap(const FieldTable& joinersFt, const FieldTable& membersFt, framing::SequenceNumber frameSeq_)
   : frameSeq(frameSeq_)
 {
-    std::for_each(joinersFt.begin(), joinersFt.end(), boost::bind(&addFieldTableValue, _1, boost::ref(joiners), boost::ref(alive)));
-    std::for_each(membersFt.begin(), membersFt.end(), boost::bind(&addFieldTableValue, _1, boost::ref(members), boost::ref(alive)));
+    for_each(joinersFt.begin(), joinersFt.end(), bind(&addFieldTableValue, _1, ref(joiners), ref(alive)));
+    for_each(membersFt.begin(), membersFt.end(), bind(&addFieldTableValue, _1, ref(members), ref(alive)));
 }
 
 void ClusterMap::toMethodBody(framing::ClusterConnectionMembershipBody& b) const {
     b.getJoiners().clear();
-    std::for_each(joiners.begin(), joiners.end(), boost::bind(&insertFieldTableFromMapValue, boost::ref(b.getJoiners()), _1));
+    for_each(joiners.begin(), joiners.end(), bind(&insertFieldTableFromMapValue, ref(b.getJoiners()), _1));
     for(Set::const_iterator i = alive.begin(); i != alive.end(); ++i) {
         if (!isMember(*i) && !isJoiner(*i))
-            b.getJoiners().setString(i->str(), std::string());
+            b.getJoiners().setString(i->str(), string());
     }
     b.getMembers().clear();
-    std::for_each(members.begin(), members.end(), boost::bind(&insertFieldTableFromMapValue, boost::ref(b.getMembers()), _1));
+    for_each(members.begin(), members.end(), bind(&insertFieldTableFromMapValue, ref(b.getMembers()), _1));
     b.setFrameSeq(frameSeq);
 }
 
@@ -99,21 +92,21 @@ MemberId ClusterMap::firstJoiner() const {
     return joiners.empty() ? MemberId() : joiners.begin()->first;
 }
 
-std::vector<string> ClusterMap::memberIds() const {
-    std::vector<string> ids;
+vector<string> ClusterMap::memberIds() const {
+    vector<string> ids;
     for (Map::const_iterator iter = members.begin();
          iter != members.end(); iter++) {
-        std::stringstream stream;
+        stringstream stream;
         stream << iter->first;
         ids.push_back(stream.str());
     }
     return ids;
 }
 
-std::vector<Url> ClusterMap::memberUrls() const {
-    std::vector<Url> urls(members.size());
-    std::transform(members.begin(), members.end(), urls.begin(),
-                   boost::bind(&Map::value_type::second, _1));
+vector<Url> ClusterMap::memberUrls() const {
+    vector<Url> urls(members.size());
+    transform(members.begin(), members.end(), urls.begin(),
+                   bind(&Map::value_type::second, _1));
     return urls;
 }
 
@@ -121,18 +114,18 @@ ClusterMap::Set ClusterMap::getAlive() const { return alive; }
 
 ClusterMap::Set ClusterMap::getMembers() const {
     Set s;
-    std::transform(members.begin(), members.end(), std::inserter(s, s.begin()),
-                   boost::bind(&Map::value_type::first, _1));
+    transform(members.begin(), members.end(), inserter(s, s.begin()),
+                   bind(&Map::value_type::first, _1));
     return s;
 }
 
-std::ostream& operator<<(std::ostream& o, const ClusterMap::Map& m) {
-    std::ostream_iterator<MemberId> oi(o);
-    std::transform(m.begin(), m.end(), oi, boost::bind(&ClusterMap::Map::value_type::first, _1));
+ostream& operator<<(ostream& o, const ClusterMap::Map& m) {
+    ostream_iterator<MemberId> oi(o);
+    transform(m.begin(), m.end(), oi, bind(&ClusterMap::Map::value_type::first, _1));
     return o;
 }
 
-std::ostream& operator<<(std::ostream& o, const ClusterMap& m) {
+ostream& operator<<(ostream& o, const ClusterMap& m) {
     for (ClusterMap::Set::const_iterator i = m.alive.begin(); i != m.alive.end(); ++i) {
         o << *i;
         if (m.isMember(*i)) o << "(member)";
@@ -143,7 +136,7 @@ std::ostream& operator<<(std::ostream& o, const ClusterMap& m) {
     return o;
 }
 
-bool ClusterMap::updateRequest(const MemberId& id, const std::string& url) {
+bool ClusterMap::updateRequest(const MemberId& id, const string& url) {
     if (isAlive(id)) {
         joiners[id] = Url(url);
         return true;
@@ -155,13 +148,12 @@ bool ClusterMap::ready(const MemberId& id, const Url& url) {
     return isAlive(id) &&  members.insert(Map::value_type(id,url)).second;
 }
 
-bool ClusterMap::configChange(const std::string& addresses) {
+bool ClusterMap::configChange(const Set& update) {
     bool memberChange = false;
-    Set update = decode(addresses);
     Set removed;
-    std::set_difference(alive.begin(), alive.end(),
+    set_difference(alive.begin(), alive.end(),
                         update.begin(), update.end(),
-                        std::inserter(removed, removed.begin()));
+                        inserter(removed, removed.begin()));
     alive = update;
     for (Set::const_iterator i = removed.begin(); i != removed.end(); ++i) {
         memberChange = memberChange || members.erase(*i);
@@ -170,23 +162,14 @@ bool ClusterMap::configChange(const std::string& addresses) {
     return memberChange;
 }
 
-boost::optional<Url> ClusterMap::updateOffer(const MemberId& from, const MemberId& to) {
+optional<Url> ClusterMap::updateOffer(const MemberId& from, const MemberId& to) {
     Map::iterator i = joiners.find(to);
     if (isAlive(from) && i != joiners.end()) {
         Url url= i->second;
         joiners.erase(i);       // No longer a potential updatee.
         return url;
     }
-    return boost::optional<Url>();
+    return optional<Url>();
 }
 
-ClusterMap::Set ClusterMap::intersection(const ClusterMap::Set& a, const ClusterMap::Set& b)
-{
-    Set intersection;
-    std::set_intersection(a.begin(), a.end(),
-                          b.begin(), b.end(),
-                          std::inserter(intersection, intersection.begin()));
-    return intersection;
-
-}
 }} // namespace qpid::cluster

@@ -22,7 +22,7 @@
  *
  */
 
-#include "qpid/cluster/types.h"
+#include "qpid/cluster/MemberSet.h"
 #include "qpid/cluster/Multicaster.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/SequenceNumber.h"
@@ -34,7 +34,6 @@ namespace qpid {
 namespace cluster {
 
 class EventFrame;
-class ClusterMap;
 class Cluster;
 class Multicaster;
 class Connection;
@@ -48,7 +47,6 @@ class Connection;
 class ErrorCheck
 {
   public:
-    typedef std::set<MemberId> MemberSet;
     typedef framing::cluster::ErrorType ErrorType;
     typedef framing::SequenceNumber SequenceNumber;
     

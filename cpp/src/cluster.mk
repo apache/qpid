@@ -84,6 +84,8 @@ cluster_la_SOURCES =				\
   qpid/cluster/Quorum.h				\
   qpid/cluster/InitialStatusMap.h		\
   qpid/cluster/InitialStatusMap.cpp		\
+  qpid/cluster/MemberSet.h			\
+  qpid/cluster/MemberSet.cpp			\
   qpid/cluster/types.h
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la

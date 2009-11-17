@@ -105,7 +105,7 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
 
     QPID_LOG(notice, "Initializing CPG");
     cpg_error_t err = cpg_initialize(&handle, &callbacks);
-    int retries = 6; // FIXME aconway 2009-08-06: configure, use same config for cman connection.
+    int retries = 6; // FIXME aconway 2009-08-06: make this configurable.
     while (err == CPG_ERR_TRY_AGAIN && --retries) {
         QPID_LOG(notice, "Re-trying CPG initialization.");
         sys::sleep(5);
