@@ -48,7 +48,8 @@ class Connection : public qpid::client::Handle<ConnectionImpl>
     QPID_CLIENT_EXTERN ~Connection();
     QPID_CLIENT_EXTERN Connection& operator=(const Connection&);
     QPID_CLIENT_EXTERN void close();
-    QPID_CLIENT_EXTERN Session newSession();
+    QPID_CLIENT_EXTERN Session newSession(const std::string& name = std::string());
+    QPID_CLIENT_EXTERN Session getSession(const std::string& name) const;
   private:
   friend class qpid::client::PrivateImplRef<Connection>;
 

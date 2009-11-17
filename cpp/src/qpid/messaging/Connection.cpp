@@ -50,7 +50,8 @@ Connection& Connection::operator=(const Connection& c) { return PI::assign(*this
 Connection::~Connection() { PI::dtor(*this); }
 
 void Connection::close() { impl->close(); }
-Session Connection::newSession() { return impl->newSession(); }
+Session Connection::newSession(const std::string& name) { return impl->newSession(name); }
+Session Connection::getSession(const std::string& name) const { return impl->getSession(name); }
 
 InvalidOptionString::InvalidOptionString(const std::string& msg) : Exception(msg) {}
 
