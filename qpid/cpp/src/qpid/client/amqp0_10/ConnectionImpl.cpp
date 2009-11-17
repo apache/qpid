@@ -22,14 +22,17 @@
 #include "SessionImpl.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/client/PrivateImplRef.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include <boost/intrusive_ptr.hpp>
+#include <vector>
 
 namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
 using qpid::messaging::Variant;
+using qpid::framing::Uuid;
 using namespace qpid::sys;
 
 template <class T> void setIfFound(const Variant::Map& map, const std::string& key, T& value)
@@ -73,6 +76,15 @@ ConnectionImpl::ConnectionImpl(const std::string& u, const Variant::Map& options
 
 void ConnectionImpl::close()
 {
+    std::vector<std::string> names;
+    {
+        qpid::sys::Mutex::ScopedLock l(lock);
+        for (Sessions::const_iterator i = sessions.begin(); i != sessions.end(); ++i) names.push_back(i->first);
+    }
+    for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
+        getSession(*i).close();
+    }
+
     qpid::sys::Mutex::ScopedLock l(lock);
     connection.close();
 }
@@ -88,22 +100,34 @@ void ConnectionImpl::closed(SessionImpl& s)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     for (Sessions::iterator i = sessions.begin(); i != sessions.end(); ++i) {
-        if (getImplPtr(*i).get() == &s) {
+        if (getImplPtr(i->second).get() == &s) {
             sessions.erase(i);
             break;
         }
     }
 }
 
-qpid::messaging::Session ConnectionImpl::newSession()
+qpid::messaging::Session ConnectionImpl::getSession(const std::string& name) const
 {
+    qpid::sys::Mutex::ScopedLock l(lock);
+    Sessions::const_iterator i = sessions.find(name);
+    if (i == sessions.end()) {
+        throw qpid::messaging::KeyError("No such session: " + name);
+    } else {
+        return i->second;
+    }
+}
+
+qpid::messaging::Session ConnectionImpl::newSession(const std::string& n)
+{
+    std::string name = n.empty() ? Uuid(true).str() : n;
     qpid::messaging::Session impl(new SessionImpl(*this));
     {
         qpid::sys::Mutex::ScopedLock l(lock);
-        sessions.push_back(impl);
+        sessions[name] = impl;
     }
     try {
-        getImplPtr(impl)->setSession(connection.newSession());
+        getImplPtr(impl)->setSession(connection.newSession(name));
     } catch (const TransportFailure&) {
         reconnect();
     }
@@ -172,7 +196,7 @@ bool ConnectionImpl::resetSessions()
     try {
         qpid::sys::Mutex::ScopedLock l(lock);
         for (Sessions::iterator i = sessions.begin(); i != sessions.end(); ++i) {
-            getImplPtr(*i)->setSession(connection.newSession());
+            getImplPtr(i->second)->setSession(connection.newSession(i->first));
         }
         return true;
     } catch (const TransportFailure&) {

@@ -29,7 +29,7 @@
 #include "qpid/client/ConnectionSettings.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Semaphore.h"
-#include <vector>
+#include <map>
 
 namespace qpid {
 namespace client {
@@ -42,13 +42,14 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
   public:
     ConnectionImpl(const std::string& url, const qpid::messaging::Variant::Map& options);
     void close();
-    qpid::messaging::Session newSession();
+    qpid::messaging::Session newSession(const std::string& name);
+    qpid::messaging::Session getSession(const std::string& name) const;
     void closed(SessionImpl&);
     void reconnect();
   private:
-    typedef std::vector<qpid::messaging::Session> Sessions;
+    typedef std::map<std::string, qpid::messaging::Session> Sessions;
 
-    qpid::sys::Mutex lock;//used to protect data structures
+    mutable qpid::sys::Mutex lock;//used to protect data structures
     qpid::sys::Semaphore semaphore;//used to coordinate reconnection
     Sessions sessions;
     qpid::client::Connection connection;

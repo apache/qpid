@@ -37,7 +37,8 @@ class ConnectionImpl : public virtual qpid::RefCounted
   public:
     virtual ~ConnectionImpl() {}
     virtual void close() = 0;
-    virtual Session newSession() = 0;
+    virtual Session newSession(const std::string& name) = 0;
+    virtual Session getSession(const std::string& name) const = 0;
   private:
 };
 }} // namespace qpid::messaging
