@@ -598,7 +598,11 @@ void Queue::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
 
 void Queue::checkDelete(qpid::client::AsyncSession& session, CheckMode mode)
 {
-    if (enabled(deletePolicy, mode)) {
+    //Note: queue-delete will cause a session exception if the queue
+    //does not exist, the query here prevents obvious cases of this
+    //but there is a race whenever two deletions are made concurrently
+    //so careful use of the delete policy is recommended at present
+    if (enabled(deletePolicy, mode) && sync(session).queueQuery(name).getQueue() == name) {
         QPID_LOG(debug, "Auto-deleting queue '" << name << "'");
         sync(session).queueDelete(arg::queue=name);
     }
@@ -683,7 +687,12 @@ void Exchange::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
 
 void Exchange::checkDelete(qpid::client::AsyncSession& session, CheckMode mode)
 {
-    if (enabled(deletePolicy, mode)) {
+    //Note: exchange-delete will cause a session exception if the
+    //exchange does not exist, the query here prevents obvious cases
+    //of this but there is a race whenever two deletions are made
+    //concurrently so careful use of the delete policy is recommended
+    //at present
+    if (enabled(deletePolicy, mode) && !sync(session).exchangeQuery(name).getNotFound()) {
         sync(session).exchangeDelete(arg::exchange=name);
     }
 }
