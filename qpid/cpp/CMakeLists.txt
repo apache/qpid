@@ -67,13 +67,6 @@ set (CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
 
 endif (WIN32)
 
-if (CMAKE_SYSTEM_NAME STREQUAL Linux)
-  # Set up install locations. Since the Linux install puts some files in
-  # /etc and most in the install location, we need to use a DESTDIR build
-  # rather than the usual simple use of CPACK_INSTALL_PREFIX.
-  set (CPACK_SET_DESTDIR ON)
-endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
-
 set (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf CACHE STRING
      "Name of the Qpid client configuration file")
 set (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf CACHE STRING
