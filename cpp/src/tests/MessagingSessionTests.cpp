@@ -607,10 +607,6 @@ struct DeletePolicyFixture : public MessagingFixture
             BOOST_CHECK(!exists(address));
             break;
           case ALWAYS:
-            //Problematic case at present; multiple attempts to delete
-            //will result in all but one attempt failing and killing
-            //the session which is not desirable. TODO: better
-            //implementation of delete policy.
             s.cancel();
             BOOST_CHECK(!exists(address));
             break;

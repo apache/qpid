@@ -94,6 +94,20 @@ void SessionImpl::reject(qpid::messaging::Message& m)
 
 void SessionImpl::close()
 {
+    //cancel all the senders and receivers (get copy of names and then
+    //make the calls to avoid modifying maps while iterating over
+    //them):
+    std::vector<std::string> s;
+    std::vector<std::string> r;
+    {
+        qpid::sys::Mutex::ScopedLock l(lock);        
+        for (Senders::const_iterator i = senders.begin(); i != senders.end(); ++i) s.push_back(i->first);
+        for (Receivers::const_iterator i = receivers.begin(); i != receivers.end(); ++i) r.push_back(i->first);
+    }
+    for (std::vector<std::string>::const_iterator i = s.begin(); i != s.end(); ++i) getSender(*i).cancel();
+    for (std::vector<std::string>::const_iterator i = r.begin(); i != r.end(); ++i) getReceiver(*i).cancel();
+    
+
     connection.closed(*this);
     session.close();
 }
