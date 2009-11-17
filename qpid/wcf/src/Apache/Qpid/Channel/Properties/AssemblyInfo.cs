@@ -33,10 +33,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-// Setting ComVisible to false makes the types in this assembly not visible 
-// to COM components.  If you need to access a type in this assembly from 
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
+// Setting ComVisible to true makes the types in this assembly visible 
+// to COM components.  This is required for this to be used by an
+// Excel RTD component.
+[assembly: ComVisible(true)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("ac02bbb0-2c19-43fb-a36c-b1b0a50eaf1a")]
