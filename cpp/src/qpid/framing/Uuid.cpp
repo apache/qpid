@@ -43,7 +43,9 @@ Uuid::Uuid(const uint8_t* data) {
 }
 
 void Uuid::assign(const uint8_t* data) {
-    uuid_copy(c_array(), data);
+    // This const cast is for Solaris which has a 
+    // uuid_copy that takes a non const 2nd argument
+    uuid_copy(c_array(), const_cast<uint8_t*>(data));
 }
 
 void Uuid::generate() {

@@ -42,7 +42,7 @@ void invoke(boost::function<void()> f) { f(); }
 Plugin::Target::~Target() { finalize(); }
 
 void Plugin::Target::finalize() {
-    for_each(finalizers.begin(), finalizers.end(), invoke);
+    std::for_each(finalizers.begin(), finalizers.end(), invoke);
     finalizers.clear();
 }
 
