@@ -430,12 +430,19 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   # POSIX (Non-Windows) platforms have a lot of overlap in sources; the only
   # major difference is the poller module.
   if (CMAKE_SYSTEM_NAME STREQUAL Linux)
-    set (qpid_poller_module qpid/sys/epoll/EpollPoller.cpp)
+    set (qpid_poller_module 
+      qpid/sys/epoll/EpollPoller.cpp
+      qpid/sys/posix/SystemInfo.cpp
+    )
     add_definitions(-pthread)
     set (CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pthread)
   endif (CMAKE_SYSTEM_NAME STREQUAL Linux)
+
   if (CMAKE_SYSTEM_NAME STREQUAL SunOS)
-    set (qpid_poller_module qpid/sys/solaris/ECFPoller.cpp)
+    set (qpid_poller_module
+      qpid/sys/solaris/ECFPoller.cpp
+      qpid/sys/solaris/SystemInfo.cpp
+    )
   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
 
   set (qpidcommon_platform_SOURCES
@@ -452,7 +459,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/Socket.cpp
     qpid/sys/posix/SocketAddress.cpp
     qpid/sys/posix/StrError.cpp
-    qpid/sys/posix/SystemInfo.cpp
     qpid/sys/posix/Thread.cpp
     qpid/sys/posix/Time.cpp
 
