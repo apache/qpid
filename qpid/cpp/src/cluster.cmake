@@ -123,6 +123,10 @@ if (BUILD_CLUSTER)
        qpid/cluster/PollerDispatch.h
        qpid/cluster/ProxyInputHandler.h
        qpid/cluster/Quorum.h
+       qpid/cluster/InitialStatusMap.h
+       qpid/cluster/InitialStatusMap.cpp
+       qpid/cluster/MemberSet.h
+       qpid/cluster/MemberSet.cpp
        qpid/cluster/types.h
       )
 
