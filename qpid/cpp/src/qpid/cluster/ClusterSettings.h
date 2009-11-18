@@ -34,10 +34,9 @@ struct ClusterSettings {
     bool quorum;
     size_t readMax;
     std::string username, password, mechanism;
-    bool checkErrors;
+    size_t size;
 
-    ClusterSettings() : quorum(false), readMax(10),
-                        checkErrors(true) // TODO aconway 2009-05-20: remove this option.
+    ClusterSettings() : quorum(false), readMax(10), size(1)
     {}
   
     Url getUrl(uint16_t port) const {

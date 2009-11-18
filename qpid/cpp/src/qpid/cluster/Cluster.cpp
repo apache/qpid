@@ -208,7 +208,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     decoder(boost::bind(&Cluster::deliverFrame, this, _1)),
     discarding(true),
     state(INIT),
-    initMap(self),
+    initMap(self, settings.size),
     lastSize(0),
     lastBroker(false),
     updateRetracted(false),
@@ -403,8 +403,7 @@ void Cluster::flagError(
                  << ": " << msg);
         leave(l);
     }
-    else if (settings.checkErrors)
-        error.error(connection, type, map.getFrameSeq(), map.getMembers(), msg);
+    error.error(connection, type, map.getFrameSeq(), map.getMembers(), msg);
 }
 
 // Handler for deliverFrameQueue.
@@ -423,7 +422,7 @@ void Cluster::deliveredFrame(const EventFrame& efConst) {
         deliverEventQueue.start(); 
     }
     // Process each frame through the error checker.
-    if (settings.checkErrors && error.isUnresolved()) {
+    if (error.isUnresolved()) {
         error.delivered(e);
         while (error.canProcess())  // There is a frame ready to process.
             processFrame(error.getNext(), l);
@@ -874,7 +873,7 @@ std::ostream& operator<<(std::ostream& o, const Cluster& cluster) {
     };
     assert(sizeof(STATE)/sizeof(*STATE) == Cluster::LEFT+1);
     o << "cluster(" << cluster.self << " " << STATE[cluster.state];
-    if (cluster.settings.checkErrors && cluster.error.isUnresolved()) o << "/error";
+    if (cluster.error.isUnresolved()) o << "/error";
     return o << ")";;
 }
 

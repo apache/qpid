@@ -71,9 +71,8 @@ struct ClusterOptions : public Options {
 #if HAVE_LIBCMAN_H
             ("cluster-cman", optValue(settings.quorum), "Integrate with Cluster Manager (CMAN) cluster.")
 #endif
+            ("cluster-size", optValue(settings.size, "N"), "Wait for N cluster members before allowing clients to connect.")
             ("cluster-read-max", optValue(settings.readMax,"N"), "Experimental: flow-control limit  reads per connection. 0=no limit.")
-            // TODO aconway 2009-05-20: temporary, remove
-            ("cluster-check-errors", optValue(settings.checkErrors, "yes|no"), "Enable/disable cluster error checks. Normally should be enabled.")
             ;
     }
 };
