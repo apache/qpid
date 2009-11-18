@@ -102,7 +102,6 @@ class BrokerURL(URL):
         self.port = 5671
       else:
         self.port = 5672
-    socket.getaddrinfo(self.host, self.port)[0][4][0]
     self.authName = None
     self.authPass = None
     if self.user:

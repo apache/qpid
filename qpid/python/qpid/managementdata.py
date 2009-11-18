@@ -50,7 +50,9 @@ class Broker:
 
     if port: self.port = int(port)
     else: self.port = 5672
-    self.host = socket.getaddrinfo(host, self.port)[0][4][0]
+    for addr in socket.getaddrinfo(host, self.port):
+      if addr[1] == socket.AF_INET:
+        self.host = addr[4][0]
     self.username = user or "guest"
     self.password = password or "guest"
 
