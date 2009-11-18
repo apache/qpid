@@ -245,12 +245,13 @@ class BrokerTest(TestCase):
     receiver_exec = os.getenv("RECEIVER_EXEC")
     sender_exec = os.getenv("SENDER_EXEC")
     store_lib = os.getenv("STORE_LIB")
-    
     rootdir = os.getcwd()
+
     def configure(self, config): self.config=config
     
     def setUp(self):
-        self.dir = os.path.join(self.rootdir, self.config.defines["OUTDIR"], self.id())
+        outdir = self.config.defines.get("OUTDIR") or "brokertest.tmp"
+        self.dir = os.path.join(self.rootdir, outdir, self.id())
         os.makedirs(self.dir)
         os.chdir(self.dir)
         self.stopem = []                # things to stop at end of test
