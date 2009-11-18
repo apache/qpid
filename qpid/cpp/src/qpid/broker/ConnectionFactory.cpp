@@ -40,7 +40,7 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
                           unsigned int ) {
     if (broker.getConnectionCounter().allowConnection())
     {
-        QPID_LOG(error, "Client max connection count limit exceeded: " << broker.getOptions().maxConnections << " connection refushed");
+        QPID_LOG(error, "Client max connection count limit exceeded: " << broker.getOptions().maxConnections << " connection refused");
         return 0;
     }
     if (v == ProtocolVersion(0, 10)) {
