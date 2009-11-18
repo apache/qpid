@@ -66,7 +66,8 @@ class JavaClientTest(BrokerTest):
         cmd += ["-Dmsg_count=" + str(options.get("msg_count",10))]
         cmd += ["-Dsleep_time=" + str(options.get("sleep_time",1000))]
         cmd += ["-Dfailover=" + options.get("failover", "failover_exchange")]
-        cmd += ["-Dreliability=" + options.get("reliability", "exactly_once")]        
+        cmd += ["-Dreliability=" + options.get("reliability", "exactly_once")]  
+        cmd += ["-Dlog.level=" + options.get("log.level", "warn")]  
         cmd += [self.client_class]
 
         print str(options.get("port",5672))  
@@ -119,7 +120,7 @@ class JavaClientTest(BrokerTest):
 class ConcurrencyTest(JavaClientTest):
     """A concurrency test suite for the JMS client"""
 
-    def test_multiplexing_con(self):
+    def xtest_multiplexing_con(self):
         """Tests multiple sessions on a single connection""" 
 
         cluster = Cluster(self, 2)
@@ -146,7 +147,7 @@ class ConcurrencyTest(JavaClientTest):
     def test_multiplexing_con_tx(self):
         """Tests multiple transacted sessions on a single connection""" 
 
-        cluster = Cluster(self, 2)
+        cluster = Cluster(self,2)
         ssn = cluster[0].connect().session()
         p = cluster[0].port
      
@@ -173,7 +174,7 @@ class ConcurrencyTest(JavaClientTest):
 class SoakTest(JavaClientTest):
     """A soak test suite for the JMS client"""
 
-    def test_failover(self):
+    def xtest_failover(self):
         cluster = self.cluster(4, expect=EXPECT_EXIT_FAIL)
         p = cluster[0].port
         self.start_error_watcher(broker=cluster[0])
@@ -209,7 +210,4 @@ class SoakTest(JavaClientTest):
         self.verify(receiver,sender)
         if error_msg:      
             raise Exception(error_msg)            
-  
-if __name__ == '__main__':
-    if not test.main(): sys.exit(1)
-        
+     

@@ -39,6 +39,11 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
@@ -117,8 +122,26 @@ public class TestLauncher implements ErrorHandler
     	   
     	   System.out.println("Failover exchange " + url );
        }
+       
+       configureLogging();
     }
 
+    protected void configureLogging()
+    {
+    	PatternLayout layout = new PatternLayout();
+    	layout.setConversionPattern("%t %d %p [%c{4}] %m%n");
+    	BasicConfigurator.configure(new ConsoleAppender(layout));
+    	
+    	String logLevel = System.getProperty("log.level","warn");
+    	String logComponent = System.getProperty("log.comp","org.apache.qpid");
+    	
+    	Logger logger = Logger.getLogger(logComponent);
+    	logger.setLevel(Level.toLevel(logLevel, Level.WARN));
+    	
+    	System.out.println("Level " + logger.getLevel());
+    	
+    }
+    
     public void setUpControlChannel()
     {
         try
