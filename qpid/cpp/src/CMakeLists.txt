@@ -124,8 +124,8 @@ if (ENABLE_VALGRIND AND NOT VALGRIND)
   message(STATUS "Can't locate the valgrind command; no run-time error detection")
 endif (ENABLE_VALGRIND AND NOT VALGRIND)
 
-option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
-if (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_COMPILER_IS_GNUCXX)
+   set (COMPILER_FLAGS "")
    # Warnings: Enable as many as possible, keep the code clean. Please
    # do not disable warnings or remove -Werror without discussing on
    # qpid-dev list.
@@ -134,9 +134,20 @@ if (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
    # -Wunreachable-code -Wpadded -Winline
    # -Wshadow - warns about boost headers.
    set (WARNING_FLAGS
-        " -Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
-   set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}${WARNING_FLAGS})
-endif (ENABLE_WARNINGS AND CMAKE_COMPILER_IS_GNUCXX)
+        "-Werror -pedantic -Wall -Wextra -Wno-shadow -Wpointer-arith -Wcast-qual -Wcast-align -Wno-long-long -Wvolatile-register-var -Winvalid-pch -Wno-system-headers -Woverloaded-virtual")
+endif (CMAKE_COMPILER_IS_GNUCXX)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
+  set (COMPILER_FLAGS "-library=stlport4 -mt")
+  set (WARNING_FLAGS "+w2")
+endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
+
+option(ENABLE_WARNINGS "Enable lots of compiler warnings (recommended)" ON)
+if (NOT ENABLE_WARNINGS)
+  set (WARNING_FLAGS "")
+endif (NOT ENABLE_WARNINGS)
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # TODO: Not all these libs are needed everywhere:
