@@ -149,7 +149,7 @@ class Broker(Popen):
 
         Popen.__init__(self, cmd, expect)
         try: self.port = int(self.stdout.readline())
-        except Exception, e:
+        except ValueError, e:
             raise Exception("Failed to start broker %s (%s)" % (self.name, self.pname))
         test.cleanup_stop(self)
         self.host = "localhost"         # Placeholder for remote brokers.
