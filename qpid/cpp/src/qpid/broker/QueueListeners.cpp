@@ -69,13 +69,13 @@ void QueueListeners::remove(Listeners& listeners, Consumer::shared_ptr c)
 void QueueListeners::NotificationSet::notify()
 {
     if (consumer) consumer->notify();
-    else for_each(browsers.begin(), browsers.end(), boost::mem_fn(&Consumer::notify));
+    else std::for_each(browsers.begin(), browsers.end(), boost::mem_fn(&Consumer::notify));
 }
 
 bool QueueListeners::contains(Consumer::shared_ptr c) const {
     return
-        find(browsers.begin(), browsers.end(), c) != browsers.end() ||
-        find(consumers.begin(), consumers.end(), c) != consumers.end();
+        std::find(browsers.begin(), browsers.end(), c) != browsers.end() ||
+        std::find(consumers.begin(), consumers.end(), c) != consumers.end();
 }
 
 }} // namespace qpid::broker
