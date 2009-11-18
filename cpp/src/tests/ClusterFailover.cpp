@@ -58,7 +58,7 @@ QPID_AUTO_TEST_CASE(testReconnectSameSessionName) {
     ClusterFixture::Args args = list_of<string>("--auth")("no")("--no-module-dir")("--no-data-dir")("--load-module")(clusterLib.str());
     ClusterFixture cluster(2, args, -1);
     Client c0(cluster[0], "foo");
-    cluster.kill(0, 9);
+    cluster.killWithSilencer(0, c0.connection, 9);
     Client c1(cluster[1], "foo"); // Using same name, should be cleaned up.
 }
 
