@@ -40,7 +40,7 @@ Status newcomerStatus(const Uuid& id=Uuid()) { return Status(ProtocolVersion(), 
 
 QPID_AUTO_TEST_CASE(testFirstInCluster) {
     // Single member is first in cluster.
-    InitialStatusMap map(MemberId(0));
+    InitialStatusMap map(MemberId(0), 1);
     Uuid id(true);
     BOOST_CHECK(!map.isComplete());
     MemberSet members = list_of(MemberId(0));
@@ -56,7 +56,7 @@ QPID_AUTO_TEST_CASE(testFirstInCluster) {
 
 QPID_AUTO_TEST_CASE(testJoinExistingCluster) {
     // Single member 0 joins existing cluster 1,2
-    InitialStatusMap map(MemberId(0));
+    InitialStatusMap map(MemberId(0), 1);
     Uuid id(true);
     MemberSet members = list_of(MemberId(0))(MemberId(1))(MemberId(2));
     map.configChange(members);
@@ -79,7 +79,7 @@ QPID_AUTO_TEST_CASE(testJoinExistingCluster) {
 
 QPID_AUTO_TEST_CASE(testMultipleFirstInCluster) {
     // Multiple members 0,1,2 join at same time.
-    InitialStatusMap map(MemberId(1)); // self is 1
+    InitialStatusMap map(MemberId(1), 1); // self is 1
     Uuid id(true);
     MemberSet members = list_of(MemberId(0))(MemberId(1))(MemberId(2));
     map.configChange(members);
@@ -99,7 +99,7 @@ QPID_AUTO_TEST_CASE(testMultipleFirstInCluster) {
 
 QPID_AUTO_TEST_CASE(testMultipleJoinExisting) {
     // Multiple members 1,2,3 join existing cluster containing 0.
-    InitialStatusMap map(MemberId(2)); // self is 2
+    InitialStatusMap map(MemberId(2), 1); // self is 2
     Uuid id(true);
     MemberSet members = list_of(MemberId(0))(MemberId(1))(MemberId(2))(MemberId(3));
     map.configChange(members);
@@ -119,7 +119,7 @@ QPID_AUTO_TEST_CASE(testMultipleJoinExisting) {
 
 QPID_AUTO_TEST_CASE(testMembersLeave) {
     // Test that map completes if members leave rather than send status.
-    InitialStatusMap map(MemberId(0));
+    InitialStatusMap map(MemberId(0), 1);
     Uuid id(true);
     map.configChange(list_of(MemberId(0))(MemberId(1))(MemberId(2)));
     map.received(MemberId(0), newcomerStatus());
@@ -134,7 +134,7 @@ QPID_AUTO_TEST_CASE(testMembersLeave) {
 
 QPID_AUTO_TEST_CASE(testInteveningConfig) {
     // Multiple config changes arrives before we complete the map.
-    InitialStatusMap map(MemberId(0));
+    InitialStatusMap map(MemberId(0), 1);
     Uuid id(true);
 
     map.configChange(list_of<MemberId>(0)(1));
@@ -157,6 +157,20 @@ QPID_AUTO_TEST_CASE(testInteveningConfig) {
     BOOST_CHECK(map.transitionToComplete());
     BOOST_CHECK_EQUAL(map.getElders(), list_of<MemberId>(1));
     BOOST_CHECK_EQUAL(map.getClusterId(), id);
+}
+
+QPID_AUTO_TEST_CASE(testInitialSize) {
+    InitialStatusMap map(MemberId(0), 3);
+    map.configChange(list_of<MemberId>(0)(1));
+    map.received(MemberId(0), newcomerStatus());
+    map.received(MemberId(1), newcomerStatus());
+    BOOST_CHECK(!map.isComplete());
+
+    map.configChange(list_of<MemberId>(0)(1)(2));
+    map.received(MemberId(0), newcomerStatus());
+    map.received(MemberId(1), newcomerStatus());
+    map.received(MemberId(2), newcomerStatus());
+    BOOST_CHECK(map.isComplete());
 }
 
 QPID_AUTO_TEST_SUITE_END()

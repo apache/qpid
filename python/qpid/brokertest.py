@@ -206,7 +206,7 @@ class Cluster:
     _cluster_lib = checkenv("CLUSTER_LIB")
     _cluster_count = 0
 
-    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING):
+    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait_for_start=True):
         self.test = test
         self._brokers=[]
         self.name = "cluster%d" % Cluster._cluster_count
@@ -215,21 +215,16 @@ class Cluster:
         self.args = copy(args)
         self.args += [ "--cluster-name", "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
         self.args += [ "--load-module", self._cluster_lib ]
-        self.start_n(count, expect=expect)
+        self.start_n(count, expect=expect, wait_for_start=wait_for_start)
 
-    def start(self, name=None, expect=EXPECT_RUNNING):
+    def start(self, name=None, expect=EXPECT_RUNNING, wait_for_start=True):
         """Add a broker to the cluster. Returns the index of the new broker."""
         if not name: name="%s-%d" % (self.name, len(self._brokers))
-        self._brokers.append(self.test.broker(self.args, name, expect))
+        self._brokers.append(self.test.broker(self.args, name, expect, wait_for_start))
         return self._brokers[-1]
 
-    def start_n(self, count, expect=EXPECT_RUNNING):
-        for i in range(count): self.start(expect=expect)
-
-    def wait(self):
-        """Wait for all cluster members to be ready"""
-        for b in self._brokers:
-            b.connect().close()
+    def start_n(self, count, expect=EXPECT_RUNNING, wait_for_start=True):
+        for i in range(count): self.start(expect=expect, wait_for_start=wait_for_start)
 
     # Behave like a list of brokers.
     def __len__(self): return len(self._brokers)
@@ -280,16 +275,15 @@ class BrokerTest(TestCase):
         self.cleanup_stop(p)
         return p
 
-    def broker(self, args=[], name=None, expect=EXPECT_RUNNING):
+    def broker(self, args=[], name=None, expect=EXPECT_RUNNING,wait_for_start=True):
         """Create and return a broker ready for use"""
         b = Broker(self, args=args, name=name, expect=expect)
-        b.connect().close()
+        if (wait_for_start): b.connect().close()
         return b
 
-    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING):
+    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait_for_start=True):
         """Create and return a cluster ready for use"""
-        cluster = Cluster(self, count, args, expect=expect)
-        cluster.wait()
+        cluster = Cluster(self, count, args, expect=expect, wait_for_start=wait_for_start)
         return cluster
 
 class RethrownException(Exception):

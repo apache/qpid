@@ -28,8 +28,8 @@ using namespace boost;
 namespace qpid {
 namespace cluster {
 
-InitialStatusMap::InitialStatusMap(const MemberId& self_)
-    : self(self_), completed(), resendNeeded()
+InitialStatusMap::InitialStatusMap(const MemberId& self_, size_t size_)
+    : self(self_), completed(), resendNeeded(), size(size_)
 {}
 
 void InitialStatusMap::configChange(const MemberSet& members) {
@@ -83,7 +83,8 @@ bool InitialStatusMap::isActive(const Map::value_type& v) {
 }
 
 bool InitialStatusMap::isComplete() {
-    return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end();
+    return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end()
+        && (map.size() >= size);
 }
 
 bool InitialStatusMap::transitionToComplete() {

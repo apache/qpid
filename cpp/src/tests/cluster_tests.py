@@ -26,13 +26,8 @@ from qpid.messaging import Message
 from threading import Thread
 
 
-class ClusterTests(BrokerTest):
-    """Cluster tests with support for testing with a store plugin."""
-
-    def duration(self):
-        d = self.config.defines.get("DURATION")
-        if d: return float(d)*60
-        else: return 3
+class ShortTests(BrokerTest):
+    """Short cluster functionality tests."""
 
     def test_message_replication(self):
         """Test basic cluster message replication."""
@@ -56,6 +51,42 @@ class ClusterTests(BrokerTest):
         s2.acknowledge()
         self.assertEqual("y", m.content)
         s2.connection.close()
+
+    def test_cluster_size(self):
+        """Verify cluster startup waits for N brokers if --cluster-size=N"""
+        class ConnectThread(Thread):
+            def __init__(self, broker):
+                Thread.__init__(self)
+                self.broker=broker
+                self.connected = False
+                self.error = None
+
+            def run(self):
+                try:
+                    self.broker.connect()
+                    self.connected = True
+                except Exception, e: self.error = RethrownException(e)
+
+        cluster = self.cluster(1, args=["--cluster-size=3"], wait_for_start=False)
+        c = ConnectThread(cluster[0])
+        c.start()
+        time.sleep(.01)
+        assert not c.connected
+        cluster.start(wait_for_start=False)
+        time.sleep(.01)
+        assert not c.connected
+        cluster.start(wait_for_start=False)
+        c.join(1)
+        assert not c.isAlive()       # Join didn't time out
+        assert c.connected
+        if c.error: raise c.error
+
+class LongTests(BrokerTest):
+    """Tests that can run for a long time if -DDURATION=<minutes> is set"""
+    def duration(self):
+        d = self.config.defines.get("DURATION")
+        if d: return float(d)*60
+        else: return 3                  # Default is to be quick
 
     def test_failover(self):
         """Test fail-over during continuous send-receive with errors"""
@@ -84,7 +115,8 @@ class ClusterTests(BrokerTest):
         receiver.stop(sender.sent)
         for i in range(i, len(cluster)): cluster[i].kill()
 
-class ClusterStoreTests(BrokerTest):
+
+class StoreTests(BrokerTest):
     """
     Cluster tests that can only be run if there is a store available.
     """

@@ -37,7 +37,7 @@ class InitialStatusMap
   public:
     typedef framing::ClusterInitialStatusBody Status;
 
-    InitialStatusMap(const MemberId& self);
+    InitialStatusMap(const MemberId& self, size_t size);
     /** Process a config change. @return true if we need to re-send our status */
     void configChange(const MemberSet& newConfig);
     /** @return true if we need to re-send status */
@@ -71,6 +71,7 @@ class InitialStatusMap
     MemberSet firstConfig;
     MemberId self;
     bool completed, resendNeeded;
+    size_t size;
 };
 }} // namespace qpid::cluster
 
