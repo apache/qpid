@@ -71,6 +71,7 @@ const std::string FILTER("filter");
 const std::string RELIABILITY("reliability");
 const std::string NAME("subscription-name");
 const std::string NODE_PROPERTIES("node-properties");
+const std::string X_PROPERTIES("x-properties");
 
 //policy types
 const std::string CREATE("create");
@@ -102,13 +103,12 @@ const std::string WILDCARD_ANY("*");
 
 //some amqp 0-10 specific options
 namespace xamqp{
-const std::string AUTO_DELETE("x-amqp0-10-auto-delete");
-const std::string EXCHANGE_TYPE("x-amqp0-10-exchange-type");
-const std::string EXCLUSIVE("x-amqp0-10-exclusive");
-const std::string ALTERNATE_EXCHANGE("x-amqp0-10-alternate-exchange");
-const std::string ARGUMENTS("x-amqp0-10-arguments");
-const std::string QUEUE_ARGUMENTS("x-amqp0-10-queue-arguments");
-const std::string SUBSCRIBE_ARGUMENTS("x-amqp0-10-queue-arguments");
+const std::string AUTO_DELETE("auto-delete");
+const std::string EXCHANGE_TYPE("type");
+const std::string EXCLUSIVE("exclusive");
+const std::string ALTERNATE_EXCHANGE("alternate-exchange");
+const std::string QUEUE_ARGUMENTS("x-queue-arguments");
+const std::string SUBSCRIBE_ARGUMENTS("x-subscribe-arguments");
 }
 
 class Node
@@ -692,20 +692,27 @@ void Queue::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
 
 void Queue::configure(const Address& address)
 {
-    const Variant& properties = address.getOption(NODE_PROPERTIES);
-    if (!properties.isVoid()) {
-        Variant::Map p = properties.asMap();
-        durable = p[DURABLE];
-        autoDelete = p[xamqp::AUTO_DELETE];
-        exclusive = p[xamqp::EXCLUSIVE];
-        alternateExchange = p[xamqp::ALTERNATE_EXCHANGE].asString();
-        if (!p[xamqp::ARGUMENTS].isVoid()) {
-            translate(p[xamqp::ARGUMENTS].asMap(), arguments);
+    const Variant& v = address.getOption(NODE_PROPERTIES);
+    if (!v.isVoid()) {
+        Variant::Map nodeProps = v.asMap();
+        durable = nodeProps[DURABLE];
+        Variant::Map::const_iterator x = nodeProps.find(X_PROPERTIES);
+        if (x != nodeProps.end()) {
+            const Variant::Map& xProps = x->second.asMap();
+            Variant::Map passthrough;
+            for (Variant::Map::const_iterator i = xProps.begin(); i != xProps.end(); ++i) {
+                if (i->first == xamqp::AUTO_DELETE) autoDelete = i->second;
+                else if (i->first == xamqp::EXCLUSIVE) exclusive = i->second;
+                else if (i->first == xamqp::ALTERNATE_EXCHANGE) alternateExchange = i->second.asString();
+                else passthrough[i->first] = i->second;
+            }
+            translate(passthrough, arguments);
         }
     }
 }
 
 Exchange::Exchange(const Address& a) : Node(a),
+                                       type(TOPIC_EXCHANGE),
                                        durable(false),
                                        autoDelete(false)
 {
@@ -778,15 +785,21 @@ void Exchange::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
 
 void Exchange::configure(const Address& address)
 {
-    const Variant& properties = address.getOption(NODE_PROPERTIES);
-    if (!properties.isVoid()) {
-        Variant::Map p = properties.asMap();
-        durable = p[DURABLE];
-        autoDelete = p[xamqp::AUTO_DELETE];
-        type = p[xamqp::EXCHANGE_TYPE].asString();
-        alternateExchange = p[xamqp::ALTERNATE_EXCHANGE].asString();
-        if (!p[xamqp::ARGUMENTS].isVoid()) {
-            translate(p[xamqp::ARGUMENTS].asMap(), arguments);
+    const Variant& v = address.getOption(NODE_PROPERTIES);
+    if (!v.isVoid()) {
+        Variant::Map nodeProps = v.asMap();
+        durable = nodeProps[DURABLE];
+        Variant::Map::const_iterator x = nodeProps.find(X_PROPERTIES);
+        if (x != nodeProps.end()) {
+            const Variant::Map& xProps = x->second.asMap();
+            Variant::Map passthrough;
+            for (Variant::Map::const_iterator i = xProps.begin(); i != xProps.end(); ++i) {
+                if (i->first == xamqp::AUTO_DELETE) autoDelete = i->second;
+                else if (i->first == xamqp::EXCHANGE_TYPE) type = i->second.asString();
+                else if (i->first == xamqp::ALTERNATE_EXCHANGE) alternateExchange = i->second.asString();
+                else passthrough[i->first] = i->second;
+            }
+            translate(passthrough, arguments);
         }
     }
 }

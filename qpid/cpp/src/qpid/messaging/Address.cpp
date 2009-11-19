@@ -114,20 +114,36 @@ void Address::setOptions(const Variant::Map& options) { impl->options = options;
 namespace{
 const Variant EMPTY_VARIANT;
 const std::string EMPTY_STRING;
+const std::string NODE_PROPERTIES="node-properties";
+}
+
+const Variant& find(const Variant::Map& map, const std::string& key)
+{
+    Variant::Map::const_iterator i = map.find(key);
+    if (i == map.end()) return EMPTY_VARIANT;
+    else return i->second;
 }
 
 std::string Address::getType() const
 {
-    const Variant& type = getOption(TYPE);
-    return type.isVoid() ? EMPTY_STRING : type.asString();
+    const Variant& props = getOption(NODE_PROPERTIES);
+    if (props.getType() == VAR_MAP) {
+        const Variant& type = find(props.asMap(), TYPE);
+        if (!type.isVoid()) return type.asString();
+    }
+    return EMPTY_STRING;
 }
-void Address::setType(const std::string& type) { impl->options[TYPE] = type; }
+
+void Address::setType(const std::string& type)
+{ 
+    Variant& props = impl->options[NODE_PROPERTIES];
+    if (props.isVoid()) props = Variant::Map();
+    props.asMap()[TYPE] = type;
+}
 
 const Variant& Address::getOption(const std::string& key) const
 {
-    Variant::Map::const_iterator i = impl->options.find(key);
-    if (i == impl->options.end()) return EMPTY_VARIANT;
-    else return i->second;
+    return find(impl->options, key);
 }
 
 std::ostream& operator<<(std::ostream& out, const Address& address)
@@ -144,7 +160,7 @@ AddressParser::AddressParser(const std::string& s) : input(s), current(0) {}
 
 bool AddressParser::error(const std::string& message)
 {
-    throw MalformedAddress(message);//TODO: add more debug detail to error message (position etc)
+    throw MalformedAddress((boost::format("%1%, character %2% of %3%") % message % current % input).str());
 }
 
 bool AddressParser::parse(Address& address)
@@ -210,7 +226,7 @@ bool AddressParser::readKeyValuePair(Variant::Map& map)
             map[key] = value;
             return true;
         } else {
-            return error("Bad key-value pair!");
+            return error("Bad key-value pair, expected ':'");
         }
     } else {
         return false;

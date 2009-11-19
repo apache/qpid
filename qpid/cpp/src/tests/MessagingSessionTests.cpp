@@ -249,7 +249,7 @@ QPID_AUTO_TEST_CASE(testSenderError)
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress"), qpid::messaging::InvalidAddress);
     fix.session = fix.connection.newSession();
-    BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress; {create:receiver, type:queue}"),
+    BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress; {create:receiver}"),
                       qpid::messaging::InvalidAddress);
 }
 
@@ -259,7 +259,7 @@ QPID_AUTO_TEST_CASE(testReceiverError)
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress"), qpid::messaging::InvalidAddress);
     fix.session = fix.connection.newSession();
-    BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress; {create:sender, type:queue}"),
+    BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress; {create:sender}"),
                       qpid::messaging::InvalidAddress);
 }
 
@@ -491,13 +491,13 @@ struct QueueCreatePolicyFixture : public MessagingFixture
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueAlways)
 {
-    QueueCreatePolicyFixture fix("#; {create:always, type:queue}");
+    QueueCreatePolicyFixture fix("#; {create:always, node-properties:{type:queue}}");
     fix.test();
 }
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueReceiver)
 {
-    QueueCreatePolicyFixture fix("#; {create:receiver, type:queue}");
+    QueueCreatePolicyFixture fix("#; {create:receiver, node-properties:{type:queue}}");
     Receiver r = fix.session.createReceiver(fix.address);
     fix.test();
     r.cancel();
@@ -505,7 +505,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyQueueReceiver)
 
 QPID_AUTO_TEST_CASE(testCreatePolicyQueueSender)
 {
-    QueueCreatePolicyFixture fix("#; {create:sender, type:queue}");
+    QueueCreatePolicyFixture fix("#; {create:sender, node-properties:{type:queue}}");
     Sender s = fix.session.createSender(fix.address);
     fix.test();
     s.cancel();
@@ -535,14 +535,14 @@ struct ExchangeCreatePolicyFixture : public MessagingFixture
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopic)
 {
-    ExchangeCreatePolicyFixture fix("#; {create:always, type:topic, node-properties:{x-amqp0-10-exchange-type:topic}}",
+    ExchangeCreatePolicyFixture fix("#; {create:always, node-properties:{type:topic}}",
                                   "topic");
     fix.test();
 }
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopicReceiverFanout)
 {
-    ExchangeCreatePolicyFixture fix("#/my-subject; {create:receiver, type:topic, node-properties:{x-amqp0-10-exchange-type:fanout}}", "fanout");
+    ExchangeCreatePolicyFixture fix("#/my-subject; {create:receiver, node-properties:{type:topic, x-properties:{type:fanout}}}", "fanout");
     Receiver r = fix.session.createReceiver(fix.address);
     fix.test();
     r.cancel();
@@ -550,7 +550,7 @@ QPID_AUTO_TEST_CASE(testCreatePolicyTopicReceiverFanout)
 
 QPID_AUTO_TEST_CASE(testCreatePolicyTopicSenderDirect)
 {
-    ExchangeCreatePolicyFixture fix("#/my-subject; {create:sender, type:topic, node-properties:{x-amqp0-10-exchange-type:direct}}", "direct");
+    ExchangeCreatePolicyFixture fix("#/my-subject; {create:sender, node-properties:{type:topic, x-properties:{type:direct}}}", "direct");
     Sender s = fix.session.createSender(fix.address);
     fix.test();
     s.cancel();
@@ -673,18 +673,18 @@ QPID_AUTO_TEST_CASE(testDeletePolicyExchange)
 QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
 {
     MessagingFixture fix;
-    std::string a1 = "q; {create:always, assert:always, type:queue, node-properties:{durable:false, x-amqp0-10-arguments:{qpid.max-count:100}}}";
+    std::string a1 = "q; {create:always, assert:always, node-properties:{type:queue, durable:false, x-properties:{qpid.max-count:100}}}";
     Sender s1 = fix.session.createSender(a1);
     s1.cancel();
     Receiver r1 = fix.session.createReceiver(a1);
     r1.cancel();
     
-    std::string a2 = "q; {assert:receiver, node-properties:{durable:true, x-amqp0-10-arguments:{qpid.max-count:100}}}";
+    std::string a2 = "q; {assert:receiver, node-properties:{durable:true, x-properties:{qpid.max-count:100}}}";
     Sender s2 = fix.session.createSender(a2);
     s2.cancel();
     BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::InvalidAddress);
 
-    std::string a3 = "q; {assert:sender, node-properties:{x-amqp0-10-arguments:{qpid.max-count:99}}}";
+    std::string a3 = "q; {assert:sender, node-properties:{x-properties:{qpid.max-count:99}}}";
     BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::InvalidAddress);
     Receiver r3 = fix.session.createReceiver(a3);
     r3.cancel();
