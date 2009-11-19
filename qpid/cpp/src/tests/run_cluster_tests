@@ -19,24 +19,10 @@
 # under the License.
 #
 
-absdir() { echo `cd $1; pwd`; }
-srcdir=$(absdir $(dirname $0))
-top_builddir=$(absdir ../..)
+srcdir=$(dirname $0)
 
-. $srcdir/python_env.sh
-export PYTHONPATH=${srcdir}:${PYTHONPATH}
-export QPIDD_EXEC=${top_builddir}/src/qpidd
-export CLUSTER_LIB=${top_builddir}/src/.libs/cluster.so
-export QPID_CONFIG_EXEC=${srcdir}/../../../python/commands/qpid-config
-export QPID_ROUTE_EXEC=${srcdir}/../../../python/commands/qpid-route
-export RECEIVER_EXEC=${top_builddir}/src/tests/receiver
-export SENDER_EXEC=${top_builddir}/src/tests/sender
-
-# Check XML exchange requirements
-XML_LIB=$srcdir/../.libs/xml.so
-test -f ${XML_LIB} && export XML_LIB
-
-# Check AIS requirements
+. $srcdir/test_env.sh checkout $srcdir/../../.. ../.. || exit 1
+PYTHONPATH=$srcdir:$PYTHONPATH
 . $srcdir/ais_check
 
 # Delete old cluster test data
@@ -49,6 +35,6 @@ CLUSTER_TESTS_IGNORE=${CLUSTER_TESTS_IGNORE:--i cluster_tests.StoreTests.* -I $s
 CLUSTER_TESTS=${CLUSTER_TESTS:-$*}
 
 set -x
-with_ais_group $PYTHON_COMMANDS/qpid-python-test -DOUTDIR=$OUTDIR -m cluster_tests $CLUSTER_TESTS_IGNORE $CLUSTER_TESTS || exit 1
+with_ais_group $QPID_PYTHON_COMMANDS/qpid-python-test -DOUTDIR=$OUTDIR -m cluster_tests $CLUSTER_TESTS_IGNORE $CLUSTER_TESTS || exit 1
 rm -rf $OUTDIR
 #exit 0
