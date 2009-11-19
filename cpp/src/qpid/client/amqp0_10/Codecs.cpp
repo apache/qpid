@@ -293,7 +293,7 @@ void translate(const FieldTable& from, Variant::Map& to)
     convert(from, to, &toVariantMapEntry);
 }
 
-const std::string ListCodec::contentType("amqp0_10/list");
-const std::string MapCodec::contentType("amqp0_10/map");
+const std::string ListCodec::contentType("amqp/list");
+const std::string MapCodec::contentType("amqp/map");
 
 }}} // namespace qpid::client::amqp0_10
