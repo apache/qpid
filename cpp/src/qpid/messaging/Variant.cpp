@@ -566,19 +566,23 @@ Variant::operator const char*() const { return asString().c_str(); }
 
 std::ostream& operator<<(std::ostream& out, const Variant::Map& map)
 {
+    out << "{";
     for (Variant::Map::const_iterator i = map.begin(); i != map.end(); ++i) {
         if (i != map.begin()) out << ", ";
         out << i->first << ":" << i->second;
     }
+    out << "}";
     return out;
 }
 
 std::ostream& operator<<(std::ostream& out, const Variant::List& list)
 {
+    out << "[";
     for (Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
         if (i != list.begin()) out << ", ";
         out << *i;
     }
+    out << "]";
     return out;
 }
 
@@ -586,10 +590,10 @@ std::ostream& operator<<(std::ostream& out, const Variant& value)
 {
     switch (value.getType()) {
       case VAR_MAP:
-        out << "{" << value.asMap() << "}";
+        out << value.asMap();
         break;
       case VAR_LIST:
-        out << "[" << value.asList() << "]";
+        out << value.asList();
         break;
       case VAR_VOID:
         out << "<void>";

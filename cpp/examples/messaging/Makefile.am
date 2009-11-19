@@ -21,7 +21,13 @@ examplesdir=$(pkgdatadir)/examples/messaging
 MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
 
-noinst_PROGRAMS=queue_sender queue_receiver topic_sender topic_receiver client server map_sender map_receiver
+noinst_PROGRAMS=drain spout queue_sender queue_receiver topic_sender topic_receiver client server map_sender map_receiver
+
+drain_SOURCES=drain.cpp
+drain_LDADD=$(CLIENT_LIB)
+
+spout_SOURCES=spout.cpp
+spout_LDADD=$(CLIENT_LIB)
 
 queue_sender_SOURCES=queue_sender.cpp
 queue_sender_LDADD=$(CLIENT_LIB)
