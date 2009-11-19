@@ -51,12 +51,80 @@ class AddressImpl;
  * All parts of an address can be specified in a string of the
  * following form:
  * 
+ * <pre>
  * <address> [ / <subject> ] ; [ { <key> : <value> , ... } ]
+ * </pre>
  * 
- * Here the <address> is a simple name for the addressed entity and
- * <subject> is a subject or subject pattern for messages sent to or
- * received from this address. The options are specified as a series
- * of key value pairs enclosed in curly brackets (denoting a map).
+ * Here the <pre><address></pre> is a simple name for the addressed
+ * entity and <pre><subject></pre> is a subject or subject pattern for
+ * messages sent to or received from this address. The options are
+ * specified as a series of key value pairs enclosed in curly brackets
+ * (denoting a map). Values can be nested maps, or lists (which are
+ * denoted as a comma separated list of values inside square brackets,
+ * e.g. [a, b, c]).
+ * 
+ * The currently supported options are as follows:
+ * 
+ * create - whether the address should be automatically created or
+ * not. Can be one of always, never, sender or receiver; the
+ * properties of the node to be created can be specified via the
+ * node-properties option.
+ * 
+ * assert - whether or not to assert any specified node-properties
+ * match the address. Can be one of always, never, sender or receiver.
+ * 
+ * delete - whether or not to delete the addressed nide when a sender
+ * or receiver is cancelled. Can be one of always, never, sender or
+ * receiver.
+ *
+ * node-properties - a nested map of properties of the addressed
+ * entity or 'node'. These can be used when automatically creating it,
+ * or to assert certain properties.
+ * 
+ * The valid node-properties are:
+ * 
+ * type - queue or topic
+ * 
+ * durable - true or false
+ * 
+ * x-properties - a nested map that can contain implementation or
+ * protocol specifiec extedned properties. For the amqp 0-10 mapping,
+ * the fields in queue- or exchange- declare can be specified in here;
+ * anything that is not recognised as one of those will be passed
+ * through in the arguments field.
+ * 
+ * For receivers there are some further options of interest:
+ * 
+ * no-local - (only relevant for topics at present) specifies that the
+ * receiver does not want to receiver messages published to the topic
+ * that originate from a sender on the same connection
+ *
+ * browse - (only relevant for queues) specifies that the receiver
+ * does not wish to consume the messages, but merely browse them
+ * 
+ * durable - (only relevant for topics at present) specifies that a
+ * durable subscription is required
+ * 
+ * reliability - indicates the level of reliability that the receiver
+ * expects. Can be one of unreliable, at-most-once, at-least-once or
+ * exactly-once (the latter is not yet correctly supported).
+ * 
+ * filter - (only relevant for topics at present) allows bindings to
+ * be created for the queue that match the given criteris (or list of
+ * criteria).
+ * 
+ * x-properties - allows protocol or implementation specific options
+ * to be specified for a receiver; this is a nested map and currently
+ * the implementation only recognises two specific nested properties
+ * within it (all others are passed through in the arguments of the
+ * message-subscribe command):
+ * 
+ *     exclusive, which requests an exclusive subscription and
+ *     is only relevant for queues
+ *
+ *     x-queue-arguments, which ais only relevant for topics and
+ *     allows arguments to the queue-declare for the subscription
+ *     queue to be specified
  */
 class Address
 {

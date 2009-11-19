@@ -179,7 +179,7 @@ class QueueSource : public Queue, public MessageSource
   private:
     const AcceptMode acceptMode;
     const AcquireMode acquireMode;
-    const bool exclusive;
+    bool exclusive;
     FieldTable options;
 };
 
@@ -344,10 +344,19 @@ QueueSource::QueueSource(const Address& address) :
     Queue(address),
     acceptMode(is_unreliable(address) ? ACCEPT_MODE_NONE : ACCEPT_MODE_EXPLICIT),
     acquireMode(address.getOption(BROWSE).asBool() ? ACQUIRE_MODE_NOT_ACQUIRED : ACQUIRE_MODE_PRE_ACQUIRED),
-    exclusive(getNestedOption(address.getOptions(), list_of<std::string>(X_PROPERTIES)(EXCLUSIVE)).asBool())
+    exclusive(false)
 {
     //extract subscription arguments from address options
-    convert(address.getOption(xamqp::SUBSCRIBE_ARGUMENTS), options);
+    const Variant& x = address.getOption(X_PROPERTIES);
+    if (!x.isVoid()) {
+        const Variant::Map& xProps = x.asMap();
+        Variant::Map passthrough;
+        for (Variant::Map::const_iterator i = xProps.begin(); i != xProps.end(); ++i) {
+            if (i->first == xamqp::EXCLUSIVE) exclusive = i->second;
+            else passthrough[i->first] = i->second;
+        }
+        translate(passthrough, options);
+    }
 }
 
 void QueueSource::subscribe(qpid::client::AsyncSession& session, const std::string& destination)
@@ -384,8 +393,16 @@ Subscription::Subscription(const Address& address, const std::string& exchangeTy
       durable(address.getOption(DURABLE_SUBSCRIPTION).asBool())
 {
     if (address.getOption(NO_LOCAL).asBool()) queueOptions.setInt(NO_LOCAL, 1);
-    convert(address.getOption(xamqp::QUEUE_ARGUMENTS), queueOptions);
-    convert(address.getOption(xamqp::SUBSCRIBE_ARGUMENTS), subscriptionOptions);
+    const Variant& x = address.getOption(X_PROPERTIES);
+    if (!x.isVoid()) {
+        const Variant::Map& xProps = x.asMap();
+        Variant::Map passthrough;
+        for (Variant::Map::const_iterator i = xProps.begin(); i != xProps.end(); ++i) {
+            if (i->first == xamqp::QUEUE_ARGUMENTS) convert(i->second.asMap(), queueOptions);
+            else passthrough[i->first] = i->second;
+        }
+        translate(passthrough, subscriptionOptions);
+    }
 
     const Variant& filter = address.getOption(FILTER);
     if (!filter.isVoid()) {
