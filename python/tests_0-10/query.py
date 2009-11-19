@@ -133,8 +133,20 @@ class QueryTests(TestBase010):
         #test exchange not found
         self.assertEqual(True, session.exchange_bound(exchange="unknown-exchange").exchange_not_found)
 
-        #test queue not found
-        self.assertEqual(True, session.exchange_bound(exchange=exchange_name, queue="unknown-queue").queue_not_found)
+        #test exchange found, queue not found
+        response = session.exchange_bound(exchange=exchange_name, queue="unknown-queue")
+        self.assertEqual(False, response.exchange_not_found)
+        self.assertEqual(True, response.queue_not_found)
+
+        #test exchange not found, queue found
+        response = session.exchange_bound(exchange="unknown-exchange", queue="used-queue")
+        self.assertEqual(True, response.exchange_not_found)
+        self.assertEqual(False, response.queue_not_found)
+
+        #test not exchange found, queue not found
+        response = session.exchange_bound(exchange="unknown-exchange", queue="unknown-queue")
+        self.assertEqual(True, response.exchange_not_found)
+        self.assertEqual(True, response.queue_not_found)
 
 
     def test_exchange_bound_fanout(self):

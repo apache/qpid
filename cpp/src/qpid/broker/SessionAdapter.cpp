@@ -256,7 +256,7 @@ ExchangeBoundResult SessionAdapter::ExchangeHandlerImpl::bound(const std::string
     }
 
     if (!exchange) {
-        return ExchangeBoundResult(true, false, false, false, false);
+        return ExchangeBoundResult(true, (!queueName.empty() && !queue), false, false, false);
     } else if (!queueName.empty() && !queue) {
         return ExchangeBoundResult(false, true, false, false, false);
     } else if (exchange->isBound(queue, key.empty() ? 0 : &key, args.count() > 0 ? &args : &args)) {
