@@ -89,6 +89,8 @@ class NullMessageStore : public MessageStore
 
     QPID_BROKER_EXTERN virtual bool isNull() const;
     static bool isNullStore(const MessageStore*);
+
+    std::string getStoreDir() const;
 };
 
 }
