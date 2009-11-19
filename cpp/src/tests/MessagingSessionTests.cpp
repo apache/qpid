@@ -248,6 +248,7 @@ QPID_AUTO_TEST_CASE(testSenderError)
     MessagingFixture fix;
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress"), qpid::messaging::InvalidAddress);
+    fix.session = fix.connection.newSession();
     BOOST_CHECK_THROW(fix.session.createSender("NonExistentAddress; {create:receiver, type:queue}"),
                       qpid::messaging::InvalidAddress);
 }
@@ -257,6 +258,7 @@ QPID_AUTO_TEST_CASE(testReceiverError)
     MessagingFixture fix;
     ScopedSuppressLogging sl;
     BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress"), qpid::messaging::InvalidAddress);
+    fix.session = fix.connection.newSession();
     BOOST_CHECK_THROW(fix.session.createReceiver("NonExistentAddress; {create:sender, type:queue}"),
                       qpid::messaging::InvalidAddress);
 }
