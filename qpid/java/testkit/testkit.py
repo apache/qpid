@@ -120,7 +120,7 @@ class JavaClientTest(BrokerTest):
 class ConcurrencyTest(JavaClientTest):
     """A concurrency test suite for the JMS client"""
 
-    def xtest_multiplexing_con(self):
+    def test_multiplexing_con(self):
         """Tests multiple sessions on a single connection""" 
 
         cluster = Cluster(self, 2)
@@ -174,7 +174,7 @@ class ConcurrencyTest(JavaClientTest):
 class SoakTest(JavaClientTest):
     """A soak test suite for the JMS client"""
 
-    def xtest_failover(self):
+    def test_failover(self):
         cluster = self.cluster(4, expect=EXPECT_EXIT_FAIL)
         p = cluster[0].port
         self.start_error_watcher(broker=cluster[0])

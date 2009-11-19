@@ -17,6 +17,13 @@
 # under the License.
 #
 
+abs_path()
+{
+  D=`dirname "$1"`
+  B=`basename "$1"`
+  echo "`cd \"$D\" 2>/dev/null && pwd || echo \"$D\"`/$B"
+}
+
 # Environment for python tests
 test -d ../../../python || { echo "WARNING: skipping test, no python directory."; exit 0; }
 PYTHON_DIR=../../../python
@@ -24,20 +31,22 @@ PYTHONPATH=$PYTHON_DIR:$PYTHON_DIR/qpid
 
 if [ "$QPIDD_EXEC" = "" ] ; then
    test -x ../../../cpp/src/qpidd || { echo "WARNING: skipping test, QPIDD_EXEC not set and qpidd not found."; exit 0; }
-   QPIDD_EXEC=../../../cpp/src/qpidd
+   QPIDD_EXEC=`abs_path "../../../cpp/src/qpidd"`
+   #QPIDD_EXEC=/opt/workspace/qpid/trunk/qpid/cpp/src/.libs/lt-qpidd
 fi
 
 if [ "$CLUSTER_LIB" = "" ] ; then
    test -x ../../../cpp/src/.libs/cluster.so || { echo "WARNING: skipping test, CLUSTER_LIB not set and cluster.so not found."; exit 0; }
-   CLUSTER_LIB=../../../cpp/src/.libs/cluster.so
+   CLUSTER_LIB=`abs_path "../../../cpp/src/.libs/cluster.so"`
+   #CLUSTER_LIB=/opt/workspace/qpid/trunk/qpid/cpp/src/.libs/cluster.so
 fi
 
 if [ "$QP_CP" = "" ] ; then
    QP_CP=`find ../../build/lib/ -name '*.jar' | tr '\n' ':'`
 fi
 
-if [ "$QUTDIR" = "" ] ; then
-   OUTDIR=../
+if [ "$OUTDIR" = "" ] ; then
+   OUTDIR=`abs_path "../output"`
 fi
 
 
