@@ -95,7 +95,7 @@ std::string Address::toStr() const
     std::stringstream out;
     out << impl->name;
     if (!impl->subject.empty()) out << SUBJECT_DIVIDER << impl->subject;
-    if (!impl->options.empty()) out << OPTIONS_DIVIDER << " {" << impl->options << "}";
+    if (!impl->options.empty()) out << OPTIONS_DIVIDER << impl->options;
     return out.str();
 }
 Address::operator bool() const { return !impl->name.empty(); }

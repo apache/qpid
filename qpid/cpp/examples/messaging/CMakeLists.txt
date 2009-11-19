@@ -17,6 +17,9 @@
 # under the License.
 #
 
+add_example(messaging drain)
+add_example(messaging spout)
+
 add_example(messaging queue_receiver)
 add_example(messaging queue_sender)
 

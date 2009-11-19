@@ -41,6 +41,7 @@ class MapContentImpl : public Variant
     {
         qpid::client::amqp0_10::MapCodec codec;
         codec.encode(*this, msg->getContent());
+        msg->setContentType(qpid::client::amqp0_10::MapCodec::contentType);
     }
 };
 

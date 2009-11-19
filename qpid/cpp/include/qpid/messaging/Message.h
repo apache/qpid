@@ -58,8 +58,8 @@ class Message
     QPID_CLIENT_EXTERN void setContentType(const std::string&);
     QPID_CLIENT_EXTERN const std::string& getContentType() const;
 
-    QPID_CLIENT_EXTERN const VariantMap& getHeaders() const;
-    QPID_CLIENT_EXTERN VariantMap& getHeaders();
+    QPID_CLIENT_EXTERN const Variant::Map& getHeaders() const;
+    QPID_CLIENT_EXTERN Variant::Map& getHeaders();
 
     QPID_CLIENT_EXTERN const std::string& getContent() const;
     QPID_CLIENT_EXTERN std::string& getContent();
