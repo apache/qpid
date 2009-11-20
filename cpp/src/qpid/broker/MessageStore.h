@@ -192,8 +192,6 @@ class MessageStore : public TransactionalStore, public Recoverable {
      */
     virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue) = 0;
 
-    /**@return store directory or empty string if this is a null store.  */
-    virtual std::string getStoreDir() const = 0;
 
     virtual ~MessageStore(){}
 };
