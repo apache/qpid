@@ -725,6 +725,7 @@ TYPE_CODEC={
   "amqp/map": codec("map"),
   "amqp/list": codec("list"),
   "text/plain; charset=utf8": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
+  "": (lambda x: x, lambda x: x),
   None: (lambda x: x, lambda x: x)
   }
 
