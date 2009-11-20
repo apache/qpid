@@ -17,8 +17,8 @@
 # under the License.
 #
 
-add_example(messaging drain)
-add_example(messaging spout)
+add_example(messaging drain ${Boost_PROGRAM_OPTIONS_LIBRARY})
+add_example(messaging spout ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
 add_example(messaging queue_receiver)
 add_example(messaging queue_sender)
