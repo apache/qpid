@@ -20,10 +20,13 @@
 #
 
 srcdir=$(dirname $0)
-
 . $srcdir/test_env.sh checkout $srcdir/../../.. ../.. || exit 1
-PYTHONPATH=$srcdir:$PYTHONPATH
 . $srcdir/ais_check
+
+TEST_EXEC=$QPID_PYTHON_COMMANDS/qpid-python-test
+test -x  $TEST_EXEC || { echo Skipping test, $TEST_EXEC not found; exit 0; }
+
+PYTHONPATH=$srcdir:$PYTHONPATH
 
 # Delete old cluster test data
 OUTDIR=brokertest.tmp
@@ -35,6 +38,6 @@ CLUSTER_TESTS_IGNORE=${CLUSTER_TESTS_IGNORE:--i cluster_tests.StoreTests.* -I $s
 CLUSTER_TESTS=${CLUSTER_TESTS:-$*}
 
 set -x
-with_ais_group $QPID_PYTHON_COMMANDS/qpid-python-test -DOUTDIR=$OUTDIR -m cluster_tests $CLUSTER_TESTS_IGNORE $CLUSTER_TESTS || exit 1
+with_ais_group $TEST_EXEC -DOUTDIR=$OUTDIR -m cluster_tests $CLUSTER_TESTS_IGNORE $CLUSTER_TESTS || exit 1
 rm -rf $OUTDIR
 #exit 0
