@@ -48,6 +48,7 @@ examples_DATA= \
 	$(MAKEDIST)
 
 EXTRA_DIST=                  \
+	CMakeLists.txt \
 	qmf-console_console.vcproj \
 	qmf-console_ping.vcproj \
 	qmf-console_printevents.vcproj \

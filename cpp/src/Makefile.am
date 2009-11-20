@@ -23,13 +23,6 @@ SUBDIRS = . tests
 # are listed here to ensure they're included in releases. They are built
 # using Visual Studio solutions/projects.
 windows_dist = \
-  qpid.sln \
-  broker.vcproj \
-  common.vcproj \
-  client.vcproj \
-  qpidbroker.vcproj \
-  qmfconsole.vcproj \
-  protocol_gen.mak \
   qpid/client/windows/SaslFactory.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
@@ -47,6 +40,7 @@ windows_dist = \
   qpid/sys/windows/PipeHandle.cpp \
   ../include/qpid/sys/windows/Mutex.h \
   qpid/sys/windows/Shlib.cpp \
+  qpid/sys/windows/SocketAddress.cpp \
   qpid/sys/windows/Socket.cpp \
   qpid/sys/windows/StrError.cpp \
   qpid/sys/windows/SystemInfo.cpp \
@@ -82,16 +76,21 @@ specs=$(amqp_0_10_xml) $(top_srcdir)/xml/cluster.xml
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen
-rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate . ../include $(specs) all $(srcdir)/rubygen.mk
+rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate . ../include $(specs) all
 
 $(rgen_srcs) $(srcdir)/rubygen.mk: rgen.timestamp
 rgen.timestamp: $(rgen_generator) $(specs)
-	$(rgen_cmd); touch $@
+	$(rgen_cmd) $(srcdir)/rubygen.mk; touch $@
 $(rgen_generator):
+
+# The CMake version is needed for dist
+$(srcdir)/rubygen.cmake: $(rgen_generator) $(specs)
+	$(rgen_cmd) $(srcdir)/rubygen.cmake
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk -q -b -o qmf \
+mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
+	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
 	$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
 	$(srcdir)/qpid/cluster/management-schema.xml
@@ -269,6 +268,13 @@ endif
 # New 0-10 codec, to be integrated in future.
 # libqpidamqp_0_10_la_SOURCES= 
 EXTRA_DIST +=\
+  CMakeLists.txt \
+  cluster.cmake \
+  config.h.cmake \
+  rdma.cmake \
+  ssl.cmake \
+  managementgen.cmake \
+  rubygen.cmake \
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
@@ -299,7 +305,8 @@ EXTRA_DIST +=\
   qpid/amqp_0_10/UnknownType.h \
   qpid/amqp_0_10/UnknownType.cpp \
   qpid/amqp_0_10/UnknownStruct.h \
-  qpid/amqp_0_10/UnknownStruct.cpp 
+  qpid/amqp_0_10/UnknownStruct.cpp \
+  qpid/store
 
 libqpidcommon_la_LIBADD = \
   -lboost_program_options \

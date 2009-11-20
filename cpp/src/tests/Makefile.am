@@ -329,6 +329,7 @@ LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_p
  federated_cluster_test_with_node_failure
 
 EXTRA_DIST+=						\
+	CMakeLists.txt					\
 	python_env.sh					\
 	fanout_perftest					\
 	shared_perftest					\
@@ -336,24 +337,8 @@ EXTRA_DIST+=						\
 	topic_perftest					\
 	run_failover_soak				\
 	reliable_replication_test			\
-	federated_cluster_test_with_node_failure	\
-	tests.sln					\
-	client_test.vcproj				\
-	consume.vcproj					\
-	echotest.vcproj					\
-	header_test.vcproj				\
-	latencytest.vcproj				\
-	perftest.vcproj					\
-	publish.vcproj					\
-	receiver.vcproj					\
-	sender.vcproj					\
-	shlibtest.vcproj				\
-	topic_listener.vcproj				\
-	topic_publisher.vcproj				\
-	txjob.vcproj					\
-	txshift.vcproj					\
-	txtest.vcproj					\
-	unit_test.vcproj
+	federated_cluster_test_with_node_failure        \
+	windows/DisableWin32ErrorWindows.cpp
 
 check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=

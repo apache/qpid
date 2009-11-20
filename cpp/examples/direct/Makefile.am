@@ -39,6 +39,7 @@ examples_DATA=               \
 
 EXTRA_DIST=	             \
 	$(examples_DATA)     \
+	CMakeLists.txt	     \
 	verify               \
 	verify.in            \
 	verify_cpp_python    \
