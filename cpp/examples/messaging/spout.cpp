@@ -76,7 +76,7 @@ struct Options : public qpid::Options
             ("id,i", qpid::optValue(id, "ID"), "use the supplied id instead of generating one")
             ("reply-to", qpid::optValue(replyto, "REPLY-TO"), "specify reply-to address")
             ("property,P", qpid::optValue(properties, "NAME=VALUE"), "specify message property")
-            ("entry,E", qpid::optValue(entries, "NAME=VALUE"), "specify entry for map content")
+            ("map,M", qpid::optValue(entries, "NAME=VALUE"), "specify entry for map content")
             ("content", qpid::optValue(content, "CONTENT"), "specify textual content")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
