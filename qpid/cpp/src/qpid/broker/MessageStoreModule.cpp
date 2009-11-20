@@ -176,6 +176,4 @@ bool MessageStoreModule::isNull() const
     return NullMessageStore::isNullStore(store.get());
 }
 
-std::string MessageStoreModule::getStoreDir() const { return store->getStoreDir(); }
-
 }} // namespace qpid::broker

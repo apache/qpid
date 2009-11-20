@@ -409,8 +409,6 @@ class TestMessageStoreOC : public MessageStore
     void collectPreparedXids(std::set<std::string>& out) { out.insert(prepared.begin(), prepared.end()); }
 
     void recover(RecoveryManager&) {}
-
-    std::string getStoreDir() const { return std::string(); }
 };
 
 

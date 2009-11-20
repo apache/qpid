@@ -77,7 +77,6 @@ class MessageStoreModule : public MessageStore
     void flush(const qpid::broker::PersistableQueue& queue);
     bool isNull() const;
 
-    virtual std::string getStoreDir() const;
     ~MessageStoreModule();
 };
 
