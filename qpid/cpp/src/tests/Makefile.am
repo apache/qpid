@@ -313,7 +313,8 @@ EXTRA_DIST +=								\
   replication_test							\
   run_perftest								\
   ring_queue_test							\
-  run_ring_queue_test
+  run_ring_queue_test							\
+  test_env.sh
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
