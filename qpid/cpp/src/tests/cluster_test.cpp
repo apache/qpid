@@ -87,7 +87,7 @@ ClusterFixture::Args prepareArgs(const bool durableFlag = false) {
 }
 
 // Timeout for tests that wait for messages
-const sys::Duration TIMEOUT=sys::TIME_SEC/4;
+const sys::Duration TIMEOUT=sys::TIME_SEC/2;
 
 
 ostream& operator<<(ostream& o, const cpg_name* n) {
@@ -150,7 +150,7 @@ Message makeMessage(const string& data, const string& key, bool durable = false)
 
 vector<string> browse(Client& c, const string& q, int n) {
     SubscriptionSettings browseSettings(
-        FlowControl::unlimited(),
+        FlowControl::messageCredit(n),
         ACCEPT_MODE_NONE,
         ACQUIRE_MODE_NOT_ACQUIRED,
         0                       // No auto-ack.
@@ -262,9 +262,6 @@ QPID_AUTO_TEST_CASE(testAcl) {
 }
 
 QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
-    // Note: this doesn't actually test for cluster race conditions around TTL,
-    // it just verifies that basic TTL functionality works.
-    //
     ClusterFixture::Args args;
     prepareArgs(args, durableFlag);
     ClusterFixture cluster(2, args, -1);
@@ -279,9 +276,9 @@ QPID_AUTO_TEST_CASE(testMessageTimeToLive) {
     cluster.add();
     Client c2(cluster[1], "c2");
 
-    BOOST_CHECK_EQUAL(browse(c0, "p", 2), list_of<string>("x")("y"));
-    BOOST_CHECK_EQUAL(browse(c1, "p", 2), list_of<string>("x")("y"));
-    BOOST_CHECK_EQUAL(browse(c2, "p", 2), list_of<string>("x")("y"));
+    BOOST_CHECK_EQUAL(browse(c0, "p", 1), list_of<string>("x"));
+    BOOST_CHECK_EQUAL(browse(c1, "p", 1), list_of<string>("x"));
+    BOOST_CHECK_EQUAL(browse(c2, "p", 1), list_of<string>("x"));
 
     sys::usleep(200*1000);
     BOOST_CHECK_EQUAL(browse(c0, "q", 1), list_of<string>("b"));
