@@ -54,6 +54,7 @@ map_receiver_SOURCES=map_receiver.cpp
 map_receiver_LDADD=$(CLIENT_LIB)
 
 EXTRA_DIST=                  \
+	CMakeLists.txt \
 	messaging_client.vcproj \
 	messaging_map_receiver.vcproj \
 	messaging_map_sender.vcproj \

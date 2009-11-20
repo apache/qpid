@@ -33,4 +33,4 @@ nobase_qmfpython_DATA = \
 	qmfgen/templates/Package.h \
 	qmfgen/management-types.xml
 
-EXTRA_DIST = $(nobase_qmfpython_DATA)
+EXTRA_DIST = $(nobase_qmfpython_DATA) CMakeLists.txt

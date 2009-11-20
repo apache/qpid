@@ -24,7 +24,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = \
   LICENSE NOTICE README SSL RELEASE_NOTES DESIGN \
-  xml/cluster.xml INSTALL-WINDOWS
+  xml/cluster.xml INSTALL-WINDOWS CMakeLists.txt BuildInstallSettings.cmake
 
 SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf
 

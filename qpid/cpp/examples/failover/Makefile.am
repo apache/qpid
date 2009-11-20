@@ -41,6 +41,7 @@ examples_DATA=                \
 # FIXME aconway 2008-10-10: add verify scripts.
 
 EXTRA_DIST=	             \
+	CMakeLists.txt       \
 	failover_declare_queues.vcproj \
 	failover_replaying_sender.vcproj \
 	failover_resuming_receiver.vcproj

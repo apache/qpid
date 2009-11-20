@@ -92,13 +92,15 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE} ${mgen_dir}/qmf-gen -c managementge
     message(STATUS "No need to generate Qpid Management Framework sources")
   endif (regen_mgmt)
 
-else (EXISTS ${AMQP_SPEC})
-  message(STATUS "No AMQP spec... won't generate sources")
-endif (EXISTS ${AMQP_SPEC})
+  # Pull in the names of the generated files, i.e. ${rgen_framing_srcs}
+  include (${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
+  include (${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
 
-# Pull in the names of the generated files, i.e. ${rgen_framing_srcs}
-include (${CMAKE_CURRENT_BINARY_DIR}/rubygen.cmake)
-include (${CMAKE_CURRENT_BINARY_DIR}/managementgen.cmake)
+else (EXISTS ${AMQP_SPEC})
+  message(STATUS "No AMQP spec... presume generated sources are included")
+  include (rubygen.cmake)
+  include (managementgen.cmake)
+endif (EXISTS ${AMQP_SPEC})
 
 find_program(HELP2MAN help2man DOC "Location of the help2man program")
 option(GEN_MANPAGES "Use help2man to generate man pages" ON)
@@ -513,7 +515,6 @@ set (qpidcommon_SOURCES
      qpid/framing/AMQHeaderBody.cpp
      qpid/framing/AMQHeartbeatBody.cpp
      qpid/framing/Array.cpp
-     qpid/framing/BodyHolder.cpp
      qpid/framing/BodyHandler.cpp
      qpid/framing/Buffer.cpp
      qpid/framing/Endian.cpp

@@ -40,6 +40,7 @@ examples_DATA=               \
 	$(MAKEDIST)
 
 EXTRA_DIST=                  \
+	CMakeLists.txt       \
 	tradedemo_declare_queues.vcproj \
 	tradedemo_topic_listener.vcproj \
 	tradedemo_topic_publisher.vcproj
