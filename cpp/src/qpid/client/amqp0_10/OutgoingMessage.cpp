@@ -48,4 +48,20 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
     //TODO: set other delivery properties
 }
 
+namespace {
+const std::string SUBJECT("subject");
+}
+
+void OutgoingMessage::setSubject(const std::string& subject)
+{
+    if (!subject.empty()) {
+        message.getMessageProperties().getApplicationHeaders().setString(SUBJECT, subject);
+    }
+}
+
+std::string OutgoingMessage::getSubject() const
+{
+    return message.getMessageProperties().getApplicationHeaders().getAsString(SUBJECT);
+}
+
 }}} // namespace qpid::client::amqp0_10

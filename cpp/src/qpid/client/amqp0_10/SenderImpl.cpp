@@ -98,6 +98,7 @@ void SenderImpl::sendImpl(const qpid::messaging::Message& m)
     //TODO: make recording for replay optional (would still want to track completion however)
     std::auto_ptr<OutgoingMessage> msg(new OutgoingMessage());
     msg->convert(m);
+    msg->setSubject(m.getSubject().empty() ? address.getSubject() : m.getSubject());
     outgoing.push_back(msg.release());
     sink->send(session, name, outgoing.back());
 }
