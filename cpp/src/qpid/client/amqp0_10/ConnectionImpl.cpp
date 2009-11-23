@@ -118,10 +118,10 @@ qpid::messaging::Session ConnectionImpl::getSession(const std::string& name) con
     }
 }
 
-qpid::messaging::Session ConnectionImpl::newSession(const std::string& n)
+qpid::messaging::Session ConnectionImpl::newSession(bool transactional, const std::string& n)
 {
     std::string name = n.empty() ? Uuid(true).str() : n;
-    qpid::messaging::Session impl(new SessionImpl(*this));
+    qpid::messaging::Session impl(new SessionImpl(*this, transactional));
     {
         qpid::sys::Mutex::ScopedLock l(lock);
         sessions[name] = impl;
