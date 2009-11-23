@@ -50,7 +50,7 @@ namespace qpid {
 namespace client {
 namespace amqp0_10 {
 
-SessionImpl::SessionImpl(ConnectionImpl& c) : connection(c) {}
+SessionImpl::SessionImpl(ConnectionImpl& c, bool t) : connection(c), transactional(t) {}
 
 
 void SessionImpl::sync()
@@ -134,6 +134,7 @@ void SessionImpl::setSession(qpid::client::Session s)
     qpid::sys::Mutex::ScopedLock l(lock);
     session = s;
     incoming.setSession(session);
+    if (transactional) session.txSelect();
     for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
         getImplPtr<Receiver, ReceiverImpl>(i->second)->init(session, resolver);
     }

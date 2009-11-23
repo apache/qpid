@@ -745,6 +745,33 @@ QPID_AUTO_TEST_CASE(testGetConnectionFromSession)
     BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
 }
 
+QPID_AUTO_TEST_CASE(testTx)
+{
+    QueueFixture fix;
+    Session ssn1 = fix.connection.newSession(true);
+    Session ssn2 = fix.connection.newSession(true);
+    Sender sender1 = ssn1.createSender(fix.queue);
+    Sender sender2 = ssn2.createSender(fix.queue);
+    Receiver receiver1 = ssn1.createReceiver(fix.queue);
+    Receiver receiver2 = ssn2.createReceiver(fix.queue);
+    Message in;
+
+    send(sender1, 5, 1, "A");
+    send(sender2, 5, 1, "B");
+    ssn2.commit();
+    receive(receiver1, 5, 1, "B");//(only those from sender2 should be received)
+    BOOST_CHECK(!receiver1.fetch(in, 0));//check there are no more messages
+    ssn1.rollback();
+    receive(receiver2, 5, 1, "B");
+    BOOST_CHECK(!receiver2.fetch(in, 0));//check there are no more messages
+    ssn2.rollback();
+    receive(receiver1, 5, 1, "B");
+    BOOST_CHECK(!receiver1.fetch(in, 0));//check there are no more messages
+    ssn1.commit();
+    //check neither receiver gets any more messages:
+    BOOST_CHECK(!receiver1.fetch(in, 0));
+    BOOST_CHECK(!receiver2.fetch(in, 0));
+}
 
 QPID_AUTO_TEST_SUITE_END()
 

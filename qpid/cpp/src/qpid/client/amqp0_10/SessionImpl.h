@@ -54,7 +54,7 @@ class SenderImpl;
 class SessionImpl : public qpid::messaging::SessionImpl
 {
   public:
-    SessionImpl(ConnectionImpl&);
+    SessionImpl(ConnectionImpl&, bool transactional);
     void commit();
     void rollback();
     void acknowledge();
@@ -111,6 +111,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     IncomingMessages incoming;
     Receivers receivers;
     Senders senders;
+    const bool transactional;
 
     bool accept(ReceiverImpl*, qpid::messaging::Message*, IncomingMessages::MessageTransfer&);
     bool getIncoming(IncomingMessages::Handler& handler, qpid::sys::Duration timeout);
