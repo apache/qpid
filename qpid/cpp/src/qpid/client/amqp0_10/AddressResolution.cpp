@@ -224,7 +224,6 @@ class ExchangeSink : public Exchange, public MessageSink
     void send(qpid::client::AsyncSession& session, const std::string& name, OutgoingMessage& message);
     void cancel(qpid::client::AsyncSession& session, const std::string& name);
   private:
-    const std::string defaultSubject;
 };
 
 class QueueSink : public Queue, public MessageSink
@@ -406,9 +405,8 @@ Subscription::Subscription(const Address& address, const std::string& exchangeTy
 
     const Variant& filter = address.getOption(FILTER);
     if (!filter.isVoid()) {
-        //TODO: if both subject _and_ filter are specified,
-        //combine in some way; for now we just ignore the
-        //subject in that case.
+        //TODO: if both subject _and_ filter are specified, combine in
+        //some way; for now we just ignore the subject in that case.
         bind(filter);
     } else if (address.hasSubject()) {
         //Note: This will not work for headers- or xml- exchange;
@@ -459,9 +457,7 @@ void Subscription::cancel(qpid::client::AsyncSession& session, const std::string
 Subscription::Binding::Binding(const std::string& e, const std::string& k, const FieldTable& o):
     exchange(e), key(k), options(o) {}
 
-void convert(qpid::messaging::Message& from, qpid::client::Message& to);
-
-ExchangeSink::ExchangeSink(const Address& address) : Exchange(address), defaultSubject(address.getSubject()) {}
+ExchangeSink::ExchangeSink(const Address& address) : Exchange(address) {}
 
 void ExchangeSink::declare(qpid::client::AsyncSession& session, const std::string&)
 {
@@ -471,9 +467,7 @@ void ExchangeSink::declare(qpid::client::AsyncSession& session, const std::strin
 
 void ExchangeSink::send(qpid::client::AsyncSession& session, const std::string&, OutgoingMessage& m)
 {
-    if (m.message.getDeliveryProperties().getRoutingKey().empty() && !defaultSubject.empty()) {
-        m.message.getDeliveryProperties().setRoutingKey(defaultSubject);
-    }
+    m.message.getDeliveryProperties().setRoutingKey(m.getSubject());
     m.status = session.messageTransfer(arg::destination=name, arg::content=m.message);
 }
 
@@ -498,21 +492,6 @@ void QueueSink::send(qpid::client::AsyncSession& session, const std::string&, Ou
 void QueueSink::cancel(qpid::client::AsyncSession& session, const std::string&)
 {
     checkDelete(session, FOR_SENDER);
-}
-
-void convert(qpid::messaging::Message& from, qpid::client::Message& to)
-{
-    //TODO: need to avoid copying as much as possible
-    to.setData(from.getContent());
-    to.getDeliveryProperties().setRoutingKey(from.getSubject());
-    //TODO: set other delivery properties
-    to.getMessageProperties().setContentType(from.getContentType());
-    const Address& address = from.getReplyTo();
-    if (!address.getName().empty()) {
-        to.getMessageProperties().setReplyTo(AddressResolution::convert(address));
-    }
-    translate(from.getHeaders(), to.getMessageProperties().getApplicationHeaders());
-    //TODO: set other message properties
 }
 
 Address AddressResolution::convert(const qpid::framing::ReplyTo& rt)

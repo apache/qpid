@@ -37,6 +37,8 @@ struct OutgoingMessage
     qpid::client::Completion status;
 
     void convert(const qpid::messaging::Message&);
+    void setSubject(const std::string& subject);
+    std::string getSubject() const;
 };
 
 
