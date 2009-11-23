@@ -41,6 +41,35 @@ class Session;
 class Connection : public qpid::client::Handle<ConnectionImpl>
 {
   public:
+    /**
+     * Current implementation supports the following options:
+     * 
+     *     username
+     *     password
+     *     heartbeat
+     *     tcp-nodelay
+     *     sasl-mechanism
+     *     sasl-min-ssf
+     *     sasl-max-ssf
+     * 
+     * (note also bounds, locale, max-channels and max-framesize, but not sure whether those should be docuemented here)
+     * 
+     * Retry behaviour can be controlled through the following options:
+     *
+     *     reconnection-timeout - determines how long it will try to
+     *                            reconnect for -1 means forever, 0
+     *                            means don't try to reconnect
+     *     min-retry-interval
+     *     max-retry-interval
+     * 
+     *     The retry-interval is the time that the client waits for
+     *     after a failed attempt to reconnect before retrying. It
+     *     starts at the value of the min-retry-interval and is
+     *     doubled every failure until the value of max-retry-interval
+     *     is reached.
+     * 
+     *
+     */
     static QPID_CLIENT_EXTERN Connection open(const std::string& url, const Variant::Map& options = Variant::Map());
 
     QPID_CLIENT_EXTERN Connection(ConnectionImpl* impl = 0);
@@ -63,6 +92,11 @@ struct InvalidOptionString : public qpid::Exception
     InvalidOptionString(const std::string& msg);
 };
 
+/**
+ * TODO: need to change format of connection option string (currently
+ * name1=value1&name2=value2 etc, should probably use map syntax as
+ * per address options.
+ */
 QPID_CLIENT_EXTERN void parseOptionString(const std::string&, Variant::Map&);
 QPID_CLIENT_EXTERN Variant::Map parseOptionString(const std::string&);
 
