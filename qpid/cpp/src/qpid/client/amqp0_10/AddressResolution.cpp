@@ -209,9 +209,10 @@ class Subscription : public Exchange, public MessageSource
     Bindings bindings;
     
     void bindSpecial(const std::string& exchangeType);
-    void bind(const Variant& filter);
-    void bind(const Variant::Map& filter);
-    void bind(const Variant::List& filter);
+    void bind(const std::string& subject);
+    void bind(const std::string& subject, const Variant& filter);
+    void bind(const std::string& subject, const Variant::Map& filter);
+    void bind(const std::string& subject, const Variant::List& filter);
     void add(const std::string& exchange, const std::string& key, const FieldTable& options = EMPTY_FIELD_TABLE);
     static std::string getSubscriptionName(const std::string& base, const Variant& name);
 };
@@ -405,9 +406,7 @@ Subscription::Subscription(const Address& address, const std::string& exchangeTy
 
     const Variant& filter = address.getOption(FILTER);
     if (!filter.isVoid()) {
-        //TODO: if both subject _and_ filter are specified, combine in
-        //some way; for now we just ignore the subject in that case.
-        bind(filter);
+        bind(address.getSubject(), filter);
     } else if (address.hasSubject()) {
         //Note: This will not work for headers- or xml- exchange;
         //fanout exchange will do no filtering.
@@ -537,32 +536,39 @@ bool isTopic(qpid::client::Session session, const qpid::messaging::Address& addr
     }
 }
 
-void Subscription::bind(const Variant& filter)
+void Subscription::bind(const std::string& subject)
+{
+    add(name, subject);
+}
+
+void Subscription::bind(const std::string& subject, const Variant& filter)
 {
     switch (filter.getType()) {
       case qpid::messaging::VAR_MAP:
-        bind(filter.asMap());
+        bind(subject, filter.asMap());
         break;
       case qpid::messaging::VAR_LIST:
-        bind(filter.asList());
+        bind(subject, filter.asList());
         break;
       default:
+        //TODO: if both subject _and_ filter are specified, combine in
+        //some way; for now we just ignore the subject in that case.
         add(name, filter.asString());
         break;
     }
 }
 
-void Subscription::bind(const Variant::Map& filter)
+void Subscription::bind(const std::string& subject, const Variant::Map& filter)
 {
     qpid::framing::FieldTable arguments;
     translate(filter, arguments);
-    add(name, queue, arguments);
+    add(name, subject.empty() ? queue : subject, arguments);
 }
 
-void Subscription::bind(const Variant::List& filter)
+void Subscription::bind(const std::string& subject, const Variant::List& filter)
 {
     for (Variant::List::const_iterator i = filter.begin(); i != filter.end(); ++i) {
-        bind(*i);
+        bind(subject, *i);
     }
 }
 
