@@ -324,26 +324,48 @@ class NumberedSender(StoppableThread):
     Thread to run a sender client and send numbered messages until stopped.
     """
 
-    def __init__(self, broker):
+    def __init__(self, broker, max_depth=None):
+        """
+        max_depth: enable flow control, ensure sent - received <= max_depth.
+        Requires self.received(n) to be called each time messages are received.
+        """
         StoppableThread.__init__(self)
         self.sender = broker.test.popen(
             [broker.test.sender_exec, "--port", broker.port()], expect=EXPECT_RUNNING)
+        self.condition = Condition()
+        self.max = max_depth
+        self.received = 0
 
     def run(self):
         try:
             self.sent = 0
             while not self.stopped:
+                if self.max:
+                    self.condition.acquire()
+                    while self.sent - self.received > self.max:
+                        self.condition.wait()
+                    self.condition.release()
                 self.sender.stdin.write(str(self.sent)+"\n")
                 self.sender.stdin.flush()
                 self.sent += 1
         except Exception, e: self.error = RethrownException(e, self.sender.pname)
 
+    def notify_received(self, count):
+        """Called by receiver to enable flow control. count = messages received so far."""
+        self.condition.acquire()
+        self.received = count
+        self.condition.notify()
+        self.condition.release()
+        
 class NumberedReceiver(Thread):
     """
     Thread to run a receiver client and verify it receives
     sequentially numbered messages.
     """
-    def __init__(self, broker):
+    def __init__(self, broker, sender = None):
+        """
+        sender: enable flow control. Call sender.received(n) for each message received.
+        """
         Thread.__init__(self)
         self.test = broker.test
         self.receiver = self.test.popen(
@@ -351,7 +373,8 @@ class NumberedReceiver(Thread):
         self.stopat = None
         self.lock = Lock()
         self.error = None
-
+        self.sender = sender
+        
     def run(self):
         try:
             self.received = 0
@@ -360,7 +383,10 @@ class NumberedReceiver(Thread):
                 try:
                     m = int(self.receiver.stdout.readline())
                     assert(m <= self.received) # Allow for duplicates
-                    if (m == self.received): self.received += 1
+                    if (m == self.received):
+                        self.received += 1
+                        if self.sender:
+                            self.sender.notify_received(self.received)
                 finally:
                     self.lock.release()
         except Exception, e:

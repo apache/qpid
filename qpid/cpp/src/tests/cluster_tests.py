@@ -73,9 +73,9 @@ class LongTests(BrokerTest):
 
         # Start sender and receiver threads
         cluster[0].declare_queue("test-queue")
-        receiver = NumberedReceiver(cluster[1])
+        sender = NumberedSender(cluster[1], 1000) # Max queue depth
+        receiver = NumberedReceiver(cluster[2], sender)
         receiver.start()
-        sender = NumberedSender(cluster[2])
         sender.start()
 
         # Kill original brokers, start new ones for the duration.
