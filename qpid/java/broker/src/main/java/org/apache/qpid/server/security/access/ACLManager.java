@@ -70,13 +70,17 @@ public class ACLManager
             _allSecurityPlugins.put(securityPlugin.getClass().getName(), securityPlugin);
         }
 
-        _globalPlugins = configurePlugins(configuration);
+        configureGlobalPlugins(configuration);
     }
-
 
     public void configureHostPlugins(SecurityConfiguration hostConfig) throws ConfigurationException
     {
         _hostPlugins = configurePlugins(hostConfig);
+    }
+
+    public void configureGlobalPlugins(SecurityConfiguration configuration) throws ConfigurationException
+    {
+        _globalPlugins = configurePlugins(configuration);
     }
     
     public Map<String, ACLPlugin> configurePlugins(SecurityConfiguration hostConfig) throws ConfigurationException
@@ -96,7 +100,7 @@ public class ACLManager
                 {
                     if (plugin.supportsTag(tag))
                     {
-                        _logger.warn("Plugin handling security section "+tag+" is "+plugin.getClass().getSimpleName());
+                        _logger.info("Plugin handling security section "+tag+" is "+plugin);
                         handledTags.add(tag);
                         plugins.put(plugin.getClass().getName(), plugin.newInstance(securityConfig));
                     }

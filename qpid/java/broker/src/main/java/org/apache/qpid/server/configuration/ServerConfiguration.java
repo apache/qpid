@@ -309,13 +309,13 @@ public class ServerConfiguration implements SignalHandler
         {
             Configuration newConfig = parseConfig(_configFile);
             _securityConfiguration = new SecurityConfiguration(newConfig.subset("security"));
-            ApplicationRegistry.getInstance().getAccessManager().configurePlugins(_securityConfiguration);
 
             VirtualHostRegistry vhostRegistry = ApplicationRegistry.getInstance().getVirtualHostRegistry();
             for (String hostname : _virtualHosts.keySet())
             {
                 VirtualHost vhost = vhostRegistry.getVirtualHost(hostname);
                 SecurityConfiguration hostSecurityConfig = new SecurityConfiguration(newConfig.subset("virtualhosts.virtualhost."+hostname+".security"));
+                vhost.getAccessManager().configureGlobalPlugins(_securityConfiguration);
                 vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
             }
         }

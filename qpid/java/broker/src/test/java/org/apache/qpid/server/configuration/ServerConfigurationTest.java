@@ -752,38 +752,8 @@ public class ServerConfigurationTest extends TestCase
      // Write out config
         File mainFile = File.createTempFile(getClass().getName(), null);
         mainFile.deleteOnExit();
-        FileWriter out = new FileWriter(mainFile);
-
-        out.write("<broker>\n");
-        out.write("\t<management><enabled>false</enabled></management>\n");
-        out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
-        out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
-        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
-        out.write("\t\t\t\t<attributes>\n");
-        out.write("\t\t\t\t\t<attribute>\n");
-        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
-        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
-        out.write("\t\t\t\t\t</attribute>\n");
-        out.write("\t\t\t\t</attributes>\n");
-        out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
-        out.write("\t\t<firewall>\n");
-        out.write("\t\t\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
-        out.write("\t\t</firewall>\n");
-        out.write("\t</security>\n");
-        out.write("\t<virtualhosts>\n");
-        out.write("\t\t<virtualhost>\n");
-        out.write("\t\t\t<name>test</name>\n");
-        out.write("\t\t</virtualhost>\n");
-        out.write("\t</virtualhosts>\n");
-        out.write("</broker>\n");
-        out.close();
+        FileWriter out;
+        writeConfigFile(mainFile, false);
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
@@ -874,6 +844,70 @@ public class ServerConfigurationTest extends TestCase
 
         AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+    }
+    
+    public void testConfigurationFirewallReload() throws Exception
+    {
+        // Write out config
+        File mainFile = File.createTempFile(getClass().getName(), null);
+
+        mainFile.deleteOnExit();        
+        writeConfigFile(mainFile, false);
+
+        // Load config
+        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
+        ApplicationRegistry.initialise(reg, 1);
+
+        // Test config
+        TestNetworkDriver testDriver = new TestNetworkDriver();
+        testDriver.setRemoteAddress("127.0.0.1");
+        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+        AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+        
+        assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
+       
+        // Switch to deny the connection
+        writeConfigFile(mainFile, true);
+        
+        reg.getConfiguration().reparseConfigFile();
+
+        assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
+
+    }
+
+    private void writeConfigFile(File mainFile, boolean allow) throws IOException {
+        FileWriter out = new FileWriter(mainFile);
+        out.write("<broker>\n");
+        out.write("\t<management><enabled>false</enabled></management>\n");
+        out.write("\t<security>\n");
+        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t\t<principal-database>\n");
+        out.write("\t\t\t\t<name>passwordfile</name>\n");
+        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
+        out.write("\t\t\t\t<attributes>\n");
+        out.write("\t\t\t\t\t<attribute>\n");
+        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
+        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
+        out.write("\t\t\t\t\t</attribute>\n");
+        out.write("\t\t\t\t</attributes>\n");
+        out.write("\t\t\t</principal-database>\n");
+        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t<jmx>\n");
+        out.write("\t\t\t<access>/dev/null</access>\n");
+        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
+        out.write("\t\t</jmx>\n");
+        out.write("\t\t<firewall>\n");
+        out.write("\t\t\t<rule access=\""+ ((allow) ? "allow" : "deny") +"\" network=\"127.0.0.1\"/>");
+        out.write("\t\t</firewall>\n");
+        out.write("\t</security>\n");
+        out.write("\t<virtualhosts>\n");
+        out.write("\t\t<virtualhost>\n");
+        out.write("\t\t\t<name>test</name>\n");
+        out.write("\t\t</virtualhost>\n");
+        out.write("\t</virtualhosts>\n");
+        out.write("</broker>\n");
+        out.close();
     }
 
     public void testCombinedConfigurationFirewallReload() throws Exception

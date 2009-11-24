@@ -56,6 +56,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1210,4 +1211,27 @@ public class QpidTestCase extends TestCase
         return null;
     }
 
+    public void reloadBroker() throws ConfigurationException, IOException
+    {
+        reloadBroker(0);
+    }
+    
+    public void reloadBroker(int port) throws ConfigurationException, IOException
+    {
+        if (_broker.equals(VM))
+        {
+            ApplicationRegistry.getInstance().getConfiguration().reparseConfigFile();
+        } 
+        else // FIXME: should really use the JMX interface to do this
+        {
+            /*
+             * Sigh, this is going to get messy. grep for BRKR and the port number
+             */
+
+            Process p = Runtime.getRuntime().exec("/usr/bin/pgrep -f " + getPort(port));
+            BufferedReader reader = new BufferedReader (new InputStreamReader(p.getInputStream()));
+            String cmd = "/bin/kill -SIGHUP " + reader.readLine();
+            p = Runtime.getRuntime().exec(cmd);
+        }
+    }
 }
