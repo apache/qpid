@@ -39,8 +39,8 @@ StoreStatus::StoreStatus(const std::string& d)
 namespace {
 
 const char* SUBDIR="cluster";
-const char* START_FILE="start";
-const char* STOP_FILE="stop";
+const char* CLUSTER_ID_FILE="cluster.uuid";
+const char* SHUTDOWN_ID_FILE="shutdown.uuid";
 
 Uuid loadUuid(const path& path) {
     Uuid ret;
@@ -62,33 +62,33 @@ void saveUuid(const path& path, const Uuid& uuid) {
 void StoreStatus::load() {
     path dir = path(dataDir)/SUBDIR;
     create_directory(dir);
-    start = loadUuid(dir/START_FILE);
-    stop = loadUuid(dir/STOP_FILE);
+    clusterId = loadUuid(dir/CLUSTER_ID_FILE);
+    shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
 
-    if (start && stop) state = STORE_STATE_CLEAN_STORE;
-    else if (start) state = STORE_STATE_DIRTY_STORE;
+    if (clusterId && shutdownId) state = STORE_STATE_CLEAN_STORE;
+    else if (clusterId) state = STORE_STATE_DIRTY_STORE;
     else state = STORE_STATE_EMPTY_STORE;
 }
 
 void StoreStatus::save() {
     path dir = path(dataDir)/SUBDIR;
     create_directory(dir);
-    saveUuid(dir/START_FILE, start);
-    saveUuid(dir/STOP_FILE, stop);
+    saveUuid(dir/CLUSTER_ID_FILE, clusterId);
+    saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
 }
 
-void StoreStatus::dirty(const Uuid& start_) {
-    start = start_;
-    stop = Uuid();
+void StoreStatus::dirty(const Uuid& clusterId_) {
+    clusterId = clusterId_;
+    shutdownId = Uuid();
     state = STORE_STATE_DIRTY_STORE;
     save();
 }
 
-void StoreStatus::clean(const Uuid& stop_) {
-    assert(start);              // FIXME aconway 2009-11-20: exception?
-    assert(stop_);
+void StoreStatus::clean(const Uuid& shutdownId_) {
+    assert(clusterId);              // FIXME aconway 2009-11-20: throw exception
+    assert(shutdownId_);
     state = STORE_STATE_CLEAN_STORE;
-    stop = stop_;
+    shutdownId = shutdownId_;
     save();
 }
 

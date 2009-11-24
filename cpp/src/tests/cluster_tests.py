@@ -158,3 +158,14 @@ class StoreTests(BrokerTest):
         c = cluster.start("c", wait_for_start=True)
         self.assertEqual(a.get_message("q").content, "clean")
         
+    def test_wrong_store_uuid(self):
+        # Start a cluster1 broker, then try to restart in cluster2
+        cluster1 = self.cluster(0, args=self.args())
+        a = cluster1.start("a", expect=EXPECT_EXIT_OK)
+        a.terminate()
+        cluster2 = self.cluster(1, args=self.args())
+        try:
+            a = cluster2.start("a", expect=EXPECT_EXIT_FAIL)
+            self.fail("Expected exception")
+        except: pass
+            

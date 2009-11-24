@@ -62,10 +62,8 @@
       <field name="version" type="uint32"/>
       <field name="active" type="bit"/>
       <field name="cluster-id" type="uuid"/>>
-      <!-- Related to persistent store -->
       <field name="store-state" type="store-state"/>
-      <field name="start-uuid" type="uuid"/>
-      <field name="stop-uuid" type="uuid"/>
+      <field name="shutdown-id" type="uuid"/>
     </control>
 
     <!-- New member or updater is ready as an active member. -->

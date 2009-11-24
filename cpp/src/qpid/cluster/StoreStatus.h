@@ -40,8 +40,8 @@ class StoreStatus
     StoreStatus(const std::string& dir);
 
     framing::cluster::StoreState getState() const { return state; }
-    Uuid getStart() const { return start; }
-    Uuid getStop() const { return stop; }
+    const Uuid& getClusterId() const { return clusterId; }
+    const Uuid& getShutdownId() const { return shutdownId; }
 
     void dirty(const Uuid& start); // Start using the store.
     void clean(const Uuid& stop); // Stop using the store.
@@ -51,9 +51,10 @@ class StoreStatus
 
     bool hasStore() { return state != framing::cluster::STORE_STATE_NO_STORE; }
     bool isEmpty() { return state != framing::cluster::STORE_STATE_EMPTY_STORE; }
+
   private:
     framing::cluster::StoreState state;
-    Uuid start, stop;
+    Uuid clusterId, shutdownId;
     std::string dataDir;
 };
 }} // namespace qpid::cluster
