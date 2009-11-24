@@ -859,11 +859,13 @@ public class ServerConfigurationTest extends TestCase
         ApplicationRegistry.initialise(reg, 1);
 
         // Test config
-        TestNetworkDriver testDriver = new TestNetworkDriver();
-        testDriver.setRemoteAddress("127.0.0.1");
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        AMQProtocolSession session = new AMQProtocolEngine(virtualHostRegistry, testDriver);
+        AMQCodecFactory codecFactory = new AMQCodecFactory(true);
+        TestIoSession iosession = new TestIoSession();
+        iosession.setAddress("127.0.0.1");
+
+        AMQProtocolSession session = new AMQMinaProtocolSession(iosession, virtualHostRegistry, codecFactory);
         
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
        
