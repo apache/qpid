@@ -47,13 +47,25 @@
       <field name="updatee" type="uint64"/>
     </control>
 
-    <!-- Status exchanged when new members join the cluster -->
-    <control name="initial-status" code="0x4">
-      <field name="active" type="bit"/>
-      <field name="persistent" type="bit"/>
-      <field name="cluster-id" type="uuid"/>>
+    <!-- Possible states for persistent store -->
+    <domain name="store-state" type="uint8">
+      <enum>
+	<choice name="no-store" value="0"/>
+	<choice name="empty-store" value="1"/>
+	<choice name="clean-store" value="2"/>
+	<choice name="dirty-store" value="3"/>
+      </enum>
+    </domain>
+
+    <!-- Status exchanged when new members join the cluster. -->
+    <control name="initial-status" code="0x5">
       <field name="version" type="uint32"/>
-      <field name="url" type="str16"/>>
+      <field name="active" type="bit"/>
+      <field name="cluster-id" type="uuid"/>>
+      <!-- Related to persistent store -->
+      <field name="store-state" type="store-state"/>
+      <field name="start-uuid" type="uuid"/>
+      <field name="stop-uuid" type="uuid"/>
     </control>
 
     <!-- New member or updater is ready as an active member. -->

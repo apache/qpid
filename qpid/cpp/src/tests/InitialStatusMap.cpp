@@ -26,6 +26,7 @@
 using namespace std;
 using namespace qpid::cluster;
 using namespace qpid::framing;
+using namespace qpid::framing::cluster;
 using namespace boost::assign;
 
 namespace qpid {
@@ -35,8 +36,19 @@ QPID_AUTO_TEST_SUITE(InitialStatusMapTestSuite)
 
 typedef InitialStatusMap::Status Status;
 
-Status activeStatus(const Uuid& id=Uuid()) { return Status(ProtocolVersion(), true, false, id, 0, ""); }
-Status newcomerStatus(const Uuid& id=Uuid()) { return Status(ProtocolVersion(), false, false, id, 0, ""); }
+Status activeStatus(const Uuid& id=Uuid()) {
+    return Status(ProtocolVersion(), 0, true, id,
+                  STORE_STATE_NO_STORE, Uuid(), Uuid());
+}
+
+Status newcomerStatus(const Uuid& id=Uuid()) {
+    return Status(ProtocolVersion(), 0, false, id,
+                  STORE_STATE_NO_STORE, Uuid(), Uuid());
+}
+
+Status storeStatus(bool active, StoreState state, Uuid start=Uuid(), Uuid stop=Uuid()) {
+    return Status(ProtocolVersion(), 0, active, Uuid(), state, start, stop);
+}
 
 QPID_AUTO_TEST_CASE(testFirstInCluster) {
     // Single member is first in cluster.
@@ -172,6 +184,66 @@ QPID_AUTO_TEST_CASE(testInitialSize) {
     map.received(MemberId(2), newcomerStatus());
     BOOST_CHECK(map.isComplete());
 }
+
+QPID_AUTO_TEST_CASE(testAllCleanNoUpdate) {
+    InitialStatusMap map(MemberId(0), 3);
+    map.configChange(list_of<MemberId>(0)(1)(2));
+    map.received(MemberId(0), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    map.received(MemberId(1), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    map.received(MemberId(2), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    BOOST_CHECK(!map.isUpdateNeeded());
+}
+
+QPID_AUTO_TEST_CASE(testAllEmptyNoUpdate) {
+    InitialStatusMap map(MemberId(0), 3);
+    map.configChange(list_of<MemberId>(0)(1)(2));
+    map.received(MemberId(0), storeStatus(false, STORE_STATE_EMPTY_STORE));
+    map.received(MemberId(1), storeStatus(false, STORE_STATE_EMPTY_STORE));
+    map.received(MemberId(2), storeStatus(false, STORE_STATE_EMPTY_STORE));
+    BOOST_CHECK(map.isComplete());
+    BOOST_CHECK(!map.isUpdateNeeded());
+}
+
+QPID_AUTO_TEST_CASE(testAllNoStoreNoUpdate) {
+    InitialStatusMap map(MemberId(0), 3);
+    map.configChange(list_of<MemberId>(0)(1)(2));
+    map.received(MemberId(0), storeStatus(false, STORE_STATE_NO_STORE));
+    map.received(MemberId(1), storeStatus(false, STORE_STATE_NO_STORE));
+    map.received(MemberId(2), storeStatus(false, STORE_STATE_NO_STORE));
+    BOOST_CHECK(map.isComplete());
+    BOOST_CHECK(!map.isUpdateNeeded());
+}
+
+QPID_AUTO_TEST_CASE(testDirtyNeedUpdate) {
+    InitialStatusMap map(MemberId(0), 3);
+    map.configChange(list_of<MemberId>(0)(1)(2));
+    map.received(MemberId(0), storeStatus(false, STORE_STATE_DIRTY_STORE));
+    map.received(MemberId(1), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    map.received(MemberId(2), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    BOOST_CHECK(map.transitionToComplete());
+    BOOST_CHECK(map.isUpdateNeeded());
+}
+
+QPID_AUTO_TEST_CASE(testEmptyNeedUpdate) {
+    InitialStatusMap map(MemberId(0), 3);
+    map.configChange(list_of<MemberId>(0)(1)(2));
+    map.received(MemberId(0), storeStatus(false, STORE_STATE_EMPTY_STORE));
+    map.received(MemberId(1), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    map.received(MemberId(2), storeStatus(false, STORE_STATE_CLEAN_STORE));
+    BOOST_CHECK(map.transitionToComplete());
+    BOOST_CHECK(map.isUpdateNeeded());
+}
+
+QPID_AUTO_TEST_CASE(testEmptyAlone) {
+    InitialStatusMap map(MemberId(0), 1);
+    map.configChange(list_of<MemberId>(0));
+    map.received(MemberId(0), storeStatus(false, STORE_STATE_EMPTY_STORE));
+    BOOST_CHECK(map.transitionToComplete());
+    BOOST_CHECK(!map.isUpdateNeeded());
+}
+
+// FIXME aconway 2009-11-20: consistency tests for mixed stores,
+// tests for manual intervention case.
 
 QPID_AUTO_TEST_SUITE_END()
 

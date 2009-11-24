@@ -138,7 +138,7 @@ Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
     managementAgent(conf.enableMgmt ? new ManagementAgent() : 0),
-    store(0),
+    store(new NullMessageStore),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
     queues(this),
@@ -204,17 +204,11 @@ Broker::Broker(const Broker::Options& conf) :
     queues.setQueueEvents(&queueEvents);
 
     // Early-Initialize plugins
-    const Plugin::Plugins& plugins=Plugin::getPlugins();
-    for (Plugin::Plugins::const_iterator i = plugins.begin();
-         i != plugins.end();
-         i++)
-        (*i)->earlyInitialize(*this);
+    Plugin::earlyInitAll(*this);
 
     // If no plugin store module registered itself, set up the null store.
-    if (store.get() == 0) {
-        boost::shared_ptr<MessageStore> p(new NullMessageStore());
-        setStore (p);
-    }
+    if (NullMessageStore::isNullStore(store.get())) 
+        setStore();
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
 
@@ -259,10 +253,7 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     // Initialize plugins
-    for (Plugin::Plugins::const_iterator i = plugins.begin();
-         i != plugins.end();
-         i++)
-        (*i)->initialize(*this);
+    Plugin::initializeAll(*this);
 
     if (conf.queueCleanInterval) {
         queueCleaner.start(conf.queueCleanInterval * qpid::sys::TIME_SEC);
@@ -304,6 +295,10 @@ boost::intrusive_ptr<Broker> Broker::create(const Options& opts)
 void Broker::setStore (boost::shared_ptr<MessageStore>& _store)
 {
     store.reset(new MessageStoreModule (_store));
+    setStore();
+}
+
+void Broker::setStore () {
     queues.setStore     (store.get());
     dtxManager.setStore (store.get());
     links.setStore      (store.get());

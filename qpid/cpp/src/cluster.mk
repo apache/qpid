@@ -86,7 +86,9 @@ cluster_la_SOURCES =				\
   qpid/cluster/InitialStatusMap.cpp		\
   qpid/cluster/MemberSet.h			\
   qpid/cluster/MemberSet.cpp			\
-  qpid/cluster/types.h
+  qpid/cluster/types.h				\
+  qpid/cluster/StoreStatus.h			\
+  qpid/cluster/StoreStatus.cpp
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
