@@ -19,14 +19,16 @@
  *
  */
 #include "InitialStatusMap.h"
+#include "StoreStatus.h"
 #include <algorithm>
 #include <boost/bind.hpp>
 
-using namespace std;
-using namespace boost;
-
 namespace qpid {
 namespace cluster {
+
+using namespace std;
+using namespace boost;
+using namespace framing::cluster;
 
 InitialStatusMap::InitialStatusMap(const MemberId& self_, size_t size_)
     : self(self_), completed(), resendNeeded(), size(size_)
@@ -78,10 +80,6 @@ bool InitialStatusMap::notInitialized(const Map::value_type& v) {
     return !v.second;
 }
 
-bool InitialStatusMap::isActive(const Map::value_type& v) {
-    return v.second && v.second->getActive();
-}
-
 bool InitialStatusMap::isComplete() {
     return !map.empty() && find_if(map.begin(), map.end(), &notInitialized) == map.end()
         && (map.size() >= size);
@@ -97,10 +95,35 @@ bool InitialStatusMap::isResendNeeded() {
     return ret;
 }
 
+bool InitialStatusMap::isActive(const Map::value_type& v) {
+    return v.second && v.second->getActive();
+}
+
+bool InitialStatusMap::hasStore(const Map::value_type& v) {
+    return v.second &&
+        (v.second->getStoreState() == STORE_STATE_CLEAN_STORE ||
+         v.second->getStoreState() == STORE_STATE_DIRTY_STORE);
+}
+
 bool InitialStatusMap::isUpdateNeeded() {
+    // FIXME aconway 2009-11-20: consistency checks isComplete or here?
     assert(isComplete());
-    // If there are any active members we need an update.
-    return find_if(map.begin(), map.end(), &isActive) != map.end();
+    // We need an update if there are any active members.
+    if (find_if(map.begin(), map.end(), &isActive) != map.end()) return true;
+
+    // Otherwise it depends on store status, get my own status:
+    Map::iterator me = map.find(self);
+    assert(me != map.end());
+    assert(me->second);
+    switch (me->second->getStoreState()) {
+      case STORE_STATE_NO_STORE:
+      case STORE_STATE_EMPTY_STORE:
+        // If anybody has a store then we need an update.
+        return find_if(map.begin(), map.end(), &hasStore) != map.end();
+      case STORE_STATE_DIRTY_STORE: return true; 
+      case STORE_STATE_CLEAN_STORE: return false; // Use our own store
+    }
+    return false;
 }
 
 MemberSet InitialStatusMap::getElders() {
@@ -123,17 +146,6 @@ framing::Uuid InitialStatusMap::getClusterId() {
         return i->second->getClusterId(); // An active member
     else
         return map.begin()->second->getClusterId();
-}
-
-std::map<MemberId, Url> InitialStatusMap::getMemberUrls() {
-    assert(isComplete());
-    assert(!isUpdateNeeded());
-    std::map<MemberId, Url> urlMap;
-    for (Map::iterator i = map.begin(); i != map.end(); ++i) {
-        assert(i->second);
-        urlMap.insert(std::make_pair(i->first, i->second->getUrl()));
-    }
-    return urlMap;
 }
 
 }} // namespace qpid::cluster

@@ -57,7 +57,7 @@ void Uuid::clear() {
 }
 
 // Force int 0/!0 to false/true; avoids compile warnings.
-bool Uuid::isNull() {
+bool Uuid::isNull() const {
     return !!uuid_is_null(data());
 }
 

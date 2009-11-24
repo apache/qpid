@@ -41,11 +41,21 @@ class Cpg;
 
 /**
  * Multicast to the cluster. Shared, thread safe object.
+ *
+ * Runs in two modes;
+ * 
+ * initializing: Hold connection mcast events. Multicast cluster
+ * events directly in the calling thread. This mode is used before
+ * joining the cluster where the poller may not yet be active and we
+ * want to hold any connection traffic till we join.
+ *
+ * ready: normal operation. Queues all mcasts on a pollable queue,
+ * multicasts connection and cluster events.
  */
 class Multicaster
 {
   public:
-    /** Starts in holding mode: connection data events are held, other events are mcast */
+    /** Starts in initializing mode. */
     Multicaster(Cpg& cpg_,
                 const boost::shared_ptr<sys::Poller>&,
                 boost::function<void()> onError
@@ -54,9 +64,10 @@ class Multicaster
     void mcastControl(const framing::AMQFrame& controlFrame, const ConnectionId&);
     void mcastBuffer(const char*, size_t, const ConnectionId&);
     void mcast(const Event& e);
-    /** End holding mode, held events are mcast */
-    void release();
-    
+
+    /** Switch to ready mode. */
+    void setReady();
+
   private:
     typedef sys::PollableQueue<Event> PollableEventQueue;
     typedef std::deque<Event> PlainEventQueue;
@@ -67,7 +78,7 @@ class Multicaster
     boost::function<void()> onError;
     Cpg& cpg;
     PollableEventQueue queue;
-    bool holding;
+    bool ready;
     PlainEventQueue holdingQueue;
     std::vector<struct ::iovec> ioVector;
 };

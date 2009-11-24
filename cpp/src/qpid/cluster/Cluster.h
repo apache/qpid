@@ -19,7 +19,6 @@
  *
  */
 
-#include "InitialStatusMap.h"
 #include "ClusterMap.h"
 #include "ClusterSettings.h"
 #include "Cpg.h"
@@ -29,12 +28,14 @@
 #include "EventFrame.h"
 #include "ExpiryPolicy.h"
 #include "FailoverExchange.h"
+#include "InitialStatusMap.h"
 #include "LockedConnectionMap.h"
 #include "Multicaster.h"
 #include "NoOpConnectionOutputHandler.h"
 #include "PollableQueue.h"
 #include "PollerDispatch.h"
 #include "Quorum.h"
+#include "StoreStatus.h"
 #include "UpdateReceiver.h"
 
 #include "qmf/org/apache/qpid/cluster/Cluster.h"
@@ -147,9 +148,14 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void updateRequest(const MemberId&, const std::string&, Lock&);
     void updateOffer(const MemberId& updater, uint64_t updatee, Lock&);
     void retractOffer(const MemberId& updater, uint64_t updatee, Lock&);
-    void initialStatus(const MemberId&, bool active, bool persistent,
-                       const framing::Uuid& id, uint32_t version,
-                       const std::string& url, Lock&);
+    void initialStatus(const MemberId&,
+                       uint32_t version,
+                       bool active,
+                       const framing::Uuid& id,
+                       framing::cluster::StoreState,
+                       const framing::Uuid& start,
+                       const framing::Uuid& end,
+                       Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);
     void messageExpired(const MemberId&, uint64_t, Lock& l);
@@ -228,9 +234,6 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     Quorum quorum;
     LockedConnectionMap localConnections;
 
-    // Used only during initialization
-    bool initialized;
-
     // Used only in deliverEventQueue thread or when stalled for update.
     Decoder decoder;
     bool discarding;
@@ -259,6 +262,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
 
     ConnectionMap connections;
     InitialStatusMap initMap;
+    StoreStatus store;
     ClusterMap map;
     MemberSet elders;
     size_t lastSize;

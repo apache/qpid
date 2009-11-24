@@ -54,10 +54,10 @@ if test -d $PYTHON_DIR; then
     . $srcdir/ais_check
 
     #todo: these cluster names need to be unique to prevent clashes
-    PRIMARY_CLUSTER=PRIMARY_$(hostname)_$(pwd)
-    DR_CLUSTER=DR_$(hostname)_$(pwd)
+    PRIMARY_CLUSTER=PRIMARY_$(hostname)_$$
+    DR_CLUSTER=DR_$(hostname)_$$
 
-    GENERAL_OPTS="--auth no --no-module-dir --no-data-dir --daemon --port 0  --log-enable notice+ --log-to-stderr false"
+    GENERAL_OPTS="--auth no --no-module-dir --no-data-dir --daemon --port 0 --log-to-stderr false"
     PRIMARY_OPTS="--load-module ../.libs/replicating_listener.so --create-replication-queue true --replication-queue REPLICATION_QUEUE --load-module ../.libs/cluster.so --cluster-name $PRIMARY_CLUSTER"
     DR_OPTS="--load-module ../.libs/replication_exchange.so --load-module ../.libs/cluster.so --cluster-name $DR_CLUSTER"
 

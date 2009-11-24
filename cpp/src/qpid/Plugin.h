@@ -37,6 +37,8 @@ struct Options;
 class Plugin : private boost::noncopyable {
   public:
     typedef std::vector<Plugin*> Plugins;
+    /** Default value returned by initOrder() */
+    static const int DEFAULT_INIT_ORDER=1000;
     
     /**
      * Base interface for targets that can receive plug-ins.
@@ -99,6 +101,12 @@ class Plugin : private boost::noncopyable {
      */
     virtual void initialize(Target&) = 0;
 
+    /**
+     * Initialization order, lower initOrder() plugins are
+     * initialized first. @see DEFAULT_INIT_ORDER
+     */
+    virtual int initOrder() const;
+    
     /** List of registered Plugin objects.
      * Caller must not delete plugin pointers.
      */

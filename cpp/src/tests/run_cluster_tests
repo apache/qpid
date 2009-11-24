@@ -37,7 +37,6 @@ mkdir -p $OUTDIR
 CLUSTER_TESTS_IGNORE=${CLUSTER_TESTS_IGNORE:--i cluster_tests.StoreTests.* -I $srcdir/cluster_tests.fail}
 CLUSTER_TESTS=${CLUSTER_TESTS:-$*}
 
-set -x
 with_ais_group $TEST_EXEC -DOUTDIR=$OUTDIR -m cluster_tests $CLUSTER_TESTS_IGNORE $CLUSTER_TESTS || exit 1
 rm -rf $OUTDIR
 #exit 0

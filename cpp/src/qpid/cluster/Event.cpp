@@ -115,16 +115,16 @@ const AMQFrame& Event::getFrame() const {
 
 static const char* EVENT_TYPE_NAMES[] = { "data", "control" };
 
-std::ostream& operator << (std::ostream& o, EventType t) {
+std::ostream& operator<< (std::ostream& o, EventType t) {
     return o << EVENT_TYPE_NAMES[t];
 }
 
-std::ostream& operator << (std::ostream& o, const EventHeader& e) {
+std::ostream& operator<< (std::ostream& o, const EventHeader& e) {
     return o << "Event[" << e.getConnectionId() << " " << e.getType()
              << " " << e.getSize() << " bytes]";
 }
 
-std::ostream& operator << (std::ostream& o, const Event& e) {
+std::ostream& operator<< (std::ostream& o, const Event& e) {
     o << "Event[" << e.getConnectionId() << " ";
     if (e.getType() == CONTROL)
         o << e.getFrame();

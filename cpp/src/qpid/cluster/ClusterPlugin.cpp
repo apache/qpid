@@ -126,6 +126,9 @@ struct ClusterPlugin : public Plugin {
 
     ClusterPlugin() : options(settings), cluster(0) {}
 
+    // Cluster needs to be initialized after the store 
+    int initOrder() const { return Plugin::DEFAULT_INIT_ORDER+500; }
+    
     Options* getOptions() { return &options; }
 
     void earlyInitialize(Plugin::Target& target) {

@@ -18,13 +18,18 @@
 # under the License.
 #
 
-import os, signal, sys, time
+import os, signal, sys, time, imp
 from qpid import datatypes, messaging
 from qpid.brokertest import *
 from qpid.harness import Skipped
 from qpid.messaging import Message
 from threading import Thread
+from logging import getLogger
 
+log = getLogger("qpid.cluster_tests")
+
+# Import scripts as modules
+qpid_cluster=import_script(checkenv("QPID_CLUSTER_EXEC"))
 
 class ShortTests(BrokerTest):
     """Short cluster functionality tests."""
@@ -34,8 +39,8 @@ class ShortTests(BrokerTest):
         # Start a cluster, send some messages to member 0.
         cluster = self.cluster(2)
         s0 = cluster[0].connect().session()
-        s0.sender("q; {create:always}").send(messaging.Message("x"))
-        s0.sender("q; {create:always}").send(messaging.Message("y"))
+        s0.sender("q; {create:always}").send(Message("x"))
+        s0.sender("q; {create:always}").send(Message("y"))
         s0.connection.close()
 
         # Verify messages available on member 1.
@@ -51,35 +56,6 @@ class ShortTests(BrokerTest):
         s2.acknowledge()
         self.assertEqual("y", m.content)
         s2.connection.close()
-
-    def test_cluster_size(self):
-        """Verify cluster startup waits for N brokers if --cluster-size=N"""
-        class ConnectThread(Thread):
-            def __init__(self, broker):
-                Thread.__init__(self)
-                self.broker=broker
-                self.connected = False
-                self.error = None
-
-            def run(self):
-                try:
-                    self.broker.connect()
-                    self.connected = True
-                except Exception, e: self.error = RethrownException(e)
-
-        cluster = self.cluster(1, args=["--cluster-size=3"], wait_for_start=False)
-        c = ConnectThread(cluster[0])
-        c.start()
-        time.sleep(.01)
-        assert not c.connected
-        cluster.start(wait_for_start=False)
-        time.sleep(.01)
-        assert not c.connected
-        cluster.start(wait_for_start=False)
-        c.join(1)
-        assert not c.isAlive()       # Join didn't time out
-        assert c.connected
-        if c.error: raise c.error
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
@@ -120,20 +96,22 @@ class StoreTests(BrokerTest):
     """
     Cluster tests that can only be run if there is a store available.
     """
-    args = ["--load-module",BrokerTest.store_lib]
+    def args(self):
+        assert BrokerTest.store_lib 
+        return ["--load-module", BrokerTest.store_lib]
 
     def test_store_loaded(self):
         """Ensure we are indeed loading a working store"""
-        broker = self.broker(self.args, name="recoverme", expect=EXPECT_EXIT_FAIL)
-        m = messaging.Message("x", durable=True)
+        broker = self.broker(self.args(), name="recoverme", expect=EXPECT_EXIT_FAIL)
+        m = Message("x", durable=True)
         broker.send_message("q", m)
         broker.kill()
-        broker = self.broker(self.args, name="recoverme")
+        broker = self.broker(self.args(), name="recoverme")
         self.assertEqual("x", broker.get_message("q").content)
 
     def test_kill_restart(self):
         """Verify we can kill/resetart a broker with store in a cluster"""
-        cluster = self.cluster(1, self.args)
+        cluster = self.cluster(1, self.args())
         cluster.start("restartme", expect=EXPECT_EXIT_FAIL).kill()
 
         # Send a message, retrieve from the restarted broker
@@ -141,19 +119,42 @@ class StoreTests(BrokerTest):
         m = cluster.start("restartme").get_message("q")
         self.assertEqual("x", m.content)
 
-    def test_total_shutdown(self):
-        """Test we use the correct store to recover after total shutdown"""
-        cluster = self.cluster(2, args=self.args, expect=EXPECT_EXIT_FAIL)
-        cluster[0].send_message("q", Message("a", durable=True))
-        cluster[0].kill()
-        self.assertEqual("a", cluster[1].get_message("q").content)
-        cluster[1].send_message("q", Message("b", durable=True))
-        cluster[1].kill()
+    def test_persistent_restart(self):
+        """Verify persistent cluster shutdown/restart scenarios"""
+        cluster = self.cluster(0, args=self.args() + ["--cluster-size=3"])
+        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait_for_start=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait_for_start=False)
+        c = cluster.start("c", expect=EXPECT_EXIT_FAIL, wait_for_start=True)
+        a.send_message("q", Message("1", durable=True))
+        # Kill & restart one member.
+        c.kill()
+        self.assertEqual(a.get_message("q").content, "1")
+        a.send_message("q", Message("2", durable=True))
+        c = cluster.start("c", expect=EXPECT_EXIT_OK)
+        self.assertEqual(c.get_message("q").content, "2")
+        # Shut down the entire cluster cleanly and bring it back up
+        a.send_message("q", Message("3", durable=True))
+        qpid_cluster.main(["qpid-cluster", "-kf", a.host_port()])      
+        a = cluster.start("a", wait_for_start=False)
+        b = cluster.start("b", wait_for_start=False)
+        c = cluster.start("c", wait_for_start=True)
+        self.assertEqual(a.get_message("q").content, "3")
 
-        # Start 1 first, we should see its store used.
-        cluster.start(name=cluster.name+"-1")
-        cluster.start(name=cluster.name+"-0")
-        self.assertEqual("b", cluster[2].get_message("q").content)
-
+    def test_persistent_partial_failure(self):
+        # Kill 2 members, shut down the last cleanly then restart
+        # Ensure we use the clean database
+        cluster = self.cluster(0, args=self.args() + ["--cluster-size=3"])
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait_for_start=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait_for_start=False)
+        c = cluster.start("c", expect=EXPECT_EXIT_OK, wait_for_start=True)
+        a.send_message("q", Message("4", durable=True))
+        a.kill()
+        b.kill()
+        self.assertEqual(c.get_message("q").content, "4")
+        c.send_message("q", Message("clean", durable=True))
+        qpid_cluster.main(["qpid-cluster", "-kf", c.host_port()])              
+        a = cluster.start("a", wait_for_start=False)
+        b = cluster.start("b", wait_for_start=False)
+        c = cluster.start("c", wait_for_start=True)
+        self.assertEqual(a.get_message("q").content, "clean")
         
-    

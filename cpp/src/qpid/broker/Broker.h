@@ -142,6 +142,7 @@ public:
     typedef std::map<std::string, boost::shared_ptr<sys::ProtocolFactory> > ProtocolFactoryMap;
 
     void declareStandardExchange(const std::string& name, const std::string& type);
+    void setStore ();
 
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
