@@ -151,10 +151,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void initialStatus(const MemberId&,
                        uint32_t version,
                        bool active,
-                       const framing::Uuid& id,
+                       const framing::Uuid& clusterId,
                        framing::cluster::StoreState,
-                       const framing::Uuid& start,
-                       const framing::Uuid& end,
+                       const framing::Uuid& shutdownId,
                        Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&, const std::string& current, Lock& l);

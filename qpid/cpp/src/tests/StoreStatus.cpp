@@ -43,64 +43,64 @@ QPID_AUTO_TEST_CASE(testLoadEmpty) {
     create_directory(TEST_DIR);
     StoreStatus ss(TEST_DIR);
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_NO_STORE);
-    BOOST_CHECK(!ss.getStart());
-    BOOST_CHECK(!ss.getStop());
+    BOOST_CHECK(!ss.getClusterId());
+    BOOST_CHECK(!ss.getShutdownId());
     ss.load();
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_EMPTY_STORE);
-    BOOST_CHECK(!ss.getStop());
+    BOOST_CHECK(!ss.getShutdownId());
     remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_CASE(testSaveLoadDirty) {
     create_directory(TEST_DIR);
-    Uuid start = Uuid(true);
+    Uuid clusterId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
-    ss.dirty(start);
+    ss.dirty(clusterId);
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_DIRTY_STORE);
 
     StoreStatus ss2(TEST_DIR);
     ss2.load();
     BOOST_CHECK_EQUAL(ss2.getState(), STORE_STATE_DIRTY_STORE);
-    BOOST_CHECK_EQUAL(ss2.getStart(), start);
-    BOOST_CHECK(!ss2.getStop());
+    BOOST_CHECK_EQUAL(ss2.getClusterId(), clusterId);
+    BOOST_CHECK(!ss2.getShutdownId());
     remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_CASE(testSaveLoadClean) {
     create_directory(TEST_DIR);
-    Uuid start = Uuid(true);
-    Uuid stop = Uuid(true);
+    Uuid clusterId = Uuid(true);
+    Uuid shutdownId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
-    ss.dirty(start);
-    ss.clean(stop);
+    ss.dirty(clusterId);
+    ss.clean(shutdownId);
     BOOST_CHECK_EQUAL(ss.getState(), STORE_STATE_CLEAN_STORE);
 
     StoreStatus ss2(TEST_DIR);
     ss2.load();
     BOOST_CHECK_EQUAL(ss2.getState(), STORE_STATE_CLEAN_STORE);
-    BOOST_CHECK_EQUAL(ss2.getStart(), start);
-    BOOST_CHECK_EQUAL(ss2.getStop(), stop);
+    BOOST_CHECK_EQUAL(ss2.getClusterId(), clusterId);
+    BOOST_CHECK_EQUAL(ss2.getShutdownId(), shutdownId);
     remove_all(TEST_DIR);
 }
 
 QPID_AUTO_TEST_CASE(testMarkDirty) {
     // Save clean then mark to dirty.
     create_directory(TEST_DIR);
-    Uuid start = Uuid(true);
-    Uuid stop = Uuid(true);
+    Uuid clusterId = Uuid(true);
+    Uuid shutdownId = Uuid(true);
     StoreStatus ss(TEST_DIR);
     ss.load();
-    ss.dirty(start);
-    ss.clean(stop);
-    ss.dirty(start);
+    ss.dirty(clusterId);
+    ss.clean(shutdownId);
+    ss.dirty(clusterId);
     
     StoreStatus ss2(TEST_DIR);
     ss2.load();
     BOOST_CHECK_EQUAL(ss2.getState(), STORE_STATE_DIRTY_STORE);
-    BOOST_CHECK_EQUAL(ss2.getStart(), start);
-    BOOST_CHECK(!ss2.getStop());
+    BOOST_CHECK_EQUAL(ss2.getClusterId(), clusterId);
+    BOOST_CHECK(!ss2.getShutdownId());
     remove_all(TEST_DIR);
 }
 
