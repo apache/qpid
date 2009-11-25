@@ -50,7 +50,6 @@ class StoreStatus
     void save();
 
     bool hasStore() { return state != framing::cluster::STORE_STATE_NO_STORE; }
-    bool isEmpty() { return state != framing::cluster::STORE_STATE_EMPTY_STORE; }
 
   private:
     framing::cluster::StoreState state;

@@ -29,6 +29,7 @@ namespace cluster {
 using namespace std;
 using namespace boost;
 using namespace framing::cluster;
+using namespace framing;
 
 InitialStatusMap::InitialStatusMap(const MemberId& self_, size_t size_)
     : self(self_), completed(), resendNeeded(), size(size_)
@@ -106,7 +107,6 @@ bool InitialStatusMap::hasStore(const Map::value_type& v) {
 }
 
 bool InitialStatusMap::isUpdateNeeded() {
-    // FIXME aconway 2009-11-20: consistency checks isComplete or here?
     assert(isComplete());
     // We need an update if there are any active members.
     if (find_if(map.begin(), map.end(), &isActive) != map.end()) return true;
@@ -145,7 +145,43 @@ framing::Uuid InitialStatusMap::getClusterId() {
     if (i != map.end())
         return i->second->getClusterId(); // An active member
     else
-        return map.begin()->second->getClusterId();
+        return map.begin()->second->getClusterId(); // Youngest newcomer in node-id order
 }
+
+void InitialStatusMap::checkConsistent() {
+    assert(isComplete());
+    bool persistent = (map.begin()->second->getStoreState() != STORE_STATE_NO_STORE);
+    Uuid clusterId;
+    for (Map::iterator i = map.begin(); i != map.end(); ++i) {
+        // Must not mix transient and persistent members.
+        if (persistent != (i->second->getStoreState() != STORE_STATE_NO_STORE))
+            throw Exception("Mixing transient and persistent brokers in a cluster");
+        // Members with non-empty stores must have same cluster-id
+        switch (i->second->getStoreState()) {
+          case STORE_STATE_NO_STORE:
+          case STORE_STATE_EMPTY_STORE:
+            break;               
+          case STORE_STATE_DIRTY_STORE:
+          case STORE_STATE_CLEAN_STORE:
+            if (!clusterId) clusterId = i->second->getClusterId();
+            assert(clusterId);
+            if (clusterId != i->second->getClusterId())
+                throw Exception("Cluster-id mismatch, brokers belonged to different clusters.");
+        }
+    }
+    // If this is a newly forming cluster, clean stores must have same shutdown-id
+    if (find_if(map.begin(), map.end(), &isActive) == map.end()) {
+        Uuid shutdownId;
+        for (Map::iterator i = map.begin(); i != map.end(); ++i) {
+            if (i->second->getStoreState() == STORE_STATE_CLEAN_STORE) {
+                if (!shutdownId) shutdownId = i->second->getShutdownId();
+                assert(shutdownId);
+                if (shutdownId != i->second->getShutdownId())
+                    throw Exception("Shutdown-id mismatch, brokers were not shut down together.");
+            }
+        }
+    }
+}
+
 
 }} // namespace qpid::cluster

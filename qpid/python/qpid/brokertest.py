@@ -215,7 +215,7 @@ class Cluster:
 
     _cluster_count = 0
 
-    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait_for_start=True):
+    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait=True):
         self.test = test
         self._brokers=[]
         self.name = "cluster%d" % Cluster._cluster_count
@@ -225,17 +225,17 @@ class Cluster:
         self.args += [ "--cluster-name", "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
         assert BrokerTest.cluster_lib
         self.args += [ "--load-module", BrokerTest.cluster_lib ]
-        self.start_n(count, expect=expect, wait_for_start=wait_for_start)
+        self.start_n(count, expect=expect, wait=wait)
 
-    def start(self, name=None, expect=EXPECT_RUNNING, wait_for_start=True):
+    def start(self, name=None, expect=EXPECT_RUNNING, wait=True):
         """Add a broker to the cluster. Returns the index of the new broker."""
         if not name: name="%s-%d" % (self.name, len(self._brokers))
         log.debug("Cluster %s starting member %s" % (self.name, name))
-        self._brokers.append(self.test.broker(self.args, name, expect, wait_for_start))
+        self._brokers.append(self.test.broker(self.args, name, expect, wait))
         return self._brokers[-1]
 
-    def start_n(self, count, expect=EXPECT_RUNNING, wait_for_start=True):
-        for i in range(count): self.start(expect=expect, wait_for_start=wait_for_start)
+    def start_n(self, count, expect=EXPECT_RUNNING, wait=True):
+        for i in range(count): self.start(expect=expect, wait=wait)
 
     # Behave like a list of brokers.
     def __len__(self): return len(self._brokers)
@@ -275,8 +275,6 @@ class BrokerTest(TestCase):
             except Exception, e: err.append(str(e))
         if err: raise Exception("Unexpected process status:\n    "+"\n    ".join(err))
 
-    # FIXME aconway 2009-11-06: check for core files of exited processes.
-    
     def cleanup_stop(self, stopable):
         """Call thing.stop at end of test"""
         self.stopem.append(stopable)
@@ -288,17 +286,21 @@ class BrokerTest(TestCase):
         self.cleanup_stop(p)
         return p
 
-    def broker(self, args=[], name=None, expect=EXPECT_RUNNING,wait_for_start=True):
+    def broker(self, args=[], name=None, expect=EXPECT_RUNNING,wait=True):
         """Create and return a broker ready for use"""
         b = Broker(self, args=args, name=name, expect=expect)
-        if (wait_for_start): b.connect().close()
+        if (wait): b.connect().close()
         return b
 
-    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait_for_start=True):
+    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True):
         """Create and return a cluster ready for use"""
-        cluster = Cluster(self, count, args, expect=expect, wait_for_start=wait_for_start)
+        cluster = Cluster(self, count, args, expect=expect, wait=wait)
         return cluster
 
+    def wait():
+        """Wait for all brokers in the cluster to be ready"""
+        for b in _brokers: b.connect().close()
+        
 class RethrownException(Exception):
     """Captures the original stack trace to be thrown later""" 
     def __init__(self, e, msg=""):

@@ -122,9 +122,9 @@ class StoreTests(BrokerTest):
     def test_persistent_restart(self):
         """Verify persistent cluster shutdown/restart scenarios"""
         cluster = self.cluster(0, args=self.args() + ["--cluster-size=3"])
-        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait_for_start=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait_for_start=False)
-        c = cluster.start("c", expect=EXPECT_EXIT_FAIL, wait_for_start=True)
+        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
+        c = cluster.start("c", expect=EXPECT_EXIT_FAIL, wait=True)
         a.send_message("q", Message("1", durable=True))
         # Kill & restart one member.
         c.kill()
@@ -135,30 +135,30 @@ class StoreTests(BrokerTest):
         # Shut down the entire cluster cleanly and bring it back up
         a.send_message("q", Message("3", durable=True))
         qpid_cluster.main(["qpid-cluster", "-kf", a.host_port()])      
-        a = cluster.start("a", wait_for_start=False)
-        b = cluster.start("b", wait_for_start=False)
-        c = cluster.start("c", wait_for_start=True)
+        a = cluster.start("a", wait=False)
+        b = cluster.start("b", wait=False)
+        c = cluster.start("c", wait=True)
         self.assertEqual(a.get_message("q").content, "3")
 
     def test_persistent_partial_failure(self):
         # Kill 2 members, shut down the last cleanly then restart
         # Ensure we use the clean database
         cluster = self.cluster(0, args=self.args() + ["--cluster-size=3"])
-        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait_for_start=False)
-        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait_for_start=False)
-        c = cluster.start("c", expect=EXPECT_EXIT_OK, wait_for_start=True)
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=False)
+        c = cluster.start("c", expect=EXPECT_EXIT_OK, wait=True)
         a.send_message("q", Message("4", durable=True))
         a.kill()
         b.kill()
         self.assertEqual(c.get_message("q").content, "4")
         c.send_message("q", Message("clean", durable=True))
         qpid_cluster.main(["qpid-cluster", "-kf", c.host_port()])              
-        a = cluster.start("a", wait_for_start=False)
-        b = cluster.start("b", wait_for_start=False)
-        c = cluster.start("c", wait_for_start=True)
+        a = cluster.start("a", wait=False)
+        b = cluster.start("b", wait=False)
+        c = cluster.start("c", wait=True)
         self.assertEqual(a.get_message("q").content, "clean")
         
-    def test_wrong_store_uuid(self):
+    def test_wrong_cluster_id(self):
         # Start a cluster1 broker, then try to restart in cluster2
         cluster1 = self.cluster(0, args=self.args())
         a = cluster1.start("a", expect=EXPECT_EXIT_OK)
@@ -168,4 +168,25 @@ class StoreTests(BrokerTest):
             a = cluster2.start("a", expect=EXPECT_EXIT_FAIL)
             self.fail("Expected exception")
         except: pass
-            
+
+    def test_wrong_shutdown_id(self):
+        # Start 2 members and shut down.
+        cluster = self.cluster(0, args=self.args()+["--cluster-size=2"])
+        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_OK, wait=False)
+        self.assertEqual(0, qpid_cluster.main(["qpid_cluster", "-kf", a.host_port()]))
+        self.assertEqual(a.wait(), 0)
+        self.assertEqual(b.wait(), 0)
+
+        # Restart with a different member and shut down.
+        a = cluster.start("a", expect=EXPECT_EXIT_OK, wait=False)
+        c = cluster.start("c", expect=EXPECT_EXIT_OK, wait=False)
+        self.assertEqual(0, qpid_cluster.main(["qpid_cluster", "-kf", a.host_port()]))
+        self.assertEqual(a.wait(), 0)
+        self.assertEqual(c.wait(), 0)
+
+        # Mix members from both shutdown events, they should fail
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=False)
+
+

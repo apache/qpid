@@ -85,8 +85,6 @@ void StoreStatus::dirty(const Uuid& clusterId_) {
 }
 
 void StoreStatus::clean(const Uuid& shutdownId_) {
-    assert(clusterId);              // FIXME aconway 2009-11-20: throw exception
-    assert(shutdownId_);
     state = STORE_STATE_CLEAN_STORE;
     shutdownId = shutdownId_;
     save();
