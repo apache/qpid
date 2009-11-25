@@ -206,7 +206,10 @@ fi
 if [ "SIGN" == "$SIGN" ] ; then
   pushd artifacts
   sha1sum *.zip *.gz *.svnversion > SHA1SUM
-  for i in `find . | egrep 'jar$|pom$|gz$|zip$|svnversion$|SHA1SUM'`; do gpg --sign --armor --detach $i; done;
+  if [ ! -z $SIGNING_KEY ] ; then
+    KEYOPTION="--default-key $SIGNING_KEY"
+  fi
+  for i in `find . | egrep 'jar$|pom$|gz$|zip$|svnversion$|SHA1SUM'`; do gpg --sign --armor --detach $KEYOPTION $i; done;
   popd
 fi
 
