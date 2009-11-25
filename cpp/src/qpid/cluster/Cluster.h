@@ -160,7 +160,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void messageExpired(const MemberId&, uint64_t, Lock& l);
     void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
 
-    void shutdown(const MemberId&, Lock&);
+    void shutdown(const MemberId&, const framing::Uuid& shutdownId, Lock&);
 
     // Helper functions
     ConnectionPtr getConnection(const EventFrame&, Lock&);

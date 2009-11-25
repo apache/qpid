@@ -56,13 +56,14 @@ class InitialStatusMap
     bool isUpdateNeeded();
     /**@pre isComplete(). @return Cluster-wide cluster ID. */
     framing::Uuid getClusterId();
+    /**@pre isComplete(). @throw Exception if there are any inconsistencies. */
+    void checkConsistent();
 
   private:
     typedef std::map<MemberId, boost::optional<Status> > Map;
     static bool notInitialized(const Map::value_type&);
     static bool isActive(const Map::value_type&);
     static bool hasStore(const Map::value_type&);
-    void check();
     Map map;
     MemberSet firstConfig;
     MemberId self;

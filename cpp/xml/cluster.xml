@@ -92,9 +92,11 @@
       <field name="type" type="error-type"/>
       <field name="frame-seq" type="sequence-no"/>
     </control>
-    
 
-    <control name="shutdown" code="0x20" label="Shut down entire cluster"/>
+    <!-- Shut down the entire cluster -->
+    <control name="shutdown" code="0x20">
+      <field name="shutdown-id" type="uuid"/>
+    </control>
 
   </class>
 
