@@ -105,7 +105,7 @@ class Plugin : private boost::noncopyable {
      * Initialization order, lower initOrder() plugins are
      * initialized first. @see DEFAULT_INIT_ORDER
      */
-    virtual int initOrder() const;
+    QPID_COMMON_EXTERN virtual int initOrder() const;
     
     /** List of registered Plugin objects.
      * Caller must not delete plugin pointers.
