@@ -24,7 +24,8 @@
 
 verify=`dirname $0`/verify
 topsrcdir=$1
-qpidd=$2
+topbuilddir=$2
+qpidd=$topbuilddir/src/qpidd
 broker_args=$3
 exclude_regexp=$4
 python=${QPID_PYTHON_DIR:-$topsrcdir/python}
@@ -50,4 +51,4 @@ else
 	{ cat $f | grep $exclude_regexp > /dev/null ; } || run_examples="$run_examples $f"
     done
 fi
-$verify $run_examples
+$verify $topsrcdir $topbuilddir $run_examples

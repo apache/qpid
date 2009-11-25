@@ -41,8 +41,9 @@ EXTRA_DIST = README.verify verify verify_all examples.sln CMakeLists.txt
 
 # For older versions of automake
 abs_top_srcdir = @abs_top_srcdir@
+abs_top_builddir = @abs_top_builddir@
 
 # Verify the examples in the buid tree.
 check-local: 
-	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(top_builddir)/src/qpidd $(broker_args) $(exclude_examples_regexp)
+	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(abs_top_builddir) $(broker_args) $(exclude_examples_regexp)
 

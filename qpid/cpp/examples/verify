@@ -75,13 +75,28 @@ outputs() {
     done
 }
 
+function normalize() {
+    local path=${1//\/.\//\/}\/
+    while [[ $path =~ ([^/][^/]*/\.\./) ]]
+    do
+        path=${path/${BASH_REMATCH[0]}/}
+    done
+    echo $path | sed 's/\/$//'
+}
+
 verify() {
     FAIL=
-    if [ -d $1 ]; then dir=$1; script=verify;
-    else dir=`dirname $1`; script=`basename $1`; fi
-    cd $dir || return 1
+    arg=$(normalize $1)
+    srcdir=$(normalize $2)
+    builddir=$(normalize $3)
+    if [ -d $arg ]; then dir=$arg; script=verify;
+    else dir=`dirname $arg`; script=`basename $arg`; fi
+
+    # if the example is in the "cpp" area, make sure we run from the build directory, not the source dir.
+    rundir=${dir/$srcdir\/cpp/$builddir/}
+    cd $rundir || return 1
     rm -f *.out
-    { source ./$script && diff -ac $script.out $script.in ; } || fail
+    { source $dir/$script && diff -ac $script.out $dir/$script.in ; } || fail
     test -z "$FAIL" && rm -f *.out
     return $FAIL
 }
@@ -100,8 +115,12 @@ if [ -n "$QPIDD" ] ; then
     trap "$QPIDD -q" EXIT
 fi
 
+topsrcdir=$1
+topbuilddir=$2
+shift 2
+
 for example in "$@"; do
-    echo "== $example "
-    if ( verify $example; ) then echo "PASS";  else echo "FAIL"; RET=1; fi
+    echo "== $(normalize $example)"
+    if ( verify $example $topsrcdir $topbuilddir; ) then echo "PASS";  else echo "FAIL"; RET=1; fi
      done
 exit $RET
