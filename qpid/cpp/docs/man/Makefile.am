@@ -35,7 +35,7 @@ qpidd.1: $(srcdir)/qpidd.x $(top_builddir)/src/qpidd
 .x.1:
 	@rm -f $@
 	@echo "Updating man page $@"
-	$(HELP2MAN) --no-info --include=$(srcdir)/$*.x --output=$@-t --help-option="--help --no-module-dir" ../../src/$*
+	$(HELP2MAN) --no-info --include=$(srcdir)/$*.x --output=$@-t --help-option="--help --no-module-dir" --version-option="--version --no-module-dir" ../../src/$*
 	@chmod a-w $@-t
 	@mv $@-t $@
 else
