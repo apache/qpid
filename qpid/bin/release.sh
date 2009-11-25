@@ -36,7 +36,6 @@ usage()
     echo "--all   |-a : Generate all artefacts"
     echo "--source|-e : Generate the source artefact"
     echo "--cpp   |-c : Generate the CPP artefacts"
-    echo "--dotnet|-d : Generate the dotnet artefacts"
     echo "--java  |-j : Generate the java artefacts"
     echo "--ruby  |-r : Generate the ruby artefacts"
     echo "--python|-p : Generate the python artefacts"
@@ -81,9 +80,6 @@ for arg in $* ; do
  ;;
  --cpp|-c)
    CPP="CPP"
- ;;
- --dotnet|-d)
-   DOTNET="DOTNET"
  ;;
  --java|-j)
    JAVA="JAVA"
@@ -134,10 +130,9 @@ echo REV:$REV
 echo VER:$VER
 
 # If nothing is specified then do it all
-if [ -z "${CLEAN}${PREPARE}${CPP}${DOTNET}${JAVA}${RUBY}${PYTHON}${SOURCE}${SIGN}${UPLOAD}" ] ; then
+if [ -z "${CLEAN}${PREPARE}${CPP}${JAVA}${RUBY}${PYTHON}${SOURCE}${SIGN}${UPLOAD}" ] ; then
    PREPARE="PREPARE"
    CPP="CPP"
-   DOTNET="DOTNET"
    JAVA="JAVA"
    RUBY="RUBY"
    PYTHON="PYTHON"
@@ -206,23 +201,6 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
   #cp qpid-${VER}/java/client/example/release/*.tar.gz 
   cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
-fi
-
-if [ "DOTNET" == "$DOTNET" ] ; then
-  pushd qpid-${VER}/dotnet
-  cd Qpid.Common
-  ant
-  cd ..
-  ./build-nant-release mono-2.0
-
-  cd client-010/gentool
-  ant
-  cd ..
-  nant -t:mono-2.0 release-pkg
-  popd
-
-  cp qpid-${VER}/dotnet/bin/mono-2.0/release/*.zip artifacts/qpid-dotnet-0-8-${VER}.zip
-  cp qpid-${VER}/dotnet/client-010/bin/mono-2.0/debug/*.zip artifacts/qpid-dotnet-0-10-${VER}.zip
 fi
 
 if [ "SIGN" == "$SIGN" ] ; then
