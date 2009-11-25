@@ -26,9 +26,11 @@ usage()
 {
     echo "Usage: release.sh <svn-path> <svn-revision> <version> [options]"
     echo
-    echo "Options: Default : --prepare -all --sign"
+    echo "Options: Default : --prepare --svn --all --sign"
     echo "--help  |-h : Show this help"
-    echo "--prepare   : Download speficied tree from svn"
+    echo "--prepare   : Export specified tree from source control"
+    echo "--svn       : Export from svn"
+    echo "--git       : Export from git repository with svn metadata"
     echo "--clean-all : Remove build artefacts and downloaded svn tree"
     echo "--clean     : Remove built artefacts"
     echo "--all   |-a : Generate all artefacts"
@@ -44,6 +46,7 @@ usage()
     echo
 }
 
+REPO="SVN"
 for arg in $* ; do 
  case $arg in
  --help|-h)
@@ -51,6 +54,12 @@ for arg in $* ; do
  ;;
  --prepare)
    PREPARE="PREPARE"
+ ;;
+ --svn)
+   REPO="SVN"
+ ;;
+ --git)
+   REPO="GIT"
  ;;
  --clean-all)
    CLEAN="CLEAN"
@@ -127,7 +136,6 @@ echo VER:$VER
 # If nothing is specified then do it all
 if [ -z "${CLEAN}${PREPARE}${CPP}${DOTNET}${JAVA}${RUBY}${PYTHON}${SOURCE}${SIGN}${UPLOAD}" ] ; then
    PREPARE="PREPARE"
-
    CPP="CPP"
    DOTNET="DOTNET"
    JAVA="JAVA"
@@ -140,8 +148,6 @@ fi
 
 set -xe
 
-URL=https://svn.apache.org/repos/asf/qpid/${SVN}
-
 if [ "CLEAN" == "$CLEAN" ] ; then
   rm -rf qpid-${VER}
 fi
@@ -152,8 +158,20 @@ fi
 
 if [ "PREPARE" == "$PREPARE" ] ; then
   mkdir artifacts
-  svn export -r ${REV} ${URL} qpid-${VER}
-  echo ${URL} ${REV} > artifacts/qpid-${VER}.svnversion
+  case ${REPO} in
+  SVN)  
+    URL=https://svn.apache.org/repos/asf/qpid/${SVN}
+    svn export -r ${REV} ${URL} qpid-${VER}
+    echo ${URL} ${REV} > artifacts/qpid-${VER}.svnversion
+  ;;
+  GIT)
+    URL=${SVN}
+    GITREV=$(GIT_DIR=${URL} git svn find-rev r${REV})
+    git archive --remote=${URL}  ${GITREV} | tar xvf -
+    mv qpid qpid-${VER}
+    echo ${REV} > artifacts/qpid-${VER}.svnversion
+  ;;
+  esac
 fi
 
 if [ "SOURCE" == "$SOURCE" ] ; then
