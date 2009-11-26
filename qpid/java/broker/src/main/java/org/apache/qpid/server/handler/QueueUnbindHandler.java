@@ -78,7 +78,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
             if (queue == null)
             {
-                throw body.getConnectionException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null");
             }
 
             routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern();
@@ -92,7 +92,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
         if (queue == null)
         {
-            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
         final Exchange exch = exchangeRegistry.getExchange(body.getExchange());
         if (exch == null)
@@ -118,7 +118,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         {
             if(e.getErrorCode() == AMQConstant.NOT_FOUND)
             {
-                throw body.getConnectionException(AMQConstant.NOT_FOUND,e.getMessage(),e);
+                throw body.getChannelException(AMQConstant.NOT_FOUND,e.getMessage(),e);
             }
             throw body.getChannelException(AMQConstant.CHANNEL_ERROR, e.toString());
         }

@@ -61,6 +61,17 @@ public class ProtocolVersion  implements Comparable
         return _minorVersion;
     }
 
+    public byte getActualMinorVersion()
+    {
+        return _minorVersion > 90 ? (byte) (_minorVersion / 10) : _minorVersion;
+    }
+
+
+    public byte getRevisionVersion()
+    {
+        return _minorVersion > 90 ? (byte) (_minorVersion % 10) : (byte) 0;
+    }
+
     public String toString()
     {
         return _stringFormat;

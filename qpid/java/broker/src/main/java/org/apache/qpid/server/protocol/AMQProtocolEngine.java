@@ -341,7 +341,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
             String locales = "en_US";
 
             AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
-                                                                                       (short) getProtocolMinorVersion(),
+                                                                                       (short) pv.getActualMinorVersion(),
                                                                                        null,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());

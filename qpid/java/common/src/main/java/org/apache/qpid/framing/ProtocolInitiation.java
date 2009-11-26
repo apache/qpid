@@ -54,7 +54,8 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
     
     public ProtocolInitiation(ProtocolVersion pv)
     {
-        this(AMQP_HEADER, CURRENT_PROTOCOL_CLASS,
+        this(AMQP_HEADER,
+             pv.equals(ProtocolVersion.v0_91) ? 0 : CURRENT_PROTOCOL_CLASS,
              pv.equals(ProtocolVersion.v0_91) ? 0 : TCP_PROTOCOL_INSTANCE,
              pv.equals(ProtocolVersion.v0_91) ? 9 : pv.getMajorVersion(),
              pv.equals(ProtocolVersion.v0_91) ? 1 : pv.getMinorVersion());
@@ -159,11 +160,6 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
                 }
             }
         }
-        if (_protocolClass != CURRENT_PROTOCOL_CLASS)
-        {
-            throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
-                                                _protocolClass, null);
-        }
 
         ProtocolVersion pv;
 
@@ -171,7 +167,16 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         if(_protocolInstance == 0 && _protocolMajor == 9 && _protocolMinor == 1)
         {
             pv = ProtocolVersion.v0_91;
-
+            if (_protocolClass != 0)
+            {
+                throw new AMQProtocolClassException("Protocol class " + 0 + " was expected; received " +
+                                                    _protocolClass, null);
+            }
+        }
+        else if (_protocolClass != CURRENT_PROTOCOL_CLASS)
+        {
+            throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
+                                                _protocolClass, null);
         }
         else if (_protocolInstance != TCP_PROTOCOL_INSTANCE)
         {
