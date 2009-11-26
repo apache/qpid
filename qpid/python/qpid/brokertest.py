@@ -157,8 +157,8 @@ class Broker(Popen):
         if (self._port is None):
             try: self._port = int(self.stdout.readline())
             except ValueError, e:
-                raise Exception("Can't get port for broker %s (%s)" %
-                                (self.name, self.pname))
+                raise Exception("Can't get port for broker %s (%s)\n    %s" %
+                                (self.name, self.pname, file(self.log).readlines()[-1]))
         return self._port
 
     def unexpected(self,msg):

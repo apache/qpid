@@ -31,6 +31,7 @@ namespace cluster {
 using framing::Uuid;
 using namespace framing::cluster;
 using namespace boost::filesystem;
+using std::ostream;
 
 StoreStatus::StoreStatus(const std::string& d)
     : state(STORE_STATE_NO_STORE), dataDir(d)
@@ -88,6 +89,21 @@ void StoreStatus::clean(const Uuid& shutdownId_) {
     state = STORE_STATE_CLEAN_STORE;
     shutdownId = shutdownId_;
     save();
+}
+
+ostream& operator<<(ostream& o, const StoreStatus& s) {
+    switch (s.getState()) {
+      case STORE_STATE_NO_STORE: o << "no store"; break;
+      case STORE_STATE_EMPTY_STORE: o << "empty store"; break;
+      case STORE_STATE_DIRTY_STORE:
+        o << "dirty store, cluster-id=" << s.getClusterId();
+        break;
+      case STORE_STATE_CLEAN_STORE:
+        o << "clean store, cluster-id=" << s.getClusterId()
+          << " shutdown-id=" << s.getShutdownId();
+        break;
+    }
+    return o;
 }
 
 }} // namespace qpid::cluster

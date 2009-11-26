@@ -260,6 +260,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
         store.load();
         if (store.getClusterId())
             clusterId = store.getClusterId(); // Use stored ID if there is one.
+        QPID_LOG(notice, "Cluster store state: " << store)
     }
 
     cpg.join(name);
