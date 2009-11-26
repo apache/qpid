@@ -1263,6 +1263,17 @@ public class QpidTestCase extends TestCase
             BufferedReader reader = new BufferedReader (new InputStreamReader(p.getInputStream()));
             String cmd = "/bin/kill -SIGHUP " + reader.readLine();
             p = Runtime.getRuntime().exec(cmd);
+            
+            //delay to ensure the reload time has time to occur
+            try
+            {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                //ignore
+            }
+            
         }
     }
 }

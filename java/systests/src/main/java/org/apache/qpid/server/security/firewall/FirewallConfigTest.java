@@ -158,7 +158,7 @@ public class FirewallConfigTest extends QpidTestCase
             {
                 try
                 {
-                    reloadBroker();
+                    restartBroker();
                 } catch (Exception e)
                 {
                     fail(e.getMessage());
