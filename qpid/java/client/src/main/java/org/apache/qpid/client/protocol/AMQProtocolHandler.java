@@ -342,12 +342,15 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     /** See {@link FailoverHandler} to see rationale for separate thread. */
     private void startFailoverThread()
     {
-        Thread failoverThread = new Thread(_failoverHandler);
-        failoverThread.setName("Failover");
-        // Do not inherit daemon-ness from current thread as this can be a daemon
-        // thread such as a AnonymousIoService thread.
-        failoverThread.setDaemon(false);
-        failoverThread.start();
+        if(!_connection.isClosed())
+        {
+            Thread failoverThread = new Thread(_failoverHandler);
+            failoverThread.setName("Failover");
+            // Do not inherit daemon-ness from current thread as this can be a daemon
+            // thread such as a AnonymousIoService thread.
+            failoverThread.setDaemon(false);
+            failoverThread.start();
+        }
     }
 
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception

@@ -46,14 +46,14 @@ import org.slf4j.LoggerFactory;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
-    enum PublishMode { ASYNC_PUBLISH_ALL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL }; 
-    
+    enum PublishMode { ASYNC_PUBLISH_ALL, SYNC_PUBLISH_PERSISTENT, SYNC_PUBLISH_ALL };
+
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
     private AMQConnection _connection;
 
     /**
-     * If true, messages will not get a timestamp. 
+     * If true, messages will not get a timestamp.
      */
     protected boolean _disableTimestamps;
 
@@ -105,7 +105,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private long _producerId;
 
     /**
-     * The session used to create this producer 
+     * The session used to create this producer
      */
     protected AMQSession _session;
 
@@ -118,11 +118,11 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     private boolean _disableMessageId;
 
     private UUIDGen _messageIdGenerator = UUIDs.newGenerator();
-    
+
     protected String _userID;  // ref user id used in the connection.
 
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
-    
+
     protected PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
@@ -145,14 +145,14 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         _mandatory = mandatory;
         _waitUntilSent = waitUntilSent;
         _userID = connection.getUsername();
-        setPublishMode();        
+        setPublishMode();
     }
-    
+
     void setPublishMode()
     {
         // Publish mode could be configured at destination level as well.
         // Will add support for this when we provide a more robust binding URL
-        
+
         String syncPub = _connection.getSyncPublish();
         // Support for deprecated option sync_persistence
         if (syncPub.equals("persistent") || _connection.getSyncPersistence())
@@ -163,7 +163,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         {
             publishMode = PublishMode.SYNC_PUBLISH_ALL;
         }
-        
+
         _logger.info("MessageProducer " + toString() + " using publish mode : " + publishMode);
     }
 
@@ -276,6 +276,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     {
         checkPreConditions();
         checkInitialDestination();
+
 
         synchronized (_connection.getFailoverMutex())
         {
@@ -547,6 +548,10 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         if ((_session == null) || _session.isClosed())
         {
             throw new javax.jms.IllegalStateException("Invalid Session");
+        }
+        if(_session.getAMQConnection().isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Connection closed");
         }
     }
 
