@@ -81,6 +81,8 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 {
@@ -120,7 +122,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private Object _lastSent;
 
-    protected boolean _closed;
+    protected volatile boolean _closed;
     // maximum number of channels this session should have
     private long _maxNoOfChannels = 1000;
 
@@ -144,6 +146,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private AMQPConnectionActor _actor;
     private LogSubject _logSubject;
+
+    private final AtomicBoolean _closing = new AtomicBoolean(false);
 
     public ManagedObject getManagedObject()
     {
@@ -652,10 +656,15 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
+    public boolean isClosing()
+    {
+        return _closing.get();
+    }
+
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession() throws AMQException
     {
-        if (!_closed)
+        if(_closing.compareAndSet(false,true))
         {
             if (_virtualHost != null)
             {
@@ -676,6 +685,23 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             _closed = true;
 
             CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
+        }
+        else
+        {
+            synchronized(this)
+            {
+                while(!_closed)
+                {
+                    try
+                    {
+                        wait(1000);
+                    }
+                    catch (InterruptedException e)
+                    {
+
+                    }
+                }
+            }
         }
     }
 

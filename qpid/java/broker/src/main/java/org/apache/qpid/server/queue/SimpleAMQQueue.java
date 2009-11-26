@@ -1809,4 +1809,11 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             _flowResumeCapacity = config.getFlowResumeCapacity();
         }
     }
+
+
+    @Override
+    public String toString()
+    {
+        return String.valueOf(getName());
+    }
 }

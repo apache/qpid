@@ -42,6 +42,8 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 
     LogActor getLogActor();
 
+    boolean isClosing();
+
     public static final class ProtocolSessionIdentifier
     {
         private final Object _sessionIdentifier;
