@@ -18,7 +18,7 @@
 # under the License.
 #
 
-import os, signal, sys, time, imp
+import os, signal, sys, time, imp, re
 from qpid import datatypes, messaging
 from qpid.brokertest import *
 from qpid.harness import Skipped
@@ -189,4 +189,17 @@ class StoreTests(BrokerTest):
         a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
         b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=False)
 
-
+    def test_total_failure(self):
+        # Verify we abort with sutiable error message if no clean stores.
+        cluster = self.cluster(0, args=self.args()+["--cluster-size=2"])
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=True)
+        a.kill()
+        b.kill()
+        a = cluster.start("a", expect=EXPECT_EXIT_FAIL, wait=False)
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL, wait=False)
+        assert a.wait() != 0
+        assert b.wait() != 0
+        msg = re.compile("critical.*no clean store")
+        assert msg.search(file(a.log).read())
+        assert msg.search(file(b.log).read())

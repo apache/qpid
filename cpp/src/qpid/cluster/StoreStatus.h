@@ -24,6 +24,7 @@
 
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/enum.h"
+#include <iosfwd>
 
 namespace qpid {
 namespace cluster {
@@ -56,6 +57,8 @@ class StoreStatus
     Uuid clusterId, shutdownId;
     std::string dataDir;
 };
+
+std::ostream& operator<<(std::ostream&, const StoreStatus&);
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_STORESTATE_H*/

@@ -148,39 +148,49 @@ framing::Uuid InitialStatusMap::getClusterId() {
         return map.begin()->second->getClusterId(); // Youngest newcomer in node-id order
 }
 
+void checkId(Uuid& expect, const Uuid& actual, const string& msg) {
+    if (!expect) expect = actual;
+    assert(expect);
+    if (expect != actual)
+        throw Exception(msg);
+}
+
 void InitialStatusMap::checkConsistent() {
     assert(isComplete());
-    bool persistent = (map.begin()->second->getStoreState() != STORE_STATE_NO_STORE);
+    int clean = 0;
+    int dirty = 0;
+    int empty = 0;
+    int none = 0;
+    int active = 0;
     Uuid clusterId;
+    Uuid shutdownId;
+
     for (Map::iterator i = map.begin(); i != map.end(); ++i) {
-        // Must not mix transient and persistent members.
-        if (persistent != (i->second->getStoreState() != STORE_STATE_NO_STORE))
-            throw Exception("Mixing transient and persistent brokers in a cluster");
-        // Members with non-empty stores must have same cluster-id
+        if (i->second->getActive()) ++active;
         switch (i->second->getStoreState()) {
-          case STORE_STATE_NO_STORE:
-          case STORE_STATE_EMPTY_STORE:
-            break;               
+          case STORE_STATE_NO_STORE: ++none; break;
+          case STORE_STATE_EMPTY_STORE: ++empty; break;
           case STORE_STATE_DIRTY_STORE:
+            ++dirty;
+            checkId(clusterId, i->second->getClusterId(),
+                    "Cluster-ID mismatch. Stores belong to different clusters.");
+            break;
           case STORE_STATE_CLEAN_STORE:
-            if (!clusterId) clusterId = i->second->getClusterId();
-            assert(clusterId);
-            if (clusterId != i->second->getClusterId())
-                throw Exception("Cluster-id mismatch, brokers belonged to different clusters.");
+            ++clean;
+            checkId(clusterId, i->second->getClusterId(),
+                    "Cluster-ID mismatch. Stores belong to different clusters.");
+            checkId(shutdownId, i->second->getShutdownId(),
+                    "Shutdown-ID mismatch. Stores were not shut down together");
+            break;
         }
     }
-    // If this is a newly forming cluster, clean stores must have same shutdown-id
-    if (find_if(map.begin(), map.end(), &isActive) == map.end()) {
-        Uuid shutdownId;
-        for (Map::iterator i = map.begin(); i != map.end(); ++i) {
-            if (i->second->getStoreState() == STORE_STATE_CLEAN_STORE) {
-                if (!shutdownId) shutdownId = i->second->getShutdownId();
-                assert(shutdownId);
-                if (shutdownId != i->second->getShutdownId())
-                    throw Exception("Shutdown-id mismatch, brokers were not shut down together.");
-            }
-        }
-    }
+    // Can't mix transient and persistent members.
+    if (none && (clean+dirty+empty))
+        throw Exception("Mixing transient and persistent brokers in a cluster");
+    // If there are no active members and there are dirty stores there
+    // must be at least one clean store.
+    if (!active && dirty && !clean)
+        throw Exception("Cannot recover, no clean store");
 }
 
 
