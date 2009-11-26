@@ -47,6 +47,30 @@ def is_running(pid):
 class BadProcessStatus(Exception):
     pass
 
+class ExceptionWrapper:
+    """Proxy object that adds a message to exceptions raised"""
+    def __init__(self, obj, msg):
+        self.obj = obj
+        self.msg = msg
+        
+    def __getattr__(self, name):
+        func = getattr(self.obj, name)
+        return lambda *args, **kwargs: self._wrap(func, args, kwargs)
+
+    def _wrap(self, func, args, kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception, e:
+            raise Exception("%s: %s" %(self.msg, str(e)))
+        
+def error_line(f):
+    try:
+        lines = file(f).readlines()
+        if len(lines) > 0: return ": %s" % (lines[-1])
+    except: pass
+    return ""
+    
+
 class Popen(popen2.Popen3):
     """
     Similar to subprocess.Popen but using popen2 classes for portability.
@@ -55,24 +79,28 @@ class Popen(popen2.Popen3):
     """
 
     def __init__(self, cmd, expect=EXPECT_EXIT_OK):
+        if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
         popen2.Popen3.__init__(self, self.cmd, True)
         self.expect = expect
-        self.stdin = self.tochild
-        self.stdout = self.fromchild
-        self.stderr = self.childerr
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[-1], self.pid)
+        msg = "Process %s" % self.pname
+        self.stdin = ExceptionWrapper(self.tochild, msg)
+        self.stdout = ExceptionWrapper(self.fromchild, msg)
+        self.stderr = ExceptionWrapper(self.childerr, msg)
         self.dump(self.cmd_str(), "cmd")
 
     def dump(self, str, ext):
-        f = file("%s.%s" % (self.pname, ext), "w")
+        name = "%s.%s" % (self.pname, ext)
+        f = file(name, "w")
         f.write(str)
         f.close()
+        return name
 
     def unexpected(self,msg):
         self.dump(self.stdout.read(), "out")
-        self.dump(self.stderr.read(), "err")
-        raise BadProcessStatus("%s: %s" % (msg, self.pname))
+        err = self.dump(self.stderr.read(), "err")
+        raise BadProcessStatus("%s %s%s" % (self.pname, msg, error_line(err)))
     
     def stop(self):                  # Clean up at end of test.
         if self.expect == EXPECT_RUNNING:
@@ -88,11 +116,11 @@ class Popen(popen2.Popen3):
                 delay *= 2
             if self.returncode is None: # Still haven't stopped
                 self.kill()
-                self.unexpected("Still running")
+                self.unexpected("still running")
             elif self.expect == EXPECT_EXIT_OK and self.returncode != 0:
-                self.unexpected("Exit code %d" % self.returncode)
+                self.unexpected("exit code %d" % self.returncode)
             elif self.expect == EXPECT_EXIT_FAIL and self.returncode == 0:
-                self.unexpected("Expected error")
+                self.unexpected("expected error")
                
     def communicate(self, input=None):
         if input:
@@ -102,7 +130,10 @@ class Popen(popen2.Popen3):
         self.wait()
         return outerr
 
-    def is_running(self): return is_running(self.pid)
+    def is_running(self): return self.poll() is None
+
+    def assert_running(self):
+        if not self.is_running(): unexpected("Exit code %d" % self.returncode)
 
     def poll(self):
         self.returncode = popen2.Popen3.poll(self)
@@ -157,8 +188,8 @@ class Broker(Popen):
         if (self._port is None):
             try: self._port = int(self.stdout.readline())
             except ValueError, e:
-                raise Exception("Can't get port for broker %s (%s)\n    %s" %
-                                (self.name, self.pname, file(self.log).readlines()[-1]))
+                raise Exception("Can't get port for broker %s (%s)%s" %
+                                (self.name, self.pname, error_line(self.log)))
         return self._port
 
     def unexpected(self,msg):
