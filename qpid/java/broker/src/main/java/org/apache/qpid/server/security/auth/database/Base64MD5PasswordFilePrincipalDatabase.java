@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.access.management.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.util.FileUtils;
 
@@ -78,6 +79,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         CRAMMD5HashedInitialiser cram = new CRAMMD5HashedInitialiser();
         cram.initialise(this);
         _saslServers.put(cram.getMechanismName(), cram);
+
+        //Add the Hex initialiser
+        CRAMMD5HexInitialiser cramHex = new CRAMMD5HexInitialiser();
+        cramHex.initialise(this);
+        _saslServers.put(cramHex.getMechanismName(), cramHex);
 
         //fixme The PDs should setup a PD Mangement MBean
 //        try
