@@ -499,6 +499,10 @@ AC_SUBST([SOCKLIBS])
 
 AM_PATH_PYTHON()
 
+# Used by env scripts to find libraries in cmake or autoconf builds.
+builddir_lib_suffix="/.libs"
+AC_SUBST([builddir_lib_suffix])
+
 # Files to generate	
 AC_CONFIG_FILES([
   Makefile
@@ -520,6 +524,7 @@ AC_CONFIG_FILES([
   etc/Makefile
   src/Makefile
   src/tests/Makefile
+  src/tests/test_env.sh
   docs/man/Makefile
   docs/api/Makefile
   docs/api/user.doxygen

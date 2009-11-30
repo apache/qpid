@@ -20,10 +20,9 @@
 #
 
 # Run the python tests.
-. `dirname $0`/python_env.sh
+source ./test_env.sh
 QPID_PORT=${QPID_PORT:-5672}
 PYTHON_TESTS=${PYTHON_TESTS:-$*}
 FAILING=${FAILING:-/dev/null}
 
-cd $PYTHON_DIR
-python commands/qpid-python-test -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || exit 1
+python $QPID_PYTHON_TEST -b localhost:$QPID_PORT -I $FAILING $PYTHON_TESTS || exit 1

@@ -53,8 +53,8 @@ static bool isLogOption(const std::string& s) { return boost::starts_with(s, "--
 
 void updateArgs(ClusterFixture::Args& args, size_t index) {
     ostringstream clusterLib, testStoreLib, storeName;
-    clusterLib << getLibPath("CLUSTER_LIB", "../.libs/cluster.so");
-    testStoreLib << getLibPath("TEST_STORE_LIB", ".libs/test_store.so");
+    clusterLib << getLibPath("CLUSTER_LIB");
+    testStoreLib << getLibPath("TEST_STORE_LIB");
     storeName << "s" << index;
     args.push_back("--auth");
     args.push_back("no");

@@ -72,7 +72,7 @@ bool durableFlag = std::getenv("STORE_LIB") != 0;
 
 void prepareArgs(ClusterFixture::Args& args, const bool durableFlag = false) {
     ostringstream clusterLib;
-    clusterLib << getLibPath("CLUSTER_LIB", "../.libs/cluster.so");
+    clusterLib << getLibPath("CLUSTER_LIB");
     args += "--auth", "no", "--no-module-dir", "--load-module", clusterLib.str();
     if (durableFlag)
         args += "--load-module", getLibPath("STORE_LIB"), "TMP_DATA_DIR";
@@ -227,7 +227,7 @@ QPID_AUTO_TEST_CASE(testAcl) {
     char cwd[1024];
     BOOST_CHECK(::getcwd(cwd, sizeof(cwd)));
     ostringstream aclLib;
-    aclLib << getLibPath("ACL_LIB", "../.libs/acl.so");
+    aclLib << getLibPath("ACL_LIB");
     ClusterFixture::Args args;
     prepareArgs(args, durableFlag);
     args += "--log-enable=critical"; // Supress expected errors

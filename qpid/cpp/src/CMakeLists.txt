@@ -324,6 +324,7 @@ if (BUILD_XML)
                qpid/xml/XmlExchange.cpp
                qpid/xml/XmlExchange.h
                qpid/xml/XmlExchangePlugin.cpp)
+  set_target_properties (xml PROPERTIES PREFIX "")
   target_link_libraries (xml xerces-c xqilla qpidbroker pthread)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties (xml PROPERTIES
@@ -356,6 +357,7 @@ if (BUILD_ACL)
        qpid/acl/AclReader.h
       )
   add_library (acl MODULE ${acl_SOURCES})
+  set_target_properties (acl PROPERTIES PREFIX "")
   target_link_libraries (acl qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties (acl PROPERTIES
@@ -873,8 +875,7 @@ add_library (replicating_listener MODULE
              qpid/replication/ReplicatingEventListener.h
             )
 target_link_libraries (replicating_listener qpidbroker ${Boost_PROGRAM_OPTIONS_LIBRARY})
-set_target_properties (replicating_listener PROPERTIES
-                       PREFIX "")
+set_target_properties (replicating_listener PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_listener PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)
@@ -893,8 +894,7 @@ add_library (replicating_exchange MODULE
              qpid/replication/ReplicationExchange.h
             )
 target_link_libraries (replicating_exchange qpidbroker)
-set_target_properties (replicating_exchange PROPERTIES
-                       PREFIX "")
+set_target_properties (replicating_exchange PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(replicating_exchange PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)

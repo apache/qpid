@@ -1,0 +1,76 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+absdir() { echo `cd $1 && pwd`; }
+
+# Environment variables substituted by configure/cmake.
+export srcdir=@abs_srcdir@
+export builddir=@abs_builddir@
+export top_srcdir=@abs_top_srcdir@
+export top_builddir=@abs_top_builddir@
+
+export QPID_MODULE_DIR=$top_builddir/src@builddir_lib_suffix@
+export QPID_TEST_MODULE_DIR=$builddir@builddir_lib_suffix@
+
+# Other paths and directories
+if test -d $builddir/python ; then
+    export PYTHON_DIR=$builddir/python
+    export QPID_PYTHON_TEST=$PYTHON_DIR/commands/qpid-python-test
+elif test -d $top_srcdir/../python ; then
+    export PYTHON_DIR=$top_srcdir/../python
+    export QPID_PYTHON_TEST=$PYTHON_DIR/qpid-python-test
+fi
+if test -d $PYTHON_DIR; then
+    export PYTHON_COMMANDS=$PYTHON_DIR/commands
+    export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$PYTHONPATH
+fi
+
+export QPID_TEST_EXEC_DIR=$builddir
+
+# qpidd executable
+export QPIDD_EXEC=$top_builddir/src/qpidd
+
+# Executable python scripts
+export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
+export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
+export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster
+
+# Test executables
+export RECEIVER_EXEC=$QPID_TEST_EXEC_DIR/receiver
+export SENDER_EXEC=$QPID_TEST_EXEC_DIR/sender
+
+# Modules
+export TEST_STORE_LIB=$QPID_TEST_MODULE_DIR/test_store.so
+export REPLICATING_LISTENER_LIB=$QPID_MODULE_DIR/replicating_listener.so
+export REPLICATION_EXCHANGE_LIB=$QPID_MODULE_DIR/replication_exchange.so
+
+# Optional modules, set only if present
+exportmodule() { test -f $QPID_MODULE_DIR/$2 && eval "export $1=$QPID_MODULE_DIR/$2"; }
+exportmodule ACL_LIB acl.so
+exportmodule CLUSTER_LIB cluster.so
+exportmodule SSL_CONNECTOR_LIB ssl_connector.so
+exportmodule SSL_LIB ssl.so
+exportmodule WATCHDOG_LIB watchdog.so
+exportmodule XML_LIB xml.so
+
+
+# Qpid options
+export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules
+export QPID_DATA_DIR= 		# Default to no data dir, not ~/.qpidd
+

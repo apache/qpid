@@ -8,7 +8,7 @@ libtoolize --automake
 # the real ones.
 cat > src/rubygen.mk <<EOF
 \$(srcdir)/rubygen.mk: force
-	\$(rgen_cmd)
+	\$(rgen_cmd)  \$(srcdir)/rubygen.mk
 EOF
 cat > src/managementgen.mk <<EOF
 \$(srcdir)/managementgen.mk: force

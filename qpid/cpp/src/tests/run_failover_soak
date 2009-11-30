@@ -19,11 +19,12 @@
 # under the License.
 #
 
-. `dirname $0`/ais_check
+source ./test_env.sh
+. $srcdir/ais_check
 
 host=127.0.0.1
 
-MODULES=${MODULES:-../.libs}
+MODULES=${MODULES:-$QPID_MODULE_DIR}
 MESSAGES=${MESSAGES:-1000000}
 REPORT_FREQUENCY=${REPORT_FREQUENCY:-20000}
 VERBOSITY=${VERBOSITY:-10}

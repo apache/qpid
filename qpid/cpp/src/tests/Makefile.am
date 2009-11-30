@@ -23,6 +23,7 @@ PUBLIC_INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include # Use public
 
 abs_builddir=@abs_builddir@
 abs_srcdir=@abs_srcdir@
+
 extra_libs = 
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
@@ -280,12 +281,7 @@ qpid_stream_LDADD=$(lib_client)
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
     LIBTOOL="$(LIBTOOL)" \
-    srcdir=$(srcdir) \
-    top_builddir=$(top_builddir) \
     QPID_DATA_DIR= \
-    ACL_LIB=../.libs/acl.so \
-    CLUSTER_LIB=../.libs/cluster.so \
-    TEST_STORE_LIB=.libs/test_store.so \
     BOOST_TEST_SHOW_PROGRESS=yes \
     $(srcdir)/run_test 
 
@@ -332,7 +328,6 @@ LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_p
 
 EXTRA_DIST+=						\
 	CMakeLists.txt					\
-	python_env.sh					\
 	fanout_perftest					\
 	shared_perftest					\
 	multiq_perftest					\

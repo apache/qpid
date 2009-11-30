@@ -20,8 +20,8 @@
 #
 
 # Run a test of the replication feature
-MY_DIR=`dirname \`which $0\``
-. `dirname $0`/python_env.sh
+
+source ./test_env.sh
 
 trap stop_brokers INT TERM QUIT
 
@@ -36,16 +36,14 @@ stop_brokers() {
     fi
 }
 
-if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f ../.libs/replication_exchange.so;  then
+if test -d ${PYTHON_DIR} && test -f $QPID_MODULE_DIR/replicating_listener.so && test -f $QPID_MODULE_DIR/replication_exchange.so;  then
     rm -f queue-*.repl replication-*.log #cleanup from any earlier runs
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable info+ --log-to-file replication-source.log  --log-to-stderr 0 > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable info+ --log-to-file replication-source.log  --log-to-stderr 0 > qpidd.port
     BROKER_A=`cat qpidd.port`
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
     BROKER_B=`cat qpidd.port`
-    PYTHONPATH=$PYTHON_DIR
-    export PYTHONPATH
     echo "Running replication test between localhost:$BROKER_A and localhost:$BROKER_B"
 
     $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
@@ -120,10 +118,10 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
 
     # now check offsets working (enqueue based on position being set, not queue abs position)
     
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable info+ --log-to-file replication-source.log  --log-to-stderr 0 > qpidd.port 
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable info+ --log-to-file replication-source.log  --log-to-stderr 0 > qpidd.port 
     BROKER_A=`cat qpidd.port`
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
     BROKER_B=`cat qpidd.port`
 
     $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
@@ -151,7 +149,7 @@ if test -d ${PYTHON_DIR} && test -f ../.libs/replicating_listener.so && test -f 
     # now check offsets working
     ../qpidd -q --port $BROKER_B
     unset BROKER_B
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module ../.libs/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log  --log-to-stderr 0 > qpidd.port
     BROKER_B=`cat qpidd.port`
 
     $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add queue queue-e

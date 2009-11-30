@@ -21,8 +21,8 @@
 #script to run a sequence of ring queue tests via make
 
 #setup path to find qpid-config and sender/receiver test progs
-srcdir=`dirname $0`
-. `dirname $0`/python_env.sh
+source ./test_env.sh
+
 export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
 
 #set port to connect to via env var

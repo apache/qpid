@@ -21,8 +21,7 @@
 
 # Test reliability of the replication feature in the face of link
 # failures:
-srcdir=`dirname $0`
-. $srcdir/python_env.sh
+source ./test_env.sh
 
 trap stop_brokers INT EXIT
 
@@ -58,8 +57,8 @@ if test -d $PYTHON_DIR; then
     DR_CLUSTER=DR_$(hostname)_$$
 
     GENERAL_OPTS="--auth no --no-module-dir --no-data-dir --daemon --port 0 --log-to-stderr false"
-    PRIMARY_OPTS="--load-module ../.libs/replicating_listener.so --create-replication-queue true --replication-queue REPLICATION_QUEUE --load-module ../.libs/cluster.so --cluster-name $PRIMARY_CLUSTER"
-    DR_OPTS="--load-module ../.libs/replication_exchange.so --load-module ../.libs/cluster.so --cluster-name $DR_CLUSTER"
+    PRIMARY_OPTS="--load-module $QPID_MODULE_DIR/replicating_listener.so --create-replication-queue true --replication-queue REPLICATION_QUEUE --load-module $QPID_MODULE_DIR/cluster.so --cluster-name $PRIMARY_CLUSTER"
+    DR_OPTS="--load-module $QPID_MODULE_DIR/replication_exchange.so --load-module $QPID_MODULE_DIR/cluster.so --cluster-name $DR_CLUSTER"
 
     rm -f repl*.tmp #cleanup any files left from previous run
 

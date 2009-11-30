@@ -22,7 +22,7 @@
 # Test reliability of the replication feature in the face of link
 # failures:
 srcdir=`dirname $0`
-. $srcdir/python_env.sh
+source ./test_env.sh
 
 trap stop_brokers EXIT
 
