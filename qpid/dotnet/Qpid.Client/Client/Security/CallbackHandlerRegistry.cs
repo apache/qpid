@@ -96,6 +96,8 @@ namespace Apache.Qpid.Client.Security
             _mechanism2HandlerMap.Add(ExternalSaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
          if ( !_mechanism2HandlerMap.Contains(CramMD5SaslClient.Mechanism) )
             _mechanism2HandlerMap.Add(CramMD5SaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
+         if ( !_mechanism2HandlerMap.Contains(CramMD5HexSaslClient.Mechanism) )
+            _mechanism2HandlerMap.Add(CramMD5HexSaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
          if ( !_mechanism2HandlerMap.Contains(PlainSaslClient.Mechanism) )
             _mechanism2HandlerMap.Add(PlainSaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
 
