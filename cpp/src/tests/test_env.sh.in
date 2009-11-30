@@ -69,8 +69,6 @@ exportmodule SSL_LIB ssl.so
 exportmodule WATCHDOG_LIB watchdog.so
 exportmodule XML_LIB xml.so
 
-
 # Qpid options
-export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules
 export QPID_DATA_DIR= 		# Default to no data dir, not ~/.qpidd
 
