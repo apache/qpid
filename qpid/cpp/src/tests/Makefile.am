@@ -279,6 +279,7 @@ qpid_stream_LDADD=$(lib_client)
 
 TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
+    LIBTOOL="$(LIBTOOL)" \
     srcdir=$(srcdir) \
     top_builddir=$(top_builddir) \
     QPID_DATA_DIR= \
