@@ -19,8 +19,8 @@
  *
  */
 #include "qpid/sys/ssl/check.h"
-#include <nss3/secerr.h>
-#include <nss3/sslerr.h>
+#include <secerr.h>
+#include <sslerr.h>
 #include <boost/format.hpp>
 
 using boost::format;
