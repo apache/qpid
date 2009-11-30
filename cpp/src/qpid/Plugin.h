@@ -102,8 +102,10 @@ class Plugin : private boost::noncopyable {
     virtual void initialize(Target&) = 0;
 
     /**
-     * Initialization order, lower initOrder() plugins are
-     * initialized first. @see DEFAULT_INIT_ORDER
+     * Initialization order. If a plugin does not override this, it
+     * returns DEFAULT_INIT_ORDER. Plugins that need to be initialized
+     * earlier/later than normal can override initOrder to return
+     * a lower/higher value than DEFAULT_INIT_ORDER.
      */
     QPID_COMMON_EXTERN virtual int initOrder() const;
     
