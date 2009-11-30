@@ -146,8 +146,6 @@ AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 # It requires several external tools and files, which we check for here.
 
 AC_CHECK_PROG([RUBY], [ruby], [ruby])
-test -n "$RUBY" && generate=yes
-test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 # Swig binding generator is needed for the script (Ruby, Python, etc.) bindings.
 AC_PROG_SWIG(1.3.26)
@@ -239,6 +237,7 @@ specdir=`pwd`/$srcdir/../specs
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
 AC_SUBST(AMQP_FINAL_XML)
 AM_CONDITIONAL([GENERATE], [test -f $AMQP_FINAL_XML])
+test -f $AMQP_FINAL_XML -a -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 # URL and download URL for the package.
 URL=http://rhm.et.redhat.com/qpidc
