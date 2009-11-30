@@ -23,13 +23,14 @@
 #
 
 # Execute command with the ais group set.
+source ./test_env.sh
 . `dirname $0`/ais_check
 
 rm -f cluster*.log cluster.ports qpidd.port
 
 SIZE=${1:-3}; shift
 CLUSTER=$HOSTNAME.$$
-OPTS="-d --no-module-dir --load-module ../.libs/cluster.so  --cluster-name=$CLUSTER --auth=no --log-enable notice+ --log-enable debug+:cluster $@"
+OPTS="-d --no-module-dir --load-module $QPID_MODULE_DIR/cluster.so  --cluster-name=$CLUSTER --auth=no --log-enable notice+ --log-enable debug+:cluster $@"
 
 for (( i=0; i<SIZE; ++i )); do
     DDIR=`mktemp -d /tmp/start_cluster.XXXXXXXXXX`

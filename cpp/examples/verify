@@ -30,7 +30,8 @@
 #
 
 QPID_DATA_DIR=
-export QPID_DATA_DIR
+QPID_NO_MODULE_DIR=1
+export QPID_DATA_DIR QPID_NO_MODULE_DIR
 
 cleanup() {
     test -n "$QPIDD" &&  $QPIDD -q # Private broker

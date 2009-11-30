@@ -28,6 +28,8 @@
 #include <vector>
 #include <set>
 #include <ostream>
+#include <sstream>
+#include <exception>
 
 // Print a sequence
 template <class T> std::ostream& seqPrint(std::ostream& o, const T& seq) {
@@ -106,8 +108,11 @@ inline std::string getLibPath(const char* envName, const char* defaultPath = 0) 
     const char* p = std::getenv(envName);
     if (p != 0)
         return p;
-    if (defaultPath == 0)
-        BOOST_FAIL("Environment variable " << envName << " not set.");
+    if (defaultPath == 0) {
+        std::ostringstream msg;
+        msg << "Environment variable " << envName << " not set.";
+        throw std::runtime_error(msg.str());
+    }
     return defaultPath;
 }
 

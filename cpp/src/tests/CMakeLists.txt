@@ -28,6 +28,16 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 include (FindPythonInterp)
 
+# Create the environment scripts for tests
+set (abs_srcdir ${CMAKE_CURRENT_SOURCE_DIR})
+set (abs_builddir ${CMAKE_CURRENT_BINARY_DIR})
+set (abs_top_srcdir ${CMAKE_SOURCE_DIR})
+set (abs_top_builddir ${CMAKE_BINARY_DIR})
+set (builddir_lib_suffix "")
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/test_env.sh.in
+  ${CMAKE_CURRENT_BINARY_DIR}/test_env.sh)
+
+
 # If valgrind is selected in the configuration step, set up the path to it
 # for CTest.
 if (ENABLE_VALGRIND)
@@ -158,9 +168,10 @@ target_link_libraries (unit_test
 remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
-#libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
 
-#include cluster.mk
+# include(cluster.cmake)
+
+# FIXME aconway 2009-11-30: enable SSL
 #if SSL
 #include ssl.mk
 #endif

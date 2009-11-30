@@ -20,8 +20,8 @@
 #
 
 # Run the cli-utility tests.
-MY_DIR=`dirname \`which $0\``
-. `dirname $0`/python_env.sh
+
+source ./test_env.sh
 CLI_DIR=$PYTHON_COMMANDS
 
 trap stop_brokers INT TERM QUIT
@@ -41,8 +41,6 @@ stop_brokers() {
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
     echo "Running CLI tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
-    PYTHONPATH=${PYTHON_DIR}:${MY_DIR}
-    export PYTHONPATH
     $PYTHON_COMMANDS/qpid-python-test -m cli_tests -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dcli-dir=$CLI_DIR $@
     RETCODE=$?
     stop_brokers

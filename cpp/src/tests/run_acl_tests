@@ -20,13 +20,13 @@
 #
 
 # Run the acl tests. $srcdir is set by the Makefile.
-. `dirname $0`/python_env.sh
+source ./test_env.sh
 DATA_DIR=`pwd`/data_dir
 
 trap stop_brokers INT TERM QUIT
 
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module ../.libs/acl.so --acl-file policy.acl --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module $QPID_MODULE_DIR/acl.so --acl-file policy.acl --auth no > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
 }
 
@@ -35,9 +35,9 @@ stop_brokers() {
 }
 
 test_loading_acl_from_absolute_path(){
-    POLICY_FILE=$PWD/$srcdir/policy.acl
+    POLICY_FILE=$srcdir/policy.acl
     rm -f temp.log
-    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module ../.libs/acl.so --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
+    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module $QPID_MODULE_DIR/acl.so --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
     ACL_FILE=`grep "notice Read ACL file" temp.log | sed 's/^.*Read ACL file //'`
    ../qpidd -q --port $PORT
    if test "$ACL_FILE" != "\"$POLICY_FILE\""; then
@@ -55,7 +55,7 @@ if test -d ${PYTHON_DIR} ;  then
     echo "Running acl tests using brokers on ports $LOCAL_PORT"
     PYTHONPATH=$PYTHON_DIR:$srcdir
     export PYTHONPATH
-    $PYTHON_COMMANDS/qpid-python-test -b localhost:$LOCAL_PORT -m acl || EXITCODE=1
+    $QPID_PYTHON_TEST -b localhost:$LOCAL_PORT -m acl || EXITCODE=1
     stop_brokers || EXITCODE=1
     test_loading_acl_from_absolute_path || EXITCODE=1
     rm -rf $DATA_DIR
