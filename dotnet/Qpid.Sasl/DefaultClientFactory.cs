@@ -31,6 +31,7 @@ namespace Apache.Qpid.Sasl
       private static readonly string[] SUPPORTED = new string[] {
                DigestSaslClient.Mechanism,
                CramMD5SaslClient.Mechanism,
+               CramMD5HexSaslClient.Mechanism,
                PlainSaslClient.Mechanism, 
                AnonymousSaslClient.Mechanism,
                ExternalSaslClient.Mechanism,
@@ -50,6 +51,7 @@ namespace Apache.Qpid.Sasl
              props.Contains(SaslProperties.PolicyPassCredentials) )
          {
             vetoed.Add(CramMD5SaslClient.Mechanism);
+            vetoed.Add(CramMD5HexSaslClient.Mechanism);
             vetoed.Add(PlainSaslClient.Mechanism);
             vetoed.Add(AnonymousSaslClient.Mechanism);
             vetoed.Add(ExternalSaslClient.Mechanism);
@@ -81,6 +83,8 @@ namespace Apache.Qpid.Sasl
             return new DigestSaslClient(authorizationId, serverName, protocol, props, handler);
          if ( mechs.Contains(CramMD5SaslClient.Mechanism) )
             return new CramMD5SaslClient(authorizationId, props, handler);
+         if ( mechs.Contains(CramMD5HexSaslClient.Mechanism) )
+            return new CramMD5HexSaslClient(authorizationId, props, handler);
          if ( mechs.Contains(PlainSaslClient.Mechanism) )
             return new PlainSaslClient(authorizationId, props, handler);
          if ( mechs.Contains(AnonymousSaslClient.Mechanism) )
