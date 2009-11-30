@@ -75,22 +75,15 @@ outputs() {
     done
 }
 
-function normalize() {
-    local path=${1//\/.\//\/}\/
-    while [[ $path =~ ([^/][^/]*/\.\./) ]]
-    do
-        path=${path/${BASH_REMATCH[0]}/}
-    done
-    echo $path | sed 's/\/$//'
-}
+normalize() { echo `cd $1 && pwd`; }
 
 verify() {
     FAIL=
-    arg=$(normalize $1)
+    arg=$1
     srcdir=$(normalize $2)
     builddir=$(normalize $3)
-    if [ -d $arg ]; then dir=$arg; script=verify;
-    else dir=`dirname $arg`; script=`basename $arg`; fi
+    if [ -d $arg ]; then dir=$(normalize $arg); script=verify;
+    else dir=$(normalize `dirname $arg`); script=`basename $arg`; fi
 
     # if the example is in the "cpp" area, make sure we run from the build directory, not the source dir.
     rundir=${dir/$srcdir\/cpp/$builddir/}
@@ -120,7 +113,7 @@ topbuilddir=$2
 shift 2
 
 for example in "$@"; do
-    echo "== $(normalize $example)"
+    echo "== $example"
     if ( verify $example $topsrcdir $topbuilddir; ) then echo "PASS";  else echo "FAIL"; RET=1; fi
      done
 exit $RET
