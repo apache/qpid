@@ -716,6 +716,7 @@ TYPE_MAPPINGS={
   dict: "amqp/map",
   list: "amqp/list",
   unicode: "text/plain; charset=utf8",
+  unicode: "text/plain",
   buffer: None,
   str: None,
   None.__class__: None
@@ -725,6 +726,7 @@ TYPE_CODEC={
   "amqp/map": codec("map"),
   "amqp/list": codec("list"),
   "text/plain; charset=utf8": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
+  "text/plain": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
   "": (lambda x: x, lambda x: x),
   None: (lambda x: x, lambda x: x)
   }
