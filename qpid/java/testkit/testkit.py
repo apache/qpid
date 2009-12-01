@@ -19,7 +19,7 @@
 # under the License.
 #
 
-import time, string
+import time, string, traceback
 from brokertest import *
 from qpid.messaging import *
 
@@ -82,20 +82,22 @@ class JavaClientTest(BrokerTest):
         for j in range(i):            
             try:   
                 m = err_watcher.fetch(timeout=error_ck_freq)
-                print self.check_for_error() 
+                print "Java process notified of an error"
+                print self.check_for_error(m) 
             except messaging.Empty, e:                
                 pass # do nothing
         ssn.close()
 
-    def check_for_error(msg):
-        raise Exception("Error:%s \ntime:%s\ntrace:%s\n" %
-                         (msg.properties["desc"],
-                          msg.properties["time"],
-                          msg.properties["exception-trace"]
+    def check_for_error(self,msg):
+        raise Exception("Error:%s \nTime:%s\nTrace:%s\n" %
+                         (msg.properties.get("desc"),
+                          msg.properties.get("time"),
+                          msg.properties.get("exception-trace")
                           ))
 
     def terminate_and_capture_logs(self,popen, process_name):
-        popen.terminate()
+        if popen.is_running():          
+            popen.terminate()
         log = os.path.join(self.dir, process_name+".out") 
         f = open(log, 'w')
         f.write(popen.stdout.read())
@@ -124,7 +126,7 @@ class ConcurrencyTest(JavaClientTest):
         """Tests multiple sessions on a single connection""" 
 
         cluster = Cluster(self, 2)
-        p = cluster[0].port
+        p = cluster[0].port()
      
         self.start_error_watcher(broker=cluster[0])
 
@@ -149,7 +151,7 @@ class ConcurrencyTest(JavaClientTest):
 
         cluster = Cluster(self,2)
         ssn = cluster[0].connect().session()
-        p = cluster[0].port
+        p = cluster[0].port()
      
         self.start_error_watcher(broker=cluster[0])
 
@@ -176,7 +178,7 @@ class SoakTest(JavaClientTest):
 
     def test_failover(self):
         cluster = self.cluster(4, expect=EXPECT_EXIT_FAIL)
-        p = cluster[0].port
+        p = cluster[0].port()
         self.start_error_watcher(broker=cluster[0])
         receiver = self.popen(self.client(receiver=True,
                                           ssn_count=1,
@@ -202,9 +204,10 @@ class SoakTest(JavaClientTest):
                 b=cluster.start()
                 self.monitor_clients(broker=b,run_time=30,error_ck_freq=30)
         except ConnectError, e1:
-            error_msg = "Unable to connect to new cluster node"
+            error_msg = "Unable to connect to new cluster node : " + traceback.format_exc(e1)
+
         except SessionError, e2:
-            error_msg = "Session error while connected to new cluster node"        
+            error_msg = "Session error while connected to new cluster node : " + traceback.format_exc(e2)
 
         # verify also captures out/err streams
         self.verify(receiver,sender)
