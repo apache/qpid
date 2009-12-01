@@ -872,7 +872,7 @@ public class ServerConfigurationTest extends TestCase
         // Switch to deny the connection
         writeConfigFile(mainFile, true);
         
-        reg.getConfiguration().reparseConfigFile();
+        reg.getConfiguration().reparseConfigFileSecuritySections();
 
         assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
@@ -991,7 +991,7 @@ public class ServerConfigurationTest extends TestCase
         out.write("</firewall>\n");
         out.close();
 
-        reg.getConfiguration().reparseConfigFile();
+        reg.getConfiguration().reparseConfigFileSecuritySections();
 
         assertTrue(reg.getAccessManager().authoriseConnect(session, virtualHost));
 
@@ -1006,7 +1006,7 @@ public class ServerConfigurationTest extends TestCase
         out.write("</firewall>\n");
         out.close();
         
-        reg.getConfiguration().reparseConfigFile();
+        reg.getConfiguration().reparseConfigFileSecuritySections();
 
         assertFalse(reg.getAccessManager().authoriseConnect(session, virtualHost));
     }
