@@ -28,30 +28,24 @@ export top_builddir=@abs_top_builddir@
 export QPID_MODULE_DIR=$top_builddir/src@builddir_lib_suffix@
 export QPID_TEST_MODULE_DIR=$builddir@builddir_lib_suffix@
 
-# Other paths and directories
-if test -d $builddir/python ; then
-    export PYTHON_DIR=$builddir/python
-    export QPID_PYTHON_TEST=$PYTHON_DIR/commands/qpid-python-test
-elif test -d $top_srcdir/../python ; then
+# Python paths and directories
+export PYTHON_DIR=$builddir/python
+export QPID_PYTHON_TEST=$PYTHON_DIR/commands/qpid-python-test
+if [ ! -d $PYTHON_DIR -a -d $top_srcdir/../python ]; then
     export PYTHON_DIR=$top_srcdir/../python
     export QPID_PYTHON_TEST=$PYTHON_DIR/qpid-python-test
 fi
-if test -d $PYTHON_DIR; then
-    export PYTHON_COMMANDS=$PYTHON_DIR/commands
-    export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$PYTHONPATH
-fi
-
-export QPID_TEST_EXEC_DIR=$builddir
-
-# qpidd executable
-export QPIDD_EXEC=$top_builddir/src/qpidd
-
-# Executable python scripts
+export PYTHON_COMMANDS=$PYTHON_DIR/commands
+export PYTHONPATH=$srcdir:$PYTHON_DIR:$PYTHON_COMMANDS:$PYTHONPATH
 export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster
 
+# qpidd executable
+export QPIDD_EXEC=$top_builddir/src/qpidd
+
 # Test executables
+export QPID_TEST_EXEC_DIR=$builddir
 export RECEIVER_EXEC=$QPID_TEST_EXEC_DIR/receiver
 export SENDER_EXEC=$QPID_TEST_EXEC_DIR/sender
 
