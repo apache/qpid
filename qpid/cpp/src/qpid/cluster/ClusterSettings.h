@@ -36,7 +36,7 @@ struct ClusterSettings {
     std::string username, password, mechanism;
     size_t size;
 
-    ClusterSettings() : quorum(false), readMax(10), size(1)
+    ClusterSettings() : quorum(false), readMax(10), mechanism("ANONYMOUS"), size(1)
     {}
   
     Url getUrl(uint16_t port) const {
