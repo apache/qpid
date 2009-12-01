@@ -42,7 +42,8 @@ if [ "$CLUSTER_LIB" = "" ] ; then
 fi
 
 if [ "$QP_CP" = "" ] ; then
-   QP_CP=`find ../../build/lib/ -name '*.jar' | tr '\n' ':'`
+   QP_JAR_PATH=`abs_path "../../build/lib/"`
+   QP_CP=`find $QP_JAR_PATH -name '*.jar' | tr '\n' ':'`
 fi
 
 if [ "$OUTDIR" = "" ] ; then
