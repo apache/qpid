@@ -800,7 +800,7 @@ class MessageTests(Base):
   def testCreateUnicode(self):
     m = Message(u"unicode")
     assert m.content == u"unicode"
-    assert m.content_type == "text/plain; charset=utf8"
+    assert m.content_type == "text/plain"
 
   def testCreateMap(self):
     m = Message({})

@@ -712,6 +712,9 @@ def codec(name):
 
   return encode, decode
 
+# XXX: need to correctly parse the mime type and deal with
+# content-encoding header
+
 TYPE_MAPPINGS={
   dict: "amqp/map",
   list: "amqp/list",
