@@ -42,7 +42,7 @@ public class ConfigurationManagementMBean extends AMQManagedObject implements Co
 
     public void reloadSecurityConfiguration() throws Exception
     {
-        ApplicationRegistry.getInstance().getConfiguration().reparseConfigFile();
+        ApplicationRegistry.getInstance().getConfiguration().reparseConfigFileSecuritySections();
     }
 
 }
