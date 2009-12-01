@@ -34,6 +34,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.util.LogMonitor;
 import org.apache.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,8 @@ public class QpidTestCase extends TestCase
     protected File _configFile = new File(System.getProperty("broker.config"));
 
     protected static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
-
+    protected static final int LOGMONITOR_TIMEOUT = 5000;
+    
     protected long RECEIVE_TIMEOUT = 1000l;
 
     private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
@@ -1251,7 +1253,7 @@ public class QpidTestCase extends TestCase
     {
         if (_broker.equals(VM))
         {
-            ApplicationRegistry.getInstance().getConfiguration().reparseConfigFile();
+            ApplicationRegistry.getInstance().getConfiguration().reparseConfigFileSecuritySections();
         } 
         else // FIXME: should really use the JMX interface to do this
         {
@@ -1264,15 +1266,9 @@ public class QpidTestCase extends TestCase
             String cmd = "/bin/kill -SIGHUP " + reader.readLine();
             p = Runtime.getRuntime().exec(cmd);
             
-            //delay to ensure the reload time has time to occur
-            try
-            {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e)
-            {
-                //ignore
-            }
+            LogMonitor _monitor = new LogMonitor(_outputFile);
+            assertTrue("The expected server security configuration reload did not occur",
+                    _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
             
         }
     }

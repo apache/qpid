@@ -151,9 +151,9 @@ public class LogMonitor
     }
     
 
-    public boolean waitForMessage(String messageCountAlert, long alertLogWaitPeriod) throws FileNotFoundException, IOException
+    public boolean waitForMessage(String message, long alertLogWaitPeriod) throws FileNotFoundException, IOException
     {
-       return waitForMessage(messageCountAlert, alertLogWaitPeriod, true);
+       return waitForMessage(message, alertLogWaitPeriod, true);
     }
 
 

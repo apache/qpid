@@ -57,7 +57,8 @@ public class ServerConfiguration implements SignalHandler
     public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
     public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
     public static final String DEFAULT_STATUS_UPDATES = "on";
-
+    public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
+    
     private static final int DEFAULT_FRAME_SIZE = 65536;
     private static final int DEFAULT_PORT = 5672;
     private static final int DEFAUL_SSL_PORT = 8672;
@@ -297,15 +298,15 @@ public class ServerConfiguration implements SignalHandler
     {
         try
         {
-            reparseConfigFile();
+            reparseConfigFileSecuritySections();
         }
         catch (ConfigurationException e)
         {
-             _log.error("Could not reload configuration file", e);
+             _log.error("Could not reload configuration file security sections", e);
         }
     }
 
-    public void reparseConfigFile() throws ConfigurationException
+    public void reparseConfigFileSecuritySections() throws ConfigurationException
     {
         if (_configFile != null)
         {
@@ -320,6 +321,8 @@ public class ServerConfiguration implements SignalHandler
                 vhost.getAccessManager().configureGlobalPlugins(_securityConfiguration);
                 vhost.getAccessManager().configureHostPlugins(hostSecurityConfig);
             }
+            
+            _log.warn(SECURITY_CONFIG_RELOADED);
         }
     }
 
