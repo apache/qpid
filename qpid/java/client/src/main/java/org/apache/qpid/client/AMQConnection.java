@@ -559,7 +559,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 if (connectionException.getCause() != null)
                 {
                     message = connectionException.getCause().getMessage();
-                    connectionException.getCause().printStackTrace();
                 }
                 else
                 {

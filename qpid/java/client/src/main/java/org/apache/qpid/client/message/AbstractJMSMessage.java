@@ -402,8 +402,6 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
         }
         catch (JMSException e)
         {
-            e.printStackTrace();
-            
             throw new RuntimeException(e);
         }
     }

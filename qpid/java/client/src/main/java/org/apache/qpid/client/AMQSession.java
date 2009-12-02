@@ -1275,7 +1275,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
            JMSException ex = new JMSException("Cannot create temporary queue");
            ex.setLinkedException(e);
-           e.printStackTrace();
            throw ex;
         }
     }

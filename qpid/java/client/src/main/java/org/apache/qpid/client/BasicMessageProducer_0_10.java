@@ -180,8 +180,6 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         catch (RuntimeException rte)
         {
             JMSException ex = new JMSException("Exception when sending message");
-            rte.printStackTrace();
-            ex.setLinkedException(rte);
             throw ex;
         }
     }
