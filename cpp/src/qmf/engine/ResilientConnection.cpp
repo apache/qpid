@@ -116,9 +116,9 @@ namespace engine {
         int delayMax;
         int delayFactor;
         qpid::sys::Condition cond;
-        qpid::sys::Thread connThread;
         deque<ResilientConnectionEventImpl> eventQueue;
         set<RCSession::Ptr> sessions;
+        qpid::sys::Thread connThread;
     };
 }
 }
