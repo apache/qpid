@@ -37,11 +37,27 @@ namespace client {
 struct ConnectionSettings;
 
 /**
- * Interface to SASL support
+ * Interface to SASL support. This class is implemented by platform-specific
+ * SASL providers.
  */
 class Sasl
 {
   public:
+    /**
+     * Start SASL negotiation with the broker.
+     *
+     * @param mechanisms Comma-separated list of the SASL mechanism the
+     *             client supports.
+     * @param ssf  Security Strength Factor (SSF). SSF is used to negotiate
+     *             a SASL security layer on top of the connection should both
+     *             parties require and support it. The value indicates the
+     *             required level of security for communication. Possible
+     *             values are:
+     *             @li 0  No security
+     *             @li 1  Integrity checking only
+     *             @li >1 Integrity and confidentiality with the number
+     *                    giving the encryption key length.
+     */
     virtual std::string start(const std::string& mechanisms, unsigned int ssf) = 0;
     virtual std::string step(const std::string& challenge) = 0;
     virtual std::string getMechanism() = 0;
