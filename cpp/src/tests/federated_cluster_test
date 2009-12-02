@@ -33,15 +33,15 @@ fail() {
 
 stop_brokers() {
     if [[ $BROKER_A ]] ; then
-        ../qpidd -q --port $BROKER_A
+        ../qpidd --no-module-dir -q --port $BROKER_A
         unset BROKER_A
     fi      
     if [[ $NODE_1 ]] ; then
-        ../qpidd -q --port $NODE_1
+        ../qpidd --no-module-dir -q --port $NODE_1
         unset NODE_1
     fi
     if [[ $NODE_2 ]] ; then
-        ../qpidd -q --port $NODE_2
+        ../qpidd --no-module-dir -q --port $NODE_2
         unset NODE_2
     fi
     if [ -f cluster.ports ]; then
@@ -51,13 +51,14 @@ stop_brokers() {
 
 start_brokers() {
     #start single node...
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --log-enable info+ > fed.port.tmp
-    BROKER_A=`cat fed.port.tmp`
+    BROKER_A=`../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --log-enable info+` || fail "BROKER_A failed to start"
 
     #...and start cluster
     $srcdir/start_cluster 2 || fail "Could not start cluster"
     NODE_1=$(head -1 cluster.ports)
     NODE_2=$(tail -1 cluster.ports)
+    test -n "$NODE_1" || fail "NODE_1 failed to start"
+    test -n "$NODE_2" || fail "NODE_2 failed to start"
 }
 
 setup() {

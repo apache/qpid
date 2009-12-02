@@ -20,13 +20,12 @@
 absdir() { echo `cd $1 && pwd`; }
 
 # Environment variables substituted by configure/cmake.
-export srcdir=@abs_srcdir@
-export builddir=@abs_builddir@
-export top_srcdir=@abs_top_srcdir@
-export top_builddir=@abs_top_builddir@
-
-export QPID_MODULE_DIR=$top_builddir/src@builddir_lib_suffix@
-export QPID_TEST_MODULE_DIR=$builddir@builddir_lib_suffix@
+srcdir=@abs_srcdir@
+builddir=@abs_builddir@
+top_srcdir=@abs_top_srcdir@
+top_builddir=@abs_top_builddir@
+moduledir=$top_builddir/src@builddir_lib_suffix@
+testmoduledir=$builddir@builddir_lib_suffix@
 
 # Python paths and directories
 export PYTHON_DIR=$builddir/python
@@ -41,8 +40,9 @@ export QPID_CONFIG_EXEC=$PYTHON_COMMANDS/qpid-config
 export QPID_ROUTE_EXEC=$PYTHON_COMMANDS/qpid-route
 export QPID_CLUSTER_EXEC=$PYTHON_COMMANDS/qpid-cluster
 
-# qpidd executable
+# Executables
 export QPIDD_EXEC=$top_builddir/src/qpidd
+export QPID_WATCHDOG_EXEC=$top_builddir/src/qpidd_watchdog
 
 # Test executables
 export QPID_TEST_EXEC_DIR=$builddir
@@ -50,19 +50,19 @@ export RECEIVER_EXEC=$QPID_TEST_EXEC_DIR/receiver
 export SENDER_EXEC=$QPID_TEST_EXEC_DIR/sender
 
 # Modules
-export TEST_STORE_LIB=$QPID_TEST_MODULE_DIR/test_store.so
-export REPLICATING_LISTENER_LIB=$QPID_MODULE_DIR/replicating_listener.so
-export REPLICATION_EXCHANGE_LIB=$QPID_MODULE_DIR/replication_exchange.so
+export TEST_STORE_LIB=$testmoduledir/test_store.so
 
-# Optional modules, set only if present
-exportmodule() { test -f $QPID_MODULE_DIR/$2 && eval "export $1=$QPID_MODULE_DIR/$2"; }
+exportmodule() { test -f $moduledir/$2 && eval "export $1=$moduledir/$2"; }
 exportmodule ACL_LIB acl.so
 exportmodule CLUSTER_LIB cluster.so
-exportmodule SSL_CONNECTOR_LIB ssl_connector.so
+exportmodule REPLICATING_LISTENER_LIB replicating_listener.so
+exportmodule REPLICATION_EXCHANGE_LIB replication_exchange.so
+exportmodule SSLCONNECTOR_LIB sslconnector.so
 exportmodule SSL_LIB ssl.so
 exportmodule WATCHDOG_LIB watchdog.so
 exportmodule XML_LIB xml.so
 
 # Qpid options
+export QPID_NO_MODULE_DIR=1	# Don't accidentally load installed modules
 export QPID_DATA_DIR= 		# Default to no data dir, not ~/.qpidd
 

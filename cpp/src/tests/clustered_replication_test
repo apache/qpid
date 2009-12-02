@@ -32,19 +32,19 @@ fail() {
 
 stop_brokers() {
     if [[ $PRIMARY1 ]] ; then
-        ../qpidd -q --port $PRIMARY1
+        $QPIDD_EXEC --no-module-dir -q --port $PRIMARY1
         unset PRIMARY1
     fi      
     if [[ $PRIMARY2 ]] ; then
-        ../qpidd -q --port $PRIMARY2
+        $QPIDD_EXEC --no-module-dir -q --port $PRIMARY2
         unset PRIMARY2
     fi      
     if [[ $DR1 ]] ; then
-        ../qpidd -q --port $DR1
+        $QPIDD_EXEC --no-module-dir -q --port $DR1
         unset DR1
     fi
     if [[ $DR2 ]] ; then
-        ../qpidd -q --port $DR2
+        $QPIDD_EXEC --no-module-dir -q --port $DR2
         unset DR2
     fi
 }
@@ -57,14 +57,14 @@ if test -d $PYTHON_DIR; then
     DR_CLUSTER=DR_$(hostname)_$$
 
     GENERAL_OPTS="--auth no --no-module-dir --no-data-dir --daemon --port 0 --log-to-stderr false"
-    PRIMARY_OPTS="--load-module $QPID_MODULE_DIR/replicating_listener.so --create-replication-queue true --replication-queue REPLICATION_QUEUE --load-module $QPID_MODULE_DIR/cluster.so --cluster-name $PRIMARY_CLUSTER"
-    DR_OPTS="--load-module $QPID_MODULE_DIR/replication_exchange.so --load-module $QPID_MODULE_DIR/cluster.so --cluster-name $DR_CLUSTER"
+    PRIMARY_OPTS="--load-module $REPLICATING_LISTENER_LIB --create-replication-queue true --replication-queue REPLICATION_QUEUE --load-module $CLUSTER_LIB --cluster-name $PRIMARY_CLUSTER"
+    DR_OPTS="--load-module $REPLICATION_EXCHANGE_LIB --load-module $CLUSTER_LIB --cluster-name $DR_CLUSTER"
 
     rm -f repl*.tmp #cleanup any files left from previous run
 
     #start first node of primary cluster and set up test queue
     echo Starting primary cluster
-    PRIMARY1=$(with_ais_group ../qpidd $GENERAL_OPTS $PRIMARY_OPTS --log-to-file repl.primary.1.tmp) || fail "Could not start node"
+    PRIMARY1=$(with_ais_group $QPIDD_EXEC $GENERAL_OPTS $PRIMARY_OPTS --log-to-file repl.primary.1.tmp) || fail "Could not start PRIMARY1"
     $PYTHON_COMMANDS/qpid-config -a "localhost:$PRIMARY1" add queue test-queue --generate-queue-events 2
     $PYTHON_COMMANDS/qpid-config -a "localhost:$PRIMARY1" add queue control-queue --generate-queue-events 1
 
@@ -74,12 +74,12 @@ if test -d $PYTHON_DIR; then
 
     #add new node to primary cluster, testing correct transfer of state:
     echo Adding node to primary cluster
-    PRIMARY2=$(with_ais_group ../qpidd $GENERAL_OPTS $PRIMARY_OPTS --log-to-file repl.primary.2.tmp)
+    PRIMARY2=$(with_ais_group $QPIDD_EXEC $GENERAL_OPTS $PRIMARY_OPTS --log-to-file repl.primary.2.tmp) || fail "Could not start PRIMARY2 "
 
     #start DR cluster, set up test queue there and establish replication bridge
     echo Starting DR cluster
-    DR1=$(with_ais_group ../qpidd $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.1.tmp)
-    DR2=$(with_ais_group ../qpidd $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.2.tmp)
+    DR1=$(with_ais_group $QPIDD_EXEC $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.1.tmp) || fail "Could not start DR1"
+    DR2=$(with_ais_group $QPIDD_EXEC $GENERAL_OPTS $DR_OPTS --log-to-file repl.dr.2.tmp) || fail "Could not start DR2"
 
     $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add queue test-queue
     $PYTHON_COMMANDS/qpid-config -a "localhost:$DR1" add queue control-queue

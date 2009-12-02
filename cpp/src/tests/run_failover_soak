@@ -24,7 +24,8 @@ source ./test_env.sh
 
 host=127.0.0.1
 
-MODULES=${MODULES:-$QPID_MODULE_DIR}
+unset QPID_NO_MODULE_DIR	# failover_soak uses --module-dir, dont want clash
+MODULES=${MODULES:-$moduledir}
 MESSAGES=${MESSAGES:-1000000}
 REPORT_FREQUENCY=${REPORT_FREQUENCY:-20000}
 VERBOSITY=${VERBOSITY:-10}

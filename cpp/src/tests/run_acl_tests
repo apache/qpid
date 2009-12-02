@@ -26,20 +26,20 @@ DATA_DIR=`pwd`/data_dir
 trap stop_brokers INT TERM QUIT
 
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module $QPID_MODULE_DIR/acl.so --acl-file policy.acl --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --load-module $ACL_LIB --acl-file policy.acl --auth no > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
 }
 
 stop_brokers() {
-        ../qpidd -q --port $LOCAL_PORT
+        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
 }
 
 test_loading_acl_from_absolute_path(){
     POLICY_FILE=$srcdir/policy.acl
     rm -f temp.log
-    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module $QPID_MODULE_DIR/acl.so --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
+    PORT=`../qpidd --daemon --port 0 --no-module-dir --no-data-dir --auth no --load-module $ACL_LIB --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
     ACL_FILE=`grep "notice Read ACL file" temp.log | sed 's/^.*Read ACL file //'`
-   ../qpidd -q --port $PORT
+   $QPIDD_EXEC --no-module-dir -q --port $PORT
    if test "$ACL_FILE" != "\"$POLICY_FILE\""; then
      echo "unable to load policy file from an absolute path";
      return 1;

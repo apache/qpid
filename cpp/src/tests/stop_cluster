@@ -23,7 +23,7 @@
 
 PORTS=`cat cluster.ports`
 for PORT in $PORTS ; do
-    ../qpidd -qp $PORT || ERROR="$ERROR $PORT"
+    $QPIDD_EXEC --no-module-dir -qp $PORT || ERROR="$ERROR $PORT"
 done
 rm -f cluster.ports qpidd.port
 

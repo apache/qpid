@@ -118,7 +118,7 @@ class TestBase(unittest.TestCase):
     def stopBroker(self, nodeTuple, ignoreFailures = False):
         """Stop a broker using qpidd -q"""
         try:
-            ret = os.spawnl(os.P_WAIT, self._qpiddExec, self._qpiddExec, "--port=%d" % nodeTuple[self.PORT], "--quit")
+            ret = os.spawnl(os.P_WAIT, self._qpiddExec, self._qpiddExec, "--port=%d" % nodeTuple[self.PORT], "--quit", "--no-module-dir")
             if ret != 0:
                 raise Exception("stopBroker(): port=%d: qpidd -q returned %d" % (nodeTuple[self.PORT], ret))
             try:
