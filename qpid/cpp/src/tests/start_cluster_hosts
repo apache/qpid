@@ -52,7 +52,7 @@ while getopts "kp:n:q:r" ARG ; do
 done
 shift `expr $OPTIND - 1`
 test -n "$PORT" && PORTOPT="-p $PORT"
-test "$KILL" = yes && KILL="$QPIDD -q $PORTOPT ;"
+test "$KILL" = yes && KILL="$QPIDD --no-module-dir -q $PORTOPT ;"
 CLUSTER=${*:-$CLUSTER}		# Use args or env
 test -z "$CLUSTER" && { echo Must specify at least one host; exit 1; }
 

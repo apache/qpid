@@ -28,28 +28,23 @@ trap stop_brokers EXIT
 
 stop_brokers() {
     if [[ $BROKER_A ]] ; then
-        ../qpidd -q --port $BROKER_A
+        $QPIDD_EXEC --no-module-dir -q --port $BROKER_A
         unset BROKER_A
     fi      
     if [[ $BROKER_B ]] ; then
-        ../qpidd -q --port $BROKER_B
+        $QPIDD_EXEC --no-module-dir -q --port $BROKER_B
         unset BROKER_B
     fi
 }
 
 setup() {
     rm -f replication-source.log replication-dest.log
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable trace+ --log-to-file replication-source.log --log-to-stderr 0 > qpidd-repl.port
+    $QPIDD_EXEC --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $REPLICATING_LISTENER_LIB --replication-queue replication --create-replication-queue true  --log-enable trace+ --log-to-file replication-source.log --log-to-stderr 0 > qpidd-repl.port
     BROKER_A=`cat qpidd-repl.port`
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log --log-to-stderr 0 > qpidd-repl.port
+    $QPIDD_EXEC --daemon --port 0 --no-data-dir --no-module-dir --auth no --load-module $REPLICATION_EXCHANGE_LIB  --log-enable info+ --log-to-file replication-dest.log --log-to-stderr 0 > qpidd-repl.port
     BROKER_B=`cat qpidd-repl.port`
 
-    #../qpidd --port 5555 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replicating_listener.so --replication-queue replication --create-replication-queue true  --log-enable trace+ --log-to-file replication-source.log --log-to-stderr 0 &
-    #BROKER_A=5555
-
-    #../qpidd --port 6666 --no-data-dir --no-module-dir --auth no --load-module $QPID_MODULE_DIR/replication_exchange.so  --log-enable info+ --log-to-file replication-dest.log --log-to-stderr 0 &
-    #BROKER_B=6666
     echo "Testing replication from port $BROKER_A to port $BROKER_B"
 
     $PYTHON_COMMANDS/qpid-config -a "localhost:$BROKER_B" add exchange replication replication
@@ -78,7 +73,7 @@ bounce_link() {
     echo "Route re-established"
 }
 
-if test -d ${PYTHON_DIR} && test -e $QPID_MODULE_DIR/replicating_listener.so && test -e $QPID_MODULE_DIR/replication_exchange.so ;  then
+if test -d ${PYTHON_DIR} && test -e $REPLICATING_LISTENER_LIB && test -e $REPLICATION_EXCHANGE_LIB ;  then
     setup
     for i in `seq 1 100000`; do echo Message $i; done > replicated.expected
     send &

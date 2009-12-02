@@ -169,7 +169,9 @@ remember_location(unit_test)
 
 add_library (shlibtest MODULE shlibtest.cpp)
 
-# include(cluster.cmake)
+if (BUILD_CLUSTER)
+  include (cluster.cmake)
+endif (BUILD_CLUSTER)
 
 # FIXME aconway 2009-11-30: enable SSL
 #if SSL
@@ -229,13 +231,6 @@ target_link_libraries (header_test qpidclient)
 #header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
 remember_location(header_test)
 
-if (BUILD_CLUSTER)
-  add_executable (failover_soak failover_soak.cpp ForkedBroker.cpp ${platform_test_additions})
-  target_link_libraries (failover_soak qpidclient)
-  #failover_soak_SOURCES=failover_soak.cpp  ForkedBroker.h
-  remember_location(failover_soak)
-endif (BUILD_CLUSTER)
-
 add_executable (declare_queues declare_queues.cpp ${platform_test_additions})
 target_link_libraries (declare_queues qpidclient)
 remember_location(declare_queues)
@@ -293,6 +288,9 @@ if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
 endif (BUILD_ACL)
 endif (PYTHON_EXECUTABLE)
+
+add_library(test_store MODULE test_store.cpp)
+set_target_properties (test_store PROPERTIES PREFIX "")
 
 #EXTRA_DIST +=								\
 #  run_test vg_check							\

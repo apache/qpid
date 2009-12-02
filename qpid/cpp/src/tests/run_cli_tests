@@ -34,8 +34,8 @@ start_brokers() {
 }
 
 stop_brokers() {
-        ../qpidd -q --port $LOCAL_PORT
-        ../qpidd -q --port $REMOTE_PORT
+        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
+        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_PORT
 }
 
 if test -d ${PYTHON_DIR} ;  then

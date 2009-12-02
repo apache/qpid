@@ -25,7 +25,7 @@ QPID_PORT=`cat qpidd.port`
 export QPID_PORT
 rm -f qpidd.port
 
-../qpidd --quit || ERROR=1
+../qpidd --no-module-dir --quit || ERROR=1
 
 # Check qpidd.log.
 egrep 'warning\|error\|critical' qpidd.log && {

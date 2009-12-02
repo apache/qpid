@@ -888,18 +888,18 @@ install (TARGETS replicating_listener
 # can process the messages from a replication queue (populated on the
 # source system by the replicating listener plugin above) and take the
 # corresponding action on the local queues
-add_library (replicating_exchange MODULE
+add_library (replication_exchange MODULE
              qpid/replication/constants.h
              qpid/replication/ReplicationExchange.cpp
              qpid/replication/ReplicationExchange.h
             )
-target_link_libraries (replicating_exchange qpidbroker)
-set_target_properties (replicating_exchange PROPERTIES PREFIX "")
+target_link_libraries (replication_exchange qpidbroker)
+set_target_properties (replication_exchange PROPERTIES PREFIX "")
 if (CMAKE_COMPILER_IS_GNUCXX)
-  set_target_properties(replicating_exchange PROPERTIES
+  set_target_properties(replication_exchange PROPERTIES
                         LINK_FLAGS -Wl,--no-undefined)
 endif (CMAKE_COMPILER_IS_GNUCXX)
-install (TARGETS replicating_exchange
+install (TARGETS replication_exchange
          DESTINATION ${QPIDD_MODULE_DIR}
          COMPONENT ${QPID_COMPONENT_BROKER})
 

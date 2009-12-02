@@ -134,9 +134,12 @@ if (BUILD_CLUSTER)
 
   add_library (cluster MODULE ${cluster_SOURCES})
   target_link_libraries (cluster ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient ${Boost_FILESYSTEM_LIBRARY})
-
-  set_target_properties (cluster PROPERTIES
-                         PREFIX "")
+  set_target_properties (cluster PROPERTIES PREFIX "")
+  
+  # Create a second shared library for linking with test executables,
+  # cmake will not allow a module to be linked with an executable.
+  add_library (cluster_shared SHARED ${cluster_SOURCES})
+  target_link_libraries (cluster_shared ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient ${Boost_FILESYSTEM_LIBRARY})
 
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(cluster PROPERTIES

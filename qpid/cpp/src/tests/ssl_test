@@ -20,7 +20,6 @@
 #
 
 # Run a simple test over SSL
-
 source ./test_env.sh
 
 CONFIG=$(dirname $0)/config.null
@@ -47,12 +46,12 @@ delete_certs() {
 }
 
 start_broker() {
-    PORT=`../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no --config $CONFIG --load-module $QPID_MODULE_DIR/ssl.so --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME`
+    PORT=`../qpidd --daemon --transport ssl --port 0 --ssl-port 0 --no-data-dir --no-module-dir --auth no --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME`
 }
 
 stop_broker() {
     if [[ $PORT ]] ; then
-        ../qpidd -q --port $PORT
+        $QPIDD_EXEC --no-module-dir -q --port $PORT
     fi
 }
 
@@ -76,7 +75,7 @@ create_certs || error "Could not create test certificate"
 start_broker || error "Could not start broker"
 echo "Running SSL test on port $PORT"
 export QPID_NO_MODULE_DIR=1
-export QPID_LOAD_MODULE=$QPID_MODULE_DIR/sslconnector.so
+export QPID_LOAD_MODULE=$SSLCONNECTOR_LIB
 export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 ./perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
