@@ -476,7 +476,6 @@ public class AMQProtocolHandler implements ProtocolEngine
                         }
                         catch (Exception e)
                         {
-                            e.printStackTrace();
                             _logger.error("Exception processing frame", e);
                             propagateExceptionToFrameListeners(e);
                             exception(e);

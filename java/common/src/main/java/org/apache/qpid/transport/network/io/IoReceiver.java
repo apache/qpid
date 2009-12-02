@@ -137,7 +137,6 @@ final class IoReceiver implements Runnable
         }
         catch (Throwable t)
         {
-            t.printStackTrace();
             if (!(shutdownBroken &&
                   t instanceof SocketException &&
                   t.getMessage().equalsIgnoreCase("socket closed") &&
