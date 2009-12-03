@@ -26,9 +26,9 @@ namespace org.apache.qpid.transport.util
     public class UUID
     {
         private long _mostSigBits;
-
         private long _leastSigBits;
         private static readonly Random _random = new Random();
+        private static readonly object _randomLock = new object();
 
 
         public UUID(long mostSigBits, long leastSigBits)
@@ -49,7 +49,7 @@ namespace org.apache.qpid.transport.util
             set { _leastSigBits = value; }
         }
 
-        private UUID(byte[] r)
+        internal UUID(byte[] r)
         {
             MostSignificantBits = 0;
             LeastSignificantBits = 0;
@@ -59,27 +59,33 @@ namespace org.apache.qpid.transport.util
                 LeastSignificantBits = (LeastSignificantBits << 8) | (r[i] & 0xff); 
         }
 
-        public static UUID randomUUID()
+        public static UUID RandomUuid()
         {
             byte[] randomBytes = new byte[16];
-            _random.NextBytes(randomBytes);
-            randomBytes[6] &= 0x0f;  
-            randomBytes[6] |= 0x40; 
-            randomBytes[8] &= 0x3f; 
-            randomBytes[8] |= 0x80;           
+            lock (_randomLock)
+            {
+                _random.NextBytes(randomBytes);
+            }
+
+            randomBytes[6] &= 0x0f;
+            randomBytes[6] |= 0x40;
+            randomBytes[8] &= 0x3f;
+            randomBytes[8] |= 0x80;
+
             return new UUID(randomBytes);
         }
+       
 
         public override String ToString()
         {
-            return (digits(_mostSigBits >> 32, 8) + "-" +
-                    digits(_mostSigBits >> 16, 4) + "-" +
-                    digits(_mostSigBits, 4) + "-" +
-                    digits(_leastSigBits >> 48, 4) + "-" +
-                    digits(_leastSigBits, 12));
+            return (Digits(_mostSigBits >> 32, 8) + "-" +
+                    Digits(_mostSigBits >> 16, 4) + "-" +
+                    Digits(_mostSigBits, 4) + "-" +
+                    Digits(_leastSigBits >> 48, 4) + "-" +
+                    Digits(_leastSigBits, 12));
         }
 
-        private static String digits(long val, int digits)
+        private static String Digits(long val, int digits)
         {
             long hi = 1L << (digits * 4);
             return Convert.ToString((hi | (val & (hi - 1))), 16);

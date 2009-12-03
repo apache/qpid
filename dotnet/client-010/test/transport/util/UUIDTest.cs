@@ -28,20 +28,22 @@ namespace test.transport.util
 
     public class UUIDTest
     {
+
+
         [Test]
         public void createUUID()
         {
-            UUID uuid = UUID.randomUUID();
+            UUID uuid = UUID.RandomUuid();
             String uuidStr = uuid.ToString();
             Assert.IsNotNull(uuid);
-            UUID uuid2 = UUID.randomUUID();
+            UUID uuid2 = UUID.RandomUuid();
             Assert.AreNotSame(uuid, uuid2);
         }
 
         [Test]
         public void ToString_should_override_and_not_hide_base()
         {
-            UUID uuid = UUID.randomUUID();
+            UUID uuid = UUID.RandomUuid();
 
             string uuidStr = uuid.ToString();
             string uuidConcat = "Test." + uuid;
@@ -52,7 +54,7 @@ namespace test.transport.util
         [Test]
         public void two_uuid_with_same_value_should_have_same_hash_code()
         {
-            UUID uuid = UUID.randomUUID();
+            UUID uuid = UUID.RandomUuid();
             UUID uuid2 = new UUID(uuid.MostSignificantBits, uuid.LeastSignificantBits);
             
             Assert.AreEqual(uuid, uuid2);
