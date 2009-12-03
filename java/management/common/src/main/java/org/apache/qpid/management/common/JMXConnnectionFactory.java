@@ -199,25 +199,32 @@ public class JMXConnnectionFactory {
         Thread connectorThread = new Thread(connector);
         connectorThread.start();
         connectorThread.join(timeout);
-
-        if (connector.getConnectionException() != null)
+        
+        if(connector.getJmxc() == null)
         {
-            throw connector.getConnectionException();
+            if (connector.getConnectionException() != null)
+            {
+                throw connector.getConnectionException();
+            }
+            else
+            {
+                throw new IOException("Timed out connecting to " + host + ":" + port);
+            }
         }
+        
         return connector.getJmxc();
     }
 	
-    public static class ConnectWaiter implements Runnable
+    private static class ConnectWaiter implements Runnable
     {
-        private boolean _connected;
         private Exception _connectionException;
         private JMXConnector _jmxc;
         private JMXServiceURL _jmxUrl;
         private Map<String, ?> _env;
+        private boolean _connectionRetrieved;
         
         public ConnectWaiter(JMXServiceURL url, Map<String, ?> env)
         {
-            super();
             _jmxUrl = url;
             _env = env;
         }
@@ -226,31 +233,37 @@ public class JMXConnnectionFactory {
         {
             try
             {
-                setConnected(false);
-                setConnectionException(null);
-                setJmxc(JMXConnectorFactory.connect(_jmxUrl, _env));
-
-                setConnected(true);
+                _jmxc = null;
+                _connectionRetrieved = false;
+                _connectionException = null;
+                
+                JMXConnector conn = JMXConnectorFactory.connect(_jmxUrl, _env);
+                
+                synchronized (this)
+                {
+                    if(_connectionRetrieved)
+                    {
+                        //The app thread already timed out the attempt and retrieved the 
+                        //null connection, so just close this orphaned connection
+                        try
+                        {
+                            conn.close();
+                        }
+                        catch (IOException e)
+                        {
+                            //ignore
+                        }
+                    }
+                    else
+                    {
+                        _jmxc = conn;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                setConnectionException(ex);
+                _connectionException = ex;
             }
-        }
-
-        public void setConnected(boolean _connected)
-        {
-            this._connected = _connected;
-        }
-
-        public boolean getConnected()
-        {
-            return _connected;
-        }
-
-        public void setConnectionException(Exception _connectionException)
-        {
-            this._connectionException = _connectionException;
         }
 
         public Exception getConnectionException()
@@ -258,14 +271,14 @@ public class JMXConnnectionFactory {
             return _connectionException;
         }
 
-        public void setJmxc(JMXConnector _jmxc)
-        {
-            this._jmxc = _jmxc;
-        }
-
         public JMXConnector getJmxc()
         {
-            return _jmxc;
+            synchronized (this)
+            {
+                _connectionRetrieved = true;
+                
+                return _jmxc;
+            }
         }
     }
 }

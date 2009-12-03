@@ -43,7 +43,7 @@ public abstract class ApplicationRegistry
     private static ImageRegistry imageRegistry = new ImageRegistry();
     private static FontRegistry fontRegistry = new FontRegistry();
     public static final boolean debug = Boolean.getBoolean("eclipse.consoleLog");
-    public static final long timeout = Long.parseLong(System.getProperty("timeout", "5000"));
+    public static final long timeout = Long.parseLong(System.getProperty("timeout", "15000"));
 
     //max supported broker management interface supported by this release of the management console
     public static final int SUPPORTED_QPID_JMX_API_MAJOR_VERSION = 1;
