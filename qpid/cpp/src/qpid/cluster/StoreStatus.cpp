@@ -30,7 +30,7 @@ namespace cluster {
 
 using framing::Uuid;
 using namespace framing::cluster;
-using namespace boost::filesystem;
+namespace fs=boost::filesystem;
 using std::ostream;
 
 StoreStatus::StoreStatus(const std::string& d)
@@ -43,17 +43,17 @@ const char* SUBDIR="cluster";
 const char* CLUSTER_ID_FILE="cluster.uuid";
 const char* SHUTDOWN_ID_FILE="shutdown.uuid";
 
-Uuid loadUuid(const path& path) {
+Uuid loadUuid(const fs::path& path) {
     Uuid ret;
     if (exists(path)) {
-        ifstream i(path);
+        fs::ifstream i(path);
         i >> ret;
     }
     return ret;
 }
 
-void saveUuid(const path& path, const Uuid& uuid) {
-    ofstream o(path);
+void saveUuid(const fs::path& path, const Uuid& uuid) {
+    fs::ofstream o(path);
     o << uuid;
 }
 
@@ -61,7 +61,7 @@ void saveUuid(const path& path, const Uuid& uuid) {
 
 
 void StoreStatus::load() {
-    path dir = path(dataDir)/SUBDIR;
+    fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     create_directory(dir);
     clusterId = loadUuid(dir/CLUSTER_ID_FILE);
     shutdownId = loadUuid(dir/SHUTDOWN_ID_FILE);
@@ -72,7 +72,7 @@ void StoreStatus::load() {
 }
 
 void StoreStatus::save() {
-    path dir = path(dataDir)/SUBDIR;
+    fs::path dir = fs::path(dataDir, fs::native)/SUBDIR;
     create_directory(dir);
     saveUuid(dir/CLUSTER_ID_FILE, clusterId);
     saveUuid(dir/SHUTDOWN_ID_FILE, shutdownId);
