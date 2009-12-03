@@ -30,10 +30,8 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
-import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -172,7 +170,7 @@ public class DerbyMessageStore extends AbstractMessageStore
             }
         }
 
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1002(environmentPath.getAbsolutePath()));
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_STORE_LOCATION(environmentPath.getAbsolutePath()));
 
         createOrOpenDatabase(databasePath);
 
@@ -318,7 +316,7 @@ public class DerbyMessageStore extends AbstractMessageStore
     {
         stateTransition(State.CONFIGURING, State.RECOVERING);
 
-        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1004(null, false));
+        CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_RECOVERY_START(null, false));
 
         StoreContext context = new StoreContext();
 
@@ -337,7 +335,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                 commitTran(context);
 
                 //Recovery Complete
-                CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1006(null, false));
+                CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_RECOVERY_COMPLETE(null, false));
             }
             finally
             {
@@ -382,7 +380,7 @@ public class DerbyMessageStore extends AbstractMessageStore
             
             queueMap.put(queueNameShortString,q);
             
-            CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_1004(String.valueOf(q.getName()), true));
+            CurrentActor.get().message(_logSubject,MessageStoreMessages.MST_RECOVERY_START(String.valueOf(q.getName()), true));
 
             //Record that we have a queue for recovery
             _queueRecoveries.put(new AMQShortString(queueName), 0);
@@ -1419,7 +1417,7 @@ public class DerbyMessageStore extends AbstractMessageStore
                     queues.put(queueName, queue);
 
                     //Log Recovery Start
-                    CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1004(String.valueOf(queue.getName()), true));
+                    CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_RECOVERY_START(String.valueOf(queue.getName()), true));
                 }
 
                 long messageId = rs.getLong(2);
@@ -1479,9 +1477,9 @@ public class DerbyMessageStore extends AbstractMessageStore
 
         for(Map.Entry<AMQShortString,Integer> entry : _queueRecoveries.entrySet())
         {
-            CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1005(entry.getValue(), String.valueOf(entry.getKey())));
+            CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_RECOVERED(entry.getValue(), String.valueOf(entry.getKey())));
 
-            CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_1006(String.valueOf(entry.getKey()), true));
+            CurrentActor.get().message(_logSubject, MessageStoreMessages.MST_RECOVERY_COMPLETE(String.valueOf(entry.getKey()), true));
         }
 
         // Free the memory

@@ -179,7 +179,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         // Log the creation of this Queue.
         // The priorities display is toggled on if we set priorities > 0
         CurrentActor.get().message(_logSubject,
-                                   QueueMessages.QUE_1001(String.valueOf(_owner),
+                                   QueueMessages.QUE_CREATED(String.valueOf(_owner),
                                                           priorities,
                                                           _owner != null,
                                                           autoDelete,
@@ -1167,7 +1167,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             stop();
             
             //Log Queue Deletion
-            CurrentActor.get().message(_logSubject, QueueMessages.QUE_1002());
+            CurrentActor.get().message(_logSubject, QueueMessages.QUE_DELETED());
 
         }
         return getMessageCount();
@@ -1190,7 +1190,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 _overfull.set(true);
                 //Overfull log message
-                _logActor.message(_logSubject, QueueMessages.QUE_1003(_atomicQueueSize.get(), _capacity));
+                _logActor.message(_logSubject, QueueMessages.QUE_OVERFULL(_atomicQueueSize.get(), _capacity));
 
                 if(_blockedChannels.putIfAbsent(channel, Boolean.TRUE)==null)
                 {
@@ -1201,7 +1201,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 {
 
                     //Underfull log message
-                    _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+                    _logActor.message(_logSubject, QueueMessages.QUE_UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
 
                    channel.unblock(this);
                    _blockedChannels.remove(channel);
@@ -1223,7 +1223,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 if(_overfull.compareAndSet(true,false))
                 {//Underfull log message
-                    _logActor.message(_logSubject, QueueMessages.QUE_1004(_atomicQueueSize.get(), _flowResumeCapacity));
+                    _logActor.message(_logSubject, QueueMessages.QUE_UNDERFULL(_atomicQueueSize.get(), _flowResumeCapacity));
                 }
 
 

@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -30,7 +28,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
 import org.apache.qpid.server.configuration.QueueConfiguration;
@@ -52,7 +49,6 @@ import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.Accessable;
-import org.apache.qpid.server.security.access.plugins.SimpleXML;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
 import org.apache.qpid.server.store.MessageStore;
@@ -158,7 +154,7 @@ public class VirtualHost implements Accessable
         _configuration = hostConfig;
         _name = hostConfig.getName();
 
-        CurrentActor.get().message(VirtualHostMessages.VHT_1001(_name));        
+        CurrentActor.get().message(VirtualHostMessages.VHT_CREATED(_name));
 
         if (_name == null || _name.length() == 0)
         {
@@ -445,7 +441,7 @@ public class VirtualHost implements Accessable
             _messageStore.close();
         }
 
-        CurrentActor.get().message(VirtualHostMessages.VHT_1002());
+        CurrentActor.get().message(VirtualHostMessages.VHT_CLOSED());
     }
 
     public ManagedObject getBrokerMBean()

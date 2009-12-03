@@ -26,8 +26,6 @@ import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.logging.messages.ConnectionMessages;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.log4j.Logger;
 
 import javax.management.remote.MBeanServerForwarder;
@@ -47,7 +45,6 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.AccessControlContext;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Properties;
@@ -276,12 +273,12 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
         if (notification.getType().equals(JMXConnectionNotification.OPENED))
         {
-            _logActor.message(ManagementConsoleMessages.MNG_1007(user));
+            _logActor.message(ManagementConsoleMessages.MNG_OPEN(user));
         }
         else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
                  notification.getType().equals(JMXConnectionNotification.FAILED))
         {
-            _logActor.message(ManagementConsoleMessages.MNG_1008());
+            _logActor.message(ManagementConsoleMessages.MNG_CLOSE());
         }
     }
 }

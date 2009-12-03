@@ -248,7 +248,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
 //        _pluginManager.close();
 
-        CurrentActor.get().message(BrokerMessages.BRK_1005());        
+        CurrentActor.get().message(BrokerMessages.BRK_STOPPED());
     }
 
     private void unbind()
@@ -259,7 +259,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             {
                 QpidAcceptor acceptor = _acceptors.get(bindAddress);
                 acceptor.getIoAcceptor().unbind(bindAddress);
-                CurrentActor.get().message(BrokerMessages.BRK_1003(acceptor.toString(), bindAddress.getPort()));
+                CurrentActor.get().message(BrokerMessages.BRK_SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
             }
         }
     }

@@ -170,7 +170,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
         // Log Exchange creation
-        CurrentActor.get().message(ExchangeMessages.EXH_1001(String.valueOf(getType()), String.valueOf(name), durable));
+        CurrentActor.get().message(ExchangeMessages.EXH_CREATED(String.valueOf(getType()), String.valueOf(name), durable));
     }
 
     public boolean isDurable()
@@ -195,7 +195,7 @@ public abstract class AbstractExchange implements Exchange, Managable
             _exchangeMbean.unregister();
         }
 
-        CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_1002());
+        CurrentActor.get().message(_logSubject, ExchangeMessages.EXH_DELETED());
     }    
 
     public String toString()

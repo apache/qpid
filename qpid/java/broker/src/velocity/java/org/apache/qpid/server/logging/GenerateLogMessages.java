@@ -259,7 +259,7 @@ public class GenerateLogMessages
             if (message.startsWith(messageKey))
             {
                 // Method names can't have a '-' in them so lets make it '_'
-                // e.g. BRK_1001
+                // e.g. BRK_STARTUP
                 logEntryData.put("methodName", message.replace('-', '_'));
                 // Store the real name so we can use that in the actual log.
                 logEntryData.put("name", message);

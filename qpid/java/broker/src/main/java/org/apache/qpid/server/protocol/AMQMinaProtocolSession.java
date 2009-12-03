@@ -81,7 +81,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
@@ -165,7 +164,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
-        _actor.message(ConnectionMessages.CON_1001(null, null, false, false));
+        _actor.message(ConnectionMessages.CON_OPEN(null, null, false, false));
 
         try
         {
@@ -302,7 +301,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         try
         {
             // Log incomming protocol negotiation request
-            _actor.message(ConnectionMessages.CON_1001(null, pi._protocolMajor + "-" + pi._protocolMinor, false, true));
+            _actor.message(ConnectionMessages.CON_OPEN(null, pi._protocolMajor + "-" + pi._protocolMinor, false, true));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
@@ -684,7 +683,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
             _closed = true;
 
-            CurrentActor.get().message(_logSubject, ConnectionMessages.CON_1002());
+            CurrentActor.get().message(_logSubject, ConnectionMessages.CON_CLOSE());
         }
         else
         {
@@ -817,7 +816,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                 setContextKey(new AMQShortString(clientID));
 
                 // Log the Opening of the connection for this client
-                _actor.message(ConnectionMessages.CON_1001(clientID, _protocolVersion.toString(), true, true));
+                _actor.message(ConnectionMessages.CON_OPEN(clientID, _protocolVersion.toString(), true, true));
             }
 
             if (_clientProperties.getString(ClientProperties.version.toString()) != null)

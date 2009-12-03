@@ -240,7 +240,7 @@ public class Main
         }
         else
         {
-            CurrentActor.get().message(BrokerMessages.BRK_1006(configFile.getAbsolutePath()));
+            CurrentActor.get().message(BrokerMessages.BRK_CONFIG(configFile.getAbsolutePath()));
         }
 
         String logConfig = commandLine.getOptionValue("l");
@@ -436,7 +436,7 @@ public class Main
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
 
-            CurrentActor.get().message(BrokerMessages.BRK_1004());
+            CurrentActor.get().message(BrokerMessages.BRK_READY());
 
         }
         catch (Exception e)
@@ -461,7 +461,7 @@ public class Main
     {
         acceptor.getIoAcceptor().bind(bindAddress, handler, sconfig);
 
-        CurrentActor.get().message(BrokerMessages.BRK_1002(acceptor.toString(), bindAddress.getPort()));
+        CurrentActor.get().message(BrokerMessages.BRK_LISTENING(acceptor.toString(), bindAddress.getPort()));
 
         ApplicationRegistry.getInstance().addAcceptor(bindAddress, acceptor);
     }
@@ -515,7 +515,7 @@ public class Main
     {
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            CurrentActor.get().message(BrokerMessages.BRK_1007(logConfigFile.getAbsolutePath()));            
+            CurrentActor.get().message(BrokerMessages.BRK_LOG_CONFIG(logConfigFile.getAbsolutePath()));
             System.out.println("Configuring logger using configuration file " + logConfigFile.getAbsolutePath());
             if (logWatchTime > 0)
             {

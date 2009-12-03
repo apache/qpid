@@ -27,12 +27,12 @@ import java.util.List;
  */
 public class BrokerMessagesTest extends AbstractTestMessages
 {
-    public void testMessage1001()
+    public void testBrokerStartup()
     {
         String version = "Qpid 0.6";
         String build = "796936M";
 
-        _logMessage = BrokerMessages.BRK_1001(version, build);
+        _logMessage = BrokerMessages.BRK_STARTUP(version, build);
         List<Object> log = performLog();
 
         String[] expected = {"Startup :", "Version:", version, "Build:", build};
@@ -40,12 +40,12 @@ public class BrokerMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BRK-1001", expected);
     }
 
-    public void testMessage1002()
+    public void testBrokerListening()
     {
         String transport = "TCP";
         Integer port = 2765;
 
-        _logMessage = BrokerMessages.BRK_1002(transport, port);
+        _logMessage = BrokerMessages.BRK_LISTENING(transport, port);
 
         List<Object> log = performLog();
 
@@ -55,12 +55,12 @@ public class BrokerMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BRK-1002", expected);
     }
 
-    public void testMessage1003()
+    public void testBrokerShuttingDown()
     {
         String transport = "TCP";
         Integer port = 2765;
 
-        _logMessage = BrokerMessages.BRK_1003(transport, port);
+        _logMessage = BrokerMessages.BRK_SHUTTING_DOWN(transport, port);
 
         List<Object> log = performLog();
 
@@ -69,9 +69,9 @@ public class BrokerMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BRK-1003", expected);
     }
 
-    public void testMessage1004()
+    public void testBrokerReady()
     {
-        _logMessage = BrokerMessages.BRK_1004();
+        _logMessage = BrokerMessages.BRK_READY();
         List<Object> log = performLog();
 
         String[] expected = {"Ready"};
@@ -79,9 +79,9 @@ public class BrokerMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BRK-1004", expected);
     }
 
-    public void testMessage1005()
+    public void testBrokerStopped()
     {
-        _logMessage = BrokerMessages.BRK_1005();
+        _logMessage = BrokerMessages.BRK_STOPPED();
         List<Object> log = performLog();
 
         String[] expected = {"Stopped"};
@@ -89,11 +89,11 @@ public class BrokerMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BRK-1005", expected);
     }
 
-    public void testMessage1006()
+    public void testBrokerConfig()
     {
         String path = "/file/path/to/configuration.xml";
 
-        _logMessage = BrokerMessages.BRK_1006(path);
+        _logMessage = BrokerMessages.BRK_CONFIG(path);
         List<Object> log = performLog();
 
         String[] expected = {"Using configuration :", path};
@@ -101,11 +101,11 @@ public class BrokerMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "BRK-1006", expected);
     }
 
-    public void testMessage1007()
+    public void testBrokerLogConfig()
     {
         String path = "/file/path/to/configuration.xml";
 
-        _logMessage = BrokerMessages.BRK_1007(path);
+        _logMessage = BrokerMessages.BRK_LOG_CONFIG(path);
         List<Object> log = performLog();
 
         String[] expected = {"Using logging configuration :", path};
