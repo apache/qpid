@@ -21,7 +21,7 @@ out("   public struct $name")
 out("Getter")
 }
    {
-    public static $name get($vtype value)
+    public static $name Get($vtype value)
     {
         switch (value)
         {

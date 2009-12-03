@@ -20,14 +20,12 @@
 #
 
 
-def camel(offset, *args):
+def pascal(offset, *args):
   parts = []
   for a in args:
     parts.extend(a.split("-"))
-  return "".join(parts[:offset] + [p[0].upper() + p[1:] for p in parts[offset:]])
+  return "".join([p[0].upper() + p[1:] for p in parts[:offset]] + [p[0].upper() + p[1:] for p in parts[offset:]])
 
-def dromedary(s):
-  return s[0].lower() + s[1:]
 
 def scream(*args):
   return "_".join([a.replace("-", "_").upper() for a in args])
@@ -132,11 +130,11 @@ def cname(nd, field="@name"):
     if (nd.name in ("struct", "result") and
         cls["@name"] != "session" and
         nd[field] != "header"):
-      return camel(0, nd[field])
+      return pascal(0, nd[field])
     else:
-      return camel(0, cls["@name"], nd[field])
+      return pascal(0, cls["@name"], nd[field])
   else:
-    return camel(0, nd[field])
+    return pascal(0, nd[field])
 
 def jtype(nd):
   if nd.name == "struct" or nd["enum"]:
@@ -178,7 +176,7 @@ class Field:
 
   def __init__(self, index, nd):
     self.index = index
-    self.name = camel(1, nd["@name"])
+    self.name = pascal(1, nd["@name"])
     self.type_node = resolve_type(nd)
     if self.type_node.name == "domain":
       self.prim_type = resolve_type(self.type_node)
@@ -189,23 +187,23 @@ class Field:
     self.empty = self.variable_width == 0 and self.fixed_width == 0 and self.prim_type.name != "struct"
     tname = cname(self.type_node)
     if self.type_node.name == "struct":
-      self.read = "(%s) dec.readStruct(%s.TYPE)" % (tname, tname)
-      self.write = "enc.writeStruct(%s.TYPE, check(struct).%s)" % (tname, self.name)
+      self.read = "(%s) dec.ReadStruct(%s.TYPE)" % (tname, tname)
+      self.write = "enc.WriteStruct(%s.TYPE, check(struct).%s)" % (tname, self.name)
       self.coder = "Struct"
     elif self.type_node.name == "domain":
-      self.coder = camel(0, self.prim_type["@name"])
-      self.read = "%s.get(dec.read%s())" % (tname, self.coder)
-      self.write = "enc.write%s(check(struct).%s.getValue())" % (self.coder, self.name)
+      self.coder = pascal(0, self.prim_type["@name"])
+      self.read = "%s.Get(dec.Read%s())" % (tname, self.coder)
+      self.write = "enc.Write%s(check(struct).%s.GetValue())" % (self.coder, self.name)
     else:
-      self.coder = camel(0, self.type_node["@name"])
-      self.read = "dec.read%s()" % self.coder
-      self.write = "enc.write%s(check(struct).%s)" % (self.coder, self.name)
+      self.coder = pascal(0, self.type_node["@name"])
+      self.read = "dec.Read%s()" % self.coder
+      self.write = "enc.Write%s(check(struct).%s)" % (self.coder, self.name)
     self.type = jtype(self.type_node)
     self.default = DEFAULTS.get(self.type, "null")
-    self.has = camel(1, "has", self.name)
-    self.get = camel(1, "get", self.name)
-    self.set = camel(1, "set", self.name)
-    self.clear = camel(1, "clear", self.name)
+    self.has = pascal(1, "Has", self.name)
+    self.get = pascal(1, "Get", self.name)
+    self.set = pascal(1, "Set", self.name)
+    self.clear = pascal(1, "clear", self.name)
     if self.type == "bool":
       self.option = scream(nd["@name"])
     else:
@@ -236,7 +234,7 @@ def get_parameters(type, fields):
     params.append("Header header")
     params.append("MemoryStream body")
   if options or type.name in ("control", "command"):
-    params.append("Option ... _options")
+    params.append("Option ... options")
   return params
 
 def get_arguments(type, fields):
@@ -251,7 +249,7 @@ def get_arguments(type, fields):
     args.append("header")
     args.append("body")
   if options or type.name in ("control", "command"):
-    args.append("_options")
+    args.append("options")
   return args
 
 def get_options(fields):
@@ -269,5 +267,5 @@ def get_dotnetparameters(type, fields):
     params.append("Header header")
     params.append("MemoryStream body")
   if options or type.name in ("control", "command"):
-    params.append("params Option[] _options")
+    params.append("params Option[] options")
   return params

@@ -27,10 +27,10 @@ using common.org.apache.qpid.transport.util;
 namespace org.apache.qpid.transport
 {
 
-public abstract class Invoker {
+public abstract class Invoker : IInvoker {
 
-    protected abstract void invoke(Method method);
-    public abstract Future invoke(Method method, Future resultClass);
+    protected abstract void Invoke(Method method);
+    public abstract IFuture Invoke(Method method, IFuture resultClass);
 
 ${
 from dotnetgenutil import *
@@ -46,18 +46,18 @@ for c in composites:
       rname = cname(result["struct"])
     else:
       rname = cname(result, "@type")
-    jresult = "Future" 
+    jresult = "IFuture" 
     jreturn = "return "
     jclass = ", new ResultFuture()" 
-    jinvoke = "invoke"
+    jinvoke = "Invoke"
   else:
-    jinvoke = "invoke"
+    jinvoke = "Invoke"
     jresult = "void"
     jreturn = ""
     jclass = ""
 
   out("""
-    public $jresult $(dromedary(name))($(", ".join(params))) {
+    public $jresult $(name)($(", ".join(params))) {
         $(jreturn)$jinvoke(new $name($(", ".join(args)))$jclass);
     }
 """)
