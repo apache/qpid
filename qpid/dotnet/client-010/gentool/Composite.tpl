@@ -74,19 +74,19 @@ public sealed class $name : $base {
 
     public const int TYPE = $typecode;
 
-    public override int getStructType() {
+    public override int GetStructType() {
         return TYPE;
     }
 
-    public override int getSizeWidth() {
+    public override int GetSizeWidth() {
         return $size;
     }
 
-    public override int getPackWidth() {
+    public override int GetPackWidth() {
         return $pack;
     }
 
-    public $override bool hasPayload() {
+    public $override bool HasPayload() {
         return $payload;
     }
 
@@ -131,8 +131,8 @@ if segments:
 
 if options or base == "Method":
   out("""
-        for (int i=0; i < _options.Length; i++) {
-            switch (_options[i]) {
+        for (int i=0; i < options.Length; i++) {
+            switch (options[i]) {
 """)
 
   for f in options:
@@ -143,26 +143,26 @@ if options or base == "Method":
             case Option.BATCH: Batch = true; break;
 """)
   out("""            case Option.NONE: break;
-            default: throw new Exception("invalid option: " + _options[i]);
+            default: throw new Exception("invalid option: " + options[i]);
             }
         }
 """)
 }
     }
 
-    public $override void dispatch<C>(C context, MethodDelegate<C> mdelegate) {
-        mdelegate.$(dromedary(name))(context, this);
+    public $override void Dispatch<C>(C context, MethodDelegate<C> mdelegate) {
+        mdelegate.$(name)(context, this);
     }
 
 ${
 for f in fields:
   if pack > 0:
     out("""
-    public  bool $(f.has)() {
+    public bool $(f.has)() {
         return (packing_flags & $(f.flag_mask(pack))) != 0;
     }
 
-    public  $name $(f.clear)() {
+    public $name $(f.clear)() {
         packing_flags = (byte) (packing_flags & ~$(f.flag_mask(pack)));       
 ${
 if (not f.empty and not (f.default == "null")):
@@ -174,7 +174,7 @@ if (not f.empty and not (f.default == "null")):
 """)
 
   out("""
-    public  $(f.type) $(f.get)() {
+    public $(f.type) $(f.get)() {
 ${
 if f.empty:
   out("        return $(f.has)();")
@@ -183,7 +183,7 @@ else:
 }
     }
 
-    public  $name $(f.set)($(f.type) value) {
+    public $name $(f.set)($(f.type) value) {
 ${
 if not f.empty:
   out("        _$(f.name) = value;")
@@ -196,9 +196,6 @@ if pack > 0:
         return this;
     }
 
-    public  $name $(f.name)($(f.type) value) {
-        return $(f.set)(value);
-    }
 """)
 }
 
@@ -209,18 +206,18 @@ if segments:
         set { _header = value;}
 	      }
 	      
-    public  $name header(Header header) {
+    public $name SetHeader(Header header) {
         Header = header;
         return this;
     }
 
-    public  override MemoryStream Body
+    public override MemoryStream Body
     {
        get{ return _body;}
        set{ _body = value;}
     }
 
-    public  $name  body(MemoryStream body)
+    public $name  SetBody(MemoryStream body)
     {
         Body = body;
         return this;
@@ -228,11 +225,11 @@ if segments:
 """)
 }
 
-    public override void write(Encoder enc)
+    public override void Write(IEncoder enc)
     {
 ${
 if pack > 0:
-  out("        enc.writeUint%s(packing_flags);\n" % (pack*8));
+  out("        enc.WriteUint%s(packing_flags);\n" % (pack*8));
 
 for f in fields:
   if f.empty:
@@ -246,15 +243,15 @@ for f in fields:
   elif f.type_node.name == "domain":
     post = ""
     pre = "(short)"
-  out("        enc.write$(f.coder)($(pre)_$(f.name)$(post));\n")
+  out("        enc.Write$(f.coder)($(pre)_$(f.name)$(post));\n")
 }
     }
 
-    public override void read(Decoder dec)
+    public override void Read(IDecoder dec)
     {
 ${
 if pack > 0:
-   out("        packing_flags = ($(PACK_TYPES[pack])) dec.readUint%s();\n" % (pack*8));
+   out("        packing_flags = ($(PACK_TYPES[pack])) dec.ReadUint%s();\n" % (pack*8));
 
 for f in fields:
   if f.empty:
@@ -268,25 +265,25 @@ for f in fields:
     pre = "(%s)" % cname(f.type_node)
     arg = "%s.TYPE" % cname(f.type_node)
   elif f.type_node.name == "domain":
-    pre = "%sGetter.get(" % cname(f.type_node)
+    pre = "%sGetter.Get(" % cname(f.type_node)
     post = ")"
-  out("        _$(f.name) = $(pre)dec.read$(f.coder)($(arg))$(post);\n")
+  out("        _$(f.name) = $(pre)dec.Read$(f.coder)($(arg))$(post);\n")
 }
     }
 
     public override Dictionary<String,Object> Fields
     {
-    get{
-        Dictionary<String,Object> result = new Dictionary<String,Object>();
+		get
+		{
+			Dictionary<String,Object> result = new Dictionary<String,Object>();
 
 ${
 for f in fields:
   if pack > 0:
-    out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
-  out('        result.Add("_$(f.name)", $(f.get)());\n')
+    out("        	if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+  out('        	result.Add("_$(f.name)", $(f.get)());\n')
 }
-
-        return result;
+			return result;
         }
     }
 

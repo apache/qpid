@@ -72,6 +72,7 @@ for c in composites:
 execute("MethodDelegate.cs", "MethodDelegate.tpl", composites = composites)
 execute("Option.cs", "Option.tpl", composites = composites)
 execute("Invoker.cs", "Invoker.tpl", composites = controls + commands)
+execute("IInvoker.cs", "IInvoker.tpl", composites = controls + commands)
 execute("StructFactory.cs", "StructFactory.tpl", composites = composites)
 
 def is_enum(nd):

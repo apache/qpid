@@ -29,7 +29,7 @@ from genutil import *
 
 for c in composites:
   name = cname(c)
-  out("    public virtual void $(dromedary(name))(C context, $name mystruct) {}\n")
+  out("    public virtual void $(name)(C context, $name mystruct) {}\n")
 }
 }
 }
